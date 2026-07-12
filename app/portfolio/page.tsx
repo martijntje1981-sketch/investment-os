@@ -13,7 +13,7 @@ export default function PortfolioPage() {
           </div>
   
           <div className="rounded-2xl bg-white p-6 shadow">
-            <p className="text-sm text-slate-500">Today's Return</p>
+          <p className="text-sm text-slate-500">Today&apos;s Return</p>
             <h2 className="mt-2 text-3xl font-bold text-green-600">+0.00%</h2>
           </div>
   
