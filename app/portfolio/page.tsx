@@ -1,19 +1,37 @@
 import Link from "next/link";
+import { getPortfolioSnapshot } from "@/lib/services/portfolio/portfolioService";
+
+const euro = new Intl.NumberFormat("nl-NL", {
+  style: "currency",
+  currency: "EUR",
+  maximumFractionDigits: 0,
+});
+
+const euroTwo = new Intl.NumberFormat("nl-NL", {
+  style: "currency",
+  currency: "EUR",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+function signedPercent(value: number) {
+  return `${value > 0 ? "+" : ""}${value.toFixed(1)}%`;
+}
 
 export default function PortfolioPage() {
+  const portfolio = getPortfolioSnapshot();
+
   return (
     <main className="min-h-screen bg-slate-100">
-      <div className="mx-auto max-w-7xl p-8">
-
-        {/* Header */}
-        <div className="mb-8 flex items-center justify-between">
+      <div className="mx-auto max-w-7xl p-6 md:p-8">
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-4xl font-bold text-slate-900">
-              Portfolio
-            </h1>
-
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-600">
+              Investment OS
+            </p>
+            <h1 className="mt-2 text-4xl font-bold text-slate-900">Portfolio</h1>
             <p className="mt-2 text-slate-500">
-              Overview of your investments
+              One central source for positions, allocation and returns.
             </p>
           </div>
 
@@ -22,287 +40,158 @@ export default function PortfolioPage() {
           </button>
         </div>
 
-        {/* KPI Cards */}
+        <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+          <KpiCard
+            label="Portfolio Value"
+            value={euro.format(portfolio.totalValue)}
+            subtitle={`${portfolio.dailyChangeValue >= 0 ? "+" : ""}${euro.format(portfolio.dailyChangeValue)} today`}
+            tone={portfolio.dailyChangeValue >= 0 ? "positive" : "negative"}
+          />
+          <KpiCard
+            label="Total Return"
+            value={signedPercent(portfolio.totalReturnPercent)}
+            subtitle={`${portfolio.totalProfitLoss >= 0 ? "+" : ""}${euro.format(portfolio.totalProfitLoss)} since purchase`}
+            tone={portfolio.totalProfitLoss >= 0 ? "positive" : "negative"}
+          />
+          <KpiCard
+            label="Holdings"
+            value={String(portfolio.holdings.length)}
+            subtitle="All positions in one engine"
+          />
+          <KpiCard
+            label="Largest Position"
+            value={portfolio.largestHolding.ticker}
+            subtitle={`${portfolio.largestHolding.weightPercent.toFixed(1)}% of portfolio`}
+            tone="warning"
+          />
+        </section>
 
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+        <section className="mt-8 grid gap-6 lg:grid-cols-[1.25fr_0.75fr]">
+          <div className="rounded-3xl bg-slate-950 p-7 text-white shadow-sm md:p-8">
+            <div className="flex flex-col gap-8 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">
+                  Portfolio Health
+                </p>
+                <h2 className="mt-3 text-3xl font-bold">Concentrated growth portfolio</h2>
+                <p className="mt-3 max-w-2xl leading-7 text-slate-300">
+                  The portfolio has strong long-term growth potential, but Bitcoin-linked exposure remains dominant. New contributions should primarily strengthen diversified equity and defensive positions.
+                </p>
+              </div>
 
-          <div className="rounded-3xl bg-white p-6 shadow-sm">
-            <p className="text-sm text-slate-500">
-              Portfolio Value
-            </p>
-
-            <h2 className="mt-3 text-4xl font-bold">
-              €80,500
-            </h2>
-
-            <p className="mt-2 text-green-600 font-semibold">
-              +1.24% Today
-            </p>
+              <div className="rounded-2xl bg-white/10 px-6 py-5 text-center">
+                <p className="text-sm text-slate-400">Daily move</p>
+                <p className={`mt-2 text-3xl font-bold ${portfolio.dailyChangePercent >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                  {signedPercent(portfolio.dailyChangePercent)}
+                </p>
+              </div>
+            </div>
           </div>
 
-          <div className="rounded-3xl bg-white p-6 shadow-sm">
-            <p className="text-sm text-slate-500">
-              Total Return
+          <div className="rounded-3xl bg-white p-7 shadow-sm md:p-8">
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">
+              Allocation
             </p>
+            <h2 className="mt-2 text-2xl font-bold text-slate-900">Current weights</h2>
 
-            <h2 className="mt-3 text-4xl font-bold text-green-600">
-              +18.4%
-            </h2>
-
-            <p className="mt-2 text-slate-500">
-              Since inception
-            </p>
+            <div className="mt-6 space-y-5">
+              {portfolio.holdings.map((holding) => (
+                <div key={holding.ticker}>
+                  <div className="mb-2 flex items-center justify-between gap-4 text-sm">
+                    <span className="font-semibold text-slate-700">{holding.ticker}</span>
+                    <span className="text-slate-500">{holding.weightPercent.toFixed(1)}%</span>
+                  </div>
+                  <div className="h-2.5 overflow-hidden rounded-full bg-slate-100">
+                    <div
+                      className="h-full rounded-full bg-slate-900"
+                      style={{ width: `${Math.min(holding.weightPercent, 100)}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
+        </section>
 
-          <div className="rounded-3xl bg-white p-6 shadow-sm">
-            <p className="text-sm text-slate-500">
-              Holdings
-            </p>
-
-            <h2 className="mt-3 text-4xl font-bold">
-              6
-            </h2>
-
-            <p className="mt-2 text-slate-500">
-              Diversified portfolio
-            </p>
-          </div>
-
-          <div className="rounded-3xl bg-white p-6 shadow-sm">
-            <p className="text-sm text-slate-500">
-              Risk Profile
-            </p>
-
-            <h2 className="mt-3 text-4xl font-bold">
-              Growth
-            </h2>
-
-            <p className="mt-2 text-blue-600 font-semibold">
-              Aggressive
-            </p>
-          </div>
-
-        </div>
-
-        {/* Charts */}
-
-        <div className="mt-8 grid gap-6 lg:grid-cols-2">
-
-          <div className="rounded-3xl bg-white p-8 shadow-sm">
-
-            <h2 className="text-xl font-bold">
-              Portfolio Performance
-            </h2>
-
-            <div className="mt-8 flex h-72 items-center justify-center rounded-2xl border-2 border-dashed border-slate-300">
-
-              <p className="text-slate-400">
-                Performance chart coming soon
+        <section className="mt-8 overflow-hidden rounded-3xl bg-white shadow-sm">
+          <div className="flex items-center justify-between border-b border-slate-100 p-7 md:p-8">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">
+                Positions
               </p>
-
+              <h2 className="mt-2 text-2xl font-bold text-slate-900">Holdings</h2>
             </div>
-
+            <p className="text-sm text-slate-500">Click a holding for full analysis</p>
           </div>
 
-          <div className="rounded-3xl bg-white p-8 shadow-sm">
-
-            <h2 className="text-xl font-bold">
-              Asset Allocation
-            </h2>
-
-            <div className="mt-8 space-y-5">
-
-              <Allocation
-                name="Bitcoin"
-                percentage={67}
-              />
-
-              <Allocation
-                name="Uranium"
-                percentage={9}
-              />
-
-              <Allocation
-                name="AI Infrastructure"
-                percentage={8}
-              />
-
-              <Allocation
-                name="Global Equities"
-                percentage={10}
-              />
-
-              <Allocation
-                name="Gold"
-                percentage={6}
-              />
-
-            </div>
-
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[900px]">
+              <thead className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                <tr>
+                  <th className="px-8 py-4">Holding</th>
+                  <th className="px-5 py-4">Units</th>
+                  <th className="px-5 py-4">Price</th>
+                  <th className="px-5 py-4">Value</th>
+                  <th className="px-5 py-4">Weight</th>
+                  <th className="px-5 py-4">Return</th>
+                  <th className="px-8 py-4 text-right">Open</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {portfolio.holdings.map((holding) => (
+                  <tr key={holding.ticker} className="transition hover:bg-slate-50">
+                    <td className="px-8 py-5">
+                      <Link href={`/holding/${holding.slug}`} className="group block">
+                        <span className="font-bold text-slate-900 group-hover:text-blue-600">{holding.ticker}</span>
+                        <span className="mt-1 block text-sm text-slate-500">{holding.name}</span>
+                      </Link>
+                    </td>
+                    <td className="px-5 py-5 text-slate-700">{holding.units.toLocaleString("nl-NL")}</td>
+                    <td className="px-5 py-5 text-slate-700">{euroTwo.format(holding.currentPrice)}</td>
+                    <td className="px-5 py-5 font-semibold text-slate-900">{euro.format(holding.marketValue)}</td>
+                    <td className="px-5 py-5 text-slate-700">{holding.weightPercent.toFixed(1)}%</td>
+                    <td className={`px-5 py-5 font-semibold ${holding.returnPercent >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+                      {signedPercent(holding.returnPercent)}
+                    </td>
+                    <td className="px-8 py-5 text-right">
+                      <Link href={`/holding/${holding.slug}`} className="inline-flex rounded-xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-900 hover:text-white">
+                        View →
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-
-        </div>
-
-        {/* Holdings */}
-
-        <div className="mt-8 rounded-3xl bg-white p-8 shadow-sm">
-
-          <h2 className="mb-6 text-2xl font-bold">
-            Holdings
-          </h2>
-
-          <table className="w-full">
-
-            <thead>
-
-              <tr className="border-b text-left text-slate-500">
-
-                <th className="pb-4">
-                  Holding
-                </th>
-
-                <th>
-                  Weight
-                </th>
-
-                <th>
-                  Value
-                </th>
-
-                <th>
-                  Return
-                </th>
-
-              </tr>
-
-            </thead>
-
-            <tbody>
-
-              <HoldingRow
-                ticker="IB1T"
-                href="/holding/ib1t"
-                weight="67%"
-                value="€58,100"
-                change="+18%"
-                positive
-              />
-
-              <HoldingRow
-                ticker="NUKL"
-                href="/holding/nukl"
-                weight="9%"
-                value="€7,500"
-                change="-12%"
-              />
-
-              <HoldingRow
-                ticker="VWCE"
-                href="/holding/vwce"
-                weight="10%"
-                value="€8,900"
-                change="+6%"
-                positive
-              />
-
-              <HoldingRow
-                ticker="AIFS"
-                href="/holding/aifs"
-                weight="8%"
-                value="€5,300"
-                change="+2%"
-                positive
-              />
-
-            </tbody>
-
-          </table>
-
-        </div>
-
+        </section>
       </div>
     </main>
   );
 }
 
-function Allocation({
-  name,
-  percentage,
-}: {
-  name: string;
-  percentage: number;
-}) {
-  return (
-    <div>
-
-      <div className="mb-2 flex justify-between">
-
-        <span>{name}</span>
-
-        <span className="font-semibold">
-          {percentage}%
-        </span>
-
-      </div>
-
-      <div className="h-3 rounded-full bg-slate-200">
-
-        <div
-          className="h-3 rounded-full bg-slate-900"
-          style={{
-            width: `${percentage}%`,
-          }}
-        />
-
-      </div>
-
-    </div>
-  );
-}
-
-function HoldingRow({
-  ticker,
-  href,
-  weight,
+function KpiCard({
+  label,
   value,
-  change,
-  positive = false,
+  subtitle,
+  tone = "neutral",
 }: {
-  ticker: string;
-  href: string;
-  weight: string;
+  label: string;
   value: string;
-  change: string;
-  positive?: boolean;
+  subtitle: string;
+  tone?: "neutral" | "positive" | "negative" | "warning";
 }) {
+  const valueClass = {
+    neutral: "text-slate-900",
+    positive: "text-emerald-600",
+    negative: "text-red-600",
+    warning: "text-amber-600",
+  }[tone];
+
   return (
-    <tr className="border-b hover:bg-slate-50">
-
-      <td className="py-5">
-
-        <Link
-          href={href}
-          className="font-semibold text-blue-600 hover:underline"
-        >
-          {ticker}
-        </Link>
-
-      </td>
-
-      <td>{weight}</td>
-
-      <td>{value}</td>
-
-      <td
-        className={
-          positive
-            ? "font-semibold text-green-600"
-            : "font-semibold text-red-600"
-        }
-      >
-        {change}
-      </td>
-
-    </tr>
+    <div className="rounded-3xl bg-white p-6 shadow-sm">
+      <p className="text-sm font-medium text-slate-500">{label}</p>
+      <p className={`mt-3 text-3xl font-bold ${valueClass}`}>{value}</p>
+      <p className="mt-2 text-sm text-slate-500">{subtitle}</p>
+    </div>
   );
 }
