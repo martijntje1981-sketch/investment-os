@@ -1,3 +1,4 @@
+import { holdings } from "@/lib/services/portfolio/holdings";
 import { LocalUpdateTime } from "@/components/home/LocalUpdateTime";
 import { BottomNav } from "@/components/home/BottomNav";
 import { GoalTracker } from "@/components/home/GoalTracker";
@@ -10,7 +11,8 @@ import { homeData } from "@/lib/home-data";
 import { getMarketQuote } from "@/lib/services/market/priceService";
 
 export default async function Home() {
-  const liveQuote = await getMarketQuote("BTC/USD");
+  const primaryHolding = holdings[0];
+  const liveQuote = await getMarketQuote(primaryHolding.symbol);
   const { status, briefing, investmentScore, portfolio, goal, events } =
     homeData;
 
@@ -21,7 +23,9 @@ export default async function Home() {
           {homeData.greeting}
         </h1>
         <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-  <p className="text-sm text-slate-500">Live Bitcoin</p>
+        <p className="text-sm text-slate-500">
+  Live {primaryHolding.name}
+</p>
 
   <p className="mt-2 text-4xl font-bold">
     ${liveQuote.price.toLocaleString()}

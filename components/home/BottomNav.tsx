@@ -1,13 +1,18 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
 type NavItem = {
   label: string;
-  active?: boolean;
+  href: string;
   icon: React.ReactNode;
 };
 
 const items: NavItem[] = [
   {
     label: "Vandaag",
-    active: true,
+    href: "/",
     icon: (
       <svg
         width="20"
@@ -26,6 +31,7 @@ const items: NavItem[] = [
   },
   {
     label: "Portfolio",
+    href: "/portfolio",
     icon: (
       <svg
         width="20"
@@ -45,6 +51,7 @@ const items: NavItem[] = [
   },
   {
     label: "Goals",
+    href: "/goals",
     icon: (
       <svg
         width="20"
@@ -65,25 +72,35 @@ const items: NavItem[] = [
 ];
 
 export function BottomNav() {
+  const pathname = usePathname();
+
   return (
     <nav
       className="fixed inset-x-0 bottom-0 z-50 border-t border-[#E2E8F0] bg-white/90 backdrop-blur-md pb-[env(safe-area-inset-bottom,0px)]"
       aria-label="Main navigation"
     >
       <div className="mx-auto flex h-[var(--bottom-nav-height)] max-w-[1200px] items-center justify-around px-6">
-        {items.map((item) => (
-          <div
-            key={item.label}
-            className={`flex min-w-[72px] flex-col items-center justify-center gap-1 ${item.active ? "text-[#0F172A]" : "text-[#94A3B8]"}`}
-          >
-            <span className="flex h-6 w-6 items-center justify-center">
-              {item.icon}
-            </span>
-            <span className="text-[11px] font-medium leading-none">
-              {item.label}
-            </span>
-          </div>
-        ))}
+        {items.map((item) => {
+          const active = pathname === item.href;
+
+          return (
+            <Link
+              key={item.label}
+              href={item.href}
+              className={`flex min-w-[72px] flex-col items-center justify-center gap-1 ${
+                active ? "text-[#0F172A]" : "text-[#94A3B8]"
+              }`}
+            >
+              <span className="flex h-6 w-6 items-center justify-center">
+                {item.icon}
+              </span>
+
+              <span className="text-[11px] font-medium leading-none">
+                {item.label}
+              </span>
+            </Link>
+          );
+        })}
       </div>
     </nav>
   );
