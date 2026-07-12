@@ -1,3 +1,6 @@
+
+import Link from "next/link";
+
 export default function PortfolioPage() {
     return (
       <main className="min-h-screen bg-slate-50 p-8">
@@ -40,7 +43,14 @@ export default function PortfolioPage() {
   
             <tbody>
               <tr className="border-b h-14">
-                <td>IB1T</td>
+              <td>
+  <Link
+    href="/holding/ib1t"
+    className="font-semibold text-blue-600 hover:underline"
+  >
+    IB1T
+  </Link>
+</td>
                 <td>67%</td>
                 <td>€58,100</td>
                 <td className="text-green-600">+18%</td>
