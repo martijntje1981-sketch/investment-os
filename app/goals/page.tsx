@@ -1,481 +1,310 @@
+import PageNavigation from "../../components/PageNavigation";
+import BottomNavigation from "../../components/home/BottomNav";
 import { getPortfolioSnapshot } from "@/lib/services/portfolio/portfolioService";
 
-const TARGET_VALUE = 1_000_000;
-const MONTHLY_CONTRIBUTION = 1_000;
-const YEARS = 10;
-
-const scenarios = [
-  {
-    name: "Bear",
-    annualReturn: 8,
-    description: "Slower growth with challenging market periods.",
-  },
-  {
-    name: "Base",
-    annualReturn: 15,
-    description: "Strong long-term growth with normal volatility.",
-  },
-  {
-    name: "Bull",
-    annualReturn: 25,
-    description: "Excellent performance from growth-oriented holdings.",
-  },
-];
-
-function formatCurrency(value: number) {
-  return new Intl.NumberFormat("nl-NL", {
-    style: "currency",
-    currency: "EUR",
-    maximumFractionDigits: 0,
-  }).format(value);
-}
-
-function formatPercent(value: number) {
-  return new Intl.NumberFormat("nl-NL", {
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
-  }).format(value);
-}
+const euro = new Intl.NumberFormat("nl-NL", {
+  style: "currency",
+  currency: "EUR",
+  maximumFractionDigits: 0,
+});
 
 function calculateFutureValue(
-  startingValue: number,
+  currentValue: number,
   monthlyContribution: number,
-  annualReturnPercent: number,
-  years: number,
+  annualReturn: number,
+  years: number
 ) {
-  const monthlyRate = annualReturnPercent / 100 / 12;
+  const monthlyRate = annualReturn / 12;
   const months = years * 12;
 
-  if (monthlyRate === 0) {
-    return startingValue + monthlyContribution * months;
-  }
-
-  const portfolioGrowth = startingValue * (1 + monthlyRate) ** months;
+  const currentGrowth =
+    currentValue * Math.pow(1 + monthlyRate, months);
 
   const contributionGrowth =
-    monthlyContribution *
-    (((1 + monthlyRate) ** months - 1) / monthlyRate);
+    monthlyRate > 0
+      ? monthlyContribution *
+        ((Math.pow(1 + monthlyRate, months) - 1) / monthlyRate)
+      : monthlyContribution * months;
 
-  return portfolioGrowth + contributionGrowth;
+  return currentGrowth + contributionGrowth;
 }
 
-function calculateRequiredAnnualReturn(
-  startingValue: number,
+function calculateYearsToGoal(
+  currentValue: number,
+  target: number,
   monthlyContribution: number,
-  targetValue: number,
-  years: number,
+  annualReturn: number
 ) {
-  let low = 0;
-  let high = 100;
+  let value = currentValue;
+  let months = 0;
+  const monthlyRate = annualReturn / 12;
 
-  for (let index = 0; index < 100; index += 1) {
-    const midpoint = (low + high) / 2;
-
-    const projectedValue = calculateFutureValue(
-      startingValue,
-      monthlyContribution,
-      midpoint,
-      years,
-    );
-
-    if (projectedValue < targetValue) {
-      low = midpoint;
-    } else {
-      high = midpoint;
-    }
-  }
-
-  return (low + high) / 2;
-}
-
-function calculateYearsToTarget(
-  startingValue: number,
-  monthlyContribution: number,
-  annualReturnPercent: number,
-  targetValue: number,
-) {
-  let value = startingValue;
-  const monthlyRate = annualReturnPercent / 100 / 12;
-
-  for (let month = 1; month <= 50 * 12; month += 1) {
+  while (value < target && months < 1200) {
     value = value * (1 + monthlyRate) + monthlyContribution;
-
-    if (value >= targetValue) {
-      return month / 12;
-    }
+    months += 1;
   }
 
-  return null;
+  return months / 12;
 }
 
 export default function GoalsPage() {
   const portfolio = getPortfolioSnapshot();
 
-  const progressPercent = Math.min(
-    (portfolio.totalValue / TARGET_VALUE) * 100,
-    100,
+  const target = 1_000_000;
+  const monthlyContribution = 1_250;
+  const targetYears = 10;
+
+  const scenarios = [
+    {
+      name: "Bear case",
+      annualReturn: 0.07,
+      description: "Conservative long-term growth scenario.",
+    },
+    {
+      name: "Base case",
+      annualReturn: 0.15,
+      description: "Your main Investment OS growth scenario.",
+    },
+    {
+      name: "Bull case",
+      annualReturn: 0.22,
+      description: "Strong growth with higher volatility.",
+    },
+  ];
+
+  const progress = Math.min(
+    (portfolio.totalValue / target) * 100,
+    100
   );
 
-  const remainingValue = Math.max(
-    TARGET_VALUE - portfolio.totalValue,
-    0,
-  );
-
-  const requiredAnnualReturn = calculateRequiredAnnualReturn(
-    portfolio.totalValue,
-    MONTHLY_CONTRIBUTION,
-    TARGET_VALUE,
-    YEARS,
-  );
-
-  const baseYearsToTarget = calculateYearsToTarget(
-    portfolio.totalValue,
-    MONTHLY_CONTRIBUTION,
-    15,
-    TARGET_VALUE,
-  );
-
-  const projectedScenarios = scenarios.map((scenario) => {
-    const projectedValue = calculateFutureValue(
-      portfolio.totalValue,
-      MONTHLY_CONTRIBUTION,
-      scenario.annualReturn,
-      YEARS,
-    );
-
-    const yearsToTarget = calculateYearsToTarget(
-      portfolio.totalValue,
-      MONTHLY_CONTRIBUTION,
-      scenario.annualReturn,
-      TARGET_VALUE,
-    );
-
-    return {
-      ...scenario,
-      projectedValue,
-      yearsToTarget,
-      reachesTarget: projectedValue >= TARGET_VALUE,
-    };
-  });
+  const requiredAnnualGrowth =
+    Math.pow(target / portfolio.totalValue, 1 / targetYears) - 1;
 
   return (
-    <main className="min-h-screen bg-slate-50 px-5 pb-32 pt-8 text-slate-950 sm:px-8">
-      <div className="mx-auto max-w-6xl">
-        <section className="mb-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">
-            Wealth plan
+    <main className="min-h-screen bg-slate-100 pb-28">
+      <div className="px-6 pt-6 md:px-8 md:pt-8">
+        <PageNavigation />
+      </div>
+
+      <div className="mx-auto max-w-7xl px-6 py-10 md:px-8">
+        <header className="mb-8">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-600">
+            Investment OS
           </p>
 
-          <div className="mt-2 flex flex-col justify-between gap-4 md:flex-row md:items-end">
+          <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950 md:text-4xl">
+            Financial goals
+          </h1>
+
+          <p className="mt-3 max-w-2xl text-slate-600">
+            Track your progress toward financial independence and compare
+            different portfolio growth scenarios.
+          </p>
+        </header>
+
+        <section className="rounded-3xl bg-slate-950 p-7 text-white shadow-lg md:p-9">
+          <div className="grid gap-8 md:grid-cols-[1.5fr_1fr] md:items-center">
             <div>
-              <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-                Your path to €1 million
-              </h1>
-
-              <p className="mt-3 max-w-2xl text-base leading-7 text-slate-600">
-                Track your progress, compare growth scenarios and see what is
-                required to reach financial independence.
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                Planning horizon
-              </p>
-              <p className="mt-1 text-2xl font-bold">{YEARS} years</p>
-            </div>
-          </div>
-        </section>
-
-        <section className="overflow-hidden rounded-[2rem] bg-slate-950 p-7 text-white shadow-xl sm:p-9">
-          <div className="grid gap-8 lg:grid-cols-[1.5fr_1fr] lg:items-end">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">
-                Main financial goal
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-300">
+                Project Million
               </p>
 
-              <h2 className="mt-3 text-4xl font-bold sm:text-6xl">
-                {formatCurrency(TARGET_VALUE)}
+              <h2 className="mt-3 text-3xl font-bold md:text-4xl">
+                {euro.format(portfolio.totalValue)}
               </h2>
 
-              <p className="mt-4 max-w-xl leading-7 text-slate-300">
-                Build enough invested capital to create long-term freedom and
-                eventually generate sustainable portfolio income.
-              </p>
-            </div>
-
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
-              <p className="text-sm text-slate-400">Current portfolio</p>
-              <p className="mt-2 text-3xl font-bold">
-                {formatCurrency(portfolio.totalValue)}
+              <p className="mt-2 text-slate-300">
+                Current portfolio value toward a target of{" "}
+                {euro.format(target)}.
               </p>
 
-              <div className="mt-6 h-3 overflow-hidden rounded-full bg-white/10">
+              <div className="mt-7 h-4 overflow-hidden rounded-full bg-slate-800">
                 <div
-                  className="h-full rounded-full bg-emerald-400 transition-all duration-700"
-                  style={{ width: `${progressPercent}%` }}
+                  className="h-full rounded-full bg-blue-500 transition-all"
+                  style={{ width: `${progress}%` }}
                 />
               </div>
 
-              <div className="mt-3 flex items-center justify-between text-sm">
-                <span className="font-semibold text-emerald-300">
-                  {formatPercent(progressPercent)}% complete
-                </span>
-                <span className="text-slate-400">
-                  {formatCurrency(remainingValue)} remaining
+              <div className="mt-3 flex justify-between text-sm text-slate-300">
+                <span>{progress.toFixed(1)}% complete</span>
+                <span>
+                  {euro.format(
+                    Math.max(target - portfolio.totalValue, 0)
+                  )}{" "}
+                  remaining
                 </span>
               </div>
+            </div>
+
+            <div className="rounded-3xl border border-slate-700 bg-slate-900 p-6">
+              <p className="text-sm text-slate-400">
+                Target timeframe
+              </p>
+
+              <p className="mt-2 text-3xl font-bold">
+                {targetYears} years
+              </p>
+
+              <p className="mt-4 text-sm leading-6 text-slate-300">
+                Required annual portfolio growth without additional
+                contributions:
+              </p>
+
+              <p className="mt-2 text-2xl font-bold text-blue-300">
+                {(requiredAnnualGrowth * 100).toFixed(1)}%
+              </p>
             </div>
           </div>
         </section>
 
-        <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <MetricCard
-            label="Current value"
-            value={formatCurrency(portfolio.totalValue)}
-            subtitle={`${portfolio.holdings.length} active holdings`}
-          />
+        <section className="mt-8 grid gap-4 md:grid-cols-3">
+          <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <p className="text-sm font-medium text-slate-500">
+              Monthly contribution
+            </p>
 
-          <MetricCard
-            label="Monthly contribution"
-            value={formatCurrency(MONTHLY_CONTRIBUTION)}
-            subtitle="Current planning assumption"
-          />
+            <p className="mt-3 text-3xl font-bold text-slate-950">
+              {euro.format(monthlyContribution)}
+            </p>
 
-          <MetricCard
-            label="Required return"
-            value={`${formatPercent(requiredAnnualReturn)}%`}
-            subtitle={`Annualised return for the ${YEARS}-year goal`}
-          />
+            <p className="mt-3 text-sm text-slate-500">
+              Equivalent to {euro.format(monthlyContribution * 12)} per year.
+            </p>
+          </article>
 
-          <MetricCard
-            label="Base-case target"
-            value={
-              baseYearsToTarget
-                ? `${formatPercent(baseYearsToTarget)} years`
-                : "50+ years"
-            }
-            subtitle="At 15% annual growth"
-          />
+          <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <p className="text-sm font-medium text-slate-500">
+              Invested capital
+            </p>
+
+            <p className="mt-3 text-3xl font-bold text-slate-950">
+              {euro.format(portfolio.totalCostBasis)}
+            </p>
+
+            <p className="mt-3 text-sm text-slate-500">
+              Total calculated cost basis of all holdings.
+            </p>
+          </article>
+
+          <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <p className="text-sm font-medium text-slate-500">
+              Portfolio return
+            </p>
+
+            <p
+              className={`mt-3 text-3xl font-bold ${
+                portfolio.totalReturn >= 0
+                  ? "text-emerald-600"
+                  : "text-rose-600"
+              }`}
+            >
+              {portfolio.totalReturnPercent >= 0 ? "+" : ""}
+              {portfolio.totalReturnPercent.toFixed(1)}%
+            </p>
+
+            <p className="mt-3 text-sm text-slate-500">
+              Return compared with total invested capital.
+            </p>
+          </article>
         </section>
 
         <section className="mt-8">
-          <div className="mb-4">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Scenario monitor
-            </p>
-
-            <h2 className="mt-2 text-3xl font-bold">
-              Where could the portfolio be in {YEARS} years?
+          <div className="mb-5">
+            <h2 className="text-2xl font-bold text-slate-950">
+              Growth scenarios
             </h2>
+
+            <p className="mt-1 text-sm text-slate-500">
+              Projected portfolio value with your current monthly contribution.
+            </p>
           </div>
 
           <div className="grid gap-5 lg:grid-cols-3">
-            {projectedScenarios.map((scenario) => {
-              const scenarioProgress = Math.min(
-                (scenario.projectedValue / TARGET_VALUE) * 100,
-                100,
+            {scenarios.map((scenario) => {
+              const projectedValue = calculateFutureValue(
+                portfolio.totalValue,
+                monthlyContribution,
+                scenario.annualReturn,
+                targetYears
               );
+
+              const yearsToGoal = calculateYearsToGoal(
+                portfolio.totalValue,
+                target,
+                monthlyContribution,
+                scenario.annualReturn
+              );
+
+              const reachesTarget = projectedValue >= target;
 
               return (
                 <article
                   key={scenario.name}
-                  className="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg"
+                  className={`rounded-3xl border bg-white p-6 shadow-sm ${
+                    scenario.name === "Base case"
+                      ? "border-blue-300 ring-2 ring-blue-100"
+                      : "border-slate-200"
+                  }`}
                 >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">
-                        {scenario.name} case
-                      </p>
+                  <div className="flex items-center justify-between gap-4">
+                    <h3 className="text-xl font-bold text-slate-950">
+                      {scenario.name}
+                    </h3>
 
-                      <p className="mt-2 text-3xl font-bold">
-                        {scenario.annualReturn}%
-                      </p>
-
-                      <p className="mt-1 text-sm text-slate-500">
-                        Expected annual growth
-                      </p>
-                    </div>
-
-                    <span
-                      className={`rounded-full px-3 py-1 text-xs font-bold ${
-                        scenario.reachesTarget
-                          ? "bg-emerald-100 text-emerald-700"
-                          : "bg-amber-100 text-amber-700"
-                      }`}
-                    >
-                      {scenario.reachesTarget
-                        ? "Goal achieved"
-                        : "Below target"}
+                    <span className="whitespace-nowrap rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-700">
+                      {(scenario.annualReturn * 100).toFixed(0)}% yearly
                     </span>
                   </div>
 
-                  <div className="mt-8">
-                    <p className="text-sm text-slate-500">
-                      Projected portfolio
-                    </p>
-
-                    <p className="mt-1 text-3xl font-bold">
-                      {formatCurrency(scenario.projectedValue)}
-                    </p>
-                  </div>
-
-                  <div className="mt-6 h-2.5 overflow-hidden rounded-full bg-slate-100">
-                    <div
-                      className="h-full rounded-full bg-slate-900"
-                      style={{ width: `${scenarioProgress}%` }}
-                    />
-                  </div>
-
-                  <div className="mt-3 flex justify-between text-sm">
-                    <span className="text-slate-500">
-                      {formatPercent(
-                        (scenario.projectedValue / TARGET_VALUE) * 100,
-                      )}
-                      % of goal
-                    </span>
-
-                    <span className="font-semibold text-slate-700">
-                      {scenario.yearsToTarget
-                        ? `${formatPercent(scenario.yearsToTarget)} years`
-                        : "Not reached"}
-                    </span>
-                  </div>
-
-                  <p className="mt-6 border-t border-slate-100 pt-5 text-sm leading-6 text-slate-600">
+                  <p className="mt-3 text-sm leading-6 text-slate-500">
                     {scenario.description}
                   </p>
+
+                  <div className="mt-6 border-t border-slate-100 pt-6">
+                    <p className="text-sm text-slate-500">
+                      Value after {targetYears} years
+                    </p>
+
+                    <p className="mt-2 text-3xl font-bold text-slate-950">
+                      {euro.format(projectedValue)}
+                    </p>
+                  </div>
+
+                  <div className="mt-5 rounded-2xl bg-slate-50 p-4">
+                    <p className="text-sm text-slate-500">
+                      Estimated time to €1 million
+                    </p>
+
+                    <p
+                      className={`mt-1 text-xl font-bold ${
+                        reachesTarget
+                          ? "text-emerald-600"
+                          : "text-slate-950"
+                      }`}
+                    >
+                      {yearsToGoal.toFixed(1)} years
+                    </p>
+                  </div>
                 </article>
               );
             })}
           </div>
         </section>
 
-        <section className="mt-8 grid gap-6 lg:grid-cols-[1.25fr_0.75fr]">
-          <article className="rounded-[1.75rem] border border-slate-200 bg-white p-7 shadow-sm">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Goal assessment
-            </p>
+        <section className="mt-8 rounded-3xl border border-blue-100 bg-blue-50 p-6">
+          <h2 className="font-semibold text-blue-950">
+            Investment OS assessment
+          </h2>
 
-            <h2 className="mt-2 text-2xl font-bold">
-              The goal is ambitious, but achievable
-            </h2>
-
-            <div className="mt-6 space-y-5">
-              <AssessmentRow
-                title="Starting capital"
-                text={`${formatCurrency(
-                  portfolio.totalValue,
-                )} is already invested and compounding.`}
-                status="Strong"
-              />
-
-              <AssessmentRow
-                title="Monthly investing"
-                text={`${formatCurrency(
-                  MONTHLY_CONTRIBUTION,
-                )} per month adds €120,000 in new capital over ten years before investment growth.`}
-                status="Positive"
-              />
-
-              <AssessmentRow
-                title="Required performance"
-                text={`The current plan requires approximately ${formatPercent(
-                  requiredAnnualReturn,
-                )}% annualised growth. That is possible, but it requires both strong performance and disciplined risk management.`}
-                status="Demanding"
-              />
-
-              <AssessmentRow
-                title="Main portfolio risk"
-                text={`${portfolio.largestHolding.ticker} currently represents ${formatPercent(
-                  portfolio.largestHolding.weightPercent,
-                )}% of the portfolio, making concentration the biggest risk to the plan.`}
-                status="Monitor"
-              />
-            </div>
-          </article>
-
-          <article className="rounded-[1.75rem] bg-slate-900 p-7 text-white shadow-lg">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">
-              Next milestone
-            </p>
-
-            <h2 className="mt-3 text-4xl font-bold">€100,000</h2>
-
-            <p className="mt-3 leading-7 text-slate-300">
-              The first major milestone is close. Reaching it strengthens the
-              compounding effect and makes future percentage gains more
-              meaningful in euro terms.
-            </p>
-
-            <div className="mt-7 rounded-2xl bg-white/10 p-5">
-              <p className="text-sm text-slate-400">Still required</p>
-
-              <p className="mt-1 text-2xl font-bold">
-                {formatCurrency(
-                  Math.max(100_000 - portfolio.totalValue, 0),
-                )}
-              </p>
-            </div>
-
-            <p className="mt-6 text-sm leading-6 text-slate-400">
-              The assumptions on this page are planning scenarios, not
-              guarantees or personalised financial advice.
-            </p>
-          </article>
+          <p className="mt-2 text-sm leading-6 text-blue-800">
+            Your current portfolio is strongly growth-oriented. The base case
+            assumes a high 15% annual return and should be monitored against
+            actual performance over time.
+          </p>
         </section>
       </div>
+
+      <BottomNavigation />
     </main>
-  );
-}
-
-function MetricCard({
-  label,
-  value,
-  subtitle,
-}: {
-  label: string;
-  value: string;
-  subtitle: string;
-}) {
-  return (
-    <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-        {label}
-      </p>
-
-      <p className="mt-3 text-3xl font-bold tracking-tight">{value}</p>
-
-      <p className="mt-2 text-sm leading-6 text-slate-500">{subtitle}</p>
-    </article>
-  );
-}
-
-function AssessmentRow({
-  title,
-  text,
-  status,
-}: {
-  title: string;
-  text: string;
-  status: string;
-}) {
-  return (
-    <div className="flex items-start gap-4">
-      <div className="mt-1 h-3 w-3 shrink-0 rounded-full bg-slate-900" />
-
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3 className="font-bold text-slate-900">{title}</h3>
-
-          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">
-            {status}
-          </span>
-        </div>
-
-        <p className="mt-1 text-sm leading-6 text-slate-600">{text}</p>
-      </div>
-    </div>
   );
 }

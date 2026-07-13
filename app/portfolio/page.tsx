@@ -1,4 +1,5 @@
 import Link from "next/link";
+import PageNavigation from "../../components/PageNavigation";
 import { getPortfolioSnapshot } from "@/lib/services/portfolio/portfolioService";
 
 const euro = new Intl.NumberFormat("nl-NL", {
@@ -18,180 +19,282 @@ function signedPercent(value: number) {
   return `${value > 0 ? "+" : ""}${value.toFixed(1)}%`;
 }
 
+type Holding = {
+  ticker?: string;
+  symbol?: string;
+  name?: string;
+  category?: string;
+  price?: number;
+  currentPrice?: number;
+  value?: number;
+  marketValue?: number;
+  weight?: number;
+  allocation?: number;
+  dayChangePercent?: number;
+  dailyChangePercent?: number;
+};
+
 export default function PortfolioPage() {
-  const portfolio = getPortfolioSnapshot();
+  const portfolio = getPortfolioSnapshot() as {
+    totalValue?: number;
+    value?: number;
+    totalDayChange?: number;
+    dayChange?: number;
+    totalDayChangePercent?: number;
+    dayChangePercent?: number;
+    totalReturn?: number;
+    returnValue?: number;
+    totalReturnPercent?: number;
+    returnPercent?: number;
+    holdings?: Holding[];
+    positions?: Holding[];
+  };
+
+  const holdings = portfolio.holdings ?? portfolio.positions ?? [];
+  const totalValue = portfolio.totalValue ?? portfolio.value ?? 0;
+
+  const dayChange =
+    portfolio.totalDayChange ??
+    portfolio.dayChange ??
+    holdings.reduce((total, holding) => {
+      const holdingValue = holding.value ?? holding.marketValue ?? 0;
+      const change =
+        holding.dayChangePercent ?? holding.dailyChangePercent ?? 0;
+
+      return total + holdingValue * (change / 100);
+    }, 0);
+
+  const dayChangePercent =
+    portfolio.totalDayChangePercent ??
+    portfolio.dayChangePercent ??
+    (totalValue > 0 ? (dayChange / totalValue) * 100 : 0);
+
+  const totalReturn =
+    portfolio.totalReturn ?? portfolio.returnValue ?? 0;
+
+  const totalReturnPercent =
+    portfolio.totalReturnPercent ?? portfolio.returnPercent ?? 0;
+
+  const positiveDay = dayChange >= 0;
+  const positiveReturn = totalReturn >= 0;
 
   return (
-    <main className="min-h-screen bg-slate-100">
-      <div className="mx-auto max-w-7xl p-6 md:p-8">
-        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <main className="min-h-screen bg-slate-100 pb-28">
+      <div className="px-6 pt-6 md:px-8 md:pt-8">
+        <PageNavigation />
+      </div>
+
+      <div className="mx-auto max-w-7xl px-6 pb-8 pt-10 md:px-8">
+        <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-600">
               Investment OS
             </p>
-            <h1 className="mt-2 text-4xl font-bold text-slate-900">Portfolio</h1>
-            <p className="mt-2 text-slate-500">
-              One central source for positions, allocation and returns.
+
+            <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950 md:text-4xl">
+              Portfolio
+            </h1>
+
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 md:text-base">
+              A complete overview of your holdings, allocation and portfolio
+              performance.
             </p>
           </div>
 
-          <button className="rounded-xl bg-slate-900 px-5 py-3 font-semibold text-white transition hover:bg-slate-800">
-            + Add Holding
-          </button>
-        </div>
+          <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              Portfolio value
+            </p>
 
-        <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-          <KpiCard
-            label="Portfolio Value"
-            value={euro.format(portfolio.totalValue)}
-            subtitle={`${portfolio.dailyChangeValue >= 0 ? "+" : ""}${euro.format(portfolio.dailyChangeValue)} today`}
-            tone={portfolio.dailyChangeValue >= 0 ? "positive" : "negative"}
-          />
-          <KpiCard
-            label="Total Return"
-            value={signedPercent(portfolio.totalReturnPercent)}
-            subtitle={`${portfolio.totalProfitLoss >= 0 ? "+" : ""}${euro.format(portfolio.totalProfitLoss)} since purchase`}
-            tone={portfolio.totalProfitLoss >= 0 ? "positive" : "negative"}
-          />
-          <KpiCard
-            label="Holdings"
-            value={String(portfolio.holdings.length)}
-            subtitle="All positions in one engine"
-          />
-          <KpiCard
-            label="Largest Position"
-            value={portfolio.largestHolding.ticker}
-            subtitle={`${portfolio.largestHolding.weightPercent.toFixed(1)}% of portfolio`}
-            tone="warning"
-          />
-        </section>
+            <p className="mt-1 text-2xl font-bold text-slate-950">
+              {euro.format(totalValue)}
+            </p>
+          </div>
+        </header>
 
-        <section className="mt-8 grid gap-6 lg:grid-cols-[1.25fr_0.75fr]">
-          <div className="rounded-3xl bg-slate-950 p-7 text-white shadow-sm md:p-8">
-            <div className="flex flex-col gap-8 sm:flex-row sm:items-end sm:justify-between">
+        <section className="mb-8 grid gap-4 md:grid-cols-3">
+          <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <p className="text-sm font-medium text-slate-500">
+              Total portfolio
+            </p>
+
+            <p className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
+              {euro.format(totalValue)}
+            </p>
+
+            <p className="mt-5 text-sm text-slate-500">
+              Current market value of all holdings.
+            </p>
+          </article>
+
+          <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">
-                  Portfolio Health
+                <p className="text-sm font-medium text-slate-500">
+                  Today&apos;s change
                 </p>
-                <h2 className="mt-3 text-3xl font-bold">Concentrated growth portfolio</h2>
-                <p className="mt-3 max-w-2xl leading-7 text-slate-300">
-                  The portfolio has strong long-term growth potential, but Bitcoin-linked exposure remains dominant. New contributions should primarily strengthen diversified equity and defensive positions.
+
+                <p
+                  className={`mt-3 text-3xl font-bold tracking-tight ${
+                    positiveDay ? "text-emerald-600" : "text-rose-600"
+                  }`}
+                >
+                  {dayChange >= 0 ? "+" : ""}
+                  {euro.format(dayChange)}
                 </p>
               </div>
 
-              <div className="rounded-2xl bg-white/10 px-6 py-5 text-center">
-                <p className="text-sm text-slate-400">Daily move</p>
-                <p className={`mt-2 text-3xl font-bold ${portfolio.dailyChangePercent >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-                  {signedPercent(portfolio.dailyChangePercent)}
-                </p>
-              </div>
+              <span
+                className={`rounded-full px-3 py-1 text-sm font-semibold ${
+                  positiveDay
+                    ? "bg-emerald-50 text-emerald-700"
+                    : "bg-rose-50 text-rose-700"
+                }`}
+              >
+                {signedPercent(dayChangePercent)}
+              </span>
             </div>
-          </div>
 
-          <div className="rounded-3xl bg-white p-7 shadow-sm md:p-8">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">
-              Allocation
+            <p className="mt-5 text-sm text-slate-500">
+              Combined movement across your portfolio today.
             </p>
-            <h2 className="mt-2 text-2xl font-bold text-slate-900">Current weights</h2>
+          </article>
 
-            <div className="mt-6 space-y-5">
-              {portfolio.holdings.map((holding) => (
-                <div key={holding.ticker}>
-                  <div className="mb-2 flex items-center justify-between gap-4 text-sm">
-                    <span className="font-semibold text-slate-700">{holding.ticker}</span>
-                    <span className="text-slate-500">{holding.weightPercent.toFixed(1)}%</span>
-                  </div>
-                  <div className="h-2.5 overflow-hidden rounded-full bg-slate-100">
-                    <div
-                      className="h-full rounded-full bg-slate-900"
-                      style={{ width: `${Math.min(holding.weightPercent, 100)}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
+          <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-medium text-slate-500">
+                  Return since start
+                </p>
+
+                <p
+                  className={`mt-3 text-3xl font-bold tracking-tight ${
+                    positiveReturn ? "text-emerald-600" : "text-rose-600"
+                  }`}
+                >
+                  {totalReturn >= 0 ? "+" : ""}
+                  {euro.format(totalReturn)}
+                </p>
+              </div>
+
+              <span
+                className={`rounded-full px-3 py-1 text-sm font-semibold ${
+                  positiveReturn
+                    ? "bg-emerald-50 text-emerald-700"
+                    : "bg-rose-50 text-rose-700"
+                }`}
+              >
+                {signedPercent(totalReturnPercent)}
+              </span>
             </div>
-          </div>
+
+            <p className="mt-5 text-sm text-slate-500">
+              Performance compared with your total invested capital.
+            </p>
+          </article>
         </section>
 
-        <section className="mt-8 overflow-hidden rounded-3xl bg-white shadow-sm">
-          <div className="flex items-center justify-between border-b border-slate-100 p-7 md:p-8">
+        <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+          <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">
-                Positions
+              <h2 className="text-xl font-bold text-slate-950">
+                Your holdings
+              </h2>
+
+              <p className="mt-1 text-sm text-slate-500">
+                Select a holding to open its full detail page.
               </p>
-              <h2 className="mt-2 text-2xl font-bold text-slate-900">Holdings</h2>
             </div>
-            <p className="text-sm text-slate-500">Click a holding for full analysis</p>
+
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-600">
+              {holdings.length} holdings
+            </span>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[900px]">
-              <thead className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                <tr>
-                  <th className="px-8 py-4">Holding</th>
-                  <th className="px-5 py-4">Units</th>
-                  <th className="px-5 py-4">Price</th>
-                  <th className="px-5 py-4">Value</th>
-                  <th className="px-5 py-4">Weight</th>
-                  <th className="px-5 py-4">Return</th>
-                  <th className="px-8 py-4 text-right">Open</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {portfolio.holdings.map((holding) => (
-                  <tr key={holding.ticker} className="transition hover:bg-slate-50">
-                    <td className="px-8 py-5">
-                      <Link href={`/holding/${holding.slug}`} className="group block">
-                        <span className="font-bold text-slate-900 group-hover:text-blue-600">{holding.ticker}</span>
-                        <span className="mt-1 block text-sm text-slate-500">{holding.name}</span>
-                      </Link>
-                    </td>
-                    <td className="px-5 py-5 text-slate-700">{holding.units.toLocaleString("nl-NL")}</td>
-                    <td className="px-5 py-5 text-slate-700">{euroTwo.format(holding.currentPrice)}</td>
-                    <td className="px-5 py-5 font-semibold text-slate-900">{euro.format(holding.marketValue)}</td>
-                    <td className="px-5 py-5 text-slate-700">{holding.weightPercent.toFixed(1)}%</td>
-                    <td className={`px-5 py-5 font-semibold ${holding.returnPercent >= 0 ? "text-emerald-600" : "text-red-600"}`}>
-                      {signedPercent(holding.returnPercent)}
-                    </td>
-                    <td className="px-8 py-5 text-right">
-                      <Link href={`/holding/${holding.slug}`} className="inline-flex rounded-xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-900 hover:text-white">
-                        View →
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="hidden grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-4 border-b border-slate-200 bg-slate-50 px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-500 md:grid">
+            <span>Holding</span>
+            <span className="text-right">Price</span>
+            <span className="text-right">Value</span>
+            <span className="text-right">Weight</span>
+            <span className="text-right">Today</span>
+          </div>
+
+          <div className="divide-y divide-slate-200">
+            {holdings.map((holding, index) => {
+              const ticker =
+                holding.ticker ?? holding.symbol ?? `holding-${index + 1}`;
+
+              const displayTicker = ticker.toUpperCase();
+              const holdingName = holding.name ?? displayTicker;
+              const category = holding.category ?? "Investment";
+              const price = holding.price ?? holding.currentPrice ?? 0;
+              const value = holding.value ?? holding.marketValue ?? 0;
+
+              const weight =
+                holding.weight ??
+                holding.allocation ??
+                (totalValue > 0 ? (value / totalValue) * 100 : 0);
+
+              const dailyChange =
+                holding.dayChangePercent ??
+                holding.dailyChangePercent ??
+                0;
+
+              const positiveHolding = dailyChange >= 0;
+
+              return (
+                <Link
+                  key={`${ticker}-${index}`}
+                  href={`/holding/${ticker.toLowerCase()}`}
+                  className="group block transition hover:bg-slate-50"
+                >
+                  <div className="grid gap-4 px-6 py-5 md:grid-cols-[2fr_1fr_1fr_1fr_1fr] md:items-center">
+                    <div className="flex min-w-0 items-center gap-4">
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-900 text-xs font-bold text-white">
+                        {displayTicker.slice(0, 4)}
+                      </div>
+
+                      <div className="min-w-0">
+                        <h3 className="truncate font-semibold text-slate-950 group-hover:text-blue-600">
+                          {holdingName}
+                        </h3>
+
+                        <p className="mt-1 truncate text-sm text-slate-500">
+                          {displayTicker} · {category}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="text-right font-medium text-slate-700">
+                      {euroTwo.format(price)}
+                    </div>
+
+                    <div className="text-right font-semibold text-slate-950">
+                      {euro.format(value)}
+                    </div>
+
+                    <div className="text-right font-medium text-slate-700">
+                      {weight.toFixed(1)}%
+                    </div>
+
+                    <div className="text-right">
+                      <span
+                        className={`inline-flex rounded-full px-3 py-1 text-sm font-semibold ${
+                          positiveHolding
+                            ? "bg-emerald-50 text-emerald-700"
+                            : "bg-rose-50 text-rose-700"
+                        }`}
+                      >
+                        {signedPercent(dailyChange)}
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </section>
       </div>
     </main>
-  );
-}
-
-function KpiCard({
-  label,
-  value,
-  subtitle,
-  tone = "neutral",
-}: {
-  label: string;
-  value: string;
-  subtitle: string;
-  tone?: "neutral" | "positive" | "negative" | "warning";
-}) {
-  const valueClass = {
-    neutral: "text-slate-900",
-    positive: "text-emerald-600",
-    negative: "text-red-600",
-    warning: "text-amber-600",
-  }[tone];
-
-  return (
-    <div className="rounded-3xl bg-white p-6 shadow-sm">
-      <p className="text-sm font-medium text-slate-500">{label}</p>
-      <p className={`mt-3 text-3xl font-bold ${valueClass}`}>{value}</p>
-      <p className="mt-2 text-sm text-slate-500">{subtitle}</p>
-    </div>
   );
 }
