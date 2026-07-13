@@ -1,41 +1,89 @@
 "use client";
 
-import { ChangeEvent, DragEvent, useRef, useState } from "react";
 import {
+  ChangeEvent,
+  DragEvent,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import { useRouter } from "next/navigation";
+import {
+  AlertCircle,
   Check,
   FileImage,
-  FileSpreadsheet,
   LockKeyhole,
-  PenLine,
   ShieldCheck,
   Upload,
   X,
 } from "lucide-react";
 import BottomNavigation from "@/components/home/BottomNav";
 
+type RecognizedHolding = {
+  name: string;
+  ticker: string;
+  quantity: number;
+  price?: number;
+  value?: number;
+  currency?: string;
+  confidence?: number;
+};
+
+type AnalysisResponse = {
+  success: boolean;
+  holdings?: RecognizedHolding[];
+  broker?: string;
+  message?: string;
+};
+
 export default function UploadPage() {
+  const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [statusType, setStatusType] = useState<
+    "success" | "error" | "info" | null
+  >(null);
   const [statusMessage, setStatusMessage] = useState("");
+  const [recognizedHoldings, setRecognizedHoldings] = useState<
+    RecognizedHolding[]
+  >([]);
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
 
   function openFilePicker() {
     fileInputRef.current?.click();
   }
 
+  function resetStatus() {
+    setStatusType(null);
+    setStatusMessage("");
+    setRecognizedHoldings([]);
+  }
+
   function processFile(file: File) {
-    if (!file.type.startsWith("image/")) {
-      setStatusMessage("Please select a JPG, PNG or WEBP image.");
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+
+    if (!allowedTypes.includes(file.type)) {
+      setStatusType("error");
+      setStatusMessage("Selecteer een JPG-, PNG- of WEBP-afbeelding.");
       return;
     }
 
     const maximumFileSize = 10 * 1024 * 1024;
 
     if (file.size > maximumFileSize) {
-      setStatusMessage("The selected image is larger than 10 MB.");
+      setStatusType("error");
+      setStatusMessage("De geselecteerde afbeelding is groter dan 10 MB.");
       return;
     }
 
@@ -45,7 +93,7 @@ export default function UploadPage() {
 
     setSelectedFile(file);
     setPreviewUrl(URL.createObjectURL(file));
-    setStatusMessage("");
+    resetStatus();
   }
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
@@ -96,8 +144,8 @@ export default function UploadPage() {
 
     setSelectedFile(null);
     setPreviewUrl(null);
-    setStatusMessage("");
     setIsProcessing(false);
+    resetStatus();
 
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -106,19 +154,75 @@ export default function UploadPage() {
 
   async function analysePortfolio() {
     if (!selectedFile) {
-      setStatusMessage("Please upload a portfolio screenshot first.");
+      setStatusType("error");
+      setStatusMessage("Upload eerst een screenshot van je portefeuille.");
       return;
     }
 
     setIsProcessing(true);
-    setStatusMessage("");
+    setStatusType("info");
+    setStatusMessage("Screenshot wordt geanalyseerd…");
+    setRecognizedHoldings([]);
 
-    await new Promise((resolve) => setTimeout(resolve, 1400));
+    try {
+      const formData = new FormData();
+      formData.append("file", selectedFile);
 
-    setIsProcessing(false);
-    setStatusMessage(
-      "Screenshot accepted. Automatic portfolio recognition is the next integration step."
-    );
+      const response = await fetch("/api/analyze-portfolio", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = (await response.json()) as AnalysisResponse;
+
+      if (!response.ok || !data.success) {
+        throw new Error(
+          data.message ||
+            "De screenshot kon niet worden geanalyseerd."
+        );
+      }
+
+      const holdings = data.holdings ?? [];
+
+      if (holdings.length === 0) {
+        throw new Error(
+          "Er zijn geen holdings gevonden. Probeer een scherpere screenshot."
+        );
+      }
+
+      const portfolioImport = {
+        broker: data.broker || "Unknown broker",
+        importedAt: new Date().toISOString(),
+        holdings,
+      };
+
+      localStorage.setItem(
+        "investment-os-imported-portfolio",
+        JSON.stringify(portfolioImport)
+      );
+
+      setRecognizedHoldings(holdings);
+      setStatusType("success");
+      setStatusMessage(
+        `${holdings.length} holding${
+          holdings.length === 1 ? "" : "s"
+        } succesvol herkend. Je wordt doorgestuurd naar Portfolio.`
+      );
+
+      window.setTimeout(() => {
+        router.push("/portfolio");
+      }, 1800);
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Er is een onbekende fout opgetreden.";
+
+      setStatusType("error");
+      setStatusMessage(message);
+    } finally {
+      setIsProcessing(false);
+    }
   }
 
   function formatFileSize(bytes: number) {
@@ -133,6 +237,28 @@ export default function UploadPage() {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   }
 
+  function formatNumber(value?: number) {
+    if (value === undefined || Number.isNaN(value)) {
+      return "—";
+    }
+
+    return new Intl.NumberFormat("nl-NL", {
+      maximumFractionDigits: 4,
+    }).format(value);
+  }
+
+  function formatMoney(value?: number, currency = "EUR") {
+    if (value === undefined || Number.isNaN(value)) {
+      return "—";
+    }
+
+    return new Intl.NumberFormat("nl-NL", {
+      style: "currency",
+      currency,
+      maximumFractionDigits: 2,
+    }).format(value);
+  }
+
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
       <main className="mx-auto max-w-[1120px] px-5 pb-[calc(var(--bottom-nav-height)+env(safe-area-inset-bottom,0px)+2rem)] pt-10 sm:px-8 sm:pt-14">
@@ -143,13 +269,12 @@ export default function UploadPage() {
           </div>
 
           <h1 className="mt-5 max-w-[760px] text-[36px] font-bold leading-[1.08] tracking-[-0.04em] text-slate-950 sm:text-[48px]">
-            Add your portfolio in less than a minute.
+            Import your portfolio
           </h1>
 
           <p className="mt-4 max-w-[700px] text-base leading-7 text-slate-600 sm:text-lg">
-            Upload a screenshot from your broker. Investment OS will use it
-            to identify your holdings before anything is added to your
-            dashboard.
+            Upload een screenshot van je broker. Investment OS herkent je
+            holdings en zet ze automatisch klaar voor je portfolio.
           </p>
         </section>
 
@@ -203,9 +328,8 @@ export default function UploadPage() {
                   </h3>
 
                   <p className="mt-2 max-w-[430px] text-sm leading-6 text-slate-500">
-                    Or select an image from your computer. Screenshots from
-                    DEGIRO, Saxo, IBKR and other brokers are supported in the
-                    planned recognition flow.
+                    Selecteer een duidelijke screenshot waarop de namen,
+                    aantallen en waardes van je beleggingen zichtbaar zijn.
                   </p>
 
                   <button
@@ -246,8 +370,9 @@ export default function UploadPage() {
                       <button
                         type="button"
                         onClick={removeFile}
+                        disabled={isProcessing}
                         aria-label="Remove uploaded screenshot"
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 disabled:opacity-50"
                       >
                         <X className="h-5 w-5" />
                       </button>
@@ -270,7 +395,7 @@ export default function UploadPage() {
                       type="button"
                       onClick={analysePortfolio}
                       disabled={isProcessing}
-                      className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-3.5 text-sm font-bold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3.5 text-sm font-bold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {isProcessing ? (
                         <>
@@ -280,7 +405,7 @@ export default function UploadPage() {
                       ) : (
                         <>
                           <Check className="h-4 w-4" />
-                          Analyse portfolio
+                          Analyze screenshot
                         </>
                       )}
                     </button>
@@ -291,7 +416,7 @@ export default function UploadPage() {
                       disabled={isProcessing}
                       className="rounded-xl border border-slate-300 bg-white px-5 py-3.5 text-sm font-bold text-slate-800 transition hover:bg-slate-50 disabled:opacity-60"
                     >
-                      Choose another
+                      Choose another image
                     </button>
                   </div>
                 </div>
@@ -308,12 +433,67 @@ export default function UploadPage() {
               {statusMessage && (
                 <div
                   className={`mt-5 rounded-2xl border px-4 py-3 text-sm font-medium ${
-                    statusMessage.startsWith("Screenshot accepted")
+                    statusType === "success"
                       ? "border-green-200 bg-green-50 text-green-800"
-                      : "border-amber-200 bg-amber-50 text-amber-800"
+                      : statusType === "error"
+                        ? "border-red-200 bg-red-50 text-red-800"
+                        : "border-blue-200 bg-blue-50 text-blue-800"
                   }`}
                 >
-                  {statusMessage}
+                  <div className="flex items-start gap-2">
+                    {statusType === "error" ? (
+                      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                    ) : (
+                      <Check className="mt-0.5 h-4 w-4 shrink-0" />
+                    )}
+
+                    <span>{statusMessage}</span>
+                  </div>
+                </div>
+              )}
+
+              {recognizedHoldings.length > 0 && (
+                <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200">
+                  <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
+                    <p className="text-sm font-bold text-slate-900">
+                      Recognized holdings
+                    </p>
+                  </div>
+
+                  <div className="divide-y divide-slate-200">
+                    {recognizedHoldings.map((holding, index) => (
+                      <div
+                        key={`${holding.ticker}-${index}`}
+                        className="grid grid-cols-[1fr_auto] gap-4 px-4 py-3"
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-bold text-slate-900">
+                            {holding.name}
+                          </p>
+
+                          <p className="mt-0.5 text-xs text-slate-500">
+                            {holding.ticker || "Ticker onbekend"} ·{" "}
+                            {formatNumber(holding.quantity)} stuks
+                          </p>
+                        </div>
+
+                        <div className="text-right">
+                          <p className="text-sm font-bold text-slate-900">
+                            {formatMoney(
+                              holding.value,
+                              holding.currency || "EUR"
+                            )}
+                          </p>
+
+                          {holding.confidence !== undefined && (
+                            <p className="mt-0.5 text-xs text-slate-500">
+                              {Math.round(holding.confidence * 100)}% confidence
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -322,51 +502,26 @@ export default function UploadPage() {
           <div className="space-y-6">
             <article className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
               <h2 className="text-lg font-bold text-slate-950">
-                Other setup options
+                How it works
               </h2>
 
               <div className="mt-5 space-y-4">
-                <div className="rounded-2xl border border-slate-200 p-4">
-                  <div className="flex items-start gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
-                      <FileSpreadsheet className="h-5 w-5" />
+                {[
+                  "Upload your broker screenshot",
+                  "AI recognizes your holdings",
+                  "Review the detected positions",
+                  "Portfolio and dashboard are updated",
+                ].map((item, index) => (
+                  <div key={item} className="flex items-start gap-3">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-50 text-sm font-bold text-blue-700">
+                      {index + 1}
                     </div>
 
-                    <div>
-                      <h3 className="font-bold text-slate-900">Upload CSV</h3>
-
-                      <p className="mt-1 text-sm leading-5 text-slate-500">
-                        Ideal for larger portfolios or exported transactions.
-                      </p>
-
-                      <span className="mt-3 inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-500">
-                        Coming soon
-                      </span>
-                    </div>
+                    <p className="pt-1 text-sm font-medium text-slate-700">
+                      {item}
+                    </p>
                   </div>
-                </div>
-
-                <div className="rounded-2xl border border-slate-200 p-4">
-                  <div className="flex items-start gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
-                      <PenLine className="h-5 w-5" />
-                    </div>
-
-                    <div>
-                      <h3 className="font-bold text-slate-900">
-                        Add manually
-                      </h3>
-
-                      <p className="mt-1 text-sm leading-5 text-slate-500">
-                        Add a ticker, quantity and purchase price yourself.
-                      </p>
-
-                      <span className="mt-3 inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-500">
-                        Coming soon
-                      </span>
-                    </div>
-                  </div>
-                </div>
+                ))}
               </div>
             </article>
 
@@ -380,8 +535,8 @@ export default function UploadPage() {
               </h2>
 
               <p className="mt-3 text-sm leading-6 text-slate-300">
-                Investment OS never asks for your broker password. You review
-                detected holdings before they are added to your portfolio.
+                Investment OS vraagt nooit om je brokerwachtwoord. De
+                screenshot wordt alleen gebruikt om je posities te herkennen.
               </p>
 
               <div className="mt-5 space-y-3 text-sm text-slate-200">
@@ -392,12 +547,12 @@ export default function UploadPage() {
 
                 <div className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-400" />
-                  Review before saving
+                  Holdings stored in your browser
                 </div>
 
                 <div className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-400" />
-                  Delete or replace anytime
+                  Replace your portfolio anytime
                 </div>
               </div>
             </article>
