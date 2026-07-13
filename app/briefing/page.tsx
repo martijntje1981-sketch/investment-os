@@ -1,4 +1,5 @@
 import PageNavigation from "@/components/PageNavigation";
+import BottomNavigation from "@/components/BottomNavigation";
 
 type BriefingItem = {
   title: string;
@@ -393,6 +394,8 @@ export default function BriefingPage() {
           </aside>
         </section>
       </div>
+
+      <BottomNavigation />
     </main>
   );
 }
