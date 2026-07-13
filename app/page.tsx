@@ -1,417 +1,1202 @@
 "use client";
 
-import { ChangeEvent, DragEvent, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import {
-  Check,
-  FileImage,
-  FileSpreadsheet,
-  LockKeyhole,
-  PenLine,
+  AlertTriangle,
+  ArrowRight,
+  BarChart3,
+  Bitcoin,
+  BriefcaseBusiness,
+  CalendarDays,
+  ChartNoAxesColumnIncreasing,
+  CheckCircle2,
+  CircleDollarSign,
+  Gauge,
+  Goal,
+  Layers3,
+  Newspaper,
+  PieChart,
+  RefreshCw,
   ShieldCheck,
+  Sparkles,
+  Target,
+  TrendingDown,
+  TrendingUp,
   Upload,
-  X,
+  WalletCards,
 } from "lucide-react";
 import BottomNavigation from "@/components/home/BottomNav";
 
-export default function UploadPage() {
-  const router = useRouter();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+type Currency = "EUR" | "USD" | "GBP";
 
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [statusMessage, setStatusMessage] = useState("");
+type Holding = {
+  id: number;
+  symbol: string;
+  name: string;
+  quantity: number;
+  purchasePrice: number;
+  currentPrice: number;
+  currency: Currency;
+  confidence?: "High" | "Medium" | "Low";
+};
 
-  function openFilePicker() {
-    fileInputRef.current?.click();
+type PortfolioMetric = {
+  label: string;
+  value: string;
+  description: string;
+  tone: "neutral" | "positive" | "negative" | "warning";
+  icon: React.ReactNode;
+};
+
+const fallbackHoldings: Holding[] = [
+  {
+    id: 1,
+    symbol: "IB1T",
+    name: "iShares Bitcoin ETP",
+    quantity: 11269,
+    purchasePrice: 5.16,
+    currentPrice: 5.16,
+    currency: "EUR",
+    confidence: "High",
+  },
+  {
+    id: 2,
+    symbol: "STRC",
+    name: "21Shares Strategy Yield ETP",
+    quantity: 450,
+    purchasePrice: 15.56,
+    currentPrice: 15.56,
+    currency: "EUR",
+    confidence: "Medium",
+  },
+  {
+    id: 3,
+    symbol: "VWCE",
+    name: "Vanguard FTSE All-World ETF",
+    quantity: 99,
+    purchasePrice: 87.88,
+    currentPrice: 87.88,
+    currency: "EUR",
+    confidence: "High",
+  },
+  {
+    id: 4,
+    symbol: "NUKL",
+    name: "VanEck Uranium and Nuclear Technologies ETF",
+    quantity: 161,
+    purchasePrice: 46.58,
+    currentPrice: 46.58,
+    currency: "EUR",
+    confidence: "High",
+  },
+  {
+    id: 5,
+    symbol: "AIFS",
+    name: "AI Infrastructure ETF",
+    quantity: 520,
+    purchasePrice: 10.19,
+    currentPrice: 10.19,
+    currency: "EUR",
+    confidence: "High",
+  },
+  {
+    id: 6,
+    symbol: "PPFB",
+    name: "iShares Physical Gold ETC",
+    quantity: 200,
+    purchasePrice: 10,
+    currentPrice: 10,
+    currency: "EUR",
+    confidence: "Medium",
+  },
+];
+
+const TARGET_VALUE = 1_000_000;
+const TARGET_YEAR = 2036;
+const DEFAULT_ANNUAL_CONTRIBUTION = 15_000;
+
+function formatCurrency(
+  value: number,
+  currency: Currency = "EUR",
+  decimals = 0
+) {
+  return new Intl.NumberFormat("en-GB", {
+    style: "currency",
+    currency,
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(value);
+}
+
+function formatPercentage(value: number, decimals = 1) {
+  return new Intl.NumberFormat("en-GB", {
+    style: "percent",
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(value / 100);
+}
+
+function getHoldingValue(holding: Holding) {
+  return holding.quantity * holding.currentPrice;
+}
+
+function getHoldingCost(holding: Holding) {
+  return holding.quantity * holding.purchasePrice;
+}
+
+function calculatePortfolioValue(holdings: Holding[]) {
+  return holdings.reduce(
+    (total, holding) => total + getHoldingValue(holding),
+    0
+  );
+}
+
+function calculatePortfolioCost(holdings: Holding[]) {
+  return holdings.reduce(
+    (total, holding) => total + getHoldingCost(holding),
+    0
+  );
+}
+
+function calculateRequiredReturn(
+  startingValue: number,
+  annualContribution: number,
+  targetValue: number,
+  years: number
+) {
+  if (startingValue <= 0 || years <= 0) {
+    return 0;
   }
 
-  function processFile(file: File) {
-    if (!file.type.startsWith("image/")) {
-      setStatusMessage("Please select a JPG, PNG or WEBP image.");
-      return;
+  let lower = -0.99;
+  let upper = 2;
+
+  for (let iteration = 0; iteration < 200; iteration += 1) {
+    const middle = (lower + upper) / 2;
+    let value = startingValue;
+
+    for (let year = 0; year < years; year += 1) {
+      value = value * (1 + middle);
+      value += annualContribution;
     }
 
-    const maximumFileSize = 10 * 1024 * 1024;
-
-    if (file.size > maximumFileSize) {
-      setStatusMessage("The selected image is larger than 10 MB.");
-      return;
+    if (value < targetValue) {
+      lower = middle;
+    } else {
+      upper = middle;
     }
+  }
 
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
+  return ((lower + upper) / 2) * 100;
+}
+
+function getHoldingCategory(symbol: string) {
+  const categories: Record<string, string> = {
+    IB1T: "Bitcoin",
+    STRC: "Income",
+    VWCE: "Global equities",
+    NUKL: "Nuclear energy",
+    AIFS: "AI infrastructure",
+    PPFB: "Gold",
+  };
+
+  return categories[symbol.toUpperCase()] ?? "Investment";
+}
+
+function getHoldingRole(symbol: string) {
+  const roles: Record<string, string> = {
+    IB1T: "Growth engine",
+    STRC: "Income layer",
+    VWCE: "Diversification core",
+    NUKL: "Thematic growth",
+    AIFS: "Structural growth",
+    PPFB: "Defensive diversifier",
+  };
+
+  return roles[symbol.toUpperCase()] ?? "Portfolio holding";
+}
+
+function getAllocationTone(allocation: number) {
+  if (allocation >= 50) {
+    return "bg-red-100 text-red-700";
+  }
+
+  if (allocation >= 25) {
+    return "bg-amber-100 text-amber-700";
+  }
+
+  return "bg-emerald-100 text-emerald-700";
+}
+
+export default function DashboardPage() {
+  const [holdings, setHoldings] = useState<Holding[]>(fallbackHoldings);
+  const [annualContribution, setAnnualContribution] = useState(
+    DEFAULT_ANNUAL_CONTRIBUTION
+  );
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  const currentYear = new Date().getFullYear();
+  const yearsRemaining = Math.max(TARGET_YEAR - currentYear, 1);
+
+  useEffect(() => {
+    try {
+      const savedPortfolio = localStorage.getItem(
+        "investment-os-portfolio"
+      );
+
+      const savedAnnualContribution = localStorage.getItem(
+        "investment-os-annual-contribution"
+      );
+
+      if (savedPortfolio) {
+        const parsedPortfolio = JSON.parse(savedPortfolio) as Holding[];
+
+        if (Array.isArray(parsedPortfolio)) {
+          setHoldings(parsedPortfolio);
+        }
+      }
+
+      if (savedAnnualContribution) {
+        const parsedContribution = Number(savedAnnualContribution);
+
+        if (
+          Number.isFinite(parsedContribution) &&
+          parsedContribution >= 0
+        ) {
+          setAnnualContribution(parsedContribution);
+        }
+      }
+    } catch (error) {
+      console.error("Could not load Investment OS data:", error);
+    } finally {
+      setIsLoaded(true);
     }
+  }, []);
 
-    const newPreviewUrl = URL.createObjectURL(file);
+  const portfolioValue = useMemo(
+    () => calculatePortfolioValue(holdings),
+    [holdings]
+  );
 
-    setSelectedFile(file);
-    setPreviewUrl(newPreviewUrl);
-    setStatusMessage("");
+  const investedCapital = useMemo(
+    () => calculatePortfolioCost(holdings),
+    [holdings]
+  );
 
-    sessionStorage.setItem(
-      "investment-os-upload",
-      JSON.stringify({
-        name: file.name,
-        size: file.size,
-        type: file.type,
-      })
+  const totalReturn = portfolioValue - investedCapital;
+
+  const totalReturnPercentage =
+    investedCapital > 0
+      ? (totalReturn / investedCapital) * 100
+      : 0;
+
+  const sortedHoldings = useMemo(() => {
+    return [...holdings].sort(
+      (a, b) => getHoldingValue(b) - getHoldingValue(a)
+    );
+  }, [holdings]);
+
+  const largestHolding = sortedHoldings[0];
+
+  const largestHoldingValue = largestHolding
+    ? getHoldingValue(largestHolding)
+    : 0;
+
+  const largestHoldingAllocation =
+    portfolioValue > 0
+      ? (largestHoldingValue / portfolioValue) * 100
+      : 0;
+
+  const goalProgress = Math.min(
+    (portfolioValue / TARGET_VALUE) * 100,
+    100
+  );
+
+  const requiredAnnualReturn = calculateRequiredReturn(
+    portfolioValue,
+    annualContribution,
+    TARGET_VALUE,
+    yearsRemaining
+  );
+
+  const diversificationScore = Math.max(
+    0,
+    Math.min(
+      100,
+      Math.round(
+        100 -
+          Math.max(largestHoldingAllocation - 20, 0) * 1.2 +
+          Math.min(holdings.length * 2, 12)
+      )
+    )
+  );
+
+  const portfolioHealthScore = Math.round(
+    Math.max(
+      0,
+      Math.min(
+        100,
+        diversificationScore * 0.55 +
+          (requiredAnnualReturn <= 15
+            ? 92
+            : requiredAnnualReturn <= 25
+              ? 72
+              : 48) *
+            0.45
+      )
+    )
+  );
+
+  const concentrationRisk =
+    largestHoldingAllocation >= 50
+      ? "High"
+      : largestHoldingAllocation >= 30
+        ? "Elevated"
+        : "Controlled";
+
+  const portfolioTone =
+    totalReturn >= 0 ? "Constructive" : "Under pressure";
+
+  const metrics: PortfolioMetric[] = [
+    {
+      label: "Portfolio value",
+      value: formatCurrency(portfolioValue),
+      description: `${holdings.length} active holdings`,
+      tone: "neutral",
+      icon: <CircleDollarSign className="h-5 w-5" />,
+    },
+    {
+      label: "Total return",
+      value: `${totalReturn >= 0 ? "+" : ""}${formatCurrency(
+        totalReturn
+      )}`,
+      description: `${
+        totalReturnPercentage >= 0 ? "+" : ""
+      }${formatPercentage(totalReturnPercentage)}`,
+      tone: totalReturn >= 0 ? "positive" : "negative",
+      icon:
+        totalReturn >= 0 ? (
+          <TrendingUp className="h-5 w-5" />
+        ) : (
+          <TrendingDown className="h-5 w-5" />
+        ),
+    },
+    {
+      label: "Goal progress",
+      value: formatPercentage(goalProgress),
+      description: `${formatCurrency(
+        TARGET_VALUE - portfolioValue
+      )} remaining`,
+      tone: "positive",
+      icon: <Target className="h-5 w-5" />,
+    },
+    {
+      label: "Portfolio health",
+      value: `${portfolioHealthScore}/100`,
+      description: `${concentrationRisk} concentration risk`,
+      tone:
+        portfolioHealthScore >= 80
+          ? "positive"
+          : portfolioHealthScore >= 65
+            ? "warning"
+            : "negative",
+      icon: <Gauge className="h-5 w-5" />,
+    },
+  ];
+
+  if (!isLoaded) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-slate-50">
+        <div className="text-center">
+          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-slate-950" />
+
+          <p className="mt-4 text-sm font-semibold text-slate-500">
+            Loading Investment OS...
+          </p>
+        </div>
+      </main>
     );
   }
 
-  function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-
-    if (file) {
-      processFile(file);
-    }
-  }
-
-  function handleDragEnter(event: DragEvent<HTMLDivElement>) {
-    event.preventDefault();
-    event.stopPropagation();
-    setIsDragging(true);
-  }
-
-  function handleDragOver(event: DragEvent<HTMLDivElement>) {
-    event.preventDefault();
-    event.stopPropagation();
-    setIsDragging(true);
-  }
-
-  function handleDragLeave(event: DragEvent<HTMLDivElement>) {
-    event.preventDefault();
-    event.stopPropagation();
-
-    if (event.currentTarget === event.target) {
-      setIsDragging(false);
-    }
-  }
-
-  function handleDrop(event: DragEvent<HTMLDivElement>) {
-    event.preventDefault();
-    event.stopPropagation();
-    setIsDragging(false);
-
-    const file = event.dataTransfer.files?.[0];
-
-    if (file) {
-      processFile(file);
-    }
-  }
-
-  function removeFile() {
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-    }
-
-    sessionStorage.removeItem("investment-os-upload");
-
-    setSelectedFile(null);
-    setPreviewUrl(null);
-    setStatusMessage("");
-    setIsProcessing(false);
-
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  }
-
-  async function analysePortfolio() {
-    if (!selectedFile) {
-      setStatusMessage("Please upload a portfolio screenshot first.");
-      return;
-    }
-
-    setIsProcessing(true);
-    setStatusMessage("");
-
-    await new Promise((resolve) => setTimeout(resolve, 1200));
-
-    router.push("/upload/review");
-  }
-
-  function formatFileSize(bytes: number) {
-    if (bytes < 1024) {
-      return `${bytes} bytes`;
-    }
-
-    if (bytes < 1024 * 1024) {
-      return `${(bytes / 1024).toFixed(1)} KB`;
-    }
-
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  }
-
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
-      <main className="mx-auto max-w-[1120px] px-5 pb-[calc(var(--bottom-nav-height)+env(safe-area-inset-bottom,0px)+2rem)] pt-10 sm:px-8 sm:pt-14">
-        <section>
-          <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1.5 text-sm font-semibold text-blue-700">
-            <LockKeyhole className="h-4 w-4" />
-            Secure portfolio setup
-          </div>
-
-          <h1 className="mt-5 max-w-[760px] text-[36px] font-bold leading-[1.08] tracking-[-0.04em] text-slate-950 sm:text-[48px]">
-            Add your portfolio in less than a minute.
-          </h1>
-
-          <p className="mt-4 max-w-[700px] text-base leading-7 text-slate-600 sm:text-lg">
-            Upload a screenshot from your broker. Investment OS will use it
-            to identify your holdings before anything is added to your
-            dashboard.
-          </p>
-        </section>
-
-        <section className="mt-9 grid gap-6 lg:grid-cols-[1.35fr_0.65fr]">
-          <article className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
-            <div className="border-b border-slate-200 px-6 py-5 sm:px-8">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-bold uppercase tracking-[0.12em] text-blue-600">
-                    Recommended
-                  </p>
-
-                  <h2 className="mt-1 text-2xl font-bold tracking-[-0.03em] text-slate-950">
-                    Upload a screenshot
-                  </h2>
+    <>
+      <main className="min-h-screen bg-slate-50 px-5 pb-[calc(var(--bottom-nav-height)+env(safe-area-inset-bottom,0px)+2rem)] pt-8 text-slate-950 sm:px-8">
+        <div className="mx-auto max-w-6xl">
+          <header className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+            <div>
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-950 text-white shadow-lg">
+                  <Sparkles className="h-5 w-5" />
                 </div>
 
-                <div className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">
-                  JPG · PNG · WEBP
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+                    Complete Investment Operating System
+                  </p>
+
+                  <p className="mt-1 text-sm font-semibold text-slate-500">
+                    Portfolio intelligence, goals and market context
+                  </p>
                 </div>
               </div>
+
+              <h1 className="mt-6 text-4xl font-black tracking-[-0.05em] sm:text-6xl">
+                Your investment
+                <span className="block text-slate-400">
+                  control centre
+                </span>
+              </h1>
             </div>
 
-            <div className="p-5 sm:p-8">
-              {!selectedFile ? (
-                <div
-                  role="button"
-                  tabIndex={0}
-                  onClick={openFilePicker}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      openFilePicker();
-                    }
-                  }}
-                  onDragEnter={handleDragEnter}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onDrop={handleDrop}
-                  className={`flex min-h-[360px] cursor-pointer flex-col items-center justify-center rounded-[24px] border-2 border-dashed px-6 py-12 text-center transition ${
-                    isDragging
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-slate-300 bg-slate-50 hover:border-blue-400 hover:bg-blue-50/50"
-                  }`}
-                >
-                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-200">
-                    <Upload className="h-8 w-8" />
+            <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
+                <RefreshCw className="h-5 w-5" />
+              </div>
+
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
+                  System status
+                </p>
+
+                <p className="mt-1 text-sm font-bold text-slate-950">
+                  Portfolio loaded
+                </p>
+              </div>
+            </div>
+          </header>
+
+          <section className="mt-8 overflow-hidden rounded-[32px] bg-slate-950 p-7 text-white shadow-xl sm:p-10">
+            <div className="grid gap-9 lg:grid-cols-[1.3fr_0.7fr] lg:items-center">
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-full bg-emerald-500/20 px-3 py-1.5 text-xs font-bold text-emerald-300">
+                    {portfolioTone}
+                  </span>
+
+                  <span className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold text-slate-300">
+                    Project Million active
+                  </span>
+                </div>
+
+                <p className="mt-6 text-sm font-bold uppercase tracking-[0.16em] text-slate-400">
+                  Current portfolio value
+                </p>
+
+                <h2 className="mt-2 text-5xl font-black tracking-[-0.06em] sm:text-7xl">
+                  {formatCurrency(portfolioValue)}
+                </h2>
+
+                <div className="mt-5 flex flex-wrap items-center gap-3">
+                  <span
+                    className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-bold ${
+                      totalReturn >= 0
+                        ? "bg-emerald-500/20 text-emerald-300"
+                        : "bg-red-500/20 text-red-300"
+                    }`}
+                  >
+                    {totalReturn >= 0 ? (
+                      <TrendingUp className="h-4 w-4" />
+                    ) : (
+                      <TrendingDown className="h-4 w-4" />
+                    )}
+
+                    {totalReturn >= 0 ? "+" : ""}
+                    {formatCurrency(totalReturn)}
+                  </span>
+
+                  <span className="text-sm font-semibold text-slate-400">
+                    since purchase
+                  </span>
+                </div>
+
+                <p className="mt-6 max-w-3xl text-base leading-7 text-slate-300">
+                  Your portfolio remains positioned for long-term
+                  growth. The strongest improvement opportunity is
+                  reducing concentration by directing new investments
+                  towards diversified and defensive assets.
+                </p>
+
+                <div className="mt-8 flex flex-wrap gap-3">
+                  <Link
+                    href="/portfolio"
+                    className="inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-bold text-slate-950 shadow-sm transition hover:bg-slate-100"
+                  >
+                    View portfolio
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+
+                  <Link
+                    href="/upload"
+                    className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/15"
+                  >
+                    <Upload className="h-4 w-4" />
+                    Update portfolio
+                  </Link>
+                </div>
+              </div>
+
+              <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
+                      Project Million
+                    </p>
+
+                    <p className="mt-2 text-3xl font-black">
+                      {formatPercentage(goalProgress)}
+                    </p>
                   </div>
 
-                  <h3 className="mt-6 text-xl font-bold text-slate-950">
-                    Drop your portfolio screenshot here
-                  </h3>
-
-                  <p className="mt-2 max-w-[430px] text-sm leading-6 text-slate-500">
-                    Or select an image from your computer. Screenshots from
-                    DEGIRO, Saxo, IBKR and other brokers are supported in the
-                    planned recognition flow.
-                  </p>
-
-                  <button
-                    type="button"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      openFilePicker();
-                    }}
-                    className="mt-6 rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white transition hover:bg-slate-800"
-                  >
-                    Choose screenshot
-                  </button>
-
-                  <p className="mt-4 text-xs text-slate-400">
-                    Maximum file size: 10 MB
-                  </p>
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-500/20 text-violet-300">
+                    <Goal className="h-7 w-7" />
+                  </div>
                 </div>
-              ) : (
+
+                <div className="mt-6 h-3 overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-blue-500 via-violet-500 to-fuchsia-500"
+                    style={{
+                      width: `${Math.max(goalProgress, 1)}%`,
+                    }}
+                  />
+                </div>
+
+                <div className="mt-6 space-y-4">
+                  <HeroDetailRow
+                    label="Target"
+                    value={formatCurrency(TARGET_VALUE)}
+                  />
+
+                  <HeroDetailRow
+                    label="Target year"
+                    value={String(TARGET_YEAR)}
+                  />
+
+                  <HeroDetailRow
+                    label="Annual contribution"
+                    value={formatCurrency(annualContribution)}
+                  />
+
+                  <HeroDetailRow
+                    label="Required return"
+                    value={formatPercentage(requiredAnnualReturn)}
+                  />
+                </div>
+
+                <Link
+                  href="/goals"
+                  className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-violet-500 px-4 py-3 text-sm font-bold text-white transition hover:bg-violet-400"
+                >
+                  Open goal engine
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+            </div>
+          </section>
+
+          <section className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {metrics.map((metric) => (
+              <MetricCard key={metric.label} {...metric} />
+            ))}
+          </section>
+
+          <section className="mt-7 grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+            <article className="rounded-[28px] border border-slate-200 bg-white p-7 shadow-sm sm:p-8">
+              <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
                 <div>
-                  <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-slate-100">
-                    <div className="flex items-center justify-between gap-4 border-b border-slate-200 bg-white px-4 py-3">
-                      <div className="flex min-w-0 items-center gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-green-100 text-green-700">
-                          <FileImage className="h-5 w-5" />
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-700">
+                      <PieChart className="h-5 w-5" />
+                    </div>
+
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
+                        Portfolio allocation
+                      </p>
+
+                      <h2 className="mt-1 text-2xl font-bold">
+                        Largest positions
+                      </h2>
+                    </div>
+                  </div>
+                </div>
+
+                <Link
+                  href="/portfolio"
+                  className="inline-flex items-center gap-2 text-sm font-bold text-slate-600 transition hover:text-slate-950"
+                >
+                  View all
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+
+              <div className="mt-7 space-y-4">
+                {sortedHoldings.slice(0, 5).map((holding) => {
+                  const value = getHoldingValue(holding);
+
+                  const allocation =
+                    portfolioValue > 0
+                      ? (value / portfolioValue) * 100
+                      : 0;
+
+                  return (
+                    <Link
+                      key={holding.id}
+                      href={`/portfolio/${holding.symbol.toLowerCase()}`}
+                      className="block rounded-2xl border border-slate-200 bg-slate-50 p-5 transition hover:-translate-y-0.5 hover:bg-white hover:shadow-md"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex min-w-0 items-center gap-4">
+                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-950 text-xs font-black text-white">
+                            {holding.symbol.slice(0, 5)}
+                          </div>
+
+                          <div className="min-w-0">
+                            <p className="truncate font-bold text-slate-950">
+                              {holding.name || holding.symbol}
+                            </p>
+
+                            <p className="mt-1 text-xs font-semibold text-slate-500">
+                              {getHoldingRole(holding.symbol)}
+                            </p>
+                          </div>
                         </div>
 
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-bold text-slate-900">
-                            {selectedFile.name}
+                        <div className="shrink-0 text-right">
+                          <p className="font-bold text-slate-950">
+                            {formatCurrency(
+                              value,
+                              holding.currency
+                            )}
                           </p>
 
-                          <p className="text-xs text-slate-500">
-                            {formatFileSize(selectedFile.size)}
-                          </p>
+                          <span
+                            className={`mt-1 inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold ${getAllocationTone(
+                              allocation
+                            )}`}
+                          >
+                            {formatPercentage(allocation)}
+                          </span>
                         </div>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={removeFile}
-                        aria-label="Remove uploaded screenshot"
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
-                      >
-                        <X className="h-5 w-5" />
-                      </button>
-                    </div>
-
-                    {previewUrl && (
-                      <div className="flex min-h-[330px] items-center justify-center p-4">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={previewUrl}
-                          alt="Uploaded portfolio screenshot preview"
-                          className="max-h-[520px] w-auto max-w-full rounded-xl object-contain shadow-sm"
+                      <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-200">
+                        <div
+                          className="h-full rounded-full bg-slate-950"
+                          style={{
+                            width: `${Math.min(allocation, 100)}%`,
+                          }}
                         />
                       </div>
-                    )}
-                  </div>
-
-                  <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-                    <button
-                      type="button"
-                      onClick={analysePortfolio}
-                      disabled={isProcessing}
-                      className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-3.5 text-sm font-bold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {isProcessing ? (
-                        <>
-                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                          Analysing screenshot...
-                        </>
-                      ) : (
-                        <>
-                          <Check className="h-4 w-4" />
-                          Analyse portfolio
-                        </>
-                      )}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={openFilePicker}
-                      disabled={isProcessing}
-                      className="rounded-xl border border-slate-300 bg-white px-5 py-3.5 text-sm font-bold text-slate-800 transition hover:bg-slate-50 disabled:opacity-60"
-                    >
-                      Choose another
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                onChange={handleFileChange}
-                className="hidden"
-              />
-
-              {statusMessage && (
-                <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
-                  {statusMessage}
-                </div>
-              )}
-            </div>
-          </article>
-
-          <div className="space-y-6">
-            <article className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-              <h2 className="text-lg font-bold text-slate-950">
-                Other setup options
-              </h2>
-
-              <div className="mt-5 space-y-4">
-                <div className="rounded-2xl border border-slate-200 p-4">
-                  <div className="flex items-start gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
-                      <FileSpreadsheet className="h-5 w-5" />
-                    </div>
-
-                    <div>
-                      <h3 className="font-bold text-slate-900">Upload CSV</h3>
-
-                      <p className="mt-1 text-sm leading-5 text-slate-500">
-                        Ideal for larger portfolios or exported transactions.
-                      </p>
-
-                      <span className="mt-3 inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-500">
-                        Coming soon
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="rounded-2xl border border-slate-200 p-4">
-                  <div className="flex items-start gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
-                      <PenLine className="h-5 w-5" />
-                    </div>
-
-                    <div>
-                      <h3 className="font-bold text-slate-900">
-                        Add manually
-                      </h3>
-
-                      <p className="mt-1 text-sm leading-5 text-slate-500">
-                        Add a ticker, quantity and purchase price yourself.
-                      </p>
-
-                      <span className="mt-3 inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-500">
-                        Coming soon
-                      </span>
-                    </div>
-                  </div>
-                </div>
+                    </Link>
+                  );
+                })}
               </div>
             </article>
 
-            <article className="rounded-[28px] border border-slate-200 bg-slate-950 p-6 text-white shadow-sm">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10">
-                <ShieldCheck className="h-6 w-6" />
+            <div className="space-y-6">
+              <article className="rounded-[28px] bg-slate-950 p-7 text-white shadow-lg">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10">
+                    <AlertTriangle className="h-5 w-5" />
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
+                      Main portfolio risk
+                    </p>
+
+                    <h2 className="mt-1 text-2xl font-bold">
+                      Concentration
+                    </h2>
+                  </div>
+                </div>
+
+                {largestHolding ? (
+                  <>
+                    <p className="mt-5 leading-7 text-slate-300">
+                      {largestHolding.symbol} currently represents{" "}
+                      <strong className="text-white">
+                        {formatPercentage(largestHoldingAllocation)}
+                      </strong>{" "}
+                      of the complete portfolio. This holding remains
+                      the dominant source of both return potential and
+                      volatility.
+                    </p>
+
+                    <div className="mt-6 rounded-2xl bg-white/10 p-5">
+                      <div className="flex items-center justify-between gap-4">
+                        <div>
+                          <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
+                            Largest position
+                          </p>
+
+                          <p className="mt-1 text-xl font-bold">
+                            {largestHolding.symbol}
+                          </p>
+                        </div>
+
+                        <p className="text-3xl font-black">
+                          {formatPercentage(
+                            largestHoldingAllocation
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <p className="mt-5 text-slate-300">
+                    Upload a portfolio to calculate concentration.
+                  </p>
+                )}
+
+                <Link
+                  href="/portfolio"
+                  className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-white"
+                >
+                  Review concentration
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </article>
+
+              <article className="rounded-[28px] border border-slate-200 bg-white p-7 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700">
+                    <ShieldCheck className="h-5 w-5" />
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
+                      Diversification score
+                    </p>
+
+                    <h2 className="mt-1 text-2xl font-bold">
+                      {diversificationScore}/100
+                    </h2>
+                  </div>
+                </div>
+
+                <div className="mt-6 h-3 overflow-hidden rounded-full bg-slate-100">
+                  <div
+                    className={`h-full rounded-full ${
+                      diversificationScore >= 80
+                        ? "bg-emerald-500"
+                        : diversificationScore >= 60
+                          ? "bg-amber-500"
+                          : "bg-red-500"
+                    }`}
+                    style={{
+                      width: `${diversificationScore}%`,
+                    }}
+                  />
+                </div>
+
+                <p className="mt-5 text-sm leading-6 text-slate-500">
+                  Broad equities, gold and thematic positions improve
+                  diversification, but the large Bitcoin allocation
+                  still dominates the portfolio.
+                </p>
+              </article>
+            </div>
+          </section>
+
+          <section className="mt-7 grid gap-6 lg:grid-cols-3">
+            <QuickActionCard
+              href="/portfolio"
+              icon={<BriefcaseBusiness className="h-6 w-6" />}
+              eyebrow="Portfolio"
+              title="Analyse every holding"
+              description="View allocation, returns, thesis, risks and monitoring for every investment."
+              action="Open portfolio"
+              tone="dark"
+            />
+
+            <QuickActionCard
+              href="/briefing"
+              icon={<Newspaper className="h-6 w-6" />}
+              eyebrow="Daily intelligence"
+              title="Review market impact"
+              description="See the market and macro developments that matter most for your holdings."
+              action="Read briefing"
+              tone="light"
+            />
+
+            <QuickActionCard
+              href="/goals"
+              icon={<Target className="h-6 w-6" />}
+              eyebrow="Project Million"
+              title="Track the €1M mission"
+              description="Compare scenarios, change contributions and monitor your required growth."
+              action="Open goals"
+              tone="gradient"
+            />
+          </section>
+
+          <section className="mt-7 grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+            <article className="rounded-[28px] border border-slate-200 bg-white p-7 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-50 text-amber-700">
+                  <Bitcoin className="h-5 w-5" />
+                </div>
+
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
+                    Investment coach
+                  </p>
+
+                  <h2 className="mt-1 text-2xl font-bold">
+                    Current priority
+                  </h2>
+                </div>
               </div>
 
-              <h2 className="mt-5 text-xl font-bold">
-                Your portfolio data stays yours.
-              </h2>
-
-              <p className="mt-3 text-sm leading-6 text-slate-300">
-                Investment OS never asks for your broker password. You review
-                detected holdings before they are added to your portfolio.
+              <p className="mt-5 leading-7 text-slate-600">
+                Keep the main Bitcoin position intact, but direct new
+                capital primarily towards diversified and defensive
+                holdings. This improves portfolio balance without
+                sacrificing long-term upside.
               </p>
 
-              <div className="mt-5 space-y-3 text-sm text-slate-200">
-                <div className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-400" />
-                  No broker login required
-                </div>
+              <div className="mt-6 space-y-3">
+                <CoachRow
+                  number="1"
+                  text="Prioritise broad global diversification"
+                />
 
-                <div className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-400" />
-                  Review before saving
-                </div>
+                <CoachRow
+                  number="2"
+                  text="Build defensive assets gradually"
+                />
 
-                <div className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-400" />
-                  Delete or replace anytime
-                </div>
+                <CoachRow
+                  number="3"
+                  text="Avoid increasing Bitcoin concentration"
+                />
               </div>
             </article>
-          </div>
-        </section>
+
+            <article className="rounded-[28px] border border-slate-200 bg-white p-7 shadow-sm">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-50 text-violet-700">
+                    <CalendarDays className="h-5 w-5" />
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
+                      Today&apos;s overview
+                    </p>
+
+                    <h2 className="mt-1 text-2xl font-bold">
+                      Investment OS signals
+                    </h2>
+                  </div>
+                </div>
+
+                <span className="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">
+                  Updated
+                </span>
+              </div>
+
+              <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                <SignalCard
+                  icon={<TrendingUp className="h-5 w-5" />}
+                  label="Portfolio outlook"
+                  value={portfolioTone}
+                  description="Growth assets remain supported."
+                  tone="positive"
+                />
+
+                <SignalCard
+                  icon={<Layers3 className="h-5 w-5" />}
+                  label="Main risk"
+                  value={concentrationRisk}
+                  description="One position dominates portfolio movement."
+                  tone="warning"
+                />
+
+                <SignalCard
+                  icon={
+                    <ChartNoAxesColumnIncreasing className="h-5 w-5" />
+                  }
+                  label="Goal requirement"
+                  value={formatPercentage(requiredAnnualReturn)}
+                  description="Average annual growth required."
+                  tone={
+                    requiredAnnualReturn <= 15
+                      ? "positive"
+                      : "warning"
+                  }
+                />
+
+                <SignalCard
+                  icon={<WalletCards className="h-5 w-5" />}
+                  label="Best diversifier"
+                  value={
+                    holdings.some(
+                      (holding) =>
+                        holding.symbol.toUpperCase() === "VWCE"
+                    )
+                      ? "VWCE"
+                      : "Broad equities"
+                  }
+                  description="Improves portfolio resilience."
+                  tone="neutral"
+                />
+              </div>
+            </article>
+          </section>
+
+          <section className="mt-7 rounded-[28px] bg-gradient-to-br from-blue-600 to-violet-700 p-7 text-white shadow-lg sm:p-8">
+            <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
+              <div>
+                <div className="flex items-center gap-2 text-blue-100">
+                  <Sparkles className="h-5 w-5" />
+
+                  <p className="text-sm font-bold uppercase tracking-[0.14em]">
+                    Complete Investment OS
+                  </p>
+                </div>
+
+                <h2 className="mt-3 text-2xl font-bold sm:text-3xl">
+                  Your portfolio, strategy and goal in one system
+                </h2>
+
+                <p className="mt-3 max-w-2xl leading-7 text-blue-100">
+                  Upload a new portfolio whenever your positions change.
+                  The dashboard, holding pages and Project Million
+                  projections will update automatically.
+                </p>
+              </div>
+
+              <Link
+                href="/upload"
+                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-bold text-slate-950 shadow-sm"
+              >
+                <Upload className="h-4 w-4" />
+                Update portfolio
+              </Link>
+            </div>
+          </section>
+
+          <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5">
+            <p className="text-sm font-bold text-slate-900">
+              Important information
+            </p>
+
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              Investment OS is a decision-support and monitoring tool.
+              It does not provide personal financial advice and cannot
+              guarantee future investment results.
+            </p>
+          </section>
+        </div>
       </main>
 
       <BottomNavigation />
+    </>
+  );
+}
+
+function HeroDetailRow({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-4 last:border-none last:pb-0">
+      <span className="text-sm text-slate-400">{label}</span>
+
+      <span className="text-right text-sm font-bold text-white">
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function MetricCard({
+  icon,
+  label,
+  value,
+  description,
+  tone,
+}: PortfolioMetric) {
+  const iconClasses = {
+    neutral: "bg-slate-100 text-slate-700",
+    positive: "bg-emerald-50 text-emerald-700",
+    negative: "bg-red-50 text-red-700",
+    warning: "bg-amber-50 text-amber-700",
+  };
+
+  const descriptionClasses = {
+    neutral: "text-slate-500",
+    positive: "text-emerald-600",
+    negative: "text-red-600",
+    warning: "text-amber-600",
+  };
+
+  return (
+    <article className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+      <div
+        className={`flex h-11 w-11 items-center justify-center rounded-2xl ${iconClasses[tone]}`}
+      >
+        {icon}
+      </div>
+
+      <p className="mt-5 text-sm font-semibold text-slate-500">
+        {label}
+      </p>
+
+      <p className="mt-1 text-2xl font-bold tracking-[-0.03em] text-slate-950">
+        {value}
+      </p>
+
+      <p
+        className={`mt-1 text-xs font-bold ${descriptionClasses[tone]}`}
+      >
+        {description}
+      </p>
+    </article>
+  );
+}
+
+function QuickActionCard({
+  href,
+  icon,
+  eyebrow,
+  title,
+  description,
+  action,
+  tone,
+}: {
+  href: string;
+  icon: React.ReactNode;
+  eyebrow: string;
+  title: string;
+  description: string;
+  action: string;
+  tone: "dark" | "light" | "gradient";
+}) {
+  const containerClasses = {
+    dark: "bg-slate-950 text-white",
+    light: "border border-slate-200 bg-white text-slate-950",
+    gradient:
+      "bg-gradient-to-br from-blue-600 to-violet-700 text-white",
+  };
+
+  const iconClasses = {
+    dark: "bg-white/10 text-white",
+    light: "bg-slate-100 text-slate-700",
+    gradient: "bg-white/15 text-white",
+  };
+
+  const eyebrowClasses = {
+    dark: "text-slate-400",
+    light: "text-slate-400",
+    gradient: "text-blue-100",
+  };
+
+  const descriptionClasses = {
+    dark: "text-slate-300",
+    light: "text-slate-500",
+    gradient: "text-blue-100",
+  };
+
+  return (
+    <Link
+      href={href}
+      className={`group rounded-[28px] p-7 shadow-sm transition hover:-translate-y-1 hover:shadow-lg ${containerClasses[tone]}`}
+    >
+      <div
+        className={`flex h-12 w-12 items-center justify-center rounded-2xl ${iconClasses[tone]}`}
+      >
+        {icon}
+      </div>
+
+      <p
+        className={`mt-6 text-xs font-bold uppercase tracking-[0.16em] ${eyebrowClasses[tone]}`}
+      >
+        {eyebrow}
+      </p>
+
+      <h3 className="mt-2 text-2xl font-bold">{title}</h3>
+
+      <p
+        className={`mt-3 min-h-[72px] text-sm leading-6 ${descriptionClasses[tone]}`}
+      >
+        {description}
+      </p>
+
+      <div className="mt-6 flex items-center gap-2 text-sm font-bold">
+        {action}
+
+        <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
+      </div>
+    </Link>
+  );
+}
+
+function CoachRow({
+  number,
+  text,
+}: {
+  number: string;
+  text: string;
+}) {
+  return (
+    <div className="flex items-center gap-3 rounded-2xl bg-slate-50 p-4">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-950 font-bold text-white">
+        {number}
+      </div>
+
+      <p className="text-sm font-semibold text-slate-700">
+        {text}
+      </p>
+    </div>
+  );
+}
+
+function SignalCard({
+  icon,
+  label,
+  value,
+  description,
+  tone,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  description: string;
+  tone: "neutral" | "positive" | "warning";
+}) {
+  const iconClasses = {
+    neutral: "bg-slate-100 text-slate-700",
+    positive: "bg-emerald-50 text-emerald-700",
+    warning: "bg-amber-50 text-amber-700",
+  };
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+      <div
+        className={`flex h-10 w-10 items-center justify-center rounded-xl ${iconClasses[tone]}`}
+      >
+        {icon}
+      </div>
+
+      <p className="mt-4 text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
+        {label}
+      </p>
+
+      <p className="mt-2 text-xl font-bold text-slate-950">
+        {value}
+      </p>
+
+      <p className="mt-2 text-sm leading-6 text-slate-500">
+        {description}
+      </p>
     </div>
   );
 }

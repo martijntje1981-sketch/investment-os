@@ -1,3 +1,5 @@
+import PageNavigation from "@/components/PageNavigation";
+
 type BriefingItem = {
   title: string;
   category: string;
@@ -156,7 +158,9 @@ export default function BriefingPage() {
   return (
     <main className="min-h-screen bg-slate-50 px-5 pb-32 pt-8 text-slate-950 sm:px-8">
       <div className="mx-auto max-w-6xl">
-        <section className="mb-8">
+        <PageNavigation />
+
+        <section className="mb-8 mt-6">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">
             Daily intelligence
           </p>
