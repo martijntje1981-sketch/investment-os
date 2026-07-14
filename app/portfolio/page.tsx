@@ -30,30 +30,55 @@ type Holding = {
   quantity: number;
   purchasePrice: number;
   currentPrice: number;
-  currency: "EUR" | "USD" | "GBP";
+  currency: "EUR";
   confidence?: "High" | "Medium" | "Low";
 };
 
-type MarketQuote = {
+type MarketPrice = {
   symbol: string;
-  providerSymbol: string;
-  exchange: string;
+  eodhdSymbol: string;
+  isin: string | null;
   name: string;
-  price: number;
-  previousClose: number;
-  changePercent: number;
-  currency: string;
+
+  originalCurrency: string;
+  originalPrice: number;
+
+  baseCurrency: "EUR";
+  exchangeRateToEur: number | null;
+  priceEur: number;
+
+  previousCloseOriginal: number | null;
+  previousCloseEur: number | null;
+
+  change: number | null;
+  changePercent: number | null;
+
+  open: number | null;
+  high: number | null;
+  low: number | null;
+  volume: number | null;
+
+  timestamp: number | null;
   updatedAt: string;
-  success: boolean;
-  error?: string;
 };
 
-type QuotesResponse = {
+type PricesResponse = {
   success: boolean;
+  baseCurrency: "EUR";
+
+  fxRates: {
+    EUR: number;
+    USD_TO_EUR: number | null;
+    GBP_TO_EUR: number | null;
+    CHF_TO_EUR: number | null;
+  };
+
+  prices: MarketPrice[];
+  errors: string[];
+
   requested: number;
   received: number;
-  updatedAt: string;
-  quotes: MarketQuote[];
+  generatedAt: string;
   error?: string;
 };
 
@@ -104,7 +129,7 @@ const fallbackHoldings: Holding[] = [
   {
     id: 5,
     symbol: "AIFS",
-    name: "AI Infrastructure ETF",
+    name: "iShares AI Infrastructure UCITS ETF",
     quantity: 520,
     purchasePrice: 10.19,
     currentPrice: 10.19,
@@ -121,15 +146,21 @@ const fallbackHoldings: Holding[] = [
   },
 ];
 
-function formatCurrency(
-  value: number,
-  currency: Holding["currency"] = "EUR"
-) {
+function formatCurrency(value: number) {
   return new Intl.NumberFormat("en-GB", {
     style: "currency",
-    currency,
+    currency: "EUR",
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
+  }).format(value);
+}
+
+function formatPrice(value: number) {
+  return new Intl.NumberFormat("en-GB", {
+    style: "currency",
+    currency: "EUR",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 4,
   }).format(value);
 }
 
@@ -182,6 +213,44 @@ function getReturnPercentage(holding: Holding) {
   return (getReturnValue(holding) / costValue) * 100;
 }
 
+function normaliseSavedPortfolio(
+  savedPortfolio: unknown
+): Holding[] | null {
+  if (!Array.isArray(savedPortfolio) || savedPortfolio.length === 0) {
+    return null;
+  }
+
+  const validHoldings = savedPortfolio.filter((item) => {
+    if (!item || typeof item !== "object") {
+      return false;
+    }
+
+    const holding = item as Partial<Holding>;
+
+    return (
+      typeof holding.id === "number" &&
+      typeof holding.symbol === "string" &&
+      typeof holding.quantity === "number" &&
+      typeof holding.purchasePrice === "number" &&
+      typeof holding.currentPrice === "number"
+    );
+  });
+
+  if (validHoldings.length === 0) {
+    return null;
+  }
+
+  return validHoldings.map((item) => {
+    const holding = item as Holding;
+
+    return {
+      ...holding,
+      symbol: holding.symbol.trim().toUpperCase(),
+      currency: "EUR",
+    };
+  });
+}
+
 export default function PortfolioPage() {
   const [holdings, setHoldings] =
     useState<Holding[]>(fallbackHoldings);
@@ -192,14 +261,17 @@ export default function PortfolioPage() {
 
   const [isLoaded, setIsLoaded] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
   const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(
     null
   );
+
   const [marketDataMessage, setMarketDataMessage] = useState("");
 
   const refreshMarketData = useCallback(
     async (portfolio: Holding[]) => {
       if (portfolio.length === 0) {
+        setMarketDataMessage("No holdings available to refresh.");
         return;
       }
 
@@ -207,67 +279,73 @@ export default function PortfolioPage() {
       setMarketDataMessage("");
 
       try {
-        const symbols = Array.from(
-          new Set(
-            portfolio
-              .map((holding) => holding.symbol.trim().toUpperCase())
-              .filter(Boolean)
-          )
-        );
+        const response = await fetch("/api/prices", {
+          method: "GET",
+          cache: "no-store",
+        });
 
-        const response = await fetch(
-          `/api/quotes?symbols=${encodeURIComponent(
-            symbols.join(",")
-          )}`,
-          {
-            method: "GET",
-            cache: "no-store",
-          }
-        );
+        const data = (await response.json()) as PricesResponse;
 
-        const data = (await response.json()) as QuotesResponse;
+        if (!response.ok || !data.success) {
+          throw new Error(
+            data.error ||
+              "The market data service returned an unsuccessful response."
+          );
+        }
 
         const newStatuses: Record<string, QuoteStatus> = {};
 
-        for (const quote of data.quotes ?? []) {
-          newStatuses[quote.symbol] = {
-            success: quote.success,
-            changePercent: quote.changePercent,
-            updatedAt: quote.updatedAt,
-            error: quote.error,
+        for (const price of data.prices ?? []) {
+          newStatuses[price.symbol.toUpperCase()] = {
+            success: true,
+            changePercent:
+              typeof price.changePercent === "number"
+                ? price.changePercent
+                : 0,
+            updatedAt: price.updatedAt,
           };
+        }
+
+        for (const error of data.errors ?? []) {
+          const symbolMatch = error.match(/^([A-Z0-9]+)/);
+
+          if (symbolMatch) {
+            newStatuses[symbolMatch[1].toUpperCase()] = {
+              success: false,
+              changePercent: 0,
+              updatedAt: data.generatedAt,
+              error,
+            };
+          }
         }
 
         setQuoteStatuses(newStatuses);
 
-        const successfulQuotes = (data.quotes ?? []).filter(
-          (quote) => quote.success && quote.price > 0
+        const successfulPrices = (data.prices ?? []).filter(
+          (price) =>
+            typeof price.priceEur === "number" &&
+            Number.isFinite(price.priceEur) &&
+            price.priceEur > 0
         );
 
-        if (successfulQuotes.length > 0) {
+        if (successfulPrices.length > 0) {
           setHoldings((currentHoldings) => {
             const updatedHoldings = currentHoldings.map((holding) => {
-              const quote = successfulQuotes.find(
-                (item) =>
-                  item.symbol.toUpperCase() ===
+              const livePrice = successfulPrices.find(
+                (price) =>
+                  price.symbol.toUpperCase() ===
                   holding.symbol.toUpperCase()
               );
 
-              if (!quote) {
+              if (!livePrice) {
                 return holding;
               }
 
-              const supportedCurrency =
-                quote.currency === "EUR" ||
-                quote.currency === "USD" ||
-                quote.currency === "GBP"
-                  ? quote.currency
-                  : holding.currency;
-
               return {
                 ...holding,
-                currentPrice: quote.price,
-                currency: supportedCurrency,
+                name: livePrice.name || holding.name,
+                currentPrice: livePrice.priceEur,
+                currency: "EUR" as const,
               };
             });
 
@@ -280,40 +358,37 @@ export default function PortfolioPage() {
           });
         }
 
-        setLastUpdatedAt(data.updatedAt ?? new Date().toISOString());
-
-        const failedQuotes = (data.quotes ?? []).filter(
-          (quote) => !quote.success
+        setLastUpdatedAt(
+          data.generatedAt || new Date().toISOString()
         );
 
-        if (
-          successfulQuotes.length > 0 &&
-          failedQuotes.length > 0
-        ) {
+        const successfulCount = successfulPrices.length;
+        const failedCount = data.errors?.length ?? 0;
+
+        if (successfulCount > 0 && failedCount > 0) {
           setMarketDataMessage(
-            `${successfulQuotes.length} live ${
-              successfulQuotes.length === 1 ? "price" : "prices"
-            } updated. ${failedQuotes.length} ${
-              failedQuotes.length === 1 ? "holding is" : "holdings are"
+            `${successfulCount} live ${
+              successfulCount === 1 ? "price" : "prices"
+            } updated. ${failedCount} ${
+              failedCount === 1 ? "holding is" : "holdings are"
             } using the last saved price.`
           );
-        } else if (
-          successfulQuotes.length === 0 &&
-          failedQuotes.length > 0
-        ) {
+        } else if (successfulCount === 0) {
           setMarketDataMessage(
-            "Live prices are unavailable for these holdings on the current data plan. Your saved prices remain unchanged."
+            "Live prices are currently unavailable. Your last saved portfolio prices remain visible."
           );
         } else {
           setMarketDataMessage(
-            "All available market prices were updated."
+            `All ${successfulCount} portfolio prices were updated through EODHD.`
           );
         }
       } catch (error) {
         console.error("Could not refresh market data:", error);
 
         setMarketDataMessage(
-          "Market data could not be refreshed. Your saved portfolio prices remain available."
+          error instanceof Error
+            ? `Market data could not be refreshed: ${error.message}`
+            : "Market data could not be refreshed. Your saved portfolio prices remain available."
         );
       } finally {
         setIsRefreshing(false);
@@ -331,15 +406,12 @@ export default function PortfolioPage() {
       );
 
       if (savedPortfolio) {
-        const parsedPortfolio = JSON.parse(
-          savedPortfolio
-        ) as Holding[];
+        const parsedPortfolio = JSON.parse(savedPortfolio);
+        const normalisedPortfolio =
+          normaliseSavedPortfolio(parsedPortfolio);
 
-        if (
-          Array.isArray(parsedPortfolio) &&
-          parsedPortfolio.length > 0
-        ) {
-          portfolioToLoad = parsedPortfolio;
+        if (normalisedPortfolio) {
+          portfolioToLoad = normalisedPortfolio;
         }
       }
     } catch (error) {
@@ -417,6 +489,7 @@ export default function PortfolioPage() {
                   isRefreshing ? "animate-spin" : ""
                 }`}
               />
+
               {isRefreshing ? "Refreshing..." : "Refresh prices"}
             </button>
 
@@ -646,8 +719,7 @@ export default function PortfolioPage() {
                     </p>
 
                     <p className="mt-1 text-xs text-slate-500">
-                      {holding.quantity.toLocaleString("en-GB")}{" "}
-                      units
+                      {holding.quantity.toLocaleString("en-GB")} units
                     </p>
                   </div>
 
@@ -657,10 +729,7 @@ export default function PortfolioPage() {
                     </span>
 
                     <p className="font-bold text-slate-950">
-                      {formatCurrency(
-                        holdingValue,
-                        holding.currency
-                      )}
+                      {formatCurrency(holdingValue)}
                     </p>
                   </div>
 
@@ -696,10 +765,7 @@ export default function PortfolioPage() {
                       }`}
                     >
                       {returnValue >= 0 ? "+" : ""}
-                      {formatCurrency(
-                        returnValue,
-                        holding.currency
-                      )}
+                      {formatCurrency(returnValue)}
                     </p>
 
                     <p
@@ -720,10 +786,7 @@ export default function PortfolioPage() {
                     </span>
 
                     <p className="font-bold text-slate-950">
-                      {formatCurrency(
-                        holding.currentPrice,
-                        holding.currency
-                      )}
+                      {formatPrice(holding.currentPrice)}
                     </p>
 
                     {quoteStatus?.success && (
@@ -835,13 +898,13 @@ export default function PortfolioPage() {
             </h2>
 
             <p className="mt-3 max-w-[470px] text-sm leading-6 text-slate-500">
-              Investment OS now uses one central quote API. We can later
-              replace or combine data providers without rebuilding the
-              portfolio experience.
+              Investment OS now uses one central EODHD price endpoint.
+              Prices in other currencies are automatically converted to
+              euros before portfolio values are calculated.
             </p>
 
             <div className="mt-6 inline-flex rounded-full bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700">
-              Data layer active
+              EODHD data layer active
             </div>
           </article>
         </section>
