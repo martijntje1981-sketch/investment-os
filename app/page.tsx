@@ -1,1201 +1,816 @@
-"use client";
-
-import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
-  AlertTriangle,
   ArrowRight,
   BarChart3,
-  Bitcoin,
+  BellRing,
+  BrainCircuit,
   BriefcaseBusiness,
-  CalendarDays,
-  ChartNoAxesColumnIncreasing,
-  CheckCircle2,
+  Check,
+  ChevronRight,
   CircleDollarSign,
+  FileUp,
   Gauge,
   Goal,
   Layers3,
+  LockKeyhole,
+  Mail,
   Newspaper,
   PieChart,
-  RefreshCw,
   ShieldCheck,
   Sparkles,
   Target,
-  TrendingDown,
   TrendingUp,
   Upload,
-  WalletCards,
 } from "lucide-react";
-import BottomNavigation from "@/components/home/BottomNav";
 
-type Currency = "EUR" | "USD" | "GBP";
+import MarketingHeader from "@/components/marketing/MarketingHeader";
 
-type Holding = {
-  id: number;
-  symbol: string;
-  name: string;
-  quantity: number;
-  purchasePrice: number;
-  currentPrice: number;
-  currency: Currency;
-  confidence?: "High" | "Medium" | "Low";
-};
-
-type PortfolioMetric = {
-  label: string;
-  value: string;
-  description: string;
-  tone: "neutral" | "positive" | "negative" | "warning";
-  icon: React.ReactNode;
-};
-
-const fallbackHoldings: Holding[] = [
+const features = [
   {
-    id: 1,
-    symbol: "IB1T",
-    name: "iShares Bitcoin ETP",
-    quantity: 11269,
-    purchasePrice: 5.16,
-    currentPrice: 5.16,
-    currency: "EUR",
-    confidence: "High",
+    icon: BriefcaseBusiness,
+    title: "One complete portfolio overview",
+    description:
+      "Track holdings, allocation, purchase prices, market value and total returns from one clear dashboard.",
   },
   {
-    id: 2,
-    symbol: "STRC",
-    name: "21Shares Strategy Yield ETP",
-    quantity: 450,
-    purchasePrice: 15.56,
-    currentPrice: 15.56,
-    currency: "EUR",
-    confidence: "Medium",
+    icon: Newspaper,
+    title: "A briefing built around your holdings",
+    description:
+      "See the macroeconomic and company-specific developments that may matter for your actual portfolio.",
   },
   {
-    id: 3,
-    symbol: "VWCE",
-    name: "Vanguard FTSE All-World ETF",
-    quantity: 99,
-    purchasePrice: 87.88,
-    currentPrice: 87.88,
-    currency: "EUR",
-    confidence: "High",
+    icon: Target,
+    title: "Turn investing into a measurable plan",
+    description:
+      "Define a financial goal, test contribution scenarios and monitor the return required to stay on track.",
   },
   {
-    id: 4,
-    symbol: "NUKL",
-    name: "VanEck Uranium and Nuclear Technologies ETF",
-    quantity: 161,
-    purchasePrice: 46.58,
-    currentPrice: 46.58,
-    currency: "EUR",
-    confidence: "High",
+    icon: BrainCircuit,
+    title: "Investment intelligence, not noise",
+    description:
+      "Translate market information into clear portfolio impact, risks and decision-support insights.",
   },
   {
-    id: 5,
-    symbol: "AIFS",
-    name: "AI Infrastructure ETF",
-    quantity: 520,
-    purchasePrice: 10.19,
-    currentPrice: 10.19,
-    currency: "EUR",
-    confidence: "High",
+    icon: PieChart,
+    title: "Understand concentration and balance",
+    description:
+      "Monitor portfolio weights, diversification and the positions driving most of your risk.",
   },
   {
-    id: 6,
-    symbol: "PPFB",
-    name: "iShares Physical Gold ETC",
-    quantity: 200,
-    purchasePrice: 10,
-    currentPrice: 10,
-    currency: "EUR",
-    confidence: "Medium",
+    icon: FileUp,
+    title: "Update your portfolio quickly",
+    description:
+      "Upload a broker screenshot and review the recognised holdings before updating your Investment OS.",
   },
 ];
 
-const TARGET_VALUE = 1_000_000;
-const TARGET_YEAR = 2036;
-const DEFAULT_ANNUAL_CONTRIBUTION = 15_000;
+const workflowSteps = [
+  {
+    number: "01",
+    title: "Upload your portfolio",
+    description:
+      "Start with a portfolio screenshot and review the detected positions before saving them.",
+    icon: Upload,
+  },
+  {
+    number: "02",
+    title: "Connect your financial goal",
+    description:
+      "Set a target value, target year and expected annual contributions.",
+    icon: Goal,
+  },
+  {
+    number: "03",
+    title: "Monitor what matters",
+    description:
+      "Use the dashboard, portfolio analysis and personalised briefing to stay informed.",
+    icon: Gauge,
+  },
+];
 
-function formatCurrency(
-  value: number,
-  currency: Currency = "EUR",
-  decimals = 0
-) {
-  return new Intl.NumberFormat("en-GB", {
-    style: "currency",
-    currency,
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  }).format(value);
-}
+const benefits = [
+  "Portfolio overview and allocation monitoring",
+  "Holding-level performance and risk analysis",
+  "Macro and portfolio-specific market briefing",
+  "Goal tracking and scenario calculations",
+  "Portfolio upload and review workflow",
+  "Clear decision-support insights",
+];
 
-function formatPercentage(value: number, decimals = 1) {
-  return new Intl.NumberFormat("en-GB", {
-    style: "percent",
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  }).format(value / 100);
-}
+const faqItems = [
+  {
+    question:
+      "Does Investment OS provide financial advice?",
+    answer:
+      "No. Investment OS is a monitoring and decision-support tool. It organises portfolio information, market context and scenarios, but it does not provide regulated personal financial advice.",
+  },
+  {
+    question:
+      "How does Investment OS receive my portfolio?",
+    answer:
+      "The beta supports portfolio screenshot uploads followed by a review step. You remain in control of which recognised holdings are accepted.",
+  },
+  {
+    question:
+      "Are market prices always real time?",
+    answer:
+      "Market-data availability and update frequency depend on the selected data provider, exchange and subscription level. The product clearly shows whether data is live, cached or using a fallback price.",
+  },
+  {
+    question:
+      "Can I use Investment OS with any broker?",
+    answer:
+      "The goal is to support portfolio information from multiple brokers. During the beta, screenshot recognition and manual review will be tested with a limited number of formats.",
+  },
+  {
+    question:
+      "Is my portfolio stored securely?",
+    answer:
+      "The current development version is still being prepared for user accounts and secure database storage. A public beta will only launch after authentication, privacy and data-security controls are in place.",
+  },
+];
 
-function getHoldingValue(holding: Holding) {
-  return holding.quantity * holding.currentPrice;
-}
+const trustItems = [
+  {
+    icon: ShieldCheck,
+    title: "Built for clarity",
+    description:
+      "Understand what is happening without navigating multiple disconnected tools.",
+  },
+  {
+    icon: LockKeyhole,
+    title: "Privacy first",
+    description:
+      "User accounts and secure portfolio storage will be implemented before the public beta.",
+  },
+  {
+    icon: Layers3,
+    title: "One source of truth",
+    description:
+      "Dashboard, portfolio, holdings and briefing use the same central portfolio information.",
+  },
+];
 
-function getHoldingCost(holding: Holding) {
-  return holding.quantity * holding.purchasePrice;
-}
-
-function calculatePortfolioValue(holdings: Holding[]) {
-  return holdings.reduce(
-    (total, holding) => total + getHoldingValue(holding),
-    0
-  );
-}
-
-function calculatePortfolioCost(holdings: Holding[]) {
-  return holdings.reduce(
-    (total, holding) => total + getHoldingCost(holding),
-    0
-  );
-}
-
-function calculateRequiredReturn(
-  startingValue: number,
-  annualContribution: number,
-  targetValue: number,
-  years: number
-) {
-  if (startingValue <= 0 || years <= 0) {
-    return 0;
-  }
-
-  let lower = -0.99;
-  let upper = 2;
-
-  for (let iteration = 0; iteration < 200; iteration += 1) {
-    const middle = (lower + upper) / 2;
-    let value = startingValue;
-
-    for (let year = 0; year < years; year += 1) {
-      value = value * (1 + middle);
-      value += annualContribution;
-    }
-
-    if (value < targetValue) {
-      lower = middle;
-    } else {
-      upper = middle;
-    }
-  }
-
-  return ((lower + upper) / 2) * 100;
-}
-
-function getHoldingCategory(symbol: string) {
-  const categories: Record<string, string> = {
-    IB1T: "Bitcoin",
-    STRC: "Income",
-    VWCE: "Global equities",
-    NUKL: "Nuclear energy",
-    AIFS: "AI infrastructure",
-    PPFB: "Gold",
-  };
-
-  return categories[symbol.toUpperCase()] ?? "Investment";
-}
-
-function getHoldingRole(symbol: string) {
-  const roles: Record<string, string> = {
-    IB1T: "Growth engine",
-    STRC: "Income layer",
-    VWCE: "Diversification core",
-    NUKL: "Thematic growth",
-    AIFS: "Structural growth",
-    PPFB: "Defensive diversifier",
-  };
-
-  return roles[symbol.toUpperCase()] ?? "Portfolio holding";
-}
-
-function getAllocationTone(allocation: number) {
-  if (allocation >= 50) {
-    return "bg-red-100 text-red-700";
-  }
-
-  if (allocation >= 25) {
-    return "bg-amber-100 text-amber-700";
-  }
-
-  return "bg-emerald-100 text-emerald-700";
-}
-
-export default function DashboardPage() {
-  const [holdings, setHoldings] = useState<Holding[]>(fallbackHoldings);
-  const [annualContribution, setAnnualContribution] = useState(
-    DEFAULT_ANNUAL_CONTRIBUTION
-  );
-  const [isLoaded, setIsLoaded] = useState(false);
-
-  const currentYear = new Date().getFullYear();
-  const yearsRemaining = Math.max(TARGET_YEAR - currentYear, 1);
-
-  useEffect(() => {
-    try {
-      const savedPortfolio = localStorage.getItem(
-        "investment-os-portfolio"
-      );
-
-      const savedAnnualContribution = localStorage.getItem(
-        "investment-os-annual-contribution"
-      );
-
-      if (savedPortfolio) {
-        const parsedPortfolio = JSON.parse(savedPortfolio) as Holding[];
-
-        if (Array.isArray(parsedPortfolio)) {
-          setHoldings(parsedPortfolio);
-        }
-      }
-
-      if (savedAnnualContribution) {
-        const parsedContribution = Number(savedAnnualContribution);
-
-        if (
-          Number.isFinite(parsedContribution) &&
-          parsedContribution >= 0
-        ) {
-          setAnnualContribution(parsedContribution);
-        }
-      }
-    } catch (error) {
-      console.error("Could not load Investment OS data:", error);
-    } finally {
-      setIsLoaded(true);
-    }
-  }, []);
-
-  const portfolioValue = useMemo(
-    () => calculatePortfolioValue(holdings),
-    [holdings]
-  );
-
-  const investedCapital = useMemo(
-    () => calculatePortfolioCost(holdings),
-    [holdings]
-  );
-
-  const totalReturn = portfolioValue - investedCapital;
-
-  const totalReturnPercentage =
-    investedCapital > 0
-      ? (totalReturn / investedCapital) * 100
-      : 0;
-
-  const sortedHoldings = useMemo(() => {
-    return [...holdings].sort(
-      (a, b) => getHoldingValue(b) - getHoldingValue(a)
-    );
-  }, [holdings]);
-
-  const largestHolding = sortedHoldings[0];
-
-  const largestHoldingValue = largestHolding
-    ? getHoldingValue(largestHolding)
-    : 0;
-
-  const largestHoldingAllocation =
-    portfolioValue > 0
-      ? (largestHoldingValue / portfolioValue) * 100
-      : 0;
-
-  const goalProgress = Math.min(
-    (portfolioValue / TARGET_VALUE) * 100,
-    100
-  );
-
-  const requiredAnnualReturn = calculateRequiredReturn(
-    portfolioValue,
-    annualContribution,
-    TARGET_VALUE,
-    yearsRemaining
-  );
-
-  const diversificationScore = Math.max(
-    0,
-    Math.min(
-      100,
-      Math.round(
-        100 -
-          Math.max(largestHoldingAllocation - 20, 0) * 1.2 +
-          Math.min(holdings.length * 2, 12)
-      )
-    )
-  );
-
-  const portfolioHealthScore = Math.round(
-    Math.max(
-      0,
-      Math.min(
-        100,
-        diversificationScore * 0.55 +
-          (requiredAnnualReturn <= 15
-            ? 92
-            : requiredAnnualReturn <= 25
-              ? 72
-              : 48) *
-            0.45
-      )
-    )
-  );
-
-  const concentrationRisk =
-    largestHoldingAllocation >= 50
-      ? "High"
-      : largestHoldingAllocation >= 30
-        ? "Elevated"
-        : "Controlled";
-
-  const portfolioTone =
-    totalReturn >= 0 ? "Constructive" : "Under pressure";
-
-  const metrics: PortfolioMetric[] = [
-    {
-      label: "Portfolio value",
-      value: formatCurrency(portfolioValue),
-      description: `${holdings.length} active holdings`,
-      tone: "neutral",
-      icon: <CircleDollarSign className="h-5 w-5" />,
-    },
-    {
-      label: "Total return",
-      value: `${totalReturn >= 0 ? "+" : ""}${formatCurrency(
-        totalReturn
-      )}`,
-      description: `${
-        totalReturnPercentage >= 0 ? "+" : ""
-      }${formatPercentage(totalReturnPercentage)}`,
-      tone: totalReturn >= 0 ? "positive" : "negative",
-      icon:
-        totalReturn >= 0 ? (
-          <TrendingUp className="h-5 w-5" />
-        ) : (
-          <TrendingDown className="h-5 w-5" />
-        ),
-    },
-    {
-      label: "Goal progress",
-      value: formatPercentage(goalProgress),
-      description: `${formatCurrency(
-        TARGET_VALUE - portfolioValue
-      )} remaining`,
-      tone: "positive",
-      icon: <Target className="h-5 w-5" />,
-    },
-    {
-      label: "Portfolio health",
-      value: `${portfolioHealthScore}/100`,
-      description: `${concentrationRisk} concentration risk`,
-      tone:
-        portfolioHealthScore >= 80
-          ? "positive"
-          : portfolioHealthScore >= 65
-            ? "warning"
-            : "negative",
-      icon: <Gauge className="h-5 w-5" />,
-    },
-  ];
-
-  if (!isLoaded) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-50">
-        <div className="text-center">
-          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-slate-950" />
-
-          <p className="mt-4 text-sm font-semibold text-slate-500">
-            Loading Investment OS...
-          </p>
-        </div>
-      </main>
-    );
-  }
-
+export default function MarketingHomePage() {
   return (
-    <>
-      <main className="min-h-screen bg-slate-50 px-5 pb-[calc(var(--bottom-nav-height)+env(safe-area-inset-bottom,0px)+2rem)] pt-8 text-slate-950 sm:px-8">
-        <div className="mx-auto max-w-6xl">
-          <header className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+    <div className="min-h-screen bg-white text-slate-950">
+      <MarketingHeader />
+
+      <main>
+        <section className="relative overflow-hidden border-b border-slate-200 bg-slate-50">
+          <div className="absolute left-1/2 top-0 h-[560px] w-[860px] -translate-x-1/2 rounded-full bg-gradient-to-br from-blue-200/45 via-violet-200/30 to-transparent blur-3xl" />
+
+          <div className="relative mx-auto grid max-w-7xl gap-14 px-5 pb-20 pt-16 sm:px-8 sm:pb-28 sm:pt-24 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
             <div>
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-950 text-white shadow-lg">
-                  <Sparkles className="h-5 w-5" />
-                </div>
-
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
-                    Complete Investment Operating System
-                  </p>
-
-                  <p className="mt-1 text-sm font-semibold text-slate-500">
-                    Portfolio intelligence, goals and market context
-                  </p>
-                </div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700">
+                <Sparkles className="h-4 w-4" />
+                Portfolio intelligence in one system
               </div>
 
-              <h1 className="mt-6 text-4xl font-black tracking-[-0.05em] sm:text-6xl">
-                Your investment
-                <span className="block text-slate-400">
-                  control centre
+              <h1 className="mt-7 max-w-4xl text-5xl font-black leading-[0.98] tracking-[-0.065em] text-slate-950 sm:text-7xl">
+                Take control of your
+                <span className="block bg-gradient-to-r from-blue-600 via-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
+                  investment journey
                 </span>
               </h1>
-            </div>
 
-            <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
-                <RefreshCw className="h-5 w-5" />
-              </div>
+              <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-600 sm:text-xl">
+                Investment OS brings your portfolio,
+                market context and long-term financial
+                goal together in one clear control
+                centre.
+              </p>
 
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
-                  System status
-                </p>
-
-                <p className="mt-1 text-sm font-bold text-slate-950">
-                  Portfolio loaded
-                </p>
-              </div>
-            </div>
-          </header>
-
-          <section className="mt-8 overflow-hidden rounded-[32px] bg-slate-950 p-7 text-white shadow-xl sm:p-10">
-            <div className="grid gap-9 lg:grid-cols-[1.3fr_0.7fr] lg:items-center">
-              <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded-full bg-emerald-500/20 px-3 py-1.5 text-xs font-bold text-emerald-300">
-                    {portfolioTone}
-                  </span>
-
-                  <span className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold text-slate-300">
-                    Project Million active
-                  </span>
-                </div>
-
-                <p className="mt-6 text-sm font-bold uppercase tracking-[0.16em] text-slate-400">
-                  Current portfolio value
-                </p>
-
-                <h2 className="mt-2 text-5xl font-black tracking-[-0.06em] sm:text-7xl">
-                  {formatCurrency(portfolioValue)}
-                </h2>
-
-                <div className="mt-5 flex flex-wrap items-center gap-3">
-                  <span
-                    className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-bold ${
-                      totalReturn >= 0
-                        ? "bg-emerald-500/20 text-emerald-300"
-                        : "bg-red-500/20 text-red-300"
-                    }`}
-                  >
-                    {totalReturn >= 0 ? (
-                      <TrendingUp className="h-4 w-4" />
-                    ) : (
-                      <TrendingDown className="h-4 w-4" />
-                    )}
-
-                    {totalReturn >= 0 ? "+" : ""}
-                    {formatCurrency(totalReturn)}
-                  </span>
-
-                  <span className="text-sm font-semibold text-slate-400">
-                    since purchase
-                  </span>
-                </div>
-
-                <p className="mt-6 max-w-3xl text-base leading-7 text-slate-300">
-                  Your portfolio remains positioned for long-term
-                  growth. The strongest improvement opportunity is
-                  reducing concentration by directing new investments
-                  towards diversified and defensive assets.
-                </p>
-
-                <div className="mt-8 flex flex-wrap gap-3">
-                  <Link
-                    href="/portfolio"
-                    className="inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-bold text-slate-950 shadow-sm transition hover:bg-slate-100"
-                  >
-                    View portfolio
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-
-                  <Link
-                    href="/upload"
-                    className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/15"
-                  >
-                    <Upload className="h-4 w-4" />
-                    Update portfolio
-                  </Link>
-                </div>
-              </div>
-
-              <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
-                      Project Million
-                    </p>
-
-                    <p className="mt-2 text-3xl font-black">
-                      {formatPercentage(goalProgress)}
-                    </p>
-                  </div>
-
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-500/20 text-violet-300">
-                    <Goal className="h-7 w-7" />
-                  </div>
-                </div>
-
-                <div className="mt-6 h-3 overflow-hidden rounded-full bg-white/10">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-blue-500 via-violet-500 to-fuchsia-500"
-                    style={{
-                      width: `${Math.max(goalProgress, 1)}%`,
-                    }}
-                  />
-                </div>
-
-                <div className="mt-6 space-y-4">
-                  <HeroDetailRow
-                    label="Target"
-                    value={formatCurrency(TARGET_VALUE)}
-                  />
-
-                  <HeroDetailRow
-                    label="Target year"
-                    value={String(TARGET_YEAR)}
-                  />
-
-                  <HeroDetailRow
-                    label="Annual contribution"
-                    value={formatCurrency(annualContribution)}
-                  />
-
-                  <HeroDetailRow
-                    label="Required return"
-                    value={formatPercentage(requiredAnnualReturn)}
-                  />
-                </div>
-
+              <div className="mt-9 flex flex-col gap-3 sm:flex-row">
                 <Link
-                  href="/goals"
-                  className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-violet-500 px-4 py-3 text-sm font-bold text-white transition hover:bg-violet-400"
+                  href="/upload"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-6 py-4 text-sm font-bold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-slate-800"
                 >
-                  Open goal engine
+                  Start with your portfolio
                   <ArrowRight className="h-4 w-4" />
                 </Link>
+
+                <Link
+                  href="/dashboard"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-4 text-sm font-bold text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-50"
+                >
+                  Explore the dashboard
+                  <ChevronRight className="h-4 w-4" />
+                </Link>
+              </div>
+
+              <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3">
+                <TrustPoint text="No financial advice" />
+                <TrustPoint text="Portfolio-first intelligence" />
+                <TrustPoint text="Built for private investors" />
               </div>
             </div>
-          </section>
 
-          <section className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {metrics.map((metric) => (
-              <MetricCard key={metric.label} {...metric} />
-            ))}
-          </section>
-
-          <section className="mt-7 grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-            <article className="rounded-[28px] border border-slate-200 bg-white p-7 shadow-sm sm:p-8">
-              <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-                <div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-700">
-                      <PieChart className="h-5 w-5" />
-                    </div>
-
+            <div className="relative">
+              <div className="rounded-[32px] border border-slate-200 bg-white p-4 shadow-2xl shadow-slate-300/50 sm:p-6">
+                <div className="overflow-hidden rounded-[26px] bg-slate-950 p-6 text-white sm:p-8">
+                  <div className="flex items-start justify-between gap-5">
                     <div>
                       <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
-                        Portfolio allocation
+                        Investment control centre
                       </p>
 
-                      <h2 className="mt-1 text-2xl font-bold">
-                        Largest positions
-                      </h2>
+                      <p className="mt-3 text-4xl font-black tracking-[-0.05em]">
+                        €87,799
+                      </p>
+
+                      <p className="mt-2 text-sm text-slate-400">
+                        Illustrative portfolio value
+                      </p>
+                    </div>
+
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-300">
+                      <TrendingUp className="h-6 w-6" />
+                    </div>
+                  </div>
+
+                  <div className="mt-7 grid grid-cols-2 gap-3">
+                    <PreviewMetric
+                      label="Goal progress"
+                      value="8.8%"
+                    />
+
+                    <PreviewMetric
+                      label="Portfolio health"
+                      value="64/100"
+                    />
+
+                    <PreviewMetric
+                      label="Active holdings"
+                      value="5"
+                    />
+
+                    <PreviewMetric
+                      label="Main risk"
+                      value="Concentration"
+                    />
+                  </div>
+
+                  <div className="mt-6 rounded-2xl bg-white/10 p-5">
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
+                          Project Million
+                        </p>
+
+                        <p className="mt-2 text-xl font-bold">
+                          €1,000,000 target
+                        </p>
+                      </div>
+
+                      <Goal className="h-7 w-7 text-violet-300" />
+                    </div>
+
+                    <div className="mt-5 h-2.5 overflow-hidden rounded-full bg-white/10">
+                      <div className="h-full w-[9%] rounded-full bg-gradient-to-r from-blue-500 to-violet-500" />
                     </div>
                   </div>
                 </div>
 
-                <Link
-                  href="/portfolio"
-                  className="inline-flex items-center gap-2 text-sm font-bold text-slate-600 transition hover:text-slate-950"
-                >
-                  View all
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
+                <div className="mt-4 grid gap-4 sm:grid-cols-3">
+                  <MiniPreviewCard
+                    icon={BriefcaseBusiness}
+                    title="Portfolio"
+                    text="Holdings and allocation"
+                  />
+
+                  <MiniPreviewCard
+                    icon={Newspaper}
+                    title="Briefing"
+                    text="Relevant market context"
+                  />
+
+                  <MiniPreviewCard
+                    icon={Target}
+                    title="Goals"
+                    text="Track long-term progress"
+                  />
+                </div>
               </div>
 
-              <div className="mt-7 space-y-4">
-                {sortedHoldings.slice(0, 5).map((holding) => {
-                  const value = getHoldingValue(holding);
+              <div className="absolute -bottom-7 -left-5 hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-xl md:block">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
+                    <BellRing className="h-5 w-5" />
+                  </div>
 
-                  const allocation =
-                    portfolioValue > 0
-                      ? (value / portfolioValue) * 100
-                      : 0;
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">
+                      Daily intelligence
+                    </p>
+
+                    <p className="mt-1 text-sm font-bold">
+                      Portfolio briefing ready
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section
+          id="features"
+          className="scroll-mt-24 px-5 py-20 sm:px-8 sm:py-28"
+        >
+          <div className="mx-auto max-w-7xl">
+            <SectionHeading
+              eyebrow="One investment system"
+              title="Everything you need to understand your portfolio"
+              description="Replace scattered spreadsheets, generic market news and disconnected goal calculations with one organised investment workspace."
+            />
+
+            <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+              {features.map((feature) => {
+                const Icon = feature.icon;
+
+                return (
+                  <article
+                    key={feature.title}
+                    className="rounded-[28px] border border-slate-200 bg-white p-7 shadow-sm transition hover:-translate-y-1 hover:shadow-xl"
+                  >
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-white">
+                      <Icon className="h-6 w-6" />
+                    </div>
+
+                    <h3 className="mt-6 text-xl font-bold tracking-[-0.02em]">
+                      {feature.title}
+                    </h3>
+
+                    <p className="mt-3 text-sm leading-7 text-slate-600">
+                      {feature.description}
+                    </p>
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        <section
+          id="how-it-works"
+          className="scroll-mt-24 bg-slate-950 px-5 py-20 text-white sm:px-8 sm:py-28"
+        >
+          <div className="mx-auto max-w-7xl">
+            <div className="grid gap-12 lg:grid-cols-[0.75fr_1.25fr] lg:items-start">
+              <div>
+                <p className="text-sm font-bold uppercase tracking-[0.18em] text-blue-300">
+                  How it works
+                </p>
+
+                <h2 className="mt-4 text-4xl font-black tracking-[-0.045em] sm:text-5xl">
+                  From portfolio screenshot to daily
+                  decision support
+                </h2>
+
+                <p className="mt-5 text-lg leading-8 text-slate-300">
+                  Investment OS is designed to remove
+                  friction. Start with what you already
+                  have and build a clearer investment
+                  process around it.
+                </p>
+              </div>
+
+              <div className="grid gap-5">
+                {workflowSteps.map((step) => {
+                  const Icon = step.icon;
 
                   return (
-                    <Link
-                      key={holding.id}
-                      href={`/portfolio/${holding.symbol.toLowerCase()}`}
-                      className="block rounded-2xl border border-slate-200 bg-slate-50 p-5 transition hover:-translate-y-0.5 hover:bg-white hover:shadow-md"
+                    <article
+                      key={step.number}
+                      className="grid gap-5 rounded-[28px] border border-white/10 bg-white/5 p-6 sm:grid-cols-[auto_1fr_auto] sm:items-center"
                     >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex min-w-0 items-center gap-4">
-                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-950 text-xs font-black text-white">
-                            {holding.symbol.slice(0, 5)}
-                          </div>
+                      <span className="text-sm font-black text-blue-300">
+                        {step.number}
+                      </span>
 
-                          <div className="min-w-0">
-                            <p className="truncate font-bold text-slate-950">
-                              {holding.name || holding.symbol}
-                            </p>
+                      <div>
+                        <h3 className="text-xl font-bold">
+                          {step.title}
+                        </h3>
 
-                            <p className="mt-1 text-xs font-semibold text-slate-500">
-                              {getHoldingRole(holding.symbol)}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="shrink-0 text-right">
-                          <p className="font-bold text-slate-950">
-                            {formatCurrency(
-                              value,
-                              holding.currency
-                            )}
-                          </p>
-
-                          <span
-                            className={`mt-1 inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold ${getAllocationTone(
-                              allocation
-                            )}`}
-                          >
-                            {formatPercentage(allocation)}
-                          </span>
-                        </div>
+                        <p className="mt-2 text-sm leading-6 text-slate-300">
+                          {step.description}
+                        </p>
                       </div>
 
-                      <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-200">
-                        <div
-                          className="h-full rounded-full bg-slate-950"
-                          style={{
-                            width: `${Math.min(allocation, 100)}%`,
-                          }}
-                        />
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10">
+                        <Icon className="h-6 w-6" />
                       </div>
-                    </Link>
+                    </article>
                   );
                 })}
               </div>
-            </article>
-
-            <div className="space-y-6">
-              <article className="rounded-[28px] bg-slate-950 p-7 text-white shadow-lg">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10">
-                    <AlertTriangle className="h-5 w-5" />
-                  </div>
-
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
-                      Main portfolio risk
-                    </p>
-
-                    <h2 className="mt-1 text-2xl font-bold">
-                      Concentration
-                    </h2>
-                  </div>
-                </div>
-
-                {largestHolding ? (
-                  <>
-                    <p className="mt-5 leading-7 text-slate-300">
-                      {largestHolding.symbol} currently represents{" "}
-                      <strong className="text-white">
-                        {formatPercentage(largestHoldingAllocation)}
-                      </strong>{" "}
-                      of the complete portfolio. This holding remains
-                      the dominant source of both return potential and
-                      volatility.
-                    </p>
-
-                    <div className="mt-6 rounded-2xl bg-white/10 p-5">
-                      <div className="flex items-center justify-between gap-4">
-                        <div>
-                          <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
-                            Largest position
-                          </p>
-
-                          <p className="mt-1 text-xl font-bold">
-                            {largestHolding.symbol}
-                          </p>
-                        </div>
-
-                        <p className="text-3xl font-black">
-                          {formatPercentage(
-                            largestHoldingAllocation
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <p className="mt-5 text-slate-300">
-                    Upload a portfolio to calculate concentration.
-                  </p>
-                )}
-
-                <Link
-                  href="/portfolio"
-                  className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-white"
-                >
-                  Review concentration
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </article>
-
-              <article className="rounded-[28px] border border-slate-200 bg-white p-7 shadow-sm">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700">
-                    <ShieldCheck className="h-5 w-5" />
-                  </div>
-
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
-                      Diversification score
-                    </p>
-
-                    <h2 className="mt-1 text-2xl font-bold">
-                      {diversificationScore}/100
-                    </h2>
-                  </div>
-                </div>
-
-                <div className="mt-6 h-3 overflow-hidden rounded-full bg-slate-100">
-                  <div
-                    className={`h-full rounded-full ${
-                      diversificationScore >= 80
-                        ? "bg-emerald-500"
-                        : diversificationScore >= 60
-                          ? "bg-amber-500"
-                          : "bg-red-500"
-                    }`}
-                    style={{
-                      width: `${diversificationScore}%`,
-                    }}
-                  />
-                </div>
-
-                <p className="mt-5 text-sm leading-6 text-slate-500">
-                  Broad equities, gold and thematic positions improve
-                  diversification, but the large Bitcoin allocation
-                  still dominates the portfolio.
-                </p>
-              </article>
             </div>
-          </section>
+          </div>
+        </section>
 
-          <section className="mt-7 grid gap-6 lg:grid-cols-3">
-            <QuickActionCard
-              href="/portfolio"
-              icon={<BriefcaseBusiness className="h-6 w-6" />}
-              eyebrow="Portfolio"
-              title="Analyse every holding"
-              description="View allocation, returns, thesis, risks and monitoring for every investment."
-              action="Open portfolio"
-              tone="dark"
-            />
-
-            <QuickActionCard
-              href="/briefing"
-              icon={<Newspaper className="h-6 w-6" />}
-              eyebrow="Daily intelligence"
-              title="Review market impact"
-              description="See the market and macro developments that matter most for your holdings."
-              action="Read briefing"
-              tone="light"
-            />
-
-            <QuickActionCard
-              href="/goals"
-              icon={<Target className="h-6 w-6" />}
-              eyebrow="Project Million"
-              title="Track the €1M mission"
-              description="Compare scenarios, change contributions and monitor your required growth."
-              action="Open goals"
-              tone="gradient"
-            />
-          </section>
-
-          <section className="mt-7 grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-            <article className="rounded-[28px] border border-slate-200 bg-white p-7 shadow-sm">
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-50 text-amber-700">
-                  <Bitcoin className="h-5 w-5" />
-                </div>
-
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
-                    Investment coach
-                  </p>
-
-                  <h2 className="mt-1 text-2xl font-bold">
-                    Current priority
-                  </h2>
-                </div>
+        <section className="px-5 py-20 sm:px-8 sm:py-28">
+          <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-2 lg:items-center">
+            <div className="rounded-[32px] bg-gradient-to-br from-blue-600 to-violet-700 p-8 text-white shadow-xl sm:p-10">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15">
+                <Newspaper className="h-7 w-7" />
               </div>
 
-              <p className="mt-5 leading-7 text-slate-600">
-                Keep the main Bitcoin position intact, but direct new
-                capital primarily towards diversified and defensive
-                holdings. This improves portfolio balance without
-                sacrificing long-term upside.
+              <p className="mt-7 text-sm font-bold uppercase tracking-[0.16em] text-blue-100">
+                Personalised daily briefing
               </p>
 
-              <div className="mt-6 space-y-3">
-                <CoachRow
-                  number="1"
-                  text="Prioritise broad global diversification"
-                />
+              <h2 className="mt-3 text-3xl font-black tracking-[-0.04em] sm:text-4xl">
+                Market news becomes useful when it is
+                connected to your holdings
+              </h2>
 
-                <CoachRow
-                  number="2"
-                  text="Build defensive assets gradually"
-                />
+              <p className="mt-5 leading-8 text-blue-100">
+                Follow macroeconomic developments,
+                central-bank policy and holding-specific
+                news with a clear explanation of the
+                possible portfolio impact.
+              </p>
 
-                <CoachRow
-                  number="3"
-                  text="Avoid increasing Bitcoin concentration"
-                />
+              <div className="mt-8 grid gap-3 sm:grid-cols-2">
+                <BriefingPoint text="Macro developments" />
+                <BriefingPoint text="Holding-specific news" />
+                <BriefingPoint text="Portfolio impact" />
+                <BriefingPoint text="Upcoming events" />
               </div>
-            </article>
+            </div>
 
-            <article className="rounded-[28px] border border-slate-200 bg-white p-7 shadow-sm">
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-50 text-violet-700">
-                    <CalendarDays className="h-5 w-5" />
-                  </div>
+            <div>
+              <p className="text-sm font-bold uppercase tracking-[0.18em] text-violet-600">
+                Built around your portfolio
+              </p>
 
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
-                      Today&apos;s overview
-                    </p>
+              <h2 className="mt-4 text-4xl font-black tracking-[-0.045em] sm:text-5xl">
+                More context. Less noise.
+              </h2>
 
-                    <h2 className="mt-1 text-2xl font-bold">
-                      Investment OS signals
-                    </h2>
-                  </div>
-                </div>
+              <p className="mt-5 text-lg leading-8 text-slate-600">
+                Generic financial news leaves the most
+                important question unanswered: what does
+                this mean for your investments?
+              </p>
 
-                <span className="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">
-                  Updated
-                </span>
-              </div>
-
-              <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                <SignalCard
-                  icon={<TrendingUp className="h-5 w-5" />}
-                  label="Portfolio outlook"
-                  value={portfolioTone}
-                  description="Growth assets remain supported."
-                  tone="positive"
-                />
-
-                <SignalCard
-                  icon={<Layers3 className="h-5 w-5" />}
-                  label="Main risk"
-                  value={concentrationRisk}
-                  description="One position dominates portfolio movement."
-                  tone="warning"
-                />
-
-                <SignalCard
-                  icon={
-                    <ChartNoAxesColumnIncreasing className="h-5 w-5" />
-                  }
-                  label="Goal requirement"
-                  value={formatPercentage(requiredAnnualReturn)}
-                  description="Average annual growth required."
-                  tone={
-                    requiredAnnualReturn <= 15
-                      ? "positive"
-                      : "warning"
-                  }
-                />
-
-                <SignalCard
-                  icon={<WalletCards className="h-5 w-5" />}
-                  label="Best diversifier"
-                  value={
-                    holdings.some(
-                      (holding) =>
-                        holding.symbol.toUpperCase() === "VWCE"
-                    )
-                      ? "VWCE"
-                      : "Broad equities"
-                  }
-                  description="Improves portfolio resilience."
-                  tone="neutral"
-                />
-              </div>
-            </article>
-          </section>
-
-          <section className="mt-7 rounded-[28px] bg-gradient-to-br from-blue-600 to-violet-700 p-7 text-white shadow-lg sm:p-8">
-            <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
-              <div>
-                <div className="flex items-center gap-2 text-blue-100">
-                  <Sparkles className="h-5 w-5" />
-
-                  <p className="text-sm font-bold uppercase tracking-[0.14em]">
-                    Complete Investment OS
-                  </p>
-                </div>
-
-                <h2 className="mt-3 text-2xl font-bold sm:text-3xl">
-                  Your portfolio, strategy and goal in one system
-                </h2>
-
-                <p className="mt-3 max-w-2xl leading-7 text-blue-100">
-                  Upload a new portfolio whenever your positions change.
-                  The dashboard, holding pages and Project Million
-                  projections will update automatically.
-                </p>
+              <div className="mt-8 space-y-4">
+                <BenefitRow text="Focus on developments connected to your holdings" />
+                <BenefitRow text="Separate short-term volatility from thesis-changing news" />
+                <BenefitRow text="See which positions are most affected" />
+                <BenefitRow text="Keep your long-term goal visible during market moves" />
               </div>
 
               <Link
-                href="/upload"
-                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-bold text-slate-950 shadow-sm"
+                href="/briefing"
+                className="mt-8 inline-flex items-center gap-2 text-sm font-bold text-violet-700"
               >
-                <Upload className="h-4 w-4" />
-                Update portfolio
+                Preview portfolio briefing
+                <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
-          </section>
+          </div>
+        </section>
 
-          <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5">
-            <p className="text-sm font-bold text-slate-900">
-              Important information
-            </p>
+        <section
+          id="pricing"
+          className="scroll-mt-24 border-y border-slate-200 bg-slate-50 px-5 py-20 sm:px-8 sm:py-28"
+        >
+          <div className="mx-auto max-w-6xl">
+            <SectionHeading
+              eyebrow="Simple beta access"
+              title="Start building your Investment OS"
+              description="The first beta will focus on delivering a stable portfolio, briefing and goal-tracking experience before introducing additional premium layers."
+            />
 
-            <p className="mt-2 text-sm leading-6 text-slate-500">
-              Investment OS is a decision-support and monitoring tool.
-              It does not provide personal financial advice and cannot
-              guarantee future investment results.
-            </p>
-          </section>
-        </div>
+            <div className="mx-auto mt-12 max-w-2xl overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-xl">
+              <div className="bg-slate-950 p-8 text-white sm:p-10">
+                <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-start">
+                  <div>
+                    <p className="text-sm font-bold uppercase tracking-[0.16em] text-violet-300">
+                      Early access beta
+                    </p>
+
+                    <h3 className="mt-3 text-3xl font-black">
+                      Investment OS Beta
+                    </h3>
+
+                    <p className="mt-3 max-w-lg leading-7 text-slate-300">
+                      Join the product while the final
+                      account, data and payment
+                      infrastructure is being completed.
+                    </p>
+                  </div>
+
+                  <div className="text-left sm:text-right">
+                    <p className="text-4xl font-black">
+                      Free
+                    </p>
+
+                    <p className="mt-1 text-sm text-slate-400">
+                      During private testing
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-8 sm:p-10">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {benefits.map((benefit) => (
+                    <BenefitRow
+                      key={benefit}
+                      text={benefit}
+                    />
+                  ))}
+                </div>
+
+                <Link
+                  href="/upload"
+                  className="mt-9 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-6 py-4 text-sm font-bold text-white transition hover:bg-slate-800"
+                >
+                  Start with your portfolio
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+
+                <p className="mt-4 text-center text-xs leading-5 text-slate-500">
+                  Pricing for the public beta will be
+                  communicated before paid subscriptions
+                  are enabled.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section
+          id="faq"
+          className="scroll-mt-24 px-5 py-20 sm:px-8 sm:py-28"
+        >
+          <div className="mx-auto max-w-5xl">
+            <SectionHeading
+              eyebrow="Frequently asked questions"
+              title="Clear answers before you get started"
+              description="The product is still in active development. These answers describe the intended beta experience and current limitations."
+            />
+
+            <div className="mt-12 space-y-4">
+              {faqItems.map((item) => (
+                <details
+                  key={item.question}
+                  className="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+                >
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-bold text-slate-950">
+                    {item.question}
+
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-lg text-slate-600 transition group-open:rotate-45">
+                      +
+                    </span>
+                  </summary>
+
+                  <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-600">
+                    {item.answer}
+                  </p>
+                </details>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="bg-slate-950 px-5 py-20 text-white sm:px-8 sm:py-24">
+          <div className="mx-auto max-w-7xl">
+            <div className="grid gap-5 md:grid-cols-3">
+              {trustItems.map((item) => {
+                const Icon = item.icon;
+
+                return (
+                  <article
+                    key={item.title}
+                    className="rounded-[28px] border border-white/10 bg-white/5 p-7"
+                  >
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10">
+                      <Icon className="h-6 w-6" />
+                    </div>
+
+                    <h3 className="mt-6 text-xl font-bold">
+                      {item.title}
+                    </h3>
+
+                    <p className="mt-3 text-sm leading-7 text-slate-300">
+                      {item.description}
+                    </p>
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        <section
+          id="contact"
+          className="scroll-mt-24 px-5 py-20 sm:px-8 sm:py-28"
+        >
+          <div className="mx-auto max-w-5xl overflow-hidden rounded-[36px] bg-gradient-to-br from-blue-600 via-violet-600 to-fuchsia-600 p-8 text-white shadow-2xl sm:p-12">
+            <div className="flex flex-col justify-between gap-10 lg:flex-row lg:items-center">
+              <div>
+                <p className="text-sm font-bold uppercase tracking-[0.17em] text-blue-100">
+                  Start building clarity
+                </p>
+
+                <h2 className="mt-4 max-w-3xl text-4xl font-black tracking-[-0.05em] sm:text-5xl">
+                  Your investments deserve more than a
+                  collection of disconnected tools
+                </h2>
+
+                <p className="mt-5 max-w-2xl text-lg leading-8 text-blue-100">
+                  Bring your portfolio, market context
+                  and financial goal together in one
+                  Investment Operating System.
+                </p>
+              </div>
+
+              <div className="flex shrink-0 flex-col gap-3">
+                <Link
+                  href="/upload"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-6 py-4 text-sm font-bold text-slate-950 shadow-lg"
+                >
+                  Start free
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+
+                <a
+                  href="mailto:hello@investmentos.app"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/10 px-6 py-4 text-sm font-bold text-white"
+                >
+                  <Mail className="h-4 w-4" />
+                  Contact us
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
 
-      <BottomNavigation />
-    </>
-  );
-}
+      <footer className="border-t border-slate-200 bg-slate-50 px-5 py-10 sm:px-8">
+        <div className="mx-auto flex max-w-7xl flex-col justify-between gap-8 lg:flex-row lg:items-center">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-950 text-white">
+              <Sparkles className="h-5 w-5" />
+            </div>
 
-function HeroDetailRow({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-4 last:border-none last:pb-0">
-      <span className="text-sm text-slate-400">{label}</span>
+            <div>
+              <p className="font-black text-slate-950">
+                Investment OS
+              </p>
 
-      <span className="text-right text-sm font-bold text-white">
-        {value}
-      </span>
+              <p className="text-xs text-slate-500">
+                Portfolio intelligence, goals and market
+                context.
+              </p>
+            </div>
+          </div>
+
+          <nav className="flex flex-wrap gap-x-6 gap-y-3 text-sm font-semibold text-slate-600">
+            <Link href="#features">Features</Link>
+            <Link href="#pricing">Pricing</Link>
+            <Link href="#faq">FAQ</Link>
+            <Link href="#contact">Contact</Link>
+            <Link href="/dashboard">Dashboard</Link>
+          </nav>
+
+          <p className="max-w-md text-xs leading-5 text-slate-500 lg:text-right">
+            Investment OS is a decision-support and
+            monitoring tool. It does not provide personal
+            financial advice or guarantee investment
+            results.
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }
 
-function MetricCard({
-  icon,
-  label,
-  value,
-  description,
-  tone,
-}: PortfolioMetric) {
-  const iconClasses = {
-    neutral: "bg-slate-100 text-slate-700",
-    positive: "bg-emerald-50 text-emerald-700",
-    negative: "bg-red-50 text-red-700",
-    warning: "bg-amber-50 text-amber-700",
-  };
-
-  const descriptionClasses = {
-    neutral: "text-slate-500",
-    positive: "text-emerald-600",
-    negative: "text-red-600",
-    warning: "text-amber-600",
-  };
-
-  return (
-    <article className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-      <div
-        className={`flex h-11 w-11 items-center justify-center rounded-2xl ${iconClasses[tone]}`}
-      >
-        {icon}
-      </div>
-
-      <p className="mt-5 text-sm font-semibold text-slate-500">
-        {label}
-      </p>
-
-      <p className="mt-1 text-2xl font-bold tracking-[-0.03em] text-slate-950">
-        {value}
-      </p>
-
-      <p
-        className={`mt-1 text-xs font-bold ${descriptionClasses[tone]}`}
-      >
-        {description}
-      </p>
-    </article>
-  );
-}
-
-function QuickActionCard({
-  href,
-  icon,
+function SectionHeading({
   eyebrow,
   title,
   description,
-  action,
-  tone,
 }: {
-  href: string;
-  icon: React.ReactNode;
   eyebrow: string;
   title: string;
   description: string;
-  action: string;
-  tone: "dark" | "light" | "gradient";
 }) {
-  const containerClasses = {
-    dark: "bg-slate-950 text-white",
-    light: "border border-slate-200 bg-white text-slate-950",
-    gradient:
-      "bg-gradient-to-br from-blue-600 to-violet-700 text-white",
-  };
-
-  const iconClasses = {
-    dark: "bg-white/10 text-white",
-    light: "bg-slate-100 text-slate-700",
-    gradient: "bg-white/15 text-white",
-  };
-
-  const eyebrowClasses = {
-    dark: "text-slate-400",
-    light: "text-slate-400",
-    gradient: "text-blue-100",
-  };
-
-  const descriptionClasses = {
-    dark: "text-slate-300",
-    light: "text-slate-500",
-    gradient: "text-blue-100",
-  };
-
   return (
-    <Link
-      href={href}
-      className={`group rounded-[28px] p-7 shadow-sm transition hover:-translate-y-1 hover:shadow-lg ${containerClasses[tone]}`}
-    >
-      <div
-        className={`flex h-12 w-12 items-center justify-center rounded-2xl ${iconClasses[tone]}`}
-      >
-        {icon}
-      </div>
-
-      <p
-        className={`mt-6 text-xs font-bold uppercase tracking-[0.16em] ${eyebrowClasses[tone]}`}
-      >
+    <div className="mx-auto max-w-3xl text-center">
+      <p className="text-sm font-bold uppercase tracking-[0.18em] text-blue-600">
         {eyebrow}
       </p>
 
-      <h3 className="mt-2 text-2xl font-bold">{title}</h3>
+      <h2 className="mt-4 text-4xl font-black tracking-[-0.045em] text-slate-950 sm:text-5xl">
+        {title}
+      </h2>
 
-      <p
-        className={`mt-3 min-h-[72px] text-sm leading-6 ${descriptionClasses[tone]}`}
-      >
+      <p className="mt-5 text-lg leading-8 text-slate-600">
         {description}
       </p>
-
-      <div className="mt-6 flex items-center gap-2 text-sm font-bold">
-        {action}
-
-        <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
-      </div>
-    </Link>
+    </div>
   );
 }
 
-function CoachRow({
-  number,
+function TrustPoint({
   text,
 }: {
-  number: string;
   text: string;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl bg-slate-50 p-4">
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-950 font-bold text-white">
-        {number}
-      </div>
+    <div className="flex items-center gap-2 text-sm font-semibold text-slate-600">
+      <Check className="h-4 w-4 text-emerald-600" />
+      {text}
+    </div>
+  );
+}
 
-      <p className="text-sm font-semibold text-slate-700">
+function PreviewMetric({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-2xl bg-white/5 p-4">
+      <p className="text-xs font-semibold text-slate-400">
+        {label}
+      </p>
+
+      <p className="mt-2 font-bold text-white">
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function MiniPreviewCard({
+  icon: Icon,
+  title,
+  text,
+}: {
+  icon: React.ElementType;
+  title: string;
+  text: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+      <Icon className="h-5 w-5 text-slate-700" />
+
+      <p className="mt-3 text-sm font-bold text-slate-950">
+        {title}
+      </p>
+
+      <p className="mt-1 text-xs leading-5 text-slate-500">
         {text}
       </p>
     </div>
   );
 }
 
-function SignalCard({
-  icon,
-  label,
-  value,
-  description,
-  tone,
+function BriefingPoint({
+  text,
 }: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  description: string;
-  tone: "neutral" | "positive" | "warning";
+  text: string;
 }) {
-  const iconClasses = {
-    neutral: "bg-slate-100 text-slate-700",
-    positive: "bg-emerald-50 text-emerald-700",
-    warning: "bg-amber-50 text-amber-700",
-  };
-
   return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-      <div
-        className={`flex h-10 w-10 items-center justify-center rounded-xl ${iconClasses[tone]}`}
-      >
-        {icon}
+    <div className="flex items-center gap-3 rounded-2xl bg-white/10 p-4">
+      <CheckCircleIcon />
+
+      <span className="text-sm font-semibold">
+        {text}
+      </span>
+    </div>
+  );
+}
+
+function CheckCircleIcon() {
+  return (
+    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-violet-700">
+      <Check className="h-4 w-4" />
+    </div>
+  );
+}
+
+function BenefitRow({
+  text,
+}: {
+  text: string;
+}) {
+  return (
+    <div className="flex items-start gap-3">
+      <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+        <Check className="h-3.5 w-3.5" />
       </div>
 
-      <p className="mt-4 text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
-        {label}
-      </p>
-
-      <p className="mt-2 text-xl font-bold text-slate-950">
-        {value}
-      </p>
-
-      <p className="mt-2 text-sm leading-6 text-slate-500">
-        {description}
+      <p className="text-sm font-semibold leading-6 text-slate-700">
+        {text}
       </p>
     </div>
   );

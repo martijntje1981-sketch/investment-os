@@ -1,136 +1,200 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
 import PageNavigation from "../../components/PageNavigation";
 
-type BriefingItem = {
+type Impact = "Positive" | "Neutral" | "Negative";
+type Confidence = "High" | "Medium" | "Low";
+
+type BriefingNewsItem = {
+  id: string;
   title: string;
   category: string;
-  impact: "Positive" | "Neutral" | "Negative";
   summary: string;
   portfolioEffect: string;
+  impact: Impact;
+  confidence: Confidence;
   holdings: string[];
-  time: string;
+  publishedAt: string | null;
+  sourceUrl: string | null;
 };
 
-const briefingItems: BriefingItem[] = [
+type BriefingEvent = {
+  id: string;
+  date: string;
+  country: string;
+  title: string;
+  impact: "High impact" | "Medium impact";
+  description: string;
+  holdings: string[];
+};
+
+type BriefingResponse = {
+  success: boolean;
+  generatedAt: string;
+
+  portfolio: {
+    symbols: string[];
+    holdingCount: number;
+  };
+
+  summary: {
+    outlook: string;
+    mainRisk: string;
+    mainOpportunity: string;
+    keyFocus: string;
+  };
+
+  macroNews: BriefingNewsItem[];
+  portfolioNews: BriefingNewsItem[];
+
+  newsByHolding: Record<
+    string,
+    BriefingNewsItem[]
+  >;
+
+  upcomingEvents: BriefingEvent[];
+  errors: string[];
+
+  error?: string;
+};
+
+type DisplaySignal = {
+  label: string;
+  value: string;
+  description: string;
+  tone: "positive" | "warning" | "neutral";
+};
+
+const HOLDING_ORDER = [
+  "IB1T",
+  "STRC",
+  "AIFS",
+  "NUKL",
+  "VWCE",
+  "PPFB",
+];
+
+const HOLDING_NAMES: Record<string, string> = {
+  IB1T: "Bitcoin",
+  STRC: "Income & Bitcoin",
+  AIFS: "AI Infrastructure",
+  NUKL: "Uranium & Nuclear",
+  VWCE: "Global Equities",
+  PPFB: "Gold",
+};
+
+const fallbackNews: BriefingNewsItem[] = [
   {
-    title: "Bitcoin remains supported by improving market liquidity",
+    id: "fallback-bitcoin",
+    title:
+      "Bitcoin remains the largest driver of portfolio volatility",
     category: "Bitcoin",
-    impact: "Positive",
     summary:
-      "Digital assets are benefiting from stronger risk appetite and improving liquidity conditions. Bitcoin remains volatile, but the broader trend is constructive.",
+      "Bitcoin price movements continue to have an outsized effect on the total portfolio because IB1T remains the largest position.",
     portfolioEffect:
-      "Positive for IB1T, although the large portfolio weight means volatility can still dominate the total daily result.",
-    holdings: ["IB1T"],
-    time: "Today",
-  },
-  {
-    title: "Global equity markets remain resilient",
-    category: "Equities",
-    impact: "Positive",
-    summary:
-      "Large global companies continue to benefit from earnings growth, investment in artificial intelligence and relatively stable economic demand.",
-    portfolioEffect:
-      "Supportive for VWCE and AIFS. These positions improve diversification beyond Bitcoin.",
-    holdings: ["VWCE", "AIFS"],
-    time: "Today",
-  },
-  {
-    title: "Uranium investment case remains structurally strong",
-    category: "Energy transition",
-    impact: "Positive",
-    summary:
-      "Growing electricity demand and renewed interest in nuclear energy continue to support the long-term uranium investment case.",
-    portfolioEffect:
-      "Constructive for NUKL, but the position can remain sensitive to commodity sentiment and political developments.",
-    holdings: ["NUKL"],
-    time: "This week",
-  },
-  {
-    title: "Interest-rate expectations remain an important market driver",
-    category: "Macro",
+      "IB1T and STRC remain highly sensitive to Bitcoin price direction, liquidity and broader risk sentiment.",
     impact: "Neutral",
-    summary:
-      "Markets continue to react strongly to inflation data and expectations for central-bank policy. Lower rates would generally support growth assets.",
-    portfolioEffect:
-      "Falling rates would likely support IB1T, AIFS and VWCE. Higher-for-longer rates remain the main macro risk.",
-    holdings: ["IB1T", "AIFS", "VWCE"],
-    time: "This week",
+    confidence: "High",
+    holdings: ["IB1T", "STRC"],
+    publishedAt: null,
+    sourceUrl: null,
   },
   {
-    title: "Gold continues to provide defensive portfolio support",
-    category: "Defensive assets",
+    id: "fallback-macro",
+    title:
+      "Interest-rate expectations remain important for growth assets",
+    category: "Macro & markets",
+    summary:
+      "Changes in inflation, central-bank policy and bond yields may influence Bitcoin, global equities, AI infrastructure and gold.",
+    portfolioEffect:
+      "Lower yields may support IB1T, AIFS and VWCE, while unexpected inflation could increase portfolio volatility.",
     impact: "Neutral",
-    summary:
-      "Gold remains useful as protection against geopolitical uncertainty, currency weakness and unexpected inflation.",
-    portfolioEffect:
-      "PPFB lowers overall portfolio dependency on growth assets, although its current weight remains relatively small.",
-    holdings: ["PPFB"],
-    time: "This week",
-  },
-  {
-    title: "Income position adds cash-flow diversification",
-    category: "Income",
-    impact: "Positive",
-    summary:
-      "The income-focused position adds a different return source to the portfolio and can help reduce dependence on price appreciation alone.",
-    portfolioEffect:
-      "STRC increases portfolio income, but issuer risk and product structure should remain under active review.",
-    holdings: ["STRC"],
-    time: "This month",
+    confidence: "High",
+    holdings: [
+      "IB1T",
+      "AIFS",
+      "VWCE",
+      "PPFB",
+    ],
+    publishedAt: null,
+    sourceUrl: null,
   },
 ];
 
-const upcomingEvents = [
-  {
-    date: "Next release",
-    title: "US inflation data",
-    impact: "High impact",
-    description:
-      "Could influence rate expectations, the US dollar, equities and Bitcoin.",
-  },
-  {
-    date: "This week",
-    title: "Central-bank commentary",
-    impact: "Medium impact",
-    description:
-      "Comments from policymakers may change expectations for future interest-rate decisions.",
-  },
-  {
-    date: "Ongoing",
-    title: "Bitcoin liquidity and ETF flows",
-    impact: "High impact",
-    description:
-      "Sustained inflows may support Bitcoin, while large outflows could increase downside pressure.",
-  },
-];
+function normaliseTitle(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ");
+}
 
-const portfolioSignals = [
-  {
-    label: "Portfolio outlook",
-    value: "Constructive",
-    description: "Growth assets remain supported, but concentration is high.",
-    tone: "positive",
-  },
-  {
-    label: "Macro environment",
-    value: "Neutral-positive",
-    description: "Liquidity is improving, while rate uncertainty remains.",
-    tone: "positive",
-  },
-  {
-    label: "Main risk",
-    value: "Concentration",
-    description: "IB1T remains the dominant source of portfolio volatility.",
-    tone: "warning",
-  },
-  {
-    label: "Best diversifier",
-    value: "VWCE",
-    description: "Broad global exposure strengthens portfolio resilience.",
-    tone: "neutral",
-  },
-];
+function deduplicateNews(
+  items: BriefingNewsItem[],
+) {
+  const seen = new Set<string>();
 
-function impactClasses(impact: BriefingItem["impact"]) {
+  return items.filter((item) => {
+    const title = normaliseTitle(item.title);
+
+    if (!title || seen.has(title)) {
+      return false;
+    }
+
+    seen.add(title);
+    return true;
+  });
+}
+
+function selectPortfolioNews(
+  items: BriefingNewsItem[],
+) {
+  const uniqueItems = deduplicateNews(items);
+  const selected: BriefingNewsItem[] = [];
+  const holdingCounts = new Map<string, number>();
+
+  for (const item of uniqueItems) {
+    const linkedHoldings = item.holdings.filter(
+      (holding) =>
+        HOLDING_ORDER.includes(holding),
+    );
+
+    if (linkedHoldings.length === 0) {
+      continue;
+    }
+
+    const canUseItem = linkedHoldings.some(
+      (holding) =>
+        (holdingCounts.get(holding) ?? 0) < 2,
+    );
+
+    if (!canUseItem) {
+      continue;
+    }
+
+    selected.push(item);
+
+    for (const holding of linkedHoldings) {
+      const currentCount =
+        holdingCounts.get(holding) ?? 0;
+
+      if (currentCount < 2) {
+        holdingCounts.set(
+          holding,
+          currentCount + 1,
+        );
+      }
+    }
+
+    if (selected.length >= 10) {
+      break;
+    }
+  }
+
+  return selected;
+}
+
+function impactClasses(impact: Impact) {
   if (impact === "Positive") {
     return "bg-emerald-100 text-emerald-700";
   }
@@ -142,7 +206,23 @@ function impactClasses(impact: BriefingItem["impact"]) {
   return "bg-amber-100 text-amber-700";
 }
 
-function signalClasses(tone: string) {
+function confidenceClasses(
+  confidence: Confidence,
+) {
+  if (confidence === "High") {
+    return "bg-blue-100 text-blue-700";
+  }
+
+  if (confidence === "Medium") {
+    return "bg-violet-100 text-violet-700";
+  }
+
+  return "bg-slate-100 text-slate-600";
+}
+
+function signalClasses(
+  tone: DisplaySignal["tone"],
+) {
   if (tone === "positive") {
     return "bg-emerald-400";
   }
@@ -154,7 +234,207 @@ function signalClasses(tone: string) {
   return "bg-sky-400";
 }
 
+function formatBriefingTime(value: string | null) {
+  if (!value) {
+    return "Recently";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Recently";
+  }
+
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Amsterdam",
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
+function formatGeneratedAt(value: string | null) {
+  if (!value) {
+    return "Not updated yet";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Recently updated";
+  }
+
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Amsterdam",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
+function formatEventDate(value: string) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Amsterdam",
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
 export default function BriefingPage() {
+  const [data, setData] =
+    useState<BriefingResponse | null>(null);
+
+  const [isLoading, setIsLoading] =
+    useState(true);
+
+  const [errorMessage, setErrorMessage] =
+    useState("");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadBriefing() {
+      try {
+        setIsLoading(true);
+        setErrorMessage("");
+
+        const response = await fetch(
+          "/api/briefing",
+          {
+            method: "GET",
+            cache: "no-store",
+            headers: {
+              Accept: "application/json",
+            },
+          },
+        );
+
+        const responseData =
+          (await response.json()) as
+            BriefingResponse;
+
+        if (!response.ok || !responseData.success) {
+          throw new Error(
+            responseData.error ||
+              "The briefing could not be loaded.",
+          );
+        }
+
+        if (isMounted) {
+          setData(responseData);
+        }
+      } catch (error) {
+        console.error(
+          "Could not load portfolio briefing:",
+          error,
+        );
+
+        if (isMounted) {
+          setErrorMessage(
+            error instanceof Error
+              ? error.message
+              : "The briefing could not be loaded.",
+          );
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    void loadBriefing();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const macroNews = useMemo(() => {
+    const source =
+      data?.macroNews?.length
+        ? data.macroNews
+        : fallbackNews;
+
+    return deduplicateNews(source).slice(0, 5);
+  }, [data]);
+
+  const portfolioNews = useMemo(() => {
+    const source =
+      data?.portfolioNews?.length
+        ? data.portfolioNews
+        : fallbackNews;
+
+    return selectPortfolioNews(source);
+  }, [data]);
+
+  const signals: DisplaySignal[] = [
+    {
+      label: "Portfolio outlook",
+      value:
+        data?.summary.outlook ?? "Balanced",
+      description:
+        "Current news sentiment and macro conditions across the portfolio.",
+      tone:
+        data?.summary.outlook ===
+        "Constructive"
+          ? "positive"
+          : "neutral",
+    },
+    {
+      label: "Main risk",
+      value: "Concentration",
+      description:
+        data?.summary.mainRisk ??
+        "Bitcoin remains the dominant source of portfolio volatility.",
+      tone: "warning",
+    },
+    {
+      label: "Main opportunity",
+      value: "Diversification",
+      description:
+        data?.summary.mainOpportunity ??
+        "Global equities, AI infrastructure and uranium broaden the return drivers.",
+      tone: "positive",
+    },
+    {
+      label: "Key focus",
+      value:
+        data?.summary.keyFocus ??
+        "Macro liquidity",
+      description:
+        "The most relevant development to monitor over the next few sessions.",
+      tone: "neutral",
+    },
+  ];
+
+  const positiveCount = portfolioNews.filter(
+    (item) => item.impact === "Positive",
+  ).length;
+
+  const negativeCount = portfolioNews.filter(
+    (item) => item.impact === "Negative",
+  ).length;
+
+  const heroTone =
+    positiveCount > negativeCount
+      ? "Constructive"
+      : negativeCount > positiveCount
+        ? "Cautious"
+        : "Balanced";
+
   return (
     <main className="min-h-screen bg-slate-50 px-5 pb-32 pt-8 text-slate-950 sm:px-8">
       <div className="mx-auto max-w-6xl">
@@ -172,8 +452,9 @@ export default function BriefingPage() {
               </h1>
 
               <p className="mt-3 max-w-3xl text-base leading-7 text-slate-600">
-                The most relevant market, macro and portfolio developments in
-                one clear overview.
+                Macro developments, market news and
+                holding-specific intelligence in one
+                clear daily overview.
               </p>
             </div>
 
@@ -183,11 +464,40 @@ export default function BriefingPage() {
               </p>
 
               <div className="mt-2 flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-                <p className="font-bold text-slate-900">Up to date</p>
+                <span
+                  className={`h-2.5 w-2.5 rounded-full ${
+                    errorMessage
+                      ? "bg-amber-500"
+                      : isLoading
+                        ? "animate-pulse bg-blue-500"
+                        : "bg-emerald-500"
+                  }`}
+                />
+
+                <p className="font-bold text-slate-900">
+                  {isLoading
+                    ? "Updating"
+                    : errorMessage
+                      ? "Fallback active"
+                      : "Up to date"}
+                </p>
               </div>
+
+              <p className="mt-2 text-xs text-slate-500">
+                {formatGeneratedAt(
+                  data?.generatedAt ?? null,
+                )}
+              </p>
             </div>
           </div>
+
+          {errorMessage ? (
+            <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
+              Live briefing data is temporarily
+              unavailable. Stable fallback insights
+              remain visible.
+            </div>
+          ) : null}
         </section>
 
         <section className="overflow-hidden rounded-[2rem] bg-slate-950 p-7 text-white shadow-xl sm:p-9">
@@ -198,29 +508,43 @@ export default function BriefingPage() {
               </p>
 
               <h2 className="mt-3 max-w-3xl text-3xl font-bold leading-tight sm:text-5xl">
-                The portfolio outlook remains constructive, but Bitcoin
-                concentration is still the main risk.
+                The portfolio outlook is{" "}
+                {heroTone.toLowerCase()}, while
+                concentration remains the main risk.
               </h2>
 
               <p className="mt-5 max-w-3xl leading-7 text-slate-300">
-                Growth assets continue to benefit from improving liquidity and
-                resilient equity markets. New capital should primarily
-                strengthen diversified and defensive positions rather than
-                increase Bitcoin exposure.
+                {data?.summary.mainOpportunity ??
+                  "The portfolio has multiple long-term growth drivers, but new capital should continue to improve diversification rather than increase dependence on Bitcoin."}
               </p>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <HeroMetric label="Portfolio tone" value="Positive" />
-              <HeroMetric label="Risk level" value="High" />
-              <HeroMetric label="Opportunities" value="3" />
-              <HeroMetric label="Warnings" value="1" />
+              <HeroMetric
+                label="Portfolio tone"
+                value={heroTone}
+              />
+
+              <HeroMetric
+                label="Risk level"
+                value="High"
+              />
+
+              <HeroMetric
+                label="Positive items"
+                value={String(positiveCount)}
+              />
+
+              <HeroMetric
+                label="Warnings"
+                value={String(negativeCount)}
+              />
             </div>
           </div>
         </section>
 
         <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {portfolioSignals.map((signal) => (
+          {signals.map((signal) => (
             <article
               key={signal.label}
               className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
@@ -237,7 +561,9 @@ export default function BriefingPage() {
                 </p>
               </div>
 
-              <p className="mt-4 text-2xl font-bold">{signal.value}</p>
+              <p className="mt-4 text-2xl font-bold">
+                {signal.value}
+              </p>
 
               <p className="mt-2 text-sm leading-6 text-slate-500">
                 {signal.description}
@@ -246,76 +572,66 @@ export default function BriefingPage() {
           ))}
         </section>
 
-        <section className="mt-9 grid gap-7 lg:grid-cols-[1.35fr_0.65fr]">
+        <section className="mt-9">
+          <div className="mb-5">
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+              Macro intelligence
+            </p>
+
+            <h2 className="mt-2 text-3xl font-bold">
+              Developments affecting multiple holdings
+            </h2>
+
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
+              Central-bank policy, inflation,
+              liquidity, economic growth and broader
+              market developments.
+            </p>
+          </div>
+
+          <div className="grid gap-5 lg:grid-cols-2">
+            {macroNews.map((item) => (
+              <NewsCard
+                key={item.id}
+                item={item}
+              />
+            ))}
+          </div>
+        </section>
+
+        <section className="mt-10 grid gap-7 lg:grid-cols-[1.35fr_0.65fr]">
           <div>
             <div className="mb-5">
               <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
-                Market intelligence
+                Portfolio intelligence
               </p>
 
               <h2 className="mt-2 text-3xl font-bold">
-                Developments affecting your portfolio
+                News linked to your holdings
               </h2>
+
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
+                The selection is limited to the most
+                relevant items, with no more than two
+                primary items per holding.
+              </p>
             </div>
 
             <div className="space-y-5">
-              {briefingItems.map((item) => (
-                <article
-                  key={item.title}
-                  className="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-0.5 hover:shadow-lg"
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">
-                          {item.category}
-                        </span>
-
-                        <span
-                          className={`rounded-full px-3 py-1 text-xs font-bold ${impactClasses(
-                            item.impact,
-                          )}`}
-                        >
-                          {item.impact}
-                        </span>
-                      </div>
-
-                      <h3 className="mt-4 max-w-3xl text-xl font-bold leading-7">
-                        {item.title}
-                      </h3>
-                    </div>
-
-                    <span className="text-sm font-medium text-slate-400">
-                      {item.time}
-                    </span>
-                  </div>
-
-                  <p className="mt-4 leading-7 text-slate-600">
-                    {item.summary}
-                  </p>
-
-                  <div className="mt-5 rounded-2xl bg-slate-50 p-5">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                      Portfolio impact
-                    </p>
-
-                    <p className="mt-2 text-sm leading-6 text-slate-700">
-                      {item.portfolioEffect}
-                    </p>
-                  </div>
-
-                  <div className="mt-5 flex flex-wrap gap-2">
-                    {item.holdings.map((holding) => (
-                      <span
-                        key={holding}
-                        className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-bold text-white"
-                      >
-                        {holding}
-                      </span>
-                    ))}
-                  </div>
-                </article>
+              {portfolioNews.map((item) => (
+                <NewsCard
+                  key={item.id}
+                  item={item}
+                  large
+                />
               ))}
+
+              {portfolioNews.length === 0 ? (
+                <div className="rounded-[1.75rem] border border-slate-200 bg-white p-7 text-slate-500 shadow-sm">
+                  No relevant holding-specific news is
+                  available at the moment.
+                </div>
+              ) : null}
             </div>
           </div>
 
@@ -327,19 +643,32 @@ export default function BriefingPage() {
                 </p>
 
                 <h2 className="mt-3 text-2xl font-bold">
-                  Focus new investments on diversification
+                  Keep improving portfolio balance
                 </h2>
 
                 <p className="mt-4 leading-7 text-slate-300">
-                  The current portfolio already has significant upside
-                  potential. The priority is now to improve balance without
-                  selling the main Bitcoin position.
+                  The portfolio already has strong
+                  upside exposure. The priority for new
+                  capital remains improving
+                  diversification without selling the
+                  main Bitcoin position.
                 </p>
 
                 <div className="mt-6 space-y-3">
-                  <CoachRow number="1" text="Prioritise VWCE contributions" />
-                  <CoachRow number="2" text="Gradually strengthen PPFB" />
-                  <CoachRow number="3" text="Avoid new Bitcoin purchases" />
+                  <CoachRow
+                    number="1"
+                    text="Prioritise diversified contributions"
+                  />
+
+                  <CoachRow
+                    number="2"
+                    text="Monitor Bitcoin concentration"
+                  />
+
+                  <CoachRow
+                    number="3"
+                    text="Avoid reacting to one news headline"
+                  />
                 </div>
               </article>
 
@@ -348,33 +677,103 @@ export default function BriefingPage() {
                   Upcoming events
                 </p>
 
-                <h2 className="mt-2 text-2xl font-bold">What to watch next</h2>
+                <h2 className="mt-2 text-2xl font-bold">
+                  What to watch next
+                </h2>
 
                 <div className="mt-6 space-y-6">
-                  {upcomingEvents.map((event) => (
-                    <div
-                      key={event.title}
-                      className="border-b border-slate-100 pb-6 last:border-none last:pb-0"
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
-                          {event.date}
+                  {(data?.upcomingEvents ?? [])
+                    .slice(0, 6)
+                    .map((event) => (
+                      <div
+                        key={event.id}
+                        className="border-b border-slate-100 pb-6 last:border-none last:pb-0"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
+                            {formatEventDate(event.date)}
+                          </p>
+
+                          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">
+                            {event.impact}
+                          </span>
+                        </div>
+
+                        <h3 className="mt-3 font-bold text-slate-900">
+                          {event.title}
+                        </h3>
+
+                        <p className="mt-1 text-xs font-semibold text-slate-400">
+                          {event.country}
                         </p>
 
-                        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">
-                          {event.impact}
+                        <p className="mt-2 text-sm leading-6 text-slate-500">
+                          {event.description}
+                        </p>
+
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {event.holdings.map(
+                            (holding) => (
+                              <span
+                                key={holding}
+                                className="rounded-lg bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600"
+                              >
+                                {holding}
+                              </span>
+                            ),
+                          )}
+                        </div>
+                      </div>
+                    ))}
+
+                  {(data?.upcomingEvents ?? [])
+                    .length === 0 ? (
+                    <p className="text-sm leading-6 text-slate-500">
+                      No high-priority economic events
+                      are currently available.
+                    </p>
+                  ) : null}
+                </div>
+              </article>
+
+              <article className="rounded-[1.75rem] border border-slate-200 bg-white p-7 shadow-sm">
+                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  Holdings covered
+                </p>
+
+                <div className="mt-5 space-y-3">
+                  {HOLDING_ORDER.map((holding) => {
+                    const itemCount =
+                      portfolioNews.filter((item) =>
+                        item.holdings.includes(
+                          holding,
+                        ),
+                      ).length;
+
+                    return (
+                      <div
+                        key={holding}
+                        className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3"
+                      >
+                        <div>
+                          <p className="font-bold text-slate-900">
+                            {holding}
+                          </p>
+
+                          <p className="text-xs text-slate-500">
+                            {HOLDING_NAMES[holding]}
+                          </p>
+                        </div>
+
+                        <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-600 shadow-sm">
+                          {itemCount}{" "}
+                          {itemCount === 1
+                            ? "item"
+                            : "items"}
                         </span>
                       </div>
-
-                      <h3 className="mt-3 font-bold text-slate-900">
-                        {event.title}
-                      </h3>
-
-                      <p className="mt-2 text-sm leading-6 text-slate-500">
-                        {event.description}
-                      </p>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </article>
 
@@ -384,17 +783,113 @@ export default function BriefingPage() {
                 </p>
 
                 <p className="mt-2 text-sm leading-6 text-amber-800">
-                  This briefing is a decision-support tool. Market views and
-                  scenarios can change and are not guarantees of future
-                  performance.
+                  This briefing is a decision-support
+                  tool. News sentiment and portfolio
+                  impact assessments can change and are
+                  not guarantees of future performance.
                 </p>
               </article>
             </div>
           </aside>
         </section>
       </div>
-
     </main>
+  );
+}
+
+function NewsCard({
+  item,
+  large = false,
+}: {
+  item: BriefingNewsItem;
+  large?: boolean;
+}) {
+  return (
+    <article
+      className={`rounded-[1.75rem] border border-slate-200 bg-white shadow-sm transition duration-300 hover:-translate-y-0.5 hover:shadow-lg ${
+        large ? "p-6" : "p-5"
+      }`}
+    >
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">
+              {item.category}
+            </span>
+
+            <span
+              className={`rounded-full px-3 py-1 text-xs font-bold ${impactClasses(
+                item.impact,
+              )}`}
+            >
+              {item.impact}
+            </span>
+
+            <span
+              className={`rounded-full px-3 py-1 text-xs font-bold ${confidenceClasses(
+                item.confidence,
+              )}`}
+            >
+              {item.confidence} confidence
+            </span>
+          </div>
+
+          <h3
+            className={`mt-4 max-w-3xl font-bold leading-7 ${
+              large
+                ? "text-xl"
+                : "text-lg"
+            }`}
+          >
+            {item.title}
+          </h3>
+        </div>
+
+        <span className="text-sm font-medium text-slate-400">
+          {formatBriefingTime(
+            item.publishedAt,
+          )}
+        </span>
+      </div>
+
+      <p className="mt-4 leading-7 text-slate-600">
+        {item.summary}
+      </p>
+
+      <div className="mt-5 rounded-2xl bg-slate-50 p-5">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+          Portfolio impact
+        </p>
+
+        <p className="mt-2 text-sm leading-6 text-slate-700">
+          {item.portfolioEffect}
+        </p>
+      </div>
+
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-wrap gap-2">
+          {item.holdings.map((holding) => (
+            <span
+              key={holding}
+              className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-bold text-white"
+            >
+              {holding}
+            </span>
+          ))}
+        </div>
+
+        {item.sourceUrl ? (
+          <a
+            href={item.sourceUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="text-sm font-bold text-blue-700 transition hover:text-blue-900"
+          >
+            Open source →
+          </a>
+        ) : null}
+      </div>
+    </article>
   );
 }
 
@@ -411,7 +906,9 @@ function HeroMetric({
         {label}
       </p>
 
-      <p className="mt-2 text-xl font-bold text-white">{value}</p>
+      <p className="mt-2 text-xl font-bold text-white">
+        {value}
+      </p>
     </div>
   );
 }
@@ -429,7 +926,9 @@ function CoachRow({
         {number}
       </div>
 
-      <p className="text-sm font-semibold text-slate-100">{text}</p>
+      <p className="text-sm font-semibold text-slate-100">
+        {text}
+      </p>
     </div>
   );
 }

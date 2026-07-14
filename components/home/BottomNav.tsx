@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  House,
   LayoutDashboard,
   ChartNoAxesColumnIncreasing,
   Upload,
@@ -12,8 +13,13 @@ import {
 
 const navigationItems = [
   {
-    label: "Dashboard",
+    label: "Home",
     href: "/",
+    icon: House,
+  },
+  {
+    label: "Dashboard",
+    href: "/dashboard",
     icon: LayoutDashboard,
   },
   {
@@ -41,23 +47,30 @@ const navigationItems = [
 export default function BottomNavigation() {
   const pathname = usePathname();
 
+  const isActive = (href: string) => {
+    if (href === "/") {
+      return pathname === "/";
+    }
+
+    if (href === "/dashboard") {
+      return pathname === "/dashboard";
+    }
+
+    return pathname.startsWith(href);
+  };
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white/95 backdrop-blur">
-      <div className="mx-auto grid max-w-3xl grid-cols-5 gap-2 px-4 py-2">
+      <div className="mx-auto grid max-w-6xl grid-cols-6 gap-2 px-4 py-2">
         {navigationItems.map((item) => {
           const Icon = item.icon;
-
-          const isActive =
-            item.href === "/"
-              ? pathname === "/"
-              : pathname.startsWith(item.href);
 
           return (
             <Link
               key={item.href}
               href={item.href}
               className={`flex min-h-[56px] flex-col items-center justify-center rounded-2xl px-2 text-xs font-medium transition ${
-                isActive
+                isActive(item.href)
                   ? "bg-slate-950 text-white shadow-lg"
                   : "text-slate-500 hover:bg-slate-100 hover:text-slate-950"
               }`}

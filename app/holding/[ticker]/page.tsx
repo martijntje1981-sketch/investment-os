@@ -1,22 +1,135 @@
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import BottomNav from "@/components/home/BottomNav";
-import { getHoldingByTicker } from "@/lib/services/portfolio/portfolioService";
 
-const euro = new Intl.NumberFormat("nl-NL", {
+import BottomNav from "@/components/home/BottomNav";
+import {
+  getHoldingByTickerWithPrices,
+  type PricesApiResponse,
+} from "@/lib/services/portfolio/portfolioService";
+
+export const dynamic = "force-dynamic";
+
+const euro = new Intl.NumberFormat("en-GB", {
   style: "currency",
   currency: "EUR",
   maximumFractionDigits: 0,
 });
 
-const euroTwo = new Intl.NumberFormat("nl-NL", {
+const euroTwo = new Intl.NumberFormat("en-GB", {
   style: "currency",
   currency: "EUR",
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
 
+const numberFormat = new Intl.NumberFormat("en-GB", {
+  maximumFractionDigits: 0,
+});
+
 function signedPercent(value: number) {
-  return `${value > 0 ? "+" : ""}${value.toFixed(1)}%`;
+  const sign = value > 0 ? "+" : "";
+
+  return `${sign}${value.toFixed(2)}%`;
+}
+
+function formatUpdateTime(value: string | null) {
+  if (!value) {
+    return "Not available";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Not available";
+  }
+
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Amsterdam",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
+function getPerformanceClass(value: number) {
+  if (value > 0) {
+    return "text-emerald-400";
+  }
+
+  if (value < 0) {
+    return "text-red-400";
+  }
+
+  return "text-slate-300";
+}
+
+function getMetricPerformanceClass(value: number) {
+  if (value > 0) {
+    return "text-emerald-600";
+  }
+
+  if (value < 0) {
+    return "text-red-600";
+  }
+
+  return "text-slate-900";
+}
+
+async function getBaseUrl() {
+  const requestHeaders = await headers();
+
+  const host =
+    requestHeaders.get("x-forwarded-host") ??
+    requestHeaders.get("host");
+
+  const protocol =
+    requestHeaders.get("x-forwarded-proto") ??
+    (process.env.NODE_ENV === "development"
+      ? "http"
+      : "https");
+
+  if (host) {
+    return `${protocol}://${host}`;
+  }
+
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+
+  return "http://localhost:3000";
+}
+
+async function fetchPrices(): Promise<PricesApiResponse | null> {
+  try {
+    const baseUrl = await getBaseUrl();
+
+    const response = await fetch(`${baseUrl}/api/prices`, {
+      method: "GET",
+      cache: "no-store",
+      headers: {
+        Accept: "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      console.error(
+        `Holding page prices request failed: ${response.status}`,
+      );
+
+      return null;
+    }
+
+    return (await response.json()) as PricesApiResponse;
+  } catch (error) {
+    console.error(
+      "Holding page could not load live prices:",
+      error,
+    );
+
+    return null;
+  }
 }
 
 export default async function HoldingPage({
@@ -25,11 +138,19 @@ export default async function HoldingPage({
   params: Promise<{ ticker: string }>;
 }) {
   const { ticker } = await params;
-  const holding = getHoldingByTicker(ticker);
+  const pricesResponse = await fetchPrices();
+
+  const holding = getHoldingByTickerWithPrices(
+    ticker,
+    pricesResponse,
+  );
 
   if (!holding) {
     notFound();
   }
+
+  const isLive =
+    holding.marketDataSource === "eodhd";
 
   const stanceClass =
     holding.stance === "Hold"
@@ -57,6 +178,16 @@ export default async function HoldingPage({
                   >
                     {holding.stance}
                   </span>
+
+                  <span
+                    className={`rounded-full px-3 py-1 text-xs font-bold ${
+                      isLive
+                        ? "bg-emerald-500/20 text-emerald-300"
+                        : "bg-amber-500/20 text-amber-300"
+                    }`}
+                  >
+                    {isLive ? "Live EODHD" : "Fallback data"}
+                  </span>
                 </div>
 
                 <h1 className="mt-5 text-4xl font-bold tracking-tight md:text-5xl">
@@ -66,24 +197,38 @@ export default async function HoldingPage({
                 <p className="mt-2 text-lg text-slate-300">
                   {holding.name}
                 </p>
+
+                <p className="mt-4 text-sm text-slate-400">
+                  Last market update:{" "}
+                  <span className="font-medium text-slate-200">
+                    {formatUpdateTime(
+                      holding.marketDataUpdatedAt,
+                    )}
+                  </span>
+                </p>
               </div>
 
               <div className="grid grid-cols-2 gap-8 lg:text-right">
                 <div>
-                  <p className="text-sm text-slate-400">Current Price</p>
+                  <p className="text-sm text-slate-400">
+                    Current Price
+                  </p>
 
                   <p className="mt-2 text-3xl font-bold">
-                    {euroTwo.format(holding.currentPrice)}
+                    {euroTwo.format(
+                      holding.currentPrice,
+                    )}
                   </p>
 
                   <p
-                    className={`mt-1 font-semibold ${
-                      holding.dailyChangePercent >= 0
-                        ? "text-emerald-400"
-                        : "text-red-400"
-                    }`}
+                    className={`mt-1 font-semibold ${getPerformanceClass(
+                      holding.dailyChangePercent,
+                    )}`}
                   >
-                    {signedPercent(holding.dailyChangePercent)} today
+                    {signedPercent(
+                      holding.dailyChangePercent,
+                    )}{" "}
+                    today
                   </p>
                 </div>
 
@@ -94,7 +239,9 @@ export default async function HoldingPage({
 
                   <p className="mt-2 text-3xl font-bold">
                     {holding.investmentScore}
-                    <span className="text-lg text-slate-500">/10</span>
+                    <span className="text-lg text-slate-500">
+                      /10
+                    </span>
                   </p>
 
                   <p className="mt-1 font-semibold text-blue-400">
@@ -108,29 +255,44 @@ export default async function HoldingPage({
           <section className="mt-6 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
             <MetricCard
               label="Position Value"
-              value={euro.format(holding.marketValue)}
+              value={euro.format(
+                holding.marketValue,
+              )}
               subtitle="Current market value"
             />
 
             <MetricCard
               label="Portfolio Weight"
-              value={`${holding.weightPercent.toFixed(1)}%`}
+              value={`${holding.weightPercent.toFixed(
+                1,
+              )}%`}
               subtitle="Share of total portfolio"
             />
 
             <MetricCard
               label="Total Return"
-              value={signedPercent(holding.returnPercent)}
+              value={signedPercent(
+                holding.returnPercent,
+              )}
               subtitle={`${holding.profitLoss >= 0 ? "+" : ""}${euro.format(
                 holding.profitLoss,
               )}`}
-              positive={holding.returnPercent >= 0}
+              valueClassName={getMetricPerformanceClass(
+                holding.returnPercent,
+              )}
             />
 
             <MetricCard
-              label="Risk Level"
-              value={holding.riskLevel}
-              subtitle={holding.stance}
+              label="Day Change"
+              value={signedPercent(
+                holding.dailyChangePercent,
+              )}
+              subtitle={`${holding.dayChangeValue >= 0 ? "+" : ""}${euro.format(
+                holding.dayChangeValue,
+              )}`}
+              valueClassName={getMetricPerformanceClass(
+                holding.dailyChangePercent,
+              )}
             />
           </section>
 
@@ -174,7 +336,8 @@ export default async function HoldingPage({
                 </svg>
 
                 <p className="absolute bottom-4 left-5 text-xs text-slate-400">
-                  Live historical market data will be connected here
+                  Historical price chart follows after
+                  the stable beta
                 </p>
               </div>
             </article>
@@ -191,28 +354,70 @@ export default async function HoldingPage({
               <div className="mt-6 divide-y divide-slate-100">
                 <DataRow
                   label="Units"
-                  value={holding.units.toLocaleString("nl-NL")}
+                  value={holding.units.toLocaleString(
+                    "en-GB",
+                  )}
                 />
 
                 <DataRow
                   label="Average price"
-                  value={euroTwo.format(holding.averagePrice)}
+                  value={euroTwo.format(
+                    holding.averagePrice,
+                  )}
+                />
+
+                <DataRow
+                  label="Current price"
+                  value={euroTwo.format(
+                    holding.currentPrice,
+                  )}
+                />
+
+                <DataRow
+                  label="Previous close"
+                  value={
+                    holding.previousClose !== null
+                      ? euroTwo.format(
+                          holding.previousClose,
+                        )
+                      : "Not available"
+                  }
                 />
 
                 <DataRow
                   label="Cost basis"
-                  value={euro.format(holding.costBasis)}
+                  value={euro.format(
+                    holding.costBasis,
+                  )}
                 />
 
                 <DataRow
                   label="Market value"
-                  value={euro.format(holding.marketValue)}
+                  value={euro.format(
+                    holding.marketValue,
+                  )}
                 />
 
                 <DataRow
                   label="Portfolio weight"
-                  value={`${holding.weightPercent.toFixed(1)}%`}
+                  value={`${holding.weightPercent.toFixed(
+                    1,
+                  )}%`}
                 />
+
+                <DataRow
+                  label="Risk level"
+                  value={holding.riskLevel}
+                />
+
+                {holding.volume !== null ? (
+                  <DataRow
+                    label="Volume"
+                    value={numberFormat.format(
+                      holding.volume,
+                    )}
+                  />
+                ) : null}
               </div>
             </article>
           </section>
@@ -263,14 +468,19 @@ export default async function HoldingPage({
                   <div
                     className="h-full rounded-full bg-slate-900 transition-all duration-700"
                     style={{
-                      width: `${Math.min(holding.weightPercent, 100)}%`,
+                      width: `${Math.min(
+                        holding.weightPercent,
+                        100,
+                      )}%`,
                     }}
                   />
                 </div>
 
                 <p className="mt-5 leading-7 text-slate-600">
-                  Allocation guidance will be compared with the selected risk
-                  profile, financial target and total portfolio concentration.
+                  Allocation guidance will be
+                  compared with the selected risk
+                  profile, financial target and total
+                  portfolio concentration.
                 </p>
               </div>
             </article>
@@ -286,7 +496,9 @@ export default async function HoldingPage({
 
               <div className="mt-6 flex items-center justify-between rounded-2xl bg-white/10 p-6">
                 <div>
-                  <p className="text-sm text-slate-400">Current stance</p>
+                  <p className="text-sm text-slate-400">
+                    Current stance
+                  </p>
 
                   <p className="mt-2 text-3xl font-bold">
                     {holding.stance}
@@ -299,9 +511,11 @@ export default async function HoldingPage({
               </div>
 
               <p className="mt-6 leading-7 text-slate-300">
-                The final recommendation will combine price data, analyst
-                revisions, macro conditions, portfolio allocation and your
-                personal investment target.
+                The current stance combines the
+                position analysis, portfolio role and
+                Investment OS risk assessment. More
+                advanced AI recommendations follow
+                after the stable beta.
               </p>
             </article>
           </section>
@@ -317,29 +531,28 @@ function MetricCard({
   label,
   value,
   subtitle,
-  positive,
+  valueClassName = "text-slate-900",
 }: {
   label: string;
   value: string;
   subtitle: string;
-  positive?: boolean;
+  valueClassName?: string;
 }) {
-  const valueClass =
-    positive === undefined
-      ? "text-slate-900"
-      : positive
-        ? "text-emerald-600"
-        : "text-red-600";
-
   return (
     <article className="rounded-3xl bg-white p-6 shadow-sm">
-      <p className="text-sm font-medium text-slate-500">{label}</p>
+      <p className="text-sm font-medium text-slate-500">
+        {label}
+      </p>
 
-      <p className={`mt-3 text-3xl font-bold ${valueClass}`}>
+      <p
+        className={`mt-3 text-3xl font-bold ${valueClassName}`}
+      >
         {value}
       </p>
 
-      <p className="mt-2 text-sm text-slate-500">{subtitle}</p>
+      <p className="mt-2 text-sm text-slate-500">
+        {subtitle}
+      </p>
     </article>
   );
 }
@@ -353,9 +566,13 @@ function DataRow({
 }) {
   return (
     <div className="flex items-center justify-between gap-4 py-4">
-      <span className="text-slate-500">{label}</span>
+      <span className="text-slate-500">
+        {label}
+      </span>
 
-      <span className="font-semibold text-slate-900">{value}</span>
+      <span className="text-right font-semibold text-slate-900">
+        {value}
+      </span>
     </div>
   );
 }
@@ -371,6 +588,11 @@ function InsightCard({
   items: string[];
   risk?: boolean;
 }) {
+  const visibleItems =
+    items.length > 0
+      ? items
+      : ["Analysis is not available yet."];
+
   return (
     <article className="rounded-3xl bg-white p-7 shadow-sm">
       <div
@@ -392,15 +614,22 @@ function InsightCard({
       </h2>
 
       <div className="mt-5 space-y-4">
-        {items.map((item) => (
-          <div key={item} className="flex items-start gap-3">
+        {visibleItems.map((item) => (
+          <div
+            key={item}
+            className="flex items-start gap-3"
+          >
             <span
               className={`mt-2 h-2 w-2 shrink-0 rounded-full ${
-                risk ? "bg-red-500" : "bg-blue-500"
+                risk
+                  ? "bg-red-500"
+                  : "bg-blue-500"
               }`}
             />
 
-            <p className="leading-6 text-slate-600">{item}</p>
+            <p className="leading-6 text-slate-600">
+              {item}
+            </p>
           </div>
         ))}
       </div>
