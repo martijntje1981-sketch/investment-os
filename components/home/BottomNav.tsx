@@ -75,11 +75,11 @@ export default function BottomNavigation() {
             return (
               <Link
                 key={item.href}
-                href="/"
+                href="/?view=home"
                 prefetch={false}
                 onClick={(event) => {
                   event.preventDefault();
-                  window.location.assign("/");
+                  window.location.assign("/?view=home");
                 }}
                 aria-label="Open Home"
                 className={className}

@@ -153,11 +153,16 @@ const trustItems = [
   },
 ];
 
-export default async function MarketingHomePage() {
+export default async function MarketingHomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ view?: string }>;
+}) {
+  const { view } = await searchParams;
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();
 
-  if (data.user) {
+  if (data.user && view !== "home") {
     redirect("/dashboard");
   }
 
