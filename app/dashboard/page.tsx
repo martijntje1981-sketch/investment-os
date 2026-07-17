@@ -390,6 +390,12 @@ export default function DashboardPage() {
       : 0;
 
   const hasDailyMoveData = dailyDrivers.length > 0;
+  const biggestDailyGainer = [...dailyDrivers]
+    .filter((item) => item.move > 0)
+    .sort((a, b) => b.move - a.move)[0];
+  const biggestDailyLoser = [...dailyDrivers]
+    .filter((item) => item.move < 0)
+    .sort((a, b) => a.move - b.move)[0];
   const europeanMarketStatus = getMarketStatus(
     "Europe/Amsterdam",
     9 * 60,
@@ -498,8 +504,8 @@ export default function DashboardPage() {
 
   return (
     <>
-      <main className="min-h-screen bg-slate-50 px-5 pb-[calc(var(--bottom-nav-height)+env(safe-area-inset-bottom,0px)+2rem)] pt-8 text-slate-950 sm:px-8">
-        <div className="mx-auto max-w-6xl">
+      <main className="min-h-screen max-w-full overflow-x-hidden bg-slate-50 px-4 pb-[calc(var(--bottom-nav-height)+env(safe-area-inset-bottom,0px)+2rem)] pt-6 text-slate-950 sm:px-8 sm:pt-8">
+        <div className="mx-auto w-full min-w-0 max-w-6xl">
           <header className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
             <div>
               <div className="flex items-center gap-3">
@@ -585,6 +591,49 @@ export default function DashboardPage() {
                   <span className="text-sm font-semibold text-slate-400">
                     since purchase
                   </span>
+                </div>
+
+                <div className="mt-6 grid gap-3 sm:grid-cols-3">
+                  <DailyHeroCard
+                    label="Last 24 hours"
+                    value={
+                      hasDailyMoveData
+                        ? `${dailyPortfolioMove >= 0 ? "+" : "−"}${formatCurrency(Math.abs(dailyPortfolioMove))}`
+                        : "Awaiting data"
+                    }
+                    detail={
+                      hasDailyMoveData
+                        ? `${dailyPortfolioMovePercentage >= 0 ? "+" : "−"}${formatPercentage(Math.abs(dailyPortfolioMovePercentage))}`
+                        : "Previous-close prices required"
+                    }
+                    tone={
+                      !hasDailyMoveData
+                        ? "neutral"
+                        : dailyPortfolioMove >= 0
+                          ? "positive"
+                          : "negative"
+                    }
+                  />
+                  <DailyHeroCard
+                    label="Biggest positive"
+                    value={biggestDailyGainer?.holding.symbol ?? "No positive move"}
+                    detail={
+                      biggestDailyGainer
+                        ? `+${formatCurrency(biggestDailyGainer.move)} · +${formatPercentage(biggestDailyGainer.holding.changePercent ?? 0)}`
+                        : "No positive holding today"
+                    }
+                    tone={biggestDailyGainer ? "positive" : "neutral"}
+                  />
+                  <DailyHeroCard
+                    label="Biggest negative"
+                    value={biggestDailyLoser?.holding.symbol ?? "No negative move"}
+                    detail={
+                      biggestDailyLoser
+                        ? `−${formatCurrency(Math.abs(biggestDailyLoser.move))} · −${formatPercentage(Math.abs(biggestDailyLoser.holding.changePercent ?? 0))}`
+                        : "No negative holding today"
+                    }
+                    tone={biggestDailyLoser ? "negative" : "neutral"}
+                  />
                 </div>
 
                 <p className="mt-6 max-w-3xl text-base leading-7 text-slate-300">
@@ -1150,6 +1199,34 @@ function HeroDetailRow({
       <span className="text-right text-sm font-bold text-white">
         {value}
       </span>
+    </div>
+  );
+}
+
+function DailyHeroCard({
+  label,
+  value,
+  detail,
+  tone,
+}: {
+  label: string;
+  value: string;
+  detail: string;
+  tone: "positive" | "negative" | "neutral";
+}) {
+  const toneClasses = {
+    positive: "border-emerald-400/20 bg-emerald-400/10 text-emerald-300",
+    negative: "border-red-400/20 bg-red-400/10 text-red-300",
+    neutral: "border-white/10 bg-white/5 text-slate-300",
+  };
+
+  return (
+    <div className={`min-w-0 rounded-2xl border p-4 ${toneClasses[tone]}`}>
+      <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">
+        {label}
+      </p>
+      <p className="mt-2 truncate text-lg font-black text-current">{value}</p>
+      <p className="mt-1 text-xs font-semibold text-current/80">{detail}</p>
     </div>
   );
 }
