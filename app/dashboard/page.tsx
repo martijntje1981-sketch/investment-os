@@ -27,11 +27,12 @@ import {
   WalletCards,
 } from "lucide-react";
 import BottomNavigation from "@/components/home/BottomNav";
+import { holdings as portfolioHoldings } from "@/lib/services/portfolio/holdings";
 
 type Currency = "EUR" | "USD" | "GBP";
 
 type Holding = {
-  id: number;
+  id: string;
   symbol: string;
   name: string;
   quantity: number;
@@ -49,68 +50,44 @@ type PortfolioMetric = {
   icon: React.ReactNode;
 };
 
-const fallbackHoldings: Holding[] = [
-  {
-    id: 1,
-    symbol: "IB1T",
-    name: "iShares Bitcoin ETP",
-    quantity: 11269,
-    purchasePrice: 5.16,
-    currentPrice: 5.16,
-    currency: "EUR",
-    confidence: "High",
-  },
-  {
-    id: 2,
-    symbol: "STRC",
-    name: "21Shares Strategy Yield ETP",
-    quantity: 450,
-    purchasePrice: 15.56,
-    currentPrice: 15.56,
-    currency: "EUR",
-    confidence: "Medium",
-  },
-  {
-    id: 3,
-    symbol: "VWCE",
-    name: "Vanguard FTSE All-World ETF",
-    quantity: 99,
-    purchasePrice: 87.88,
-    currentPrice: 87.88,
-    currency: "EUR",
-    confidence: "High",
-  },
-  {
-    id: 4,
-    symbol: "NUKL",
-    name: "VanEck Uranium and Nuclear Technologies ETF",
-    quantity: 161,
-    purchasePrice: 46.58,
-    currentPrice: 46.58,
-    currency: "EUR",
-    confidence: "High",
-  },
-  {
-    id: 5,
-    symbol: "AIFS",
-    name: "AI Infrastructure ETF",
-    quantity: 520,
-    purchasePrice: 10.19,
-    currentPrice: 10.19,
-    currency: "EUR",
-    confidence: "High",
-  },
-  {
-    id: 6,
-    symbol: "PPFB",
-    name: "iShares Physical Gold ETC",
-    quantity: 200,
-    purchasePrice: 10,
-    currentPrice: 10,
-    currency: "EUR",
-    confidence: "Medium",
-  },
-];
+type CachedPrice = {
+  symbol: string;
+  price: number;
+};
+
+const PRICE_CACHE_KEY = "investment-os-market-price-cache";
+
+const canonicalHoldings: Holding[] = portfolioHoldings.map((holding) => ({
+  id: holding.id,
+  symbol: holding.symbol.trim().toUpperCase(),
+  name: holding.name,
+  quantity: holding.units,
+  purchasePrice: holding.averagePrice,
+  currentPrice: holding.currentPrice,
+  currency: "EUR",
+  confidence: "High",
+}));
+
+function applyCachedPrices(holdings: Holding[]): Holding[] {
+  const cachedValue = localStorage.getItem(PRICE_CACHE_KEY);
+
+  if (!cachedValue) return holdings;
+
+  const parsed = JSON.parse(cachedValue) as CachedPrice[];
+
+  if (!Array.isArray(parsed)) return holdings;
+
+  const prices = new Map(
+    parsed
+      .filter((item) => Number.isFinite(item.price) && item.price > 0)
+      .map((item) => [item.symbol.trim().toUpperCase(), item.price]),
+  );
+
+  return holdings.map((holding) => ({
+    ...holding,
+    currentPrice: prices.get(holding.symbol) ?? holding.currentPrice,
+  }));
+}
 
 const TARGET_VALUE = 1_000_000;
 const TARGET_YEAR = 2036;
@@ -230,7 +207,7 @@ function getAllocationTone(allocation: number) {
 }
 
 export default function DashboardPage() {
-  const [holdings, setHoldings] = useState<Holding[]>(fallbackHoldings);
+  const [holdings, setHoldings] = useState<Holding[]>(canonicalHoldings);
   const [annualContribution, setAnnualContribution] = useState(
     DEFAULT_ANNUAL_CONTRIBUTION
   );
@@ -241,21 +218,11 @@ export default function DashboardPage() {
 
   useEffect(() => {
     try {
-      const savedPortfolio = localStorage.getItem(
-        "investment-os-portfolio"
-      );
-
       const savedAnnualContribution = localStorage.getItem(
         "investment-os-annual-contribution"
       );
 
-      if (savedPortfolio) {
-        const parsedPortfolio = JSON.parse(savedPortfolio) as Holding[];
-
-        if (Array.isArray(parsedPortfolio)) {
-          setHoldings(parsedPortfolio);
-        }
-      }
+      setHoldings(applyCachedPrices(canonicalHoldings));
 
       if (savedAnnualContribution) {
         const parsedContribution = Number(savedAnnualContribution);
