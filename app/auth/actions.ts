@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -77,3 +77,65 @@ export async function logout() {
   await supabase.auth.signOut();
   redirect("/");
 }
+
+export async function requestPasswordReset(formData: FormData) {
+  const email = String(formData.get("email") ?? "").trim();
+
+  if (!email) {
+    redirectWithError("/forgot-password", "Enter your email address.");
+  }
+
+  const requestHeaders = await headers();
+  const origin = requestHeaders.get("origin") ?? "http://localhost:3000";
+  const supabase = await createClient();
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${origin}/auth/callback?next=/reset-password`,
+  });
+
+  if (error) {
+    redirectWithError(
+      "/forgot-password",
+      "We could not send the reset email. Please try again.",
+    );
+  }
+
+  redirect(
+    "/forgot-password?message=" +
+      encodeURIComponent(
+        "If an account exists for this email address, a password reset link has been sent.",
+      ),
+  );
+}
+
+export async function updatePassword(formData: FormData) {
+  const password = String(formData.get("password") ?? "");
+  const confirmPassword = String(formData.get("confirmPassword") ?? "");
+
+  if (password.length < 8) {
+    redirectWithError(
+      "/reset-password",
+      "Use a password of at least 8 characters.",
+    );
+  }
+
+  if (password !== confirmPassword) {
+    redirectWithError("/reset-password", "The passwords do not match.");
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.updateUser({ password });
+
+  if (error) {
+    redirectWithError(
+      "/reset-password",
+      "The reset session is invalid or expired. Request a new reset link.",
+    );
+  }
+
+  await supabase.auth.signOut();
+  redirect(
+    "/login?message=" +
+      encodeURIComponent("Your password has been updated. You can now sign in."),
+  );
+}
+
