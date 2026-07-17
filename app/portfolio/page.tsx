@@ -346,5 +346,6 @@ function Metric({ icon, label, value, detail, tone = "neutral" }: { icon: React.
 }
 
 function Field({ label, value, onChange, type = "text", prefix, min, step }: { label: string; value: string | number; onChange: (value: string) => void; type?: string; prefix?: string; min?: string; step?: string }) {
-  return <label className="block"><span className="text-sm font-bold text-slate-700">{label}</span><span className="mt-2 flex items-center rounded-xl border border-slate-200 bg-slate-50 px-4 focus-within:border-blue-400">{prefix && <span className="font-bold text-slate-400">{prefix}</span>}<input required type={type} min={min} step={step} value={value} onChange={(event) => onChange(event.target.value)} className="min-w-0 flex-1 bg-transparent px-2 py-3.5 font-bold outline-none" /></span></label>;
+  const displayedValue = type === "number" && value === 0 ? "" : value;
+  return <label className="block"><span className="text-sm font-bold text-slate-700">{label}</span><span className="mt-2 flex items-center rounded-xl border border-slate-200 bg-slate-50 px-4 focus-within:border-blue-400">{prefix && <span className="font-bold text-slate-400">{prefix}</span>}<input required type={type} min={min} step={step} value={displayedValue} placeholder={type === "number" ? "0" : undefined} onChange={(event) => onChange(event.target.value)} className="min-w-0 flex-1 bg-transparent px-2 py-3.5 font-bold outline-none" /></span></label>;
 }
