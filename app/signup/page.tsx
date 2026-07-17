@@ -81,6 +81,7 @@ export default async function SignupPage({
             <form
               className="mt-8 space-y-4"
               action={signup}
+              noValidate
             >
               {error && (
                 <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">
@@ -193,6 +194,8 @@ export default async function SignupPage({
                   I agree to the{" "}
                   <Link
                     href="/terms"
+                    target="_blank"
+                    rel="noreferrer"
                     className="font-bold text-blue-700 hover:text-blue-900"
                   >
                     Terms of Service
@@ -200,6 +203,8 @@ export default async function SignupPage({
                   and{" "}
                   <Link
                     href="/privacy"
+                    target="_blank"
+                    rel="noreferrer"
                     className="font-bold text-blue-700 hover:text-blue-900"
                   >
                     Privacy Policy
