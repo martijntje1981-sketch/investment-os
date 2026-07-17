@@ -73,15 +73,20 @@ export default function BottomNavigation() {
 
           if (item.href === "/") {
             return (
-              <a
+              <Link
                 key={item.href}
                 href="/"
+                prefetch={false}
+                onClick={(event) => {
+                  event.preventDefault();
+                  window.location.assign("/");
+                }}
                 aria-label="Open Home"
                 className={className}
               >
                 <Icon className="mb-1 h-5 w-5" strokeWidth={1.8} />
                 <span>Home</span>
-              </a>
+              </Link>
             );
           }
 
