@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import {
   ArrowRight,
   BarChart3,
@@ -24,6 +25,7 @@ import {
 } from "lucide-react";
 
 import MarketingHeader from "@/components/marketing/MarketingHeader";
+import { createClient } from "@/lib/supabase/server";
 
 const features = [
   {
@@ -151,7 +153,14 @@ const trustItems = [
   },
 ];
 
-export default function MarketingHomePage() {
+export default async function MarketingHomePage() {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+
+  if (data.user) {
+    redirect("/dashboard");
+  }
+
   return (
     <div className="min-h-screen bg-white text-slate-950">
       <MarketingHeader />
