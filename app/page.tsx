@@ -108,7 +108,7 @@ const faqItems = [
     question:
       "How does Investment OS receive my portfolio?",
     answer:
-      "The beta supports portfolio screenshot uploads followed by a review step. You remain in control of which recognised holdings are accepted.",
+      "Investment OS supports portfolio screenshot uploads followed by a review step. You remain in control of which recognised holdings are accepted.",
   },
   {
     question:
@@ -120,13 +120,13 @@ const faqItems = [
     question:
       "Can I use Investment OS with any broker?",
     answer:
-      "The goal is to support portfolio information from multiple brokers. During the beta, screenshot recognition and manual review will be tested with a limited number of formats.",
+      "Yes. Investment OS is independent and supports portfolio information from multiple brokers through screenshots, CSV or Excel imports and manual entry.",
   },
   {
     question:
       "Is my portfolio stored securely?",
     answer:
-      "The current development version is still being prepared for user accounts and secure database storage. A public beta will only launch after authentication, privacy and data-security controls are in place.",
+      "Investment OS uses appropriate technical and organisational safeguards to protect account and portfolio information. You remain in control of the information you upload.",
   },
 ];
 
@@ -141,7 +141,7 @@ const trustItems = [
     icon: LockKeyhole,
     title: "Privacy first",
     description:
-      "User accounts and secure portfolio storage will be implemented before the public beta.",
+      "Your portfolio information is handled with privacy and security as core product requirements.",
   },
   {
     icon: Layers3,
@@ -480,9 +480,9 @@ export default function MarketingHomePage() {
         >
           <div className="mx-auto max-w-6xl">
             <SectionHeading
-              eyebrow="Simple beta access"
-              title="Start building your Investment OS"
-              description="The first beta will focus on delivering a stable portfolio, briefing and goal-tracking experience before introducing additional premium layers."
+              eyebrow="Simple pricing"
+              title="One plan. Your complete Investment OS."
+              description="Monitor your portfolio, understand what is moving it and stay focused on your long-term financial goal."
             />
 
             <div className="mx-auto mt-12 max-w-2xl overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-xl">
@@ -490,27 +490,27 @@ export default function MarketingHomePage() {
                 <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-start">
                   <div>
                     <p className="text-sm font-bold uppercase tracking-[0.16em] text-violet-300">
-                      Early access beta
+                      Complete access
                     </p>
 
                     <h3 className="mt-3 text-3xl font-black">
-                      Investment OS Beta
+                      Investment OS
                     </h3>
 
                     <p className="mt-3 max-w-lg leading-7 text-slate-300">
-                      Join the product while the final
-                      account, data and payment
-                      infrastructure is being completed.
+                      Portfolio monitoring, personalised
+                      briefings and goal tracking in one
+                      clear platform.
                     </p>
                   </div>
 
                   <div className="text-left sm:text-right">
                     <p className="text-4xl font-black">
-                      Free
+                      €7.99
                     </p>
 
                     <p className="mt-1 text-sm text-slate-400">
-                      During private testing
+                      per month
                     </p>
                   </div>
                 </div>
@@ -530,14 +530,12 @@ export default function MarketingHomePage() {
                   href="/upload"
                   className="mt-9 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-6 py-4 text-sm font-bold text-white transition hover:bg-slate-800"
                 >
-                  Start with your portfolio
+                  Start your 24-hour free trial
                   <ArrowRight className="h-4 w-4" />
                 </Link>
 
                 <p className="mt-4 text-center text-xs leading-5 text-slate-500">
-                  Pricing for the public beta will be
-                  communicated before paid subscriptions
-                  are enabled.
+                  Then €7.99 per month. Cancel anytime.
                 </p>
               </div>
             </div>
@@ -552,7 +550,7 @@ export default function MarketingHomePage() {
             <SectionHeading
               eyebrow="Frequently asked questions"
               title="Clear answers before you get started"
-              description="The product is still in active development. These answers describe the intended beta experience and current limitations."
+              description="Everything you need to know about portfolio uploads, market data, privacy and your subscription."
             />
 
             <div className="mt-12 space-y-4">
@@ -635,7 +633,7 @@ export default function MarketingHomePage() {
                   href="/upload"
                   className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-6 py-4 text-sm font-bold text-slate-950 shadow-lg"
                 >
-                  Start free
+                  Start your 24-hour free trial
                   <ArrowRight className="h-4 w-4" />
                 </Link>
 
@@ -676,6 +674,8 @@ export default function MarketingHomePage() {
             <Link href="#pricing">Pricing</Link>
             <Link href="#faq">FAQ</Link>
             <Link href="#contact">Contact</Link>
+            <Link href="/privacy">Privacy</Link>
+            <Link href="/terms">Terms</Link>
             <Link href="/dashboard">Dashboard</Link>
           </nav>
 
