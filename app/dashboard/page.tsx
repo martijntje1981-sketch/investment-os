@@ -40,6 +40,8 @@ type Holding = {
   currentPrice: number;
   currency: Currency;
   confidence?: "High" | "Medium" | "Low";
+  changePercent?: number;
+  updatedAt?: string;
 };
 
 type PortfolioMetric = {
@@ -53,6 +55,8 @@ type PortfolioMetric = {
 type CachedPrice = {
   symbol: string;
   price: number;
+  changePercent?: number;
+  updatedAt?: string;
 };
 
 const PRICE_CACHE_KEY = "investment-os-market-price-cache";
@@ -80,13 +84,22 @@ function applyCachedPrices(holdings: Holding[]): Holding[] {
   const prices = new Map(
     parsed
       .filter((item) => Number.isFinite(item.price) && item.price > 0)
-      .map((item) => [item.symbol.trim().toUpperCase(), item.price]),
+      .map((item) => [item.symbol.trim().toUpperCase(), item]),
   );
 
-  return holdings.map((holding) => ({
-    ...holding,
-    currentPrice: prices.get(holding.symbol) ?? holding.currentPrice,
-  }));
+  return holdings.map((holding) => {
+    const cached = prices.get(holding.symbol);
+
+    return {
+      ...holding,
+      currentPrice: cached?.price ?? holding.currentPrice,
+      changePercent:
+        typeof cached?.changePercent === "number"
+          ? cached.changePercent
+          : undefined,
+      updatedAt: cached?.updatedAt,
+    };
+  });
 }
 
 const TARGET_VALUE = 1_000_000;
@@ -204,6 +217,39 @@ function getAllocationTone(allocation: number) {
   }
 
   return "bg-emerald-100 text-emerald-700";
+}
+
+function getMarketStatus(timeZone: string, openMinutes: number, closeMinutes: number) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone,
+    weekday: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(new Date());
+  const weekday = parts.find((part) => part.type === "weekday")?.value;
+  const hour = Number(parts.find((part) => part.type === "hour")?.value ?? 0);
+  const minute = Number(parts.find((part) => part.type === "minute")?.value ?? 0);
+  const currentMinutes = hour * 60 + minute;
+  const isWeekday = weekday ? !["Sat", "Sun"].includes(weekday) : false;
+
+  return isWeekday && currentMinutes >= openMinutes && currentMinutes < closeMinutes
+    ? "Open"
+    : "Closed";
+}
+
+function getDailyMove(holding: Holding) {
+  if (
+    typeof holding.changePercent !== "number" ||
+    !Number.isFinite(holding.changePercent) ||
+    holding.changePercent <= -100
+  ) {
+    return null;
+  }
+
+  const currentValue = getHoldingValue(holding);
+  const previousValue = currentValue / (1 + holding.changePercent / 100);
+  return currentValue - previousValue;
 }
 
 export default function DashboardPage() {
@@ -325,6 +371,36 @@ export default function DashboardPage() {
   const portfolioTone =
     totalReturn >= 0 ? "Constructive" : "Under pressure";
 
+  const dailyDrivers = holdings
+    .map((holding) => ({ holding, move: getDailyMove(holding) }))
+    .filter(
+      (item): item is { holding: Holding; move: number } =>
+        typeof item.move === "number" && Number.isFinite(item.move),
+    )
+    .sort((a, b) => Math.abs(b.move) - Math.abs(a.move));
+
+  const dailyPortfolioMove = dailyDrivers.reduce(
+    (total, item) => total + item.move,
+    0,
+  );
+
+  const dailyPortfolioMovePercentage =
+    portfolioValue - dailyPortfolioMove > 0
+      ? (dailyPortfolioMove / (portfolioValue - dailyPortfolioMove)) * 100
+      : 0;
+
+  const hasDailyMoveData = dailyDrivers.length > 0;
+  const europeanMarketStatus = getMarketStatus(
+    "Europe/Amsterdam",
+    9 * 60,
+    17 * 60 + 30,
+  );
+  const usMarketStatus = getMarketStatus(
+    "America/New_York",
+    9 * 60 + 30,
+    16 * 60,
+  );
+
   const metrics: PortfolioMetric[] = [
     {
       label: "Portfolio value",
@@ -381,6 +457,40 @@ export default function DashboardPage() {
           <p className="mt-4 text-sm font-semibold text-slate-500">
             Loading Investment OS...
           </p>
+        </div>
+      </main>
+    );
+  }
+
+  if (holdings.length === 0) {
+    return (
+      <main className="min-h-screen bg-slate-50 px-5 py-12 text-slate-950 sm:px-8">
+        <div className="mx-auto max-w-5xl">
+          <div className="rounded-[32px] bg-slate-950 p-8 text-white shadow-xl sm:p-12">
+            <p className="text-sm font-bold uppercase tracking-[0.16em] text-blue-300">
+              Your Investment OS
+            </p>
+            <h1 className="mt-4 max-w-2xl text-4xl font-black tracking-[-0.05em] sm:text-6xl">
+              Start with your portfolio
+            </h1>
+            <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-300">
+              Add your holdings to unlock portfolio value, risk, concentration,
+              goal progress and a personalised daily summary.
+            </p>
+            <Link
+              href="/upload"
+              className="mt-8 inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-bold text-slate-950"
+            >
+              <Upload className="h-4 w-4" />
+              Add portfolio
+            </Link>
+          </div>
+
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
+            <EmptyStateCard title="Markets today" text="Market status and major moves appear here." />
+            <EmptyStateCard title="Macro headlines" text="Important macro developments appear here." />
+            <EmptyStateCard title="Market status" text="Europe, US and crypto trading hours appear here." />
+          </div>
         </div>
       </main>
     );
@@ -478,10 +588,11 @@ export default function DashboardPage() {
                 </div>
 
                 <p className="mt-6 max-w-3xl text-base leading-7 text-slate-300">
-                  Your portfolio remains positioned for long-term
-                  growth. The strongest improvement opportunity is
-                  reducing concentration by directing new investments
-                  towards diversified and defensive assets.
+                  {largestHolding?.symbol ?? "Your largest holding"} represents{" "}
+                  {formatPercentage(largestHoldingAllocation)} of your portfolio.
+                  Portfolio health is {portfolioHealthScore}/100 and the average
+                  annual return required for your current goal is{" "}
+                  {formatPercentage(requiredAnnualReturn)}.
                 </p>
 
                 <div className="mt-8 flex flex-wrap gap-3">
@@ -566,6 +677,50 @@ export default function DashboardPage() {
             {metrics.map((metric) => (
               <MetricCard key={metric.label} {...metric} />
             ))}
+          </section>
+
+          <section className="mt-7 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+            <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-600">
+                  Portfolio at a glance
+                </p>
+                <h2 className="mt-2 text-2xl font-black tracking-[-0.03em] sm:text-3xl">
+                  Where you stand now
+                </h2>
+              </div>
+              <p className="max-w-xl text-sm leading-6 text-slate-500 sm:text-right">
+                A concise view of portfolio structure. Scores are monitoring
+                indicators, not personal financial advice.
+              </p>
+            </div>
+
+            <div className="mt-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <StatusCard
+                label="Risk"
+                value={concentrationRisk}
+                description={`${largestHolding?.symbol ?? "Largest holding"} is ${formatPercentage(largestHoldingAllocation)} of the portfolio.`}
+                tone={concentrationRisk === "Controlled" ? "positive" : "warning"}
+              />
+              <StatusCard
+                label="Concentration"
+                value={formatPercentage(largestHoldingAllocation)}
+                description="Weight of the largest single position."
+                tone={largestHoldingAllocation < 30 ? "positive" : "warning"}
+              />
+              <StatusCard
+                label="Correlation"
+                value="Pending history"
+                description="Requires sufficient daily return history across holdings."
+                tone="neutral"
+              />
+              <StatusCard
+                label="Income"
+                value="Not available"
+                description="Dividend metrics appear after verified distribution data is connected."
+                tone="neutral"
+              />
+            </div>
           </section>
 
           <section className="mt-7 grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
@@ -809,38 +964,39 @@ export default function DashboardPage() {
 
                 <div>
                   <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
-                    Investment coach
+                    Today&apos;s portfolio summary
                   </p>
 
                   <h2 className="mt-1 text-2xl font-bold">
-                    Current priority
+                    Why is my portfolio moving?
                   </h2>
                 </div>
               </div>
 
-              <p className="mt-5 leading-7 text-slate-600">
-                Keep the main Bitcoin position intact, but direct new
-                capital primarily towards diversified and defensive
-                holdings. This improves portfolio balance without
-                sacrificing long-term upside.
-              </p>
-
-              <div className="mt-6 space-y-3">
-                <CoachRow
-                  number="1"
-                  text="Prioritise broad global diversification"
-                />
-
-                <CoachRow
-                  number="2"
-                  text="Build defensive assets gradually"
-                />
-
-                <CoachRow
-                  number="3"
-                  text="Avoid increasing Bitcoin concentration"
-                />
-              </div>
+              {hasDailyMoveData ? (
+                <>
+                  <p className="mt-5 leading-7 text-slate-600">
+                    Your portfolio is {dailyPortfolioMove >= 0 ? "up" : "down"}{" "}
+                    <strong className="text-slate-950">
+                      {formatCurrency(Math.abs(dailyPortfolioMove))} ({formatPercentage(Math.abs(dailyPortfolioMovePercentage))})
+                    </strong>{" "}
+                    based on the latest available daily market changes.
+                  </p>
+                  <div className="mt-6 space-y-3">
+                    {dailyDrivers.slice(0, 3).map(({ holding, move }, index) => (
+                      <CoachRow
+                        key={holding.id}
+                        number={String(index + 1)}
+                        text={`${holding.symbol}: ${move >= 0 ? "+" : "-"}${formatCurrency(Math.abs(move))} contribution`}
+                      />
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <p className="mt-5 leading-7 text-slate-600">
+                  Daily movement will be explained here after current and previous-close data are available for your holdings. No daily driver is inferred from incomplete data.
+                </p>
+              )}
             </article>
 
             <article className="rounded-[28px] border border-slate-200 bg-white p-7 shadow-sm">
@@ -871,8 +1027,8 @@ export default function DashboardPage() {
                   icon={<TrendingUp className="h-5 w-5" />}
                   label="Portfolio outlook"
                   value={portfolioTone}
-                  description="Growth assets remain supported."
-                  tone="positive"
+                  description={`${totalReturn >= 0 ? "Positive" : "Negative"} return since purchase.`}
+                  tone={totalReturn >= 0 ? "positive" : "warning"}
                 />
 
                 <SignalCard
@@ -911,6 +1067,20 @@ export default function DashboardPage() {
                   description="Improves portfolio resilience."
                   tone="neutral"
                 />
+              </div>
+
+              <div className="mt-5 border-t border-slate-200 pt-5">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
+                    Market status
+                  </p>
+                  <p className="text-xs text-slate-400">Regular trading hours</p>
+                </div>
+                <div className="mt-3 grid grid-cols-3 gap-2">
+                  <MarketStatus label="Europe" value={europeanMarketStatus} />
+                  <MarketStatus label="United States" value={usMarketStatus} />
+                  <MarketStatus label="Crypto" value="24/7" />
+                </div>
               </div>
             </article>
           </section>
@@ -980,6 +1150,60 @@ function HeroDetailRow({
       <span className="text-right text-sm font-bold text-white">
         {value}
       </span>
+    </div>
+  );
+}
+
+function EmptyStateCard({ title, text }: { title: string; text: string }) {
+  return (
+    <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <p className="font-black text-slate-950">{title}</p>
+      <p className="mt-2 text-sm leading-6 text-slate-500">{text}</p>
+    </article>
+  );
+}
+
+function StatusCard({
+  label,
+  value,
+  description,
+  tone,
+}: {
+  label: string;
+  value: string;
+  description: string;
+  tone: "positive" | "warning" | "neutral";
+}) {
+  const toneClasses = {
+    positive: "bg-emerald-50 text-emerald-800",
+    warning: "bg-amber-50 text-amber-800",
+    neutral: "bg-slate-100 text-slate-700",
+  };
+
+  return (
+    <article className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+      <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
+        {label}
+      </p>
+      <span className={`mt-3 inline-flex rounded-full px-3 py-1.5 text-sm font-black ${toneClasses[tone]}`}>
+        {value}
+      </span>
+      <p className="mt-3 text-sm leading-6 text-slate-500">{description}</p>
+    </article>
+  );
+}
+
+function MarketStatus({ label, value }: { label: string; value: string }) {
+  const isOpen = value === "Open" || value === "24/7";
+
+  return (
+    <div className="rounded-xl bg-slate-50 px-3 py-3 text-center">
+      <p className="truncate text-[10px] font-bold uppercase tracking-wide text-slate-400">
+        {label}
+      </p>
+      <p className={`mt-1 text-xs font-black ${isOpen ? "text-emerald-700" : "text-slate-500"}`}>
+        {value}
+      </p>
     </div>
   );
 }
