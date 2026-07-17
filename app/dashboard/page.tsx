@@ -42,6 +42,7 @@ type Holding = {
   confidence?: "High" | "Medium" | "Low";
   changePercent?: number;
   updatedAt?: string;
+  assetType?: "investment" | "cash";
 };
 
 type PortfolioMetric = {
@@ -68,6 +69,7 @@ type GoalSettings = {
 
 const PRICE_CACHE_KEY = "investment-os-market-price-cache";
 const GOAL_STORAGE_KEY = "investment-os-goal";
+const HOLDINGS_STORAGE_KEY = "investment-os-holdings";
 
 const canonicalHoldings: Holding[] = portfolioHoldings.map((holding) => ({
   id: holding.id,
@@ -283,8 +285,14 @@ export default function DashboardPage() {
         "investment-os-annual-contribution"
       );
       const savedGoal = localStorage.getItem(GOAL_STORAGE_KEY);
+      const savedHoldings = localStorage.getItem(HOLDINGS_STORAGE_KEY);
 
-      setHoldings(applyCachedPrices(canonicalHoldings));
+      let activeHoldings = canonicalHoldings;
+      if (savedHoldings) {
+        const parsedHoldings = JSON.parse(savedHoldings) as Holding[];
+        if (Array.isArray(parsedHoldings)) activeHoldings = parsedHoldings;
+      }
+      setHoldings(applyCachedPrices(activeHoldings));
 
       if (savedGoal) {
         const parsedGoal = JSON.parse(savedGoal) as Partial<GoalSettings>;

@@ -1,24 +1,35 @@
 "use client";
 
-import {
-  ChangeEvent,
-  DragEvent,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { ChangeEvent, DragEvent, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import * as XLSX from "xlsx";
 import {
   AlertCircle,
   Check,
   FileImage,
-  LockKeyhole,
+  FileSpreadsheet,
+  Pencil,
+  Plus,
   ShieldCheck,
-  Upload,
-  X,
+  Trash2,
 } from "lucide-react";
 import BottomNavigation from "@/components/home/BottomNav";
 
+type ImportRow = {
+  id: string;
+  symbol: string;
+  name: string;
+  quantity: number;
+  purchasePrice: number;
+  currentPrice: number;
+  assetType: "investment" | "cash";
+  confidence?: number;
+  warnings?: string[];
+  isin?: string | null;
+  exchange?: string | null;
+};
+type StoredHolding = ImportRow & { currency: "EUR" };
 type RecognizedHolding = {
   name: string;
   ticker: string;
@@ -27,540 +38,284 @@ type RecognizedHolding = {
   value?: number;
   currency?: string;
   confidence?: number;
+  isin?: string | null;
+  exchange?: string | null;
+  assetType?: "investment" | "cash";
+  warnings?: string[];
 };
-
 type AnalysisResponse = {
   success: boolean;
   holdings?: RecognizedHolding[];
-  broker?: string;
   message?: string;
 };
 
+const HOLDINGS_KEY = "investment-os-holdings";
+
+function numberValue(value: unknown) {
+  if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+  if (typeof value !== "string") return 0;
+  const clean = value.replace(/[€$£\s]/g, "").replace(/\.(?=\d{3}(?:\D|$))/g, "").replace(",", ".");
+  const parsed = Number(clean);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function normalizedRecord(record: Record<string, unknown>) {
+  return new Map(
+    Object.entries(record).map(([key, value]) => [
+      key.toLowerCase().replace(/[^a-z0-9]/g, ""),
+      value,
+    ]),
+  );
+}
+
+function firstValue(record: Map<string, unknown>, keys: string[]) {
+  for (const key of keys) {
+    if (record.has(key)) return record.get(key);
+  }
+  return undefined;
+}
+
+function parseSpreadsheet(buffer: ArrayBuffer): ImportRow[] {
+  const workbook = XLSX.read(buffer, { type: "array" });
+  const sheetName = workbook.SheetNames[0];
+  if (!sheetName) return [];
+  const records = XLSX.utils.sheet_to_json<Record<string, unknown>>(workbook.Sheets[sheetName], { defval: "" });
+
+  return records.map((raw) => {
+    const record = normalizedRecord(raw);
+    const rawSymbol = String(firstValue(record, ["symbol", "ticker", "code", "isin"]) ?? "").trim().toUpperCase();
+    const rawName = String(firstValue(record, ["name", "investment", "holding", "security", "description"]) ?? rawSymbol).trim();
+    const rawType = String(firstValue(record, ["type", "assettype", "category"]) ?? "").toLowerCase();
+    const isCash = rawType.includes("cash") || ["CASH", "EUR", "EURCASH"].includes(rawSymbol.replace(/\s/g, ""));
+    const amount = numberValue(firstValue(record, ["amount", "cash", "value", "marketvalue"]));
+    const quantity = isCash ? amount || numberValue(firstValue(record, ["quantity", "units", "shares", "number"])) : numberValue(firstValue(record, ["quantity", "units", "shares", "number"]));
+    const purchasePrice = isCash ? 1 : numberValue(firstValue(record, ["purchaseprice", "averageprice", "avgprice", "costprice", "buyprice"]));
+    const currentPrice = isCash ? 1 : numberValue(firstValue(record, ["currentprice", "price", "marketprice", "lastprice"])) || purchasePrice;
+
+    return {
+      id: crypto.randomUUID(),
+      symbol: isCash ? rawSymbol || "EUR" : rawSymbol,
+      name: isCash ? rawName || "EUR Cash" : rawName,
+      quantity,
+      purchasePrice,
+      currentPrice,
+      assetType: isCash ? ("cash" as const) : ("investment" as const),
+    };
+  }).filter((row) => row.name && row.quantity >= 0 && (row.assetType === "cash" || row.symbol));
+}
+
+function readStoredHoldings(): StoredHolding[] {
+  try {
+    const stored = localStorage.getItem(HOLDINGS_KEY);
+    const parsed = stored ? JSON.parse(stored) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
 export default function UploadPage() {
   const router = useRouter();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const imageInput = useRef<HTMLInputElement>(null);
+  const sheetInput = useRef<HTMLInputElement>(null);
+  const [rows, setRows] = useState<ImportRow[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [statusType, setStatusType] = useState<
-    "success" | "error" | "info" | null
-  >(null);
-  const [statusMessage, setStatusMessage] = useState("");
-  const [recognizedHoldings, setRecognizedHoldings] = useState<
-    RecognizedHolding[]
-  >([]);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [source, setSource] = useState<"screenshot" | "spreadsheet" | null>(null);
 
-  useEffect(() => {
-    return () => {
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-      }
-    };
-  }, [previewUrl]);
-
-  function openFilePicker() {
-    fileInputRef.current?.click();
-  }
-
-  function resetStatus() {
-    setStatusType(null);
-    setStatusMessage("");
-    setRecognizedHoldings([]);
-  }
-
-  function processFile(file: File) {
-    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
-
-    if (!allowedTypes.includes(file.type)) {
-      setStatusType("error");
-      setStatusMessage("Selecteer een JPG-, PNG- of WEBP-afbeelding.");
+  async function processScreenshot(file: File) {
+    if (!file.type.startsWith("image/")) {
+      setError("Choose a JPG, PNG or WEBP image.");
       return;
     }
-
-    const maximumFileSize = 10 * 1024 * 1024;
-
-    if (file.size > maximumFileSize) {
-      setStatusType("error");
-      setStatusMessage("De geselecteerde afbeelding is groter dan 10 MB.");
+    if (file.size > 10 * 1024 * 1024) {
+      setError("The selected image is larger than 10 MB.");
       return;
     }
-
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-    }
-
-    setSelectedFile(file);
-    setPreviewUrl(URL.createObjectURL(file));
-    resetStatus();
-  }
-
-  function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-
-    if (file) {
-      processFile(file);
-    }
-  }
-
-  function handleDragEnter(event: DragEvent<HTMLDivElement>) {
-    event.preventDefault();
-    event.stopPropagation();
-    setIsDragging(true);
-  }
-
-  function handleDragOver(event: DragEvent<HTMLDivElement>) {
-    event.preventDefault();
-    event.stopPropagation();
-    setIsDragging(true);
-  }
-
-  function handleDragLeave(event: DragEvent<HTMLDivElement>) {
-    event.preventDefault();
-    event.stopPropagation();
-
-    if (event.currentTarget === event.target) {
-      setIsDragging(false);
-    }
-  }
-
-  function handleDrop(event: DragEvent<HTMLDivElement>) {
-    event.preventDefault();
-    event.stopPropagation();
-    setIsDragging(false);
-
-    const file = event.dataTransfer.files?.[0];
-
-    if (file) {
-      processFile(file);
-    }
-  }
-
-  function removeFile() {
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-    }
-
-    setSelectedFile(null);
-    setPreviewUrl(null);
-    setIsProcessing(false);
-    resetStatus();
-
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  }
-
-  async function analysePortfolio() {
-    if (!selectedFile) {
-      setStatusType("error");
-      setStatusMessage("Upload eerst een screenshot van je portefeuille.");
-      return;
-    }
-
+    setError("");
+    setMessage("Analysing screenshot…");
     setIsProcessing(true);
-    setStatusType("info");
-    setStatusMessage("Screenshot wordt geanalyseerd…");
-    setRecognizedHoldings([]);
-
     try {
       const formData = new FormData();
-      formData.append("file", selectedFile);
-
-      const response = await fetch("/api/analyze-portfolio", {
-        method: "POST",
-        body: formData,
+      formData.append("file", file);
+      const response = await fetch("/api/analyze-portfolio", { method: "POST", body: formData });
+      const data = await response.json() as AnalysisResponse;
+      if (!response.ok || !data.success) throw new Error(data.message ?? "The screenshot could not be analysed.");
+      const imported = (data.holdings ?? []).map((holding) => {
+        const isCash = holding.assetType === "cash";
+        const price = holding.price ?? (holding.quantity > 0 && holding.value ? holding.value / holding.quantity : 0);
+        return {
+          id: crypto.randomUUID(),
+          symbol: isCash ? holding.ticker.trim().toUpperCase() || holding.currency || "EUR" : holding.ticker.trim().toUpperCase(),
+          name: isCash ? holding.name || `${holding.currency || "EUR"} Cash` : holding.name,
+          quantity: holding.quantity,
+          purchasePrice: isCash ? 1 : price,
+          currentPrice: isCash ? 1 : price,
+          assetType: isCash ? "cash" as const : "investment" as const,
+          confidence: holding.confidence,
+          warnings: holding.warnings,
+          isin: holding.isin,
+          exchange: holding.exchange,
+        };
       });
-
-      const data = (await response.json()) as AnalysisResponse;
-
-      if (!response.ok || !data.success) {
-        throw new Error(
-          data.message ||
-            "De screenshot kon niet worden geanalyseerd."
-        );
-      }
-
-      const holdings = data.holdings ?? [];
-
-      if (holdings.length === 0) {
-        throw new Error(
-          "Er zijn geen holdings gevonden. Probeer een scherpere screenshot."
-        );
-      }
-
-      const portfolioImport = {
-        broker: data.broker || "Unknown broker",
-        importedAt: new Date().toISOString(),
-        holdings,
-      };
-
-      localStorage.setItem(
-        "investment-os-imported-portfolio",
-        JSON.stringify(portfolioImport)
-      );
-
-      setRecognizedHoldings(holdings);
-      setStatusType("success");
-      setStatusMessage(
-        `${holdings.length} holding${
-          holdings.length === 1 ? "" : "s"
-        } succesvol herkend. Je wordt doorgestuurd naar Portfolio.`
-      );
-
-      window.setTimeout(() => {
-        router.push("/portfolio");
-      }, 1800);
-    } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Er is een onbekende fout opgetreden.";
-
-      setStatusType("error");
-      setStatusMessage(message);
+      if (!imported.length) throw new Error("No holdings were recognised. Try a clearer screenshot.");
+      setRows(imported);
+      setSource("screenshot");
+      setMessage("Review every recognised value before saving.");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "The screenshot could not be analysed.");
+      setMessage("");
     } finally {
       setIsProcessing(false);
     }
   }
 
-  function formatFileSize(bytes: number) {
-    if (bytes < 1024) {
-      return `${bytes} bytes`;
+  async function processSpreadsheet(file: File) {
+    const extension = file.name.split(".").pop()?.toLowerCase();
+    if (!extension || !["xlsx", "xls", "csv"].includes(extension)) {
+      setError("Choose an Excel (.xlsx or .xls) or CSV file.");
+      return;
     }
-
-    if (bytes < 1024 * 1024) {
-      return `${(bytes / 1024).toFixed(1)} KB`;
+    setError("");
+    setIsProcessing(true);
+    setMessage("Reading spreadsheet…");
+    try {
+      const imported = parseSpreadsheet(await file.arrayBuffer());
+      if (!imported.length) throw new Error("No valid holdings were found. Check the column headings and values.");
+      setRows(imported);
+      setSource("spreadsheet");
+      setMessage("Review the imported rows before saving.");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "The spreadsheet could not be read.");
+      setMessage("");
+    } finally {
+      setIsProcessing(false);
     }
-
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   }
 
-  function formatNumber(value?: number) {
-    if (value === undefined || Number.isNaN(value)) {
-      return "—";
-    }
-
-    return new Intl.NumberFormat("nl-NL", {
-      maximumFractionDigits: 4,
-    }).format(value);
+  function onImageChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (file) void processScreenshot(file);
+    event.target.value = "";
   }
 
-  function formatMoney(value?: number, currency = "EUR") {
-    if (value === undefined || Number.isNaN(value)) {
-      return "—";
-    }
+  function onSheetChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (file) void processSpreadsheet(file);
+    event.target.value = "";
+  }
 
-    return new Intl.NumberFormat("nl-NL", {
-      style: "currency",
-      currency,
-      maximumFractionDigits: 2,
-    }).format(value);
+  function onDrop(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    setIsDragging(false);
+    const file = event.dataTransfer.files?.[0];
+    if (!file) return;
+    if (file.type.startsWith("image/")) void processScreenshot(file);
+    else void processSpreadsheet(file);
+  }
+
+  function updateRow(id: string, field: keyof ImportRow, value: string) {
+    setRows((current) => current.map((row) => row.id === id ? {
+      ...row,
+      [field]: ["quantity", "purchasePrice", "currentPrice"].includes(field) ? Number(value) : value,
+      ...(field === "assetType" && value === "cash" ? { symbol: "EUR", name: "EUR Cash", purchasePrice: 1, currentPrice: 1 } : {}),
+    } : row));
+  }
+
+  function save(mode: "replace" | "merge") {
+    const invalid = rows.some((row) => !row.name.trim() || row.quantity < 0 || (row.assetType === "investment" && (!row.symbol.trim() || row.currentPrice <= 0)));
+    if (invalid) {
+      setError("Complete all required fields and ensure quantities and prices are valid.");
+      return;
+    }
+    const prepared: StoredHolding[] = rows.map((row) => ({
+      ...row,
+      symbol: row.symbol.trim().toUpperCase(),
+      name: row.name.trim(),
+      purchasePrice: row.assetType === "cash" ? 1 : row.purchasePrice,
+      currentPrice: row.assetType === "cash" ? 1 : row.currentPrice,
+      currency: "EUR",
+    }));
+    const next = mode === "replace" ? prepared : [...readStoredHoldings(), ...prepared];
+    localStorage.setItem(HOLDINGS_KEY, JSON.stringify(next));
+    window.dispatchEvent(new Event("investment-os-holdings-updated"));
+    router.push("/portfolio");
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
-      <main className="mx-auto max-w-[1120px] px-5 pb-[calc(var(--bottom-nav-height)+env(safe-area-inset-bottom,0px)+2rem)] pt-10 sm:px-8 sm:pt-14">
-        <section>
-          <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1.5 text-sm font-semibold text-blue-700">
-            <LockKeyhole className="h-4 w-4" />
-            Secure portfolio setup
+    <>
+      <main className="min-h-screen max-w-full overflow-x-hidden bg-slate-50 px-4 pb-28 pt-7 text-slate-950 sm:px-8 sm:pt-12">
+        <div className="mx-auto max-w-6xl">
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-700">Secure portfolio setup</p>
+          <h1 className="mt-3 text-4xl font-black tracking-[-0.05em] sm:text-6xl">Import your portfolio</h1>
+          <p className="mt-4 max-w-2xl leading-7 text-slate-600">Choose a screenshot, Excel, CSV or manual entry. Nothing is saved until you review and confirm it.</p>
+
+          <section className="mt-8 grid gap-4 md:grid-cols-3">
+            <ImportCard icon={<FileImage className="h-6 w-6" />} title="Screenshot" text="AI recognises visible positions." button="Choose screenshot" onClick={() => imageInput.current?.click()} />
+            <ImportCard icon={<FileSpreadsheet className="h-6 w-6" />} title="Excel or CSV" text="Import rows from a spreadsheet." button="Choose spreadsheet" onClick={() => sheetInput.current?.click()} />
+            <ImportCard icon={<Pencil className="h-6 w-6" />} title="Manual entry" text="Add investments or cash yourself." button="Open portfolio" href="/portfolio" />
+          </section>
+
+          <input ref={imageInput} type="file" accept="image/png,image/jpeg,image/webp" onChange={onImageChange} className="hidden" />
+          <input ref={sheetInput} type="file" accept=".xlsx,.xls,.csv,text/csv" onChange={onSheetChange} className="hidden" />
+
+          <div
+            onDragOver={(event) => { event.preventDefault(); setIsDragging(true); }}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={onDrop}
+            className={`mt-5 rounded-2xl border-2 border-dashed px-5 py-5 text-center text-sm font-semibold ${isDragging ? "border-blue-500 bg-blue-50 text-blue-700" : "border-slate-300 bg-white text-slate-500"}`}
+          >
+            Drop a screenshot, Excel or CSV file here
           </div>
 
-          <h1 className="mt-5 max-w-[760px] text-[36px] font-bold leading-[1.08] tracking-[-0.04em] text-slate-950 sm:text-[48px]">
-            Import your portfolio
-          </h1>
+          {isProcessing && <div className="mt-5 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm font-bold text-blue-800">{message}</div>}
+          {error && <div className="mt-5 flex items-start gap-2 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-800"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />{error}</div>}
 
-          <p className="mt-4 max-w-[700px] text-base leading-7 text-slate-600 sm:text-lg">
-            Upload een screenshot van je broker. Investment OS herkent je
-            holdings en zet ze automatisch klaar voor je portfolio.
-          </p>
-        </section>
-
-        <section className="mt-9 grid gap-6 lg:grid-cols-[1.35fr_0.65fr]">
-          <article className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
-            <div className="border-b border-slate-200 px-6 py-5 sm:px-8">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-bold uppercase tracking-[0.12em] text-blue-600">
-                    Recommended
-                  </p>
-
-                  <h2 className="mt-1 text-2xl font-bold tracking-[-0.03em] text-slate-950">
-                    Upload a screenshot
-                  </h2>
-                </div>
-
-                <div className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">
-                  JPG · PNG · WEBP
-                </div>
+          {rows.length > 0 && !isProcessing && (
+            <section className="mt-7 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
+              <div className="flex flex-col justify-between gap-3 border-b border-slate-200 px-5 py-5 sm:flex-row sm:items-center sm:px-7">
+                <div><p className="text-xs font-black uppercase tracking-[0.14em] text-blue-700">Review required</p><h2 className="mt-1 text-2xl font-black">Check {rows.length} imported rows</h2><p className="mt-1 text-sm text-slate-500">Source: {source === "screenshot" ? "AI screenshot recognition" : "spreadsheet"}</p></div>
+                <button onClick={() => setRows((current) => [...current, { id: crypto.randomUUID(), symbol: "", name: "", quantity: 0, purchasePrice: 0, currentPrice: 0, assetType: "investment" }])} className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-bold"><Plus className="h-4 w-4" /> Add row</button>
               </div>
-            </div>
 
-            <div className="p-5 sm:p-8">
-              {!selectedFile ? (
-                <div
-                  role="button"
-                  tabIndex={0}
-                  onClick={openFilePicker}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      openFilePicker();
-                    }
-                  }}
-                  onDragEnter={handleDragEnter}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onDrop={handleDrop}
-                  className={`flex min-h-[360px] cursor-pointer flex-col items-center justify-center rounded-[24px] border-2 border-dashed px-6 py-12 text-center transition ${
-                    isDragging
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-slate-300 bg-slate-50 hover:border-blue-400 hover:bg-blue-50/50"
-                  }`}
-                >
-                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-200">
-                    <Upload className="h-8 w-8" />
-                  </div>
-
-                  <h3 className="mt-6 text-xl font-bold text-slate-950">
-                    Drop your portfolio screenshot here
-                  </h3>
-
-                  <p className="mt-2 max-w-[430px] text-sm leading-6 text-slate-500">
-                    Selecteer een duidelijke screenshot waarop de namen,
-                    aantallen en waardes van je beleggingen zichtbaar zijn.
-                  </p>
-
-                  <button
-                    type="button"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      openFilePicker();
-                    }}
-                    className="mt-6 rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white transition hover:bg-slate-800"
-                  >
-                    Choose screenshot
-                  </button>
-
-                  <p className="mt-4 text-xs text-slate-400">
-                    Maximum file size: 10 MB
-                  </p>
-                </div>
-              ) : (
-                <div>
-                  <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-slate-100">
-                    <div className="flex items-center justify-between gap-4 border-b border-slate-200 bg-white px-4 py-3">
-                      <div className="flex min-w-0 items-center gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-green-100 text-green-700">
-                          <FileImage className="h-5 w-5" />
-                        </div>
-
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-bold text-slate-900">
-                            {selectedFile.name}
-                          </p>
-
-                          <p className="text-xs text-slate-500">
-                            {formatFileSize(selectedFile.size)}
-                          </p>
-                        </div>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={removeFile}
-                        disabled={isProcessing}
-                        aria-label="Remove uploaded screenshot"
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 disabled:opacity-50"
-                      >
-                        <X className="h-5 w-5" />
-                      </button>
-                    </div>
-
-                    {previewUrl && (
-                      <div className="flex min-h-[330px] items-center justify-center p-4">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={previewUrl}
-                          alt="Uploaded portfolio screenshot preview"
-                          className="max-h-[520px] w-auto max-w-full rounded-xl object-contain shadow-sm"
-                        />
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-                    <button
-                      type="button"
-                      onClick={analysePortfolio}
-                      disabled={isProcessing}
-                      className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3.5 text-sm font-bold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {isProcessing ? (
-                        <>
-                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                          Analysing screenshot...
-                        </>
-                      ) : (
-                        <>
-                          <Check className="h-4 w-4" />
-                          Analyze screenshot
-                        </>
-                      )}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={openFilePicker}
-                      disabled={isProcessing}
-                      className="rounded-xl border border-slate-300 bg-white px-5 py-3.5 text-sm font-bold text-slate-800 transition hover:bg-slate-50 disabled:opacity-60"
-                    >
-                      Choose another image
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                onChange={handleFileChange}
-                className="hidden"
-              />
-
-              {statusMessage && (
-                <div
-                  className={`mt-5 rounded-2xl border px-4 py-3 text-sm font-medium ${
-                    statusType === "success"
-                      ? "border-green-200 bg-green-50 text-green-800"
-                      : statusType === "error"
-                        ? "border-red-200 bg-red-50 text-red-800"
-                        : "border-blue-200 bg-blue-50 text-blue-800"
-                  }`}
-                >
-                  <div className="flex items-start gap-2">
-                    {statusType === "error" ? (
-                      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                    ) : (
-                      <Check className="mt-0.5 h-4 w-4 shrink-0" />
-                    )}
-
-                    <span>{statusMessage}</span>
-                  </div>
-                </div>
-              )}
-
-              {recognizedHoldings.length > 0 && (
-                <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200">
-                  <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
-                    <p className="text-sm font-bold text-slate-900">
-                      Recognized holdings
-                    </p>
-                  </div>
-
-                  <div className="divide-y divide-slate-200">
-                    {recognizedHoldings.map((holding, index) => (
-                      <div
-                        key={`${holding.ticker}-${index}`}
-                        className="grid grid-cols-[1fr_auto] gap-4 px-4 py-3"
-                      >
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-bold text-slate-900">
-                            {holding.name}
-                          </p>
-
-                          <p className="mt-0.5 text-xs text-slate-500">
-                            {holding.ticker || "Ticker onbekend"} ·{" "}
-                            {formatNumber(holding.quantity)} stuks
-                          </p>
-                        </div>
-
-                        <div className="text-right">
-                          <p className="text-sm font-bold text-slate-900">
-                            {formatMoney(
-                              holding.value,
-                              holding.currency || "EUR"
-                            )}
-                          </p>
-
-                          {holding.confidence !== undefined && (
-                            <p className="mt-0.5 text-xs text-slate-500">
-                              {Math.round(holding.confidence * 100)}% confidence
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </article>
-
-          <div className="space-y-6">
-            <article className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-              <h2 className="text-lg font-bold text-slate-950">
-                How it works
-              </h2>
-
-              <div className="mt-5 space-y-4">
-                {[
-                  "Upload your broker screenshot",
-                  "AI recognizes your holdings",
-                  "Review the detected positions",
-                  "Portfolio and dashboard are updated",
-                ].map((item, index) => (
-                  <div key={item} className="flex items-start gap-3">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-50 text-sm font-bold text-blue-700">
-                      {index + 1}
-                    </div>
-
-                    <p className="pt-1 text-sm font-medium text-slate-700">
-                      {item}
-                    </p>
+              <div className="divide-y divide-slate-200">
+                {rows.map((row) => (
+                  <div key={row.id} className="grid gap-3 px-5 py-5 md:grid-cols-[0.8fr_0.8fr_1.4fr_0.8fr_0.9fr_0.9fr_auto] md:items-end md:px-7">
+                    <ReviewField label="Type"><select value={row.assetType} onChange={(event) => updateRow(row.id, "assetType", event.target.value)} className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-bold"><option value="investment">Investment</option><option value="cash">Cash</option></select></ReviewField>
+                    <ReviewField label="Symbol"><input disabled={row.assetType === "cash"} value={row.symbol} onChange={(event) => updateRow(row.id, "symbol", event.target.value)} className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-bold disabled:opacity-60" /></ReviewField>
+                    <ReviewField label="Name"><input value={row.name} onChange={(event) => updateRow(row.id, "name", event.target.value)} className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-bold" />{((row.confidence ?? 1) < 0.8 || (row.warnings?.length ?? 0) > 0) && <p className="mt-1.5 text-[11px] font-semibold leading-4 text-amber-700">{row.warnings?.join(" · ") || "Low-confidence recognition — verify this row carefully."}</p>}</ReviewField>
+                    <ReviewField label={row.assetType === "cash" ? "Amount" : "Quantity"}><input type="number" min="0" step="any" value={row.quantity} onChange={(event) => updateRow(row.id, "quantity", event.target.value)} className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-bold" /></ReviewField>
+                    <ReviewField label="Purchase price"><input disabled={row.assetType === "cash"} type="number" min="0" step="any" value={row.purchasePrice} onChange={(event) => updateRow(row.id, "purchasePrice", event.target.value)} className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-bold disabled:opacity-60" /></ReviewField>
+                    <ReviewField label="Current price"><input disabled={row.assetType === "cash"} type="number" min="0" step="any" value={row.currentPrice} onChange={(event) => updateRow(row.id, "currentPrice", event.target.value)} className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-bold disabled:opacity-60" /></ReviewField>
+                    <button onClick={() => setRows((current) => current.filter((item) => item.id !== row.id))} aria-label={`Remove ${row.name || "row"}`} className="rounded-lg p-2.5 text-red-600 hover:bg-red-50"><Trash2 className="h-4 w-4" /></button>
                   </div>
                 ))}
               </div>
-            </article>
 
-            <article className="rounded-[28px] border border-slate-200 bg-slate-950 p-6 text-white shadow-sm">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10">
-                <ShieldCheck className="h-6 w-6" />
+              <div className="flex flex-col gap-3 border-t border-slate-200 bg-slate-50 px-5 py-5 sm:flex-row sm:justify-end sm:px-7">
+                <button onClick={() => save("merge")} className="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold">Add to existing portfolio</button>
+                <button onClick={() => save("replace")} className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white"><Check className="h-4 w-4" /> Replace portfolio</button>
               </div>
+            </section>
+          )}
 
-              <h2 className="mt-5 text-xl font-bold">
-                Your portfolio data stays yours.
-              </h2>
-
-              <p className="mt-3 text-sm leading-6 text-slate-300">
-                Investment OS vraagt nooit om je brokerwachtwoord. De
-                screenshot wordt alleen gebruikt om je posities te herkennen.
-              </p>
-
-              <div className="mt-5 space-y-3 text-sm text-slate-200">
-                <div className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-400" />
-                  No broker login required
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-400" />
-                  Holdings stored in your browser
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-400" />
-                  Replace your portfolio anytime
-                </div>
-              </div>
-            </article>
-          </div>
-        </section>
+          <section className="mt-7 rounded-[28px] bg-slate-950 p-6 text-white sm:p-8">
+            <div className="flex items-start gap-4"><div className="rounded-2xl bg-white/10 p-3"><ShieldCheck className="h-5 w-5" /></div><div><h2 className="text-xl font-black">You stay in control</h2><p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">Investment OS never asks for your broker password. Imported and AI-recognised values must be reviewed before they are saved.</p></div></div>
+          </section>
+        </div>
       </main>
-
       <BottomNavigation />
-    </div>
+    </>
   );
+}
+
+function ImportCard({ icon, title, text, button, onClick, href }: { icon: React.ReactNode; title: string; text: string; button: string; onClick?: () => void; href?: string }) {
+  const classes = "mt-5 inline-flex rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-bold text-white";
+  return <article className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm"><div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-700">{icon}</div><h2 className="mt-5 text-xl font-black">{title}</h2><p className="mt-2 text-sm leading-6 text-slate-500">{text}</p>{href ? <Link href={href} className={classes}>{button}</Link> : <button onClick={onClick} className={classes}>{button}</button>}</article>;
+}
+
+function ReviewField({ label, children }: { label: string; children: React.ReactNode }) {
+  return <label className="min-w-0"><span className="mb-1.5 block text-[11px] font-black uppercase tracking-[0.1em] text-slate-400">{label}</span>{children}</label>;
 }
