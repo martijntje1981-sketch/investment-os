@@ -59,7 +59,15 @@ type CachedPrice = {
   updatedAt?: string;
 };
 
+type GoalSettings = {
+  targetValue: number;
+  targetYear: number;
+  monthlyContribution: number;
+  expectedAnnualReturn: number;
+};
+
 const PRICE_CACHE_KEY = "investment-os-market-price-cache";
+const GOAL_STORAGE_KEY = "investment-os-goal";
 
 const canonicalHoldings: Holding[] = portfolioHoldings.map((holding) => ({
   id: holding.id,
@@ -105,6 +113,12 @@ function applyCachedPrices(holdings: Holding[]): Holding[] {
 const TARGET_VALUE = 1_000_000;
 const TARGET_YEAR = 2036;
 const DEFAULT_ANNUAL_CONTRIBUTION = 15_000;
+const DEFAULT_GOAL: GoalSettings = {
+  targetValue: TARGET_VALUE,
+  targetYear: TARGET_YEAR,
+  monthlyContribution: DEFAULT_ANNUAL_CONTRIBUTION / 12,
+  expectedAnnualReturn: 10,
+};
 
 function formatCurrency(
   value: number,
@@ -257,20 +271,29 @@ export default function DashboardPage() {
   const [annualContribution, setAnnualContribution] = useState(
     DEFAULT_ANNUAL_CONTRIBUTION
   );
+  const [goal, setGoal] = useState<GoalSettings>(DEFAULT_GOAL);
   const [isLoaded, setIsLoaded] = useState(false);
 
   const currentYear = new Date().getFullYear();
-  const yearsRemaining = Math.max(TARGET_YEAR - currentYear, 1);
+  const yearsRemaining = Math.max(goal.targetYear - currentYear, 1);
 
   useEffect(() => {
     try {
       const savedAnnualContribution = localStorage.getItem(
         "investment-os-annual-contribution"
       );
+      const savedGoal = localStorage.getItem(GOAL_STORAGE_KEY);
 
       setHoldings(applyCachedPrices(canonicalHoldings));
 
-      if (savedAnnualContribution) {
+      if (savedGoal) {
+        const parsedGoal = JSON.parse(savedGoal) as Partial<GoalSettings>;
+        const nextGoal = { ...DEFAULT_GOAL, ...parsedGoal };
+        setGoal(nextGoal);
+        setAnnualContribution(nextGoal.monthlyContribution * 12);
+      }
+
+      if (!savedGoal && savedAnnualContribution) {
         const parsedContribution = Number(savedAnnualContribution);
 
         if (
@@ -322,14 +345,14 @@ export default function DashboardPage() {
       : 0;
 
   const goalProgress = Math.min(
-    (portfolioValue / TARGET_VALUE) * 100,
+    (portfolioValue / goal.targetValue) * 100,
     100
   );
 
   const requiredAnnualReturn = calculateRequiredReturn(
     portfolioValue,
     annualContribution,
-    TARGET_VALUE,
+    goal.targetValue,
     yearsRemaining
   );
 
@@ -435,7 +458,7 @@ export default function DashboardPage() {
       label: "Goal progress",
       value: formatPercentage(goalProgress),
       description: `${formatCurrency(
-        TARGET_VALUE - portfolioValue
+        goal.targetValue - portfolioValue
       )} remaining`,
       tone: "positive",
       icon: <Target className="h-5 w-5" />,
@@ -558,7 +581,7 @@ export default function DashboardPage() {
                   </span>
 
                   <span className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold text-slate-300">
-                    Project Million active
+                    Personal goal active
                   </span>
                 </div>
 
@@ -667,7 +690,7 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
-                      Project Million
+                      Your goal
                     </p>
 
                     <p className="mt-2 text-3xl font-black">
@@ -692,12 +715,12 @@ export default function DashboardPage() {
                 <div className="mt-6 space-y-4">
                   <HeroDetailRow
                     label="Target"
-                    value={formatCurrency(TARGET_VALUE)}
+                    value={formatCurrency(goal.targetValue)}
                   />
 
                   <HeroDetailRow
                     label="Target year"
-                    value={String(TARGET_YEAR)}
+                    value={String(goal.targetYear)}
                   />
 
                   <HeroDetailRow
@@ -996,7 +1019,7 @@ export default function DashboardPage() {
             <QuickActionCard
               href="/goals"
               icon={<Target className="h-6 w-6" />}
-              eyebrow="Project Million"
+              eyebrow="Personal goal"
               title="Track the €1M mission"
               description="Compare scenarios, change contributions and monitor your required growth."
               action="Open goals"
@@ -1151,7 +1174,7 @@ export default function DashboardPage() {
 
                 <p className="mt-3 max-w-2xl leading-7 text-blue-100">
                   Upload a new portfolio whenever your positions change.
-                  The dashboard, holding pages and Project Million
+                  The dashboard, holding pages and your personal goal
                   projections will update automatically.
                 </p>
               </div>
