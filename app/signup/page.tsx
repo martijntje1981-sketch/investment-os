@@ -10,13 +10,21 @@ import {
   UserRound,
 } from "lucide-react";
 
+import { signup } from "@/app/auth/actions";
+
 const benefits = [
   "Create your personal investment dashboard",
   "Connect your portfolio and long-term goal",
   "Receive intelligence linked to your holdings",
 ];
 
-export default function SignupPage() {
+export default async function SignupPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const { error } = await searchParams;
+
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
       <div className="grid min-h-screen lg:grid-cols-[0.9fr_1.1fr]">
@@ -72,8 +80,13 @@ export default function SignupPage() {
 
             <form
               className="mt-8 space-y-4"
-              action="/dashboard"
+              action={signup}
             >
+              {error && (
+                <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">
+                  {error}
+                </div>
+              )}
               <div>
                 <label
                   htmlFor="name"
@@ -222,9 +235,7 @@ export default function SignupPage() {
             </Link>
 
             <p className="mt-6 text-center text-xs leading-5 text-slate-500">
-              This is currently a visual beta signup.
-              Secure account creation and database storage
-              will be connected before public access.
+              Start with a 24-hour free trial. Then €7.99 per month.
             </p>
           </div>
         </section>
@@ -271,18 +282,17 @@ export default function SignupPage() {
 
           <div className="relative rounded-[28px] border border-white/10 bg-white/5 p-6">
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
-              Private beta access
+              Complete access
             </p>
 
             <p className="mt-3 text-xl font-bold">
-              Join before the public release
+              Start your Investment OS
             </p>
 
             <p className="mt-3 text-sm leading-6 text-slate-300">
-              Beta users will help test the portfolio
-              workflow, personalised briefing and goal
-              engine before paid subscriptions are
-              introduced.
+              Monitor your portfolio, receive personalised
+              briefings and track progress towards your
+              long-term financial goal.
             </p>
           </div>
         </section>

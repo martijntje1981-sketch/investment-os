@@ -9,13 +9,21 @@ import {
   Sparkles,
 } from "lucide-react";
 
+import { login } from "@/app/auth/actions";
+
 const benefits = [
   "Access your personal investment dashboard",
   "Keep your portfolio, goals and briefing together",
   "Continue securely across devices",
 ];
 
-export default function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string; message?: string }>;
+}) {
+  const { error, message } = await searchParams;
+
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
       <div className="grid min-h-screen lg:grid-cols-[0.9fr_1.1fr]">
@@ -70,8 +78,19 @@ export default function LoginPage() {
 
             <form
               className="mt-9 space-y-5"
-              action="/dashboard"
+              action={login}
             >
+              {message && (
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
+                  {message}
+                </div>
+              )}
+
+              {error && (
+                <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">
+                  {error}
+                </div>
+              )}
               <div>
                 <label
                   htmlFor="email"
@@ -164,9 +183,7 @@ export default function LoginPage() {
             </Link>
 
             <p className="mt-6 text-center text-xs leading-5 text-slate-500">
-              This is currently a visual beta login. Secure
-              authentication and account storage will be connected
-              before public access.
+              Your account is protected with secure authentication.
             </p>
           </div>
         </section>
@@ -211,16 +228,16 @@ export default function LoginPage() {
 
           <div className="relative rounded-[28px] border border-white/10 bg-white/5 p-6">
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
-              Private beta
+              Privacy first
             </p>
 
             <p className="mt-3 text-xl font-bold">
-              Built carefully before public launch
+              Your portfolio stays personal
             </p>
 
             <p className="mt-3 text-sm leading-6 text-slate-300">
-              Authentication, portfolio security and privacy controls
-              will be fully tested before external users are invited.
+              Secure authentication and privacy controls help protect
+              access to your investment information.
             </p>
           </div>
         </section>
