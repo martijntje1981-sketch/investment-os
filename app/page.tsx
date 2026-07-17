@@ -223,6 +223,15 @@ export default async function MarketingHomePage({
             <div className="relative">
               <div className="rounded-[32px] border border-slate-200 bg-white p-4 shadow-2xl shadow-slate-300/50 sm:p-6">
                 <div className="overflow-hidden rounded-[26px] bg-slate-950 p-6 text-white sm:p-8">
+                  <div className="mb-6 rounded-2xl border border-blue-400/20 bg-blue-400/10 px-4 py-3">
+                    <p className="text-xs font-black uppercase tracking-[0.14em] text-blue-200">
+                      Illustrative product preview
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-slate-300">
+                      Fixed example data — this is not your portfolio and does not change with your account.
+                    </p>
+                  </div>
+
                   <div className="flex items-start justify-between gap-5">
                     <div>
                       <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
@@ -230,11 +239,11 @@ export default async function MarketingHomePage({
                       </p>
 
                       <p className="mt-3 text-4xl font-black tracking-[-0.05em]">
-                        €87,799
+                        €100,000
                       </p>
 
                       <p className="mt-2 text-sm text-slate-400">
-                        Illustrative portfolio value
+                        Example portfolio value
                       </p>
                     </div>
 
@@ -246,17 +255,17 @@ export default async function MarketingHomePage({
                   <div className="mt-7 grid grid-cols-2 gap-3">
                     <PreviewMetric
                       label="Goal progress"
-                      value="8.8%"
+                      value="10.0%"
                     />
 
                     <PreviewMetric
                       label="Portfolio health"
-                      value="64/100"
+                      value="70/100"
                     />
 
                     <PreviewMetric
                       label="Active holdings"
-                      value="5"
+                      value="8"
                     />
 
                     <PreviewMetric
@@ -269,7 +278,7 @@ export default async function MarketingHomePage({
                     <div className="flex items-center justify-between gap-4">
                       <div>
                         <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
-                          Project Million
+                          Example goal
                         </p>
 
                         <p className="mt-2 text-xl font-bold">
@@ -281,7 +290,7 @@ export default async function MarketingHomePage({
                     </div>
 
                     <div className="mt-5 h-2.5 overflow-hidden rounded-full bg-white/10">
-                      <div className="h-full w-[9%] rounded-full bg-gradient-to-r from-blue-500 to-violet-500" />
+                      <div className="h-full w-[10%] rounded-full bg-gradient-to-r from-blue-500 to-violet-500" />
                     </div>
                   </div>
                 </div>
@@ -305,9 +314,8 @@ export default async function MarketingHomePage({
                     text="Track long-term progress"
                   />
                 </div>
-              </div>
 
-              <div className="absolute -bottom-7 -left-5 hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-xl md:block">
+                <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
                     <BellRing className="h-5 w-5" />
@@ -323,6 +331,7 @@ export default async function MarketingHomePage({
                     </p>
                   </div>
                 </div>
+              </div>
               </div>
             </div>
           </div>
