@@ -9,7 +9,7 @@ const sections = [
     content: (
       <p>
         Investment OS is an independent portfolio monitoring and decision-support
-        platform currently in development. For privacy questions or requests,
+        platform. For privacy questions or requests,
         please use our <Link href="/contact">contact form</Link>.
       </p>
     ),
@@ -169,7 +169,7 @@ export default function PrivacyPage() {
               when you visit or use the platform.
             </p>
             <p className="mt-4 text-sm font-semibold text-slate-500">
-              Draft for private beta · Last updated 17 July 2026
+              Effective 17 July 2026 · Last updated 17 July 2026
             </p>
 
             <div className="mt-10 space-y-9 border-t border-slate-200 pt-10">

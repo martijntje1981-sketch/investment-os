@@ -336,8 +336,8 @@ export default async function HoldingPage({
                 </svg>
 
                 <p className="absolute bottom-4 left-5 text-xs text-slate-400">
-                  Historical price chart follows after
-                  the stable beta
+                  Price history appears when sufficient
+                  market data is available
                 </p>
               </div>
             </article>
@@ -514,8 +514,8 @@ export default async function HoldingPage({
                 The current stance combines the
                 position analysis, portfolio role and
                 Investment OS risk assessment. More
-                advanced AI recommendations follow
-                after the stable beta.
+                additional intelligence is shown as
+                verified data becomes available.
               </p>
             </article>
           </section>

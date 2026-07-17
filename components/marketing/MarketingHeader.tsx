@@ -87,7 +87,7 @@ export default function MarketingHeader() {
             href="/signup"
             className="inline-flex items-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-slate-800"
           >
-            Start free
+            Start 24-hour trial
             <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
@@ -141,7 +141,7 @@ export default function MarketingHeader() {
                 onClick={closeMenu}
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-bold text-white"
               >
-                Start free
+                Start 24-hour trial
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>

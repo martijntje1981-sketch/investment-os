@@ -43,12 +43,12 @@ const faqSections = [
       {
         question: "How do I add my portfolio?",
         answer:
-          "During the beta, you can upload a screenshot of your portfolio. Investment OS attempts to recognise the holdings, quantities and purchase information. You review the recognised positions before they are added.",
+          "You can add your portfolio through a screenshot, CSV or Excel import, or manual entry. Investment OS helps recognise holdings, quantities and purchase information, and you review the details before they are saved.",
       },
       {
         question: "Which brokers are supported?",
         answer:
-          "The initial beta focuses on common European broker layouts, including DEGIRO-style screenshots. Support for additional brokers and direct portfolio imports will be expanded gradually.",
+          "Investment OS is broker-independent. Recognition depends on the quality and layout of the uploaded information, and every detected position is reviewed before it is saved.",
       },
       {
         question: "Can I edit recognised holdings?",
@@ -116,7 +116,7 @@ const faqSections = [
       {
         question: "Is my portfolio stored securely?",
         answer:
-          "Secure user authentication and database storage are being implemented before the public beta. The development version may still use local browser storage for certain information and should not be treated as a production environment.",
+          "Investment OS uses secure authentication and appropriate technical and organisational safeguards. Portfolio information is processed only to provide the requested platform features.",
       },
       {
         question: "Does Investment OS need access to my broker account?",
@@ -131,28 +131,28 @@ const faqSections = [
       {
         question: "Can I delete my account and portfolio data?",
         answer:
-          "Account and data-deletion controls will be included before public access. The final privacy policy will explain how deletion requests and retention periods are handled.",
+          "Yes. You can request deletion of your account and associated personal information through Support. Legal retention obligations may apply to limited records.",
       },
     ],
   },
   {
-    title: "Plans and beta access",
+    title: "Plan and subscription",
     icon: Database,
     questions: [
       {
-        question: "Is Investment OS currently free?",
+        question: "How much does Investment OS cost?",
         answer:
-          "The private testing version is currently free. Pricing for future public access will be communicated before paid subscriptions are enabled.",
+          "Investment OS costs €7.99 per month after a 24-hour free trial. The applicable price and payment terms are shown before checkout.",
       },
       {
-        question: "What will be included in a paid plan?",
+        question: "What is included in the subscription?",
         answer:
-          "The intended paid experience includes secure accounts, portfolio storage, market-data updates, personalised briefing content, holding analysis and goal monitoring. Final features and pricing have not yet been confirmed.",
+          "The subscription includes a secure account, portfolio monitoring, market-data updates, personalised briefing content, holding analysis and goal tracking.",
       },
       {
-        question: "Can I cancel a future subscription?",
+        question: "Can I cancel my subscription?",
         answer:
-          "The intention is to offer subscriptions that can be cancelled through the user account. Exact billing and cancellation terms will be published before payments are accepted.",
+          "Yes. You can cancel your subscription before the next renewal. Cancellation stops future billing, while access continues for any period already paid unless applicable law requires otherwise.",
       },
     ],
   },
@@ -207,7 +207,7 @@ export default function FAQPage() {
 
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-slate-600">
             Learn how Investment OS handles portfolios, market data,
-            goals, privacy and the upcoming beta.
+            goals, privacy and your subscription.
           </p>
         </div>
       </section>
@@ -283,7 +283,7 @@ export default function FAQPage() {
             </h2>
 
             <p className="mt-4 text-sm leading-7 text-slate-600">
-              Contact the Investment OS team about beta access, support,
+              Contact the Investment OS team about account access, support,
               partnerships or product feedback.
             </p>
 
