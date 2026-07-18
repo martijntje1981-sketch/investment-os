@@ -14,6 +14,10 @@ import {
 } from "lucide-react";
 import BottomNavigation from "@/components/home/BottomNav";
 import { holdings as portfolioHoldings } from "@/lib/services/portfolio/holdings";
+import {
+  PRICE_CACHE_KEY,
+  buildPriceLookup,
+} from "@/lib/client/portfolioPricing";
 
 type GoalSettings = {
   targetValue: number;
@@ -28,7 +32,6 @@ type CachedPrice = {
 };
 
 const GOAL_STORAGE_KEY = "investment-os-goal";
-const PRICE_CACHE_KEY = "investment-os-market-price-cache";
 const DEFAULT_GOAL: GoalSettings = {
   targetValue: 1_000_000,
   targetYear: 2036,
@@ -53,24 +56,37 @@ function formatPercentage(value: number) {
 }
 
 function getPortfolioValue() {
-  let prices = new Map<string, number>();
+  let prices = buildPriceLookup([]);
 
   try {
     const cached = localStorage.getItem(PRICE_CACHE_KEY);
-    const parsed = cached ? (JSON.parse(cached) as CachedPrice[]) : [];
+    const parsed = cached ? (JSON.parse(cached) as Array<{
+      symbol: string;
+      providerSymbol?: string;
+      isin?: string | null;
+      price: number;
+    }>) : [];
     if (Array.isArray(parsed)) {
-      prices = new Map(
+      prices = buildPriceLookup(
         parsed
           .filter((item) => Number.isFinite(item.price) && item.price > 0)
-          .map((item) => [item.symbol.trim().toUpperCase(), item.price]),
+          .map((item) => ({
+            symbol: item.symbol,
+            providerSymbol: item.providerSymbol,
+            isin: item.isin ?? null,
+            priceEur: item.price,
+          })),
       );
     }
   } catch {
-    prices = new Map();
+    prices = buildPriceLookup([]);
   }
 
   return portfolioHoldings.reduce((total, holding) => {
-    const price = prices.get(holding.symbol.trim().toUpperCase()) ?? holding.currentPrice;
+    const quote =
+      prices.get(holding.symbol.trim().toUpperCase()) ??
+      (holding.symbol ? prices.get(holding.symbol.trim().toUpperCase()) : undefined);
+    const price = quote?.priceEur ?? holding.currentPrice;
     return total + holding.units * price;
   }, 0);
 }

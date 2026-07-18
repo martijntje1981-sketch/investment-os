@@ -27,21 +27,17 @@ import {
   WalletCards,
 } from "lucide-react";
 import BottomNavigation from "@/components/home/BottomNav";
+import {
+  PORTFOLIO_STORAGE_KEY,
+  applyCachedPrices,
+  refreshPortfolioPrices,
+  type StoredPortfolioHolding,
+} from "@/lib/client/portfolioPricing";
 
 type Currency = "EUR" | "USD" | "GBP";
 
-type Holding = {
-  id: string;
-  symbol: string;
-  name: string;
-  quantity: number;
-  purchasePrice: number;
-  currentPrice: number;
-  currency: Currency;
+type Holding = StoredPortfolioHolding & {
   confidence?: "High" | "Medium" | "Low";
-  changePercent?: number;
-  updatedAt?: string;
-  assetType?: "investment" | "cash";
 };
 
 type PortfolioMetric = {
@@ -66,40 +62,7 @@ type GoalSettings = {
   expectedAnnualReturn: number;
 };
 
-const PRICE_CACHE_KEY = "investment-os-market-price-cache";
 const GOAL_STORAGE_KEY = "investment-os-goal";
-const HOLDINGS_STORAGE_KEY = "investment-os-holdings";
-
-
-function applyCachedPrices(holdings: Holding[]): Holding[] {
-  const cachedValue = localStorage.getItem(PRICE_CACHE_KEY);
-
-  if (!cachedValue) return holdings;
-
-  const parsed = JSON.parse(cachedValue) as CachedPrice[];
-
-  if (!Array.isArray(parsed)) return holdings;
-
-  const prices = new Map(
-    parsed
-      .filter((item) => Number.isFinite(item.price) && item.price > 0)
-      .map((item) => [item.symbol.trim().toUpperCase(), item]),
-  );
-
-  return holdings.map((holding) => {
-    const cached = prices.get(holding.symbol);
-
-    return {
-      ...holding,
-      currentPrice: cached?.price ?? holding.currentPrice,
-      changePercent:
-        typeof cached?.changePercent === "number"
-          ? cached.changePercent
-          : undefined,
-      updatedAt: cached?.updatedAt,
-    };
-  });
-}
 
 const TARGET_VALUE = 1_000_000;
 const TARGET_YEAR = 2036;
@@ -282,7 +245,7 @@ export default function DashboardPage() {
         "investment-os-annual-contribution",
       );
       const savedGoal = localStorage.getItem(GOAL_STORAGE_KEY);
-      const savedHoldings = localStorage.getItem(HOLDINGS_STORAGE_KEY);
+      const savedHoldings = localStorage.getItem(PORTFOLIO_STORAGE_KEY);
 
       let activeHoldings: Holding[] = [];
       if (savedHoldings) {
@@ -313,16 +276,25 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    const refreshPortfolio = () => {
+    const refreshPortfolio = async () => {
       try {
-        const savedHoldings = localStorage.getItem(HOLDINGS_STORAGE_KEY);
+        const savedHoldings = localStorage.getItem(PORTFOLIO_STORAGE_KEY);
         const savedGoal = localStorage.getItem(GOAL_STORAGE_KEY);
 
         if (savedHoldings) {
           const parsedHoldings = JSON.parse(savedHoldings) as Holding[];
 
           if (Array.isArray(parsedHoldings)) {
-            setHoldings(applyCachedPrices(parsedHoldings));
+            try {
+              const refreshed = await refreshPortfolioPrices(parsedHoldings);
+              localStorage.setItem(
+                PORTFOLIO_STORAGE_KEY,
+                JSON.stringify(refreshed),
+              );
+              setHoldings(applyCachedPrices(refreshed));
+            } catch {
+              setHoldings(applyCachedPrices(parsedHoldings));
+            }
           }
         } else {
           setHoldings([]);

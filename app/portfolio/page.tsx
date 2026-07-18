@@ -18,34 +18,16 @@ import {
   X,
 } from "lucide-react";
 import BottomNavigation from "@/components/home/BottomNav";
+import {
+  PORTFOLIO_STORAGE_KEY,
+  applyCachedPrices,
+  refreshPortfolioPrices,
+  type StoredPortfolioHolding,
+} from "@/lib/client/portfolioPricing";
 import { holdings as portfolioHoldings } from "@/lib/services/portfolio/holdings";
 
 type AssetType = "investment" | "cash";
-type Holding = {
-  id: string;
-  symbol: string;
-  name: string;
-  quantity: number;
-  purchasePrice: number;
-  currentPrice: number;
-  currency: "EUR";
-  assetType: AssetType;
-};
-type CachedPrice = {
-  symbol: string;
-  price: number;
-  changePercent?: number;
-  updatedAt?: string;
-};
-type PriceResult = {
-  symbol: string;
-  priceEur: number;
-  changePercent?: number;
-  updatedAt?: string;
-};
-
-const HOLDINGS_KEY = "investment-os-holdings";
-const PRICE_CACHE_KEY = "investment-os-market-price-cache";
+type Holding = StoredPortfolioHolding;
 
 const defaultHoldings: Holding[] = portfolioHoldings.map((holding) => ({
   id: holding.id,
@@ -112,18 +94,18 @@ export default function PortfolioPage() {
 
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(HOLDINGS_KEY);
+      const stored = localStorage.getItem(PORTFOLIO_STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
         if (validHoldings(parsed)) {
-          setHoldings(parsed.map((holding) => ({
+          setHoldings(applyCachedPrices(parsed.map((holding) => ({
             ...holding,
             assetType: holding.assetType === "cash" ? "cash" : "investment",
-          })));
+          }))));
           return;
         }
       }
-      localStorage.setItem(HOLDINGS_KEY, JSON.stringify(defaultHoldings));
+      localStorage.setItem(PORTFOLIO_STORAGE_KEY, JSON.stringify(defaultHoldings));
     } catch {
       setHoldings(defaultHoldings);
     }
@@ -131,36 +113,25 @@ export default function PortfolioPage() {
 
   const saveHoldings = useCallback((next: Holding[]) => {
     setHoldings(next);
-    localStorage.setItem(HOLDINGS_KEY, JSON.stringify(next));
+    localStorage.setItem(PORTFOLIO_STORAGE_KEY, JSON.stringify(next));
     window.dispatchEvent(new Event("investment-os-holdings-updated"));
   }, []);
 
   const refreshPrices = useCallback(async () => {
     setIsRefreshing(true);
     try {
-      const response = await fetch("/api/prices", { cache: "no-store" });
-      const data = await response.json() as { success?: boolean; prices?: PriceResult[]; error?: string };
-      if (!response.ok || !data.success) throw new Error(data.error ?? "Market data unavailable");
-
-      const prices = new Map(
-        (data.prices ?? [])
-          .filter((price) => Number.isFinite(price.priceEur) && price.priceEur > 0)
-          .map((price) => [price.symbol.trim().toUpperCase(), price]),
-      );
-      const next = holdings.map((holding) => {
-        if (holding.assetType === "cash") return holding;
-        const quote = prices.get(holding.symbol);
-        return quote ? { ...holding, currentPrice: quote.priceEur } : holding;
-      });
-      const cache: CachedPrice[] = [...prices.values()].map((quote) => ({
-        symbol: quote.symbol.trim().toUpperCase(),
-        price: quote.priceEur,
-        changePercent: quote.changePercent,
-        updatedAt: quote.updatedAt,
-      }));
-      localStorage.setItem(PRICE_CACHE_KEY, JSON.stringify(cache));
+      const next = await refreshPortfolioPrices(holdings);
       saveHoldings(next);
-      setMessage(`${prices.size} market prices updated. Cash remains fixed at its entered value.`);
+      const updatedCount = next.filter(
+        (holding, index) =>
+          holding.assetType !== "cash" &&
+          holding.currentPrice !== holdings[index]?.currentPrice,
+      ).length;
+      setMessage(
+        updatedCount > 0
+          ? `${updatedCount} market prices updated via providerSymbol. Cash remains fixed at its entered value.`
+          : "Market prices refreshed. Cash remains fixed at its entered value.",
+      );
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Market data unavailable. Stored values remain visible.");
     } finally {

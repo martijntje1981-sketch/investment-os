@@ -26,6 +26,12 @@ import {
   TrendingUp,
 } from "lucide-react";
 import BottomNavigation from "@/components/home/BottomNav";
+import {
+  PORTFOLIO_STORAGE_KEY,
+  PRICE_CACHE_KEY,
+  applyCachedPrices,
+  type StoredPortfolioHolding,
+} from "@/lib/client/portfolioPricing";
 
 type Currency = "EUR" | "USD" | "GBP";
 
@@ -65,40 +71,6 @@ type HoldingIntelligence = {
     description: string;
   }[];
 };
-
-const PRICE_CACHE_KEY = "investment-os-market-price-cache";
-const HOLDINGS_STORAGE_KEY = "investment-os-holdings";
-
-type CachedPrice = {
-  symbol: string;
-  price: number;
-  changePercent?: number;
-  updatedAt?: string;
-};
-
-function applyCachedPrices(holdings: Holding[]): Holding[] {
-  const cachedValue = localStorage.getItem(PRICE_CACHE_KEY);
-  if (!cachedValue) return holdings;
-
-  const parsed = JSON.parse(cachedValue) as CachedPrice[];
-  if (!Array.isArray(parsed)) return holdings;
-
-  const priceMap = new Map(
-    parsed
-      .filter((item) => Number.isFinite(item.price) && item.price > 0)
-      .map((item) => [item.symbol.trim().toUpperCase(), item]),
-  );
-
-  return holdings.map((holding) => {
-    const cached = priceMap.get(holding.symbol.trim().toUpperCase());
-    return {
-      ...holding,
-      currentPrice: cached?.price ?? holding.currentPrice,
-      changePercent: cached?.changePercent,
-      updatedAt: cached?.updatedAt,
-    };
-  });
-}
 
 function formatUpdatedAt(value?: string) {
   if (!value) return "Awaiting market data";
@@ -741,16 +713,22 @@ export default function HoldingDetailPage() {
 
   useEffect(() => {
     try {
-      const savedPortfolio = localStorage.getItem(HOLDINGS_STORAGE_KEY);
+      const savedPortfolio = localStorage.getItem(PORTFOLIO_STORAGE_KEY);
 
       if (savedPortfolio) {
         const parsedPortfolio = JSON.parse(savedPortfolio) as Holding[];
 
         if (Array.isArray(parsedPortfolio)) {
-          setHoldings(applyCachedPrices(parsedPortfolio));
+          setHoldings(
+            applyCachedPrices(
+              parsedPortfolio as unknown as StoredPortfolioHolding[],
+            ) as unknown as Holding[],
+          );
         }
       } else {
-        setHoldings(applyCachedPrices(fallbackHoldings));
+        setHoldings(
+          applyCachedPrices(fallbackHoldings as unknown as StoredPortfolioHolding[]) as unknown as Holding[],
+        );
       }
     } catch (error) {
       console.error("Could not load portfolio:", error);

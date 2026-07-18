@@ -1,4 +1,19 @@
+/**
+ * POST /api/analyze-portfolio
+ *
+ * WHY THIS FILE CHANGES:
+ * - OCR already extracts ticker, ISIN, exchange, and name without inventing data.
+ * - After extraction, holdings are passed through the Instrument Match Engine so
+ *   screenshot imports arrive pre-matched for user review.
+ * - Tickers are never synthesized — provider codes are only applied when EODHD
+ *   returns a verified match.
+ */
+
 import { NextResponse } from "next/server";
+import { matchInstrument } from "@/lib/services/instruments";
+import { applyResolvedToHolding } from "@/lib/services/instruments/applyResolved";
+import { isValidIsin } from "@/lib/services/instruments/validation";
+import type { ResolvedInstrument } from "@/lib/types/instrument";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -15,6 +30,15 @@ type Holding = {
   currency: string;
   confidence: number;
   warnings: string[];
+};
+
+type EnrichedHolding = Holding & {
+  providerSymbol: string | null;
+  instrumentName: string | null;
+  matchMethod: ResolvedInstrument["matchMethod"];
+  matchConfidence: number;
+  requiresConfirmation: boolean;
+  matchWarnings: string[];
 };
 
 type PortfolioAnalysis = {
@@ -46,10 +70,19 @@ function cleanNumber(value: unknown) {
 function cleanHolding(raw: Holding): Holding {
   const assetType = raw.assetType === "cash" ? "cash" : "investment";
   const quantity = cleanNumber(raw.quantity) ?? 0;
+  let ticker = String(raw.ticker || "").trim().toUpperCase();
+  let isin = raw.isin ? String(raw.isin).trim().toUpperCase() : null;
+
+  // Never treat an ISIN as a ticker — relocate to the ISIN field.
+  if (!isin && isValidIsin(ticker)) {
+    isin = ticker;
+    ticker = "";
+  }
+
   return {
     name: String(raw.name || (assetType === "cash" ? "Cash" : "Unknown holding")).trim(),
-    ticker: String(raw.ticker || "").trim().toUpperCase(),
-    isin: raw.isin ? String(raw.isin).trim().toUpperCase() : null,
+    ticker,
+    isin,
     exchange: raw.exchange ? String(raw.exchange).trim().toUpperCase() : null,
     assetType,
     quantity,
@@ -58,6 +91,52 @@ function cleanHolding(raw: Holding): Holding {
     currency: String(raw.currency || "EUR").trim().toUpperCase(),
     confidence: Math.min(1, Math.max(0, cleanNumber(raw.confidence) ?? 0)),
     warnings: Array.isArray(raw.warnings) ? raw.warnings.map(String).filter(Boolean) : [],
+  };
+}
+
+async function enrichWithMatch(holding: Holding): Promise<EnrichedHolding> {
+  if (holding.assetType === "cash") {
+    return {
+      ...holding,
+      providerSymbol: null,
+      instrumentName: null,
+      matchMethod: "unresolved",
+      matchConfidence: 0,
+      requiresConfirmation: false,
+      matchWarnings: [],
+    };
+  }
+
+  const resolved = await matchInstrument({
+    ticker: holding.ticker || null,
+    isin: holding.isin,
+    exchange: holding.exchange,
+    instrumentName: holding.name,
+    assetType: holding.assetType,
+  });
+
+  const enriched = applyResolvedToHolding(
+    {
+      ...holding,
+      symbol: holding.ticker,
+      instrumentName: null as string | null,
+      providerSymbol: null as string | null,
+    },
+    resolved,
+  );
+
+  return {
+    ...holding,
+    ticker: enriched.symbol,
+    isin: enriched.isin ?? holding.isin,
+    exchange: enriched.exchange ?? holding.exchange,
+    warnings: [...holding.warnings, ...(resolved.warnings ?? [])].filter(Boolean),
+    providerSymbol: resolved.providerSymbol,
+    instrumentName: resolved.instrumentName,
+    matchMethod: resolved.matchMethod,
+    matchConfidence: resolved.confidence,
+    requiresConfirmation: resolved.requiresConfirmation,
+    matchWarnings: resolved.warnings,
   };
 }
 
@@ -164,13 +243,15 @@ Return every visible row once.`
     }
 
     const analysis = JSON.parse(responseText(data)) as PortfolioAnalysis;
-    const holdings = Array.isArray(analysis.holdings)
+    const cleaned = Array.isArray(analysis.holdings)
       ? analysis.holdings.map(cleanHolding).filter((holding) => holding.quantity > 0 && (holding.assetType === "cash" || holding.name.length > 0))
       : [];
 
-    if (!holdings.length) {
+    if (!cleaned.length) {
       return NextResponse.json({ success: false, message: "No clear positions were found. Use a sharper screenshot showing the complete portfolio table." }, { status: 422 });
     }
+
+    const holdings = await Promise.all(cleaned.map(enrichWithMatch));
 
     return NextResponse.json({
       success: true,

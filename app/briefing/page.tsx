@@ -3,6 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import PageNavigation from "../../components/PageNavigation";
 import {
+  buildBriefingRequestPayload,
+  readPortfolioFromStorage,
+} from "@/lib/client/portfolioPricing";
+import {
   Activity,
   AlertTriangle,
   ArrowUpRight,
@@ -104,54 +108,13 @@ function normaliseSymbol(value: unknown) {
     .toUpperCase();
 }
 
-function readPortfolioFromStorage(): UserHolding[] {
-  try {
-    const storedPortfolio = localStorage.getItem(
-      "investment-os-portfolio",
-    );
-
-    if (!storedPortfolio) {
-      return [];
-    }
-
-    const parsedPortfolio = JSON.parse(storedPortfolio) as unknown;
-
-    if (!Array.isArray(parsedPortfolio)) {
-      return [];
-    }
-
-    const holdings = parsedPortfolio
-      .map((holding) => {
-        const item = holding as StoredHolding;
-
-        const symbol = normaliseSymbol(
-          item.symbol ?? item.ticker,
-        );
-
-        const name = String(
-          item.name ??
-            item.instrumentName ??
-            symbol,
-        ).trim();
-
-        return {
-          symbol,
-          name: name || symbol,
-        };
-      })
-      .filter((holding) => holding.symbol.length > 0);
-
-    return holdings.filter(
-      (holding, index, allHoldings) =>
-        allHoldings.findIndex(
-          (candidate) =>
-            candidate.symbol === holding.symbol,
-        ) === index,
-    );
-  } catch (error) {
-    console.error("Could not read saved portfolio:", error);
-    return [];
-  }
+function readBriefingHoldings(): UserHolding[] {
+  return readPortfolioFromStorage()
+    .map((holding) => ({
+      symbol: normaliseSymbol(holding.symbol),
+      name: holding.instrumentName ?? holding.name ?? holding.symbol,
+    }))
+    .filter((holding) => holding.symbol.length > 0);
 }
 
 function normaliseTitle(value: string) {
@@ -439,7 +402,8 @@ export default function AnalysisPage() {
         setIsLoading(true);
         setErrorMessage("");
 
-        const savedHoldings = readPortfolioFromStorage();
+        const savedHoldings = readBriefingHoldings();
+        const storedPortfolio = readPortfolioFromStorage();
 
         if (!isMounted) {
           return;
@@ -454,11 +418,15 @@ export default function AnalysisPage() {
         }
 
         const response = await fetch("/api/briefing", {
-          method: "GET",
+          method: "POST",
           cache: "no-store",
           headers: {
             Accept: "application/json",
+            "Content-Type": "application/json",
           },
+          body: JSON.stringify({
+            holdings: buildBriefingRequestPayload(storedPortfolio),
+          }),
         });
 
         const responseData =
@@ -497,7 +465,7 @@ export default function AnalysisPage() {
     void loadAnalysis();
 
     function refreshFromStorage() {
-      const savedHoldings = readPortfolioFromStorage();
+      const savedHoldings = readBriefingHoldings();
       setUserHoldings(savedHoldings);
       setPortfolioLoaded(true);
     }
