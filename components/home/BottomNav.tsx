@@ -33,7 +33,7 @@ const navigationItems = [
     icon: Upload,
   },
   {
-    label: "Briefing",
+    label: "Analysis",
     href: "/briefing",
     icon: Newspaper,
   },

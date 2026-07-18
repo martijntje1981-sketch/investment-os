@@ -36,9 +36,9 @@ const features = [
   },
   {
     icon: Newspaper,
-    title: "A briefing built around your holdings",
+    title: "Portfolio analysis powered by AI",
     description:
-      "See the macroeconomic and company-specific developments that may matter for your actual portfolio.",
+      "Receive personalised analysis, market context, analyst consensus and portfolio insights based on your holdings.",
   },
   {
     icon: Target,
@@ -85,7 +85,7 @@ const workflowSteps = [
     number: "03",
     title: "Monitor what matters",
     description:
-      "Use the dashboard, portfolio analysis and personalised briefing to stay informed.",
+      "Review your dashboard, AI analysis and portfolio insights every day.",
     icon: Gauge,
   },
 ];
@@ -93,7 +93,7 @@ const workflowSteps = [
 const benefits = [
   "Portfolio overview and allocation monitoring",
   "Holding-level performance and risk analysis",
-  "Macro and portfolio-specific market briefing",
+  "AI-powered portfolio analysis and market intelligence",
   "Goal tracking and scenario calculations",
   "Portfolio upload and review workflow",
   "Clear decision-support insights",
@@ -149,7 +149,7 @@ const trustItems = [
     icon: Layers3,
     title: "One source of truth",
     description:
-      "Dashboard, portfolio, holdings and briefing use the same central portfolio information.",
+      "Dashboard, portfolio, holdings and analysis use the same central portfolio information.",
   },
 ];
 
@@ -304,8 +304,8 @@ export default async function MarketingHomePage({
 
                   <MiniPreviewCard
                     icon={Newspaper}
-                    title="Briefing"
-                    text="Relevant market context"
+                    title="Analysis"
+                    text="AI insights & market intelligence"
                   />
 
                   <MiniPreviewCard
@@ -327,7 +327,7 @@ export default async function MarketingHomePage({
                     </p>
 
                     <p className="mt-1 text-sm font-bold">
-                      Portfolio briefing ready
+                      Today's portfolio analysis is ready
                     </p>
                   </div>
                 </div>
@@ -441,26 +441,25 @@ export default async function MarketingHomePage({
               </div>
 
               <p className="mt-7 text-sm font-bold uppercase tracking-[0.16em] text-blue-100">
-                Personalised daily briefing
+                AI Portfolio Analysis
               </p>
 
               <h2 className="mt-3 text-3xl font-black tracking-[-0.04em] sm:text-4xl">
-                Market news becomes useful when it is
-                connected to your holdings
+                Understand what today's market means for
+                your portfolio
               </h2>
 
               <p className="mt-5 leading-8 text-blue-100">
-                Follow macroeconomic developments,
-                central-bank policy and holding-specific
-                news with a clear explanation of the
-                possible portfolio impact.
+                AI combines macro developments, analyst consensus,
+                company news and portfolio exposure into one
+                clear daily analysis.
               </p>
 
               <div className="mt-8 grid gap-3 sm:grid-cols-2">
-                <BriefingPoint text="Macro developments" />
-                <BriefingPoint text="Holding-specific news" />
-                <BriefingPoint text="Portfolio impact" />
-                <BriefingPoint text="Upcoming events" />
+                <BriefingPoint text="Executive Summary" />
+                <BriefingPoint text="Portfolio Risks" />
+                <BriefingPoint text="Analyst Consensus" />
+                <BriefingPoint text="AI Recommendations" />
               </div>
             </div>
 
@@ -470,7 +469,7 @@ export default async function MarketingHomePage({
               </p>
 
               <h2 className="mt-4 text-4xl font-black tracking-[-0.045em] sm:text-5xl">
-                More context. Less noise.
+                Actionable investment intelligence.
               </h2>
 
               <p className="mt-5 text-lg leading-8 text-slate-600">
@@ -490,7 +489,7 @@ export default async function MarketingHomePage({
                 href="/briefing"
                 className="mt-8 inline-flex items-center gap-2 text-sm font-bold text-violet-700"
               >
-                Preview portfolio briefing
+                Preview portfolio analysis
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
@@ -522,7 +521,7 @@ export default async function MarketingHomePage({
 
                     <p className="mt-3 max-w-lg leading-7 text-slate-300">
                       Portfolio monitoring, personalised
-                      briefings and goal tracking in one
+                      analysis and goal tracking in one
                       clear platform.
                     </p>
                   </div>

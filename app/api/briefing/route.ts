@@ -63,6 +63,51 @@ type BriefingEvent = {
   holdings: string[];
 };
 
+
+type AnalysisRating = "Strong" | "Healthy" | "Watch" | "Elevated risk";
+type AnalysisAction = "Hold" | "Monitor" | "Review";
+
+type HoldingAssessment = {
+  symbol: string;
+  name: string;
+  score: number;
+  outlook: "Constructive" | "Balanced" | "Cautious";
+  thesisStatus: "Intact" | "Under review" | "At risk";
+  risk: "Low" | "Medium" | "High";
+  action: AnalysisAction;
+  positiveSignals: number;
+  negativeSignals: number;
+  neutralSignals: number;
+  explanation: string;
+};
+
+type PortfolioAnalysisEngine = {
+  healthScore: number;
+  healthRating: AnalysisRating;
+  outlook: "Constructive" | "Balanced" | "Cautious";
+  sentimentScore: number;
+  diversificationScore: number;
+  concentrationScore: number;
+  macroRiskScore: number;
+  growthScore: number;
+  incomeScore: number;
+  todaysInsight: string;
+  actionItems: string[];
+  risks: Array<{
+    title: string;
+    severity: "Low" | "Medium" | "High";
+    description: string;
+    holdings: string[];
+  }>;
+  opportunities: Array<{
+    title: string;
+    strength: "Moderate" | "Strong";
+    description: string;
+    holdings: string[];
+  }>;
+  holdingAssessments: HoldingAssessment[];
+};
+
 const HOLDINGS: HoldingConfig[] = [
   {
     symbol: "IB1T",
@@ -656,6 +701,398 @@ function mapEconomicEvents(
     .slice(0, 12);
 }
 
+
+const HOLDING_ANALYSIS_CONFIG: Record<
+  string,
+  {
+    name: string;
+    baseRisk: "Low" | "Medium" | "High";
+    growthWeight: number;
+    incomeWeight: number;
+  }
+> = {
+  IB1T: {
+    name: "Bitcoin",
+    baseRisk: "High",
+    growthWeight: 1,
+    incomeWeight: 0,
+  },
+  STRC: {
+    name: "Income & Bitcoin",
+    baseRisk: "High",
+    growthWeight: 0.6,
+    incomeWeight: 1,
+  },
+  AIFS: {
+    name: "AI Infrastructure",
+    baseRisk: "Medium",
+    growthWeight: 1,
+    incomeWeight: 0.1,
+  },
+  NUKL: {
+    name: "Uranium & Nuclear",
+    baseRisk: "Medium",
+    growthWeight: 0.8,
+    incomeWeight: 0.2,
+  },
+  VWCE: {
+    name: "Global Equities",
+    baseRisk: "Low",
+    growthWeight: 0.7,
+    incomeWeight: 0.3,
+  },
+  PPFB: {
+    name: "Gold",
+    baseRisk: "Low",
+    growthWeight: 0.2,
+    incomeWeight: 0,
+  },
+};
+
+function clampScore(value: number, minimum = 0, maximum = 10) {
+  return Math.min(maximum, Math.max(minimum, value));
+}
+
+function roundScore(value: number) {
+  return Math.round(value * 10) / 10;
+}
+
+function countNewsSignals(items: BriefingNewsItem[]) {
+  return {
+    positive: items.filter((item) => item.impact === "Positive").length,
+    negative: items.filter((item) => item.impact === "Negative").length,
+    neutral: items.filter((item) => item.impact === "Neutral").length,
+  };
+}
+
+function getHoldingAssessment(
+  holding: HoldingConfig,
+  news: BriefingNewsItem[],
+): HoldingAssessment {
+  const relevantNews = news.filter((item) =>
+    item.holdings.includes(holding.symbol),
+  );
+  const signals = countNewsSignals(relevantNews);
+  const config = HOLDING_ANALYSIS_CONFIG[holding.symbol] ?? {
+    name: holding.name,
+    baseRisk: "Medium" as const,
+    growthWeight: 0.5,
+    incomeWeight: 0.2,
+  };
+
+  const signalBalance = signals.positive - signals.negative;
+  const confidenceBonus = relevantNews.filter(
+    (item) => item.confidence === "High",
+  ).length * 0.15;
+
+  const riskPenalty =
+    config.baseRisk === "High"
+      ? 0.8
+      : config.baseRisk === "Medium"
+        ? 0.35
+        : 0;
+
+  const score = roundScore(
+    clampScore(
+      7 +
+        signalBalance * 0.55 +
+        confidenceBonus -
+        riskPenalty,
+    ),
+  );
+
+  const outlook: HoldingAssessment["outlook"] =
+    signalBalance >= 2
+      ? "Constructive"
+      : signalBalance <= -2
+        ? "Cautious"
+        : "Balanced";
+
+  const thesisStatus: HoldingAssessment["thesisStatus"] =
+    signals.negative >= 3 && signals.negative > signals.positive
+      ? "At risk"
+      : signals.negative >= 1 &&
+          signals.negative >= signals.positive
+        ? "Under review"
+        : "Intact";
+
+  const action: AnalysisAction =
+    thesisStatus === "At risk"
+      ? "Review"
+      : thesisStatus === "Under review" ||
+          config.baseRisk === "High"
+        ? "Monitor"
+        : "Hold";
+
+  const explanation =
+    relevantNews.length === 0
+      ? `No material new signals were identified for ${config.name}. The current assessment is based on its structural risk profile.`
+      : signalBalance > 0
+        ? `Recent news flow is net positive for ${config.name}, although market confirmation and follow-through remain important.`
+        : signalBalance < 0
+          ? `Recent news flow contains more negative than positive signals for ${config.name}. Monitor whether these developments affect the medium-term thesis.`
+          : `Recent signals for ${config.name} are mixed or balanced. No clear thesis-changing development has been identified.`;
+
+  return {
+    symbol: holding.symbol,
+    name: config.name,
+    score,
+    outlook,
+    thesisStatus,
+    risk: config.baseRisk,
+    action,
+    positiveSignals: signals.positive,
+    negativeSignals: signals.negative,
+    neutralSignals: signals.neutral,
+    explanation,
+  };
+}
+
+function createPortfolioRisks(
+  news: BriefingNewsItem[],
+  events: BriefingEvent[],
+): PortfolioAnalysisEngine["risks"] {
+  const risks: PortfolioAnalysisEngine["risks"] = [
+    {
+      title: "Bitcoin concentration",
+      severity: "High",
+      description:
+        "IB1T and STRC are both sensitive to Bitcoin, liquidity and crypto-market sentiment, creating correlated portfolio risk.",
+      holdings: ["IB1T", "STRC"],
+    },
+  ];
+
+  const negativeGrowthNews = news.filter(
+    (item) =>
+      item.impact === "Negative" &&
+      item.holdings.some((symbol) =>
+        ["AIFS", "VWCE", "NUKL"].includes(symbol),
+      ),
+  );
+
+  if (negativeGrowthNews.length >= 2) {
+    risks.push({
+      title: "Growth-asset pressure",
+      severity: "Medium",
+      description:
+        "Several recent developments may weigh on growth-sensitive holdings. Monitor yields, earnings expectations and risk appetite.",
+      holdings: ["AIFS", "VWCE", "NUKL"],
+    });
+  }
+
+  const highImpactEvents = events.filter(
+    (event) => event.impact === "High impact",
+  );
+
+  if (highImpactEvents.length > 0) {
+    risks.push({
+      title: "Upcoming macro volatility",
+      severity: "Medium",
+      description: `${highImpactEvents.length} high-impact economic event${highImpactEvents.length === 1 ? " is" : "s are"} scheduled in the coming week and may affect rates, currencies and risk assets.`,
+      holdings: Array.from(
+        new Set(highImpactEvents.flatMap((event) => event.holdings)),
+      ).slice(0, 6),
+    });
+  }
+
+  return risks.slice(0, 4);
+}
+
+function createPortfolioOpportunities(
+  news: BriefingNewsItem[],
+): PortfolioAnalysisEngine["opportunities"] {
+  const positiveByHolding = HOLDINGS.map((holding) => {
+    const positiveSignals = news.filter(
+      (item) =>
+        item.impact === "Positive" &&
+        item.holdings.includes(holding.symbol),
+    ).length;
+
+    return {
+      symbol: holding.symbol,
+      name:
+        HOLDING_ANALYSIS_CONFIG[holding.symbol]?.name ??
+        holding.name,
+      positiveSignals,
+    };
+  }).sort((a, b) => b.positiveSignals - a.positiveSignals);
+
+  const opportunities: PortfolioAnalysisEngine["opportunities"] = [];
+
+  for (const item of positiveByHolding) {
+    if (item.positiveSignals === 0) continue;
+
+    opportunities.push({
+      title: `${item.name} momentum`,
+      strength:
+        item.positiveSignals >= 3 ? "Strong" : "Moderate",
+      description: `${item.positiveSignals} positive signal${item.positiveSignals === 1 ? " has" : "s have"} been identified. Monitor whether fundamentals and market prices confirm the improving news flow.`,
+      holdings: [item.symbol],
+    });
+
+    if (opportunities.length >= 3) break;
+  }
+
+  if (opportunities.length === 0) {
+    opportunities.push({
+      title: "Portfolio diversification",
+      strength: "Moderate",
+      description:
+        "Global equities, AI infrastructure, uranium and gold provide return drivers beyond Bitcoin and may improve portfolio balance over time.",
+      holdings: ["AIFS", "NUKL", "VWCE", "PPFB"],
+    });
+  }
+
+  return opportunities;
+}
+
+function createPortfolioAnalysis(
+  news: BriefingNewsItem[],
+  events: BriefingEvent[],
+): PortfolioAnalysisEngine {
+  const signals = countNewsSignals(news);
+  const totalDirectionalSignals =
+    signals.positive + signals.negative;
+
+  const sentimentScore =
+    totalDirectionalSignals === 0
+      ? 5
+      : clampScore(
+          5 +
+            ((signals.positive - signals.negative) /
+              totalDirectionalSignals) *
+              3,
+        );
+
+  const holdingAssessments = HOLDINGS.map((holding) =>
+    getHoldingAssessment(holding, news),
+  );
+
+  const averageHoldingScore =
+    holdingAssessments.reduce(
+      (total, holding) => total + holding.score,
+      0,
+    ) / Math.max(holdingAssessments.length, 1);
+
+  const highImpactEventCount = events.filter(
+    (event) => event.impact === "High impact",
+  ).length;
+
+  const macroRiskScore = clampScore(
+    4.5 +
+      highImpactEventCount * 0.55 +
+      signals.negative * 0.12,
+  );
+
+  // These structural scores are intentionally conservative until live
+  // portfolio weights are connected to this endpoint.
+  const diversificationScore = 7.2;
+  const concentrationScore = 6.2;
+
+  const growthScore = clampScore(
+    6.8 +
+      holdingAssessments.reduce((total, holding) => {
+        const config =
+          HOLDING_ANALYSIS_CONFIG[holding.symbol];
+        return (
+          total +
+          ((holding.score - 5) *
+            (config?.growthWeight ?? 0.5)) /
+            HOLDINGS.length
+        );
+      }, 0),
+  );
+
+  const incomeScore = clampScore(
+    5.5 +
+      holdingAssessments.reduce((total, holding) => {
+        const config =
+          HOLDING_ANALYSIS_CONFIG[holding.symbol];
+        return (
+          total +
+          ((holding.score - 5) *
+            (config?.incomeWeight ?? 0.1)) /
+            HOLDINGS.length
+        );
+      }, 0),
+  );
+
+  const healthScore = roundScore(
+    clampScore(
+      averageHoldingScore * 0.45 +
+        sentimentScore * 0.2 +
+        diversificationScore * 0.2 +
+        (10 - macroRiskScore) * 0.15,
+    ),
+  );
+
+  const healthRating: AnalysisRating =
+    healthScore >= 8
+      ? "Strong"
+      : healthScore >= 6.5
+        ? "Healthy"
+        : healthScore >= 5
+          ? "Watch"
+          : "Elevated risk";
+
+  const outlook: PortfolioAnalysisEngine["outlook"] =
+    sentimentScore >= 6.3
+      ? "Constructive"
+      : sentimentScore <= 3.7
+        ? "Cautious"
+        : "Balanced";
+
+  const mostPositiveHolding = [...holdingAssessments].sort(
+    (a, b) =>
+      b.positiveSignals -
+      b.negativeSignals -
+      (a.positiveSignals - a.negativeSignals),
+  )[0];
+
+  const mostAtRiskHolding = [...holdingAssessments].sort(
+    (a, b) =>
+      b.negativeSignals -
+      b.positiveSignals -
+      (a.negativeSignals - a.positiveSignals),
+  )[0];
+
+  const todaysInsight =
+    mostPositiveHolding &&
+    mostPositiveHolding.positiveSignals >
+      mostPositiveHolding.negativeSignals
+      ? `${mostPositiveHolding.name} currently has the strongest positive news balance, while Bitcoin concentration remains the portfolio's main structural risk.`
+      : highImpactEventCount > 0
+        ? `The portfolio outlook is ${outlook.toLowerCase()}, but ${highImpactEventCount} high-impact macro event${highImpactEventCount === 1 ? "" : "s"} may increase short-term volatility.`
+        : `The portfolio outlook is ${outlook.toLowerCase()}. No single news development currently appears strong enough to change the overall investment thesis.`;
+
+  const actionItems = [
+    highImpactEventCount > 0
+      ? `Monitor ${events.find((event) => event.impact === "High impact")?.title ?? "the next high-impact macro event"}.`
+      : "Monitor liquidity, interest rates and broader risk appetite.",
+    "Review whether Bitcoin-related exposure remains aligned with the intended portfolio risk level.",
+    mostAtRiskHolding?.negativeSignals > 0
+      ? `Watch ${mostAtRiskHolding.name} for confirmation that recent negative signals are temporary rather than thesis-changing.`
+      : "No immediate holding-level action is required based on current news signals.",
+  ];
+
+  return {
+    healthScore,
+    healthRating,
+    outlook,
+    sentimentScore: roundScore(sentimentScore),
+    diversificationScore: roundScore(diversificationScore),
+    concentrationScore: roundScore(concentrationScore),
+    macroRiskScore: roundScore(macroRiskScore),
+    growthScore: roundScore(growthScore),
+    incomeScore: roundScore(incomeScore),
+    todaysInsight,
+    actionItems,
+    risks: createPortfolioRisks(news, events),
+    opportunities: createPortfolioOpportunities(news),
+    holdingAssessments,
+  };
+}
+
 function createFallbackNews(): BriefingNewsItem[] {
   return [
     {
@@ -780,6 +1217,11 @@ export async function GET() {
     );
   }
 
+  const analysis = createPortfolioAnalysis(
+    news,
+    events,
+  );
+
   const newsByHolding = Object.fromEntries(
     HOLDINGS.map((holding) => [
       holding.symbol,
@@ -805,26 +1247,23 @@ export async function GET() {
     },
 
     summary: {
-      outlook:
-        news.filter(
-          (item) => item.impact === "Positive",
-        ).length >
-        news.filter(
-          (item) => item.impact === "Negative",
-        ).length
-          ? "Constructive"
-          : "Balanced",
+      outlook: analysis.outlook,
 
       mainRisk:
+        analysis.risks[0]?.description ??
         "Portfolio concentration and sensitivity to Bitcoin remain the main risk.",
 
       mainOpportunity:
+        analysis.opportunities[0]?.description ??
         "Diversified exposure through global equities, AI infrastructure and uranium may reduce dependence on a single return driver.",
 
       keyFocus:
+        analysis.actionItems[0] ??
         events[0]?.title ??
         "Monitor liquidity, interest rates and portfolio-specific news.",
     },
+
+    analysis,
 
     macroNews: news
       .filter(

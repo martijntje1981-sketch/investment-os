@@ -13,6 +13,10 @@ import {
   CircleDollarSign,
   Gauge,
   Home,
+  Clock3,
+  Newspaper,
+  CalendarDays,
+  LineChart,
   Layers3,
   PieChart,
   ShieldAlert,
@@ -34,6 +38,8 @@ type Holding = {
   currentPrice: number;
   currency: Currency;
   confidence?: "High" | "Medium" | "Low";
+  changePercent?: number;
+  updatedAt?: string;
 };
 
 type HoldingIntelligence = {
@@ -59,6 +65,52 @@ type HoldingIntelligence = {
     description: string;
   }[];
 };
+
+const PRICE_CACHE_KEY = "investment-os-market-price-cache";
+const HOLDINGS_STORAGE_KEY = "investment-os-holdings";
+
+type CachedPrice = {
+  symbol: string;
+  price: number;
+  changePercent?: number;
+  updatedAt?: string;
+};
+
+function applyCachedPrices(holdings: Holding[]): Holding[] {
+  const cachedValue = localStorage.getItem(PRICE_CACHE_KEY);
+  if (!cachedValue) return holdings;
+
+  const parsed = JSON.parse(cachedValue) as CachedPrice[];
+  if (!Array.isArray(parsed)) return holdings;
+
+  const priceMap = new Map(
+    parsed
+      .filter((item) => Number.isFinite(item.price) && item.price > 0)
+      .map((item) => [item.symbol.trim().toUpperCase(), item]),
+  );
+
+  return holdings.map((holding) => {
+    const cached = priceMap.get(holding.symbol.trim().toUpperCase());
+    return {
+      ...holding,
+      currentPrice: cached?.price ?? holding.currentPrice,
+      changePercent: cached?.changePercent,
+      updatedAt: cached?.updatedAt,
+    };
+  });
+}
+
+function formatUpdatedAt(value?: string) {
+  if (!value) return "Awaiting market data";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Awaiting market data";
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
 
 const fallbackHoldings: Holding[] = [
   {
@@ -244,8 +296,7 @@ const holdingIntelligence: Record<string, HoldingIntelligence> = {
       },
       {
         title: "Issuer balance sheet",
-        description:
-          "Tracks financial resilience and access to capital.",
+        description: "Tracks financial resilience and access to capital.",
       },
       {
         title: "Bitcoin exposure",
@@ -506,8 +557,7 @@ const holdingIntelligence: Record<string, HoldingIntelligence> = {
     risks: [
       {
         title: "No cash flow",
-        description:
-          "Gold does not produce earnings, interest or dividends.",
+        description: "Gold does not produce earnings, interest or dividends.",
       },
       {
         title: "Real interest rates",
@@ -528,8 +578,7 @@ const holdingIntelligence: Record<string, HoldingIntelligence> = {
       },
       {
         title: "Central-bank purchases",
-        description:
-          "Monitors official-sector demand for physical gold.",
+        description: "Monitors official-sector demand for physical gold.",
       },
       {
         title: "Inflation expectations",
@@ -610,8 +659,7 @@ const defaultIntelligence: HoldingIntelligence = {
     },
     {
       title: "Relevant news",
-      description:
-        "Follow developments that materially affect the investment.",
+      description: "Follow developments that materially affect the investment.",
     },
   ],
 };
@@ -693,16 +741,16 @@ export default function HoldingDetailPage() {
 
   useEffect(() => {
     try {
-      const savedPortfolio = localStorage.getItem(
-        "investment-os-portfolio"
-      );
+      const savedPortfolio = localStorage.getItem(HOLDINGS_STORAGE_KEY);
 
       if (savedPortfolio) {
         const parsedPortfolio = JSON.parse(savedPortfolio) as Holding[];
 
         if (Array.isArray(parsedPortfolio)) {
-          setHoldings(parsedPortfolio);
+          setHoldings(applyCachedPrices(parsedPortfolio));
         }
+      } else {
+        setHoldings(applyCachedPrices(fallbackHoldings));
       }
     } catch (error) {
       console.error("Could not load portfolio:", error);
@@ -712,20 +760,14 @@ export default function HoldingDetailPage() {
   }, []);
 
   const holding = useMemo(() => {
-    return holdings.find(
-      (item) => item.symbol.trim().toUpperCase() === symbol
-    );
+    return holdings.find((item) => item.symbol.trim().toUpperCase() === symbol);
   }, [holdings, symbol]);
 
   const totalPortfolioValue = useMemo(() => {
-    return holdings.reduce(
-      (total, item) => total + getHoldingValue(item),
-      0
-    );
+    return holdings.reduce((total, item) => total + getHoldingValue(item), 0);
   }, [holdings]);
 
-  const intelligence =
-    holdingIntelligence[symbol] ?? defaultIntelligence;
+  const intelligence = holdingIntelligence[symbol] ?? defaultIntelligence;
 
   if (!isLoaded) {
     return (
@@ -799,16 +841,28 @@ export default function HoldingDetailPage() {
   const returnPercentage = getReturnPercentage(holding);
 
   const allocation =
-    totalPortfolioValue > 0
-      ? (currentValue / totalPortfolioValue) * 100
-      : 0;
+    totalPortfolioValue > 0 ? (currentValue / totalPortfolioValue) * 100 : 0;
 
-  const concentrationDifference =
-    allocation - intelligence.concentrationLimit;
+  const concentrationDifference = allocation - intelligence.concentrationLimit;
 
   const scoreClasses = getScoreClasses(intelligence.healthScore);
   const positiveReturn = returnValue >= 0;
   const aboveLimit = concentrationDifference > 0;
+  const dailyChange = holding.changePercent;
+  const hasDailyChange =
+    typeof dailyChange === "number" && Number.isFinite(dailyChange);
+  const thesisStatus =
+    intelligence.healthScore >= 85
+      ? "Thesis intact"
+      : intelligence.healthScore >= 70
+        ? "Under review"
+        : "Thesis at risk";
+  const thesisTone =
+    intelligence.healthScore >= 85
+      ? "positive"
+      : intelligence.healthScore >= 70
+        ? "warning"
+        : "negative";
 
   return (
     <>
@@ -889,14 +943,56 @@ export default function HoldingDetailPage() {
             </div>
           </section>
 
+          <section className="mt-6 grid gap-4 md:grid-cols-4">
+            <LiveMetric
+              icon={<CircleDollarSign className="h-5 w-5" />}
+              label="Current price"
+              value={formatCurrency(holding.currentPrice, holding.currency)}
+              detail={holding.symbol.toUpperCase()}
+            />
+            <LiveMetric
+              icon={
+                hasDailyChange && dailyChange >= 0 ? (
+                  <TrendingUp className="h-5 w-5" />
+                ) : (
+                  <TrendingDown className="h-5 w-5" />
+                )
+              }
+              label="Today's change"
+              value={
+                hasDailyChange
+                  ? `${dailyChange >= 0 ? "+" : ""}${formatPercentage(dailyChange)}`
+                  : "Awaiting data"
+              }
+              detail="Versus previous close"
+              tone={
+                !hasDailyChange
+                  ? "neutral"
+                  : dailyChange >= 0
+                    ? "positive"
+                    : "negative"
+              }
+            />
+            <LiveMetric
+              icon={<Clock3 className="h-5 w-5" />}
+              label="Last updated"
+              value={formatUpdatedAt(holding.updatedAt)}
+              detail="Latest available market price"
+            />
+            <LiveMetric
+              icon={<LineChart className="h-5 w-5" />}
+              label="Market status"
+              value="Latest close"
+              detail="Live status will follow provider data"
+            />
+          </section>
+
           <section className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <MetricCard
               icon={<CircleDollarSign className="h-5 w-5" />}
               label="Current value"
               value={formatCurrency(currentValue, holding.currency)}
-              description={`${holding.quantity.toLocaleString(
-                "en-GB"
-              )} units`}
+              description={`${holding.quantity.toLocaleString("en-GB")} units`}
             />
 
             <MetricCard
@@ -905,7 +1001,7 @@ export default function HoldingDetailPage() {
               value={formatCurrency(investedCapital, holding.currency)}
               description={`${formatCurrency(
                 holding.purchasePrice,
-                holding.currency
+                holding.currency,
               )} average price`}
             />
 
@@ -920,10 +1016,10 @@ export default function HoldingDetailPage() {
               label="Total return"
               value={`${positiveReturn ? "+" : ""}${formatCurrency(
                 returnValue,
-                holding.currency
+                holding.currency,
               )}`}
               description={`${returnPercentage >= 0 ? "+" : ""}${formatPercentage(
-                returnPercentage
+                returnPercentage,
               )}`}
               tone={positiveReturn ? "positive" : "negative"}
             />
@@ -935,7 +1031,7 @@ export default function HoldingDetailPage() {
               description={
                 aboveLimit
                   ? `${formatPercentage(
-                      concentrationDifference
+                      concentrationDifference,
                     )} above monitoring level`
                   : "Within monitoring level"
               }
@@ -964,6 +1060,23 @@ export default function HoldingDetailPage() {
               <p className="mt-6 leading-7 text-slate-300">
                 {intelligence.thesis}
               </p>
+
+              <div
+                className={`mt-6 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-bold ${
+                  thesisTone === "positive"
+                    ? "bg-emerald-500/20 text-emerald-300"
+                    : thesisTone === "warning"
+                      ? "bg-amber-500/20 text-amber-300"
+                      : "bg-red-500/20 text-red-300"
+                }`}
+              >
+                {thesisTone === "positive" ? (
+                  <CheckCircle2 className="h-4 w-4" />
+                ) : (
+                  <AlertTriangle className="h-4 w-4" />
+                )}
+                {thesisStatus}
+              </div>
             </article>
 
             <article className="rounded-[28px] border border-slate-200 bg-white p-7 shadow-sm sm:p-8">
@@ -1058,14 +1171,46 @@ export default function HoldingDetailPage() {
             </div>
           </section>
 
+          <section className="mt-7 grid gap-6 lg:grid-cols-3">
+            <ComingSoonCard
+              title="Analyst consensus"
+              description="Buy, hold and sell consensus from verified analyst data."
+            />
+            <ComingSoonCard
+              title="Price targets"
+              description="Consensus targets, upside and downside ranges."
+            />
+            <ComingSoonCard
+              title="Market sentiment"
+              description="News and market sentiment connected to this holding."
+            />
+          </section>
+
+          <section className="mt-7 grid gap-6 lg:grid-cols-2">
+            <PlaceholderFeedCard
+              icon={<Newspaper className="h-5 w-5" />}
+              eyebrow="Holding intelligence"
+              title="Latest news"
+              description="Verified holding-specific news will appear here after the news provider is connected."
+              action="Open insights"
+              href="/briefing"
+            />
+            <PlaceholderFeedCard
+              icon={<CalendarDays className="h-5 w-5" />}
+              eyebrow="Forward calendar"
+              title="Upcoming events"
+              description="Earnings, distributions, ETF events and relevant macro dates will appear here."
+              action="View upcoming events"
+              href="/briefing"
+            />
+          </section>
+
           <section className="mt-7 grid gap-6 lg:grid-cols-[0.85fr_1.15fr]">
             <article className="rounded-[28px] border border-slate-200 bg-white p-7 shadow-sm">
               <div className="flex items-center gap-3">
                 <Layers3 className="h-5 w-5 text-slate-500" />
 
-                <h2 className="text-xl font-bold">
-                  Position details
-                </h2>
+                <h2 className="text-xl font-bold">Position details</h2>
               </div>
 
               <div className="mt-6 divide-y divide-slate-100">
@@ -1076,17 +1221,14 @@ export default function HoldingDetailPage() {
 
                 <DetailRow
                   label="Current price"
-                  value={formatCurrency(
-                    holding.currentPrice,
-                    holding.currency
-                  )}
+                  value={formatCurrency(holding.currentPrice, holding.currency)}
                 />
 
                 <DetailRow
                   label="Average purchase price"
                   value={formatCurrency(
                     holding.purchasePrice,
-                    holding.currency
+                    holding.currency,
                   )}
                 />
 
@@ -1095,10 +1237,7 @@ export default function HoldingDetailPage() {
                   value={holding.quantity.toLocaleString("en-GB")}
                 />
 
-                <DetailRow
-                  label="Currency"
-                  value={holding.currency}
-                />
+                <DetailRow label="Currency" value={holding.currency} />
               </div>
             </article>
 
@@ -1127,9 +1266,7 @@ export default function HoldingDetailPage() {
                 <div>
                   <p
                     className={`text-xs font-bold uppercase tracking-[0.16em] ${
-                      aboveLimit
-                        ? "text-amber-700"
-                        : "text-emerald-700"
+                      aboveLimit ? "text-amber-700" : "text-emerald-700"
                     }`}
                   >
                     Allocation check
@@ -1194,6 +1331,97 @@ export default function HoldingDetailPage() {
   );
 }
 
+function LiveMetric({
+  icon,
+  label,
+  value,
+  detail,
+  tone = "neutral",
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  detail: string;
+  tone?: "neutral" | "positive" | "negative";
+}) {
+  const tones = {
+    neutral: "bg-slate-100 text-slate-700",
+    positive: "bg-emerald-50 text-emerald-700",
+    negative: "bg-red-50 text-red-700",
+  };
+
+  return (
+    <article className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+      <div
+        className={`flex h-10 w-10 items-center justify-center rounded-xl ${tones[tone]}`}
+      >
+        {icon}
+      </div>
+      <p className="mt-4 text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
+        {label}
+      </p>
+      <p className="mt-2 break-words text-xl font-bold text-slate-950">
+        {value}
+      </p>
+      <p className="mt-1 text-xs font-semibold text-slate-500">{detail}</p>
+    </article>
+  );
+}
+
+function ComingSoonCard({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
+  return (
+    <article className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm">
+      <span className="rounded-full bg-violet-50 px-3 py-1.5 text-xs font-bold text-violet-700">
+        Coming soon
+      </span>
+      <h2 className="mt-5 text-xl font-bold text-slate-950">{title}</h2>
+      <p className="mt-2 text-sm leading-6 text-slate-500">{description}</p>
+    </article>
+  );
+}
+
+function PlaceholderFeedCard({
+  icon,
+  eyebrow,
+  title,
+  description,
+  action,
+  href,
+}: {
+  icon: React.ReactNode;
+  eyebrow: string;
+  title: string;
+  description: string;
+  action: string;
+  href: string;
+}) {
+  return (
+    <article className="rounded-[28px] border border-slate-200 bg-white p-7 shadow-sm">
+      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-700">
+        {icon}
+      </div>
+      <p className="mt-5 text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
+        {eyebrow}
+      </p>
+      <h2 className="mt-2 text-2xl font-bold text-slate-950">{title}</h2>
+      <p className="mt-3 leading-7 text-slate-500">{description}</p>
+      <Link
+        href={href}
+        className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-slate-950"
+      >
+        {action}
+        <ArrowRight className="h-4 w-4" />
+      </Link>
+    </article>
+  );
+}
+
 function MetricCard({
   icon,
   label,
@@ -1222,9 +1450,7 @@ function MetricCard({
         {icon}
       </div>
 
-      <p className="mt-5 text-sm font-semibold text-slate-500">
-        {label}
-      </p>
+      <p className="mt-5 text-sm font-semibold text-slate-500">{label}</p>
 
       <p className="mt-1 text-2xl font-bold tracking-[-0.03em] text-slate-950">
         {value}
@@ -1292,9 +1518,7 @@ function IntelligenceCard({
             key={item.title}
             className="rounded-2xl border border-slate-100 bg-slate-50 p-5"
           >
-            <h3 className="font-bold text-slate-950">
-              {item.title}
-            </h3>
+            <h3 className="font-bold text-slate-950">{item.title}</h3>
 
             <p className="mt-2 text-sm leading-6 text-slate-500">
               {item.description}
@@ -1306,13 +1530,7 @@ function IntelligenceCard({
   );
 }
 
-function DetailRow({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
+function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-4 py-4">
       <span className="text-sm text-slate-500">{label}</span>

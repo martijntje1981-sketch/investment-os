@@ -125,7 +125,7 @@ const DEFAULT_GOAL: GoalSettings = {
 function formatCurrency(
   value: number,
   currency: Currency = "EUR",
-  decimals = 0
+  decimals = 0,
 ) {
   return new Intl.NumberFormat("en-GB", {
     style: "currency",
@@ -154,14 +154,14 @@ function getHoldingCost(holding: Holding) {
 function calculatePortfolioValue(holdings: Holding[]) {
   return holdings.reduce(
     (total, holding) => total + getHoldingValue(holding),
-    0
+    0,
   );
 }
 
 function calculatePortfolioCost(holdings: Holding[]) {
   return holdings.reduce(
     (total, holding) => total + getHoldingCost(holding),
-    0
+    0,
   );
 }
 
@@ -169,7 +169,7 @@ function calculateRequiredReturn(
   startingValue: number,
   annualContribution: number,
   targetValue: number,
-  years: number
+  years: number,
 ) {
   if (startingValue <= 0 || years <= 0) {
     return 0;
@@ -235,7 +235,11 @@ function getAllocationTone(allocation: number) {
   return "bg-emerald-100 text-emerald-700";
 }
 
-function getMarketStatus(timeZone: string, openMinutes: number, closeMinutes: number) {
+function getMarketStatus(
+  timeZone: string,
+  openMinutes: number,
+  closeMinutes: number,
+) {
   const parts = new Intl.DateTimeFormat("en-GB", {
     timeZone,
     weekday: "short",
@@ -245,11 +249,15 @@ function getMarketStatus(timeZone: string, openMinutes: number, closeMinutes: nu
   }).formatToParts(new Date());
   const weekday = parts.find((part) => part.type === "weekday")?.value;
   const hour = Number(parts.find((part) => part.type === "hour")?.value ?? 0);
-  const minute = Number(parts.find((part) => part.type === "minute")?.value ?? 0);
+  const minute = Number(
+    parts.find((part) => part.type === "minute")?.value ?? 0,
+  );
   const currentMinutes = hour * 60 + minute;
   const isWeekday = weekday ? !["Sat", "Sun"].includes(weekday) : false;
 
-  return isWeekday && currentMinutes >= openMinutes && currentMinutes < closeMinutes
+  return isWeekday &&
+    currentMinutes >= openMinutes &&
+    currentMinutes < closeMinutes
     ? "Open"
     : "Closed";
 }
@@ -271,7 +279,7 @@ function getDailyMove(holding: Holding) {
 export default function DashboardPage() {
   const [holdings, setHoldings] = useState<Holding[]>(canonicalHoldings);
   const [annualContribution, setAnnualContribution] = useState(
-    DEFAULT_ANNUAL_CONTRIBUTION
+    DEFAULT_ANNUAL_CONTRIBUTION,
   );
   const [goal, setGoal] = useState<GoalSettings>(DEFAULT_GOAL);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -282,7 +290,7 @@ export default function DashboardPage() {
   useEffect(() => {
     try {
       const savedAnnualContribution = localStorage.getItem(
-        "investment-os-annual-contribution"
+        "investment-os-annual-contribution",
       );
       const savedGoal = localStorage.getItem(GOAL_STORAGE_KEY);
       const savedHoldings = localStorage.getItem(HOLDINGS_STORAGE_KEY);
@@ -304,10 +312,7 @@ export default function DashboardPage() {
       if (!savedGoal && savedAnnualContribution) {
         const parsedContribution = Number(savedAnnualContribution);
 
-        if (
-          Number.isFinite(parsedContribution) &&
-          parsedContribution >= 0
-        ) {
+        if (Number.isFinite(parsedContribution) && parsedContribution >= 0) {
           setAnnualContribution(parsedContribution);
         }
       }
@@ -318,26 +323,61 @@ export default function DashboardPage() {
     }
   }, []);
 
+  useEffect(() => {
+    const refreshPortfolio = () => {
+      try {
+        const savedHoldings = localStorage.getItem(HOLDINGS_STORAGE_KEY);
+        const savedGoal = localStorage.getItem(GOAL_STORAGE_KEY);
+
+        if (savedHoldings) {
+          const parsedHoldings = JSON.parse(savedHoldings) as Holding[];
+
+          if (Array.isArray(parsedHoldings)) {
+            setHoldings(applyCachedPrices(parsedHoldings));
+          }
+        } else {
+          setHoldings(applyCachedPrices(canonicalHoldings));
+        }
+
+        if (savedGoal) {
+          const parsedGoal = JSON.parse(savedGoal) as Partial<GoalSettings>;
+          const nextGoal = { ...DEFAULT_GOAL, ...parsedGoal };
+
+          setGoal(nextGoal);
+          setAnnualContribution(nextGoal.monthlyContribution * 12);
+        }
+      } catch (error) {
+        console.error("Could not refresh Investment OS data:", error);
+      }
+    };
+
+    window.addEventListener("focus", refreshPortfolio);
+    window.addEventListener("storage", refreshPortfolio);
+
+    return () => {
+      window.removeEventListener("focus", refreshPortfolio);
+      window.removeEventListener("storage", refreshPortfolio);
+    };
+  }, []);
+
   const portfolioValue = useMemo(
     () => calculatePortfolioValue(holdings),
-    [holdings]
+    [holdings],
   );
 
   const investedCapital = useMemo(
     () => calculatePortfolioCost(holdings),
-    [holdings]
+    [holdings],
   );
 
   const totalReturn = portfolioValue - investedCapital;
 
   const totalReturnPercentage =
-    investedCapital > 0
-      ? (totalReturn / investedCapital) * 100
-      : 0;
+    investedCapital > 0 ? (totalReturn / investedCapital) * 100 : 0;
 
   const sortedHoldings = useMemo(() => {
     return [...holdings].sort(
-      (a, b) => getHoldingValue(b) - getHoldingValue(a)
+      (a, b) => getHoldingValue(b) - getHoldingValue(a),
     );
   }, [holdings]);
 
@@ -348,20 +388,15 @@ export default function DashboardPage() {
     : 0;
 
   const largestHoldingAllocation =
-    portfolioValue > 0
-      ? (largestHoldingValue / portfolioValue) * 100
-      : 0;
+    portfolioValue > 0 ? (largestHoldingValue / portfolioValue) * 100 : 0;
 
-  const goalProgress = Math.min(
-    (portfolioValue / goal.targetValue) * 100,
-    100
-  );
+  const goalProgress = Math.min((portfolioValue / goal.targetValue) * 100, 100);
 
   const requiredAnnualReturn = calculateRequiredReturn(
     portfolioValue,
     annualContribution,
     goal.targetValue,
-    yearsRemaining
+    yearsRemaining,
   );
 
   const diversificationScore = Math.max(
@@ -371,9 +406,9 @@ export default function DashboardPage() {
       Math.round(
         100 -
           Math.max(largestHoldingAllocation - 20, 0) * 1.2 +
-          Math.min(holdings.length * 2, 12)
-      )
-    )
+          Math.min(holdings.length * 2, 12),
+      ),
+    ),
   );
 
   const portfolioHealthScore = Math.round(
@@ -387,9 +422,9 @@ export default function DashboardPage() {
             : requiredAnnualReturn <= 25
               ? 72
               : 48) *
-            0.45
-      )
-    )
+            0.45,
+      ),
+    ),
   );
 
   const concentrationRisk =
@@ -399,8 +434,7 @@ export default function DashboardPage() {
         ? "Elevated"
         : "Controlled";
 
-  const portfolioTone =
-    totalReturn >= 0 ? "Constructive" : "Under pressure";
+  const portfolioTone = totalReturn >= 0 ? "Constructive" : "Under pressure";
 
   const dailyDrivers = holdings
     .map((holding) => ({ holding, move: getDailyMove(holding) }))
@@ -448,9 +482,7 @@ export default function DashboardPage() {
     },
     {
       label: "Total return",
-      value: `${totalReturn >= 0 ? "+" : ""}${formatCurrency(
-        totalReturn
-      )}`,
+      value: `${totalReturn >= 0 ? "+" : ""}${formatCurrency(totalReturn)}`,
       description: `${
         totalReturnPercentage >= 0 ? "+" : ""
       }${formatPercentage(totalReturnPercentage)}`,
@@ -466,7 +498,7 @@ export default function DashboardPage() {
       label: "Goal progress",
       value: formatPercentage(goalProgress),
       description: `${formatCurrency(
-        goal.targetValue - portfolioValue
+        goal.targetValue - portfolioValue,
       )} remaining`,
       tone: "positive",
       icon: <Target className="h-5 w-5" />,
@@ -524,9 +556,18 @@ export default function DashboardPage() {
           </div>
 
           <div className="mt-6 grid gap-4 md:grid-cols-3">
-            <EmptyStateCard title="Markets today" text="Market status and major moves appear here." />
-            <EmptyStateCard title="Macro headlines" text="Important macro developments appear here." />
-            <EmptyStateCard title="Market status" text="Europe, US and crypto trading hours appear here." />
+            <EmptyStateCard
+              title="Markets today"
+              text="Market status and major moves appear here."
+            />
+            <EmptyStateCard
+              title="Macro headlines"
+              text="Important macro developments appear here."
+            />
+            <EmptyStateCard
+              title="Market status"
+              text="Europe, US and crypto trading hours appear here."
+            />
           </div>
         </div>
       </main>
@@ -557,9 +598,7 @@ export default function DashboardPage() {
 
               <h1 className="mt-6 text-4xl font-black tracking-[-0.05em] sm:text-6xl">
                 Your investment
-                <span className="block text-slate-400">
-                  control centre
-                </span>
+                <span className="block text-slate-400">control centre</span>
               </h1>
             </div>
 
@@ -647,7 +686,9 @@ export default function DashboardPage() {
                   />
                   <DailyHeroCard
                     label="Biggest positive"
-                    value={biggestDailyGainer?.holding.symbol ?? "No positive move"}
+                    value={
+                      biggestDailyGainer?.holding.symbol ?? "No positive move"
+                    }
                     detail={
                       biggestDailyGainer
                         ? `+${formatCurrency(biggestDailyGainer.move)} · +${formatPercentage(biggestDailyGainer.holding.changePercent ?? 0)}`
@@ -657,7 +698,9 @@ export default function DashboardPage() {
                   />
                   <DailyHeroCard
                     label="Biggest negative"
-                    value={biggestDailyLoser?.holding.symbol ?? "No negative move"}
+                    value={
+                      biggestDailyLoser?.holding.symbol ?? "No negative move"
+                    }
                     detail={
                       biggestDailyLoser
                         ? `−${formatCurrency(Math.abs(biggestDailyLoser.move))} · −${formatPercentage(Math.abs(biggestDailyLoser.holding.changePercent ?? 0))}`
@@ -669,9 +712,9 @@ export default function DashboardPage() {
 
                 <p className="mt-6 max-w-3xl text-base leading-7 text-slate-300">
                   {largestHolding?.symbol ?? "Your largest holding"} represents{" "}
-                  {formatPercentage(largestHoldingAllocation)} of your portfolio.
-                  Portfolio health is {portfolioHealthScore}/100 and the average
-                  annual return required for your current goal is{" "}
+                  {formatPercentage(largestHoldingAllocation)} of your
+                  portfolio. Portfolio health is {portfolioHealthScore}/100 and
+                  the average annual return required for your current goal is{" "}
                   {formatPercentage(requiredAnnualReturn)}.
                 </p>
 
@@ -780,7 +823,9 @@ export default function DashboardPage() {
                 label="Risk"
                 value={concentrationRisk}
                 description={`${largestHolding?.symbol ?? "Largest holding"} is ${formatPercentage(largestHoldingAllocation)} of the portfolio.`}
-                tone={concentrationRisk === "Controlled" ? "positive" : "warning"}
+                tone={
+                  concentrationRisk === "Controlled" ? "positive" : "warning"
+                }
               />
               <StatusCard
                 label="Concentration"
@@ -838,9 +883,7 @@ export default function DashboardPage() {
                   const value = getHoldingValue(holding);
 
                   const allocation =
-                    portfolioValue > 0
-                      ? (value / portfolioValue) * 100
-                      : 0;
+                    portfolioValue > 0 ? (value / portfolioValue) * 100 : 0;
 
                   return (
                     <Link
@@ -867,15 +910,12 @@ export default function DashboardPage() {
 
                         <div className="shrink-0 text-right">
                           <p className="font-bold text-slate-950">
-                            {formatCurrency(
-                              value,
-                              holding.currency
-                            )}
+                            {formatCurrency(value, holding.currency)}
                           </p>
 
                           <span
                             className={`mt-1 inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold ${getAllocationTone(
-                              allocation
+                              allocation,
                             )}`}
                           >
                             {formatPercentage(allocation)}
@@ -909,9 +949,7 @@ export default function DashboardPage() {
                       Main portfolio risk
                     </p>
 
-                    <h2 className="mt-1 text-2xl font-bold">
-                      Concentration
-                    </h2>
+                    <h2 className="mt-1 text-2xl font-bold">Concentration</h2>
                   </div>
                 </div>
 
@@ -922,9 +960,8 @@ export default function DashboardPage() {
                       <strong className="text-white">
                         {formatPercentage(largestHoldingAllocation)}
                       </strong>{" "}
-                      of the complete portfolio. This holding remains
-                      the dominant source of both return potential and
-                      volatility.
+                      of the complete portfolio. This holding remains the
+                      dominant source of both return potential and volatility.
                     </p>
 
                     <div className="mt-6 rounded-2xl bg-white/10 p-5">
@@ -940,9 +977,7 @@ export default function DashboardPage() {
                         </div>
 
                         <p className="text-3xl font-black">
-                          {formatPercentage(
-                            largestHoldingAllocation
-                          )}
+                          {formatPercentage(largestHoldingAllocation)}
                         </p>
                       </div>
                     </div>
@@ -996,8 +1031,8 @@ export default function DashboardPage() {
 
                 <p className="mt-5 text-sm leading-6 text-slate-500">
                   Broad equities, gold and thematic positions improve
-                  diversification, but the large Bitcoin allocation
-                  still dominates the portfolio.
+                  diversification, but the large Bitcoin allocation still
+                  dominates the portfolio.
                 </p>
               </article>
             </div>
@@ -1058,23 +1093,29 @@ export default function DashboardPage() {
                   <p className="mt-5 leading-7 text-slate-600">
                     Your portfolio is {dailyPortfolioMove >= 0 ? "up" : "down"}{" "}
                     <strong className="text-slate-950">
-                      {formatCurrency(Math.abs(dailyPortfolioMove))} ({formatPercentage(Math.abs(dailyPortfolioMovePercentage))})
+                      {formatCurrency(Math.abs(dailyPortfolioMove))} (
+                      {formatPercentage(Math.abs(dailyPortfolioMovePercentage))}
+                      )
                     </strong>{" "}
                     based on the latest available daily market changes.
                   </p>
                   <div className="mt-6 space-y-3">
-                    {dailyDrivers.slice(0, 3).map(({ holding, move }, index) => (
-                      <CoachRow
-                        key={holding.id}
-                        number={String(index + 1)}
-                        text={`${holding.symbol}: ${move >= 0 ? "+" : "-"}${formatCurrency(Math.abs(move))} contribution`}
-                      />
-                    ))}
+                    {dailyDrivers
+                      .slice(0, 3)
+                      .map(({ holding, move }, index) => (
+                        <CoachRow
+                          key={holding.id}
+                          number={String(index + 1)}
+                          text={`${holding.symbol}: ${move >= 0 ? "+" : "-"}${formatCurrency(Math.abs(move))} contribution`}
+                        />
+                      ))}
                   </div>
                 </>
               ) : (
                 <p className="mt-5 leading-7 text-slate-600">
-                  Daily movement will be explained here after current and previous-close data are available for your holdings. No daily driver is inferred from incomplete data.
+                  Daily movement will be explained here after current and
+                  previous-close data are available for your holdings. No daily
+                  driver is inferred from incomplete data.
                 </p>
               )}
             </article>
@@ -1120,17 +1161,11 @@ export default function DashboardPage() {
                 />
 
                 <SignalCard
-                  icon={
-                    <ChartNoAxesColumnIncreasing className="h-5 w-5" />
-                  }
+                  icon={<ChartNoAxesColumnIncreasing className="h-5 w-5" />}
                   label="Goal requirement"
                   value={formatPercentage(requiredAnnualReturn)}
                   description="Average annual growth required."
-                  tone={
-                    requiredAnnualReturn <= 15
-                      ? "positive"
-                      : "warning"
-                  }
+                  tone={requiredAnnualReturn <= 15 ? "positive" : "warning"}
                 />
 
                 <SignalCard
@@ -1138,8 +1173,7 @@ export default function DashboardPage() {
                   label="Best diversifier"
                   value={
                     holdings.some(
-                      (holding) =>
-                        holding.symbol.toUpperCase() === "VWCE"
+                      (holding) => holding.symbol.toUpperCase() === "VWCE",
                     )
                       ? "VWCE"
                       : "Broad equities"
@@ -1154,7 +1188,9 @@ export default function DashboardPage() {
                   <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
                     Market status
                   </p>
-                  <p className="text-xs text-slate-400">Regular trading hours</p>
+                  <p className="text-xs text-slate-400">
+                    Regular trading hours
+                  </p>
                 </div>
                 <div className="mt-3 grid grid-cols-3 gap-2">
                   <MarketStatus label="Europe" value={europeanMarketStatus} />
@@ -1181,9 +1217,9 @@ export default function DashboardPage() {
                 </h2>
 
                 <p className="mt-3 max-w-2xl leading-7 text-blue-100">
-                  Upload a new portfolio whenever your positions change.
-                  The dashboard, holding pages and your personal goal
-                  projections will update automatically.
+                  Upload a new portfolio whenever your positions change. The
+                  dashboard, holding pages and your personal goal projections
+                  will update automatically.
                 </p>
               </div>
 
@@ -1203,9 +1239,9 @@ export default function DashboardPage() {
             </p>
 
             <p className="mt-2 text-sm leading-6 text-slate-500">
-              Investment OS is a decision-support and monitoring tool.
-              It does not provide personal financial advice and cannot
-              guarantee future investment results.
+              Investment OS is a decision-support and monitoring tool. It does
+              not provide personal financial advice and cannot guarantee future
+              investment results.
             </p>
           </section>
         </div>
@@ -1216,20 +1252,12 @@ export default function DashboardPage() {
   );
 }
 
-function HeroDetailRow({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
+function HeroDetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-4 last:border-none last:pb-0">
       <span className="text-sm text-slate-400">{label}</span>
 
-      <span className="text-right text-sm font-bold text-white">
-        {value}
-      </span>
+      <span className="text-right text-sm font-bold text-white">{value}</span>
     </div>
   );
 }
@@ -1293,7 +1321,9 @@ function StatusCard({
       <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
         {label}
       </p>
-      <span className={`mt-3 inline-flex rounded-full px-3 py-1.5 text-sm font-black ${toneClasses[tone]}`}>
+      <span
+        className={`mt-3 inline-flex rounded-full px-3 py-1.5 text-sm font-black ${toneClasses[tone]}`}
+      >
         {value}
       </span>
       <p className="mt-3 text-sm leading-6 text-slate-500">{description}</p>
@@ -1309,7 +1339,9 @@ function MarketStatus({ label, value }: { label: string; value: string }) {
       <p className="truncate text-[10px] font-bold uppercase tracking-wide text-slate-400">
         {label}
       </p>
-      <p className={`mt-1 text-xs font-black ${isOpen ? "text-emerald-700" : "text-slate-500"}`}>
+      <p
+        className={`mt-1 text-xs font-black ${isOpen ? "text-emerald-700" : "text-slate-500"}`}
+      >
         {value}
       </p>
     </div>
@@ -1345,17 +1377,13 @@ function MetricCard({
         {icon}
       </div>
 
-      <p className="mt-5 text-sm font-semibold text-slate-500">
-        {label}
-      </p>
+      <p className="mt-5 text-sm font-semibold text-slate-500">{label}</p>
 
       <p className="mt-1 text-2xl font-bold tracking-[-0.03em] text-slate-950">
         {value}
       </p>
 
-      <p
-        className={`mt-1 text-xs font-bold ${descriptionClasses[tone]}`}
-      >
+      <p className={`mt-1 text-xs font-bold ${descriptionClasses[tone]}`}>
         {description}
       </p>
     </article>
@@ -1382,8 +1410,7 @@ function QuickActionCard({
   const containerClasses = {
     dark: "bg-slate-950 text-white",
     light: "border border-slate-200 bg-white text-slate-950",
-    gradient:
-      "bg-gradient-to-br from-blue-600 to-violet-700 text-white",
+    gradient: "bg-gradient-to-br from-blue-600 to-violet-700 text-white",
   };
 
   const iconClasses = {
@@ -1438,22 +1465,14 @@ function QuickActionCard({
   );
 }
 
-function CoachRow({
-  number,
-  text,
-}: {
-  number: string;
-  text: string;
-}) {
+function CoachRow({ number, text }: { number: string; text: string }) {
   return (
     <div className="flex items-center gap-3 rounded-2xl bg-slate-50 p-4">
       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-950 font-bold text-white">
         {number}
       </div>
 
-      <p className="text-sm font-semibold text-slate-700">
-        {text}
-      </p>
+      <p className="text-sm font-semibold text-slate-700">{text}</p>
     </div>
   );
 }
@@ -1489,13 +1508,9 @@ function SignalCard({
         {label}
       </p>
 
-      <p className="mt-2 text-xl font-bold text-slate-950">
-        {value}
-      </p>
+      <p className="mt-2 text-xl font-bold text-slate-950">{value}</p>
 
-      <p className="mt-2 text-sm leading-6 text-slate-500">
-        {description}
-      </p>
+      <p className="mt-2 text-sm leading-6 text-slate-500">{description}</p>
     </div>
   );
 }
