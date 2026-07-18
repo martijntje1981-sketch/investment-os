@@ -2,13 +2,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
   ArrowRight,
-  BarChart3,
   BellRing,
   BrainCircuit,
   BriefcaseBusiness,
   Check,
   ChevronRight,
-  CircleDollarSign,
   FileUp,
   Gauge,
   Goal,
@@ -327,7 +325,7 @@ export default async function MarketingHomePage({
                     </p>
 
                     <p className="mt-1 text-sm font-bold">
-                      Today's portfolio analysis is ready
+                      Today&apos;s portfolio analysis is ready
                     </p>
                   </div>
                 </div>
@@ -445,7 +443,7 @@ export default async function MarketingHomePage({
               </p>
 
               <h2 className="mt-3 text-3xl font-black tracking-[-0.04em] sm:text-4xl">
-                Understand what today's market means for
+                Understand what today&apos;s market means for
                 your portfolio
               </h2>
 
