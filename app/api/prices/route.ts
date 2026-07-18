@@ -119,6 +119,13 @@ const HOLDINGS: HoldingConfig[] = [
     name: "Vanguard FTSE All-World UCITS ETF",
     currency: "EUR",
   },
+  {
+    portfolioSymbol: "VUSA",
+    eodhdSymbol: "VUSA.AS",
+    isin: "IE00B3XXRP09",
+    name: "Vanguard S&P 500 UCITS ETF USD Distributing",
+    currency: "EUR",
+  },
 ];
 
 function getApiKey() {
@@ -148,7 +155,9 @@ async function fetchRealtimeData(
   apiKey: string,
 ): Promise<EodhdRealtimeResponse> {
   const url =
-    `https://eodhd.com/api/real-time/${encodeURIComponent(symbol)}` +
+    `https://eodhd.com/api/real-time/${encodeURIComponent(
+      symbol,
+    )}` +
     `?api_token=${encodeURIComponent(apiKey)}&fmt=json`;
 
   const response = await fetch(url, {
@@ -381,7 +390,7 @@ async function loadPricesFromEodhd(): Promise<PricePayload> {
  */
 const getCachedPrices = unstable_cache(
   loadPricesFromEodhd,
-  ["investment-os-eodhd-prices-v1"],
+  ["investment-os-eodhd-prices-v2"],
   {
     revalidate: CACHE_SECONDS,
     tags: ["market-prices"],
@@ -396,7 +405,8 @@ export async function GET() {
       status: payload.success ? 200 : 503,
       headers: {
         "Cache-Control":
-          `public, s-maxage=${CACHE_SECONDS}, stale-while-revalidate=${CACHE_SECONDS * 2}`,
+          `public, s-maxage=${CACHE_SECONDS}, ` +
+          `stale-while-revalidate=${CACHE_SECONDS * 2}`,
       },
     });
   } catch (error) {
