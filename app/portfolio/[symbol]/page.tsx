@@ -27,11 +27,11 @@ import {
 } from "lucide-react";
 import BottomNavigation from "@/components/home/BottomNav";
 import {
-  PORTFOLIO_STORAGE_KEY,
-  PRICE_CACHE_KEY,
   applyCachedPrices,
+  readPortfolioFromStorage,
   type StoredPortfolioHolding,
 } from "@/lib/client/portfolioPricing";
+import { useAuthenticatedUserSub } from "@/lib/client/useAuthenticatedUserSub";
 
 type Currency = "EUR" | "USD" | "GBP";
 
@@ -83,63 +83,6 @@ function formatUpdatedAt(value?: string) {
     minute: "2-digit",
   }).format(date);
 }
-
-const fallbackHoldings: Holding[] = [
-  {
-    id: 1,
-    symbol: "IB1T",
-    name: "iShares Bitcoin ETP",
-    quantity: 11269,
-    purchasePrice: 5.16,
-    currentPrice: 5.16,
-    currency: "EUR",
-  },
-  {
-    id: 2,
-    symbol: "STRC",
-    name: "21Shares Strategy Yield ETP",
-    quantity: 450,
-    purchasePrice: 15.56,
-    currentPrice: 15.56,
-    currency: "EUR",
-  },
-  {
-    id: 3,
-    symbol: "VWCE",
-    name: "Vanguard FTSE All-World ETF",
-    quantity: 99,
-    purchasePrice: 87.88,
-    currentPrice: 87.88,
-    currency: "EUR",
-  },
-  {
-    id: 4,
-    symbol: "NUKL",
-    name: "VanEck Uranium and Nuclear Technologies ETF",
-    quantity: 161,
-    purchasePrice: 46.58,
-    currentPrice: 46.58,
-    currency: "EUR",
-  },
-  {
-    id: 5,
-    symbol: "AIFS",
-    name: "AI Infrastructure ETF",
-    quantity: 520,
-    purchasePrice: 10.19,
-    currentPrice: 10.19,
-    currency: "EUR",
-  },
-  {
-    id: 6,
-    symbol: "PPFB",
-    name: "iShares Physical Gold ETC",
-    quantity: 200,
-    purchasePrice: 10,
-    currentPrice: 10,
-    currency: "EUR",
-  },
-];
 
 const holdingIntelligence: Record<string, HoldingIntelligence> = {
   IB1T: {
@@ -705,29 +648,37 @@ function getScoreClasses(score: number) {
 export default function HoldingDetailPage() {
   const router = useRouter();
   const params = useParams<{ symbol: string }>();
+  const { userSub, authReady } = useAuthenticatedUserSub();
 
   const symbol = decodeURIComponent(params.symbol ?? "").toUpperCase();
 
-  const [holdings, setHoldings] = useState<Holding[]>(fallbackHoldings);
+  const [holdings, setHoldings] = useState<Holding[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
+    if (!authReady) {
+      setHoldings([]);
+      setIsLoaded(false);
+      return;
+    }
+
+    setHoldings([]);
+    setIsLoaded(false);
+
+    if (!userSub) {
+      setIsLoaded(true);
+      return;
+    }
+
     try {
-      const savedPortfolio = localStorage.getItem(PORTFOLIO_STORAGE_KEY);
+      const savedPortfolio = readPortfolioFromStorage(userSub);
 
-      if (savedPortfolio) {
-        const parsedPortfolio = JSON.parse(savedPortfolio) as Holding[];
-
-        if (Array.isArray(parsedPortfolio)) {
-          setHoldings(
-            applyCachedPrices(
-              parsedPortfolio as unknown as StoredPortfolioHolding[],
-            ) as unknown as Holding[],
-          );
-        }
-      } else {
+      if (Array.isArray(savedPortfolio) && savedPortfolio.length > 0) {
         setHoldings(
-          applyCachedPrices(fallbackHoldings as unknown as StoredPortfolioHolding[]) as unknown as Holding[],
+          applyCachedPrices(
+            userSub,
+            savedPortfolio as unknown as StoredPortfolioHolding[],
+          ) as unknown as Holding[],
         );
       }
     } catch (error) {
@@ -735,7 +686,7 @@ export default function HoldingDetailPage() {
     } finally {
       setIsLoaded(true);
     }
-  }, []);
+  }, [authReady, userSub]);
 
   const holding = useMemo(() => {
     return holdings.find((item) => item.symbol.trim().toUpperCase() === symbol);

@@ -19,26 +19,17 @@ import {
 } from "lucide-react";
 import BottomNavigation from "@/components/home/BottomNav";
 import {
-  PORTFOLIO_STORAGE_KEY,
   applyCachedPrices,
+  dispatchPortfolioUpdated,
+  readPortfolioFromStorage,
   refreshPortfolioPrices,
+  writePortfolioToStorage,
   type StoredPortfolioHolding,
 } from "@/lib/client/portfolioPricing";
-import { holdings as portfolioHoldings } from "@/lib/services/portfolio/holdings";
+import { useAuthenticatedUserSub } from "@/lib/client/useAuthenticatedUserSub";
 
 type AssetType = "investment" | "cash";
 type Holding = StoredPortfolioHolding;
-
-const defaultHoldings: Holding[] = portfolioHoldings.map((holding) => ({
-  id: holding.id,
-  symbol: holding.symbol.trim().toUpperCase(),
-  name: holding.name,
-  quantity: holding.units,
-  purchasePrice: holding.averagePrice,
-  currentPrice: holding.currentPrice,
-  currency: "EUR",
-  assetType: "investment",
-}));
 
 const emptyDraft: Holding = {
   id: "",
@@ -72,55 +63,60 @@ function costOf(holding: Holding) {
   return holding.quantity * holding.purchasePrice;
 }
 
-function validHoldings(value: unknown): value is Holding[] {
-  return Array.isArray(value) && value.every((item) => {
-    if (!item || typeof item !== "object") return false;
-    const holding = item as Partial<Holding>;
-    return typeof holding.id === "string" &&
-      typeof holding.symbol === "string" &&
-      typeof holding.name === "string" &&
-      typeof holding.quantity === "number" &&
-      typeof holding.purchasePrice === "number" &&
-      typeof holding.currentPrice === "number";
-  });
-}
-
 export default function PortfolioPage() {
-  const [holdings, setHoldings] = useState<Holding[]>(defaultHoldings);
+  const { userSub, authReady } = useAuthenticatedUserSub();
+  const [holdings, setHoldings] = useState<Holding[]>([]);
+  const [portfolioReady, setPortfolioReady] = useState(false);
   const [draft, setDraft] = useState<Holding>(emptyDraft);
   const [editorOpen, setEditorOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [message, setMessage] = useState("Portfolio prices use the latest available market data.");
 
   useEffect(() => {
+    if (!authReady) {
+      setHoldings([]);
+      setPortfolioReady(false);
+      return;
+    }
+
+    setHoldings([]);
+    setPortfolioReady(false);
+
+    if (!userSub) {
+      setPortfolioReady(true);
+      return;
+    }
+
     try {
-      const stored = localStorage.getItem(PORTFOLIO_STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (validHoldings(parsed)) {
-          setHoldings(applyCachedPrices(parsed.map((holding) => ({
+      const stored = readPortfolioFromStorage(userSub);
+      setHoldings(
+        applyCachedPrices(
+          userSub,
+          stored.map((holding) => ({
             ...holding,
             assetType: holding.assetType === "cash" ? "cash" : "investment",
-          }))));
-          return;
-        }
-      }
-      localStorage.setItem(PORTFOLIO_STORAGE_KEY, JSON.stringify(defaultHoldings));
+          })),
+        ),
+      );
     } catch {
-      setHoldings(defaultHoldings);
+      setHoldings([]);
+    } finally {
+      setPortfolioReady(true);
     }
-  }, []);
+  }, [authReady, userSub]);
 
   const saveHoldings = useCallback((next: Holding[]) => {
+    if (!userSub) return;
     setHoldings(next);
-    localStorage.setItem(PORTFOLIO_STORAGE_KEY, JSON.stringify(next));
-    window.dispatchEvent(new Event("investment-os-holdings-updated"));
-  }, []);
+    writePortfolioToStorage(userSub, next);
+    dispatchPortfolioUpdated(userSub);
+  }, [userSub]);
 
   const refreshPrices = useCallback(async () => {
+    if (!userSub) return;
     setIsRefreshing(true);
     try {
-      const next = await refreshPortfolioPrices(holdings);
+      const next = await refreshPortfolioPrices(userSub, holdings);
       saveHoldings(next);
       const updatedCount = next.filter(
         (holding, index) =>
@@ -137,7 +133,7 @@ export default function PortfolioPage() {
     } finally {
       setIsRefreshing(false);
     }
-  }, [holdings, saveHoldings]);
+  }, [holdings, saveHoldings, userSub]);
 
   const totalValue = useMemo(() => holdings.reduce((sum, holding) => sum + valueOf(holding), 0), [holdings]);
   const investedCost = useMemo(() => holdings.reduce((sum, holding) => sum + costOf(holding), 0), [holdings]);
@@ -145,6 +141,17 @@ export default function PortfolioPage() {
   const totalReturnPercent = investedCost > 0 ? totalReturn / investedCost * 100 : 0;
   const cashValue = holdings.filter((holding) => holding.assetType === "cash").reduce((sum, holding) => sum + valueOf(holding), 0);
   const largest = [...holdings].sort((a, b) => valueOf(b) - valueOf(a))[0];
+
+  if (!portfolioReady) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-slate-50">
+        <div className="text-center">
+          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-slate-950" />
+          <p className="mt-4 text-sm font-semibold text-slate-500">Loading portfolio…</p>
+        </div>
+      </main>
+    );
+  }
 
   function openAdd(assetType: AssetType) {
     setDraft({

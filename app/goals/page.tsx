@@ -13,25 +13,15 @@ import {
   TrendingUp,
 } from "lucide-react";
 import BottomNavigation from "@/components/home/BottomNav";
-import { holdings as portfolioHoldings } from "@/lib/services/portfolio/holdings";
 import {
-  PRICE_CACHE_KEY,
-  buildPriceLookup,
+  annualContributionKey,
+  applyCachedPrices,
+  goalStorageKey,
+  readPortfolioFromStorage,
 } from "@/lib/client/portfolioPricing";
+import { useAuthenticatedUserSub } from "@/lib/client/useAuthenticatedUserSub";
+import type { GoalSettings } from "@/lib/types/portfolioStorage";
 
-type GoalSettings = {
-  targetValue: number;
-  targetYear: number;
-  monthlyContribution: number;
-  expectedAnnualReturn: number;
-};
-
-type CachedPrice = {
-  symbol: string;
-  price: number;
-};
-
-const GOAL_STORAGE_KEY = "investment-os-goal";
 const DEFAULT_GOAL: GoalSettings = {
   targetValue: 1_000_000,
   targetYear: 2036,
@@ -55,40 +45,12 @@ function formatPercentage(value: number) {
   }).format(value / 100);
 }
 
-function getPortfolioValue() {
-  let prices = buildPriceLookup([]);
-
-  try {
-    const cached = localStorage.getItem(PRICE_CACHE_KEY);
-    const parsed = cached ? (JSON.parse(cached) as Array<{
-      symbol: string;
-      providerSymbol?: string;
-      isin?: string | null;
-      price: number;
-    }>) : [];
-    if (Array.isArray(parsed)) {
-      prices = buildPriceLookup(
-        parsed
-          .filter((item) => Number.isFinite(item.price) && item.price > 0)
-          .map((item) => ({
-            symbol: item.symbol,
-            providerSymbol: item.providerSymbol,
-            isin: item.isin ?? null,
-            priceEur: item.price,
-          })),
-      );
-    }
-  } catch {
-    prices = buildPriceLookup([]);
-  }
-
-  return portfolioHoldings.reduce((total, holding) => {
-    const quote =
-      prices.get(holding.symbol.trim().toUpperCase()) ??
-      (holding.symbol ? prices.get(holding.symbol.trim().toUpperCase()) : undefined);
-    const price = quote?.priceEur ?? holding.currentPrice;
-    return total + holding.units * price;
-  }, 0);
+function calculatePortfolioValue(userSub: string) {
+  const holdings = applyCachedPrices(userSub, readPortfolioFromStorage(userSub));
+  return holdings.reduce(
+    (total, holding) => total + holding.quantity * holding.currentPrice,
+    0,
+  );
 }
 
 function projectValue(
@@ -108,16 +70,33 @@ function projectValue(
 }
 
 export default function GoalsPage() {
+  const { userSub, authReady } = useAuthenticatedUserSub();
   const [goal, setGoal] = useState<GoalSettings>(DEFAULT_GOAL);
   const [portfolioValue, setPortfolioValue] = useState(0);
   const [isLoaded, setIsLoaded] = useState(false);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    setPortfolioValue(getPortfolioValue());
+    if (!authReady) {
+      setPortfolioValue(0);
+      setGoal(DEFAULT_GOAL);
+      setIsLoaded(false);
+      return;
+    }
+
+    setPortfolioValue(0);
+    setGoal(DEFAULT_GOAL);
+    setIsLoaded(false);
+
+    if (!userSub) {
+      setIsLoaded(true);
+      return;
+    }
 
     try {
-      const stored = localStorage.getItem(GOAL_STORAGE_KEY);
+      setPortfolioValue(calculatePortfolioValue(userSub));
+
+      const stored = localStorage.getItem(goalStorageKey(userSub));
       if (stored) {
         const parsed = JSON.parse(stored) as Partial<GoalSettings>;
         setGoal({ ...DEFAULT_GOAL, ...parsed });
@@ -127,7 +106,7 @@ export default function GoalsPage() {
     } finally {
       setIsLoaded(true);
     }
-  }, []);
+  }, [authReady, userSub]);
 
   const currentYear = new Date().getFullYear();
   const monthsRemaining = Math.max((goal.targetYear - currentYear) * 12, 0);
@@ -165,9 +144,10 @@ export default function GoalsPage() {
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    localStorage.setItem(GOAL_STORAGE_KEY, JSON.stringify(goal));
+    if (!userSub) return;
+    localStorage.setItem(goalStorageKey(userSub), JSON.stringify(goal));
     localStorage.setItem(
-      "investment-os-annual-contribution",
+      annualContributionKey(userSub),
       String(goal.monthlyContribution * 12),
     );
     setSaved(true);

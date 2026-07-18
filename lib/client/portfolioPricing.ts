@@ -3,11 +3,14 @@
  *
  * Used by portfolio, dashboard, and detail pages so every surface resolves
  * live prices through the same POST /api/prices + providerSymbol join logic.
+ * All storage operations require the authenticated user's stable id (sub).
  */
 
 import {
-  PORTFOLIO_STORAGE_KEY,
-  PRICE_CACHE_KEY,
+  assertUserSub,
+  priceCacheKey,
+} from "@/lib/client/portfolioStorageKeys";
+import {
   type CachedPortfolioPrice,
   type PortfolioInstrumentPayload,
   type PriceApiQuote,
@@ -16,38 +19,33 @@ import {
 } from "@/lib/types/portfolioStorage";
 
 export {
+  LEGACY_PORTFOLIO_STORAGE_KEY,
+  LEGACY_PRICE_CACHE_KEY,
+  portfolioStorageKey,
+  priceCacheKey,
+  goalStorageKey,
+  annualContributionKey,
+  PORTFOLIO_HOLDINGS_UPDATED_EVENT,
+} from "@/lib/client/portfolioStorageKeys";
+
+export {
   PORTFOLIO_STORAGE_KEY,
   PRICE_CACHE_KEY,
 } from "@/lib/types/portfolioStorage";
+
+export {
+  readPortfolioFromStorage,
+  writePortfolioToStorage,
+  dispatchPortfolioUpdated,
+  resolveVisiblePortfolioState,
+  requestLegacyPortfolioMigration,
+  tryExplicitLegacyPortfolioMigration,
+} from "@/lib/client/userPortfolioStorage";
 
 export type { StoredPortfolioHolding, PortfolioInstrumentPayload };
 
 export function normalizePortfolioSymbol(value: unknown): string {
   return String(value ?? "").trim().toUpperCase();
-}
-
-/** Reads holdings from localStorage, preserving extended instrument fields. */
-export function readPortfolioFromStorage(): StoredPortfolioHolding[] {
-  try {
-    const stored = localStorage.getItem(PORTFOLIO_STORAGE_KEY);
-    const parsed = stored ? JSON.parse(stored) : [];
-    if (!Array.isArray(parsed)) return [];
-
-    return parsed
-      .filter((item) => item && typeof item === "object")
-      .map((item) => ({
-        ...(item as StoredPortfolioHolding),
-        symbol: normalizePortfolioSymbol(
-          (item as StoredPortfolioHolding).symbol,
-        ),
-        assetType:
-          (item as StoredPortfolioHolding).assetType === "cash"
-            ? "cash"
-            : "investment",
-      }));
-  } catch {
-    return [];
-  }
 }
 
 /** Builds the POST /api/prices request body from stored holdings. */
@@ -150,7 +148,12 @@ export function applyPricesToHoldings<T extends StoredPortfolioHolding>(
   });
 }
 
-export function writePriceCache(quotes: PriceApiQuote[] | undefined): void {
+export function writePriceCache(
+  userSub: string,
+  quotes: PriceApiQuote[] | undefined,
+): void {
+  assertUserSub(userSub);
+
   const cache: CachedPortfolioPrice[] = (quotes ?? [])
     .filter((quote) => Number.isFinite(quote.priceEur) && quote.priceEur > 0)
     .map((quote) => ({
@@ -165,15 +168,18 @@ export function writePriceCache(quotes: PriceApiQuote[] | undefined): void {
       updatedAt: quote.updatedAt,
     }));
 
-  localStorage.setItem(PRICE_CACHE_KEY, JSON.stringify(cache));
+  localStorage.setItem(priceCacheKey(userSub), JSON.stringify(cache));
 }
 
 /** Applies cached prices using the same multi-key join as live pricing. */
 export function applyCachedPrices<T extends StoredPortfolioHolding>(
+  userSub: string,
   holdings: T[],
 ): T[] {
+  assertUserSub(userSub);
+
   try {
-    const cached = localStorage.getItem(PRICE_CACHE_KEY);
+    const cached = localStorage.getItem(priceCacheKey(userSub));
     const parsed = cached ? (JSON.parse(cached) as CachedPortfolioPrice[]) : [];
     if (!Array.isArray(parsed)) return holdings;
 
@@ -196,11 +202,13 @@ export function applyCachedPrices<T extends StoredPortfolioHolding>(
 
 /**
  * Fetches live prices for the supplied holdings via POST /api/prices,
- * writes the shared cache, and returns holdings with updated prices.
+ * writes the user-scoped cache, and returns holdings with updated prices.
  */
 export async function refreshPortfolioPrices<
   T extends StoredPortfolioHolding,
->(holdings: T[]): Promise<T[]> {
+>(userSub: string, holdings: T[]): Promise<T[]> {
+  assertUserSub(userSub);
+
   const payload = buildPriceRequestPayload(holdings);
 
   const response = await fetch("/api/prices", {
@@ -219,6 +227,6 @@ export async function refreshPortfolioPrices<
     throw new Error(data.error ?? "Market data unavailable");
   }
 
-  writePriceCache(data.prices);
+  writePriceCache(userSub, data.prices);
   return applyPricesToHoldings(holdings, data.prices);
 }

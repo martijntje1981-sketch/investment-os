@@ -28,11 +28,16 @@ import {
 } from "lucide-react";
 import BottomNavigation from "@/components/home/BottomNav";
 import {
-  PORTFOLIO_STORAGE_KEY,
+  annualContributionKey,
   applyCachedPrices,
+  goalStorageKey,
+  readPortfolioFromStorage,
   refreshPortfolioPrices,
+  writePortfolioToStorage,
   type StoredPortfolioHolding,
 } from "@/lib/client/portfolioPricing";
+import { useAuthenticatedUserSub } from "@/lib/client/useAuthenticatedUserSub";
+import type { GoalSettings } from "@/lib/types/portfolioStorage";
 
 type Currency = "EUR" | "USD" | "GBP";
 
@@ -54,15 +59,6 @@ type CachedPrice = {
   changePercent?: number;
   updatedAt?: string;
 };
-
-type GoalSettings = {
-  targetValue: number;
-  targetYear: number;
-  monthlyContribution: number;
-  expectedAnnualReturn: number;
-};
-
-const GOAL_STORAGE_KEY = "investment-os-goal";
 
 const TARGET_VALUE = 1_000_000;
 const TARGET_YEAR = 2036;
@@ -229,6 +225,7 @@ function getDailyMove(holding: Holding) {
 }
 
 export default function DashboardPage() {
+  const { userSub, authReady } = useAuthenticatedUserSub();
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [annualContribution, setAnnualContribution] = useState(
     DEFAULT_ANNUAL_CONTRIBUTION,
@@ -240,32 +237,43 @@ export default function DashboardPage() {
   const yearsRemaining = Math.max(goal.targetYear - currentYear, 1);
 
   useEffect(() => {
+    if (!authReady) {
+      setHoldings([]);
+      setGoal(DEFAULT_GOAL);
+      setAnnualContribution(DEFAULT_ANNUAL_CONTRIBUTION);
+      setIsLoaded(false);
+      return;
+    }
+
+    setHoldings([]);
+    setGoal(DEFAULT_GOAL);
+    setAnnualContribution(DEFAULT_ANNUAL_CONTRIBUTION);
+    setIsLoaded(false);
+
+    if (!userSub) {
+      setIsLoaded(true);
+      return;
+    }
+
     try {
-      const savedAnnualContribution = localStorage.getItem(
-        "investment-os-annual-contribution",
-      );
-      const savedGoal = localStorage.getItem(GOAL_STORAGE_KEY);
-      const savedHoldings = localStorage.getItem(PORTFOLIO_STORAGE_KEY);
+      const activeHoldings = readPortfolioFromStorage(userSub) as Holding[];
+      setHoldings(applyCachedPrices(userSub, activeHoldings));
 
-      let activeHoldings: Holding[] = [];
-      if (savedHoldings) {
-        const parsedHoldings = JSON.parse(savedHoldings) as Holding[];
-        if (Array.isArray(parsedHoldings)) activeHoldings = parsedHoldings;
-      }
-      setHoldings(applyCachedPrices(activeHoldings));
-
+      const savedGoal = localStorage.getItem(goalStorageKey(userSub));
       if (savedGoal) {
         const parsedGoal = JSON.parse(savedGoal) as Partial<GoalSettings>;
         const nextGoal = { ...DEFAULT_GOAL, ...parsedGoal };
         setGoal(nextGoal);
         setAnnualContribution(nextGoal.monthlyContribution * 12);
-      }
-
-      if (!savedGoal && savedAnnualContribution) {
-        const parsedContribution = Number(savedAnnualContribution);
-
-        if (Number.isFinite(parsedContribution) && parsedContribution >= 0) {
-          setAnnualContribution(parsedContribution);
+      } else {
+        const savedAnnualContribution = localStorage.getItem(
+          annualContributionKey(userSub),
+        );
+        if (savedAnnualContribution) {
+          const parsedContribution = Number(savedAnnualContribution);
+          if (Number.isFinite(parsedContribution) && parsedContribution >= 0) {
+            setAnnualContribution(parsedContribution);
+          }
         }
       }
     } catch (error) {
@@ -273,37 +281,31 @@ export default function DashboardPage() {
     } finally {
       setIsLoaded(true);
     }
-  }, []);
+  }, [authReady, userSub]);
 
   useEffect(() => {
+    if (!authReady || !userSub) return;
+
     const refreshPortfolio = async () => {
       try {
-        const savedHoldings = localStorage.getItem(PORTFOLIO_STORAGE_KEY);
-        const savedGoal = localStorage.getItem(GOAL_STORAGE_KEY);
+        const parsedHoldings = readPortfolioFromStorage(userSub) as Holding[];
 
-        if (savedHoldings) {
-          const parsedHoldings = JSON.parse(savedHoldings) as Holding[];
-
-          if (Array.isArray(parsedHoldings)) {
-            try {
-              const refreshed = await refreshPortfolioPrices(parsedHoldings);
-              localStorage.setItem(
-                PORTFOLIO_STORAGE_KEY,
-                JSON.stringify(refreshed),
-              );
-              setHoldings(applyCachedPrices(refreshed));
-            } catch {
-              setHoldings(applyCachedPrices(parsedHoldings));
-            }
+        if (parsedHoldings.length > 0) {
+          try {
+            const refreshed = await refreshPortfolioPrices(userSub, parsedHoldings);
+            writePortfolioToStorage(userSub, refreshed);
+            setHoldings(applyCachedPrices(userSub, refreshed));
+          } catch {
+            setHoldings(applyCachedPrices(userSub, parsedHoldings));
           }
         } else {
           setHoldings([]);
         }
 
+        const savedGoal = localStorage.getItem(goalStorageKey(userSub));
         if (savedGoal) {
           const parsedGoal = JSON.parse(savedGoal) as Partial<GoalSettings>;
           const nextGoal = { ...DEFAULT_GOAL, ...parsedGoal };
-
           setGoal(nextGoal);
           setAnnualContribution(nextGoal.monthlyContribution * 12);
         }
@@ -319,7 +321,7 @@ export default function DashboardPage() {
       window.removeEventListener("focus", refreshPortfolio);
       window.removeEventListener("storage", refreshPortfolio);
     };
-  }, []);
+  }, [authReady, userSub]);
 
   const portfolioValue = useMemo(
     () => calculatePortfolioValue(holdings),

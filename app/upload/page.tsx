@@ -24,7 +24,12 @@ import {
   Trash2,
 } from "lucide-react";
 import BottomNavigation from "@/components/home/BottomNav";
-import { PORTFOLIO_STORAGE_KEY } from "@/lib/types/portfolioStorage";
+import {
+  dispatchPortfolioUpdated,
+  readPortfolioFromStorage,
+  writePortfolioToStorage,
+} from "@/lib/client/portfolioPricing";
+import { useAuthenticatedUserSub } from "@/lib/client/useAuthenticatedUserSub";
 import {
   isValidIsin,
   splitIsinFromTicker,
@@ -252,14 +257,8 @@ function parseSpreadsheet(buffer: ArrayBuffer): ImportRow[] {
   });
 }
 
-function readStoredHoldings(): StoredHolding[] {
-  try {
-    const stored = localStorage.getItem(PORTFOLIO_STORAGE_KEY);
-    const parsed = stored ? JSON.parse(stored) : [];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
+function readStoredHoldings(userSub: string): StoredHolding[] {
+  return readPortfolioFromStorage(userSub) as StoredHolding[];
 }
 
 function matchStatusLabel(row: ImportRow): string {
@@ -278,6 +277,7 @@ function matchStatusClass(row: ImportRow): string {
 
 export default function UploadPage() {
   const router = useRouter();
+  const { userSub } = useAuthenticatedUserSub();
   const imageInput = useRef<HTMLInputElement>(null);
   const sheetInput = useRef<HTMLInputElement>(null);
   const [rows, setRows] = useState<ImportRow[]>([]);
@@ -480,9 +480,14 @@ export default function UploadPage() {
       currency: "EUR",
     }));
 
-    const next = mode === "replace" ? prepared : [...readStoredHoldings(), ...prepared];
-    localStorage.setItem(PORTFOLIO_STORAGE_KEY, JSON.stringify(next));
-    window.dispatchEvent(new Event("investment-os-holdings-updated"));
+    if (!userSub) {
+      setError("Sign in to save your portfolio.");
+      return;
+    }
+
+    const next = mode === "replace" ? prepared : [...readStoredHoldings(userSub), ...prepared];
+    writePortfolioToStorage(userSub, next);
+    dispatchPortfolioUpdated(userSub);
     router.push("/portfolio");
   }
 

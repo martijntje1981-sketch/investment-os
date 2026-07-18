@@ -6,6 +6,7 @@ import {
   buildBriefingRequestPayload,
   readPortfolioFromStorage,
 } from "@/lib/client/portfolioPricing";
+import { useAuthenticatedUserSub } from "@/lib/client/useAuthenticatedUserSub";
 import {
   Activity,
   AlertTriangle,
@@ -108,8 +109,8 @@ function normaliseSymbol(value: unknown) {
     .toUpperCase();
 }
 
-function readBriefingHoldings(): UserHolding[] {
-  return readPortfolioFromStorage()
+function readBriefingHoldings(userSub: string): UserHolding[] {
+  return readPortfolioFromStorage(userSub)
     .map((holding) => ({
       symbol: normaliseSymbol(holding.symbol),
       name: holding.instrumentName ?? holding.name ?? holding.symbol,
@@ -381,6 +382,7 @@ function confidenceClasses(confidence: Confidence) {
 }
 
 export default function AnalysisPage() {
+  const { userSub, authReady } = useAuthenticatedUserSub();
   const [data, setData] =
     useState<BriefingResponse | null>(null);
 
@@ -397,13 +399,40 @@ export default function AnalysisPage() {
   useEffect(() => {
     let isMounted = true;
 
+    if (!authReady) {
+      setData(null);
+      setUserHoldings([]);
+      setPortfolioLoaded(false);
+      setIsLoading(true);
+      setErrorMessage("");
+      return () => {
+        isMounted = false;
+      };
+    }
+
+    setData(null);
+    setUserHoldings([]);
+    setPortfolioLoaded(false);
+    setIsLoading(true);
+    setErrorMessage("");
+
+    if (!userSub) {
+      setPortfolioLoaded(true);
+      setIsLoading(false);
+      return () => {
+        isMounted = false;
+      };
+    }
+
+    const activeUserSub = userSub;
+
     async function loadAnalysis() {
       try {
         setIsLoading(true);
         setErrorMessage("");
 
-        const savedHoldings = readBriefingHoldings();
-        const storedPortfolio = readPortfolioFromStorage();
+        const savedHoldings = readBriefingHoldings(activeUserSub);
+        const storedPortfolio = readPortfolioFromStorage(activeUserSub);
 
         if (!isMounted) {
           return;
@@ -465,7 +494,7 @@ export default function AnalysisPage() {
     void loadAnalysis();
 
     function refreshFromStorage() {
-      const savedHoldings = readBriefingHoldings();
+      const savedHoldings = readBriefingHoldings(activeUserSub);
       setUserHoldings(savedHoldings);
       setPortfolioLoaded(true);
     }
@@ -486,7 +515,7 @@ export default function AnalysisPage() {
         refreshFromStorage,
       );
     };
-  }, []);
+  }, [authReady, userSub]);
 
   const userSymbols = useMemo(
     () =>
