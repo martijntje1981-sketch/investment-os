@@ -27,7 +27,6 @@ import {
   WalletCards,
 } from "lucide-react";
 import BottomNavigation from "@/components/home/BottomNav";
-import { holdings as portfolioHoldings } from "@/lib/services/portfolio/holdings";
 
 type Currency = "EUR" | "USD" | "GBP";
 
@@ -71,16 +70,6 @@ const PRICE_CACHE_KEY = "investment-os-market-price-cache";
 const GOAL_STORAGE_KEY = "investment-os-goal";
 const HOLDINGS_STORAGE_KEY = "investment-os-holdings";
 
-const canonicalHoldings: Holding[] = portfolioHoldings.map((holding) => ({
-  id: holding.id,
-  symbol: holding.symbol.trim().toUpperCase(),
-  name: holding.name,
-  quantity: holding.units,
-  purchasePrice: holding.averagePrice,
-  currentPrice: holding.currentPrice,
-  currency: "EUR",
-  confidence: "High",
-}));
 
 function applyCachedPrices(holdings: Holding[]): Holding[] {
   const cachedValue = localStorage.getItem(PRICE_CACHE_KEY);
@@ -277,7 +266,7 @@ function getDailyMove(holding: Holding) {
 }
 
 export default function DashboardPage() {
-  const [holdings, setHoldings] = useState<Holding[]>(canonicalHoldings);
+  const [holdings, setHoldings] = useState<Holding[]>([]);
   const [annualContribution, setAnnualContribution] = useState(
     DEFAULT_ANNUAL_CONTRIBUTION,
   );
@@ -295,7 +284,7 @@ export default function DashboardPage() {
       const savedGoal = localStorage.getItem(GOAL_STORAGE_KEY);
       const savedHoldings = localStorage.getItem(HOLDINGS_STORAGE_KEY);
 
-      let activeHoldings = canonicalHoldings;
+      let activeHoldings: Holding[] = [];
       if (savedHoldings) {
         const parsedHoldings = JSON.parse(savedHoldings) as Holding[];
         if (Array.isArray(parsedHoldings)) activeHoldings = parsedHoldings;
@@ -336,7 +325,7 @@ export default function DashboardPage() {
             setHoldings(applyCachedPrices(parsedHoldings));
           }
         } else {
-          setHoldings(applyCachedPrices(canonicalHoldings));
+          setHoldings([]);
         }
 
         if (savedGoal) {
