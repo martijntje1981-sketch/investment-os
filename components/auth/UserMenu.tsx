@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { LogOut, UserRound } from "lucide-react";
+import { LogOut, Newspaper, UserRound } from "lucide-react";
+import Link from "next/link";
 import type { User } from "@supabase/supabase-js";
 
 import { createClient } from "@/lib/supabase/client";
@@ -12,6 +13,7 @@ const protectedRoutes = [
   "/portfolio",
   "/upload",
   "/briefing",
+  "/news",
   "/goals",
   "/holding",
 ];
@@ -98,6 +100,16 @@ export default function UserMenu() {
               </div>
             </div>
           </div>
+
+          <nav className="border-b border-slate-100 px-2 py-2">
+            <Link
+              href="/news"
+              className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+            >
+              <Newspaper className="h-4 w-4" />
+              News
+            </Link>
+          </nav>
 
           <button
             type="button"

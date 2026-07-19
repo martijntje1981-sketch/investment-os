@@ -6,6 +6,7 @@ const protectedRoutes = [
   "/portfolio",
   "/upload",
   "/briefing",
+  "/news",
   "/goals",
   "/holding",
 ];

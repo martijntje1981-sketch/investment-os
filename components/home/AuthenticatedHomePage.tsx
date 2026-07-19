@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
-import { BriefcaseBusiness, Upload } from "lucide-react";
+import { BriefcaseBusiness, Newspaper, Upload } from "lucide-react";
 import BottomNavigation from "@/components/home/BottomNav";
 import { PortfolioSnapshot } from "@/components/home/PortfolioSnapshot";
 import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
@@ -46,6 +46,13 @@ export default function AuthenticatedHomePage() {
               Portfolio, dashboard, analysis, and goals all read from the same
               saved holdings on this browser.
             </p>
+            <Link
+              href="/news"
+              className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-blue-700"
+            >
+              <Newspaper className="h-4 w-4" />
+              Latest News
+            </Link>
           </header>
 
           <PortfolioRecoveryBanner
