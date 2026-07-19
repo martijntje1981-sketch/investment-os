@@ -14,13 +14,13 @@ import {
 } from "lucide-react";
 import BottomNavigation from "@/components/home/BottomNav";
 import NumericInput from "@/components/NumericInput";
+import { getHoldingMarketValue } from "@/lib/client/portfolioAnalysis";
 import {
   annualContributionKey,
-  applyCachedPrices,
   goalStorageKey,
-  readPortfolioFromStorage,
+  loadUserPortfolioHoldings,
 } from "@/lib/client/portfolioPricing";
-import { useAuthenticatedUserSub } from "@/lib/client/useAuthenticatedUserSub";
+import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 import type { GoalSettings } from "@/lib/types/portfolioStorage";
 
 const DEFAULT_GOAL: GoalSettings = {
@@ -46,10 +46,9 @@ function formatPercentage(value: number) {
   }).format(value / 100);
 }
 
-function calculatePortfolioValue(userSub: string) {
-  const holdings = applyCachedPrices(userSub, readPortfolioFromStorage(userSub));
+function calculatePortfolioValue(holdings: ReturnType<typeof loadUserPortfolioHoldings>) {
   return holdings.reduce(
-    (total, holding) => total + holding.quantity * holding.currentPrice,
+    (total, holding) => total + (getHoldingMarketValue(holding) ?? 0),
     0,
   );
 }
@@ -71,32 +70,17 @@ function projectValue(
 }
 
 export default function GoalsPage() {
-  const { userSub, authReady } = useAuthenticatedUserSub();
+  const { userSub, authReady, holdings, portfolioReady } = useUserPortfolio();
   const [goal, setGoal] = useState<GoalSettings>(DEFAULT_GOAL);
-  const [portfolioValue, setPortfolioValue] = useState(0);
-  const [isLoaded, setIsLoaded] = useState(false);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    if (!authReady) {
-      setPortfolioValue(0);
+    if (!authReady || !userSub) {
       setGoal(DEFAULT_GOAL);
-      setIsLoaded(false);
-      return;
-    }
-
-    setPortfolioValue(0);
-    setGoal(DEFAULT_GOAL);
-    setIsLoaded(false);
-
-    if (!userSub) {
-      setIsLoaded(true);
       return;
     }
 
     try {
-      setPortfolioValue(calculatePortfolioValue(userSub));
-
       const stored = localStorage.getItem(goalStorageKey(userSub));
       if (stored) {
         const parsed = JSON.parse(stored) as Partial<GoalSettings>;
@@ -104,10 +88,13 @@ export default function GoalsPage() {
       }
     } catch {
       setGoal(DEFAULT_GOAL);
-    } finally {
-      setIsLoaded(true);
     }
   }, [authReady, userSub]);
+
+  const portfolioValue = useMemo(
+    () => calculatePortfolioValue(holdings),
+    [holdings],
+  );
 
   const currentYear = new Date().getFullYear();
   const monthsRemaining = Math.max((goal.targetYear - currentYear) * 12, 0);
@@ -154,7 +141,7 @@ export default function GoalsPage() {
     setSaved(true);
   }
 
-  if (!isLoaded) {
+  if (!portfolioReady) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-50">
         <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-slate-950" />

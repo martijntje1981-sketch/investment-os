@@ -27,16 +27,15 @@ import {
   WalletCards,
 } from "lucide-react";
 import BottomNavigation from "@/components/home/BottomNav";
+import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
+import { getHoldingMarketValue } from "@/lib/client/portfolioAnalysis";
 import {
   annualContributionKey,
-  applyCachedPrices,
   goalStorageKey,
-  readPortfolioFromStorage,
-  refreshPortfolioPrices,
-  writePortfolioToStorage,
+  tryRefreshPortfolioPrices,
   type StoredPortfolioHolding,
 } from "@/lib/client/portfolioPricing";
-import { useAuthenticatedUserSub } from "@/lib/client/useAuthenticatedUserSub";
+import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 import type { GoalSettings } from "@/lib/types/portfolioStorage";
 
 type Currency = "EUR" | "USD" | "GBP";
@@ -92,7 +91,7 @@ function formatPercentage(value: number, decimals = 1) {
 }
 
 function getHoldingValue(holding: Holding) {
-  return holding.quantity * holding.currentPrice;
+  return getHoldingMarketValue(holding) ?? 0;
 }
 
 function getHoldingCost(holding: Holding) {
@@ -225,40 +224,41 @@ function getDailyMove(holding: Holding) {
 }
 
 export default function DashboardPage() {
-  const { userSub, authReady } = useAuthenticatedUserSub();
-  const [holdings, setHoldings] = useState<Holding[]>([]);
+  const {
+    userSub,
+    authReady,
+    holdings,
+    portfolioReady,
+    recoveryOffer,
+    saveHoldings,
+    recoverPortfolio,
+    dismissRecovery,
+    reloadPortfolio,
+  } = useUserPortfolio();
   const [annualContribution, setAnnualContribution] = useState(
     DEFAULT_ANNUAL_CONTRIBUTION,
   );
   const [goal, setGoal] = useState<GoalSettings>(DEFAULT_GOAL);
-  const [isLoaded, setIsLoaded] = useState(false);
+
+  const isLoaded = portfolioReady;
 
   const currentYear = new Date().getFullYear();
   const yearsRemaining = Math.max(goal.targetYear - currentYear, 1);
 
   useEffect(() => {
     if (!authReady) {
-      setHoldings([]);
       setGoal(DEFAULT_GOAL);
       setAnnualContribution(DEFAULT_ANNUAL_CONTRIBUTION);
-      setIsLoaded(false);
       return;
     }
 
-    setHoldings([]);
-    setGoal(DEFAULT_GOAL);
-    setAnnualContribution(DEFAULT_ANNUAL_CONTRIBUTION);
-    setIsLoaded(false);
-
     if (!userSub) {
-      setIsLoaded(true);
+      setGoal(DEFAULT_GOAL);
+      setAnnualContribution(DEFAULT_ANNUAL_CONTRIBUTION);
       return;
     }
 
     try {
-      const activeHoldings = readPortfolioFromStorage(userSub) as Holding[];
-      setHoldings(applyCachedPrices(userSub, activeHoldings));
-
       const savedGoal = localStorage.getItem(goalStorageKey(userSub));
       if (savedGoal) {
         const parsedGoal = JSON.parse(savedGoal) as Partial<GoalSettings>;
@@ -277,9 +277,7 @@ export default function DashboardPage() {
         }
       }
     } catch (error) {
-      console.error("Could not load Investment OS data:", error);
-    } finally {
-      setIsLoaded(true);
+      console.error("Could not load Investment OS goal data:", error);
     }
   }, [authReady, userSub]);
 
@@ -288,18 +286,13 @@ export default function DashboardPage() {
 
     const refreshPortfolio = async () => {
       try {
-        const parsedHoldings = readPortfolioFromStorage(userSub) as Holding[];
+        reloadPortfolio();
 
-        if (parsedHoldings.length > 0) {
-          try {
-            const refreshed = await refreshPortfolioPrices(userSub, parsedHoldings);
-            writePortfolioToStorage(userSub, refreshed);
-            setHoldings(applyCachedPrices(userSub, refreshed));
-          } catch {
-            setHoldings(applyCachedPrices(userSub, parsedHoldings));
+        if (holdings.length > 0) {
+          const result = await tryRefreshPortfolioPrices(userSub, holdings);
+          if (result.updated) {
+            saveHoldings(result.holdings);
           }
-        } else {
-          setHoldings([]);
         }
 
         const savedGoal = localStorage.getItem(goalStorageKey(userSub));
@@ -321,7 +314,7 @@ export default function DashboardPage() {
       window.removeEventListener("focus", refreshPortfolio);
       window.removeEventListener("storage", refreshPortfolio);
     };
-  }, [authReady, userSub]);
+  }, [authReady, holdings, reloadPortfolio, saveHoldings, userSub]);
 
   const portfolioValue = useMemo(
     () => calculatePortfolioValue(holdings),
@@ -496,9 +489,18 @@ export default function DashboardPage() {
 
   if (holdings.length === 0) {
     return (
-      <main className="min-h-screen bg-slate-50 px-5 py-12 text-slate-950 sm:px-8">
-        <div className="mx-auto max-w-5xl">
-          <div className="rounded-[32px] bg-slate-950 p-8 text-white shadow-xl sm:p-12">
+      <>
+        <main className="min-h-screen bg-slate-50 px-5 py-12 text-slate-950 sm:px-8">
+          <div className="mx-auto max-w-5xl">
+            <PortfolioRecoveryBanner
+              offer={recoveryOffer}
+              onRecover={() => {
+                recoverPortfolio();
+              }}
+              onDismiss={dismissRecovery}
+            />
+
+            <div className="rounded-[32px] bg-slate-950 p-8 text-white shadow-xl sm:p-12">
             <p className="text-sm font-bold uppercase tracking-[0.16em] text-blue-300">
               Your Investment OS
             </p>
@@ -533,7 +535,9 @@ export default function DashboardPage() {
             />
           </div>
         </div>
-      </main>
+        </main>
+        <BottomNavigation />
+      </>
     );
   }
 
@@ -541,6 +545,14 @@ export default function DashboardPage() {
     <>
       <main className="min-h-screen max-w-full overflow-x-hidden bg-slate-50 px-4 pb-[calc(var(--bottom-nav-height)+env(safe-area-inset-bottom,0px)+2rem)] pt-6 text-slate-950 sm:px-8 sm:pt-8">
         <div className="mx-auto w-full min-w-0 max-w-6xl">
+          <PortfolioRecoveryBanner
+            offer={recoveryOffer}
+            onRecover={() => {
+              recoverPortfolio();
+            }}
+            onDismiss={dismissRecovery}
+          />
+
           <header className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
             <div>
               <div className="flex items-center gap-3">

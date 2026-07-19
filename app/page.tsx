@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 
 import MarketingHeader from "@/components/marketing/MarketingHeader";
+import AuthenticatedHomePage from "@/components/home/AuthenticatedHomePage";
 import { createClient } from "@/lib/supabase/server";
 
 const features = [
@@ -162,6 +163,10 @@ export default async function MarketingHomePage({
 
   if (data.user && view !== "home") {
     redirect("/dashboard");
+  }
+
+  if (data.user && view === "home") {
+    return <AuthenticatedHomePage />;
   }
 
   return (

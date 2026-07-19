@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import {
   AlertCircle,
@@ -15,10 +15,7 @@ import {
   Upload,
 } from "lucide-react";
 import BottomNavigation from "@/components/home/BottomNav";
-import {
-  applyCachedPrices,
-  readPortfolioFromStorage,
-} from "@/lib/client/portfolioPricing";
+import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
 import {
   buildPortfolioAnalysis,
   concentrationExplanation,
@@ -26,8 +23,7 @@ import {
   formatPortfolioCurrency,
   formatPortfolioPercent,
 } from "@/lib/client/portfolioAnalysis";
-import { useAuthenticatedUserSub } from "@/lib/client/useAuthenticatedUserSub";
-import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
+import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 
 function formatUpdatedAt(value: string | null) {
   if (!value) {
@@ -63,42 +59,13 @@ function allocationBarColor(index: number) {
 }
 
 export default function AnalysisPage() {
-  const { userSub, authReady } = useAuthenticatedUserSub();
-  const [holdings, setHoldings] = useState<StoredPortfolioHolding[]>([]);
-  const [portfolioReady, setPortfolioReady] = useState(false);
-
-  useEffect(() => {
-    if (!authReady) {
-      setHoldings([]);
-      setPortfolioReady(false);
-      return;
-    }
-
-    setPortfolioReady(false);
-
-    if (!userSub) {
-      setHoldings([]);
-      setPortfolioReady(true);
-      return;
-    }
-
-    try {
-      const stored = readPortfolioFromStorage(userSub);
-      setHoldings(
-        applyCachedPrices(
-          userSub,
-          stored.map((holding) => ({
-            ...holding,
-            assetType: holding.assetType === "cash" ? "cash" : "investment",
-          })),
-        ),
-      );
-    } catch {
-      setHoldings([]);
-    } finally {
-      setPortfolioReady(true);
-    }
-  }, [authReady, userSub]);
+  const {
+    holdings,
+    portfolioReady,
+    recoveryOffer,
+    recoverPortfolio,
+    dismissRecovery,
+  } = useUserPortfolio();
 
   const analysis = useMemo(
     () => buildPortfolioAnalysis(holdings),
@@ -140,6 +107,14 @@ export default function AnalysisPage() {
               Last portfolio update: {formatUpdatedAt(analysis.lastUpdatedAt)}
             </p>
           </header>
+
+          <PortfolioRecoveryBanner
+            offer={recoveryOffer}
+            onRecover={() => {
+              recoverPortfolio();
+            }}
+            onDismiss={dismissRecovery}
+          />
 
           {!hasHoldings ? (
             <section className="mt-10 rounded-[28px] border border-slate-200 bg-white p-8 text-center shadow-sm sm:p-12">

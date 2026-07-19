@@ -11,6 +11,16 @@ import {
   priceCacheKey,
 } from "@/lib/client/portfolioStorageKeys";
 import {
+  readPortfolioFromStorage,
+  writePortfolioToStorage,
+  dispatchPortfolioUpdated,
+  resolveVisiblePortfolioState,
+  requestLegacyPortfolioMigration,
+  tryExplicitLegacyPortfolioMigration,
+  readScopedHoldingsRaw,
+  isScopedPortfolioEmpty,
+} from "@/lib/client/userPortfolioStorage";
+import {
   type CachedPortfolioPrice,
   type PortfolioInstrumentPayload,
   type PriceApiQuote,
@@ -40,9 +50,75 @@ export {
   resolveVisiblePortfolioState,
   requestLegacyPortfolioMigration,
   tryExplicitLegacyPortfolioMigration,
-} from "@/lib/client/userPortfolioStorage";
+  readScopedHoldingsRaw,
+  isScopedPortfolioEmpty,
+};
+
+export {
+  dismissLegacyPortfolioRecovery,
+  getLegacyRecoveryOffer,
+  mergeLegacyPriceCacheIntoScoped,
+  recoverLegacyPortfolioToUser,
+  type LegacyRecoveryOffer,
+} from "@/lib/client/portfolioRecovery";
 
 export type { StoredPortfolioHolding, PortfolioInstrumentPayload };
+
+/** Central read path for all portfolio surfaces. */
+export function loadUserPortfolioHoldings(
+  userSub: string,
+): StoredPortfolioHolding[] {
+  return applyCachedPrices(userSub, readPortfolioFromStorage(userSub));
+}
+
+export function isInvestmentPricePending(
+  holding: StoredPortfolioHolding,
+): boolean {
+  if (holding.assetType === "cash") return false;
+  return !Number.isFinite(holding.currentPrice) || holding.currentPrice <= 0;
+}
+
+/** Persist a holding without inferring market price from purchase price. */
+export function normalizeHoldingForSave(
+  holding: StoredPortfolioHolding,
+): StoredPortfolioHolding {
+  if (holding.assetType === "cash") {
+    return {
+      ...holding,
+      symbol: holding.symbol || "EUR",
+      name: holding.name || "EUR Cash",
+      purchasePrice: 1,
+      currentPrice: 1,
+    };
+  }
+
+  const purchasePrice = Number.isFinite(holding.purchasePrice)
+    ? holding.purchasePrice
+    : 0;
+  const currentPrice =
+    Number.isFinite(holding.currentPrice) && holding.currentPrice > 0
+      ? holding.currentPrice
+      : 0;
+
+  return {
+    ...holding,
+    symbol: holding.symbol.trim().toUpperCase(),
+    name: holding.name.trim(),
+    purchasePrice,
+    currentPrice,
+  };
+}
+
+export type PriceRefreshResult<T extends StoredPortfolioHolding> = {
+  holdings: T[];
+  updated: boolean;
+  message?: string;
+  rateLimited?: boolean;
+};
+
+export function isRateLimitedPriceError(message: string): boolean {
+  return /rate.?limit|daily.?limit|quota|too many requests|429/i.test(message);
+}
 
 export function normalizePortfolioSymbol(value: unknown): string {
   return String(value ?? "").trim().toUpperCase();
@@ -229,4 +305,29 @@ export async function refreshPortfolioPrices<
 
   writePriceCache(userSub, data.prices);
   return applyPricesToHoldings(holdings, data.prices);
+}
+
+/**
+ * Best-effort price refresh that never discards holdings when quotes fail.
+ */
+export async function tryRefreshPortfolioPrices<
+  T extends StoredPortfolioHolding,
+>(userSub: string, holdings: T[]): Promise<PriceRefreshResult<T>> {
+  if (holdings.length === 0) {
+    return { holdings, updated: false };
+  }
+
+  try {
+    const refreshed = await refreshPortfolioPrices(userSub, holdings);
+    return { holdings: refreshed, updated: true };
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Market data unavailable";
+    return {
+      holdings,
+      updated: false,
+      message,
+      rateLimited: isRateLimitedPriceError(message),
+    };
+  }
 }

@@ -57,3 +57,8 @@ export function legacyMigrationFlagKey(userSub: string): string {
   assertUserSub(userSub);
   return `investment-os-legacy-migrated:${userSub}`;
 }
+
+export function legacyRecoveryDismissedKey(userSub: string): string {
+  assertUserSub(userSub);
+  return `investment-os-legacy-recovery-dismissed:${userSub}`;
+}

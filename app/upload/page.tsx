@@ -25,12 +25,13 @@ import {
 } from "lucide-react";
 import BottomNavigation from "@/components/home/BottomNav";
 import NumericInput from "@/components/NumericInput";
+import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
 import {
   dispatchPortfolioUpdated,
-  readPortfolioFromStorage,
+  normalizeHoldingForSave,
   writePortfolioToStorage,
 } from "@/lib/client/portfolioPricing";
-import { useAuthenticatedUserSub } from "@/lib/client/useAuthenticatedUserSub";
+import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 import {
   isValidIsin,
   splitIsinFromTicker,
@@ -237,7 +238,9 @@ function parseSpreadsheet(buffer: ArrayBuffer): ImportRow[] {
       : numberValue(firstValue(record, ["purchaseprice", "averageprice", "avgprice", "costprice", "buyprice"]));
     const currentPrice = isCash
       ? 1
-      : numberValue(firstValue(record, ["currentprice", "price", "marketprice", "lastprice"])) || purchasePrice;
+      : numberValue(
+          firstValue(record, ["currentprice", "price", "marketprice", "lastprice"]),
+        );
 
     return {
       id: crypto.randomUUID(),
@@ -258,8 +261,8 @@ function parseSpreadsheet(buffer: ArrayBuffer): ImportRow[] {
   });
 }
 
-function readStoredHoldings(userSub: string): StoredHolding[] {
-  return readPortfolioFromStorage(userSub) as StoredHolding[];
+function readStoredHoldings(holdings: StoredHolding[]): StoredHolding[] {
+  return holdings;
 }
 
 function matchStatusLabel(row: ImportRow): string {
@@ -278,7 +281,13 @@ function matchStatusClass(row: ImportRow): string {
 
 export default function UploadPage() {
   const router = useRouter();
-  const { userSub } = useAuthenticatedUserSub();
+  const {
+    userSub,
+    holdings: storedHoldings,
+    recoveryOffer,
+    recoverPortfolio,
+    dismissRecovery,
+  } = useUserPortfolio();
   const imageInput = useRef<HTMLInputElement>(null);
   const sheetInput = useRef<HTMLInputElement>(null);
   const [rows, setRows] = useState<ImportRow[]>([]);
@@ -323,7 +332,7 @@ export default function UploadPage() {
           symbol,
           name: isCash ? holding.name || `${holding.currency || "EUR"} Cash` : holding.name,
           quantity: holding.quantity,
-          purchasePrice: isCash ? 1 : price,
+          purchasePrice: isCash ? 1 : 0,
           currentPrice: isCash ? 1 : price,
           assetType: isCash ? ("cash" as const) : ("investment" as const),
           confidence: holding.confidence,
@@ -455,7 +464,6 @@ export default function UploadPage() {
     const invalid = rows.some((row) => {
       if (!row.name.trim() || row.quantity < 0) return true;
       if (row.assetType === "cash") return false;
-      if (row.currentPrice <= 0) return true;
       if (!row.symbol.trim() && !row.isin) return true;
       if (row.requiresConfirmation && !row.confirmed) return true;
       return false;
@@ -468,27 +476,42 @@ export default function UploadPage() {
       return;
     }
 
-    const prepared: StoredHolding[] = rows.map((row) => ({
-      ...row,
-      symbol: row.symbol.trim().toUpperCase(),
-      name: row.name.trim(),
-      isin: row.isin ?? null,
-      exchange: row.exchange ?? null,
-      providerSymbol: row.providerSymbol ?? null,
-      instrumentName: row.instrumentName ?? null,
-      purchasePrice: row.assetType === "cash" ? 1 : row.purchasePrice,
-      currentPrice: row.assetType === "cash" ? 1 : row.currentPrice,
-      currency: "EUR",
-    }));
+    const prepared = rows.map((row) =>
+      normalizeHoldingForSave({
+        ...row,
+        symbol: row.symbol.trim().toUpperCase(),
+        name: row.name.trim(),
+        isin: row.isin ?? null,
+        exchange: row.exchange ?? null,
+        providerSymbol: row.providerSymbol ?? null,
+        instrumentName: row.instrumentName ?? null,
+        currency: "EUR",
+      }),
+    ) as StoredHolding[];
 
     if (!userSub) {
       setError("Sign in to save your portfolio.");
       return;
     }
 
-    const next = mode === "replace" ? prepared : [...readStoredHoldings(userSub), ...prepared];
+    const existing = readStoredHoldings(storedHoldings as StoredHolding[]);
+    const next =
+      mode === "replace" ? prepared : [...existing, ...prepared];
     writePortfolioToStorage(userSub, next);
     dispatchPortfolioUpdated(userSub);
+
+    const hasPendingPrices = prepared.some(
+      (holding) => holding.assetType !== "cash" && holding.currentPrice <= 0,
+    );
+    if (hasPendingPrices) {
+      setMessage(
+        "Holding saved. Current price is temporarily unavailable and will be refreshed later.",
+      );
+      setError("");
+      window.setTimeout(() => router.push("/portfolio"), 1200);
+      return;
+    }
+
     router.push("/portfolio");
   }
 
@@ -499,6 +522,14 @@ export default function UploadPage() {
           <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-700">Secure portfolio setup</p>
           <h1 className="mt-3 text-4xl font-black tracking-[-0.05em] sm:text-6xl">Import your portfolio</h1>
           <p className="mt-4 max-w-2xl leading-7 text-slate-600">Choose a screenshot, Excel, CSV or manual entry. Nothing is saved until you review and confirm it.</p>
+
+          <PortfolioRecoveryBanner
+            offer={recoveryOffer}
+            onRecover={() => {
+              recoverPortfolio();
+            }}
+            onDismiss={dismissRecovery}
+          />
 
           <section className="mt-8 grid gap-4 md:grid-cols-3">
             <ImportCard icon={<FileImage className="h-6 w-6" />} title="Screenshot" text="AI recognises visible positions." button="Choose screenshot" onClick={() => imageInput.current?.click()} />

@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Banknote,
@@ -19,15 +19,14 @@ import {
 } from "lucide-react";
 import BottomNavigation from "@/components/home/BottomNav";
 import NumericInput from "@/components/NumericInput";
+import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
+import { getHoldingMarketValue } from "@/lib/client/portfolioAnalysis";
 import {
-  applyCachedPrices,
-  dispatchPortfolioUpdated,
-  readPortfolioFromStorage,
-  refreshPortfolioPrices,
-  writePortfolioToStorage,
+  normalizeHoldingForSave,
+  tryRefreshPortfolioPrices,
   type StoredPortfolioHolding,
 } from "@/lib/client/portfolioPricing";
-import { useAuthenticatedUserSub } from "@/lib/client/useAuthenticatedUserSub";
+import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 
 type AssetType = "investment" | "cash";
 type Holding = StoredPortfolioHolding;
@@ -57,7 +56,7 @@ function percent(value: number) {
 }
 
 function valueOf(holding: Holding) {
-  return holding.quantity * holding.currentPrice;
+  return getHoldingMarketValue(holding) ?? 0;
 }
 
 function costOf(holding: Holding) {
@@ -65,72 +64,47 @@ function costOf(holding: Holding) {
 }
 
 export default function PortfolioPage() {
-  const { userSub, authReady } = useAuthenticatedUserSub();
-  const [holdings, setHoldings] = useState<Holding[]>([]);
-  const [portfolioReady, setPortfolioReady] = useState(false);
+  const {
+    userSub,
+    holdings,
+    portfolioReady,
+    recoveryOffer,
+    saveHoldings,
+    recoverPortfolio,
+    dismissRecovery,
+  } = useUserPortfolio();
   const [draft, setDraft] = useState<Holding>(emptyDraft);
   const [editorOpen, setEditorOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [message, setMessage] = useState("Portfolio prices use the latest available market data.");
 
-  useEffect(() => {
-    if (!authReady) {
-      setHoldings([]);
-      setPortfolioReady(false);
-      return;
-    }
-
-    setHoldings([]);
-    setPortfolioReady(false);
-
-    if (!userSub) {
-      setPortfolioReady(true);
-      return;
-    }
-
-    try {
-      const stored = readPortfolioFromStorage(userSub);
-      setHoldings(
-        applyCachedPrices(
-          userSub,
-          stored.map((holding) => ({
-            ...holding,
-            assetType: holding.assetType === "cash" ? "cash" : "investment",
-          })),
-        ),
-      );
-    } catch {
-      setHoldings([]);
-    } finally {
-      setPortfolioReady(true);
-    }
-  }, [authReady, userSub]);
-
-  const saveHoldings = useCallback((next: Holding[]) => {
-    if (!userSub) return;
-    setHoldings(next);
-    writePortfolioToStorage(userSub, next);
-    dispatchPortfolioUpdated(userSub);
-  }, [userSub]);
-
   const refreshPrices = useCallback(async () => {
     if (!userSub) return;
     setIsRefreshing(true);
     try {
-      const next = await refreshPortfolioPrices(userSub, holdings);
-      saveHoldings(next);
-      const updatedCount = next.filter(
-        (holding, index) =>
-          holding.assetType !== "cash" &&
-          holding.currentPrice !== holdings[index]?.currentPrice,
-      ).length;
-      setMessage(
-        updatedCount > 0
-          ? `${updatedCount} market prices updated via providerSymbol. Cash remains fixed at its entered value.`
-          : "Market prices refreshed. Cash remains fixed at its entered value.",
-      );
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Market data unavailable. Stored values remain visible.");
+      const result = await tryRefreshPortfolioPrices(userSub, holdings);
+      if (result.updated) {
+        saveHoldings(result.holdings);
+        const updatedCount = result.holdings.filter(
+          (holding, index) =>
+            holding.assetType !== "cash" &&
+            holding.currentPrice !== holdings[index]?.currentPrice,
+        ).length;
+        setMessage(
+          updatedCount > 0
+            ? `${updatedCount} market prices updated via providerSymbol. Cash remains fixed at its entered value.`
+            : "Market prices refreshed. Cash remains fixed at its entered value.",
+        );
+      } else if (result.rateLimited) {
+        setMessage(
+          "Market data is temporarily rate-limited. Your holdings remain saved and unvalued positions stay excluded from totals.",
+        );
+      } else {
+        setMessage(
+          result.message ??
+            "Market data unavailable. Stored values remain visible.",
+        );
+      }
     } finally {
       setIsRefreshing(false);
     }
@@ -174,13 +148,17 @@ export default function PortfolioPage() {
 
   function submitHolding(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const cleaned: Holding = draft.assetType === "cash"
-      ? { ...draft, symbol: draft.symbol || "EUR", name: draft.name || "EUR Cash", purchasePrice: 1, currentPrice: 1 }
-      : { ...draft, symbol: draft.symbol.trim().toUpperCase(), name: draft.name.trim() };
+    const cleaned = normalizeHoldingForSave(draft);
     const exists = holdings.some((holding) => holding.id === cleaned.id);
-    saveHoldings(exists
-      ? holdings.map((holding) => holding.id === cleaned.id ? cleaned : holding)
-      : [...holdings, cleaned]);
+    const next = exists
+      ? holdings.map((holding) => (holding.id === cleaned.id ? cleaned : holding))
+      : [...holdings, cleaned];
+    saveHoldings(next);
+    if (cleaned.assetType !== "cash" && cleaned.currentPrice <= 0) {
+      setMessage(
+        "Holding saved. Current price is temporarily unavailable and will be refreshed later.",
+      );
+    }
     setEditorOpen(false);
   }
 
@@ -212,6 +190,16 @@ export default function PortfolioPage() {
               </button>
             </div>
           </header>
+
+          <PortfolioRecoveryBanner
+            offer={recoveryOffer}
+            onRecover={() => {
+              if (recoverPortfolio()) {
+                setMessage("Portfolio recovered from this browser.");
+              }
+            }}
+            onDismiss={dismissRecovery}
+          />
 
           <div className="mt-6 rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-800">{message}</div>
 
@@ -251,7 +239,7 @@ export default function PortfolioPage() {
                         <p className="font-black">{holding.name}</p>
                         <p className="mt-1 text-xs text-slate-500">{holding.assetType === "cash" ? "Cash holding" : `${holding.quantity.toLocaleString("en-GB")} units`}</p>
                       </div>
-                      <div><p className="text-xs font-bold uppercase text-slate-400 lg:hidden">Value</p><p className="font-black">{money(holdingValue)}</p></div>
+                      <div><p className="text-xs font-bold uppercase text-slate-400 lg:hidden">Value</p><p className="font-black">{holding.assetType !== "cash" && holding.currentPrice <= 0 ? "Price pending" : money(holdingValue)}</p></div>
                       <div><p className="text-xs font-bold uppercase text-slate-400 lg:hidden">Allocation</p><p className="font-bold">{allocation.toFixed(1)}%</p></div>
                       <div>
                         <p className="text-xs font-bold uppercase text-slate-400 lg:hidden">Return</p>

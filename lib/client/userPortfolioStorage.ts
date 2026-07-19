@@ -34,6 +34,26 @@ function normalizeStoredHoldings(
     });
 }
 
+export { normalizeStoredHoldings };
+
+export function readScopedHoldingsRaw(
+  userSub: string,
+): StoredPortfolioHolding[] {
+  assertUserSub(userSub);
+
+  try {
+    const stored = localStorage.getItem(portfolioStorageKey(userSub));
+    if (!stored) return [];
+    return normalizeStoredHoldings(JSON.parse(stored));
+  } catch {
+    return [];
+  }
+}
+
+export function isScopedPortfolioEmpty(userSub: string): boolean {
+  return readScopedHoldingsRaw(userSub).length === 0;
+}
+
 /** Marks that the current browser session may perform a one-time legacy import. */
 export function requestLegacyPortfolioMigration(): void {
   if (typeof sessionStorage === "undefined") return;
@@ -61,7 +81,7 @@ export function tryExplicitLegacyPortfolioMigration(
   }
 
   const scopedKey = portfolioStorageKey(userSub);
-  if (localStorage.getItem(scopedKey)) {
+  if (!isScopedPortfolioEmpty(userSub)) {
     sessionStorage.removeItem(LEGACY_MIGRATION_SESSION_FLAG);
     return false;
   }
@@ -96,13 +116,7 @@ export function readPortfolioFromStorage(
 
   tryExplicitLegacyPortfolioMigration(userSub);
 
-  try {
-    const stored = localStorage.getItem(portfolioStorageKey(userSub));
-    if (!stored) return [];
-    return normalizeStoredHoldings(JSON.parse(stored));
-  } catch {
-    return [];
-  }
+  return readScopedHoldingsRaw(userSub);
 }
 
 export function writePortfolioToStorage(
