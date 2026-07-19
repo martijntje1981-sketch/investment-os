@@ -13,6 +13,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import BottomNavigation from "@/components/home/BottomNav";
+import NumericInput from "@/components/NumericInput";
 import {
   annualContributionKey,
   applyCachedPrices,
@@ -307,8 +308,6 @@ function GoalInput({
   suffix,
   value,
   min,
-  max,
-  step,
   onChange,
 }: {
   label: string;
@@ -318,7 +317,7 @@ function GoalInput({
   value: number;
   min: number;
   max?: number;
-  step: number;
+  step?: number;
   onChange: (value: string) => void;
 }) {
   return (
@@ -329,14 +328,12 @@ function GoalInput({
       </span>
       <span className="mt-2 flex items-center rounded-xl border border-slate-200 bg-slate-50 px-4 focus-within:border-violet-400 focus-within:ring-4 focus-within:ring-violet-100">
         {prefix && <span className="font-bold text-slate-400">{prefix}</span>}
-        <input
-          type="number"
+        <NumericInput
           required
           value={value}
           min={min}
-          max={max}
-          step={step}
-          onChange={(event) => onChange(event.target.value)}
+          placeholder={prefix ? "0.00" : suffix ? "0.0" : "0"}
+          onChange={(next) => onChange(String(next))}
           className="min-w-0 flex-1 bg-transparent px-2 py-3.5 text-base font-bold outline-none"
         />
         {suffix && <span className="font-bold text-slate-400">{suffix}</span>}

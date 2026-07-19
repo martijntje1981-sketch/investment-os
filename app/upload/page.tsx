@@ -24,6 +24,7 @@ import {
   Trash2,
 } from "lucide-react";
 import BottomNavigation from "@/components/home/BottomNav";
+import NumericInput from "@/components/NumericInput";
 import {
   dispatchPortfolioUpdated,
   readPortfolioFromStorage,
@@ -413,13 +414,13 @@ export default function UploadPage() {
     else void processSpreadsheet(file);
   }
 
-  function updateRow(id: string, field: keyof ImportRow, value: string | boolean) {
+  function updateRow(id: string, field: keyof ImportRow, value: string | boolean | number) {
     setRows((current) => current.map((row) => {
       if (row.id !== id) return row;
       const next: ImportRow = {
         ...row,
         [field]: ["quantity", "purchasePrice", "currentPrice", "matchConfidence"].includes(field)
-          ? Number(value)
+          ? typeof value === "number" ? value : Number(value)
           : value,
         ...(field === "assetType" && value === "cash"
           ? {
@@ -542,9 +543,9 @@ export default function UploadPage() {
                       <ReviewField label="Ticker"><input disabled={row.assetType === "cash"} value={row.symbol} onChange={(event) => updateRow(row.id, "symbol", event.target.value)} placeholder="e.g. VWCE" className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-bold disabled:opacity-60" /></ReviewField>
                       <ReviewField label="ISIN"><input disabled={row.assetType === "cash"} value={row.isin ?? ""} onChange={(event) => updateRow(row.id, "isin", event.target.value.toUpperCase())} placeholder="12-character ISIN" className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-bold disabled:opacity-60" /></ReviewField>
                       <ReviewField label="Name"><input value={row.name} onChange={(event) => updateRow(row.id, "name", event.target.value)} className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-bold" /></ReviewField>
-                      <ReviewField label={row.assetType === "cash" ? "Amount" : "Quantity"}><input type="number" min="0" step="any" value={row.quantity} onChange={(event) => updateRow(row.id, "quantity", event.target.value)} className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-bold" /></ReviewField>
-                      <ReviewField label="Purchase price"><input disabled={row.assetType === "cash"} type="number" min="0" step="any" value={row.purchasePrice} onChange={(event) => updateRow(row.id, "purchasePrice", event.target.value)} className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-bold disabled:opacity-60" /></ReviewField>
-                      <ReviewField label="Current price"><input disabled={row.assetType === "cash"} type="number" min="0" step="any" value={row.currentPrice} onChange={(event) => updateRow(row.id, "currentPrice", event.target.value)} className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-bold disabled:opacity-60" /></ReviewField>
+                      <ReviewField label={row.assetType === "cash" ? "Amount" : "Quantity"}><NumericInput value={row.quantity} onChange={(value) => updateRow(row.id, "quantity", value)} className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-bold" placeholder="0.00" /></ReviewField>
+                      <ReviewField label="Purchase price"><NumericInput disabled={row.assetType === "cash"} value={row.purchasePrice} onChange={(value) => updateRow(row.id, "purchasePrice", value)} className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-bold disabled:opacity-60" placeholder="0.00" /></ReviewField>
+                      <ReviewField label="Current price"><NumericInput disabled={row.assetType === "cash"} value={row.currentPrice} onChange={(value) => updateRow(row.id, "currentPrice", value)} className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-bold disabled:opacity-60" placeholder="0.00" /></ReviewField>
                       <button onClick={() => setRows((current) => current.filter((item) => item.id !== row.id))} aria-label={`Remove ${row.name || "row"}`} className="rounded-lg p-2.5 text-red-600 hover:bg-red-50"><Trash2 className="h-4 w-4" /></button>
                     </div>
 
