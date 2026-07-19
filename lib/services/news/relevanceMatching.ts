@@ -5,7 +5,7 @@ export type HoldingMatchProfile = {
   id: string;
   symbol: string;
   name: string;
-  keywords: string[];
+  strongKeywords: string[];
 };
 
 const SHORT_TICKER_BLOCKLIST = new Set([
@@ -32,15 +32,50 @@ const SHORT_TICKER_BLOCKLIST = new Set([
   "UP",
 ]);
 
-const SYMBOL_THEME_KEYWORDS: Record<string, string[]> = {
+const GENERIC_FINANCE_STOPWORDS = new Set([
+  "world",
+  "global",
+  "markets",
+  "market",
+  "index",
+  "equity",
+  "equities",
+  "stock",
+  "stocks",
+  "fund",
+  "funds",
+  "etf",
+  "income",
+  "growth",
+  "investment",
+  "investments",
+]);
+
+const SYMBOL_STRONG_KEYWORDS: Record<string, string[]> = {
   IB1T: ["bitcoin", "btc", "crypto"],
   BTC: ["bitcoin", "btc", "crypto"],
-  VWCE: ["global markets", "world equities", "etf", "index fund"],
-  NUKL: ["uranium", "nuclear", "nuclear energy"],
-  AIFS: ["ai infrastructure", "artificial intelligence", "semiconductor", "data centre", "data center"],
+  VWCE: [
+    "vwce",
+    "vanguard ftse all-world",
+    "vanguard ftse all world",
+    "ftse all-world",
+    "ftse all world",
+    "ftse all-world ucits",
+  ],
+  NUKL: ["uranium", "nuclear energy", "nuclear power"],
+  AIFS: [
+    "ai infrastructure",
+    "artificial intelligence",
+    "semiconductor",
+    "semiconductors",
+    "data centre",
+    "data center",
+  ],
   PPFB: ["gold", "precious metals"],
-  STRC: ["income", "dividend", "bond"],
+  STRC: ["dividend", "income fund", "bond fund"],
 };
+
+export const STRONG_PORTFOLIO_MATCH_SCORE = 15;
 
 function normalizeToken(value: string): string {
   return value.trim().toLowerCase();
@@ -50,7 +85,7 @@ function tokenizeName(name: string): string[] {
   return name
     .toLowerCase()
     .split(/[^a-z0-9]+/)
-    .filter((token) => token.length >= 4);
+    .filter((token) => token.length >= 5 && !GENERIC_FINANCE_STOPWORDS.has(token));
 }
 
 export function buildHoldingMatchProfiles(
@@ -60,11 +95,9 @@ export function buildHoldingMatchProfiles(
     .filter((holding) => holding.assetType !== "cash")
     .map((holding) => {
       const symbol = holding.symbol.trim().toUpperCase();
-      const nameTokens = tokenizeName(holding.name);
-      const themeKeywords = SYMBOL_THEME_KEYWORDS[symbol] ?? [];
-      const keywords = [
-        ...themeKeywords,
-        ...nameTokens,
+      const strongKeywords = [
+        ...(SYMBOL_STRONG_KEYWORDS[symbol] ?? []),
+        ...tokenizeName(holding.name),
         ...(symbol.length >= 4 ? [symbol.toLowerCase()] : []),
       ];
 
@@ -72,7 +105,7 @@ export function buildHoldingMatchProfiles(
         id: holding.id,
         symbol,
         name: holding.name.trim(),
-        keywords: [...new Set(keywords.map(normalizeToken))],
+        strongKeywords: [...new Set(strongKeywords.map(normalizeToken))],
       };
     });
 }
@@ -81,11 +114,15 @@ function escapeRegex(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function containsKeyword(text: string, keyword: string): boolean {
-  const normalizedKeyword = normalizeToken(keyword);
-  if (normalizedKeyword.length < 4) return false;
+function containsPhrase(text: string, phrase: string): boolean {
+  const normalizedPhrase = normalizeToken(phrase);
+  if (normalizedPhrase.length < 3) return false;
 
-  const pattern = new RegExp(`\\b${escapeRegex(normalizedKeyword)}\\b`, "i");
+  if (normalizedPhrase.includes(" ")) {
+    return text.includes(normalizedPhrase);
+  }
+
+  const pattern = new RegExp(`\\b${escapeRegex(normalizedPhrase)}\\b`, "i");
   return pattern.test(text);
 }
 
@@ -98,6 +135,19 @@ function containsSymbol(text: string, symbol: string): boolean {
   return pattern.test(text);
 }
 
+export function isStrongPortfolioMatch(
+  haystack: string,
+  profile: HoldingMatchProfile,
+): boolean {
+  if (containsSymbol(haystack, profile.symbol)) {
+    return true;
+  }
+
+  return profile.strongKeywords.some((keyword) =>
+    containsPhrase(haystack, keyword),
+  );
+}
+
 export function scoreNewsItemRelevance(
   item: NewsContentItem,
   profiles: HoldingMatchProfile[],
@@ -107,25 +157,24 @@ export function scoreNewsItemRelevance(
   }
 
   const haystack = `${item.title} ${item.description ?? ""}`.toLowerCase();
-  const matchedProfiles = profiles.filter((profile) => {
-    if (containsSymbol(haystack, profile.symbol)) return true;
-    return profile.keywords.some((keyword) => containsKeyword(haystack, keyword));
-  });
+  const matchedProfiles = profiles.filter((profile) =>
+    isStrongPortfolioMatch(haystack, profile),
+  );
 
   if (matchedProfiles.length === 0) {
     return { ...item, relevanceScore: 0, relevanceLabel: null };
   }
 
   const primary = matchedProfiles[0];
-  const matchedSymbols = matchedProfiles.map((profile) => profile.symbol);
-  const matchedHoldingIds = matchedProfiles.map((profile) => profile.id);
 
   return {
     ...item,
-    matchedHoldingIds,
-    matchedSymbols,
+    matchedHoldingIds: matchedProfiles.map((profile) => profile.id),
+    matchedSymbols: matchedProfiles.map((profile) => profile.symbol),
     relevanceLabel: `Relevant to ${primary.symbol}`,
-    relevanceScore: matchedProfiles.length * 10 + (containsSymbol(haystack, primary.symbol) ? 5 : 0),
+    relevanceScore:
+      STRONG_PORTFOLIO_MATCH_SCORE +
+      (containsSymbol(haystack, primary.symbol) ? 5 : 0),
   };
 }
 
@@ -163,7 +212,9 @@ export function personalizeNewsItems(
 }
 
 export function partitionNewsSections(items: NewsContentItem[]) {
-  const forYou = items.filter((item) => item.relevanceScore > 0);
+  const forYou = items.filter(
+    (item) => item.relevanceScore >= STRONG_PORTFOLIO_MATCH_SCORE,
+  );
   const markets = items.filter((item) =>
     ["markets", "macro", "general"].includes(item.category),
   );

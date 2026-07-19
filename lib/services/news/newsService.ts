@@ -1,6 +1,7 @@
 import { unstable_cache } from "next/cache";
 
 import { CURATED_YOUTUBE_SOURCES } from "@/lib/services/news/newsSources";
+import { filterFinancialNewsItems } from "@/lib/services/news/financialContentFilter";
 import { createYouTubeProviders } from "@/lib/services/news/providers/youtubeRssProvider";
 import {
   partitionNewsSections,
@@ -49,20 +50,18 @@ export async function buildNewsResponse(
   holdings: StoredPortfolioHolding[] = [],
 ): Promise<NewsApiResponse> {
   const { items, sourceErrors, fetchedAt } = await getCachedRawNewsItems();
-  const personalized = personalizeNewsItems(items, holdings);
-  const displayItems =
-    personalized.some((item) => item.relevanceScore > 0)
-      ? personalized
-      : sortRecentOnly(personalized);
-
+  const financialItems = filterFinancialNewsItems(items);
+  const personalized = personalizeNewsItems(financialItems, holdings);
+  const displayItems = sortRecentOnly(personalized);
   const sections = partitionNewsSections(displayItems);
+  const fallbackItems = displayItems.slice(0, 12);
 
   return {
     success: true,
     items: displayItems,
-    forYou: sections.forYou.length > 0 ? sections.forYou : displayItems.slice(0, 8),
-    markets: sections.markets.length > 0 ? sections.markets : displayItems,
-    videos: sections.videos.length > 0 ? sections.videos : displayItems,
+    forYou: sections.forYou,
+    markets: sections.markets.length > 0 ? sections.markets : fallbackItems,
+    videos: sections.videos.length > 0 ? sections.videos : fallbackItems,
     sourceErrors,
     fetchedAt,
   };

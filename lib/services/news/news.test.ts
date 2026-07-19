@@ -5,10 +5,17 @@ import { describe, expect, it, vi } from "vitest";
 import { parseYouTubeAtomFeed } from "@/lib/services/news/providers/youtubeRssProvider";
 import {
   deduplicateNewsItems,
+  isStrongPortfolioMatch,
   personalizeNewsItems,
   scoreNewsItemRelevance,
   sortNewsItems,
+  buildHoldingMatchProfiles,
 } from "@/lib/services/news/relevanceMatching";
+import {
+  filterFinancialNewsItems,
+  isFinancialMarketContent,
+  isSportsContent,
+} from "@/lib/services/news/financialContentFilter";
 import {
   sanitizeNewsText,
   sanitizeNewsUrl,
@@ -120,18 +127,36 @@ describe("news relevance matching", () => {
       description: "Nuclear power demand rises",
     });
 
-    const scored = scoreNewsItemRelevance(news, [
-      {
-        id: "nukl-id",
-        symbol: "NUKL",
-        name: "Uranium and Nuclear ETF",
-        keywords: ["uranium", "nuclear", "nuclear energy"],
-      },
+    const profiles = buildHoldingMatchProfiles([
+      holding({ symbol: "NUKL", name: "Uranium and Nuclear ETF" }),
     ]);
+    const scored = scoreNewsItemRelevance(news, profiles);
 
     expect(scored.relevanceLabel).toBe("Relevant to NUKL");
     expect(scored.matchedSymbols).toEqual(["NUKL"]);
     expect(scored.relevanceScore).toBeGreaterThan(0);
+  });
+
+  it("does not weak-match VWCE from generic global market language", () => {
+    const profiles = buildHoldingMatchProfiles([
+      holding({ symbol: "VWCE", name: "Vanguard FTSE All-World UCITS ETF" }),
+    ]);
+    const haystack = "Global markets weekly wrap for world equities";
+
+    expect(isStrongPortfolioMatch(haystack, profiles[0]!)).toBe(false);
+
+    const scored = scoreNewsItemRelevance(
+      item({
+        id: "vwce-general",
+        title: "Global markets weekly wrap",
+        canonicalUrl: "https://www.youtube.com/watch?v=markets1",
+        description: "World equities and macro update",
+      }),
+      profiles,
+    );
+
+    expect(scored.relevanceScore).toBe(0);
+    expect(scored.relevanceLabel).toBeNull();
   });
 
   it("prevents short-ticker false positives", () => {
@@ -141,14 +166,12 @@ describe("news relevance matching", () => {
       canonicalUrl: "https://www.youtube.com/watch?v=ai1",
     });
 
-    const scored = scoreNewsItemRelevance(news, [
-      {
-        id: "ai-id",
-        symbol: "AI",
-        name: "Generic AI Fund",
-        keywords: ["ai"],
-      },
-    ]);
+    const scored = scoreNewsItemRelevance(
+      news,
+      buildHoldingMatchProfiles([
+        holding({ symbol: "AI", name: "Generic AI Fund" }),
+      ]),
+    );
 
     expect(scored.relevanceScore).toBe(0);
     expect(scored.relevanceLabel).toBeNull();
@@ -218,6 +241,49 @@ describe("news relevance matching", () => {
 
     expect(personalized).toHaveLength(1);
     expect(personalized[0]?.relevanceScore).toBe(0);
+  });
+});
+
+describe("financial news filtering", () => {
+  it("excludes observed sports examples from financial content", () => {
+    const sportsExamples = [
+      "BetMGM CEO: Most-Bet FIFA World Cup in Our History",
+      "FIFA Integrity Debate Shadows World Cup",
+    ];
+
+    for (const title of sportsExamples) {
+      expect(isSportsContent(title)).toBe(true);
+      expect(
+        isFinancialMarketContent(
+          item({
+            id: title,
+            title,
+            canonicalUrl: "https://www.youtube.com/watch?v=sports1",
+            category: "markets",
+          }),
+        ),
+      ).toBe(false);
+    }
+  });
+
+  it("keeps financial market videos in fallback sections", () => {
+    const filtered = filterFinancialNewsItems([
+      item({
+        id: "markets",
+        title: "Fed outlook and inflation update",
+        canonicalUrl: "https://www.youtube.com/watch?v=macro1",
+        category: "markets",
+      }),
+      item({
+        id: "sports",
+        title: "BetMGM CEO: Most-Bet FIFA World Cup in Our History",
+        canonicalUrl: "https://www.youtube.com/watch?v=sports1",
+        category: "markets",
+      }),
+    ]);
+
+    expect(filtered).toHaveLength(1);
+    expect(filtered[0]?.title).toContain("Fed outlook");
   });
 });
 

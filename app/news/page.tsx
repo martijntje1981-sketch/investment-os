@@ -245,20 +245,31 @@ export default function NewsPage() {
               </p>
             </div>
           ) : visibleItems.length === 0 ? (
-            <section className="mt-10 rounded-[28px] border border-slate-200 bg-white p-8 text-center shadow-sm sm:p-12">
-              <Newspaper className="mx-auto h-10 w-10 text-slate-300" />
-              <h2 className="mt-4 text-2xl font-black">No videos available right now</h2>
-              <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-500">
-                Official feeds could not be loaded at the moment. Try refreshing
-                shortly, or add holdings to improve relevance matching.
-              </p>
-              <Link
-                href="/portfolio"
-                className="mt-6 inline-flex items-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white"
-              >
-                Review portfolio
-              </Link>
-            </section>
+            filter === "forYou" ? (
+              <section className="mt-10 rounded-[28px] border border-slate-200 bg-white p-8 text-center shadow-sm sm:p-12">
+                <Newspaper className="mx-auto h-10 w-10 text-slate-300" />
+                <h2 className="mt-4 text-2xl font-black">No strong portfolio matches yet</h2>
+                <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-500">
+                  For You shows videos with a clear link to your holdings. Try Markets
+                  for broader financial coverage, or add holdings to improve matching.
+                </p>
+              </section>
+            ) : (
+              <section className="mt-10 rounded-[28px] border border-slate-200 bg-white p-8 text-center shadow-sm sm:p-12">
+                <Newspaper className="mx-auto h-10 w-10 text-slate-300" />
+                <h2 className="mt-4 text-2xl font-black">No videos available right now</h2>
+                <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-500">
+                  Official feeds could not be loaded at the moment. Try refreshing
+                  shortly, or add holdings to improve relevance matching.
+                </p>
+                <Link
+                  href="/portfolio"
+                  className="mt-6 inline-flex items-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white"
+                >
+                  Review portfolio
+                </Link>
+              </section>
+            )
           ) : (
             <section className="mt-8 space-y-4">
               {visibleItems.map((item) => (

@@ -15,20 +15,15 @@ import {
 import BottomNavigation from "@/components/home/BottomNav";
 import NumericInput from "@/components/NumericInput";
 import { getHoldingMarketValue } from "@/lib/client/portfolioAnalysis";
+import { loadUserPortfolioHoldings } from "@/lib/client/portfolioPricing";
 import {
-  annualContributionKey,
-  goalStorageKey,
-  loadUserPortfolioHoldings,
-} from "@/lib/client/portfolioPricing";
+  computeGoalProgress,
+  GOAL_FORM_DEFAULT,
+  isGoalAchieved,
+} from "@/lib/client/userGoalStorage";
+import { useUserGoal } from "@/lib/client/useUserGoal";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 import type { GoalSettings } from "@/lib/types/portfolioStorage";
-
-const DEFAULT_GOAL: GoalSettings = {
-  targetValue: 1_000_000,
-  targetYear: 2036,
-  monthlyContribution: 1_250,
-  expectedAnnualReturn: 10,
-};
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("en-GB", {
@@ -71,25 +66,15 @@ function projectValue(
 
 export default function GoalsPage() {
   const { userSub, authReady, holdings, portfolioReady } = useUserPortfolio();
-  const [goal, setGoal] = useState<GoalSettings>(DEFAULT_GOAL);
+  const { goal: savedGoal, hasSavedGoal, persistGoal } = useUserGoal();
+  const [goal, setGoal] = useState<GoalSettings>(GOAL_FORM_DEFAULT);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    if (!authReady || !userSub) {
-      setGoal(DEFAULT_GOAL);
-      return;
+    if (savedGoal) {
+      setGoal(savedGoal);
     }
-
-    try {
-      const stored = localStorage.getItem(goalStorageKey(userSub));
-      if (stored) {
-        const parsed = JSON.parse(stored) as Partial<GoalSettings>;
-        setGoal({ ...DEFAULT_GOAL, ...parsed });
-      }
-    } catch {
-      setGoal(DEFAULT_GOAL);
-    }
-  }, [authReady, userSub]);
+  }, [savedGoal]);
 
   const portfolioValue = useMemo(
     () => calculatePortfolioValue(holdings),
@@ -99,8 +84,9 @@ export default function GoalsPage() {
   const currentYear = new Date().getFullYear();
   const monthsRemaining = Math.max((goal.targetYear - currentYear) * 12, 0);
   const progress = goal.targetValue > 0
-    ? Math.min((portfolioValue / goal.targetValue) * 100, 100)
+    ? computeGoalProgress(portfolioValue, goal)
     : 0;
+  const goalCompleted = isGoalAchieved(portfolioValue, goal);
 
   const projectedValue = useMemo(
     () => projectValue(
@@ -133,11 +119,7 @@ export default function GoalsPage() {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!userSub) return;
-    localStorage.setItem(goalStorageKey(userSub), JSON.stringify(goal));
-    localStorage.setItem(
-      annualContributionKey(userSub),
-      String(goal.monthlyContribution * 12),
-    );
+    persistGoal(goal);
     setSaved(true);
   }
 
@@ -242,9 +224,15 @@ export default function GoalsPage() {
                 <div>
                   <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Goal dashboard</p>
                   <p className="mt-3 text-4xl font-black tracking-[-0.05em] sm:text-5xl">
-                    {formatPercentage(progress)}
+                    {goalCompleted
+                      ? "Goal achieved"
+                      : formatPercentage(progress)}
                   </p>
-                  <p className="mt-2 text-sm text-slate-400">of {formatCurrency(goal.targetValue)}</p>
+                  <p className="mt-2 text-sm text-slate-400">
+                    {goalCompleted
+                      ? `Your portfolio has reached ${formatCurrency(goal.targetValue)}.`
+                      : `of ${formatCurrency(goal.targetValue)}`}
+                  </p>
                 </div>
                 <span className={`rounded-full px-3 py-1.5 text-xs font-black ${healthClasses}`}>
                   {health}
@@ -254,7 +242,7 @@ export default function GoalsPage() {
               <div className="mt-7 h-3 overflow-hidden rounded-full bg-white/10">
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-blue-500 via-violet-500 to-fuchsia-500"
-                  style={{ width: `${Math.max(progress, 1)}%` }}
+                  style={{ width: `${Math.max(progress, goalCompleted ? 100 : hasSavedGoal ? 1 : 0)}%` }}
                 />
               </div>
 

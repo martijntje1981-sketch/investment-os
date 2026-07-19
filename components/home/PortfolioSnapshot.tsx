@@ -112,35 +112,35 @@ function getMarketStatuses(date: Date): MarketStatus[] {
 
   return [
     {
-      label: "Europa",
+      label: "Europe",
       status: europeOpen ? "open" : "closed",
-      statusLabel: europeOpen ? "Open" : "Gesloten",
+      statusLabel: europeOpen ? "Market open" : "Market closed",
     },
     {
-      label: "Verenigde Staten",
+      label: "United States",
       status: usaOpen ? "open" : "closed",
-      statusLabel: usaOpen ? "Open" : "Gesloten",
+      statusLabel: usaOpen ? "Market open" : "Market closed",
     },
     {
       label: "Crypto",
       status: "always-open",
-      statusLabel: "24/7 open",
+      statusLabel: "Open 24/7",
     },
   ];
 }
 
 function formatUpdateTime(value?: string | null) {
   if (!value) {
-    return "Nog niet beschikbaar";
+    return "Not available yet";
   }
 
   const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) {
-    return "Nog niet beschikbaar";
+    return "Not available yet";
   }
 
-  return new Intl.DateTimeFormat("nl-NL", {
+  return new Intl.DateTimeFormat("en-GB", {
     timeZone: "Europe/Amsterdam",
     day: "2-digit",
     month: "short",
@@ -245,7 +245,7 @@ function MarketStatusCard({
           </div>
 
           <p className="mt-1 text-[12px] text-[#94A3B8]">
-            Indicatieve handelsuren
+            Indicative trading hours
           </p>
         </div>
 
@@ -284,10 +284,10 @@ function MarketStatusCard({
 
       <div className="mt-5 border-t border-[#E2E8F0] pt-4">
         <p className="text-[12px] text-[#64748B]">
-          Laatste koersupdate:{" "}
+          Last price update:{" "}
           <span className="font-medium text-[#0F172A]">
             {isRefreshing
-              ? "Bezig met vernieuwen…"
+              ? "Refreshing…"
               : formatUpdateTime(lastUpdatedAt)}
           </span>
         </p>
@@ -322,14 +322,14 @@ export function PortfolioSnapshot({
             label="Today's Change"
             value={formatEuro(todayChange, { signed: true })}
             valueClassName={getPerformanceColor(todayChange)}
-            description="Ten opzichte van het vorige beursslot"
+            description="Compared with the previous market close"
           />
 
           <SnapshotMetric
             label="Today's %"
             value={formatPercent(todayPercent, true)}
             valueClassName={getPerformanceColor(todayPercent)}
-            description="Ten opzichte van het vorige beursslot"
+            description="Compared with the previous market close"
           />
         </div>
 

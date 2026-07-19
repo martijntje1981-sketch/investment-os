@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import Link from "next/link";
 import {
   AlertTriangle,
@@ -30,13 +30,17 @@ import BottomNavigation from "@/components/home/BottomNav";
 import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
 import { getHoldingMarketValue } from "@/lib/client/portfolioAnalysis";
 import {
-  annualContributionKey,
-  goalStorageKey,
   tryRefreshPortfolioPrices,
   type StoredPortfolioHolding,
 } from "@/lib/client/portfolioPricing";
+import {
+  computeGoalProgress,
+  formatGoalCurrency,
+  isGoalAchieved,
+  resolveGoalMissionTitle,
+} from "@/lib/client/userGoalStorage";
+import { useUserGoal } from "@/lib/client/useUserGoal";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
-import type { GoalSettings } from "@/lib/types/portfolioStorage";
 
 type Currency = "EUR" | "USD" | "GBP";
 
@@ -59,15 +63,7 @@ type CachedPrice = {
   updatedAt?: string;
 };
 
-const TARGET_VALUE = 1_000_000;
-const TARGET_YEAR = 2036;
 const DEFAULT_ANNUAL_CONTRIBUTION = 15_000;
-const DEFAULT_GOAL: GoalSettings = {
-  targetValue: TARGET_VALUE,
-  targetYear: TARGET_YEAR,
-  monthlyContribution: DEFAULT_ANNUAL_CONTRIBUTION / 12,
-  expectedAnnualReturn: 10,
-};
 
 function formatCurrency(
   value: number,
@@ -235,51 +231,17 @@ export default function DashboardPage() {
     dismissRecovery,
     reloadPortfolio,
   } = useUserPortfolio();
-  const [annualContribution, setAnnualContribution] = useState(
-    DEFAULT_ANNUAL_CONTRIBUTION,
-  );
-  const [goal, setGoal] = useState<GoalSettings>(DEFAULT_GOAL);
+  const { goal, hasSavedGoal } = useUserGoal();
 
   const isLoaded = portfolioReady;
+  const annualContribution = goal
+    ? goal.monthlyContribution * 12
+    : DEFAULT_ANNUAL_CONTRIBUTION;
 
   const currentYear = new Date().getFullYear();
-  const yearsRemaining = Math.max(goal.targetYear - currentYear, 1);
-
-  useEffect(() => {
-    if (!authReady) {
-      setGoal(DEFAULT_GOAL);
-      setAnnualContribution(DEFAULT_ANNUAL_CONTRIBUTION);
-      return;
-    }
-
-    if (!userSub) {
-      setGoal(DEFAULT_GOAL);
-      setAnnualContribution(DEFAULT_ANNUAL_CONTRIBUTION);
-      return;
-    }
-
-    try {
-      const savedGoal = localStorage.getItem(goalStorageKey(userSub));
-      if (savedGoal) {
-        const parsedGoal = JSON.parse(savedGoal) as Partial<GoalSettings>;
-        const nextGoal = { ...DEFAULT_GOAL, ...parsedGoal };
-        setGoal(nextGoal);
-        setAnnualContribution(nextGoal.monthlyContribution * 12);
-      } else {
-        const savedAnnualContribution = localStorage.getItem(
-          annualContributionKey(userSub),
-        );
-        if (savedAnnualContribution) {
-          const parsedContribution = Number(savedAnnualContribution);
-          if (Number.isFinite(parsedContribution) && parsedContribution >= 0) {
-            setAnnualContribution(parsedContribution);
-          }
-        }
-      }
-    } catch (error) {
-      console.error("Could not load Investment OS goal data:", error);
-    }
-  }, [authReady, userSub]);
+  const yearsRemaining = goal
+    ? Math.max(goal.targetYear - currentYear, 1)
+    : 1;
 
   useEffect(() => {
     if (!authReady || !userSub) return;
@@ -293,14 +255,6 @@ export default function DashboardPage() {
           if (result.updated) {
             saveHoldings(result.holdings);
           }
-        }
-
-        const savedGoal = localStorage.getItem(goalStorageKey(userSub));
-        if (savedGoal) {
-          const parsedGoal = JSON.parse(savedGoal) as Partial<GoalSettings>;
-          const nextGoal = { ...DEFAULT_GOAL, ...parsedGoal };
-          setGoal(nextGoal);
-          setAnnualContribution(nextGoal.monthlyContribution * 12);
         }
       } catch (error) {
         console.error("Could not refresh Investment OS data:", error);
@@ -346,14 +300,17 @@ export default function DashboardPage() {
   const largestHoldingAllocation =
     portfolioValue > 0 ? (largestHoldingValue / portfolioValue) * 100 : 0;
 
-  const goalProgress = Math.min((portfolioValue / goal.targetValue) * 100, 100);
+  const goalProgress = goal ? computeGoalProgress(portfolioValue, goal) : 0;
+  const goalCompleted = goal ? isGoalAchieved(portfolioValue, goal) : false;
 
-  const requiredAnnualReturn = calculateRequiredReturn(
-    portfolioValue,
-    annualContribution,
-    goal.targetValue,
-    yearsRemaining,
-  );
+  const requiredAnnualReturn = goal
+    ? calculateRequiredReturn(
+        portfolioValue,
+        annualContribution,
+        goal.targetValue,
+        yearsRemaining,
+      )
+    : 0;
 
   const diversificationScore = Math.max(
     0,
@@ -452,11 +409,17 @@ export default function DashboardPage() {
     },
     {
       label: "Goal progress",
-      value: formatPercentage(goalProgress),
-      description: `${formatCurrency(
-        goal.targetValue - portfolioValue,
-      )} remaining`,
-      tone: "positive",
+      value: goal
+        ? goalCompleted
+          ? "Achieved"
+          : formatPercentage(goalProgress)
+        : "Not set",
+      description: goal
+        ? goalCompleted
+          ? `Target of ${formatGoalCurrency(goal.targetValue)} reached`
+          : `${formatCurrency(Math.max(goal.targetValue - portfolioValue, 0))} remaining`
+        : "Set a goal to track progress",
+      tone: goalCompleted ? "positive" : "positive",
       icon: <Target className="h-5 w-5" />,
     },
     {
@@ -603,7 +566,7 @@ export default function DashboardPage() {
                   </span>
 
                   <span className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold text-slate-300">
-                    Personal goal active
+                    {hasSavedGoal ? "Personal goal active" : "No goal saved yet"}
                   </span>
                 </div>
 
@@ -719,9 +682,27 @@ export default function DashboardPage() {
                       Your goal
                     </p>
 
-                    <p className="mt-2 text-3xl font-black">
-                      {formatPercentage(goalProgress)}
-                    </p>
+                    {hasSavedGoal && goal ? (
+                      <>
+                        <p className="mt-2 text-3xl font-black">
+                          {goalCompleted
+                            ? "Goal achieved"
+                            : formatPercentage(goalProgress)}
+                        </p>
+                        {goalCompleted ? (
+                          <p className="mt-2 text-sm text-emerald-300">
+                            Your portfolio has reached {formatGoalCurrency(goal.targetValue)}.
+                          </p>
+                        ) : null}
+                      </>
+                    ) : (
+                      <>
+                        <p className="mt-2 text-2xl font-black">No goal saved yet</p>
+                        <p className="mt-2 text-sm text-slate-400">
+                          Set a target on the Goals page to track progress here.
+                        </p>
+                      </>
+                    )}
                   </div>
 
                   <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-500/20 text-violet-300">
@@ -733,32 +714,34 @@ export default function DashboardPage() {
                   <div
                     className="h-full rounded-full bg-gradient-to-r from-blue-500 via-violet-500 to-fuchsia-500"
                     style={{
-                      width: `${Math.max(goalProgress, 1)}%`,
+                      width: `${hasSavedGoal && goal ? Math.max(goalProgress, goalCompleted ? 100 : 1) : 0}%`,
                     }}
                   />
                 </div>
 
-                <div className="mt-6 space-y-4">
-                  <HeroDetailRow
-                    label="Target"
-                    value={formatCurrency(goal.targetValue)}
-                  />
+                {hasSavedGoal && goal ? (
+                  <div className="mt-6 space-y-4">
+                    <HeroDetailRow
+                      label="Target"
+                      value={formatCurrency(goal.targetValue)}
+                    />
 
-                  <HeroDetailRow
-                    label="Target year"
-                    value={String(goal.targetYear)}
-                  />
+                    <HeroDetailRow
+                      label="Target year"
+                      value={String(goal.targetYear)}
+                    />
 
-                  <HeroDetailRow
-                    label="Annual contribution"
-                    value={formatCurrency(annualContribution)}
-                  />
+                    <HeroDetailRow
+                      label="Annual contribution"
+                      value={formatCurrency(annualContribution)}
+                    />
 
-                  <HeroDetailRow
-                    label="Required return"
-                    value={formatPercentage(requiredAnnualReturn)}
-                  />
-                </div>
+                    <HeroDetailRow
+                      label="Required return"
+                      value={formatPercentage(requiredAnnualReturn)}
+                    />
+                  </div>
+                ) : null}
 
                 <Link
                   href="/goals"
@@ -1038,7 +1021,7 @@ export default function DashboardPage() {
               href="/goals"
               icon={<Target className="h-6 w-6" />}
               eyebrow="Personal goal"
-              title="Track the €1M mission"
+              title={resolveGoalMissionTitle(goal, hasSavedGoal)}
               description="Compare scenarios, change contributions and monitor your required growth."
               action="Open goals"
               tone="gradient"
