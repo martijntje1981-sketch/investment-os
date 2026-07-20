@@ -23,6 +23,7 @@ import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
 import {
   HoldingDividendMeta,
 } from "@/components/analysis/DividendIntelligenceSection";
+import { HoldingAnalystMeta } from "@/components/analysis/AnalystIntelligenceSection";
 import { getHoldingMarketValue } from "@/lib/client/portfolioAnalysis";
 import {
   normalizeHoldingForSave,
@@ -30,8 +31,13 @@ import {
   type StoredPortfolioHolding,
 } from "@/lib/client/portfolioPricing";
 import { findDividendQuoteForHolding } from "@/lib/client/portfolioDividends";
+import { findAnalystQuoteForHolding } from "@/lib/client/portfolioAnalyst";
+import {
+  calculateImpliedUpsidePercent,
+} from "@/lib/services/analyst/analystCalculations";
 import { formatDividendFrequency } from "@/lib/services/dividends";
 import { usePortfolioDividends } from "@/lib/client/usePortfolioDividends";
+import { usePortfolioAnalyst } from "@/lib/client/usePortfolioAnalyst";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 
 type AssetType = "investment" | "cash";
@@ -80,6 +86,11 @@ export default function PortfolioPage() {
     dismissRecovery,
   } = useUserPortfolio();
   const { quotes: dividendQuotes } = usePortfolioDividends(
+    holdings,
+    userSub,
+    holdings.length > 0,
+  );
+  const { quotes: analystQuotes } = usePortfolioAnalyst(
     holdings,
     userSub,
     holdings.length > 0,
@@ -247,6 +258,17 @@ export default function PortfolioPage() {
                     holding.assetType === "investment"
                       ? findDividendQuoteForHolding(holding, dividendQuotes)
                       : null;
+                  const analystQuote =
+                    holding.assetType === "investment"
+                      ? findAnalystQuoteForHolding(holding, analystQuotes)
+                      : null;
+                  const impliedUpsidePercent =
+                    analystQuote && holding.currentPrice > 0
+                      ? calculateImpliedUpsidePercent(
+                          holding.currentPrice,
+                          analystQuote.averagePriceTarget,
+                        )
+                      : null;
                   return (
                     <article key={holding.id} className="space-y-3 px-5 py-5 lg:px-7">
                     <div className="grid gap-4 lg:grid-cols-[0.65fr_1.5fr_1fr_0.8fr_1fr_auto] lg:items-center">
@@ -276,6 +298,15 @@ export default function PortfolioPage() {
                             nextPaymentDate={dividendQuote.nextPaymentDate}
                             frequency={formatDividendFrequency(dividendQuote.frequency)}
                           />
+                      ) : null}
+                      {analystQuote ? (
+                        <HoldingAnalystMeta
+                          quote={analystQuote}
+                          currentPriceEur={
+                            holding.currentPrice > 0 ? holding.currentPrice : null
+                          }
+                          impliedUpsidePercent={impliedUpsidePercent}
+                        />
                       ) : null}
                     </article>
                   );

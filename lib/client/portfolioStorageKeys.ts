@@ -63,6 +63,11 @@ export function dividendCacheKey(userSub: string): string {
   return `investment-os-dividend-cache:${userSub}`;
 }
 
+export function analystCacheKey(userSub: string): string {
+  assertUserSub(userSub);
+  return `investment-os-analyst-cache:${userSub}`;
+}
+
 export function legacyRecoveryDismissedKey(userSub: string): string {
   assertUserSub(userSub);
   return `investment-os-legacy-recovery-dismissed:${userSub}`;

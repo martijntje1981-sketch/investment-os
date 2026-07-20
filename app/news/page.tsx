@@ -7,6 +7,7 @@ import {
   BriefcaseBusiness,
   Coins,
   Globe2,
+  LineChart,
   Newspaper,
   PlayCircle,
 } from "lucide-react";
@@ -181,6 +182,22 @@ export default function NewsPage() {
                   />
                   <div className="grid gap-6">
                     {payload.dividendNews?.map((item) => (
+                      <NewsArticleCard key={item.id} item={item} variant="portfolio" />
+                    ))}
+                  </div>
+                </section>
+              ) : null}
+
+              {(payload.analystNews?.length ?? 0) > 0 ? (
+                <section className="space-y-8">
+                  <NewsSectionHeader
+                    eyebrow="Analyst intelligence"
+                    title="Analyst updates for your holdings"
+                    description="Upgrades, downgrades, price-target changes, and estimate revisions linked to your portfolio holdings."
+                    icon={<LineChart className="h-6 w-6" />}
+                  />
+                  <div className="grid gap-6">
+                    {payload.analystNews?.map((item) => (
                       <NewsArticleCard key={item.id} item={item} variant="portfolio" />
                     ))}
                   </div>

@@ -4,6 +4,7 @@ import { useEffect, useMemo } from "react";
 import BottomNavigation from "@/components/home/BottomNav";
 import { DashboardEmptyState } from "@/components/dashboard/DashboardEmptyState";
 import { DashboardDividendCard } from "@/components/dashboard/DashboardDividendCard";
+import { DashboardAnalystCard } from "@/components/dashboard/DashboardAnalystCard";
 import { DashboardGoalCard } from "@/components/dashboard/DashboardGoalCard";
 import {
   DashboardHero,
@@ -17,6 +18,7 @@ import { buildDashboardInsight } from "@/lib/client/dashboardInsight";
 import { buildDashboardSummary } from "@/lib/client/dashboardSummary";
 import { tryRefreshPortfolioPrices } from "@/lib/client/portfolioPricing";
 import { usePortfolioDividends } from "@/lib/client/usePortfolioDividends";
+import { usePortfolioAnalyst } from "@/lib/client/usePortfolioAnalyst";
 import { useUserGoal } from "@/lib/client/useUserGoal";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 
@@ -35,6 +37,8 @@ export default function DashboardPage() {
   const { goal, hasSavedGoal } = useUserGoal();
   const { snapshot: dividendSnapshot, isLoading: dividendsLoading } =
     usePortfolioDividends(holdings, userSub, holdings.length > 0);
+  const { snapshot: analystSnapshot, isLoading: analystLoading } =
+    usePortfolioAnalyst(holdings, userSub, holdings.length > 0);
 
   useEffect(() => {
     if (!authReady || !userSub) return;
@@ -102,6 +106,10 @@ export default function DashboardPage() {
               <DashboardDividendCard
                 snapshot={dividendSnapshot}
                 isLoading={dividendsLoading}
+              />
+              <DashboardAnalystCard
+                snapshot={analystSnapshot}
+                isLoading={analystLoading}
               />
 
               <section className="grid gap-4 sm:grid-cols-2">

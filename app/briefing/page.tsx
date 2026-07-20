@@ -15,6 +15,7 @@ import {
   Upload,
 } from "lucide-react";
 import { DividendIntelligenceSection } from "@/components/analysis/DividendIntelligenceSection";
+import { AnalystIntelligenceSection } from "@/components/analysis/AnalystIntelligenceSection";
 import BottomNavigation from "@/components/home/BottomNav";
 import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
 import {
@@ -25,6 +26,7 @@ import {
   formatPortfolioPercent,
 } from "@/lib/client/portfolioAnalysis";
 import { usePortfolioDividends } from "@/lib/client/usePortfolioDividends";
+import { usePortfolioAnalyst } from "@/lib/client/usePortfolioAnalyst";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 
 function formatUpdatedAt(value: string | null) {
@@ -72,6 +74,8 @@ export default function AnalysisPage() {
 
   const { snapshot: dividendSnapshot, isLoading: dividendsLoading } =
     usePortfolioDividends(holdings, userSub, holdings.length > 0);
+  const { snapshot: analystSnapshot, isLoading: analystLoading } =
+    usePortfolioAnalyst(holdings, userSub, holdings.length > 0);
 
   const analysis = useMemo(
     () => buildPortfolioAnalysis(holdings),
@@ -263,6 +267,11 @@ export default function AnalysisPage() {
               <DividendIntelligenceSection
                 snapshot={dividendSnapshot}
                 isLoading={dividendsLoading}
+              />
+
+              <AnalystIntelligenceSection
+                snapshot={analystSnapshot}
+                isLoading={analystLoading}
               />
 
               <section className="mt-7 grid gap-4 lg:grid-cols-2">
