@@ -52,26 +52,37 @@ function stripTitleSuffix(title: string): string {
   return title.replace(/\s*[|–—-]\s*.+$/, "").trim();
 }
 
-export function generateWhyThisMatters(
+export function generateInterpretation(
   item: Pick<
     NewsContentItem,
-    "title" | "matchedSymbols" | "category" | "impactLevel"
+    "title" | "matchedSymbols" | "matchedHoldings" | "category" | "marketCategory" | "impactLevel"
   >,
 ): string {
   const topic = stripTitleSuffix(item.title);
 
-  if (item.matchedSymbols.length > 0) {
-    const holdings = item.matchedSymbols.join(", ");
-    return `Why this matters: moves in ${topic.toLowerCase()} can affect your ${holdings} exposure through price action, sector sentiment, or allocation drift.`;
+  if (item.matchedHoldings.length > 0) {
+    const holdings = item.matchedHoldings.map((holding) => holding.symbol).join(", ");
+    return `This headline may affect ${holdings} through price action, sector sentiment, or how the holding fits your current allocation. It is context, not a recommendation.`;
   }
 
-  if (item.category === "crypto") {
-    return "Why this matters: crypto headlines can change risk appetite and may spill over into broader growth and tech holdings.";
+  if (item.marketCategory === "crypto" || item.category === "crypto") {
+    return `Crypto-related coverage can influence risk appetite and may spill over into growth and technology exposures.`;
+  }
+
+  if (item.marketCategory === "commodities") {
+    return `Commodity developments can affect inflation expectations and sectors tied to energy or materials.`;
+  }
+
+  if (item.marketCategory === "geopolitics") {
+    return `Geopolitical headlines can shift risk sentiment across equities, currencies, and safe-haven assets.`;
   }
 
   if (item.impactLevel === "High Impact") {
-    return "Why this matters: this development can shift rate expectations, index direction, and cross-asset volatility across your portfolio.";
+    return `This macro development could influence rate expectations, index direction, and cross-asset volatility.`;
   }
 
-  return "Why this matters: even indirect macro headlines can influence the environment your holdings trade in today.";
+  return `Broader market headlines can shape the environment your holdings trade in, even without a direct company link to ${topic}.`;
 }
+
+/** @deprecated Use generateInterpretation */
+export const generateWhyThisMatters = generateInterpretation;

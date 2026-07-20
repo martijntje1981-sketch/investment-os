@@ -153,7 +153,14 @@ export function scoreNewsItemRelevance(
   profiles: HoldingMatchProfile[],
 ): NewsContentItem {
   if (profiles.length === 0) {
-    return item;
+    return {
+      ...item,
+      relevanceScore: 0,
+      relevanceLabel: null,
+      matchedHoldingIds: [],
+      matchedSymbols: [],
+      matchedHoldings: [],
+    };
   }
 
   const haystack = `${item.title} ${item.description ?? ""}`.toLowerCase();
@@ -162,7 +169,14 @@ export function scoreNewsItemRelevance(
   );
 
   if (matchedProfiles.length === 0) {
-    return { ...item, relevanceScore: 0, relevanceLabel: null };
+    return {
+      ...item,
+      relevanceScore: 0,
+      relevanceLabel: null,
+      matchedHoldingIds: [],
+      matchedSymbols: [],
+      matchedHoldings: [],
+    };
   }
 
   const primary = matchedProfiles[0];
@@ -171,6 +185,12 @@ export function scoreNewsItemRelevance(
     ...item,
     matchedHoldingIds: matchedProfiles.map((profile) => profile.id),
     matchedSymbols: matchedProfiles.map((profile) => profile.symbol),
+    matchedHoldings: matchedProfiles.map((profile) => ({
+      id: profile.id,
+      symbol: profile.symbol,
+      name: profile.name,
+      providerSymbol: null,
+    })),
     relevanceLabel: `Relevant to ${primary.symbol}`,
     relevanceScore:
       STRONG_PORTFOLIO_MATCH_SCORE +

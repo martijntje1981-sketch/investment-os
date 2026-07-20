@@ -2,18 +2,22 @@
  * Analyst-related news detection, deduplication, and action normalization.
  */
 
-import { unstable_cache } from "next/cache";
-
 import { filterFinancialNewsItems } from "@/lib/services/news/financialContentFilter";
-import { createYouTubeProviders } from "@/lib/services/news/providers/youtubeRssProvider";
-import { CURATED_YOUTUBE_SOURCES } from "@/lib/services/news/newsSources";
-import { personalizeNewsItems } from "@/lib/services/news/relevanceMatching";
+import { fetchSharedRawNewsItems } from "@/lib/services/news/fetchNewsFeed";
+import {
+  rankPortfolioNews,
+  resolveNewsHoldingProfiles,
+  scoreNewsItemWithProfiles,
+} from "@/lib/services/news/portfolioNewsMatching";
 import type {
   AnalystRecentAction,
   AnalystRecentActionType,
 } from "@/lib/types/analyst";
 import type { NewsContentItem } from "@/lib/types/newsContent";
-import type { PortfolioInstrumentPayload } from "@/lib/types/portfolioStorage";
+import type {
+  PortfolioInstrumentPayload,
+  StoredPortfolioHolding,
+} from "@/lib/types/portfolioStorage";
 
 type AnalystPattern = {
   pattern: RegExp;
@@ -187,30 +191,38 @@ export function buildAnalystActionsFromNewsItems(
     .slice(0, 12);
 }
 
-const youtubeProviders = createYouTubeProviders(CURATED_YOUTUBE_SOURCES);
-
-const getCachedPortfolioNewsItems = unstable_cache(
-  async () => {
-    const fetchedAt = new Date().toISOString();
-    const results = await Promise.all(
-      youtubeProviders.map((provider) =>
-        provider.fetchItems({ fetchedAt, timeoutMs: 8_000 }),
-      ),
-    );
-    return results.flatMap((result) => result.items);
-  },
-  ["investment-os-analyst-news-scan"],
-  { revalidate: 45 * 60 },
-);
+export async function personalizeNewsItemsForAnalyst(
+  items: NewsContentItem[],
+  holdings: StoredPortfolioHolding[],
+): Promise<NewsContentItem[]> {
+  const profiles = await resolveNewsHoldingProfiles(holdings);
+  return rankPortfolioNews(
+    items.map((item) => scoreNewsItemWithProfiles(item, profiles)),
+  );
+}
 
 export async function buildAnalystActionsFromNews(
   holdings: Array<PortfolioInstrumentPayload>,
 ): Promise<AnalystRecentAction[]> {
   if (holdings.length === 0) return [];
 
-  const rawItems = await getCachedPortfolioNewsItems();
-  const financialItems = filterFinancialNewsItems(rawItems);
-  const personalized = personalizeNewsItems(financialItems, holdings as never);
+  const investments = holdings.filter(
+    (holding) => (holding as { assetType?: string }).assetType !== "cash",
+  );
+  const profiles = await resolveNewsHoldingProfiles(
+    investments as StoredPortfolioHolding[],
+  );
+  const providerSymbols = profiles
+    .map((profile) => profile.providerSymbol)
+    .filter((symbol): symbol is string => Boolean(symbol));
+
+  const { items } = await fetchSharedRawNewsItems(providerSymbols);
+  const financialItems = filterFinancialNewsItems(items);
+  const personalized = await personalizeNewsItemsForAnalyst(
+    financialItems,
+    investments as StoredPortfolioHolding[],
+  );
+
   return buildAnalystActionsFromNewsItems(personalized, holdings);
 }
 

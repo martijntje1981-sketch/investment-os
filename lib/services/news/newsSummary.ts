@@ -1,7 +1,11 @@
+/**
+ * Factual summaries and interpretation enrichment for news items.
+ */
+
 import type { NewsContentItem } from "@/lib/types/newsContent";
 import {
   deriveNewsImpactLevel,
-  generateWhyThisMatters,
+  generateInterpretation,
 } from "@/lib/services/news/newsImpact";
 
 function truncate(value: string, maxLength: number): string {
@@ -25,10 +29,10 @@ function stripTitleSuffix(title: string): string {
   return title.replace(/\s*[|–—-]\s*.+$/, "").trim();
 }
 
-export function generateNewsAiSummary(
+export function generateNewsSummary(
   item: Pick<
     NewsContentItem,
-    "title" | "description" | "sourceName" | "category" | "matchedSymbols"
+    "title" | "description" | "sourceName" | "publishedAt"
   >,
 ): string {
   const description = item.description?.trim();
@@ -38,38 +42,36 @@ export function generateNewsAiSummary(
   }
 
   const topic = stripTitleSuffix(item.title);
+  return `${item.sourceName} published "${topic}" on ${formatFactDate(item.publishedAt)}.`;
+}
 
-  if (item.matchedSymbols.length > 0) {
-    const holdings = item.matchedSymbols.join(", ");
-    return `${item.sourceName} covers ${topic}, with read-through for ${holdings} holders and related portfolio exposure.`;
-  }
-
-  if (item.category === "macro") {
-    return `${item.sourceName} highlights ${topic}, focusing on macro drivers such as rates, inflation, or central-bank policy.`;
-  }
-
-  if (item.category === "crypto") {
-    return `${item.sourceName} discusses ${topic}, with implications for digital-asset sentiment and risk appetite.`;
-  }
-
-  return `${item.sourceName} reports on ${topic}. Open the source for the full market context.`;
+function formatFactDate(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "an unverified date";
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(date);
 }
 
 export function enrichNewsItem(item: NewsContentItem): NewsContentItem {
-  const aiSummary = generateNewsAiSummary(item);
+  const summary = generateNewsSummary(item);
   const impactLevel = deriveNewsImpactLevel(item);
-  const whyThisMatters = generateWhyThisMatters({
+  const interpretation = generateInterpretation({
     title: item.title,
     matchedSymbols: item.matchedSymbols,
+    matchedHoldings: item.matchedHoldings,
     category: item.category,
+    marketCategory: item.marketCategory,
     impactLevel,
   });
 
   return {
     ...item,
-    aiSummary,
+    summary,
+    interpretation,
     impactLevel,
-    whyThisMatters,
   };
 }
 
@@ -77,7 +79,8 @@ export function enrichNewsItems(items: NewsContentItem[]): NewsContentItem[] {
   return items.map(enrichNewsItem);
 }
 
+/** @deprecated Use generateNewsSummary */
+export const generateNewsAiSummary = generateNewsSummary;
+
 /** @deprecated Use enrichNewsItems */
-export function attachNewsSummaries(items: NewsContentItem[]): NewsContentItem[] {
-  return enrichNewsItems(items);
-}
+export const enrichNewsItemLegacy = enrichNewsItem;

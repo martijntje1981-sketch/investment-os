@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 
+import { deduplicateCrossSourceNews } from "@/lib/services/news/deduplicateNews";
 import { parseYouTubeAtomFeed } from "@/lib/services/news/providers/youtubeRssProvider";
 import {
   deduplicateNewsItems,
@@ -11,10 +12,10 @@ import {
   sortNewsItems,
   buildHoldingMatchProfiles,
 } from "@/lib/services/news/relevanceMatching";
-import { generateNewsAiSummary, enrichNewsItem } from "@/lib/services/news/newsSummary";
+import { generateNewsSummary, enrichNewsItem } from "@/lib/services/news/newsSummary";
 import {
   deriveNewsImpactLevel,
-  generateWhyThisMatters,
+  generateInterpretation,
 } from "@/lib/services/news/newsImpact";
 import { buildTodaysMarketBrief } from "@/lib/services/news/marketBrief";
 import {
@@ -65,13 +66,15 @@ function item(
     thumbnailUrl: null,
     publishedAt: "2026-07-18T10:00:00.000Z",
     description: null,
-    aiSummary: "",
-    whyThisMatters: "",
+    summary: "",
+    interpretation: "",
     impactLevel: "Low Impact",
     matchedHoldingIds: [],
     matchedSymbols: [],
+    matchedHoldings: [],
     relevanceLabel: null,
     category: "markets",
+    marketCategory: "general",
     contentTypeLabel: "Video",
     fetchedAt: "2026-07-19T08:00:00.000Z",
     relevanceScore: 0,
@@ -260,6 +263,29 @@ describe("news relevance matching", () => {
   });
 });
 
+describe("cross-source deduplication", () => {
+  it("prefers wire articles over duplicate YouTube titles", () => {
+    const deduped = deduplicateCrossSourceNews([
+      item({
+        id: "yt",
+        title: "Fed outlook and inflation update",
+        canonicalUrl: "https://www.youtube.com/watch?v=macro1",
+        sourceType: "youtube",
+      }),
+      item({
+        id: "wire",
+        title: "Fed outlook and inflation update",
+        canonicalUrl: "https://example.com/fed-outlook",
+        sourceType: "news",
+        sourceName: "EODHD News",
+      }),
+    ]);
+
+    expect(deduped).toHaveLength(1);
+    expect(deduped[0]?.sourceType).toBe("news");
+  });
+});
+
 describe("financial news filtering", () => {
   it("excludes observed sports examples from financial content", () => {
     const sportsExamples = [
@@ -303,32 +329,30 @@ describe("financial news filtering", () => {
   });
 });
 
-describe("news AI summaries", () => {
-  it("creates readable summaries from descriptions and titles", () => {
-    const fromDescription = generateNewsAiSummary({
+describe("news summaries and interpretation", () => {
+  it("creates readable factual summaries from descriptions and titles", () => {
+    const fromDescription = generateNewsSummary({
       title: "Bitcoin outlook for long-term investors",
       description:
         "BTC remains volatile. Institutional demand continues to build across global markets.",
       sourceName: "Bloomberg Television",
-      category: "crypto",
-      matchedSymbols: ["IB1T"],
+      publishedAt: "2026-07-18T10:00:00.000Z",
     });
 
     expect(fromDescription).toContain("BTC remains volatile");
 
-    const fromTitle = generateNewsAiSummary({
+    const fromTitle = generateNewsSummary({
       title: "Fed outlook and inflation update",
       description: null,
       sourceName: "CNBC Television",
-      category: "macro",
-      matchedSymbols: [],
+      publishedAt: "2026-07-18T10:00:00.000Z",
     });
 
     expect(fromTitle).toContain("CNBC Television");
     expect(fromTitle.length).toBeGreaterThan(20);
   });
 
-  it("adds impact badges and why-this-matters copy to enriched items", () => {
+  it("adds impact badges and interpretation copy to enriched items", () => {
     const enriched = enrichNewsItem(
       item({
         id: "portfolio-hit",
@@ -336,17 +360,25 @@ describe("news AI summaries", () => {
         canonicalUrl: "https://www.youtube.com/watch?v=btc1",
         relevanceScore: 15,
         matchedSymbols: ["IB1T"],
+        matchedHoldings: [
+          {
+            id: "ib1t-id",
+            symbol: "IB1T",
+            name: "Bitcoin ETP",
+            providerSymbol: "IB1T.XETRA",
+          },
+        ],
       }),
     );
 
     expect(enriched.impactLevel).toBe("High Impact");
-    expect(enriched.whyThisMatters).toContain("Why this matters:");
-    expect(enriched.whyThisMatters).toContain("IB1T");
+    expect(enriched.interpretation).toContain("IB1T");
+    expect(enriched.summary.length).toBeGreaterThan(0);
   });
 });
 
 describe("today's market brief", () => {
-  it("builds a brief with insights, macro, portfolio, and watch item", () => {
+  it("builds a brief with facts, interpretation, and verified watch items", () => {
     const brief = buildTodaysMarketBrief(
       [
         item({
@@ -355,7 +387,16 @@ describe("today's market brief", () => {
           canonicalUrl: "https://www.youtube.com/watch?v=btc1",
           relevanceScore: 15,
           matchedSymbols: ["IB1T"],
-          aiSummary: "BTC demand remains constructive.",
+          matchedHoldings: [
+            {
+              id: "ib1t-id",
+              symbol: "IB1T",
+              name: "Bitcoin ETP",
+              providerSymbol: "IB1T.XETRA",
+            },
+          ],
+          summary: "BTC demand remains constructive.",
+          interpretation: "Crypto coverage may affect IB1T exposure.",
         }),
       ],
       [
@@ -364,7 +405,9 @@ describe("today's market brief", () => {
           title: "Fed outlook and inflation update",
           canonicalUrl: "https://www.youtube.com/watch?v=macro1",
           category: "macro",
-          aiSummary: "Rates remain in focus.",
+          marketCategory: "macro",
+          summary: "Rates remain in focus.",
+          interpretation: "Macro development could influence rate expectations.",
         }),
       ],
       [
@@ -377,6 +420,7 @@ describe("today's market brief", () => {
           country: "United States",
           description: "Inflation data release",
           impact: "High",
+          source: "EODHD Economic Calendar",
         },
       ],
       "2026-07-20T08:00:00.000Z",
@@ -385,8 +429,9 @@ describe("today's market brief", () => {
     expect(brief.title).toBe("Today's Market Brief");
     expect(brief.keyInsights.length).toBeGreaterThanOrEqual(4);
     expect(brief.biggestMacroDevelopment).toContain("Rates remain in focus");
-    expect(brief.biggestPortfolioDevelopment).toContain("IB1T");
+    expect(brief.biggestPortfolioDevelopment).toContain("BTC demand remains constructive");
     expect(brief.whatToWatchToday).toContain("US Consumer Price Index");
+    expect(brief.hasVerifiedContent).toBe(true);
   });
 });
 
@@ -415,28 +460,26 @@ describe("news impact levels", () => {
     ).toBe("High Impact");
 
     expect(
-      generateWhyThisMatters({
+      generateInterpretation({
         title: "Fed outlook and inflation update",
         matchedSymbols: [],
+        matchedHoldings: [],
         category: "macro",
+        marketCategory: "macro",
         impactLevel: "High Impact",
       }),
-    ).toContain("Why this matters:");
+    ).toContain("macro development");
   });
 });
 
 describe("upcoming market events", () => {
-  it("provides fallback catalysts for CPI, Fed, ECB and earnings", async () => {
+  it("does not expose fabricated fallback catalysts in production helpers", async () => {
     const { buildFallbackUpcomingEvents } = await import(
       "@/lib/services/news/upcomingEvents"
     );
 
-    const events = buildFallbackUpcomingEvents(new Date("2026-07-20T10:00:00.000Z"));
-    const categories = events.map((event) => event.category);
-
-    expect(events.length).toBeGreaterThanOrEqual(4);
-    expect(categories).toEqual(
-      expect.arrayContaining(["cpi", "fed", "ecb", "earnings"]),
+    expect(buildFallbackUpcomingEvents(new Date("2026-07-20T10:00:00.000Z"))).toEqual(
+      [],
     );
   });
 });

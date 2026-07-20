@@ -1,6 +1,5 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   AlertCircle,
@@ -14,12 +13,13 @@ import {
 import BottomNavigation from "@/components/home/BottomNav";
 import { MarketVideoCard } from "@/components/news/MarketVideoCard";
 import { NewsArticleCard } from "@/components/news/NewsArticleCard";
+import { NewsDataStatusBanner } from "@/components/news/NewsDataStatusBanner";
 import { NewsSectionHeader } from "@/components/news/NewsSectionHeader";
 import { TodaysMarketBriefHero } from "@/components/news/TodaysMarketBrief";
 import { UpcomingEventsStrip } from "@/components/news/UpcomingEventsStrip";
 import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
+import { usePortfolioNews } from "@/lib/client/usePortfolioNews";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
-import type { NewsApiResponse } from "@/lib/types/newsContent";
 
 function EmptySection({
   title,
@@ -55,46 +55,17 @@ export default function NewsPage() {
   const {
     holdings,
     portfolioReady,
+    userSub,
     recoveryOffer,
     recoverPortfolio,
     dismissRecovery,
   } = useUserPortfolio();
-  const [payload, setPayload] = useState<NewsApiResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  const loadNews = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await fetch("/api/news", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ holdings }),
-        cache: "no-store",
-      });
-
-      const data = (await response.json()) as NewsApiResponse;
-      if (!response.ok || !data.success) {
-        throw new Error(data.error ?? "News could not be loaded.");
-      }
-
-      setPayload(data);
-    } catch (caught) {
-      setPayload(null);
-      setError(
-        caught instanceof Error ? caught.message : "News could not be loaded.",
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }, [holdings]);
-
-  useEffect(() => {
-    if (!portfolioReady) return;
-    void loadNews();
-  }, [loadNews, portfolioReady]);
+  const { payload, isLoading, error, isStale, reload } = usePortfolioNews(
+    holdings,
+    userSub,
+    portfolioReady,
+  );
 
   if (!portfolioReady) {
     return (
@@ -116,44 +87,54 @@ export default function NewsPage() {
             onDismiss={dismissRecovery}
           />
 
-          {error && (
+          {error ? (
             <div className="flex items-start gap-2 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-800">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
               {error}
             </div>
-          )}
+          ) : null}
 
           {isLoading ? (
             <section className="overflow-hidden rounded-[32px] border border-slate-800 bg-slate-950 p-10 text-center text-white shadow-2xl">
               <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-white/20 border-t-white" />
               <p className="mt-4 text-sm font-semibold text-slate-300">
-                Preparing today&apos;s market brief…
+                Loading verified market headlines…
               </p>
             </section>
           ) : payload ? (
             <>
               <TodaysMarketBriefHero
                 brief={payload.marketBrief}
-                onRefresh={() => void loadNews()}
+                onRefresh={() => void reload()}
                 isRefreshing={isLoading}
+              />
+
+              <NewsDataStatusBanner
+                dataStatus={payload.dataStatus}
+                fetchedAt={payload.fetchedAt}
+                isStale={isStale}
               />
 
               {payload.sourceErrors?.length ? (
                 <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                  Some sources are temporarily unavailable. Showing available
-                  content only.
+                  Some sources are temporarily unavailable. Showing verified content
+                  only from active feeds.
                 </div>
               ) : null}
 
               <section className="space-y-5 sm:space-y-6">
-                <UpcomingEventsStrip events={payload.upcomingEvents} compact />
+                <UpcomingEventsStrip
+                  events={payload.upcomingEvents}
+                  eventsState={payload.dataStatus.eventsState}
+                  compact
+                />
               </section>
 
               <section className="space-y-8">
                 <NewsSectionHeader
                   eyebrow="Portfolio news"
                   title="Relevant to your holdings"
-                  description="Sorted by relevance first, then publication time. Only stories with a clear link to your saved portfolio."
+                  description="Matched using confirmed provider symbols and verified instrument mappings wherever available."
                   icon={<BriefcaseBusiness className="h-6 w-6" />}
                 />
                 {payload.portfolioNews.length > 0 ? (
@@ -165,7 +146,7 @@ export default function NewsPage() {
                 ) : (
                   <EmptySection
                     title="No portfolio matches yet"
-                    description="Add holdings to unlock personalised headlines in your daily brief and portfolio news feed."
+                    description="Add holdings with confirmed instrument mappings to unlock verified portfolio headlines."
                     actionHref="/portfolio"
                     actionLabel="Review portfolio"
                   />
@@ -177,7 +158,7 @@ export default function NewsPage() {
                   <NewsSectionHeader
                     eyebrow="Dividend intelligence"
                     title="Dividend updates for your holdings"
-                    description="High-confidence dividend increases, cuts, ex-dividend dates, and payment announcements linked to your portfolio."
+                    description="Verified dividend-related headlines linked to your portfolio."
                     icon={<Coins className="h-6 w-6" />}
                   />
                   <div className="grid gap-6">
@@ -193,7 +174,7 @@ export default function NewsPage() {
                   <NewsSectionHeader
                     eyebrow="Analyst intelligence"
                     title="Analyst updates for your holdings"
-                    description="Upgrades, downgrades, price-target changes, and estimate revisions linked to your portfolio holdings."
+                    description="Verified analyst-related headlines linked to your portfolio holdings."
                     icon={<LineChart className="h-6 w-6" />}
                   />
                   <div className="grid gap-6">
@@ -206,9 +187,9 @@ export default function NewsPage() {
 
               <section className="space-y-8">
                 <NewsSectionHeader
-                  eyebrow="Macro news"
+                  eyebrow="Market news"
                   title="Broader market context"
-                  description="Macro, rates, inflation, and cross-asset developments without duplicating your portfolio headlines."
+                  description="Macro, equities, crypto, commodities, and geopolitics from verified sources."
                   icon={<Globe2 className="h-6 w-6" />}
                 />
                 {payload.macroNews.length > 0 ? (
@@ -219,8 +200,8 @@ export default function NewsPage() {
                   </div>
                 ) : (
                   <EmptySection
-                    title="No macro stories available"
-                    description="Official feeds may be quiet right now. Refresh your brief shortly."
+                    title="No market stories available"
+                    description="Verified market feeds may be quiet right now, or sources may be temporarily unavailable."
                   />
                 )}
               </section>
@@ -247,7 +228,7 @@ export default function NewsPage() {
               </section>
 
               <p className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-center text-xs leading-6 text-slate-500 sm:text-sm">
-                Commentary and AI summaries are for information only and are not
+                News summaries and interpretations are for information only and are not
                 financial advice.
               </p>
             </>

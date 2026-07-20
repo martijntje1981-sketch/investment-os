@@ -32,10 +32,7 @@ export function MarketVideoCard({ item }: { item: NewsContentItem }) {
         </div>
         <h3 className="mt-4 text-lg font-black leading-8 text-slate-950">{item.title}</h3>
         <p className="mt-3 line-clamp-2 text-sm leading-6 text-slate-600">
-          {item.aiSummary}
-        </p>
-        <p className="mt-3 line-clamp-2 text-sm font-semibold leading-6 text-slate-700">
-          {item.whyThisMatters}
+          {item.summary}
         </p>
         <div className="mt-5 flex items-center justify-between gap-3">
           <p className="text-xs font-semibold text-slate-500">

@@ -13,54 +13,20 @@ function buildInsight(
   label: string,
   text: string,
   kind: TodaysMarketBrief["keyInsights"][number]["kind"],
+  insightType: "fact" | "interpretation",
+  sourceName?: string | null,
 ) {
-  return { id, label, text, kind };
+  return { id, label, text, kind, insightType, sourceName };
 }
 
-function synthesizeMacroInsight(item: NewsContentItem): string {
+function factFromItem(item: NewsContentItem): string {
   const topic = stripTitleSuffix(item.title);
-  return `${item.sourceName}: ${item.aiSummary || topic}`;
+  return `${item.sourceName}: ${item.summary || topic}`;
 }
 
-function synthesizePortfolioInsight(item: NewsContentItem): string {
+function interpretationFromPortfolioItem(item: NewsContentItem): string {
   const symbols = item.matchedSymbols.join(", ");
-  return `${symbols} exposure — ${item.aiSummary || stripTitleSuffix(item.title)}`;
-}
-
-function buildFallbackInsights(
-  macroNews: NewsContentItem[],
-  portfolioNews: NewsContentItem[],
-): TodaysMarketBrief["keyInsights"] {
-  const insights: TodaysMarketBrief["keyInsights"] = [
-    buildInsight(
-      "macro-default",
-      "Macro pulse",
-      "Markets are digesting the latest policy, inflation, and growth signals from official video coverage.",
-      "macro",
-    ),
-    buildInsight(
-      "portfolio-default",
-      "Portfolio lens",
-      portfolioNews.length > 0
-        ? "At least one headline today maps directly to your saved holdings."
-        : "Add holdings to unlock portfolio-specific read-through in tomorrow's brief.",
-      "portfolio",
-    ),
-    buildInsight(
-      "risk-default",
-      "Risk context",
-      "Cross-asset volatility remains sensitive to central-bank guidance and earnings expectations.",
-      "general",
-    ),
-    buildInsight(
-      "action-default",
-      "Stay prepared",
-      "Use upcoming catalysts below to decide what deserves attention before the next portfolio review.",
-      "general",
-    ),
-  ];
-
-  return insights;
+  return `${symbols} exposure — ${item.interpretation}`;
 }
 
 function pickWhatToWatch(
@@ -74,10 +40,14 @@ function pickWhatToWatch(
 
   const topMacro = macroNews[0];
   if (topMacro) {
-    return `Follow ${stripTitleSuffix(topMacro.title)} for the latest macro read-through.`;
+    return `Follow ${stripTitleSuffix(topMacro.title)} (${topMacro.sourceName}) for the latest verified macro headline.`;
   }
 
-  return "Scan upcoming CPI, Fed, and ECB dates for the next volatility catalyst.";
+  return "No verified calendar catalysts are available right now. Check back after the next data refresh.";
+}
+
+function countSources(items: NewsContentItem[]): number {
+  return new Set(items.map((item) => item.sourceName)).size;
 }
 
 export function buildTodaysMarketBrief(
@@ -86,15 +56,21 @@ export function buildTodaysMarketBrief(
   upcomingEvents: UpcomingMarketEvent[],
   updatedAt: string,
 ): TodaysMarketBrief {
+  const allItems = [...portfolioNews, ...macroNews];
+  const sourceCount = countSources(allItems);
+  const hasVerifiedContent = allItems.length > 0 || upcomingEvents.length > 0;
+
   const insights: TodaysMarketBrief["keyInsights"] = [];
 
   if (macroNews[0]) {
     insights.push(
       buildInsight(
-        "macro-1",
-        "Macro headline",
-        synthesizeMacroInsight(macroNews[0]),
+        "macro-fact-1",
+        "Confirmed macro headline",
+        factFromItem(macroNews[0]),
         "macro",
+        "fact",
+        macroNews[0].sourceName,
       ),
     );
   }
@@ -102,10 +78,12 @@ export function buildTodaysMarketBrief(
   if (macroNews[1]) {
     insights.push(
       buildInsight(
-        "macro-2",
+        "macro-fact-2",
         "Macro development",
-        synthesizeMacroInsight(macroNews[1]),
+        factFromItem(macroNews[1]),
         "macro",
+        "fact",
+        macroNews[1].sourceName,
       ),
     );
   }
@@ -113,21 +91,22 @@ export function buildTodaysMarketBrief(
   if (portfolioNews[0]) {
     insights.push(
       buildInsight(
-        "portfolio-1",
-        "Portfolio headline",
-        synthesizePortfolioInsight(portfolioNews[0]),
+        "portfolio-fact-1",
+        "Confirmed portfolio headline",
+        factFromItem(portfolioNews[0]),
         "portfolio",
+        "fact",
+        portfolioNews[0].sourceName,
       ),
     );
-  }
-
-  if (portfolioNews[1]) {
     insights.push(
       buildInsight(
-        "portfolio-2",
-        "Holdings watch",
-        synthesizePortfolioInsight(portfolioNews[1]),
+        "portfolio-read-1",
+        "Portfolio read-through",
+        interpretationFromPortfolioItem(portfolioNews[0]),
         "portfolio",
+        "interpretation",
+        portfolioNews[0].sourceName,
       ),
     );
   }
@@ -137,43 +116,43 @@ export function buildTodaysMarketBrief(
     insights.push(
       buildInsight(
         `event-${nextEvent.id}`,
-        "Calendar catalyst",
+        "Verified calendar event",
         `${nextEvent.title} (${nextEvent.timeLabel}) — ${nextEvent.description}`,
         "general",
+        "fact",
+        nextEvent.source,
       ),
     );
   }
 
-  if (macroNews[2]) {
+  if (macroNews[0] && !portfolioNews[0]) {
     insights.push(
       buildInsight(
-        "macro-3",
-        "Market signal",
-        synthesizeMacroInsight(macroNews[2]),
+        "macro-read-1",
+        "Macro read-through",
+        macroNews[0].interpretation,
         "macro",
+        "interpretation",
+        macroNews[0].sourceName,
       ),
     );
   }
-
-  const keyInsights =
-    insights.length >= 4
-      ? insights.slice(0, 6)
-      : [...insights, ...buildFallbackInsights(macroNews, portfolioNews)].slice(
-          0,
-          6,
-        );
 
   return {
     title: "Today's Market Brief",
     updatedAt,
-    keyInsights,
+    keyInsights: insights.slice(0, 6),
     biggestMacroDevelopment: macroNews[0]
-      ? synthesizeMacroInsight(macroNews[0])
-      : "No major macro headline is available yet — refresh shortly for the latest official coverage.",
+      ? factFromItem(macroNews[0])
+      : "No verified macro headline is available in the current feed.",
+    biggestMacroDevelopmentType: macroNews[0] ? "fact" : "unavailable",
     biggestPortfolioDevelopment: portfolioNews[0]
-      ? synthesizePortfolioInsight(portfolioNews[0])
+      ? factFromItem(portfolioNews[0])
       : null,
+    biggestPortfolioDevelopmentType: portfolioNews[0] ? "fact" : "unavailable",
     whatToWatchToday: pickWhatToWatch(upcomingEvents, macroNews),
+    sourceCount,
+    hasVerifiedContent,
   };
 }
 
@@ -181,10 +160,15 @@ export function createEmptyMarketBrief(updatedAt: string): TodaysMarketBrief {
   return {
     title: "Today's Market Brief",
     updatedAt,
-    keyInsights: buildFallbackInsights([], []),
+    keyInsights: [],
     biggestMacroDevelopment:
-      "Market brief unavailable right now. Refresh to load the latest intelligence.",
+      "Market brief unavailable right now. Refresh to load verified headlines when sources reconnect.",
+    biggestMacroDevelopmentType: "unavailable",
     biggestPortfolioDevelopment: null,
-    whatToWatchToday: "Check upcoming events once the feed reconnects.",
+    biggestPortfolioDevelopmentType: "unavailable",
+    whatToWatchToday:
+      "No verified events or headlines are available until data sources reconnect.",
+    sourceCount: 0,
+    hasVerifiedContent: false,
   };
 }

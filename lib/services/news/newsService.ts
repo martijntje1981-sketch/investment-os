@@ -1,12 +1,10 @@
-import { unstable_cache } from "next/cache";
-
-import { CURATED_YOUTUBE_SOURCES } from "@/lib/services/news/newsSources";
-import { filterFinancialNewsItems } from "@/lib/services/news/financialContentFilter";
-import { createYouTubeProviders } from "@/lib/services/news/providers/youtubeRssProvider";
+import { assignMarketCategories, isMacroNewsCandidate } from "@/lib/services/news/categorizeNews";
 import {
-  partitionNewsHub,
-  personalizeNewsItems,
-} from "@/lib/services/news/relevanceMatching";
+  deduplicateCrossSourceNews,
+  excludeNewsItemIds,
+} from "@/lib/services/news/deduplicateNews";
+import { fetchSharedRawNewsItems } from "@/lib/services/news/fetchNewsFeed";
+import { filterFinancialNewsItems } from "@/lib/services/news/financialContentFilter";
 import {
   buildTodaysMarketBrief,
   createEmptyMarketBrief,
@@ -14,80 +12,127 @@ import {
 import { enrichNewsItems } from "@/lib/services/news/newsSummary";
 import { filterPortfolioAnalystNews } from "@/lib/services/news/analystNews";
 import { filterPortfolioDividendNews } from "@/lib/services/news/dividendNews";
+import {
+  providerSymbolsFromProfiles,
+  rankPortfolioNews,
+  resolveNewsHoldingProfiles,
+  scoreNewsItemWithProfiles,
+} from "@/lib/services/news/portfolioNewsMatching";
+import { STRONG_PORTFOLIO_MATCH_SCORE } from "@/lib/services/news/relevanceMatching";
 import { fetchUpcomingMarketEvents } from "@/lib/services/news/upcomingEvents";
 import type { NewsApiResponse, NewsContentItem } from "@/lib/types/newsContent";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
-const FETCH_TIMEOUT_MS = 8_000;
-const CACHE_SECONDS = 45 * 60;
-
-const youtubeProviders = createYouTubeProviders(CURATED_YOUTUBE_SOURCES);
-
-async function fetchRawNewsItems(): Promise<{
-  items: NewsContentItem[];
-  sourceErrors: NewsApiResponse["sourceErrors"];
-  fetchedAt: string;
-}> {
-  const fetchedAt = new Date().toISOString();
-  const results = await Promise.all(
-    youtubeProviders.map((provider) =>
-      provider.fetchItems({ fetchedAt, timeoutMs: FETCH_TIMEOUT_MS }),
-    ),
-  );
-
-  const sourceErrors = results
-    .filter((result) => result.error)
-    .map((result) => ({
-      sourceId: result.sourceId,
-      sourceName: result.sourceName,
-      error: result.error ?? "Unknown feed error",
-    }));
-
-  const items = results.flatMap((result) => result.items);
-
-  return { items, sourceErrors, fetchedAt };
-}
-
-const getCachedRawNewsItems = unstable_cache(
-  fetchRawNewsItems,
-  ["investment-os-news-youtube-v3"],
-  { revalidate: CACHE_SECONDS },
-);
-
 export async function buildNewsResponse(
   holdings: StoredPortfolioHolding[] = [],
 ): Promise<NewsApiResponse> {
-  const [{ items, sourceErrors, fetchedAt }, upcomingEvents] = await Promise.all([
-    getCachedRawNewsItems(),
-    fetchUpcomingMarketEvents(),
-  ]);
+  const profiles = await resolveNewsHoldingProfiles(holdings);
+  const providerSymbols = providerSymbolsFromProfiles(profiles);
+
+  const [{ items, sourceErrors, fetchedAt, eodhdAvailable }, upcomingResult] =
+    await Promise.all([
+      fetchSharedRawNewsItems(providerSymbols),
+      fetchUpcomingMarketEvents(),
+    ]);
 
   const financialItems = filterFinancialNewsItems(items);
-  const personalized = enrichNewsItems(
-    personalizeNewsItems(financialItems, holdings),
-  );
-  const sections = partitionNewsHub(personalized);
+  const categorized = assignMarketCategories(financialItems);
+  const deduped = deduplicateCrossSourceNews(categorized);
+
+  const scored = deduped.map((item) => scoreNewsItemWithProfiles(item, profiles));
+  const enriched = enrichNewsItems(scored);
+  const sections = partitionNewsHub(enriched);
+
   const dividendNews = filterPortfolioDividendNews(sections.portfolioNews);
   const analystNews = filterPortfolioAnalystNews(sections.portfolioNews);
+  const intelligenceIds = new Set([
+    ...dividendNews.map((item) => item.id),
+    ...analystNews.map((item) => item.id),
+  ]);
+
+  const portfolioNews = excludeNewsItemIds(sections.portfolioNews, intelligenceIds);
+
+  const activeSourceNames = Array.from(
+    new Set(enriched.map((item) => item.sourceName)),
+  );
+
+  const feedsState =
+    enriched.length === 0
+      ? sourceErrors.length > 0
+        ? "unavailable"
+        : "unavailable"
+      : sourceErrors.length > 0
+        ? "partial"
+        : "live";
+
   const marketBrief = buildTodaysMarketBrief(
-    sections.portfolioNews,
+    portfolioNews,
     sections.macroNews,
-    upcomingEvents,
+    upcomingResult.events,
     fetchedAt,
   );
 
   return {
     success: true,
     marketBrief,
-    portfolioNews: sections.portfolioNews,
+    portfolioNews,
     macroNews: sections.macroNews,
     marketVideos: sections.marketVideos,
     dividendNews,
     analystNews,
-    upcomingEvents,
+    upcomingEvents: upcomingResult.events,
+    dataStatus: {
+      feedsState,
+      eventsState: upcomingResult.state,
+      eodhdNewsAvailable: eodhdAvailable,
+      sourceCount: activeSourceNames.length,
+      activeSourceNames,
+    },
     sourceErrors,
     fetchedAt,
   };
 }
 
-export { CURATED_YOUTUBE_SOURCES, createEmptyMarketBrief };
+function normalizeTitleKey(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+export function partitionNewsHub(items: NewsContentItem[]) {
+  const portfolioNews = rankPortfolioNews(
+    items.filter((item) => item.relevanceScore >= STRONG_PORTFOLIO_MATCH_SCORE),
+  ).slice(0, 12);
+
+  const portfolioKeys = new Set(
+    portfolioNews.flatMap((item) => [
+      item.canonicalUrl.toLowerCase(),
+      normalizeTitleKey(item.title),
+    ]),
+  );
+
+  const macroNews = items
+    .filter(
+      (item) =>
+        item.relevanceScore < STRONG_PORTFOLIO_MATCH_SCORE &&
+        isMacroNewsCandidate(item) &&
+        !portfolioKeys.has(item.canonicalUrl.toLowerCase()) &&
+        !portfolioKeys.has(normalizeTitleKey(item.title)),
+    )
+    .sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt))
+    .slice(0, 12);
+
+  const marketVideos = items
+    .filter((item) => item.sourceType === "youtube")
+    .sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt))
+    .slice(0, 12);
+
+  return {
+    portfolioNews,
+    macroNews,
+    marketVideos,
+  };
+}
+
+export { createEmptyMarketBrief };

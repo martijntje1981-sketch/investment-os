@@ -68,6 +68,11 @@ export function analystCacheKey(userSub: string): string {
   return `investment-os-analyst-cache:${userSub}`;
 }
 
+export function newsCacheKey(userSub: string): string {
+  assertUserSub(userSub);
+  return `investment-os-news-cache:${userSub}`;
+}
+
 export function legacyRecoveryDismissedKey(userSub: string): string {
   assertUserSub(userSub);
   return `investment-os-legacy-recovery-dismissed:${userSub}`;

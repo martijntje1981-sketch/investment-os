@@ -37,6 +37,13 @@ function emptyNewsResponse(error?: string) {
     macroNews: [],
     marketVideos: [],
     upcomingEvents: [],
+    dataStatus: {
+      feedsState: "unavailable" as const,
+      eventsState: "provider_unavailable" as const,
+      eodhdNewsAvailable: false,
+      sourceCount: 0,
+      activeSourceNames: [],
+    },
     sourceErrors: [],
     fetchedAt,
     error,

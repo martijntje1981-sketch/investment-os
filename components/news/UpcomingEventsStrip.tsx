@@ -1,7 +1,7 @@
 import { CalendarDays } from "lucide-react";
 
 import { formatEventDate } from "@/components/news/newsFormatting";
-import type { UpcomingMarketEvent } from "@/lib/types/newsContent";
+import type { EventsDataState, UpcomingMarketEvent } from "@/lib/types/newsContent";
 
 const CATEGORY_LABELS: Record<UpcomingMarketEvent["category"], string> = {
   earnings: "Earnings",
@@ -13,15 +13,27 @@ const CATEGORY_LABELS: Record<UpcomingMarketEvent["category"], string> = {
 
 export function UpcomingEventsStrip({
   events,
+  eventsState = "empty",
   compact = false,
 }: {
   events: UpcomingMarketEvent[];
+  eventsState?: EventsDataState;
   compact?: boolean;
 }) {
   if (events.length === 0) {
     return (
       <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-        <p className="text-sm text-slate-500">No upcoming events available right now.</p>
+        <div className="flex items-start gap-3">
+          <CalendarDays className="mt-0.5 h-5 w-5 text-slate-400" />
+          <div>
+            <p className="font-black text-slate-950">No verified upcoming events</p>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              {eventsState === "provider_unavailable"
+                ? "The economic calendar provider is unavailable right now. Events with unverified dates are never shown."
+                : "No verified macro or calendar events matched the current window."}
+            </p>
+          </div>
+        </div>
       </section>
     );
   }
@@ -40,11 +52,11 @@ export function UpcomingEventsStrip({
               Upcoming events
             </p>
             <h2 className="mt-1 text-2xl font-black tracking-[-0.04em] text-slate-950 sm:text-3xl">
-              Catalysts on your radar
+              Verified catalysts
             </h2>
             {!compact && (
               <p className="mt-2 text-sm text-slate-500">
-                Earnings, CPI, Fed, ECB and other macro dates
+                Dates sourced from the connected economic calendar provider
               </p>
             )}
           </div>
@@ -81,6 +93,9 @@ export function UpcomingEventsStrip({
             </p>
             <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-600">
               {event.description}
+            </p>
+            <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-400">
+              Source: {event.source}
             </p>
           </article>
         ))}

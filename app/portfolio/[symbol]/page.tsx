@@ -1122,7 +1122,7 @@ export default function HoldingDetailPage() {
               title="Latest news"
               description="Verified holding-specific news will appear here after the news provider is connected."
               action="Open insights"
-              href="/briefing"
+              href="/news"
             />
             <PlaceholderFeedCard
               icon={<CalendarDays className="h-5 w-5" />}
@@ -1130,7 +1130,7 @@ export default function HoldingDetailPage() {
               title="Upcoming events"
               description="Earnings, distributions, ETF events and relevant macro dates will appear here."
               action="View upcoming events"
-              href="/briefing"
+              href="/news"
             />
           </section>
 

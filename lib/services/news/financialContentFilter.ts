@@ -68,6 +68,10 @@ export function isFinancialMarketContent(item: NewsContentItem): boolean {
     return false;
   }
 
+  if (item.sourceType === "news" && (item.articleSymbols?.length ?? 0) > 0) {
+    return true;
+  }
+
   if (["markets", "macro", "crypto"].includes(item.category)) {
     return FINANCIAL_SIGNAL_PATTERNS.some((pattern) => pattern.test(haystack));
   }

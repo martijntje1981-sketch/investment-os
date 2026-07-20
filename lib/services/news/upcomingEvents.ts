@@ -1,5 +1,7 @@
 import { unstable_cache } from "next/cache";
 
+import type { EventsDataState, UpcomingMarketEvent } from "@/lib/types/newsContent";
+
 export type UpcomingEventCategory =
   | "earnings"
   | "cpi"
@@ -7,15 +9,10 @@ export type UpcomingEventCategory =
   | "ecb"
   | "macro";
 
-export type UpcomingMarketEvent = {
-  id: string;
-  title: string;
-  category: UpcomingEventCategory;
-  date: string;
-  timeLabel: string;
-  country: string;
-  description: string;
-  impact: "High" | "Medium";
+export type UpcomingEventsResult = {
+  events: UpcomingMarketEvent[];
+  state: EventsDataState;
+  source: string | null;
 };
 
 type EodhdEconomicEvent = {
@@ -26,6 +23,8 @@ type EodhdEconomicEvent = {
   previous?: number | null;
   estimate?: number | null;
 };
+
+const EODHD_EVENTS_SOURCE = "EODHD Economic Calendar";
 
 const HIGH_IMPACT_KEYWORDS = [
   "interest rate decision",
@@ -107,7 +106,7 @@ function formatEventDescription(event: EodhdEconomicEvent): string {
   ].filter(Boolean);
 
   if (values.length === 0) {
-    return "This release may influence rates, currencies, and risk appetite across global markets.";
+    return "Verified economic calendar release from EODHD.";
   }
 
   return `${values.join(" · ")}. Markets may react if the print differs from expectations.`;
@@ -115,7 +114,7 @@ function formatEventDescription(event: EodhdEconomicEvent): string {
 
 function formatTimeLabel(dateValue: string): string {
   const date = new Date(`${dateValue}T12:00:00.000Z`);
-  if (Number.isNaN(date.getTime())) return "Date TBC";
+  if (Number.isNaN(date.getTime())) return "Date unavailable";
 
   return new Intl.DateTimeFormat("en-GB", {
     weekday: "short",
@@ -135,6 +134,11 @@ function mapEodhdEvents(events: EodhdEconomicEvent[]): UpcomingMarketEvent[] {
         return null;
       }
 
+      const parsed = Date.parse(`${date}T12:00:00.000Z`);
+      if (Number.isNaN(parsed)) {
+        return null;
+      }
+
       const category = classifyEventCategory(title);
 
       return {
@@ -146,6 +150,7 @@ function mapEodhdEvents(events: EodhdEconomicEvent[]): UpcomingMarketEvent[] {
         country: normaliseText(event.country) || "Global",
         description: formatEventDescription(event),
         impact,
+        source: EODHD_EVENTS_SOURCE,
       };
     })
     .filter((event): event is UpcomingMarketEvent => event !== null)
@@ -153,57 +158,19 @@ function mapEodhdEvents(events: EodhdEconomicEvent[]): UpcomingMarketEvent[] {
     .slice(0, 8);
 }
 
-export function buildFallbackUpcomingEvents(now = new Date()): UpcomingMarketEvent[] {
-  const templates: Array<Omit<UpcomingMarketEvent, "id" | "date" | "timeLabel">> = [
-    {
-      title: "US Consumer Price Index (CPI)",
-      category: "cpi",
-      country: "United States",
-      description:
-        "Inflation data can shift rate expectations and affect both equity and bond positioning.",
-      impact: "High",
-    },
-    {
-      title: "Federal Reserve interest rate decision",
-      category: "fed",
-      country: "United States",
-      description:
-        "Policy guidance and the rate decision often set the tone for global risk assets.",
-      impact: "High",
-    },
-    {
-      title: "ECB monetary policy announcement",
-      category: "ecb",
-      country: "Euro Area",
-      description:
-        "European rate expectations can move EUR assets and broader continental equity markets.",
-      impact: "High",
-    },
-    {
-      title: "Major index constituents earnings updates",
-      category: "earnings",
-      country: "Global",
-      description:
-        "Corporate earnings releases help investors assess growth, margins, and sector leadership.",
-      impact: "Medium",
-    },
-  ];
-
-  return templates.map((template, index) => {
-    const date = createDateString(addDays(now, index + 2));
-    return {
-      ...template,
-      id: `fallback-${template.category}-${date}`,
-      date,
-      timeLabel: formatTimeLabel(date),
-    };
-  });
+/** @deprecated Production must not use fabricated fallback events. Tests only. */
+export function buildFallbackUpcomingEvents(_now = new Date()): UpcomingMarketEvent[] {
+  return [];
 }
 
-async function fetchEconomicEventsFromEodhd(): Promise<UpcomingMarketEvent[]> {
+async function fetchEconomicEventsFromEodhd(): Promise<UpcomingEventsResult> {
   const apiKey = process.env.EODHD_API_KEY;
   if (!apiKey) {
-    return buildFallbackUpcomingEvents();
+    return {
+      events: [],
+      state: "provider_unavailable",
+      source: null,
+    };
   }
 
   const now = new Date();
@@ -220,27 +187,43 @@ async function fetchEconomicEventsFromEodhd(): Promise<UpcomingMarketEvent[]> {
     });
 
     if (!response.ok) {
-      return buildFallbackUpcomingEvents(now);
+      return {
+        events: [],
+        state: "provider_unavailable",
+        source: null,
+      };
     }
 
     const data = (await response.json()) as unknown;
     if (!Array.isArray(data)) {
-      return buildFallbackUpcomingEvents(now);
+      return {
+        events: [],
+        state: "empty",
+        source: EODHD_EVENTS_SOURCE,
+      };
     }
 
     const mapped = mapEodhdEvents(data as EodhdEconomicEvent[]);
-    return mapped.length > 0 ? mapped : buildFallbackUpcomingEvents(now);
+    return {
+      events: mapped,
+      state: mapped.length > 0 ? "live" : "empty",
+      source: EODHD_EVENTS_SOURCE,
+    };
   } catch {
-    return buildFallbackUpcomingEvents(now);
+    return {
+      events: [],
+      state: "provider_unavailable",
+      source: null,
+    };
   }
 }
 
 const getCachedUpcomingEvents = unstable_cache(
   fetchEconomicEventsFromEodhd,
-  ["investment-os-news-upcoming-events-v1"],
+  ["investment-os-news-upcoming-events-v2"],
   { revalidate: 45 * 60 },
 );
 
-export async function fetchUpcomingMarketEvents(): Promise<UpcomingMarketEvent[]> {
+export async function fetchUpcomingMarketEvents(): Promise<UpcomingEventsResult> {
   return getCachedUpcomingEvents();
 }

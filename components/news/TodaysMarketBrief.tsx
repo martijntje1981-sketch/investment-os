@@ -1,4 +1,4 @@
-import { Clock3, Sparkles, Target, TrendingUp } from "lucide-react";
+import { BriefcaseBusiness, Clock3, Newspaper, Target, TrendingUp } from "lucide-react";
 
 import { formatNewsRefreshedAt } from "@/components/news/newsFormatting";
 import type { TodaysMarketBrief } from "@/lib/types/newsContent";
@@ -24,15 +24,14 @@ export function TodaysMarketBriefHero({
         <div className="flex flex-wrap items-start justify-between gap-3 sm:gap-4">
           <div className="min-w-0 flex-1">
             <div className="inline-flex items-center gap-2 rounded-full bg-violet-500/15 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-violet-200">
-              <Sparkles className="h-3.5 w-3.5" />
+              <Newspaper className="h-3.5 w-3.5" />
               Daily intelligence
             </div>
             <h1 className="mt-3 text-2xl font-black tracking-[-0.05em] sm:mt-4 sm:text-4xl lg:text-5xl">
               {brief.title}
             </h1>
             <p className="mt-2 hidden max-w-2xl text-sm leading-6 text-slate-300 sm:block sm:text-base">
-              Your opening read for macro moves, portfolio headlines, and what to
-              watch before the session unfolds.
+              Verified headlines first, with interpretation clearly separated below.
             </p>
           </div>
 
@@ -47,9 +46,14 @@ export function TodaysMarketBriefHero({
           </button>
         </div>
 
-        <p className="mt-3 text-[11px] font-semibold text-slate-400 sm:mt-4 sm:text-xs">
-          Last updated: {formatNewsRefreshedAt(brief.updatedAt)}
-        </p>
+        <div className="mt-3 flex flex-wrap gap-3 text-[11px] font-semibold text-slate-400 sm:mt-4 sm:text-xs">
+          <span>Last updated: {formatNewsRefreshedAt(brief.updatedAt)}</span>
+          {brief.sourceCount > 0 ? (
+            <span>Based on {brief.sourceCount} active sources</span>
+          ) : (
+            <span>No verified sources in the current brief</span>
+          )}
+        </div>
       </div>
 
       <div className="border-b border-white/10 px-4 py-4 sm:px-8 sm:py-5">
@@ -60,7 +64,7 @@ export function TodaysMarketBriefHero({
           <div className="min-w-[240px] shrink-0 rounded-[20px] border border-white/10 bg-white/[0.03] p-4 sm:min-w-0">
             <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.14em] text-blue-300">
               <TrendingUp className="h-3.5 w-3.5" />
-              Macro
+              Macro fact
             </div>
             <p className="mt-2 line-clamp-3 text-sm leading-6 text-slate-100">
               {brief.biggestMacroDevelopment}
@@ -69,12 +73,12 @@ export function TodaysMarketBriefHero({
 
           <div className="min-w-[240px] shrink-0 rounded-[20px] border border-white/10 bg-white/[0.03] p-4 sm:min-w-0">
             <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.14em] text-emerald-300">
-              <Sparkles className="h-3.5 w-3.5" />
-              Portfolio
+              <BriefcaseBusiness className="h-3.5 w-3.5" />
+              Portfolio fact
             </div>
             <p className="mt-2 line-clamp-3 text-sm leading-6 text-slate-100">
               {brief.biggestPortfolioDevelopment ??
-                "Add holdings to unlock personalised portfolio read-through."}
+                "Add holdings to unlock verified portfolio headlines."}
             </p>
           </div>
 
@@ -90,29 +94,47 @@ export function TodaysMarketBriefHero({
         </div>
       </div>
 
-      <div className="px-4 py-4 sm:px-8 sm:py-6">
-        <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
-          Key insights
-        </p>
-        <div className="mt-3 flex gap-3 overflow-x-auto pb-1 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible xl:grid-cols-3">
-          {brief.keyInsights.map((insight) => (
-            <article
-              key={insight.id}
-              className="min-w-[240px] shrink-0 rounded-[20px] border border-white/10 bg-white/[0.04] p-4 sm:min-w-0 sm:p-5"
-            >
-              <span className="rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-slate-200">
-                {KIND_LABELS[insight.kind]}
-              </span>
-              <p className="mt-3 text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
-                {insight.label}
-              </p>
-              <p className="mt-2 line-clamp-4 text-sm leading-6 text-slate-100">
-                {insight.text}
-              </p>
-            </article>
-          ))}
+      {brief.keyInsights.length > 0 ? (
+        <div className="px-4 py-4 sm:px-8 sm:py-6">
+          <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
+            Key insights
+          </p>
+          <div className="mt-3 flex gap-3 overflow-x-auto pb-1 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible xl:grid-cols-3">
+            {brief.keyInsights.map((insight) => (
+              <article
+                key={insight.id}
+                className="min-w-[240px] shrink-0 rounded-[20px] border border-white/10 bg-white/[0.04] p-4 sm:min-w-0 sm:p-5"
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-slate-200">
+                    {KIND_LABELS[insight.kind]}
+                  </span>
+                  <span
+                    className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] ${
+                      insight.insightType === "fact"
+                        ? "bg-blue-500/20 text-blue-100"
+                        : "bg-violet-500/20 text-violet-100"
+                    }`}
+                  >
+                    {insight.insightType === "fact" ? "Fact" : "Interpretation"}
+                  </span>
+                </div>
+                <p className="mt-3 text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
+                  {insight.label}
+                </p>
+                <p className="mt-2 line-clamp-4 text-sm leading-6 text-slate-100">
+                  {insight.text}
+                </p>
+                {insight.sourceName ? (
+                  <p className="mt-3 text-[10px] font-semibold text-slate-500">
+                    Source: {insight.sourceName}
+                  </p>
+                ) : null}
+              </article>
+            ))}
+          </div>
         </div>
-      </div>
+      ) : null}
     </section>
   );
 }
