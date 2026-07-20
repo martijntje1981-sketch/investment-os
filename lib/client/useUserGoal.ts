@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
   GOAL_FORM_DEFAULT,
@@ -9,7 +9,11 @@ import {
   saveUserGoal,
   shouldHandleGoalUpdatedEvent,
 } from "@/lib/client/userGoalStorage";
+import { loadUserPortfolioHoldings } from "@/lib/client/portfolioPricing";
+import { pushPortfolioToRemote } from "@/lib/client/portfolioSyncApi";
+import { applyRemoteSnapshotToLocalCache } from "@/lib/client/portfolioSyncState";
 import { useAuthenticatedUserSub } from "@/lib/client/useAuthenticatedUserSub";
+import { readImportMappingsFromCache } from "@/lib/services/import/mappingMemory";
 import type { GoalSettings } from "@/lib/types/portfolioStorage";
 
 export function useUserGoal() {
@@ -17,6 +21,7 @@ export function useUserGoal() {
   const [goal, setGoal] = useState<GoalSettings | null>(null);
   const [hasSavedGoal, setHasSavedGoal] = useState(false);
   const [goalReady, setGoalReady] = useState(false);
+  const saveRequestRef = useRef<string | null>(null);
 
   const reloadGoal = useCallback(() => {
     if (!userSub) {
@@ -70,6 +75,22 @@ export function useUserGoal() {
       saveUserGoal(userSub, nextGoal);
       setGoal(nextGoal);
       setHasSavedGoal(true);
+
+      const saveKey = saveRequestRef.current ?? crypto.randomUUID();
+      saveRequestRef.current = saveKey;
+
+      void pushPortfolioToRemote({
+        idempotencyKey: `goal:${userSub}:${saveKey}`,
+        holdings: loadUserPortfolioHoldings(userSub),
+        goal: nextGoal,
+        importMappings: readImportMappingsFromCache(userSub),
+      }).then((result) => {
+        if (saveRequestRef.current !== saveKey) return;
+        saveRequestRef.current = null;
+        if (result.ok) {
+          applyRemoteSnapshotToLocalCache(userSub, result.snapshot);
+        }
+      });
     },
     [userSub],
   );

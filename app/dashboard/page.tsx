@@ -14,6 +14,7 @@ import { DashboardInsightCard } from "@/components/dashboard/DashboardInsightCar
 import { DashboardMarketStatus } from "@/components/dashboard/DashboardMarketStatus";
 import { DashboardQuickActions } from "@/components/dashboard/DashboardQuickActions";
 import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
+import PortfolioSyncBanner from "@/components/PortfolioSyncBanner";
 import { buildDashboardInsight } from "@/lib/client/dashboardInsight";
 import { buildDashboardSummary } from "@/lib/client/dashboardSummary";
 import { tryRefreshPortfolioPrices } from "@/lib/client/portfolioPricing";
@@ -29,7 +30,13 @@ export default function DashboardPage() {
     holdings,
     portfolioReady,
     recoveryOffer,
+    syncState,
+    migrationPreview,
     saveHoldings,
+    migratePortfolio,
+    retrySync,
+    useRemotePortfolio,
+    keepLocalPortfolio,
     recoverPortfolio,
     dismissRecovery,
     reloadPortfolio,
@@ -89,6 +96,15 @@ export default function DashboardPage() {
     <>
       <main className="min-h-screen max-w-full overflow-x-hidden bg-[#F4F7FB] px-4 pb-32 pt-4 text-slate-950 sm:px-8 sm:pt-6">
         <div className="mx-auto w-full max-w-6xl space-y-8 sm:space-y-10">
+          <PortfolioSyncBanner
+            syncState={syncState}
+            migrationPreview={migrationPreview}
+            onMigrate={() => void migratePortfolio()}
+            onRetry={() => void retrySync()}
+            onUseRemote={useRemotePortfolio}
+            onKeepLocal={keepLocalPortfolio}
+          />
+
           <PortfolioRecoveryBanner
             offer={recoveryOffer}
             onRecover={() => {
@@ -97,9 +113,9 @@ export default function DashboardPage() {
             onDismiss={dismissRecovery}
           />
 
-          {holdings.length === 0 ? (
+          {holdings.length === 0 && syncState.status !== "loading" ? (
             <DashboardEmptyState />
-          ) : (
+          ) : holdings.length > 0 ? (
             <>
               <DashboardHero summary={summary} />
               <DashboardInsightCard insight={insight} />
@@ -128,7 +144,7 @@ export default function DashboardPage() {
               <DashboardMarketStatus lastUpdatedAt={summary.lastUpdatedAt} />
               <DashboardGoalCard summary={summary} />
             </>
-          )}
+          ) : null}
 
           <DashboardQuickActions />
 

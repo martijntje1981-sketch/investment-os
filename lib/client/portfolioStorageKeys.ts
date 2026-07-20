@@ -77,3 +77,8 @@ export function legacyRecoveryDismissedKey(userSub: string): string {
   assertUserSub(userSub);
   return `investment-os-legacy-recovery-dismissed:${userSub}`;
 }
+
+export function portfolioSyncMetaKey(userSub: string): string {
+  assertUserSub(userSub);
+  return `investment-os-portfolio-sync-meta:${userSub}`;
+}

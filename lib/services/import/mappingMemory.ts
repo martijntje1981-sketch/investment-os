@@ -66,6 +66,19 @@ function writeMappings(userSub: string, mappings: SavedImportMapping[]) {
   );
 }
 
+export function readImportMappingsFromCache(
+  userSub: string,
+): SavedImportMapping[] {
+  return readMappings(userSub);
+}
+
+export function writeImportMappingsToCache(
+  userSub: string,
+  mappings: SavedImportMapping[],
+): void {
+  writeMappings(userSub, mappings);
+}
+
 export function findSavedImportMapping(
   userSub: string,
   row: ImportRow,

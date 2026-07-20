@@ -20,6 +20,7 @@ import {
 import BottomNavigation from "@/components/home/BottomNav";
 import NumericInput from "@/components/NumericInput";
 import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
+import PortfolioSyncBanner from "@/components/PortfolioSyncBanner";
 import {
   HoldingDividendMeta,
 } from "@/components/analysis/DividendIntelligenceSection";
@@ -81,10 +82,17 @@ export default function PortfolioPage() {
     holdings,
     portfolioReady,
     recoveryOffer,
+    syncState,
+    migrationPreview,
     saveHoldings,
+    migratePortfolio,
+    retrySync,
+    useRemotePortfolio,
+    keepLocalPortfolio,
     recoverPortfolio,
     dismissRecovery,
   } = useUserPortfolio();
+  const [isMigrating, setIsMigrating] = useState(false);
   const { quotes: dividendQuotes } = usePortfolioDividends(
     holdings,
     userSub,
@@ -212,6 +220,23 @@ export default function PortfolioPage() {
               </button>
             </div>
           </header>
+
+          <PortfolioSyncBanner
+            syncState={syncState}
+            migrationPreview={migrationPreview}
+            migrating={isMigrating}
+            onMigrate={async () => {
+              setIsMigrating(true);
+              try {
+                await migratePortfolio();
+              } finally {
+                setIsMigrating(false);
+              }
+            }}
+            onRetry={() => void retrySync()}
+            onUseRemote={useRemotePortfolio}
+            onKeepLocal={keepLocalPortfolio}
+          />
 
           <PortfolioRecoveryBanner
             offer={recoveryOffer}

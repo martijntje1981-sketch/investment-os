@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   applyCachedPrices,
   dispatchPortfolioUpdated,
@@ -14,7 +14,27 @@ import {
 } from "@/lib/client/portfolioPricing";
 import { PORTFOLIO_HOLDINGS_UPDATED_EVENT } from "@/lib/client/portfolioStorageKeys";
 import { createPortfolioUpdatedHandler } from "@/lib/client/portfolioUpdatedEvents";
+import {
+  fetchRemotePortfolio,
+  migratePortfolioToRemote,
+  pushPortfolioToRemote,
+} from "@/lib/client/portfolioSyncApi";
+import {
+  applyRemoteSnapshotToLocalCache,
+  type ClientPortfolioSyncState,
+  readPortfolioSyncMeta,
+  recordMigrationSuccess,
+  recordSyncFailure,
+  resolveClientSyncState,
+} from "@/lib/client/portfolioSyncState";
 import { useAuthenticatedUserSub } from "@/lib/client/useAuthenticatedUserSub";
+import { readSavedUserGoal } from "@/lib/client/userGoalStorage";
+import { readImportMappingsFromCache } from "@/lib/services/import/mappingMemory";
+import {
+  buildMigrationIdempotencyKey,
+  portfolioFingerprint,
+} from "@/lib/services/portfolio/idempotency";
+import type { PortfolioSyncPreview } from "@/lib/services/portfolio/types";
 
 export function useUserPortfolio() {
   const { userSub, authReady } = useAuthenticatedUserSub();
@@ -22,6 +42,15 @@ export function useUserPortfolio() {
   const [portfolioReady, setPortfolioReady] = useState(false);
   const [recoveryOffer, setRecoveryOffer] =
     useState<LegacyRecoveryOffer | null>(null);
+  const [syncState, setSyncState] = useState<ClientPortfolioSyncState>({
+    status: "loading",
+  });
+  const [migrationPreview, setMigrationPreview] =
+    useState<PortfolioSyncPreview | null>(null);
+
+  const remoteHydratedRef = useRef(false);
+  const syncRequestRef = useRef<string | null>(null);
+  const saveRequestRef = useRef<{ key: string } | null>(null);
 
   const reloadPortfolio = useCallback(() => {
     if (!userSub) {
@@ -34,11 +63,123 @@ export function useUserPortfolio() {
     setRecoveryOffer(getLegacyRecoveryOffer(userSub));
   }, [userSub]);
 
+  const hydrateFromRemote = useCallback(
+    async (force = false) => {
+      if (!userSub || (!force && remoteHydratedRef.current)) return;
+
+      setSyncState({ status: "loading" });
+      const localHoldings = loadUserPortfolioHoldings(userSub);
+      const goal = readSavedUserGoal(userSub);
+      const importMappings = readImportMappingsFromCache(userSub);
+
+      if (localHoldings.length > 0) {
+        setHoldings(applyCachedPrices(userSub, localHoldings));
+        setPortfolioReady(true);
+      }
+
+      const remoteResult = await fetchRemotePortfolio();
+
+      if (!remoteResult.ok) {
+        if ("unauthorized" in remoteResult && remoteResult.unauthorized) {
+          setSyncState({ status: "ready", source: "local" });
+          setPortfolioReady(true);
+          return;
+        }
+
+        const offline =
+          "offline" in remoteResult && remoteResult.offline === true;
+
+        const remoteSnapshot = null;
+
+        const nextSyncState = resolveClientSyncState(
+          userSub,
+          localHoldings,
+          remoteSnapshot,
+          offline,
+          goal,
+          importMappings,
+        );
+
+        if (localHoldings.length > 0) {
+          setHoldings(applyCachedPrices(userSub, localHoldings));
+        }
+
+        if (nextSyncState.status === "migration_offer") {
+          setMigrationPreview(nextSyncState.preview);
+        } else {
+          setMigrationPreview(null);
+        }
+
+        if (!offline) {
+          setSyncState({
+            status: "sync_error",
+            message:
+              "error" in remoteResult
+                ? remoteResult.error
+                : "Could not reach cloud portfolio. Showing this device copy.",
+            retryable: true,
+          });
+        } else {
+          setSyncState(nextSyncState);
+        }
+
+        remoteHydratedRef.current = true;
+        setPortfolioReady(true);
+        setRecoveryOffer(getLegacyRecoveryOffer(userSub));
+        return;
+      }
+
+      const remoteSnapshot = remoteResult.snapshot;
+
+      const nextSyncState = resolveClientSyncState(
+        userSub,
+        localHoldings,
+        remoteSnapshot,
+        false,
+        goal,
+        importMappings,
+      );
+
+      if (
+        nextSyncState.status === "ready" &&
+        nextSyncState.source === "remote" &&
+        remoteSnapshot
+      ) {
+        const merged = applyRemoteSnapshotToLocalCache(userSub, remoteSnapshot, {
+          preserveLocalPrices: localHoldings,
+        });
+        setHoldings(applyCachedPrices(userSub, merged));
+        dispatchPortfolioUpdated(userSub);
+      } else if (localHoldings.length > 0) {
+        setHoldings(applyCachedPrices(userSub, localHoldings));
+      }
+
+      if (nextSyncState.status === "migration_offer") {
+        setMigrationPreview(nextSyncState.preview);
+      } else {
+        setMigrationPreview(null);
+      }
+
+      setSyncState(nextSyncState);
+
+      remoteHydratedRef.current = true;
+      setPortfolioReady(true);
+      setRecoveryOffer(getLegacyRecoveryOffer(userSub));
+    },
+    [userSub],
+  );
+
   useEffect(() => {
+    remoteHydratedRef.current = false;
+    syncRequestRef.current = null;
+    saveRequestRef.current = null;
+
     if (!authReady) {
       setHoldings([]);
       setRecoveryOffer(null);
       setPortfolioReady(false);
+      setSyncState({ status: "loading" });
+      setMigrationPreview(null);
       return;
     }
 
@@ -46,12 +187,13 @@ export function useUserPortfolio() {
       setHoldings([]);
       setRecoveryOffer(null);
       setPortfolioReady(true);
+      setSyncState({ status: "ready", source: "local" });
+      setMigrationPreview(null);
       return;
     }
 
-    reloadPortfolio();
-    setPortfolioReady(true);
-  }, [authReady, reloadPortfolio, userSub]);
+    void hydrateFromRemote();
+  }, [authReady, hydrateFromRemote, userSub]);
 
   useEffect(() => {
     if (!userSub) return;
@@ -74,16 +216,156 @@ export function useUserPortfolio() {
     };
   }, [reloadPortfolio, userSub]);
 
+  const pushRemoteHoldings = useCallback(
+    async (next: StoredPortfolioHolding[]) => {
+      if (!userSub) return;
+
+      const saveKey =
+        saveRequestRef.current?.key ?? crypto.randomUUID();
+      saveRequestRef.current = { key: saveKey };
+
+      const goal = readSavedUserGoal(userSub);
+      const importMappings = readImportMappingsFromCache(userSub);
+
+      const result = await pushPortfolioToRemote({
+        idempotencyKey: `save:${userSub}:${saveKey}`,
+        holdings: next,
+        goal,
+        importMappings,
+      });
+
+      if (saveRequestRef.current?.key !== saveKey) return;
+
+      if (result.ok) {
+        applyRemoteSnapshotToLocalCache(userSub, result.snapshot, {
+          preserveLocalPrices: next,
+        });
+        recordSyncFailure(userSub, "");
+        return;
+      }
+
+      if ("unauthorized" in result) return;
+
+      recordSyncFailure(userSub, result.error);
+      setSyncState({
+        status: "sync_error",
+        message: result.error,
+        retryable: result.retryable,
+      });
+    },
+    [userSub],
+  );
+
   const saveHoldings = useCallback(
     (next: StoredPortfolioHolding[]) => {
       if (!userSub) return;
+
       writePortfolioToStorage(userSub, next);
       dispatchPortfolioUpdated(userSub);
       setHoldings(applyCachedPrices(userSub, next));
       setRecoveryOffer(getLegacyRecoveryOffer(userSub));
+
+      if (
+        syncState.status === "conflict" ||
+        syncState.status === "migration_offer"
+      ) {
+        return;
+      }
+
+      void pushRemoteHoldings(next);
     },
-    [userSub],
+    [pushRemoteHoldings, syncState.status, userSub],
   );
+
+  const migratePortfolio = useCallback(async () => {
+    if (!userSub || syncRequestRef.current) return false;
+
+    const localHoldings = loadUserPortfolioHoldings(userSub);
+    if (localHoldings.length === 0) return false;
+
+    const goal = readSavedUserGoal(userSub);
+    const importMappings = readImportMappingsFromCache(userSub);
+    const localFingerprint = portfolioFingerprint(localHoldings, userSub);
+    const meta = readPortfolioSyncMeta(userSub);
+    const idempotencyKey =
+      meta.lastMigrationIdempotencyKey ??
+      buildMigrationIdempotencyKey(userSub, localFingerprint);
+
+    syncRequestRef.current = idempotencyKey;
+    setSyncState({ status: "syncing" });
+
+    const result = await migratePortfolioToRemote({
+      idempotencyKey,
+      holdings: localHoldings,
+      goal,
+      importMappings,
+      localFingerprint,
+    });
+
+    syncRequestRef.current = null;
+
+    if (result.ok && result.verified) {
+      const merged = applyRemoteSnapshotToLocalCache(userSub, result.snapshot, {
+        preserveLocalPrices: localHoldings,
+      });
+      setHoldings(applyCachedPrices(userSub, merged));
+      recordMigrationSuccess(userSub, idempotencyKey, localFingerprint);
+      setMigrationPreview(null);
+      setSyncState({ status: "ready", source: "remote" });
+      dispatchPortfolioUpdated(userSub);
+      return true;
+    }
+
+    if (!result.ok) {
+      if ("unauthorized" in result) {
+        setSyncState({
+          status: "sync_error",
+          message: "Migration failed. Your local portfolio was not changed.",
+          retryable: true,
+        });
+        return false;
+      }
+
+      setSyncState({
+        status: "sync_error",
+        message: result.error,
+        retryable: result.retryable,
+      });
+      return false;
+    }
+
+    setSyncState({
+      status: "sync_error",
+      message: "Migration verification failed. Your local portfolio was not changed.",
+      retryable: true,
+    });
+    return false;
+  }, [userSub]);
+
+  const retrySync = useCallback(async () => {
+    remoteHydratedRef.current = false;
+    await hydrateFromRemote(true);
+  }, [hydrateFromRemote]);
+
+  const useRemotePortfolio = useCallback(() => {
+    if (!userSub || syncState.status !== "conflict") return false;
+
+    const merged = applyRemoteSnapshotToLocalCache(
+      userSub,
+      syncState.remoteSnapshot,
+      { preserveLocalPrices: syncState.localHoldings },
+    );
+    setHoldings(applyCachedPrices(userSub, merged));
+    setSyncState({ status: "ready", source: "remote" });
+    dispatchPortfolioUpdated(userSub);
+    return true;
+  }, [syncState, userSub]);
+
+  const keepLocalPortfolio = useCallback(() => {
+    if (!userSub || syncState.status !== "conflict") return false;
+    setSyncState({ status: "ready", source: "local" });
+    return true;
+  }, [syncState, userSub]);
 
   const recoverPortfolio = useCallback(() => {
     if (!userSub) return false;
@@ -105,8 +387,14 @@ export function useUserPortfolio() {
     setHoldings,
     portfolioReady,
     recoveryOffer,
+    syncState,
+    migrationPreview,
     reloadPortfolio,
     saveHoldings,
+    migratePortfolio,
+    retrySync,
+    useRemotePortfolio,
+    keepLocalPortfolio,
     recoverPortfolio,
     dismissRecovery,
   };
