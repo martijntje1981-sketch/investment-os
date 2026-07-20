@@ -31,25 +31,40 @@ export async function resolveNewsHoldingProfiles(
   if (investments.length === 0) return [];
 
   const keywordProfiles = buildHoldingMatchProfiles(investments);
-  const resolved = await resolveBriefingPortfolio(
-    investments.map((holding) => ({
-      symbol: holding.symbol,
-      name: holding.name,
-      isin: holding.isin ?? null,
-      exchange: holding.exchange ?? null,
-      providerSymbol: holding.providerSymbol ?? null,
-      instrumentName: holding.name,
-    })),
-  );
 
-  return keywordProfiles.map((profile, index) => ({
-    id: profile.id,
-    symbol: profile.symbol,
-    name: profile.name,
-    providerSymbol: resolved[index]?.providerSymbol ?? null,
-    isin: resolved[index]?.isin ?? null,
-    strongKeywords: profile.strongKeywords,
-  }));
+  try {
+    const resolved = await resolveBriefingPortfolio(
+      investments.map((holding) => ({
+        symbol: holding.symbol,
+        name: holding.name,
+        isin: holding.isin ?? null,
+        exchange: holding.exchange ?? null,
+        providerSymbol: holding.providerSymbol ?? null,
+        instrumentName: holding.name,
+      })),
+    );
+
+    return keywordProfiles.map((profile, index) => ({
+      id: profile.id,
+      symbol: profile.symbol,
+      name: profile.name,
+      providerSymbol: resolved[index]?.providerSymbol ?? null,
+      isin: resolved[index]?.isin ?? null,
+      strongKeywords: profile.strongKeywords,
+    }));
+  } catch {
+    return keywordProfiles.map((profile) => {
+      const holding = investments.find((item) => item.id === profile.id);
+      return {
+        id: profile.id,
+        symbol: profile.symbol,
+        name: profile.name,
+        providerSymbol: holding?.providerSymbol ?? null,
+        isin: holding?.isin ?? null,
+        strongKeywords: profile.strongKeywords,
+      };
+    });
+  }
 }
 
 function normalizeSymbol(value: string): string {

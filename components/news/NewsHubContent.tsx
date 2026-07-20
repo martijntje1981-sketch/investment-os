@@ -102,8 +102,14 @@ export function NewsHubContent({
 
       {payload.sourceErrors?.length ? (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          Some sources are temporarily unavailable. Showing verified content only
-          from active feeds.
+          <p className="font-semibold">Some sources are temporarily unavailable.</p>
+          <ul className="mt-2 space-y-1">
+            {payload.sourceErrors.map((sourceError) => (
+              <li key={`${sourceError.sourceId}:${sourceError.sourceName}`}>
+                {sourceError.sourceName}: {sourceError.error}
+              </li>
+            ))}
+          </ul>
         </div>
       ) : null}
 

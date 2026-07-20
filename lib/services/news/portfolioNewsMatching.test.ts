@@ -115,4 +115,36 @@ describe("portfolioNewsMatching", () => {
 
     expect(providerSymbolsFromProfiles(profiles)).toEqual(["VWCE.XETRA"]);
   });
+
+  it("falls back to stored provider symbols when instrument matching fails", async () => {
+    const briefing = await import("@/lib/services/briefing/briefingPortfolio");
+    vi.spyOn(briefing, "resolveBriefingPortfolio").mockRejectedValueOnce(
+      new Error("EODHD_API_KEY is missing"),
+    );
+
+    const { resolveNewsHoldingProfiles } = await import(
+      "@/lib/services/news/portfolioNewsMatching"
+    );
+
+    const profiles = await resolveNewsHoldingProfiles([
+      {
+        id: "1",
+        symbol: "AAPL",
+        name: "Apple",
+        quantity: 1,
+        purchasePrice: 100,
+        currentPrice: 100,
+        currency: "EUR",
+        assetType: "investment",
+        providerSymbol: "AAPL.US",
+      },
+    ]);
+
+    expect(profiles).toEqual([
+      expect.objectContaining({
+        symbol: "AAPL",
+        providerSymbol: "AAPL.US",
+      }),
+    ]);
+  });
 });

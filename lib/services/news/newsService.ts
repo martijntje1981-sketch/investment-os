@@ -20,6 +20,7 @@ import {
 } from "@/lib/services/news/portfolioNewsMatching";
 import { STRONG_PORTFOLIO_MATCH_SCORE } from "@/lib/services/news/relevanceMatching";
 import { fetchUpcomingMarketEvents } from "@/lib/services/news/upcomingEvents";
+import { createDegradedNewsResponse } from "@/lib/services/news/newsResponseFactory";
 import type { NewsApiResponse, NewsContentItem } from "@/lib/types/newsContent";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
@@ -91,6 +92,22 @@ export async function buildNewsResponse(
     sourceErrors,
     fetchedAt,
   };
+}
+
+export async function safeBuildNewsResponse(
+  holdings: StoredPortfolioHolding[] = [],
+): Promise<NewsApiResponse> {
+  try {
+    return await buildNewsResponse(holdings);
+  } catch (error) {
+    console.error("[news] buildNewsResponse failed", error);
+    return createDegradedNewsResponse({
+      recoveryMessage:
+        error instanceof Error
+          ? "News matching or provider setup failed temporarily."
+          : "News could not be loaded.",
+    });
+  }
 }
 
 function normalizeTitleKey(title: string): string {

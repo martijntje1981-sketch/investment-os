@@ -3,6 +3,7 @@
  */
 
 import { newsCacheKey } from "@/lib/client/portfolioStorageKeys";
+import { coerceNewsApiResponse } from "@/lib/services/news/newsResponseFactory";
 import type { NewsApiResponse } from "@/lib/types/newsContent";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
@@ -43,6 +44,34 @@ export function isNewsCacheFresh(cachedAt: string | undefined): boolean {
   return Number.isFinite(age) && age >= 0 && age < CACHE_MAX_AGE_MS;
 }
 
+async function readNewsResponse(response: Response): Promise<NewsApiResponse> {
+  let body: unknown = null;
+
+  try {
+    body = await response.json();
+  } catch {
+    body = null;
+  }
+
+  if (isRenderableNewsPayload(body)) {
+    return coerceNewsApiResponse(body);
+  }
+
+  if (!response.ok) {
+    return coerceNewsApiResponse(null, "News feeds are temporarily unavailable.");
+  }
+
+  return coerceNewsApiResponse(body);
+}
+
+function isRenderableNewsPayload(value: unknown): value is NewsApiResponse {
+  return (
+    Boolean(value) &&
+    typeof value === "object" &&
+    "marketBrief" in (value as NewsApiResponse)
+  );
+}
+
 export async function refreshPortfolioNews(
   userSub: string,
   holdings: StoredPortfolioHolding[],
@@ -54,11 +83,7 @@ export async function refreshPortfolioNews(
     cache: "no-store",
   });
 
-  const data = (await response.json()) as NewsApiResponse;
-  if (!response.ok || !data.success) {
-    throw new Error(data.error ?? "News could not be loaded.");
-  }
-
+  const data = await readNewsResponse(response);
   writeNewsCache(userSub, data);
   return data;
 }
@@ -74,21 +99,48 @@ export async function tryRefreshPortfolioNews(
   }
 
   if (!userSub) {
-    const response = await fetch("/api/news", {
-      method: "GET",
-      cache: "no-store",
-    }).then((res) => res.json() as Promise<NewsApiResponse>);
+    try {
+      const response = await fetch("/api/news", {
+        method: "GET",
+        cache: "no-store",
+      }).then((res) => readNewsResponse(res));
 
-    return { response, fromCache: false, isStale: false };
+      return {
+        response,
+        fromCache: false,
+        isStale: response.dataStatus.feedsState !== "live",
+      };
+    } catch {
+      return {
+        response: coerceNewsApiResponse(
+          null,
+          "News feeds are temporarily unavailable.",
+        ),
+        fromCache: false,
+        isStale: false,
+      };
+    }
   }
 
   try {
     const response = await refreshPortfolioNews(userSub, holdings);
-    return { response, fromCache: false, isStale: false };
+    return {
+      response,
+      fromCache: false,
+      isStale: response.dataStatus.feedsState !== "live",
+    };
   } catch {
     if (cached) {
       return { response: cached.response, fromCache: true, isStale: true };
     }
-    throw new Error("News could not be loaded.");
+
+    return {
+      response: coerceNewsApiResponse(
+        null,
+        "News feeds are temporarily unavailable.",
+      ),
+      fromCache: false,
+      isStale: false,
+    };
   }
 }

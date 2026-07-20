@@ -10,7 +10,7 @@ import { createEmptyMarketBrief } from "@/lib/services/news/marketBrief";
 import type { NewsApiResponse } from "@/lib/types/newsContent";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
-const EMPTY_RESPONSE: NewsApiResponse = {
+export const EMPTY_NEWS_RESPONSE: NewsApiResponse = {
   success: true,
   marketBrief: createEmptyMarketBrief(new Date().toISOString()),
   portfolioNews: [],
@@ -33,33 +33,31 @@ export function usePortfolioNews(
   userSub: string | null,
   enabled = true,
 ) {
-  const [payload, setPayload] = useState<NewsApiResponse | null>(() => {
-    if (!userSub) return null;
-    return readNewsCache(userSub)?.response ?? null;
+  const [payload, setPayload] = useState<NewsApiResponse>(() => {
+    if (!userSub) return EMPTY_NEWS_RESPONSE;
+    return readNewsCache(userSub)?.response ?? EMPTY_NEWS_RESPONSE;
   });
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [isStale, setIsStale] = useState(false);
 
   const reload = useCallback(async () => {
     if (!enabled) {
-      setPayload(EMPTY_RESPONSE);
+      setPayload(EMPTY_NEWS_RESPONSE);
       setIsLoading(false);
+      setIsStale(false);
       return;
     }
 
     setIsLoading(true);
-    setError(null);
 
     try {
       const result = await tryRefreshPortfolioNews(userSub, holdings);
       setPayload(result.response);
       setIsStale(result.isStale);
-    } catch (caught) {
-      setPayload(null);
-      setError(
-        caught instanceof Error ? caught.message : "News could not be loaded.",
-      );
+    } catch {
+      const cached = userSub ? readNewsCache(userSub) : null;
+      setPayload(cached?.response ?? EMPTY_NEWS_RESPONSE);
+      setIsStale(true);
     } finally {
       setIsLoading(false);
     }
@@ -72,7 +70,6 @@ export function usePortfolioNews(
   return {
     payload,
     isLoading,
-    error,
     isStale,
     reload,
   };

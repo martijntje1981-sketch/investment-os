@@ -58,6 +58,16 @@ describe("news hub UI structure", () => {
     expect(source).toContain("PortfolioAnalysisPage");
   });
 
+  it("always renders the news hub shell even while data is unavailable", () => {
+    const newsPage = readFileSync(
+      path.resolve(process.cwd(), "app/news/page.tsx"),
+      "utf8",
+    );
+
+    expect(newsPage).toContain("NewsHubContent");
+    expect(newsPage).not.toContain("News could not be loaded.");
+  });
+
   it("routes bottom navigation news item to /news", () => {
     const source = readFileSync(
       path.resolve(process.cwd(), "components/home/BottomNav.tsx"),

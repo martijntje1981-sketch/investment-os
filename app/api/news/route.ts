@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
-import { buildNewsResponse, createEmptyMarketBrief } from "@/lib/services/news/newsService";
+import { createDegradedNewsResponse } from "@/lib/services/news/newsResponseFactory";
+import { safeBuildNewsResponse } from "@/lib/services/news/newsService";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
 export const dynamic = "force-dynamic";
@@ -28,52 +29,52 @@ function normalizeHoldings(parsed: unknown): StoredPortfolioHolding[] {
     });
 }
 
-function emptyNewsResponse(error?: string) {
-  const fetchedAt = new Date().toISOString();
-  return {
-    success: false,
-    marketBrief: createEmptyMarketBrief(fetchedAt),
-    portfolioNews: [],
-    macroNews: [],
-    marketVideos: [],
-    upcomingEvents: [],
-    dataStatus: {
-      feedsState: "unavailable" as const,
-      eventsState: "provider_unavailable" as const,
-      eodhdNewsAvailable: false,
-      sourceCount: 0,
-      activeSourceNames: [],
+function jsonNewsResponse(payload: ReturnType<typeof createDegradedNewsResponse>) {
+  return NextResponse.json(payload, {
+    status: 200,
+    headers: {
+      "Cache-Control": `private, max-age=0, s-maxage=${CACHE_SECONDS}, stale-while-revalidate=${CACHE_SECONDS}`,
     },
-    sourceErrors: [],
-    fetchedAt,
-    error,
-  };
+  });
 }
 
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as NewsRequestBody;
     const holdings = normalizeHoldings(body.holdings);
-    const payload = await buildNewsResponse(holdings);
-
-    return NextResponse.json(payload, {
-      headers: {
-        "Cache-Control": `private, max-age=0, s-maxage=${CACHE_SECONDS}, stale-while-revalidate=${CACHE_SECONDS}`,
-      },
-    });
-  } catch {
-    return NextResponse.json(emptyNewsResponse("News could not be loaded."), {
-      status: 500,
-    });
+    const payload = await safeBuildNewsResponse(holdings);
+    return jsonNewsResponse(payload);
+  } catch (error) {
+    console.error("[news POST]", error);
+    return jsonNewsResponse(
+      createDegradedNewsResponse({
+        recoveryMessage: "News request could not be processed.",
+      }),
+    );
   }
 }
 
 export async function GET() {
-  const payload = await buildNewsResponse([]);
-
-  return NextResponse.json(payload, {
-    headers: {
-      "Cache-Control": `public, s-maxage=${CACHE_SECONDS}, stale-while-revalidate=${CACHE_SECONDS}`,
-    },
-  });
+  try {
+    const payload = await safeBuildNewsResponse([]);
+    return NextResponse.json(payload, {
+      status: 200,
+      headers: {
+        "Cache-Control": `public, s-maxage=${CACHE_SECONDS}, stale-while-revalidate=${CACHE_SECONDS}`,
+      },
+    });
+  } catch (error) {
+    console.error("[news GET]", error);
+    return NextResponse.json(
+      createDegradedNewsResponse({
+        recoveryMessage: "News request could not be processed.",
+      }),
+      {
+        status: 200,
+        headers: {
+          "Cache-Control": `public, s-maxage=${CACHE_SECONDS}, stale-while-revalidate=${CACHE_SECONDS}`,
+        },
+      },
+    );
+  }
 }
