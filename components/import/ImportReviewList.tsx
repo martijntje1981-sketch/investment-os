@@ -7,6 +7,7 @@ import {
   type ExtractionReviewField,
 } from "@/lib/services/extraction/fieldConfidence";
 import {
+  getPurchaseDateValidationError,
   importTierLabel,
   roundConfidencePercent,
   type ImportRow,
@@ -89,6 +90,9 @@ function ImportReviewCard({
     tier === "blocked" ||
     !row.providerSymbol ||
     row.matchMethod === "unresolved";
+  const purchaseDateError = getPurchaseDateValidationError(row.purchaseDate);
+  const showOptionalPurchaseDate =
+    row.assetType !== "cash" && !uncertainFields.includes("purchaseDate");
 
   return (
     <article className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm">
@@ -151,6 +155,10 @@ function ImportReviewCard({
           </div>
         ) : null}
 
+        {showOptionalPurchaseDate ? (
+          <OptionalPurchaseDateField row={row} onChange={onFieldChange} />
+        ) : null}
+
         {needsMatchReview && alternatives.length > 0 ? (
           <div>
             <p className="mb-2 text-[11px] font-black uppercase tracking-[0.1em] text-slate-400">
@@ -196,10 +204,16 @@ function ImportReviewCard({
           </div>
         ) : null}
 
+        {purchaseDateError ? (
+          <p className="text-sm font-semibold text-red-700">{purchaseDateError}</p>
+        ) : null}
+
         <button
           type="button"
           onClick={onConfirm}
-          disabled={!row.providerSymbol && needsMatchReview}
+          disabled={
+            (!row.providerSymbol && needsMatchReview) || purchaseDateError !== null
+          }
           className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
         >
           <Check className="h-4 w-4" />
@@ -299,6 +313,22 @@ function UncertainFieldEditor({
     );
   }
 
+  if (field === "purchaseDate") {
+    return (
+      <label className="block">
+        <span className="mb-1.5 block text-[11px] font-black uppercase tracking-[0.1em] text-slate-400">
+          {label}
+        </span>
+        <input
+          type="date"
+          value={row.purchaseDate ?? ""}
+          onChange={(event) => onChange(event.target.value)}
+          className={inputClass}
+        />
+      </label>
+    );
+  }
+
   const textValue =
     field === "name"
       ? row.name
@@ -306,9 +336,7 @@ function UncertainFieldEditor({
         ? row.isin ?? ""
         : field === "ticker"
           ? row.symbol
-          : field === "exchange"
-            ? row.exchange ?? ""
-            : row.purchaseDate ?? "";
+          : row.exchange ?? "";
 
   return (
     <label className="block">
@@ -319,6 +347,28 @@ function UncertainFieldEditor({
         value={textValue}
         onChange={(event) => onChange(event.target.value)}
         className={inputClass}
+      />
+    </label>
+  );
+}
+
+function OptionalPurchaseDateField({
+  row,
+  onChange,
+}: {
+  row: ImportRow;
+  onChange: (field: ExtractionReviewField, value: string | number) => void;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-[11px] font-black uppercase tracking-[0.1em] text-slate-400">
+        Purchase date <span className="font-semibold normal-case text-slate-500">(optional)</span>
+      </span>
+      <input
+        type="date"
+        value={row.purchaseDate ?? ""}
+        onChange={(event) => onChange("purchaseDate", event.target.value)}
+        className="w-full min-h-[48px] rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold"
       />
     </label>
   );

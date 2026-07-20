@@ -30,6 +30,7 @@ import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 import {
   annotateImportRow,
   applySavedMappingsToRows,
+  applyImportPurchaseDateToRow,
   buildImportReviewPlan,
   canImportRows,
   confirmImportRow,
@@ -228,8 +229,7 @@ export default function UploadPage() {
             next.currentPrice = numeric;
             break;
           case "purchaseDate":
-            next.purchaseDate = String(value) || null;
-            break;
+            return applyImportPurchaseDateToRow(row, value);
           default:
             break;
         }

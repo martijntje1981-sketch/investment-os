@@ -85,7 +85,10 @@ export function getExtractionFieldsNeedingReview(
   ) {
     fields.push("currentPrice");
   }
-  if (fieldConfidence(row, "purchaseDate") < EXTRACTION_FIELD_REVIEW_THRESHOLD) {
+  if (
+    row.purchaseDate &&
+    fieldConfidence(row, "purchaseDate") < EXTRACTION_FIELD_REVIEW_THRESHOLD
+  ) {
     fields.push("purchaseDate");
   }
 

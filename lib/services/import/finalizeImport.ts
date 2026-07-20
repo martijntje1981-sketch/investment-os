@@ -5,6 +5,7 @@
 import { normalizeHoldingForSave } from "@/lib/client/portfolioPricing";
 import { annotateImportRow } from "@/lib/services/import/confidencePolicy";
 import type { ImportRow } from "@/lib/services/import/types";
+import { normalizeImportPurchaseDate } from "@/lib/services/import/purchaseDate";
 import { applyResolvedToHolding } from "@/lib/services/instruments/applyResolved";
 import type { ResolvedInstrument } from "@/lib/types/instrument";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
@@ -40,6 +41,7 @@ export function applyMatchResultToImportRow(
 export function confirmImportRow(row: ImportRow): ImportRow {
   return annotateImportRow({
     ...row,
+    purchaseDate: normalizeImportPurchaseDate(row.purchaseDate),
     userConfirmed: true,
     requiresConfirmation: false,
   });
