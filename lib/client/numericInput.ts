@@ -42,6 +42,18 @@ export function formatNumericInputDisplay(value: number): string {
   return String(value);
 }
 
+/** Parse optional numeric input; empty field stays unset (undefined). */
+export function parseOptionalNumericInput(raw: string): number | undefined {
+  const trimmed = sanitizeNumericInput(raw.trim());
+
+  if (trimmed === "" || trimmed === ".") {
+    return undefined;
+  }
+
+  const parsed = Number(trimmed);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
 /** Whether a sanitized string represents an explicit zero entry. */
 export function isExplicitZeroInput(raw: string): boolean {
   const trimmed = sanitizeNumericInput(raw.trim());

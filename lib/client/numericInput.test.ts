@@ -4,6 +4,7 @@ import {
   formatNumericInputDisplay,
   isExplicitZeroInput,
   parseNumericInput,
+  parseOptionalNumericInput,
   sanitizeNumericInput,
 } from "@/lib/client/numericInput";
 
@@ -29,6 +30,13 @@ describe("numericInput", () => {
   it("parses empty input as zero for submission", () => {
     expect(parseNumericInput("")).toBe(0);
     expect(parseNumericInput(".")).toBe(0);
+  });
+
+  it("keeps optional numeric input unset when blank", () => {
+    expect(parseOptionalNumericInput("")).toBeUndefined();
+    expect(parseOptionalNumericInput(".")).toBeUndefined();
+    expect(parseOptionalNumericInput("0")).toBe(0);
+    expect(parseOptionalNumericInput("1500")).toBe(1500);
   });
 
   it("keeps decimal typing intact before blur", () => {

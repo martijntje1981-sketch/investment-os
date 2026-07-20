@@ -21,7 +21,10 @@ import {
   computeGoalProgress,
   GOAL_FORM_DEFAULT,
   isGoalAchieved,
+  sanitizeGoalForSave,
 } from "@/lib/client/userGoalStorage";
+import { formatOptionalPassiveIncomeDisplay } from "@/lib/client/goalPassiveIncome";
+import { parseOptionalNumericInput, sanitizeNumericInput } from "@/lib/client/numericInput";
 import { useUserGoal } from "@/lib/client/useUserGoal";
 import { usePortfolioDividends } from "@/lib/client/usePortfolioDividends";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
@@ -126,7 +129,12 @@ export default function GoalsPage() {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!userSub) return;
-    persistGoal(goal);
+
+    const normalized = sanitizeGoalForSave(goal);
+    if (!normalized) return;
+
+    persistGoal(normalized);
+    setGoal(normalized);
     setSaved(true);
   }
 
@@ -215,21 +223,23 @@ export default function GoalsPage() {
                   step={0.5}
                   onChange={(value) => updateGoal("expectedAnnualReturn", value)}
                 />
-                <GoalInput
+                <OptionalGoalInput
                   label="Passive income target (optional)"
                   icon={<PiggyBank className="h-4 w-4" />}
                   prefix="€"
-                  value={goal.passiveIncomeTarget ?? 0}
-                  min={0}
+                  value={goal.passiveIncomeTarget}
                   step={500}
                   onChange={(value) => {
                     setSaved(false);
-                    const parsed = Number(value);
-                    setGoal((current) => ({
-                      ...current,
-                      passiveIncomeTarget:
-                        Number.isFinite(parsed) && parsed > 0 ? parsed : undefined,
-                    }));
+                    setGoal((current) => {
+                      if (value === undefined) {
+                        const next = { ...current };
+                        delete next.passiveIncomeTarget;
+                        return next;
+                      }
+
+                      return { ...current, passiveIncomeTarget: value };
+                    });
                   }}
                 />
               </div>
@@ -343,6 +353,80 @@ function GoalInput({
           className="min-w-0 flex-1 bg-transparent px-2 py-3.5 text-base font-bold outline-none"
         />
         {suffix && <span className="font-bold text-slate-400">{suffix}</span>}
+      </span>
+    </label>
+  );
+}
+
+function OptionalGoalInput({
+  label,
+  icon,
+  prefix,
+  value,
+  onChange,
+}: {
+  label: string;
+  icon: React.ReactNode;
+  prefix?: string;
+  value?: number;
+  step?: number;
+  onChange: (value: number | undefined) => void;
+}) {
+  const [text, setText] = useState(() => formatOptionalPassiveIncomeDisplay(value));
+  const [focused, setFocused] = useState(false);
+
+  useEffect(() => {
+    if (!focused) {
+      setText(formatOptionalPassiveIncomeDisplay(value));
+    }
+  }, [focused, value]);
+
+  return (
+    <label className="block">
+      <span className="flex items-center gap-2 text-sm font-bold text-slate-700">
+        {icon}
+        {label}
+      </span>
+      <span className="mt-2 flex items-center rounded-xl border border-slate-200 bg-slate-50 px-4 focus-within:border-violet-400 focus-within:ring-4 focus-within:ring-violet-100">
+        {prefix && <span className="font-bold text-slate-400">{prefix}</span>}
+        <input
+          type="text"
+          inputMode="decimal"
+          value={text}
+          placeholder="0.00"
+          onFocus={() => setFocused(true)}
+          onBlur={() => {
+            setFocused(false);
+            const parsed = parseOptionalNumericInput(text);
+            if (parsed === undefined) {
+              onChange(undefined);
+              setText("");
+              return;
+            }
+
+            if (parsed < 0) {
+              setText(formatOptionalPassiveIncomeDisplay(value));
+              return;
+            }
+
+            onChange(parsed);
+            setText(formatOptionalPassiveIncomeDisplay(parsed));
+          }}
+          onChange={(event) => {
+            const next = sanitizeNumericInput(event.target.value);
+            setText(next);
+            const parsed = parseOptionalNumericInput(next);
+            if (parsed === undefined) {
+              onChange(undefined);
+              return;
+            }
+
+            if (parsed >= 0) {
+              onChange(parsed);
+            }
+          }}
+          className="min-w-0 flex-1 bg-transparent px-2 py-3.5 text-base font-bold outline-none"
+        />
       </span>
     </label>
   );

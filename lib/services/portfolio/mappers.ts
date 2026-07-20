@@ -6,6 +6,10 @@ import {
   resolveRemoteHoldingId,
 } from "@/lib/services/portfolio/idempotency";
 import { isValidMarketPrice } from "@/lib/client/portfolioPerformance";
+import {
+  normalizePassiveIncomeTarget,
+  passiveIncomeTargetForDatabase,
+} from "@/lib/client/goalPassiveIncome";
 import type {
   DbGoalRow,
   DbHoldingRow,
@@ -87,15 +91,16 @@ export function mapDbHoldingToStored(
 export function mapDbGoalToStored(row: DbGoalRow | null): GoalSettings | null {
   if (!row) return null;
 
+  const passiveIncomeTarget = normalizePassiveIncomeTarget(
+    row.passive_income_target,
+  );
+
   return {
     targetValue: toNumber(row.target_value),
     targetYear: row.target_year,
     monthlyContribution: toNumber(row.monthly_contribution),
     expectedAnnualReturn: toNumber(row.expected_annual_return),
-    ...(row.passive_income_target != null &&
-    toNumber(row.passive_income_target) > 0
-      ? { passiveIncomeTarget: toNumber(row.passive_income_target) }
-      : {}),
+    ...(passiveIncomeTarget !== undefined ? { passiveIncomeTarget } : {}),
   };
 }
 
@@ -192,7 +197,9 @@ export function mapGoalToDbInsert(goal: GoalSettings, userId: string) {
     target_year: goal.targetYear,
     monthly_contribution: goal.monthlyContribution,
     expected_annual_return: goal.expectedAnnualReturn,
-    passive_income_target: goal.passiveIncomeTarget ?? null,
+    passive_income_target: passiveIncomeTargetForDatabase(
+      goal.passiveIncomeTarget,
+    ),
     is_active: true,
   };
 }

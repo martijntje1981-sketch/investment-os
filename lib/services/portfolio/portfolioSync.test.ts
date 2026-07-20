@@ -438,6 +438,41 @@ describe("client portfolio sync state", () => {
     applyRemoteSnapshotToLocalCache(USER_ID, remote);
     expect(localStorage.getItem(goalStorageKey(USER_ID))).toContain("500000");
   });
+
+  it("writes passive income variants to local cache from remote snapshot", () => {
+    applyRemoteSnapshotToLocalCache(USER_ID, {
+      ...emptySnapshot(),
+      goal: {
+        targetValue: 500000,
+        targetYear: 2035,
+        monthlyContribution: 1000,
+        expectedAnnualReturn: 8,
+        passiveIncomeTarget: 0,
+      },
+    });
+    expect(JSON.parse(localStorage.getItem(goalStorageKey(USER_ID)) ?? "{}")).toEqual({
+      targetValue: 500000,
+      targetYear: 2035,
+      monthlyContribution: 1000,
+      expectedAnnualReturn: 8,
+      passiveIncomeTarget: 0,
+    });
+
+    applyRemoteSnapshotToLocalCache(USER_ID, {
+      ...emptySnapshot(),
+      goal: {
+        targetValue: 500000,
+        targetYear: 2035,
+        monthlyContribution: 1000,
+        expectedAnnualReturn: 8,
+        passiveIncomeTarget: 12000,
+      },
+    });
+    expect(
+      JSON.parse(localStorage.getItem(goalStorageKey(USER_ID)) ?? "{}")
+        .passiveIncomeTarget,
+    ).toBe(12000);
+  });
 });
 
 function writePortfolio(holdings: StoredPortfolioHolding[]) {

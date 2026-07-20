@@ -8,6 +8,7 @@ import {
   goalStorageKey,
   isValidUserSub,
 } from "@/lib/client/portfolioStorageKeys";
+import { normalizePassiveIncomeTarget } from "@/lib/client/goalPassiveIncome";
 import type { GoalSettings } from "@/lib/types/portfolioStorage";
 
 export const GOAL_UPDATED_EVENT = "investment-os-goal-updated";
@@ -25,6 +26,9 @@ function normalizeGoal(parsed: Partial<GoalSettings>): GoalSettings | null {
   const targetYear = Number(parsed.targetYear);
   const monthlyContribution = Number(parsed.monthlyContribution);
   const expectedAnnualReturn = Number(parsed.expectedAnnualReturn);
+  const passiveIncomeTarget = normalizePassiveIncomeTarget(
+    parsed.passiveIncomeTarget,
+  );
 
   if (
     !Number.isFinite(targetValue) ||
@@ -44,11 +48,12 @@ function normalizeGoal(parsed: Partial<GoalSettings>): GoalSettings | null {
     targetYear,
     monthlyContribution,
     expectedAnnualReturn,
-    ...(Number.isFinite(Number(parsed.passiveIncomeTarget)) &&
-    Number(parsed.passiveIncomeTarget) > 0
-      ? { passiveIncomeTarget: Number(parsed.passiveIncomeTarget) }
-      : {}),
+    ...(passiveIncomeTarget !== undefined ? { passiveIncomeTarget } : {}),
   };
+}
+
+export function sanitizeGoalForSave(goal: GoalSettings): GoalSettings | null {
+  return normalizeGoal(goal);
 }
 
 export function readSavedUserGoal(userSub: string): GoalSettings | null {
@@ -82,7 +87,10 @@ export function dispatchGoalUpdated(userSub: string): void {
 }
 
 export function saveUserGoal(userSub: string, goal: GoalSettings): void {
-  writeUserGoal(userSub, goal);
+  const normalized = sanitizeGoalForSave(goal);
+  if (!normalized) return;
+
+  writeUserGoal(userSub, normalized);
   dispatchGoalUpdated(userSub);
 }
 

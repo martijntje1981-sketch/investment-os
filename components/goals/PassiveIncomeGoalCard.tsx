@@ -2,6 +2,7 @@ import Link from "next/link";
 import { TrendingUp } from "lucide-react";
 
 import { formatPortfolioCurrency, formatPortfolioPercent } from "@/lib/client/portfolioAnalysis";
+import { hasPassiveIncomeTarget } from "@/lib/client/goalPassiveIncome";
 import { computePassiveIncomeProgress } from "@/lib/services/dividends";
 import type { PortfolioDividendSnapshot } from "@/lib/types/dividends";
 
@@ -16,7 +17,7 @@ export function PassiveIncomeGoalCard({
     snapshot.estimatedAnnualIncomeEur,
     passiveIncomeTarget,
   );
-  const hasTarget = Boolean(passiveIncomeTarget && passiveIncomeTarget > 0);
+  const hasTarget = hasPassiveIncomeTarget(passiveIncomeTarget);
 
   return (
     <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">

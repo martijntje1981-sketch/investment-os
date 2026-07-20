@@ -169,6 +169,12 @@ export function computePassiveIncomeProgress(
   annualIncomeEur: number,
   passiveIncomeTargetEur: number | null | undefined,
 ): number {
-  if (!passiveIncomeTargetEur || passiveIncomeTargetEur <= 0) return 0;
+  if (
+    passiveIncomeTargetEur == null ||
+    !Number.isFinite(passiveIncomeTargetEur) ||
+    passiveIncomeTargetEur <= 0
+  ) {
+    return 0;
+  }
   return Math.min((annualIncomeEur / passiveIncomeTargetEur) * 100, 100);
 }
