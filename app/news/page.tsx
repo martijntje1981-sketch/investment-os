@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   AlertCircle,
   BriefcaseBusiness,
+  Coins,
   Globe2,
   Newspaper,
   PlayCircle,
@@ -169,6 +170,22 @@ export default function NewsPage() {
                   />
                 )}
               </section>
+
+              {(payload.dividendNews?.length ?? 0) > 0 ? (
+                <section className="space-y-8">
+                  <NewsSectionHeader
+                    eyebrow="Dividend intelligence"
+                    title="Dividend updates for your holdings"
+                    description="High-confidence dividend increases, cuts, ex-dividend dates, and payment announcements linked to your portfolio."
+                    icon={<Coins className="h-6 w-6" />}
+                  />
+                  <div className="grid gap-6">
+                    {payload.dividendNews?.map((item) => (
+                      <NewsArticleCard key={item.id} item={item} variant="portfolio" />
+                    ))}
+                  </div>
+                </section>
+              ) : null}
 
               <section className="space-y-8">
                 <NewsSectionHeader

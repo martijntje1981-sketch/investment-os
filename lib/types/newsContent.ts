@@ -87,6 +87,7 @@ export type NewsApiResponse = {
   macroNews: NewsContentItem[];
   marketVideos: NewsContentItem[];
   upcomingEvents: UpcomingMarketEvent[];
+  dividendNews?: NewsContentItem[];
   sourceErrors: Array<{ sourceId: string; sourceName: string; error: string }>;
   fetchedAt: string;
   error?: string;

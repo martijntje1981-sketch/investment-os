@@ -58,6 +58,11 @@ export function legacyMigrationFlagKey(userSub: string): string {
   return `investment-os-legacy-migrated:${userSub}`;
 }
 
+export function dividendCacheKey(userSub: string): string {
+  assertUserSub(userSub);
+  return `investment-os-dividend-cache:${userSub}`;
+}
+
 export function legacyRecoveryDismissedKey(userSub: string): string {
   assertUserSub(userSub);
   return `investment-os-legacy-recovery-dismissed:${userSub}`;

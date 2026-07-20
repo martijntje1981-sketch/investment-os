@@ -44,6 +44,10 @@ function normalizeGoal(parsed: Partial<GoalSettings>): GoalSettings | null {
     targetYear,
     monthlyContribution,
     expectedAnnualReturn,
+    ...(Number.isFinite(Number(parsed.passiveIncomeTarget)) &&
+    Number(parsed.passiveIncomeTarget) > 0
+      ? { passiveIncomeTarget: Number(parsed.passiveIncomeTarget) }
+      : {}),
   };
 }
 

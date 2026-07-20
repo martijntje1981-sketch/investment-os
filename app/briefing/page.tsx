@@ -14,6 +14,7 @@ import {
   Sparkles,
   Upload,
 } from "lucide-react";
+import { DividendIntelligenceSection } from "@/components/analysis/DividendIntelligenceSection";
 import BottomNavigation from "@/components/home/BottomNav";
 import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
 import {
@@ -23,6 +24,7 @@ import {
   formatPortfolioCurrency,
   formatPortfolioPercent,
 } from "@/lib/client/portfolioAnalysis";
+import { usePortfolioDividends } from "@/lib/client/usePortfolioDividends";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 
 function formatUpdatedAt(value: string | null) {
@@ -62,10 +64,14 @@ export default function AnalysisPage() {
   const {
     holdings,
     portfolioReady,
+    userSub,
     recoveryOffer,
     recoverPortfolio,
     dismissRecovery,
   } = useUserPortfolio();
+
+  const { snapshot: dividendSnapshot, isLoading: dividendsLoading } =
+    usePortfolioDividends(holdings, userSub, holdings.length > 0);
 
   const analysis = useMemo(
     () => buildPortfolioAnalysis(holdings),
@@ -253,6 +259,11 @@ export default function AnalysisPage() {
                   </p>
                 )}
               </section>
+
+              <DividendIntelligenceSection
+                snapshot={dividendSnapshot}
+                isLoading={dividendsLoading}
+              />
 
               <section className="mt-7 grid gap-4 lg:grid-cols-2">
                 <article className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">

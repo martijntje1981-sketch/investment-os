@@ -13,6 +13,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import BottomNavigation from "@/components/home/BottomNav";
+import { PassiveIncomeGoalCard } from "@/components/goals/PassiveIncomeGoalCard";
 import NumericInput from "@/components/NumericInput";
 import { getHoldingMarketValue } from "@/lib/client/portfolioAnalysis";
 import { loadUserPortfolioHoldings } from "@/lib/client/portfolioPricing";
@@ -22,6 +23,7 @@ import {
   isGoalAchieved,
 } from "@/lib/client/userGoalStorage";
 import { useUserGoal } from "@/lib/client/useUserGoal";
+import { usePortfolioDividends } from "@/lib/client/usePortfolioDividends";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 import type { GoalSettings } from "@/lib/types/portfolioStorage";
 
@@ -67,6 +69,11 @@ function projectValue(
 export default function GoalsPage() {
   const { userSub, authReady, holdings, portfolioReady } = useUserPortfolio();
   const { goal: savedGoal, hasSavedGoal, persistGoal } = useUserGoal();
+  const { snapshot: dividendSnapshot } = usePortfolioDividends(
+    holdings,
+    userSub,
+    holdings.length > 0,
+  );
   const [goal, setGoal] = useState<GoalSettings>(GOAL_FORM_DEFAULT);
   const [saved, setSaved] = useState(false);
 
@@ -208,6 +215,23 @@ export default function GoalsPage() {
                   step={0.5}
                   onChange={(value) => updateGoal("expectedAnnualReturn", value)}
                 />
+                <GoalInput
+                  label="Passive income target (optional)"
+                  icon={<PiggyBank className="h-4 w-4" />}
+                  prefix="€"
+                  value={goal.passiveIncomeTarget ?? 0}
+                  min={0}
+                  step={500}
+                  onChange={(value) => {
+                    setSaved(false);
+                    const parsed = Number(value);
+                    setGoal((current) => ({
+                      ...current,
+                      passiveIncomeTarget:
+                        Number.isFinite(parsed) && parsed > 0 ? parsed : undefined,
+                    }));
+                  }}
+                />
               </div>
 
               <button
@@ -268,6 +292,13 @@ export default function GoalsPage() {
                 </p>
               </div>
             </section>
+          </div>
+
+          <div className="mt-6">
+            <PassiveIncomeGoalCard
+              snapshot={dividendSnapshot}
+              passiveIncomeTarget={savedGoal?.passiveIncomeTarget ?? goal.passiveIncomeTarget}
+            />
           </div>
         </div>
       </main>

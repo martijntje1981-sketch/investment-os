@@ -20,12 +20,18 @@ import {
 import BottomNavigation from "@/components/home/BottomNav";
 import NumericInput from "@/components/NumericInput";
 import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
+import {
+  HoldingDividendMeta,
+} from "@/components/analysis/DividendIntelligenceSection";
 import { getHoldingMarketValue } from "@/lib/client/portfolioAnalysis";
 import {
   normalizeHoldingForSave,
   tryRefreshPortfolioPrices,
   type StoredPortfolioHolding,
 } from "@/lib/client/portfolioPricing";
+import { findDividendQuoteForHolding } from "@/lib/client/portfolioDividends";
+import { formatDividendFrequency } from "@/lib/services/dividends";
+import { usePortfolioDividends } from "@/lib/client/usePortfolioDividends";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 
 type AssetType = "investment" | "cash";
@@ -73,6 +79,11 @@ export default function PortfolioPage() {
     recoverPortfolio,
     dismissRecovery,
   } = useUserPortfolio();
+  const { quotes: dividendQuotes } = usePortfolioDividends(
+    holdings,
+    userSub,
+    holdings.length > 0,
+  );
   const [draft, setDraft] = useState<Holding>(emptyDraft);
   const [editorOpen, setEditorOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -232,8 +243,13 @@ export default function PortfolioPage() {
                   const holdingValue = valueOf(holding);
                   const holdingReturn = holdingValue - costOf(holding);
                   const allocation = totalValue > 0 ? holdingValue / totalValue * 100 : 0;
+                  const dividendQuote =
+                    holding.assetType === "investment"
+                      ? findDividendQuoteForHolding(holding, dividendQuotes)
+                      : null;
                   return (
-                    <article key={holding.id} className="grid gap-4 px-5 py-5 lg:grid-cols-[0.65fr_1.5fr_1fr_0.8fr_1fr_auto] lg:items-center lg:px-7">
+                    <article key={holding.id} className="space-y-3 px-5 py-5 lg:px-7">
+                    <div className="grid gap-4 lg:grid-cols-[0.65fr_1.5fr_1fr_0.8fr_1fr_auto] lg:items-center">
                       <div><span className={`inline-flex rounded-xl px-3 py-2 text-sm font-black ${holding.assetType === "cash" ? "bg-emerald-100 text-emerald-800" : "bg-slate-950 text-white"}`}>{holding.symbol}</span></div>
                       <div>
                         <p className="font-black">{holding.name}</p>
@@ -250,6 +266,17 @@ export default function PortfolioPage() {
                         <button onClick={() => openEdit(holding)} aria-label={`Edit ${holding.name}`} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100"><Pencil className="h-4 w-4" /></button>
                         <button onClick={() => removeHolding(holding)} aria-label={`Remove ${holding.name}`} className="rounded-lg p-2 text-red-600 hover:bg-red-50"><Trash2 className="h-4 w-4" /></button>
                       </div>
+                    </div>
+                      {dividendQuote?.paysDividends ? (
+                          <HoldingDividendMeta
+                            yieldPercent={dividendQuote.dividendYield}
+                            annualIncomeEur={dividendQuote.estimatedAnnualDividendEur}
+                            nextPaymentEur={dividendQuote.estimatedNextPaymentEur}
+                            nextExDate={dividendQuote.nextExDate}
+                            nextPaymentDate={dividendQuote.nextPaymentDate}
+                            frequency={formatDividendFrequency(dividendQuote.frequency)}
+                          />
+                      ) : null}
                     </article>
                   );
                 })}

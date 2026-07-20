@@ -12,6 +12,7 @@ import {
   createEmptyMarketBrief,
 } from "@/lib/services/news/marketBrief";
 import { enrichNewsItems } from "@/lib/services/news/newsSummary";
+import { filterPortfolioDividendNews } from "@/lib/services/news/dividendNews";
 import { fetchUpcomingMarketEvents } from "@/lib/services/news/upcomingEvents";
 import type { NewsApiResponse, NewsContentItem } from "@/lib/types/newsContent";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
@@ -65,6 +66,7 @@ export async function buildNewsResponse(
     personalizeNewsItems(financialItems, holdings),
   );
   const sections = partitionNewsHub(personalized);
+  const dividendNews = filterPortfolioDividendNews(sections.portfolioNews);
   const marketBrief = buildTodaysMarketBrief(
     sections.portfolioNews,
     sections.macroNews,
@@ -78,6 +80,7 @@ export async function buildNewsResponse(
     portfolioNews: sections.portfolioNews,
     macroNews: sections.macroNews,
     marketVideos: sections.marketVideos,
+    dividendNews,
     upcomingEvents,
     sourceErrors,
     fetchedAt,

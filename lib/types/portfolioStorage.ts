@@ -83,4 +83,6 @@ export type GoalSettings = {
   targetYear: number;
   monthlyContribution: number;
   expectedAnnualReturn: number;
+  /** Optional passive income target for dividend progress tracking. */
+  passiveIncomeTarget?: number;
 };
