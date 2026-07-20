@@ -1,71 +1,19 @@
 /**
  * POST /api/analyze-portfolio
  *
- * Screenshot → vision extraction → normalization → Match Engine.
- * The Match Engine is unchanged; this route improves everything before it.
+ * Screenshot → vision extraction → normalization.
+ * Instrument matching runs separately via /api/instruments/match so EODHD
+ * quota issues never block extraction from reaching review.
  */
 
 import { NextResponse } from "next/server";
-import { matchInstrument } from "@/lib/services/instruments";
 import {
   VisionExtractError,
   extractPortfolioFromScreenshot,
 } from "@/lib/services/extraction/visionExtract";
-import type { NormalizedExtractedHolding } from "@/lib/services/extraction/types";
-import type { ResolvedInstrument } from "@/lib/types/instrument";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
-
-type EnrichedHolding = NormalizedExtractedHolding & {
-  providerSymbol: string | null;
-  instrumentName: string | null;
-  matchMethod: ResolvedInstrument["matchMethod"];
-  matchConfidence: number;
-  requiresConfirmation: boolean;
-  matchWarnings: string[];
-  candidates?: ResolvedInstrument[];
-};
-
-async function enrichWithMatch(
-  holding: NormalizedExtractedHolding,
-): Promise<EnrichedHolding> {
-  if (holding.assetType === "cash") {
-    return {
-      ...holding,
-      providerSymbol: null,
-      instrumentName: null,
-      matchMethod: "unresolved",
-      matchConfidence: 0,
-      requiresConfirmation: false,
-      matchWarnings: [],
-    };
-  }
-
-  const resolved = await matchInstrument({
-    ticker: holding.ticker || null,
-    isin: holding.isin,
-    exchange: holding.exchange,
-    instrumentName: holding.name,
-    assetType: holding.assetType,
-  });
-
-  return {
-    ...holding,
-    ticker: holding.ticker || resolved.providerSymbol?.split(".")[0] || holding.ticker,
-    isin: resolved.isin ?? holding.isin,
-    exchange: resolved.exchange ?? holding.exchange,
-    name: holding.name || resolved.instrumentName || holding.name,
-    warnings: [...holding.warnings, ...(resolved.warnings ?? [])].filter(Boolean),
-    providerSymbol: resolved.providerSymbol,
-    instrumentName: resolved.instrumentName,
-    matchMethod: resolved.matchMethod,
-    matchConfidence: resolved.confidence,
-    requiresConfirmation: resolved.requiresConfirmation,
-    matchWarnings: resolved.warnings,
-    candidates: resolved.candidates,
-  };
-}
 
 export async function POST(request: Request) {
   try {
@@ -126,12 +74,10 @@ export async function POST(request: Request) {
       );
     }
 
-    const holdings = await Promise.all(extraction.holdings.map(enrichWithMatch));
-
     return NextResponse.json({
       success: true,
       broker: extraction.broker,
-      holdings,
+      holdings: extraction.holdings,
     });
   } catch (error) {
     if (error instanceof VisionExtractError) {

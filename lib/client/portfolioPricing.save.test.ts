@@ -95,6 +95,9 @@ describe("portfolio save without live quotes", () => {
   it("detects rate-limit style errors explicitly", () => {
     expect(isRateLimitedPriceError("EODHD daily limit reached")).toBe(true);
     expect(isRateLimitedPriceError("HTTP 429 Too Many Requests")).toBe(true);
+    expect(isRateLimitedPriceError("EODHD returned 402: payment required")).toBe(
+      true,
+    );
     expect(isRateLimitedPriceError("Market data unavailable")).toBe(false);
   });
 

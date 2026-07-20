@@ -16,9 +16,14 @@ import {
   buildProviderSymbol,
   fetchIdMapping,
   fetchSearch,
+  isEodhdQuotaOrRateLimitError,
   type EodhdIdMappingRow,
   type EodhdSearchRow,
 } from "./eodhdClient";
+import {
+  isEodhdQuotaExhausted,
+  markEodhdQuotaExhausted,
+} from "./eodhdQuotaGuard";
 import { exchangesMatch, normalizeExchange } from "./exchangeNormalizer";
 import { isValidIsin, normalizeIsin } from "./validation";
 import type {
@@ -29,6 +34,46 @@ import type {
 
 /** Minimum confidence below which user confirmation is required. */
 const CONFIRMATION_THRESHOLD = 0.85;
+
+const MATCHING_UNAVAILABLE_WARNING =
+  "Instrument lookup is temporarily unavailable — confirm this holding manually.";
+
+function handleProviderFailure(error: unknown): void {
+  if (isEodhdQuotaOrRateLimitError(error)) {
+    markEodhdQuotaExhausted();
+  }
+}
+
+async function safeFetchIdMapping(
+  filters: Parameters<typeof fetchIdMapping>[0],
+): Promise<EodhdIdMappingRow[] | null> {
+  if (isEodhdQuotaExhausted()) {
+    return null;
+  }
+
+  try {
+    return await fetchIdMapping(filters);
+  } catch (error) {
+    handleProviderFailure(error);
+    return null;
+  }
+}
+
+async function safeFetchSearch(
+  query: string,
+  options: Parameters<typeof fetchSearch>[1] = {},
+): Promise<EodhdSearchRow[] | null> {
+  if (isEodhdQuotaExhausted()) {
+    return null;
+  }
+
+  try {
+    return await fetchSearch(query, options);
+  } catch (error) {
+    handleProviderFailure(error);
+    return null;
+  }
+}
 
 function cleanTicker(value: string | null | undefined): string {
   return value ? value.trim().toUpperCase() : "";
@@ -125,7 +170,11 @@ async function resolveByIsin(
   isin: string,
   preferredExchange: string | null,
 ): Promise<ResolvedInstrument> {
-  const rows = await fetchIdMapping({ isin });
+  const rows = await safeFetchIdMapping({ isin });
+  if (rows === null) {
+    return unresolved([MATCHING_UNAVAILABLE_WARNING]);
+  }
+
   const { best, ambiguous } = disambiguateRows(rows, preferredExchange);
 
   if (best) {
@@ -158,36 +207,35 @@ async function resolveByTickerAndExchange(
 
   const providerCandidate = buildProviderSymbol(ticker, normalizedExchange);
 
-  // Try ID mapping with fully qualified symbol first.
-  try {
-    const mapped = await fetchIdMapping({ symbol: providerCandidate });
-    const { best, ambiguous } = disambiguateRows(
-      mapped,
-      normalizedExchange,
-    );
-    if (best) {
-      return rowToResolved(best, "ticker_exchange", 0.92, normalizeIsin(best.ISIN));
-    }
-    if (ambiguous.length > 1) {
-      return finalize({
-        ...unresolved([
-          "Multiple listings match this ticker and exchange — confirm the instrument.",
-        ]),
-        candidates: ambiguous.map((row) =>
-          rowToResolved(row, "ticker_exchange", 0.65, normalizeIsin(row.ISIN), [
-            "Possible match",
-          ]),
-        ),
-      });
-    }
-  } catch {
-    // Fall through to search.
+  const mapped = await safeFetchIdMapping({ symbol: providerCandidate });
+  if (mapped === null) {
+    return unresolved([MATCHING_UNAVAILABLE_WARNING]);
   }
 
-  const searchRows = await fetchSearch(ticker, {
+  const { best, ambiguous } = disambiguateRows(mapped, normalizedExchange);
+  if (best) {
+    return rowToResolved(best, "ticker_exchange", 0.92, normalizeIsin(best.ISIN));
+  }
+  if (ambiguous.length > 1) {
+    return finalize({
+      ...unresolved([
+        "Multiple listings match this ticker and exchange — confirm the instrument.",
+      ]),
+      candidates: ambiguous.map((row) =>
+        rowToResolved(row, "ticker_exchange", 0.65, normalizeIsin(row.ISIN), [
+          "Possible match",
+        ]),
+      ),
+    });
+  }
+
+  const searchRows = await safeFetchSearch(ticker, {
     exchange: normalizedExchange,
     limit: 10,
   });
+  if (searchRows === null) {
+    return unresolved([MATCHING_UNAVAILABLE_WARNING]);
+  }
 
   const exactCode = searchRows.filter(
     (row) =>
@@ -195,31 +243,31 @@ async function resolveByTickerAndExchange(
       exchangesMatch(row.Exchange, normalizedExchange),
   );
 
-  const { best, ambiguous } = disambiguateRows(
+  const { best: searchBest, ambiguous: searchAmbiguous } = disambiguateRows(
     exactCode.length > 0 ? exactCode : searchRows,
     normalizedExchange,
   );
 
-  if (best) {
+  if (searchBest) {
     const confidence =
-      best.Code?.trim().toUpperCase() === ticker ? 0.88 : 0.75;
+      searchBest.Code?.trim().toUpperCase() === ticker ? 0.88 : 0.75;
     return rowToResolved(
-      best,
+      searchBest,
       "ticker_exchange",
       confidence,
-      normalizeIsin(best.ISIN),
+      normalizeIsin(searchBest.ISIN),
       confidence < CONFIRMATION_THRESHOLD
         ? ["Ticker match may not be exact — confirm before saving."]
         : [],
     );
   }
 
-  if (ambiguous.length > 1) {
+  if (searchAmbiguous.length > 1) {
     return finalize({
       ...unresolved([
         "Multiple instruments match this ticker — confirm the listing.",
       ]),
-      candidates: ambiguous.map((row) =>
+      candidates: searchAmbiguous.map((row) =>
         rowToResolved(row, "ticker_exchange", 0.6, normalizeIsin(row.ISIN), [
           "Possible match",
         ]),
@@ -240,7 +288,11 @@ async function resolveByTickerWithNameHint(
   ticker: string,
   instrumentName: string,
 ): Promise<ResolvedInstrument> {
-  const searchRows = await fetchSearch(ticker, { limit: 15 });
+  const searchRows = await safeFetchSearch(ticker, { limit: 15 });
+  if (searchRows === null) {
+    return unresolved([MATCHING_UNAVAILABLE_WARNING]);
+  }
+
   const exactCodeRows = searchRows.filter(
     (row) => row.Code?.trim().toUpperCase() === ticker,
   );
@@ -301,10 +353,13 @@ async function resolveByNameAndExchange(
     return unresolved(["Exchange could not be normalized for name lookup."]);
   }
 
-  const searchRows = await fetchSearch(instrumentName, {
+  const searchRows = await safeFetchSearch(instrumentName, {
     exchange: normalizedExchange,
     limit: 10,
   });
+  if (searchRows === null) {
+    return unresolved([MATCHING_UNAVAILABLE_WARNING]);
+  }
 
   if (searchRows.length === 0) {
     return unresolved([
@@ -365,6 +420,10 @@ export async function matchInstrument(
 ): Promise<ResolvedInstrument> {
   if (input.assetType === "cash") {
     return unresolved([]);
+  }
+
+  if (isEodhdQuotaExhausted()) {
+    return unresolved([MATCHING_UNAVAILABLE_WARNING]);
   }
 
   const ticker = cleanTicker(input.ticker);

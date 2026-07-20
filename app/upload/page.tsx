@@ -13,7 +13,7 @@
 
 import { ChangeEvent, DragEvent, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertCircle, Check, Sparkles } from "lucide-react";
+import { AlertCircle, Check, Info, Sparkles } from "lucide-react";
 
 import BottomNavigation from "@/components/home/BottomNav";
 import { ImportAutoHoldingsList, ImportSummaryCard } from "@/components/import/ImportSummaryCard";
@@ -24,11 +24,8 @@ import { ImportReviewList } from "@/components/import/ImportReviewList";
 import { ImportTrustBanner } from "@/components/import/ImportTrustBanner";
 import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
 import { runImportPipeline, matchSingleImportRow } from "@/lib/client/importMatchClient";
+import { saveImportedPortfolio } from "@/lib/client/importSavePortfolio";
 import type { ExtractionReviewField } from "@/lib/services/extraction/fieldConfidence";
-import {
-  dispatchPortfolioUpdated,
-  writePortfolioToStorage,
-} from "@/lib/client/portfolioPricing";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 import {
   annotateImportRow,
@@ -71,6 +68,7 @@ export default function UploadPage() {
   const [processingStep, setProcessingStep] = useState("");
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState("");
+  const [importNotice, setImportNotice] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
@@ -89,6 +87,7 @@ export default function UploadPage() {
 
   async function processFile(file: File, importSource: ImportSource) {
     setError("");
+    setImportNotice("");
     setSuccessMessage("");
     setPhase("processing");
     setProcessingStep(
@@ -124,6 +123,9 @@ export default function UploadPage() {
       setRows(result.rows);
       setBroker(result.broker);
       setSource(importSource);
+      if (result.matchQuotaWarning) {
+        setImportNotice(result.matchQuotaWarning);
+      }
       setPhase("ready");
       setProcessingMessage("");
       setProcessingStep("");
@@ -172,6 +174,7 @@ export default function UploadPage() {
     setSource(null);
     setPhase("choose");
     setError("");
+    setImportNotice("");
     setSuccessMessage("");
   }
 
@@ -274,7 +277,7 @@ export default function UploadPage() {
     setRows((current) => current.filter((row) => row.id !== id));
   }
 
-  function importPortfolio(mode: "replace" | "merge") {
+  async function importPortfolio(mode: "replace" | "merge") {
     const validation = canImportRows(rows);
     if (!validation.ok) {
       setError(validation.message ?? "Complete the review before importing.");
@@ -288,6 +291,7 @@ export default function UploadPage() {
 
     setIsSaving(true);
     setError("");
+    setImportNotice("");
 
     try {
       const prepared = finalizeImportRowsForSave(rows);
@@ -297,22 +301,26 @@ export default function UploadPage() {
       const next =
         mode === "replace" ? prepared : [...existing, ...prepared];
 
-      writePortfolioToStorage(userSub, next);
-      dispatchPortfolioUpdated(userSub);
+      const saved = await saveImportedPortfolio({
+        userSub,
+        holdings: next,
+      });
 
-      const hasPendingPrices = prepared.some(
-        (holding) => holding.assetType !== "cash" && holding.currentPrice <= 0,
-      );
-
-      if (hasPendingPrices) {
-        setSuccessMessage(
-          "Portfolio imported. Live prices will refresh on your dashboard.",
+      if (!saved.ok) {
+        setError(
+          saved.stage === "cloud_save"
+            ? saved.message
+            : `${saved.message} Your import was not completed.`,
         );
-        window.setTimeout(() => router.push("/dashboard"), 900);
         return;
       }
 
-      router.push("/dashboard");
+      const messages = [
+        saved.priceWarning ??
+          "Portfolio imported successfully.",
+      ];
+      setSuccessMessage(messages.join(" "));
+      window.setTimeout(() => router.push("/dashboard"), 900);
     } catch (caught) {
       setError(
         caught instanceof Error
@@ -389,6 +397,13 @@ export default function UploadPage() {
             />
           ) : null}
 
+          {importNotice ? (
+            <div className="mt-5 flex items-start gap-2 rounded-[24px] border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-900">
+              <Info className="mt-0.5 h-4 w-4 shrink-0" />
+              {importNotice}
+            </div>
+          ) : null}
+
           {error ? (
             <div className="mt-5 flex items-start gap-2 rounded-[24px] border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-800">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -451,7 +466,7 @@ export default function UploadPage() {
                     <button
                       type="button"
                       disabled={!plan.readyToImport || isSaving}
-                      onClick={() => importPortfolio("merge")}
+                      onClick={() => void importPortfolio("merge")}
                       className="min-h-[48px] rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold disabled:opacity-40"
                     >
                       Add to existing portfolio
@@ -460,7 +475,7 @@ export default function UploadPage() {
                   <button
                     type="button"
                     disabled={!plan.readyToImport || isSaving}
-                    onClick={() => importPortfolio("replace")}
+                    onClick={() => void importPortfolio("replace")}
                     className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white disabled:opacity-40"
                   >
                     <Check className="h-4 w-4" />

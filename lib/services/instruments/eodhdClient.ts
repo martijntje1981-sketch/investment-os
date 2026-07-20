@@ -37,6 +37,30 @@ type SearchOptions = {
   limit?: number;
 };
 
+export class EodhdProviderError extends Error {
+  readonly status: number;
+
+  constructor(status: number, message: string) {
+    super(message);
+    this.name = "EodhdProviderError";
+    this.status = status;
+  }
+}
+
+export function isEodhdQuotaOrRateLimitError(error: unknown): boolean {
+  if (error instanceof EodhdProviderError) {
+    return error.status === 402 || error.status === 429;
+  }
+
+  if (error instanceof Error) {
+    return /returned 402|returned 429|payment required|quota|rate.?limit|too many requests/i.test(
+      error.message,
+    );
+  }
+
+  return false;
+}
+
 export function getEodhdApiKey(): string {
   const apiKey = process.env.EODHD_API_KEY;
   if (!apiKey) {
@@ -98,7 +122,8 @@ export async function fetchIdMapping(
 
   if (!response.ok) {
     const details = await response.text();
-    throw new Error(
+    throw new EodhdProviderError(
+      response.status,
       `EODHD id-mapping returned ${response.status}: ${details}`,
     );
   }
@@ -143,7 +168,8 @@ export async function fetchSearch(
 
   if (!response.ok) {
     const details = await response.text();
-    throw new Error(
+    throw new EodhdProviderError(
+      response.status,
       `EODHD search returned ${response.status}: ${details}`,
     );
   }

@@ -22,6 +22,20 @@ type MatchApiResponse = {
   message?: string;
 };
 
+export type ImportPipelineResult = {
+  broker: string | null;
+  rows: ImportRow[];
+  matchQuotaWarning?: string;
+};
+
+export type ImportMatchResult = {
+  rows: ImportRow[];
+  quotaWarning?: string;
+};
+
+const MATCH_QUOTA_WARNING =
+  "Some instruments could not be matched automatically because the market data provider is temporarily unavailable. Review holdings before import.";
+
 function rowNeedsRemoteMatch(row: ImportRow): boolean {
   if (row.assetType === "cash") return false;
   if (row.fromSavedMapping) return false;
@@ -35,13 +49,22 @@ function rowNeedsRemoteMatch(row: ImportRow): boolean {
   return true;
 }
 
-export async function matchImportRowsViaApi(rows: ImportRow[]): Promise<ImportRow[]> {
+function isMatchProviderFailure(message: string | undefined): boolean {
+  if (!message) return false;
+  return /402|429|quota|rate.?limit|payment required|temporarily unavailable/i.test(
+    message,
+  );
+}
+
+export async function matchImportRowsViaApi(
+  rows: ImportRow[],
+): Promise<ImportMatchResult> {
   const targets = rows
     .map((row, index) => ({ row, index }))
     .filter(({ row }) => rowNeedsRemoteMatch(row));
 
   if (targets.length === 0) {
-    return rows.map(annotateImportRow);
+    return { rows: rows.map(annotateImportRow) };
   }
 
   const response = await fetch("/api/instruments/match", {
@@ -53,7 +76,15 @@ export async function matchImportRowsViaApi(rows: ImportRow[]): Promise<ImportRo
   });
 
   const data = (await response.json()) as MatchApiResponse;
+
   if (!response.ok || !data.success || !data.results) {
+    if (isMatchProviderFailure(data.message)) {
+      return {
+        rows: rows.map(annotateImportRow),
+        quotaWarning: MATCH_QUOTA_WARNING,
+      };
+    }
+
     throw new Error(data.message ?? "Instrument matching failed.");
   }
 
@@ -64,7 +95,19 @@ export async function matchImportRowsViaApi(rows: ImportRow[]): Promise<ImportRo
     next[index] = applyMatchResultToImportRow(rows[index], result.resolved);
   });
 
-  return next.map(annotateImportRow);
+  const annotated = next.map(annotateImportRow);
+  const unresolvedAfterMatch = annotated.filter(
+    (row) =>
+      row.assetType !== "cash" &&
+      !row.fromSavedMapping &&
+      (!row.providerSymbol || row.matchMethod === "unresolved"),
+  );
+
+  if (unresolvedAfterMatch.length > 0 && isMatchProviderFailure(data.message)) {
+    return { rows: annotated, quotaWarning: MATCH_QUOTA_WARNING };
+  }
+
+  return { rows: annotated };
 }
 
 export async function matchSingleImportRow(row: ImportRow): Promise<ImportRow> {
@@ -78,6 +121,9 @@ export async function matchSingleImportRow(row: ImportRow): Promise<ImportRow> {
 
   const data = (await response.json()) as MatchApiResponse;
   if (!response.ok || !data.success || !data.results?.[0]) {
+    if (isMatchProviderFailure(data.message)) {
+      return annotateImportRow(row);
+    }
     throw new Error(data.message ?? "Instrument matching failed.");
   }
 
@@ -120,7 +166,7 @@ export async function runImportPipeline(input: {
   userSub: string | null;
   parseSpreadsheet: (buffer: ArrayBuffer) => ImportRow[];
   applySavedMappings: (rows: ImportRow[]) => ImportRow[];
-}): Promise<{ broker: string | null; rows: ImportRow[] }> {
+}): Promise<ImportPipelineResult> {
   if (input.source === "broker") {
     throw new Error("Broker connections are not available yet.");
   }
@@ -129,7 +175,11 @@ export async function runImportPipeline(input: {
     const result = await analyzePortfolioScreenshot(input.file);
     const withMemory = input.applySavedMappings(result.rows);
     const matched = await matchImportRowsViaApi(withMemory);
-    return { broker: result.broker, rows: matched };
+    return {
+      broker: result.broker,
+      rows: matched.rows,
+      matchQuotaWarning: matched.quotaWarning,
+    };
   }
 
   const parsed = input.parseSpreadsheet(await input.file.arrayBuffer());
@@ -139,5 +189,9 @@ export async function runImportPipeline(input: {
 
   const withMemory = input.applySavedMappings(parsed);
   const matched = await matchImportRowsViaApi(withMemory);
-  return { broker: null, rows: matched };
+  return {
+    broker: null,
+    rows: matched.rows,
+    matchQuotaWarning: matched.quotaWarning,
+  };
 }

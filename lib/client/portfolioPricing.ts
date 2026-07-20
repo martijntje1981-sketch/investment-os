@@ -114,6 +114,10 @@ export function normalizeHoldingForSave(
     name: holding.name.trim(),
     purchasePrice,
     currentPrice,
+    priceDataStatus:
+      currentPrice > 0
+        ? holding.priceDataStatus
+        : holding.priceDataStatus ?? "unavailable",
     marketPriceUpdatedAt:
       currentPrice > 0
         ? holding.marketPriceUpdatedAt ??
@@ -131,7 +135,9 @@ export type PriceRefreshResult<T extends StoredPortfolioHolding> = {
 };
 
 export function isRateLimitedPriceError(message: string): boolean {
-  return /rate.?limit|daily.?limit|quota|too many requests|429/i.test(message);
+  return /402|rate.?limit|daily.?limit|quota|too many requests|429|payment required/i.test(
+    message,
+  );
 }
 
 export function normalizePortfolioSymbol(value: unknown): string {
