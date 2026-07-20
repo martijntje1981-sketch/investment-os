@@ -4,9 +4,15 @@ import { CURATED_YOUTUBE_SOURCES } from "@/lib/services/news/newsSources";
 import { filterFinancialNewsItems } from "@/lib/services/news/financialContentFilter";
 import { createYouTubeProviders } from "@/lib/services/news/providers/youtubeRssProvider";
 import {
-  partitionNewsSections,
+  partitionNewsHub,
   personalizeNewsItems,
 } from "@/lib/services/news/relevanceMatching";
+import {
+  buildTodaysMarketBrief,
+  createEmptyMarketBrief,
+} from "@/lib/services/news/marketBrief";
+import { enrichNewsItems } from "@/lib/services/news/newsSummary";
+import { fetchUpcomingMarketEvents } from "@/lib/services/news/upcomingEvents";
 import type { NewsApiResponse, NewsContentItem } from "@/lib/types/newsContent";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
@@ -42,33 +48,40 @@ async function fetchRawNewsItems(): Promise<{
 
 const getCachedRawNewsItems = unstable_cache(
   fetchRawNewsItems,
-  ["investment-os-news-youtube-v1"],
+  ["investment-os-news-youtube-v3"],
   { revalidate: CACHE_SECONDS },
 );
 
 export async function buildNewsResponse(
   holdings: StoredPortfolioHolding[] = [],
 ): Promise<NewsApiResponse> {
-  const { items, sourceErrors, fetchedAt } = await getCachedRawNewsItems();
+  const [{ items, sourceErrors, fetchedAt }, upcomingEvents] = await Promise.all([
+    getCachedRawNewsItems(),
+    fetchUpcomingMarketEvents(),
+  ]);
+
   const financialItems = filterFinancialNewsItems(items);
-  const personalized = personalizeNewsItems(financialItems, holdings);
-  const displayItems = sortRecentOnly(personalized);
-  const sections = partitionNewsSections(displayItems);
-  const fallbackItems = displayItems.slice(0, 12);
+  const personalized = enrichNewsItems(
+    personalizeNewsItems(financialItems, holdings),
+  );
+  const sections = partitionNewsHub(personalized);
+  const marketBrief = buildTodaysMarketBrief(
+    sections.portfolioNews,
+    sections.macroNews,
+    upcomingEvents,
+    fetchedAt,
+  );
 
   return {
     success: true,
-    items: displayItems,
-    forYou: sections.forYou,
-    markets: sections.markets.length > 0 ? sections.markets : fallbackItems,
-    videos: sections.videos.length > 0 ? sections.videos : fallbackItems,
+    marketBrief,
+    portfolioNews: sections.portfolioNews,
+    macroNews: sections.macroNews,
+    marketVideos: sections.marketVideos,
+    upcomingEvents,
     sourceErrors,
     fetchedAt,
   };
 }
 
-function sortRecentOnly(items: NewsContentItem[]): NewsContentItem[] {
-  return [...items].sort(
-    (a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt),
-  );
-}
+export { CURATED_YOUTUBE_SOURCES, createEmptyMarketBrief };

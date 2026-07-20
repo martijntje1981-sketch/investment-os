@@ -1,102 +1,51 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   AlertCircle,
-  ExternalLink,
+  BriefcaseBusiness,
+  Globe2,
   Newspaper,
   PlayCircle,
-  RefreshCw,
 } from "lucide-react";
 import BottomNavigation from "@/components/home/BottomNav";
+import { MarketVideoCard } from "@/components/news/MarketVideoCard";
+import { NewsArticleCard } from "@/components/news/NewsArticleCard";
+import { NewsSectionHeader } from "@/components/news/NewsSectionHeader";
+import { TodaysMarketBriefHero } from "@/components/news/TodaysMarketBrief";
+import { UpcomingEventsStrip } from "@/components/news/UpcomingEventsStrip";
 import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
-import type { NewsApiResponse, NewsContentItem } from "@/lib/types/newsContent";
+import type { NewsApiResponse } from "@/lib/types/newsContent";
 
-type NewsFilter = "forYou" | "markets" | "videos";
-
-function formatPublishedAt(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Unknown time";
-
-  return new Intl.DateTimeFormat("en-GB", {
-    timeZone: "Europe/Amsterdam",
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
-}
-
-function formatRefreshedAt(value: string | null) {
-  if (!value) return "Not refreshed yet";
-  return formatPublishedAt(value);
-}
-
-function NewsCard({ item }: { item: NewsContentItem }) {
+function EmptySection({
+  title,
+  description,
+  actionHref,
+  actionLabel,
+}: {
+  title: string;
+  description: string;
+  actionHref?: string;
+  actionLabel?: string;
+}) {
   return (
-    <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div className="grid gap-0 sm:grid-cols-[160px_1fr]">
-        {item.thumbnailUrl ? (
-          <div className="aspect-video bg-slate-100 sm:aspect-auto">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={item.thumbnailUrl}
-              alt=""
-              className="h-full w-full object-cover"
-              loading="lazy"
-            />
-          </div>
-        ) : (
-          <div className="flex aspect-video items-center justify-center bg-slate-100 sm:aspect-auto">
-            <PlayCircle className="h-10 w-10 text-slate-300" />
-          </div>
-        )}
-
-        <div className="p-5">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-slate-950 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-white">
-              {item.contentTypeLabel}
-            </span>
-            <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-blue-700">
-              {item.sourceName}
-            </span>
-            {item.relevanceLabel && (
-              <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700">
-                {item.relevanceLabel}
-              </span>
-            )}
-          </div>
-
-          <h2 className="mt-3 text-lg font-black leading-7 text-slate-950">
-            {item.title}
-          </h2>
-
-          {item.description && (
-            <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-600">
-              {item.description}
-            </p>
-          )}
-
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-            <p className="text-xs font-semibold text-slate-500">
-              Published {formatPublishedAt(item.publishedAt)}
-            </p>
-            <a
-              href={item.canonicalUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50"
-            >
-              Open original
-              <ExternalLink className="h-3.5 w-3.5" />
-            </a>
-          </div>
-        </div>
-      </div>
-    </article>
+    <section className="rounded-[28px] border border-dashed border-slate-200 bg-white p-8 text-center shadow-sm sm:p-10">
+      <Newspaper className="mx-auto h-10 w-10 text-slate-300" />
+      <h3 className="mt-4 text-xl font-black text-slate-950">{title}</h3>
+      <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-500">
+        {description}
+      </p>
+      {actionHref && actionLabel ? (
+        <Link
+          href={actionHref}
+          className="mt-6 inline-flex items-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white"
+        >
+          {actionLabel}
+        </Link>
+      ) : null}
+    </section>
   );
 }
 
@@ -108,7 +57,6 @@ export default function NewsPage() {
     recoverPortfolio,
     dismissRecovery,
   } = useUserPortfolio();
-  const [filter, setFilter] = useState<NewsFilter>("forYou");
   const [payload, setPayload] = useState<NewsApiResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -146,16 +94,9 @@ export default function NewsPage() {
     void loadNews();
   }, [loadNews, portfolioReady]);
 
-  const visibleItems = useMemo(() => {
-    if (!payload) return [];
-    if (filter === "forYou") return payload.forYou;
-    if (filter === "markets") return payload.markets;
-    return payload.videos;
-  }, [filter, payload]);
-
   if (!portfolioReady) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-50">
+      <main className="flex min-h-screen items-center justify-center bg-[#F4F7FB]">
         <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-slate-950" />
       </main>
     );
@@ -163,23 +104,8 @@ export default function NewsPage() {
 
   return (
     <>
-      <main className="min-h-screen max-w-full overflow-x-hidden bg-slate-50 px-4 pb-28 pt-7 text-slate-950 sm:px-8 sm:pt-12">
-        <div className="mx-auto w-full max-w-6xl">
-          <header className="max-w-3xl">
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-700">
-              News
-            </p>
-            <h1 className="mt-3 text-4xl font-black tracking-[-0.05em] sm:text-5xl">
-              News
-            </h1>
-            <p className="mt-4 leading-7 text-slate-600">
-              Market updates and videos relevant to your portfolio.
-            </p>
-            <p className="mt-3 text-sm font-semibold text-slate-500">
-              Last refreshed: {formatRefreshedAt(payload?.fetchedAt ?? null)}
-            </p>
-          </header>
-
+      <main className="min-h-screen max-w-full overflow-x-hidden bg-[#F4F7FB] px-4 pb-32 pt-3 text-slate-950 sm:px-8 sm:pt-6">
+        <div className="mx-auto w-full max-w-7xl space-y-10 sm:space-y-12">
           <PortfolioRecoveryBanner
             offer={recoveryOffer}
             onRecover={() => {
@@ -188,95 +114,110 @@ export default function NewsPage() {
             onDismiss={dismissRecovery}
           />
 
-          <div className="mt-6 rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            Social and market commentary may contain opinions and is not
-            financial advice.
-          </div>
-
-          <div className="mt-6 flex flex-wrap items-center gap-2">
-            {([
-              ["forYou", "For You"],
-              ["markets", "Markets"],
-              ["videos", "Videos"],
-            ] as const).map(([key, label]) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setFilter(key)}
-                className={`rounded-xl px-4 py-2.5 text-sm font-bold transition ${
-                  filter === key
-                    ? "bg-slate-950 text-white"
-                    : "border border-slate-300 bg-white text-slate-700"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-            <button
-              type="button"
-              onClick={() => void loadNews()}
-              disabled={isLoading}
-              className="ml-auto inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 disabled:opacity-50"
-            >
-              <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-              Refresh
-            </button>
-          </div>
-
-          {payload?.sourceErrors?.length ? (
-            <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-              Some sources are temporarily unavailable. Showing available
-              content only.
-            </div>
-          ) : null}
-
           {error && (
-            <div className="mt-5 flex items-start gap-2 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-800">
+            <div className="flex items-start gap-2 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-800">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
               {error}
             </div>
           )}
 
           {isLoading ? (
-            <div className="mt-10 text-center">
-              <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-slate-950" />
-              <p className="mt-4 text-sm font-semibold text-slate-500">
-                Loading market videos…
+            <section className="overflow-hidden rounded-[32px] border border-slate-800 bg-slate-950 p-10 text-center text-white shadow-2xl">
+              <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-white/20 border-t-white" />
+              <p className="mt-4 text-sm font-semibold text-slate-300">
+                Preparing today&apos;s market brief…
               </p>
-            </div>
-          ) : visibleItems.length === 0 ? (
-            filter === "forYou" ? (
-              <section className="mt-10 rounded-[28px] border border-slate-200 bg-white p-8 text-center shadow-sm sm:p-12">
-                <Newspaper className="mx-auto h-10 w-10 text-slate-300" />
-                <h2 className="mt-4 text-2xl font-black">No strong portfolio matches yet</h2>
-                <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-500">
-                  For You shows videos with a clear link to your holdings. Try Markets
-                  for broader financial coverage, or add holdings to improve matching.
-                </p>
-              </section>
-            ) : (
-              <section className="mt-10 rounded-[28px] border border-slate-200 bg-white p-8 text-center shadow-sm sm:p-12">
-                <Newspaper className="mx-auto h-10 w-10 text-slate-300" />
-                <h2 className="mt-4 text-2xl font-black">No videos available right now</h2>
-                <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-500">
-                  Official feeds could not be loaded at the moment. Try refreshing
-                  shortly, or add holdings to improve relevance matching.
-                </p>
-                <Link
-                  href="/portfolio"
-                  className="mt-6 inline-flex items-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white"
-                >
-                  Review portfolio
-                </Link>
-              </section>
-            )
-          ) : (
-            <section className="mt-8 space-y-4">
-              {visibleItems.map((item) => (
-                <NewsCard key={item.id} item={item} />
-              ))}
             </section>
-          )}
+          ) : payload ? (
+            <>
+              <TodaysMarketBriefHero
+                brief={payload.marketBrief}
+                onRefresh={() => void loadNews()}
+                isRefreshing={isLoading}
+              />
+
+              {payload.sourceErrors?.length ? (
+                <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                  Some sources are temporarily unavailable. Showing available
+                  content only.
+                </div>
+              ) : null}
+
+              <section className="space-y-5 sm:space-y-6">
+                <UpcomingEventsStrip events={payload.upcomingEvents} compact />
+              </section>
+
+              <section className="space-y-8">
+                <NewsSectionHeader
+                  eyebrow="Portfolio news"
+                  title="Relevant to your holdings"
+                  description="Sorted by relevance first, then publication time. Only stories with a clear link to your saved portfolio."
+                  icon={<BriefcaseBusiness className="h-6 w-6" />}
+                />
+                {payload.portfolioNews.length > 0 ? (
+                  <div className="grid gap-6">
+                    {payload.portfolioNews.map((item) => (
+                      <NewsArticleCard key={item.id} item={item} variant="portfolio" />
+                    ))}
+                  </div>
+                ) : (
+                  <EmptySection
+                    title="No portfolio matches yet"
+                    description="Add holdings to unlock personalised headlines in your daily brief and portfolio news feed."
+                    actionHref="/portfolio"
+                    actionLabel="Review portfolio"
+                  />
+                )}
+              </section>
+
+              <section className="space-y-8">
+                <NewsSectionHeader
+                  eyebrow="Macro news"
+                  title="Broader market context"
+                  description="Macro, rates, inflation, and cross-asset developments without duplicating your portfolio headlines."
+                  icon={<Globe2 className="h-6 w-6" />}
+                />
+                {payload.macroNews.length > 0 ? (
+                  <div className="grid gap-6">
+                    {payload.macroNews.map((item) => (
+                      <NewsArticleCard key={item.id} item={item} variant="macro" />
+                    ))}
+                  </div>
+                ) : (
+                  <EmptySection
+                    title="No macro stories available"
+                    description="Official feeds may be quiet right now. Refresh your brief shortly."
+                  />
+                )}
+              </section>
+
+              <section className="space-y-8 pb-4">
+                <NewsSectionHeader
+                  eyebrow="Market videos"
+                  title="Official market coverage"
+                  description="Latest video coverage from Bloomberg Television, CNBC Television, and Coin Bureau."
+                  icon={<PlayCircle className="h-6 w-6" />}
+                />
+                {payload.marketVideos.length > 0 ? (
+                  <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+                    {payload.marketVideos.map((item) => (
+                      <MarketVideoCard key={item.id} item={item} />
+                    ))}
+                  </div>
+                ) : (
+                  <EmptySection
+                    title="No market videos available"
+                    description="Video feeds could not be loaded at the moment. Try refreshing your brief."
+                  />
+                )}
+              </section>
+
+              <p className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-center text-xs leading-6 text-slate-500 sm:text-sm">
+                Commentary and AI summaries are for information only and are not
+                financial advice.
+              </p>
+            </>
+          ) : null}
         </div>
       </main>
       <BottomNavigation />

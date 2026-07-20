@@ -178,14 +178,32 @@ export function scoreNewsItemRelevance(
   };
 }
 
+function normalizeTitleKey(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
 export function deduplicateNewsItems(items: NewsContentItem[]): NewsContentItem[] {
-  const seen = new Set<string>();
+  const seenUrls = new Set<string>();
+  const seenTitles = new Set<string>();
   const deduped: NewsContentItem[] = [];
 
-  for (const item of items) {
-    const key = item.canonicalUrl.toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
+  const sorted = [...items].sort(
+    (a, b) => b.relevanceScore - a.relevanceScore || Date.parse(b.publishedAt) - Date.parse(a.publishedAt),
+  );
+
+  for (const item of sorted) {
+    const urlKey = item.canonicalUrl.toLowerCase();
+    const titleKey = normalizeTitleKey(item.title);
+
+    if (seenUrls.has(urlKey) || (titleKey && seenTitles.has(titleKey))) {
+      continue;
+    }
+
+    seenUrls.add(urlKey);
+    if (titleKey) seenTitles.add(titleKey);
     deduped.push(item);
   }
 
@@ -211,14 +229,44 @@ export function personalizeNewsItems(
   return sortNewsItems(deduplicateNewsItems(scored));
 }
 
-export function partitionNewsSections(items: NewsContentItem[]) {
-  const forYou = items.filter(
+function isMacroNewsCandidate(item: NewsContentItem): boolean {
+  return ["markets", "macro", "crypto", "general"].includes(item.category);
+}
+
+export function partitionNewsHub(items: NewsContentItem[]) {
+  const portfolioNews = items.filter(
     (item) => item.relevanceScore >= STRONG_PORTFOLIO_MATCH_SCORE,
   );
-  const markets = items.filter((item) =>
-    ["markets", "macro", "general"].includes(item.category),
+  const portfolioKeys = new Set(
+    portfolioNews.flatMap((item) => [
+      item.canonicalUrl.toLowerCase(),
+      normalizeTitleKey(item.title),
+    ]),
   );
-  const videos = items.filter((item) => item.sourceType === "youtube");
 
-  return { forYou, markets, videos };
+  const macroNews = items.filter(
+    (item) =>
+      item.relevanceScore < STRONG_PORTFOLIO_MATCH_SCORE &&
+      isMacroNewsCandidate(item) &&
+      !portfolioKeys.has(item.canonicalUrl.toLowerCase()) &&
+      !portfolioKeys.has(normalizeTitleKey(item.title)),
+  );
+
+  const marketVideos = deduplicateNewsItems(
+    items.filter((item) => item.sourceType === "youtube"),
+  ).sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt));
+
+  return {
+    portfolioNews: portfolioNews
+      .sort(
+        (a, b) =>
+          b.relevanceScore - a.relevanceScore ||
+          Date.parse(b.publishedAt) - Date.parse(a.publishedAt),
+      )
+      .slice(0, 12),
+    macroNews: macroNews
+      .sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt))
+      .slice(0, 12),
+    marketVideos: marketVideos.slice(0, 12),
+  };
 }

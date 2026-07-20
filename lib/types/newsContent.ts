@@ -1,3 +1,5 @@
+export type NewsImpactLevel = "High Impact" | "Medium Impact" | "Low Impact";
+
 export type NewsSourceType = "youtube" | "news" | "x" | "instagram";
 
 export type NewsContentCategory =
@@ -25,6 +27,9 @@ export type NewsContentItem = {
   thumbnailUrl: string | null;
   publishedAt: string;
   description: string | null;
+  aiSummary: string;
+  whyThisMatters: string;
+  impactLevel: NewsImpactLevel;
   matchedHoldingIds: string[];
   matchedSymbols: string[];
   relevanceLabel: string | null;
@@ -34,6 +39,22 @@ export type NewsContentItem = {
   relevanceScore: number;
 };
 
+export type MarketBriefInsight = {
+  id: string;
+  label: string;
+  text: string;
+  kind: "macro" | "portfolio" | "general";
+};
+
+export type TodaysMarketBrief = {
+  title: string;
+  updatedAt: string;
+  keyInsights: MarketBriefInsight[];
+  biggestMacroDevelopment: string;
+  biggestPortfolioDevelopment: string | null;
+  whatToWatchToday: string;
+};
+
 export type NewsFeedFetchResult = {
   sourceId: string;
   sourceName: string;
@@ -41,12 +62,31 @@ export type NewsFeedFetchResult = {
   error: string | null;
 };
 
+export type UpcomingEventCategory =
+  | "earnings"
+  | "cpi"
+  | "fed"
+  | "ecb"
+  | "macro";
+
+export type UpcomingMarketEvent = {
+  id: string;
+  title: string;
+  category: UpcomingEventCategory;
+  date: string;
+  timeLabel: string;
+  country: string;
+  description: string;
+  impact: "High" | "Medium";
+};
+
 export type NewsApiResponse = {
   success: boolean;
-  items: NewsContentItem[];
-  forYou: NewsContentItem[];
-  markets: NewsContentItem[];
-  videos: NewsContentItem[];
+  marketBrief: TodaysMarketBrief;
+  portfolioNews: NewsContentItem[];
+  macroNews: NewsContentItem[];
+  marketVideos: NewsContentItem[];
+  upcomingEvents: UpcomingMarketEvent[];
   sourceErrors: Array<{ sourceId: string; sourceName: string; error: string }>;
   fetchedAt: string;
   error?: string;

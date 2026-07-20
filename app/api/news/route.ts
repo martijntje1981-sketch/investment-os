@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { buildNewsResponse } from "@/lib/services/news/newsService";
+import { buildNewsResponse, createEmptyMarketBrief } from "@/lib/services/news/newsService";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
 export const dynamic = "force-dynamic";
@@ -28,6 +28,21 @@ function normalizeHoldings(parsed: unknown): StoredPortfolioHolding[] {
     });
 }
 
+function emptyNewsResponse(error?: string) {
+  const fetchedAt = new Date().toISOString();
+  return {
+    success: false,
+    marketBrief: createEmptyMarketBrief(fetchedAt),
+    portfolioNews: [],
+    macroNews: [],
+    marketVideos: [],
+    upcomingEvents: [],
+    sourceErrors: [],
+    fetchedAt,
+    error,
+  };
+}
+
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as NewsRequestBody;
@@ -40,19 +55,9 @@ export async function POST(request: Request) {
       },
     });
   } catch {
-    return NextResponse.json(
-      {
-        success: false,
-        items: [],
-        forYou: [],
-        markets: [],
-        videos: [],
-        sourceErrors: [],
-        fetchedAt: new Date().toISOString(),
-        error: "News could not be loaded.",
-      },
-      { status: 500 },
-    );
+    return NextResponse.json(emptyNewsResponse("News could not be loaded."), {
+      status: 500,
+    });
   }
 }
 

@@ -6,11 +6,17 @@ import { parseYouTubeAtomFeed } from "@/lib/services/news/providers/youtubeRssPr
 import {
   deduplicateNewsItems,
   isStrongPortfolioMatch,
-  personalizeNewsItems,
+  partitionNewsHub,
   scoreNewsItemRelevance,
   sortNewsItems,
   buildHoldingMatchProfiles,
 } from "@/lib/services/news/relevanceMatching";
+import { generateNewsAiSummary, enrichNewsItem } from "@/lib/services/news/newsSummary";
+import {
+  deriveNewsImpactLevel,
+  generateWhyThisMatters,
+} from "@/lib/services/news/newsImpact";
+import { buildTodaysMarketBrief } from "@/lib/services/news/marketBrief";
 import {
   filterFinancialNewsItems,
   isFinancialMarketContent,
@@ -59,6 +65,9 @@ function item(
     thumbnailUrl: null,
     publishedAt: "2026-07-18T10:00:00.000Z",
     description: null,
+    aiSummary: "",
+    whyThisMatters: "",
+    impactLevel: "Low Impact",
     matchedHoldingIds: [],
     matchedSymbols: [],
     relevanceLabel: null,
@@ -177,17 +186,17 @@ describe("news relevance matching", () => {
     expect(scored.relevanceLabel).toBeNull();
   });
 
-  it("deduplicates by canonical URL", () => {
+  it("deduplicates by canonical URL and near-identical titles", () => {
     const deduped = deduplicateNewsItems([
       item({
         id: "a",
-        title: "One",
+        title: "Fed outlook and inflation update",
         canonicalUrl: "https://www.youtube.com/watch?v=same",
       }),
       item({
         id: "b",
-        title: "Duplicate",
-        canonicalUrl: "https://www.youtube.com/watch?v=same",
+        title: "Fed outlook and inflation update",
+        canonicalUrl: "https://www.youtube.com/watch?v=other",
       }),
     ]);
 
@@ -226,21 +235,28 @@ describe("news relevance matching", () => {
     ]);
   });
 
-  it("falls back to recent general items when nothing matches holdings", () => {
-    const personalized = personalizeNewsItems(
-      [
-        item({
-          id: "general",
-          title: "Global markets weekly wrap",
-          canonicalUrl: "https://www.youtube.com/watch?v=def456",
-          publishedAt: "2026-07-19T10:00:00.000Z",
-        }),
-      ],
-      [holding({ symbol: "ZZZZ", name: "Unknown Microcap" })],
-    );
+  it("sorts portfolio news by relevance then recency", () => {
+    const sections = partitionNewsHub([
+      item({
+        id: "older-strong",
+        title: "Bitcoin outlook for long-term investors",
+        canonicalUrl: "https://www.youtube.com/watch?v=btc-old",
+        publishedAt: "2026-07-10T10:00:00.000Z",
+        relevanceScore: 20,
+      }),
+      item({
+        id: "newer-strong",
+        title: "VWCE and global ETF flows update",
+        canonicalUrl: "https://www.youtube.com/watch?v=vwce-new",
+        publishedAt: "2026-07-19T10:00:00.000Z",
+        relevanceScore: 15,
+      }),
+    ]);
 
-    expect(personalized).toHaveLength(1);
-    expect(personalized[0]?.relevanceScore).toBe(0);
+    expect(sections.portfolioNews.map((entry) => entry.id)).toEqual([
+      "older-strong",
+      "newer-strong",
+    ]);
   });
 });
 
@@ -284,6 +300,144 @@ describe("financial news filtering", () => {
 
     expect(filtered).toHaveLength(1);
     expect(filtered[0]?.title).toContain("Fed outlook");
+  });
+});
+
+describe("news AI summaries", () => {
+  it("creates readable summaries from descriptions and titles", () => {
+    const fromDescription = generateNewsAiSummary({
+      title: "Bitcoin outlook for long-term investors",
+      description:
+        "BTC remains volatile. Institutional demand continues to build across global markets.",
+      sourceName: "Bloomberg Television",
+      category: "crypto",
+      matchedSymbols: ["IB1T"],
+    });
+
+    expect(fromDescription).toContain("BTC remains volatile");
+
+    const fromTitle = generateNewsAiSummary({
+      title: "Fed outlook and inflation update",
+      description: null,
+      sourceName: "CNBC Television",
+      category: "macro",
+      matchedSymbols: [],
+    });
+
+    expect(fromTitle).toContain("CNBC Television");
+    expect(fromTitle.length).toBeGreaterThan(20);
+  });
+
+  it("adds impact badges and why-this-matters copy to enriched items", () => {
+    const enriched = enrichNewsItem(
+      item({
+        id: "portfolio-hit",
+        title: "Bitcoin outlook for long-term investors",
+        canonicalUrl: "https://www.youtube.com/watch?v=btc1",
+        relevanceScore: 15,
+        matchedSymbols: ["IB1T"],
+      }),
+    );
+
+    expect(enriched.impactLevel).toBe("High Impact");
+    expect(enriched.whyThisMatters).toContain("Why this matters:");
+    expect(enriched.whyThisMatters).toContain("IB1T");
+  });
+});
+
+describe("today's market brief", () => {
+  it("builds a brief with insights, macro, portfolio, and watch item", () => {
+    const brief = buildTodaysMarketBrief(
+      [
+        item({
+          id: "portfolio",
+          title: "Bitcoin outlook for long-term investors",
+          canonicalUrl: "https://www.youtube.com/watch?v=btc1",
+          relevanceScore: 15,
+          matchedSymbols: ["IB1T"],
+          aiSummary: "BTC demand remains constructive.",
+        }),
+      ],
+      [
+        item({
+          id: "macro",
+          title: "Fed outlook and inflation update",
+          canonicalUrl: "https://www.youtube.com/watch?v=macro1",
+          category: "macro",
+          aiSummary: "Rates remain in focus.",
+        }),
+      ],
+      [
+        {
+          id: "cpi",
+          title: "US Consumer Price Index",
+          category: "cpi",
+          date: "2026-07-22",
+          timeLabel: "Tue 22 Jul",
+          country: "United States",
+          description: "Inflation data release",
+          impact: "High",
+        },
+      ],
+      "2026-07-20T08:00:00.000Z",
+    );
+
+    expect(brief.title).toBe("Today's Market Brief");
+    expect(brief.keyInsights.length).toBeGreaterThanOrEqual(4);
+    expect(brief.biggestMacroDevelopment).toContain("Rates remain in focus");
+    expect(brief.biggestPortfolioDevelopment).toContain("IB1T");
+    expect(brief.whatToWatchToday).toContain("US Consumer Price Index");
+  });
+});
+
+describe("news impact levels", () => {
+  it("classifies portfolio matches and macro headlines", () => {
+    expect(
+      deriveNewsImpactLevel(
+        item({
+          id: "high",
+          title: "Bitcoin outlook",
+          canonicalUrl: "https://example.com/1",
+          relevanceScore: 15,
+        }),
+      ),
+    ).toBe("High Impact");
+
+    expect(
+      deriveNewsImpactLevel(
+        item({
+          id: "macro",
+          title: "Fed outlook and inflation update",
+          canonicalUrl: "https://example.com/2",
+          category: "macro",
+        }),
+      ),
+    ).toBe("High Impact");
+
+    expect(
+      generateWhyThisMatters({
+        title: "Fed outlook and inflation update",
+        matchedSymbols: [],
+        category: "macro",
+        impactLevel: "High Impact",
+      }),
+    ).toContain("Why this matters:");
+  });
+});
+
+describe("upcoming market events", () => {
+  it("provides fallback catalysts for CPI, Fed, ECB and earnings", async () => {
+    const { buildFallbackUpcomingEvents } = await import(
+      "@/lib/services/news/upcomingEvents"
+    );
+
+    const events = buildFallbackUpcomingEvents(new Date("2026-07-20T10:00:00.000Z"));
+    const categories = events.map((event) => event.category);
+
+    expect(events.length).toBeGreaterThanOrEqual(4);
+    expect(categories).toEqual(
+      expect.arrayContaining(["cpi", "fed", "ecb", "earnings"]),
+    );
   });
 });
 
