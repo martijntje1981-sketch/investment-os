@@ -111,7 +111,7 @@ export function DashboardAnalystCard({
           </div>
 
           <Link
-            href="/briefing"
+            href="/analysis"
             className="mt-5 inline-flex min-h-[44px] items-center text-sm font-bold text-blue-700"
           >
             View analyst analysis

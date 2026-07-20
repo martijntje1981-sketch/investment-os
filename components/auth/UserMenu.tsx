@@ -12,6 +12,7 @@ const protectedRoutes = [
   "/dashboard",
   "/portfolio",
   "/upload",
+  "/analysis",
   "/briefing",
   "/news",
   "/goals",

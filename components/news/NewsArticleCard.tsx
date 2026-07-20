@@ -60,7 +60,7 @@ export function NewsArticleCard({
             <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-500">
               Summary
             </p>
-            <p className="mt-3 text-sm leading-7 text-slate-700">{item.summary}</p>
+            <p className="mt-3 line-clamp-3 text-sm leading-7 text-slate-700">{item.summary}</p>
           </div>
 
           <div className="rounded-[22px] border border-violet-100 bg-violet-50/70 p-5">
@@ -68,7 +68,7 @@ export function NewsArticleCard({
               <BookOpen className="h-3.5 w-3.5" />
               Interpretation
             </div>
-            <p className="mt-3 text-sm leading-7 text-slate-700">{item.interpretation}</p>
+            <p className="mt-3 line-clamp-3 text-sm leading-7 text-slate-700">{item.interpretation}</p>
           </div>
         </div>
 

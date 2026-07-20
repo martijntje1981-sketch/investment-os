@@ -67,7 +67,7 @@ function projectValue(
 }
 
 export default function GoalsPage() {
-  const { userSub, authReady, holdings, portfolioReady } = useUserPortfolio();
+  const { userSub, holdings, portfolioReady } = useUserPortfolio();
   const { goal: savedGoal, hasSavedGoal, persistGoal } = useUserGoal();
   const { snapshot: dividendSnapshot } = usePortfolioDividends(
     holdings,

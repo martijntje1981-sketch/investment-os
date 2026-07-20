@@ -159,7 +159,7 @@ function mapEodhdEvents(events: EodhdEconomicEvent[]): UpcomingMarketEvent[] {
 }
 
 /** @deprecated Production must not use fabricated fallback events. Tests only. */
-export function buildFallbackUpcomingEvents(_now = new Date()): UpcomingMarketEvent[] {
+export function buildFallbackUpcomingEvents(): UpcomingMarketEvent[] {
   return [];
 }
 

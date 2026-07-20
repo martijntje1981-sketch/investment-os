@@ -478,9 +478,7 @@ describe("upcoming market events", () => {
       "@/lib/services/news/upcomingEvents"
     );
 
-    expect(buildFallbackUpcomingEvents(new Date("2026-07-20T10:00:00.000Z"))).toEqual(
-      [],
-    );
+    expect(buildFallbackUpcomingEvents()).toEqual([]);
   });
 });
 
@@ -493,13 +491,15 @@ describe("news safety boundaries", () => {
     expect(source).not.toMatch(/export\s+function\s+fetchNews/);
   });
 
-  it("keeps the Analysis page separate from the News route", () => {
-    const analysisPagePath = path.resolve(process.cwd(), "app/briefing/page.tsx");
-    const source = readFileSync(analysisPagePath, "utf8");
+  it("keeps portfolio analysis separate from the news hub route", () => {
+    const analysisPagePath = path.resolve(process.cwd(), "app/analysis/page.tsx");
+    const newsPagePath = path.resolve(process.cwd(), "app/news/page.tsx");
+    const analysisSource = readFileSync(analysisPagePath, "utf8");
+    const newsSource = readFileSync(newsPagePath, "utf8");
 
-    expect(source).toContain("Portfolio Analysis");
-    expect(source).not.toContain("/api/news");
-    expect(source).not.toContain("NewsPage");
+    expect(analysisSource).toContain("PortfolioAnalysisPage");
+    expect(newsSource).toContain("NewsHubContent");
+    expect(newsSource).not.toContain("/api/briefing");
   });
 
   it("handles provider failures without throwing during feed parsing", async () => {

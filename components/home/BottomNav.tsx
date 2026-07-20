@@ -38,7 +38,7 @@ const navigationItems = [
   },
   {
     label: "Analysis",
-    href: "/briefing",
+    href: "/analysis",
     icon: ScanLine,
     featured: false,
   },

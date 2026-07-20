@@ -11,7 +11,6 @@ import {
   Newspaper,
   ShieldCheck,
   Sparkles,
-  Upload,
 } from "lucide-react";
 
 const faqSections = [

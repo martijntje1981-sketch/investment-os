@@ -489,7 +489,7 @@ export default async function MarketingHomePage({
               </div>
 
               <Link
-                href="/briefing"
+                href="/analysis"
                 className="mt-8 inline-flex items-center gap-2 text-sm font-bold text-violet-700"
               >
                 Preview portfolio analysis
