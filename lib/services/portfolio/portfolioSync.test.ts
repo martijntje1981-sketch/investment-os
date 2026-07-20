@@ -6,6 +6,7 @@ import {
   approxEqual,
   buildHoldingLedgerIdempotencyKey,
   buildMigrationIdempotencyKey,
+  portfolioContentFingerprint,
   portfolioFingerprint,
   resolveRemoteHoldingId,
 } from "@/lib/services/portfolio/idempotency";
@@ -24,6 +25,8 @@ import { SYNC_ERROR_CODES } from "@/lib/services/portfolio/types";
 import {
   applyRemoteSnapshotToLocalCache,
   resolveClientSyncState,
+  resolveConflictWithPushedSnapshot,
+  resolveConflictWithRemoteSnapshot,
 } from "@/lib/client/portfolioSyncState";
 import {
   portfolioStorageKey,
@@ -171,11 +174,52 @@ describe("portfolio conflict detection", () => {
     expect(resolution.kind).toBe("conflict");
   });
 
-  it("treats matching fingerprints as aligned", () => {
-    const local = [holding("1", "VWCE")];
-    const remote = snapshotWith(local);
+  it("treats matching content as aligned even with different holding ids", () => {
+    const local = [holding("legacy-local-id", "VWCE")];
+    const remote = snapshotWith([holding("remote-db-id", "VWCE")]);
     const resolution = resolvePortfolioSyncState(local, remote, USER_ID);
     expect(resolution.kind).toBe("aligned");
+  });
+
+  it("treats matching holdings in different order as aligned", () => {
+    const local = [
+      holding("1", "VWCE"),
+      holding("2", "STRC"),
+    ];
+    const remote = snapshotWith([
+      holding("9", "STRC"),
+      holding("8", "VWCE"),
+    ]);
+    const resolution = resolvePortfolioSyncState(local, remote, USER_ID);
+    expect(resolution.kind).toBe("aligned");
+  });
+
+  it("ignores live price differences when comparing portfolio content", () => {
+    const local = [
+      holding("1", "VWCE", {
+        currentPrice: 120,
+        changePercent: 2.5,
+        previousClose: 117,
+        marketPriceUpdatedAt: "2026-07-20T10:00:00.000Z",
+      }),
+    ];
+    const remote = snapshotWith([
+      holding("2", "VWCE", {
+        currentPrice: 99,
+        changePercent: -1.2,
+        previousClose: 100,
+        marketPriceUpdatedAt: "2026-07-19T10:00:00.000Z",
+      }),
+    ]);
+    const resolution = resolvePortfolioSyncState(local, remote, USER_ID);
+    expect(resolution.kind).toBe("aligned");
+  });
+
+  it("detects conflict when quantity differs", () => {
+    const local = [holding("1", "VWCE", { quantity: 10 })];
+    const remote = snapshotWith([holding("2", "VWCE", { quantity: 12 })]);
+    const resolution = resolvePortfolioSyncState(local, remote, USER_ID);
+    expect(resolution.kind).toBe("conflict");
   });
 });
 
@@ -472,6 +516,102 @@ describe("client portfolio sync state", () => {
       JSON.parse(localStorage.getItem(goalStorageKey(USER_ID)) ?? "{}")
         .passiveIncomeTarget,
     ).toBe(12000);
+  });
+
+  it("resolves cloud choice without conflict after reload", () => {
+    const local = [
+      holding("legacy-1", "VWCE", {
+        currentPrice: 130,
+        changePercent: 3,
+      }),
+    ];
+    const remote = snapshotWith([
+      holding("cloud-1", "VWCE", { currentPrice: 110 }),
+    ]);
+
+    const resolved = resolveConflictWithRemoteSnapshot(
+      USER_ID,
+      remote,
+      local,
+      null,
+    );
+    expect(resolved.ok).toBe(true);
+
+    const reloadedLocal = JSON.parse(
+      localStorage.getItem(portfolioStorageKey(USER_ID)) ?? "[]",
+    ) as StoredPortfolioHolding[];
+
+    const afterReload = resolveClientSyncState(
+      USER_ID,
+      reloadedLocal,
+      remote,
+      false,
+      null,
+      [],
+    );
+    expect(afterReload.status).toBe("ready");
+    if (afterReload.status === "ready") {
+      expect(afterReload.source).toBe("remote");
+    }
+  });
+
+  it("resolves device choice without conflict after reload", () => {
+    const local = [holding("legacy-1", "VWCE")];
+    const remote = snapshotWith([
+      holding("cloud-1", "IWDA"),
+    ]);
+    const pushed = snapshotWith(local);
+
+    const resolved = resolveConflictWithPushedSnapshot(
+      USER_ID,
+      pushed,
+      local,
+      null,
+    );
+    expect(resolved.ok).toBe(true);
+
+    const reloadedLocal = JSON.parse(
+      localStorage.getItem(portfolioStorageKey(USER_ID)) ?? "[]",
+    ) as StoredPortfolioHolding[];
+
+    const afterReload = resolveClientSyncState(
+      USER_ID,
+      reloadedLocal,
+      pushed,
+      false,
+      null,
+      [],
+    );
+    expect(afterReload.status).toBe("ready");
+    if (afterReload.status === "ready") {
+      expect(afterReload.source).toBe("remote");
+    }
+    expect(portfolioContentFingerprint(reloadedLocal, null)).toBe(
+      portfolioContentFingerprint(pushed.holdings, null),
+    );
+  });
+
+  it("keeps conflict unresolved when pushed snapshot verification fails", () => {
+    const local = [holding("legacy-1", "VWCE")];
+    const mismatched = snapshotWith([holding("cloud-1", "IWDA")]);
+
+    const resolved = resolveConflictWithPushedSnapshot(
+      USER_ID,
+      mismatched,
+      local,
+      null,
+    );
+    expect(resolved.ok).toBe(false);
+
+    const afterReload = resolveClientSyncState(
+      USER_ID,
+      local,
+      mismatched,
+      false,
+      null,
+      [],
+    );
+    expect(afterReload.status).toBe("conflict");
   });
 });
 

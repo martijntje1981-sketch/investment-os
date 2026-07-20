@@ -100,17 +100,20 @@ export default function PortfolioSyncBanner({
               This device and your cloud account both have different portfolios.
               Nothing was overwritten. Choose which copy to keep viewing.
             </p>
+            {syncState.errorMessage ? (
+              <p className="mt-2 text-sm text-amber-200">{syncState.errorMessage}</p>
+            ) : null}
             <div className="mt-3 flex flex-wrap gap-2">
               <button
                 type="button"
-                onClick={onUseRemote}
+                onClick={() => void onUseRemote()}
                 className="rounded-lg bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-white"
               >
                 Use cloud portfolio
               </button>
               <button
                 type="button"
-                onClick={onKeepLocal}
+                onClick={() => void onKeepLocal()}
                 className="rounded-lg border border-zinc-600 px-4 py-2 text-sm font-medium text-zinc-100 hover:border-zinc-400"
               >
                 Keep this device copy

@@ -22,6 +22,8 @@ import {
 } from "@/lib/client/portfolioSyncApi";
 import {
   applyRemoteSnapshotToLocalCache,
+  resolveConflictWithPushedSnapshot,
+  resolveConflictWithRemoteSnapshot,
   type ClientPortfolioSyncState,
   readPortfolioSyncMeta,
   recordMigrationSuccess,
@@ -385,23 +387,84 @@ export function useUserPortfolio() {
     await hydrateFromRemote(true);
   }, [hydrateFromRemote]);
 
-  const useRemotePortfolio = useCallback(() => {
+  const useRemotePortfolio = useCallback(async () => {
     if (!userSub || syncState.status !== "conflict") return false;
 
-    const merged = applyRemoteSnapshotToLocalCache(
+    const conflict = syncState;
+    setSyncState({ status: "syncing" });
+
+    const goal = readSavedUserGoal(userSub);
+    const resolved = resolveConflictWithRemoteSnapshot(
       userSub,
-      syncState.remoteSnapshot,
-      { preserveLocalPrices: syncState.localHoldings },
+      conflict.remoteSnapshot,
+      conflict.localHoldings,
+      goal,
     );
-    setHoldings(applyCachedPrices(userSub, merged));
+
+    if (!resolved.ok) {
+      recordSyncFailure(userSub, resolved.message);
+      setSyncState({
+        ...conflict,
+        errorMessage: resolved.message,
+      });
+      return false;
+    }
+
+    setHoldings(applyCachedPrices(userSub, resolved.holdings));
     setSyncState({ status: "ready", source: "remote" });
     dispatchPortfolioUpdated(userSub);
     return true;
   }, [syncState, userSub]);
 
-  const keepLocalPortfolio = useCallback(() => {
+  const keepLocalPortfolio = useCallback(async () => {
     if (!userSub || syncState.status !== "conflict") return false;
+
+    const conflict = syncState;
+    setSyncState({ status: "syncing" });
+
+    const localHoldings = loadUserPortfolioHoldings(userSub);
+    const goal = readSavedUserGoal(userSub);
+    const importMappings = readImportMappingsFromCache(userSub);
+
+    const result = await pushPortfolioToRemote({
+      idempotencyKey: `conflict-local:${userSub}:${crypto.randomUUID()}`,
+      holdings: localHoldings,
+      goal,
+      importMappings,
+    });
+
+    if (!result.ok) {
+      const message =
+        "error" in result
+          ? result.error
+          : "Could not upload this device copy to the cloud.";
+      recordSyncFailure(userSub, message);
+      setSyncState({
+        ...conflict,
+        errorMessage: message,
+      });
+      return false;
+    }
+
+    const resolved = resolveConflictWithPushedSnapshot(
+      userSub,
+      result.snapshot,
+      localHoldings,
+      goal,
+    );
+
+    if (!resolved.ok) {
+      recordSyncFailure(userSub, resolved.message);
+      setSyncState({
+        ...conflict,
+        errorMessage: resolved.message,
+      });
+      return false;
+    }
+
+    setHoldings(applyCachedPrices(userSub, resolved.holdings));
     setSyncState({ status: "ready", source: "local" });
+    dispatchPortfolioUpdated(userSub);
     return true;
   }, [syncState, userSub]);
 

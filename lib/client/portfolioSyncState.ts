@@ -14,6 +14,10 @@ import { writePortfolioToStorage } from "@/lib/client/userPortfolioStorage";
 import { writeUserGoal } from "@/lib/client/userGoalStorage";
 import { writeImportMappingsToCache } from "@/lib/services/import/mappingMemory";
 import { mergeRemoteMarketPrice } from "@/lib/client/portfolioPerformance";
+import {
+  portfolioContentFingerprint,
+  portfoliosContentMatch,
+} from "@/lib/services/portfolio/idempotency";
 
 export type ClientPortfolioSyncState =
   | { status: "loading" }
@@ -25,6 +29,7 @@ export type ClientPortfolioSyncState =
       remoteSnapshot: RemotePortfolioSnapshot;
       localFingerprint: string;
       remoteFingerprint: string;
+      errorMessage?: string;
     }
   | { status: "syncing" }
   | { status: "sync_error"; message: string; retryable: boolean }
@@ -85,6 +90,7 @@ export function resolveClientSyncState(
     localHoldings,
     remoteSnapshot,
     userSub,
+    goal,
   );
 
   switch (resolution.kind) {
@@ -169,6 +175,103 @@ export function applyRemoteSnapshotToLocalCache(
   });
 
   return holdings;
+}
+
+export type ConflictResolutionResult =
+  | { ok: true; holdings: StoredPortfolioHolding[] }
+  | { ok: false; message: string };
+
+/** Applies the cloud portfolio locally and verifies content alignment. */
+export function resolveConflictWithRemoteSnapshot(
+  userSub: string,
+  remoteSnapshot: RemotePortfolioSnapshot,
+  localHoldings: StoredPortfolioHolding[],
+  localGoal: GoalSettings | null,
+): ConflictResolutionResult {
+  const merged = applyRemoteSnapshotToLocalCache(userSub, remoteSnapshot, {
+    preserveLocalPrices: localHoldings,
+  });
+
+  if (
+    !portfoliosContentMatch(
+      merged,
+      remoteSnapshot.holdings,
+      localGoal,
+      remoteSnapshot.goal,
+    )
+  ) {
+    return {
+      ok: false,
+      message:
+        "Cloud portfolio was loaded, but local and cloud copies still differ. Nothing was marked resolved.",
+    };
+  }
+
+  writePortfolioSyncMeta(userSub, {
+    ...readPortfolioSyncMeta(userSub),
+    version: PORTFOLIO_SYNC_VERSION,
+    lastResolvedContentFingerprint: portfolioContentFingerprint(
+      merged,
+      localGoal,
+    ),
+    lastSyncError: null,
+  });
+
+  return { ok: true, holdings: merged };
+}
+
+/** Applies a pushed cloud snapshot locally and verifies content alignment. */
+export function resolveConflictWithPushedSnapshot(
+  userSub: string,
+  snapshot: RemotePortfolioSnapshot,
+  localHoldings: StoredPortfolioHolding[],
+  localGoal: GoalSettings | null,
+): ConflictResolutionResult {
+  if (
+    !portfoliosContentMatch(
+      localHoldings,
+      snapshot.holdings,
+      localGoal,
+      snapshot.goal,
+    )
+  ) {
+    return {
+      ok: false,
+      message:
+        "Cloud did not reflect the device portfolio after upload. The conflict remains unresolved.",
+    };
+  }
+
+  const merged = applyRemoteSnapshotToLocalCache(userSub, snapshot, {
+    preserveLocalPrices: localHoldings,
+  });
+
+  if (
+    !portfoliosContentMatch(
+      merged,
+      snapshot.holdings,
+      localGoal,
+      snapshot.goal,
+    )
+  ) {
+    return {
+      ok: false,
+      message:
+        "Device portfolio was uploaded, but local verification failed. The conflict remains unresolved.",
+    };
+  }
+
+  writePortfolioSyncMeta(userSub, {
+    ...readPortfolioSyncMeta(userSub),
+    version: PORTFOLIO_SYNC_VERSION,
+    lastResolvedContentFingerprint: portfolioContentFingerprint(
+      merged,
+      localGoal,
+    ),
+    lastSyncError: null,
+  });
+
+  return { ok: true, holdings: merged };
 }
 
 export function recordSyncFailure(userSub: string, message: string): void {

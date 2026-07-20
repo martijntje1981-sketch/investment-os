@@ -73,6 +73,95 @@ type FingerprintHolding = {
   providerSymbol: string | null;
 };
 
+function normalizeSymbol(value: unknown): string {
+  return String(value ?? "").trim().toUpperCase();
+}
+
+function normalizeOptionalSymbol(value: unknown): string | null {
+  const normalized = normalizeSymbol(value);
+  return normalized || null;
+}
+
+function roundFingerprintNumber(value: number): number {
+  return Number(value.toFixed(8));
+}
+
+/** Stable user-owned identity for a holding — ignores runtime ids and market data. */
+export function holdingContentIdentity(
+  holding: StoredPortfolioHolding,
+): string {
+  const assetType = holding.assetType === "cash" ? "cash" : "investment";
+
+  if (assetType === "cash") {
+    return `cash:${normalizeSymbol(holding.symbol || holding.currency || "EUR")}`;
+  }
+
+  const isin = normalizeOptionalSymbol(holding.isin);
+  if (isin && /^[A-Z0-9]{12}$/.test(isin)) {
+    return `investment:isin:${isin}`;
+  }
+
+  return `investment:symbol:${normalizeSymbol(holding.symbol)}`;
+}
+
+type ContentFingerprintHolding = {
+  identity: string;
+  quantity: number;
+  purchasePrice: number;
+  assetType: "cash" | "investment";
+  currency: string;
+  isin: string | null;
+  providerSymbol: string | null;
+  exchange: string | null;
+};
+
+/** Normalizes holdings for stable portfolio-content comparison. */
+export function normalizeHoldingsForContentFingerprint(
+  holdings: StoredPortfolioHolding[],
+): ContentFingerprintHolding[] {
+  return holdings
+    .map((holding) => {
+      const assetType: "cash" | "investment" =
+        holding.assetType === "cash" ? "cash" : "investment";
+      return {
+        identity: holdingContentIdentity(holding),
+        quantity: roundFingerprintNumber(Number(holding.quantity) || 0),
+        purchasePrice: roundFingerprintNumber(
+          assetType === "cash" ? 1 : Number(holding.purchasePrice) || 0,
+        ),
+        assetType,
+        currency: normalizeSymbol(holding.currency ?? "EUR"),
+        isin: normalizeOptionalSymbol(holding.isin),
+        providerSymbol: normalizeOptionalSymbol(holding.providerSymbol),
+        exchange: normalizeOptionalSymbol(holding.exchange),
+      };
+    })
+    .sort((a, b) => a.identity.localeCompare(b.identity));
+}
+
+/** Stable fingerprint of user-owned portfolio content (excludes market/sync metadata). */
+export function portfolioContentFingerprint(
+  holdings: StoredPortfolioHolding[],
+  goal?: GoalSettings | null,
+): string {
+  return hashPayload({
+    holdings: normalizeHoldingsForContentFingerprint(holdings),
+    goal: goalFingerprint(goal),
+  });
+}
+
+export function portfoliosContentMatch(
+  localHoldings: StoredPortfolioHolding[],
+  remoteHoldings: StoredPortfolioHolding[],
+  localGoal?: GoalSettings | null,
+  remoteGoal?: GoalSettings | null,
+): boolean {
+  return (
+    portfolioContentFingerprint(localHoldings, localGoal) ===
+    portfolioContentFingerprint(remoteHoldings, remoteGoal)
+  );
+}
+
 function normalizeForFingerprint(
   holdings: StoredPortfolioHolding[],
   userId?: string,

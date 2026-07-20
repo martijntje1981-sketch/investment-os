@@ -10,6 +10,7 @@ export type PortfolioSyncMeta = {
   lastMigrationIdempotencyKey?: string;
   lastMigrationFingerprint?: string;
   lastSuccessfulRemoteAt?: string;
+  lastResolvedContentFingerprint?: string;
   lastSyncError?: string | null;
 };
 

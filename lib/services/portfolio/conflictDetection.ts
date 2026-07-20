@@ -1,6 +1,9 @@
-import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
+import type { GoalSettings, StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 import { buildSyncPreview } from "@/lib/services/portfolio/mappers";
-import { portfolioFingerprint } from "@/lib/services/portfolio/idempotency";
+import {
+  portfolioContentFingerprint,
+  portfolioFingerprint,
+} from "@/lib/services/portfolio/idempotency";
 import type {
   PortfolioSyncPreview,
   PortfolioSyncResolution,
@@ -11,13 +14,17 @@ export function resolvePortfolioSyncState(
   localHoldings: StoredPortfolioHolding[],
   remoteSnapshot: RemotePortfolioSnapshot,
   userId: string,
+  localGoal: GoalSettings | null = null,
 ): PortfolioSyncResolution {
   const localCount = localHoldings.length;
   const remoteCount = remoteSnapshot.holdingCount;
-  const localFingerprint = portfolioFingerprint(localHoldings, userId);
-  const remoteFingerprint = portfolioFingerprint(
+  const localFingerprint = portfolioContentFingerprint(
+    localHoldings,
+    localGoal,
+  );
+  const remoteFingerprint = portfolioContentFingerprint(
     remoteSnapshot.holdings,
-    userId,
+    remoteSnapshot.goal,
   );
 
   if (remoteCount === 0 && localCount === 0) {
