@@ -1,283 +1,54 @@
 "use client";
 
 /**
- * Portfolio import page — screenshot, CSV/Excel, and review before save.
+ * Portfolio import — screenshot, spreadsheet, and confidence-based review.
  *
- * WHY THIS FILE CHANGES:
- * - CSV import previously treated ISIN as a ticker (column fallback bug).
- * - ISIN and ticker must be stored separately and resolved via the Match Engine.
- * - Users must review match confidence before saving unresolved instruments.
+ * Architecture:
+ * - lib/services/import/* — parsing, confidence policy, finalize, mapping memory
+ * - lib/client/importMatchClient.ts — Match Engine API wrapper
+ * - components/import/* — mobile-first import UI
+ *
+ * Future broker feeds plug into the same ImportRow pipeline.
  */
 
-import { ChangeEvent, DragEvent, useRef, useState } from "react";
+import { ChangeEvent, DragEvent, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
-import * as XLSX from "xlsx";
-import {
-  AlertCircle,
-  Check,
-  FileImage,
-  FileSpreadsheet,
-  Pencil,
-  Plus,
-  ShieldCheck,
-  Trash2,
-} from "lucide-react";
+import { AlertCircle, Check, Sparkles } from "lucide-react";
+
 import BottomNavigation from "@/components/home/BottomNav";
-import NumericInput from "@/components/NumericInput";
+import { ImportAutoHoldingsList, ImportSummaryCard } from "@/components/import/ImportSummaryCard";
+import { ImportDropzone } from "@/components/import/ImportDropzone";
+import { ImportMethodPicker } from "@/components/import/ImportMethodPicker";
+import { ImportProcessingState } from "@/components/import/ImportProcessingState";
+import { ImportReviewList } from "@/components/import/ImportReviewList";
+import { ImportTrustBanner } from "@/components/import/ImportTrustBanner";
 import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
+import { runImportPipeline, matchSingleImportRow } from "@/lib/client/importMatchClient";
+import type { ExtractionReviewField } from "@/lib/services/extraction/fieldConfidence";
 import {
   dispatchPortfolioUpdated,
-  normalizeHoldingForSave,
   writePortfolioToStorage,
 } from "@/lib/client/portfolioPricing";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 import {
-  isValidIsin,
-  splitIsinFromTicker,
-} from "@/lib/services/instruments/validation";
-import { applyResolvedToHolding } from "@/lib/services/instruments/applyResolved";
+  annotateImportRow,
+  applySavedMappingsToRows,
+  buildImportReviewPlan,
+  canImportRows,
+  confirmImportRow,
+  finalizeImportRowsForSave,
+  isSupportedScreenshotFile,
+  isSupportedSpreadsheetFileName,
+  parseSpreadsheetBuffer,
+  rememberConfirmedImportMappings,
+  selectImportCandidate,
+  type ImportRow,
+  type ImportSource,
+} from "@/lib/services/import";
 import type { ResolvedInstrument } from "@/lib/types/instrument";
+import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
-type ImportRow = {
-  id: string;
-  symbol: string;
-  name: string;
-  quantity: number;
-  purchasePrice: number;
-  currentPrice: number;
-  assetType: "investment" | "cash";
-  confidence?: number;
-  warnings?: string[];
-  isin?: string | null;
-  exchange?: string | null;
-  providerSymbol?: string | null;
-  instrumentName?: string | null;
-  matchMethod?: ResolvedInstrument["matchMethod"];
-  matchConfidence?: number;
-  requiresConfirmation?: boolean;
-  matchWarnings?: string[];
-  confirmed?: boolean;
-};
-
-type StoredHolding = ImportRow & { currency: "EUR" };
-
-type RecognizedHolding = {
-  name: string;
-  ticker: string;
-  quantity: number;
-  price?: number;
-  value?: number;
-  currency?: string;
-  confidence?: number;
-  isin?: string | null;
-  exchange?: string | null;
-  assetType?: "investment" | "cash";
-  warnings?: string[];
-  providerSymbol?: string | null;
-  instrumentName?: string | null;
-  matchMethod?: ResolvedInstrument["matchMethod"];
-  matchConfidence?: number;
-  requiresConfirmation?: boolean;
-  matchWarnings?: string[];
-};
-
-type AnalysisResponse = {
-  success: boolean;
-  holdings?: RecognizedHolding[];
-  message?: string;
-};
-
-type MatchApiResult = {
-  input: {
-    ticker?: string | null;
-    isin?: string | null;
-    exchange?: string | null;
-    instrumentName?: string | null;
-    assetType?: "investment" | "cash";
-  };
-  resolved: ResolvedInstrument;
-};
-
-type MatchApiResponse = {
-  success: boolean;
-  results?: MatchApiResult[];
-  message?: string;
-};
-
-function numberValue(value: unknown) {
-  if (typeof value === "number") return Number.isFinite(value) ? value : 0;
-  if (typeof value !== "string") return 0;
-  const clean = value.replace(/[€$£\s]/g, "").replace(/\.(?=\d{3}(?:\D|$))/g, "").replace(",", ".");
-  const parsed = Number(clean);
-  return Number.isFinite(parsed) ? parsed : 0;
-}
-
-function normalizedRecord(record: Record<string, unknown>) {
-  return new Map(
-    Object.entries(record).map(([key, value]) => [
-      key.toLowerCase().replace(/[^a-z0-9]/g, ""),
-      value,
-    ]),
-  );
-}
-
-function firstValue(record: Map<string, unknown>, keys: string[]) {
-  for (const key of keys) {
-    if (record.has(key)) return record.get(key);
-  }
-  return undefined;
-}
-
-function stringValue(value: unknown): string {
-  return String(value ?? "").trim();
-}
-
-function applyMatchToRow(row: ImportRow, resolved: ResolvedInstrument): ImportRow {
-  const mergedWarnings = [
-    ...(row.warnings ?? []),
-    ...resolved.warnings,
-  ].filter(Boolean);
-
-  const merged = applyResolvedToHolding(
-    {
-      ...row,
-      matchWarnings: row.matchWarnings,
-    },
-    resolved,
-  );
-
-  return {
-    ...merged,
-    warnings: mergedWarnings.length > 0 ? mergedWarnings : row.warnings,
-    confirmed: resolved.requiresConfirmation ? row.confirmed ?? false : true,
-  };
-}
-
-function rowToMatchInput(row: ImportRow) {
-  return {
-    ticker: row.symbol.trim() || null,
-    isin: row.isin ?? null,
-    exchange: row.exchange ?? null,
-    instrumentName: row.name.trim() || null,
-    assetType: row.assetType,
-  };
-}
-
-async function matchImportRows(rows: ImportRow[]): Promise<ImportRow[]> {
-  const investments = rows.filter((row) => row.assetType === "investment");
-  if (investments.length === 0) return rows;
-
-  const response = await fetch("/api/instruments/match", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      holdings: investments.map(rowToMatchInput),
-    }),
-  });
-
-  const data = (await response.json()) as MatchApiResponse;
-  if (!response.ok || !data.success || !data.results) {
-    throw new Error(data.message ?? "Instrument matching failed.");
-  }
-
-  const matchByIndex = new Map<number, ResolvedInstrument>();
-  investments.forEach((_, index) => {
-    const result = data.results?.[index];
-    if (result) matchByIndex.set(index, result.resolved);
-  });
-
-  let investmentIndex = 0;
-  return rows.map((row) => {
-    if (row.assetType === "cash") return row;
-    const resolved = matchByIndex.get(investmentIndex);
-    investmentIndex += 1;
-    return resolved ? applyMatchToRow(row, resolved) : row;
-  });
-}
-
-/**
- * Parses spreadsheet rows with ISIN, ticker, and exchange in separate columns.
- * ISIN is never copied into the symbol field.
- */
-function parseSpreadsheet(buffer: ArrayBuffer): ImportRow[] {
-  const workbook = XLSX.read(buffer, { type: "array" });
-  const sheetName = workbook.SheetNames[0];
-  if (!sheetName) return [];
-  const records = XLSX.utils.sheet_to_json<Record<string, unknown>>(workbook.Sheets[sheetName], { defval: "" });
-
-  return records.map((raw) => {
-    const record = normalizedRecord(raw);
-
-    // ISIN and ticker are separate columns — never merge them.
-    const rawIsin = stringValue(firstValue(record, ["isin"])).toUpperCase();
-    const rawExchange = stringValue(firstValue(record, ["exchange", "mic", "market", "listing"])).toUpperCase();
-    const rawTicker = stringValue(firstValue(record, ["symbol", "ticker", "code"])).toUpperCase();
-
-    const isin = isValidIsin(rawIsin) ? rawIsin : null;
-    const tickerFromColumn = splitIsinFromTicker(rawTicker).ticker;
-    const isinFromTickerColumn = splitIsinFromTicker(rawTicker).isin;
-    const resolvedIsin = isin ?? isinFromTickerColumn;
-    const symbol = tickerFromColumn;
-
-    const rawName = stringValue(
-      firstValue(record, ["name", "investment", "holding", "security", "description"]),
-    ) || symbol || resolvedIsin || "Unknown holding";
-
-    const rawType = stringValue(firstValue(record, ["type", "assettype", "category"])).toLowerCase();
-    const isCash =
-      rawType.includes("cash") ||
-      ["CASH", "EUR", "EURCASH"].includes(symbol.replace(/\s/g, ""));
-
-    const amount = numberValue(firstValue(record, ["amount", "cash", "value", "marketvalue"]));
-    const quantity = isCash
-      ? amount || numberValue(firstValue(record, ["quantity", "units", "shares", "number"]))
-      : numberValue(firstValue(record, ["quantity", "units", "shares", "number"]));
-    const purchasePrice = isCash
-      ? 1
-      : numberValue(firstValue(record, ["purchaseprice", "averageprice", "avgprice", "costprice", "buyprice"]));
-    const currentPrice = isCash
-      ? 1
-      : numberValue(
-          firstValue(record, ["currentprice", "price", "marketprice", "lastprice"]),
-        );
-
-    return {
-      id: crypto.randomUUID(),
-      symbol: isCash ? symbol || "EUR" : symbol,
-      name: isCash ? rawName || "EUR Cash" : rawName,
-      quantity,
-      purchasePrice,
-      currentPrice,
-      assetType: isCash ? ("cash" as const) : ("investment" as const),
-      isin: isCash ? null : resolvedIsin,
-      exchange: isCash ? null : rawExchange || null,
-    };
-  }).filter((row) => {
-    if (!row.name || row.quantity < 0) return false;
-    if (row.assetType === "cash") return true;
-    // Accept rows with a ticker, ISIN, or name — matching runs after parse.
-    return Boolean(row.symbol || row.isin || row.name);
-  });
-}
-
-function readStoredHoldings(holdings: StoredHolding[]): StoredHolding[] {
-  return holdings;
-}
-
-function matchStatusLabel(row: ImportRow): string {
-  if (row.assetType === "cash") return "Cash";
-  if (row.matchMethod === "unresolved" || !row.providerSymbol) return "Unresolved";
-  if (row.requiresConfirmation) return "Confirm match";
-  return "Matched";
-}
-
-function matchStatusClass(row: ImportRow): string {
-  if (row.assetType === "cash") return "text-slate-500";
-  if (row.matchMethod === "unresolved" || !row.providerSymbol) return "text-red-700";
-  if (row.requiresConfirmation) return "text-amber-700";
-  return "text-emerald-700";
-}
+type ImportPhase = "choose" | "processing" | "ready";
 
 export default function UploadPage() {
   const router = useRouter();
@@ -288,129 +59,103 @@ export default function UploadPage() {
     recoverPortfolio,
     dismissRecovery,
   } = useUserPortfolio();
+
   const imageInput = useRef<HTMLInputElement>(null);
   const sheetInput = useRef<HTMLInputElement>(null);
+
+  const [phase, setPhase] = useState<ImportPhase>("choose");
   const [rows, setRows] = useState<ImportRow[]>([]);
+  const [broker, setBroker] = useState<string | null>(null);
+  const [source, setSource] = useState<ImportSource | null>(null);
+  const [processingMessage, setProcessingMessage] = useState("");
+  const [processingStep, setProcessingStep] = useState("");
   const [isDragging, setIsDragging] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [source, setSource] = useState<"screenshot" | "spreadsheet" | null>(null);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
-  async function processScreenshot(file: File) {
-    if (!file.type.startsWith("image/")) {
-      setError("Choose a JPG, PNG or WEBP image.");
-      return;
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      setError("The selected image is larger than 10 MB.");
-      return;
-    }
+  const plan = useMemo(() => buildImportReviewPlan(rows), [rows]);
+
+  const sourceLabel =
+    source === "screenshot"
+      ? "AI screenshot recognition"
+      : source === "spreadsheet"
+        ? "Spreadsheet import"
+        : "Import";
+
+  function applyMemory(rowsToEnhance: ImportRow[]) {
+    return applySavedMappingsToRows(userSub, rowsToEnhance).map(annotateImportRow);
+  }
+
+  async function processFile(file: File, importSource: ImportSource) {
     setError("");
-    setMessage("Analysing screenshot…");
-    setIsProcessing(true);
+    setSuccessMessage("");
+    setPhase("processing");
+    setProcessingStep(
+      importSource === "screenshot" ? "Reading screenshot" : "Reading file",
+    );
+    setProcessingMessage(
+      importSource === "screenshot"
+        ? "AI is reading your portfolio screenshot…"
+        : "Reading your spreadsheet…",
+    );
+
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const response = await fetch("/api/analyze-portfolio", { method: "POST", body: formData });
-      const data = await response.json() as AnalysisResponse;
-      if (!response.ok || !data.success) throw new Error(data.message ?? "The screenshot could not be analysed.");
+      if (importSource === "screenshot") {
+        const validation = isSupportedScreenshotFile(file);
+        if (!validation.ok) throw new Error(validation.message);
+      } else {
+        if (!isSupportedSpreadsheetFileName(file.name)) {
+          throw new Error("Choose an Excel (.xlsx or .xls) or CSV file.");
+        }
+      }
 
-      const imported = (data.holdings ?? []).map((holding) => {
-        const isCash = holding.assetType === "cash";
-        const price = holding.price ?? (holding.quantity > 0 && holding.value ? holding.value / holding.quantity : 0);
-        const ticker = holding.ticker.trim().toUpperCase();
-        const isinFromTicker = isValidIsin(ticker) ? ticker : null;
-        const symbol = isCash
-          ? ticker || holding.currency || "EUR"
-          : isinFromTicker
-            ? ""
-            : ticker;
+      setProcessingStep("Matching instruments");
+      setProcessingMessage("Matching every holding to the correct instrument…");
 
-        return {
-          id: crypto.randomUUID(),
-          symbol,
-          name: isCash ? holding.name || `${holding.currency || "EUR"} Cash` : holding.name,
-          quantity: holding.quantity,
-          purchasePrice: isCash ? 1 : 0,
-          currentPrice: isCash ? 1 : price,
-          assetType: isCash ? ("cash" as const) : ("investment" as const),
-          confidence: holding.confidence,
-          warnings: holding.warnings,
-          isin: holding.isin ?? isinFromTicker,
-          exchange: holding.exchange,
-          providerSymbol: holding.providerSymbol ?? null,
-          instrumentName: holding.instrumentName ?? null,
-          matchMethod: holding.matchMethod,
-          matchConfidence: holding.matchConfidence,
-          requiresConfirmation: holding.requiresConfirmation,
-          matchWarnings: holding.matchWarnings,
-          confirmed: !holding.requiresConfirmation,
-        } satisfies ImportRow;
+      const result = await runImportPipeline({
+        source: importSource,
+        file,
+        userSub,
+        parseSpreadsheet: parseSpreadsheetBuffer,
+        applySavedMappings: applyMemory,
       });
 
-      if (!imported.length) throw new Error("No holdings were recognised. Try a clearer screenshot.");
-      setRows(imported);
-      setSource("screenshot");
-      setMessage("Review every recognised value and confirm instrument matches before saving.");
+      setRows(result.rows);
+      setBroker(result.broker);
+      setSource(importSource);
+      setPhase("ready");
+      setProcessingMessage("");
+      setProcessingStep("");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "The screenshot could not be analysed.");
-      setMessage("");
-    } finally {
-      setIsProcessing(false);
+      setPhase("choose");
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Something went wrong while importing your file.",
+      );
+      setProcessingMessage("");
+      setProcessingStep("");
     }
   }
 
-  async function processSpreadsheet(file: File) {
-    const extension = file.name.split(".").pop()?.toLowerCase();
-    if (!extension || !["xlsx", "xls", "csv"].includes(extension)) {
-      setError("Choose an Excel (.xlsx or .xls) or CSV file.");
+  function processDroppedOrSelected(file: File) {
+    if (file.type.startsWith("image/")) {
+      void processFile(file, "screenshot");
       return;
     }
-    setError("");
-    setIsProcessing(true);
-    setMessage("Reading spreadsheet…");
-    try {
-      const parsed = parseSpreadsheet(await file.arrayBuffer());
-      if (!parsed.length) throw new Error("No valid holdings were found. Check the column headings and values.");
-      setMessage("Matching instruments…");
-      const matched = await matchImportRows(parsed);
-      setRows(matched);
-      setSource("spreadsheet");
-      setMessage("Review imported rows and confirm any low-confidence instrument matches.");
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "The spreadsheet could not be read.");
-      setMessage("");
-    } finally {
-      setIsProcessing(false);
-    }
-  }
-
-  async function rematchRows() {
-    if (rows.length === 0) return;
-    setError("");
-    setIsProcessing(true);
-    setMessage("Re-matching instruments…");
-    try {
-      const matched = await matchImportRows(rows);
-      setRows(matched);
-      setMessage("Instrument matches updated. Confirm any flagged rows before saving.");
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Instrument matching failed.");
-    } finally {
-      setIsProcessing(false);
-    }
+    void processFile(file, "spreadsheet");
   }
 
   function onImageChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
-    if (file) void processScreenshot(file);
+    if (file) void processFile(file, "screenshot");
     event.target.value = "";
   }
 
   function onSheetChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
-    if (file) void processSpreadsheet(file);
+    if (file) void processFile(file, "spreadsheet");
     event.target.value = "";
   }
 
@@ -418,213 +163,318 @@ export default function UploadPage() {
     event.preventDefault();
     setIsDragging(false);
     const file = event.dataTransfer.files?.[0];
-    if (!file) return;
-    if (file.type.startsWith("image/")) void processScreenshot(file);
-    else void processSpreadsheet(file);
+    if (file) processDroppedOrSelected(file);
   }
 
-  function updateRow(id: string, field: keyof ImportRow, value: string | boolean | number) {
-    setRows((current) => current.map((row) => {
-      if (row.id !== id) return row;
-      const next: ImportRow = {
-        ...row,
-        [field]: ["quantity", "purchasePrice", "currentPrice", "matchConfidence"].includes(field)
-          ? typeof value === "number" ? value : Number(value)
-          : value,
-        ...(field === "assetType" && value === "cash"
-          ? {
-              symbol: "EUR",
-              name: "EUR Cash",
-              purchasePrice: 1,
-              currentPrice: 1,
-              isin: null,
-              exchange: null,
-              providerSymbol: null,
-              requiresConfirmation: false,
-              confirmed: true,
-            }
-          : {}),
-      };
+  function resetImport() {
+    setRows([]);
+    setBroker(null);
+    setSource(null);
+    setPhase("choose");
+    setError("");
+    setSuccessMessage("");
+  }
 
-      // Identifier edits invalidate prior matches until re-matched.
-      if (["symbol", "isin", "exchange", "name", "assetType"].includes(field)) {
-        next.providerSymbol = null;
-        next.matchMethod = undefined;
-        next.matchConfidence = undefined;
-        next.requiresConfirmation = undefined;
-        next.matchWarnings = undefined;
-        next.confirmed = false;
+  function confirmRow(id: string) {
+    setRows((current) =>
+      current.map((row) => (row.id === id ? confirmImportRow(row) : row)),
+    );
+  }
+
+  function pickCandidate(id: string, candidate: ResolvedInstrument) {
+    setRows((current) =>
+      current.map((row) =>
+        row.id === id ? selectImportCandidate(row, candidate) : row,
+      ),
+    );
+  }
+
+  function updateRowField(
+    id: string,
+    field: ExtractionReviewField,
+    value: string | number,
+  ) {
+    setRows((current) => {
+      const updated = current.map((row) => {
+        if (row.id !== id) return row;
+
+        const next: ImportRow = { ...row };
+        const numeric =
+          typeof value === "number" ? value : Number(value);
+
+        switch (field) {
+          case "name":
+            next.name = String(value);
+            break;
+          case "isin":
+            next.isin = String(value).trim().toUpperCase() || null;
+            break;
+          case "ticker":
+            next.symbol = String(value).trim().toUpperCase();
+            break;
+          case "exchange":
+            next.exchange = String(value).trim().toUpperCase() || null;
+            break;
+          case "quantity":
+            next.quantity = numeric;
+            break;
+          case "purchasePrice":
+            next.purchasePrice = numeric;
+            break;
+          case "currentPrice":
+            next.currentPrice = numeric;
+            break;
+          case "purchaseDate":
+            next.purchaseDate = String(value) || null;
+            break;
+          default:
+            break;
+        }
+
+        if (["isin", "ticker", "exchange", "name"].includes(field)) {
+          next.providerSymbol = null;
+          next.matchMethod = undefined;
+          next.matchConfidence = undefined;
+          next.requiresConfirmation = undefined;
+          next.matchWarnings = undefined;
+          next.userConfirmed = false;
+          next.candidates = undefined;
+        }
+
+        if (next.extractionFieldConfidence) {
+          next.extractionFieldConfidence = {
+            ...next.extractionFieldConfidence,
+            [field === "ticker" ? "ticker" : field]: 1,
+          };
+        }
+
+        return annotateImportRow(next);
+      });
+
+      if (["isin", "ticker", "exchange", "name"].includes(field)) {
+        const changed = updated.find((row) => row.id === id);
+        if (changed && changed.assetType !== "cash") {
+          void matchSingleImportRow(changed)
+            .then((matched) => {
+              setRows((rowsNow) =>
+                rowsNow.map((item) => (item.id === id ? matched : item)),
+              );
+            })
+            .catch(() => {
+              // Keep editable row state; user can still pick a candidate manually.
+            });
+        }
       }
 
-      return next;
-    }));
+      return updated;
+    });
   }
 
-  function save(mode: "replace" | "merge") {
-    const invalid = rows.some((row) => {
-      if (!row.name.trim() || row.quantity < 0) return true;
-      if (row.assetType === "cash") return false;
-      if (!row.symbol.trim() && !row.isin) return true;
-      if (row.requiresConfirmation && !row.confirmed) return true;
-      return false;
-    });
+  function removeRow(id: string) {
+    setRows((current) => current.filter((row) => row.id !== id));
+  }
 
-    if (invalid) {
-      setError(
-        "Complete all required fields, confirm flagged instrument matches, and ensure each investment has a ticker or ISIN.",
-      );
+  function importPortfolio(mode: "replace" | "merge") {
+    const validation = canImportRows(rows);
+    if (!validation.ok) {
+      setError(validation.message ?? "Complete the review before importing.");
       return;
     }
-
-    const prepared = rows.map((row) =>
-      normalizeHoldingForSave({
-        ...row,
-        symbol: row.symbol.trim().toUpperCase(),
-        name: row.name.trim(),
-        isin: row.isin ?? null,
-        exchange: row.exchange ?? null,
-        providerSymbol: row.providerSymbol ?? null,
-        instrumentName: row.instrumentName ?? null,
-        currency: "EUR",
-      }),
-    ) as StoredHolding[];
 
     if (!userSub) {
       setError("Sign in to save your portfolio.");
       return;
     }
 
-    const existing = readStoredHoldings(storedHoldings as StoredHolding[]);
-    const next =
-      mode === "replace" ? prepared : [...existing, ...prepared];
-    writePortfolioToStorage(userSub, next);
-    dispatchPortfolioUpdated(userSub);
+    setIsSaving(true);
+    setError("");
 
-    const hasPendingPrices = prepared.some(
-      (holding) => holding.assetType !== "cash" && holding.currentPrice <= 0,
-    );
-    if (hasPendingPrices) {
-      setMessage(
-        "Holding saved. Current price is temporarily unavailable and will be refreshed later.",
+    try {
+      const prepared = finalizeImportRowsForSave(rows);
+      rememberConfirmedImportMappings(userSub, rows);
+
+      const existing = storedHoldings as StoredPortfolioHolding[];
+      const next =
+        mode === "replace" ? prepared : [...existing, ...prepared];
+
+      writePortfolioToStorage(userSub, next);
+      dispatchPortfolioUpdated(userSub);
+
+      const hasPendingPrices = prepared.some(
+        (holding) => holding.assetType !== "cash" && holding.currentPrice <= 0,
       );
-      setError("");
-      window.setTimeout(() => router.push("/portfolio"), 1200);
-      return;
-    }
 
-    router.push("/portfolio");
+      if (hasPendingPrices) {
+        setSuccessMessage(
+          "Portfolio imported. Live prices will refresh on your dashboard.",
+        );
+        window.setTimeout(() => router.push("/dashboard"), 900);
+        return;
+      }
+
+      router.push("/dashboard");
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Your portfolio could not be saved.",
+      );
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   return (
     <>
-      <main className="min-h-screen max-w-full overflow-x-hidden bg-slate-50 px-4 pb-28 pt-7 text-slate-950 sm:px-8 sm:pt-12">
-        <div className="mx-auto max-w-6xl">
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-700">Secure portfolio setup</p>
-          <h1 className="mt-3 text-4xl font-black tracking-[-0.05em] sm:text-6xl">Import your portfolio</h1>
-          <p className="mt-4 max-w-2xl leading-7 text-slate-600">Choose a screenshot, Excel, CSV or manual entry. Nothing is saved until you review and confirm it.</p>
+      <main className="min-h-screen max-w-full overflow-x-hidden bg-[#F4F7FB] px-4 pb-28 pt-7 text-slate-950 sm:px-8 sm:pt-12">
+        <div className="mx-auto max-w-3xl">
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-700">
+            Portfolio setup
+          </p>
+          <h1 className="mt-3 text-4xl font-black tracking-[-0.05em] sm:text-5xl">
+            Import your portfolio
+          </h1>
+          <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-600 sm:text-base">
+            Upload a screenshot or spreadsheet. Investment OS reads your
+            holdings, matches every instrument, and builds your portfolio in
+            seconds.
+          </p>
 
           <PortfolioRecoveryBanner
             offer={recoveryOffer}
-            onRecover={() => {
-              recoverPortfolio();
-            }}
+            onRecover={recoverPortfolio}
             onDismiss={dismissRecovery}
           />
 
-          <section className="mt-8 grid gap-4 md:grid-cols-3">
-            <ImportCard icon={<FileImage className="h-6 w-6" />} title="Screenshot" text="AI recognises visible positions." button="Choose screenshot" onClick={() => imageInput.current?.click()} />
-            <ImportCard icon={<FileSpreadsheet className="h-6 w-6" />} title="Excel or CSV" text="Import rows from a spreadsheet." button="Choose spreadsheet" onClick={() => sheetInput.current?.click()} />
-            <ImportCard icon={<Pencil className="h-6 w-6" />} title="Manual entry" text="Add investments or cash yourself." button="Open portfolio" href="/portfolio" />
-          </section>
-
-          <input ref={imageInput} type="file" accept="image/png,image/jpeg,image/webp" onChange={onImageChange} className="hidden" />
-          <input ref={sheetInput} type="file" accept=".xlsx,.xls,.csv,text/csv" onChange={onSheetChange} className="hidden" />
-
-          <div
-            onDragOver={(event) => { event.preventDefault(); setIsDragging(true); }}
-            onDragLeave={() => setIsDragging(false)}
-            onDrop={onDrop}
-            className={`mt-5 rounded-2xl border-2 border-dashed px-5 py-5 text-center text-sm font-semibold ${isDragging ? "border-blue-500 bg-blue-50 text-blue-700" : "border-slate-300 bg-white text-slate-500"}`}
-          >
-            Drop a screenshot, Excel or CSV file here
-          </div>
-
-          {isProcessing && <div className="mt-5 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm font-bold text-blue-800">{message}</div>}
-          {error && <div className="mt-5 flex items-start gap-2 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-800"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />{error}</div>}
-
-          {rows.length > 0 && !isProcessing && (
-            <section className="mt-7 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
-              <div className="flex flex-col justify-between gap-3 border-b border-slate-200 px-5 py-5 sm:flex-row sm:items-center sm:px-7">
-                <div>
-                  <p className="text-xs font-black uppercase tracking-[0.14em] text-blue-700">Review required</p>
-                  <h2 className="mt-1 text-2xl font-black">Check {rows.length} imported rows</h2>
-                  <p className="mt-1 text-sm text-slate-500">Source: {source === "screenshot" ? "AI screenshot recognition" : "spreadsheet"}</p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <button onClick={() => void rematchRows()} className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-bold">Re-match instruments</button>
-                  <button onClick={() => setRows((current) => [...current, { id: crypto.randomUUID(), symbol: "", name: "", quantity: 0, purchasePrice: 0, currentPrice: 0, assetType: "investment" }])} className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-bold"><Plus className="h-4 w-4" /> Add row</button>
-                </div>
+          {phase === "choose" ? (
+            <>
+              <div className="mt-8">
+                <ImportMethodPicker
+                  onScreenshotClick={() => imageInput.current?.click()}
+                  onSpreadsheetClick={() => sheetInput.current?.click()}
+                />
               </div>
 
-              <div className="divide-y divide-slate-200">
-                {rows.map((row) => (
-                  <div key={row.id} className="space-y-3 px-5 py-5 md:px-7">
-                    <div className="grid gap-3 md:grid-cols-[0.7fr_0.8fr_0.8fr_1.2fr_0.7fr_0.8fr_0.8fr_auto] md:items-end">
-                      <ReviewField label="Type"><select value={row.assetType} onChange={(event) => updateRow(row.id, "assetType", event.target.value)} className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-bold"><option value="investment">Investment</option><option value="cash">Cash</option></select></ReviewField>
-                      <ReviewField label="Ticker"><input disabled={row.assetType === "cash"} value={row.symbol} onChange={(event) => updateRow(row.id, "symbol", event.target.value)} placeholder="e.g. VWCE" className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-bold disabled:opacity-60" /></ReviewField>
-                      <ReviewField label="ISIN"><input disabled={row.assetType === "cash"} value={row.isin ?? ""} onChange={(event) => updateRow(row.id, "isin", event.target.value.toUpperCase())} placeholder="12-character ISIN" className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-bold disabled:opacity-60" /></ReviewField>
-                      <ReviewField label="Name"><input value={row.name} onChange={(event) => updateRow(row.id, "name", event.target.value)} className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-bold" /></ReviewField>
-                      <ReviewField label={row.assetType === "cash" ? "Amount" : "Quantity"}><NumericInput value={row.quantity} onChange={(value) => updateRow(row.id, "quantity", value)} className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-bold" placeholder="0.00" /></ReviewField>
-                      <ReviewField label="Purchase price"><NumericInput disabled={row.assetType === "cash"} value={row.purchasePrice} onChange={(value) => updateRow(row.id, "purchasePrice", value)} className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-bold disabled:opacity-60" placeholder="0.00" /></ReviewField>
-                      <ReviewField label="Current price"><NumericInput disabled={row.assetType === "cash"} value={row.currentPrice} onChange={(value) => updateRow(row.id, "currentPrice", value)} className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-bold disabled:opacity-60" placeholder="0.00" /></ReviewField>
-                      <button onClick={() => setRows((current) => current.filter((item) => item.id !== row.id))} aria-label={`Remove ${row.name || "row"}`} className="rounded-lg p-2.5 text-red-600 hover:bg-red-50"><Trash2 className="h-4 w-4" /></button>
-                    </div>
+              <ImportDropzone
+                isDragging={isDragging}
+                onDragOver={(event) => {
+                  event.preventDefault();
+                  setIsDragging(true);
+                }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={onDrop}
+              />
+            </>
+          ) : null}
 
-                    {row.assetType === "investment" && (
-                      <div className="grid gap-3 md:grid-cols-[1fr_1fr_1fr_auto] md:items-end">
-                        <ReviewField label="Exchange"><input value={row.exchange ?? ""} onChange={(event) => updateRow(row.id, "exchange", event.target.value.toUpperCase())} placeholder="e.g. XETRA" className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-bold" /></ReviewField>
-                        <ReviewField label="Provider symbol"><input value={row.providerSymbol ?? ""} readOnly className="w-full rounded-lg border border-slate-200 bg-slate-100 px-3 py-2.5 text-sm font-bold text-slate-600" /></ReviewField>
-                        <ReviewField label="Match status"><p className={`rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-bold ${matchStatusClass(row)}`}>{matchStatusLabel(row)}{row.matchConfidence != null ? ` (${Math.round(row.matchConfidence * 100)}%)` : ""}</p></ReviewField>
-                        {row.requiresConfirmation && (
-                          <label className="flex items-center gap-2 pb-2 text-sm font-bold text-amber-800">
-                            <input type="checkbox" checked={row.confirmed ?? false} onChange={(event) => updateRow(row.id, "confirmed", event.target.checked)} />
-                            I confirm this match
-                          </label>
-                        )}
-                      </div>
-                    )}
+          <input
+            ref={imageInput}
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            onChange={onImageChange}
+            className="hidden"
+          />
+          <input
+            ref={sheetInput}
+            type="file"
+            accept=".xlsx,.xls,.csv,text/csv"
+            onChange={onSheetChange}
+            className="hidden"
+          />
 
-                    {((row.confidence ?? 1) < 0.8 || (row.warnings?.length ?? 0) > 0 || (row.matchWarnings?.length ?? 0) > 0) && (
-                      <p className="text-[11px] font-semibold leading-4 text-amber-700">
-                        {[...(row.warnings ?? []), ...(row.matchWarnings ?? [])].filter(Boolean).join(" · ") || "Low-confidence recognition — verify this row carefully."}
-                      </p>
-                    )}
+          {phase === "processing" ? (
+            <ImportProcessingState
+              message={processingMessage}
+              step={processingStep}
+            />
+          ) : null}
+
+          {error ? (
+            <div className="mt-5 flex items-start gap-2 rounded-[24px] border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-800">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              {error}
+            </div>
+          ) : null}
+
+          {successMessage ? (
+            <div className="mt-5 rounded-[24px] border border-emerald-200 bg-emerald-50 p-4 text-sm font-bold text-emerald-800">
+              {successMessage}
+            </div>
+          ) : null}
+
+          {phase === "ready" && rows.length > 0 ? (
+            <div className="mt-8 space-y-5">
+              <ImportSummaryCard
+                plan={plan}
+                broker={broker}
+                sourceLabel={sourceLabel}
+              />
+
+              <ImportAutoHoldingsList holdings={plan.autoRows} />
+
+              <ImportReviewList
+                rows={[...plan.reviewRows, ...plan.blockedRows]}
+                onConfirm={confirmRow}
+                onSelectCandidate={pickCandidate}
+                onFieldChange={updateRowField}
+                onRemove={removeRow}
+              />
+
+              <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+                <div className="flex items-start gap-3">
+                  <div className="rounded-2xl bg-blue-50 p-3 text-blue-700">
+                    <Sparkles className="h-5 w-5" />
                   </div>
-                ))}
-              </div>
+                  <div>
+                    <h3 className="text-lg font-black tracking-[-0.03em]">
+                      {plan.readyToImport
+                        ? "Ready to import"
+                        : "Almost there"}
+                    </h3>
+                    <p className="mt-1 text-sm text-slate-500">
+                      {plan.readyToImport
+                        ? "Your portfolio will activate your dashboard, news, goals, analytics, and AI insights immediately."
+                        : "Confirm the holdings above, then import your portfolio."}
+                    </p>
+                  </div>
+                </div>
 
-              <div className="flex flex-col gap-3 border-t border-slate-200 bg-slate-50 px-5 py-5 sm:flex-row sm:justify-end sm:px-7">
-                <button onClick={() => save("merge")} className="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold">Add to existing portfolio</button>
-                <button onClick={() => save("replace")} className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white"><Check className="h-4 w-4" /> Replace portfolio</button>
-              </div>
-            </section>
-          )}
+                <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+                  <button
+                    type="button"
+                    onClick={resetImport}
+                    className="min-h-[48px] rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700"
+                  >
+                    Upload another file
+                  </button>
+                  {storedHoldings.length > 0 ? (
+                    <button
+                      type="button"
+                      disabled={!plan.readyToImport || isSaving}
+                      onClick={() => importPortfolio("merge")}
+                      className="min-h-[48px] rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold disabled:opacity-40"
+                    >
+                      Add to existing portfolio
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    disabled={!plan.readyToImport || isSaving}
+                    onClick={() => importPortfolio("replace")}
+                    className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white disabled:opacity-40"
+                  >
+                    <Check className="h-4 w-4" />
+                    {isSaving ? "Importing…" : "Import portfolio"}
+                  </button>
+                </div>
+              </section>
+            </div>
+          ) : null}
 
-          <section className="mt-7 rounded-[28px] bg-slate-950 p-6 text-white sm:p-8">
-            <div className="flex items-start gap-4"><div className="rounded-2xl bg-white/10 p-3"><ShieldCheck className="h-5 w-5" /></div><div><h2 className="text-xl font-black">You stay in control</h2><p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">Investment OS never asks for your broker password. Imported and AI-recognised values must be reviewed before they are saved.</p></div></div>
-          </section>
+          {phase === "choose" ? <ImportTrustBanner /> : null}
         </div>
       </main>
       <BottomNavigation />
     </>
   );
-}
-
-function ImportCard({ icon, title, text, button, onClick, href }: { icon: React.ReactNode; title: string; text: string; button: string; onClick?: () => void; href?: string }) {
-  const classes = "mt-5 inline-flex rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-bold text-white";
-  return <article className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm"><div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-700">{icon}</div><h2 className="mt-5 text-xl font-black">{title}</h2><p className="mt-2 text-sm leading-6 text-slate-500">{text}</p>{href ? <Link href={href} className={classes}>{button}</Link> : <button onClick={onClick} className={classes}>{button}</button>}</article>;
-}
-
-function ReviewField({ label, children }: { label: string; children: React.ReactNode }) {
-  return <label className="min-w-0"><span className="mb-1.5 block text-[11px] font-black uppercase tracking-[0.1em] text-slate-400">{label}</span>{children}</label>;
 }
