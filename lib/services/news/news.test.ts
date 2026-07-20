@@ -125,8 +125,9 @@ describe("news URL and text sanitization", () => {
     expect(sanitizeNewsUrl("ftp://example.com/video")).toBeNull();
   });
 
-  it("strips HTML and truncates descriptions", () => {
+  it("strips HTML and decodes entities in descriptions", () => {
     expect(sanitizeNewsText("<b>Bitcoin</b> update", 20)).toBe("Bitcoin update");
+    expect(sanitizeNewsText("Markets&#13; &#13; drift", 40)).toBe("Markets drift");
   });
 });
 
