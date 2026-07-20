@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import BottomNavigation from "@/components/home/BottomNav";
 import { DashboardEmptyState } from "@/components/dashboard/DashboardEmptyState";
 import { DashboardDividendCard } from "@/components/dashboard/DashboardDividendCard";
@@ -17,7 +17,6 @@ import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
 import PortfolioSyncBanner from "@/components/PortfolioSyncBanner";
 import { buildDashboardInsight } from "@/lib/client/dashboardInsight";
 import { buildDashboardSummary } from "@/lib/client/dashboardSummary";
-import { tryRefreshPortfolioPrices } from "@/lib/client/portfolioPricing";
 import { usePortfolioDividends } from "@/lib/client/usePortfolioDividends";
 import { usePortfolioAnalyst } from "@/lib/client/usePortfolioAnalyst";
 import { useUserGoal } from "@/lib/client/useUserGoal";
@@ -26,53 +25,23 @@ import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 export default function DashboardPage() {
   const {
     userSub,
-    authReady,
     holdings,
     portfolioReady,
     recoveryOffer,
     syncState,
     migrationPreview,
-    saveHoldings,
     migratePortfolio,
     retrySync,
     useRemotePortfolio,
     keepLocalPortfolio,
     recoverPortfolio,
     dismissRecovery,
-    reloadPortfolio,
   } = useUserPortfolio();
   const { goal, hasSavedGoal } = useUserGoal();
   const { snapshot: dividendSnapshot, isLoading: dividendsLoading } =
     usePortfolioDividends(holdings, userSub, holdings.length > 0);
   const { snapshot: analystSnapshot, isLoading: analystLoading } =
     usePortfolioAnalyst(holdings, userSub, holdings.length > 0);
-
-  useEffect(() => {
-    if (!authReady || !userSub) return;
-
-    const refreshPortfolio = async () => {
-      try {
-        reloadPortfolio();
-
-        if (holdings.length > 0) {
-          const result = await tryRefreshPortfolioPrices(userSub, holdings);
-          if (result.updated) {
-            saveHoldings(result.holdings);
-          }
-        }
-      } catch (error) {
-        console.error("Could not refresh Investment OS data:", error);
-      }
-    };
-
-    window.addEventListener("focus", refreshPortfolio);
-    window.addEventListener("storage", refreshPortfolio);
-
-    return () => {
-      window.removeEventListener("focus", refreshPortfolio);
-      window.removeEventListener("storage", refreshPortfolio);
-    };
-  }, [authReady, holdings, reloadPortfolio, saveHoldings, userSub]);
 
   const summary = useMemo(
     () => buildDashboardSummary(holdings, goal, hasSavedGoal),
@@ -133,11 +102,13 @@ export default function DashboardPage() {
                   label="Biggest winner"
                   mover={summary.bestMover}
                   tone="positive"
+                  performanceCoverageComplete={summary.performanceCoverageComplete}
                 />
                 <DashboardMoverCard
                   label="Biggest loser"
                   mover={summary.worstMover}
                   tone="negative"
+                  performanceCoverageComplete={summary.performanceCoverageComplete}
                 />
               </section>
 

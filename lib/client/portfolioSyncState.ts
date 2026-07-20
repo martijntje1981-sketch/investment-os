@@ -139,10 +139,14 @@ export function applyRemoteSnapshotToLocalCache(
     return {
       ...holding,
       currentPrice: mergedPrice,
+      changePercent: localHolding?.changePercent ?? holding.changePercent,
+      previousClose: localHolding?.previousClose ?? holding.previousClose,
+      changeAmount: localHolding?.changeAmount ?? holding.changeAmount,
+      priceDataStatus: localHolding?.priceDataStatus ?? holding.priceDataStatus,
       marketPriceUpdatedAt:
         mergedPrice > 0
-          ? holding.marketPriceUpdatedAt ??
-            localHolding?.marketPriceUpdatedAt ??
+          ? localHolding?.marketPriceUpdatedAt ??
+            holding.marketPriceUpdatedAt ??
             holding.updatedAt
           : undefined,
     };

@@ -2,8 +2,13 @@
  * Portfolio metrics for the authenticated Home surface (`/?view=home`).
  */
 
-import { getHoldingMarketValue } from "@/lib/client/portfolioAnalysis";
+import {
+  summarizeDailyPerformance,
+  formatDailyPerformanceCoverageMessage,
+  type DailyPerformer,
+} from "@/lib/client/dailyPerformance";
 import { loadUserPortfolioHoldings } from "@/lib/client/portfolioPricing";
+import { getHoldingMarketValue } from "@/lib/client/portfolioAnalysis";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
 export function readAuthenticatedHomePortfolio(
@@ -12,71 +17,39 @@ export function readAuthenticatedHomePortfolio(
   return loadUserPortfolioHoldings(userSub);
 }
 
+function toHomeHolding(performer: DailyPerformer | null) {
+  if (!performer) {
+    return { name: "—", change: 0, move: 0 };
+  }
+
+  return {
+    name: performer.holding.name,
+    change: performer.changePercent,
+    move: performer.move,
+  };
+}
+
 export function summarizeAuthenticatedHomePortfolio(
   holdings: StoredPortfolioHolding[],
 ) {
-  let totalValue = 0;
-  let todayChange = 0;
-  let latestUpdatedAt: string | null = null;
-
-  const performers: Array<{ name: string; change: number; move: number }> = [];
-
-  for (const holding of holdings) {
-    const value = getHoldingMarketValue(holding) ?? 0;
-    totalValue += value;
-
-    if (holding.assetType === "cash") {
-      continue;
-    }
-
-    const changePercent =
-      typeof holding.changePercent === "number" &&
-      Number.isFinite(holding.changePercent) &&
-      holding.changePercent > -100
-        ? holding.changePercent
-        : null;
-
-    let move = 0;
-    if (changePercent !== null && value > 0) {
-      const previousValue = value / (1 + changePercent / 100);
-      move = value - previousValue;
-      todayChange += move;
-    }
-
-    if (holding.updatedAt) {
-      if (
-        !latestUpdatedAt ||
-        Date.parse(holding.updatedAt) > Date.parse(latestUpdatedAt)
-      ) {
-        latestUpdatedAt = holding.updatedAt;
-      }
-    }
-
-    performers.push({
-      name: holding.name,
-      change: changePercent ?? 0,
-      move,
-    });
-  }
-
-  const sortedPerformers = [...performers].sort(
-    (a, b) => b.change - a.change,
+  const daily = summarizeDailyPerformance(holdings);
+  const totalValue = holdings.reduce(
+    (sum, holding) => sum + (getHoldingMarketValue(holding) ?? 0),
+    0,
   );
-  const bestHolding = sortedPerformers[0] ?? { name: "—", change: 0, move: 0 };
-  const worstHolding =
-    sortedPerformers[sortedPerformers.length - 1] ?? bestHolding;
-
-  const previousValue = totalValue - todayChange;
-  const todayPercent =
-    previousValue > 0 ? (todayChange / previousValue) * 100 : 0;
 
   return {
     totalValue,
-    todayChange,
-    todayPercent,
-    bestHolding,
-    worstHolding,
-    latestUpdatedAt,
+    todayChange: daily.todayChange,
+    todayPercent: daily.todayPercent,
+    hasDailyData: daily.hasDailyData,
+    validPerformanceCount: daily.validPerformanceCount,
+    eligibleMarketHoldingCount: daily.eligibleMarketHoldingCount,
+    performanceCoverageComplete: daily.performanceCoverageComplete,
+    dailyPerformanceCoverageMessage: formatDailyPerformanceCoverageMessage(daily),
+    bestHolding: toHomeHolding(daily.bestPerformer),
+    worstHolding: toHomeHolding(daily.worstPerformer),
+    latestUpdatedAt: daily.latestMarketUpdateAt,
     holdingCount: holdings.length,
   };
 }

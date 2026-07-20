@@ -16,6 +16,9 @@ type PortfolioSnapshotProps = {
   totalValue: number;
   todayChange: number;
   todayPercent: number;
+  hasDailyData?: boolean;
+  performanceCoverageComplete?: boolean;
+  dailyPerformanceCoverageMessage?: string | null;
   bestHolding: Holding;
   worstHolding: Holding;
   lastUpdatedAt?: string | null;
@@ -173,16 +176,28 @@ export function PortfolioSnapshot({
   totalValue,
   todayChange,
   todayPercent,
+  hasDailyData = true,
+  performanceCoverageComplete = true,
+  dailyPerformanceCoverageMessage = null,
   bestHolding,
   worstHolding,
   lastUpdatedAt,
   isRefreshing = false,
 }: PortfolioSnapshotProps) {
+  const showTodayMove = hasDailyData && performanceCoverageComplete;
+  const showMovers = performanceCoverageComplete;
+
   return (
     <section>
       <h2 className="mb-5 text-[15px] font-semibold tracking-[-0.01em] text-[#0F172A]">
         Portfolio Snapshot
       </h2>
+
+      {dailyPerformanceCoverageMessage ? (
+        <p className="mb-4 text-[13px] font-medium text-[#64748B]">
+          {dailyPerformanceCoverageMessage}
+        </p>
+      ) : null}
 
       <div className="flex flex-col gap-4">
         <div className="grid gap-4 sm:grid-cols-3">
@@ -193,15 +208,31 @@ export function PortfolioSnapshot({
 
           <SnapshotMetric
             label="Today's Change"
-            value={formatEuro(todayChange, { signed: true })}
-            valueClassName={getPerformanceColor(todayChange)}
+            value={
+              showTodayMove
+                ? formatEuro(todayChange, { signed: true })
+                : hasDailyData
+                  ? "Partial data"
+                  : "Awaiting data"
+            }
+            valueClassName={
+              showTodayMove ? getPerformanceColor(todayChange) : "text-[#64748B]"
+            }
             description="Compared with the previous market close"
           />
 
           <SnapshotMetric
             label="Today's %"
-            value={formatPercent(todayPercent, true)}
-            valueClassName={getPerformanceColor(todayPercent)}
+            value={
+              showTodayMove
+                ? formatPercent(todayPercent, true)
+                : hasDailyData
+                  ? "Partial data"
+                  : "Awaiting data"
+            }
+            valueClassName={
+              showTodayMove ? getPerformanceColor(todayPercent) : "text-[#64748B]"
+            }
             description="Compared with the previous market close"
           />
         </div>
@@ -209,14 +240,22 @@ export function PortfolioSnapshot({
         <div className="grid gap-4 sm:grid-cols-2">
           <HoldingCard
             label="Best Performing Holding"
-            name={bestHolding.name}
-            change={bestHolding.change}
+            name={
+              showMovers
+                ? bestHolding.name
+                : "Insufficient daily performance data"
+            }
+            change={showMovers ? bestHolding.change : 0}
           />
 
           <HoldingCard
             label="Worst Performing Holding"
-            name={worstHolding.name}
-            change={worstHolding.change}
+            name={
+              showMovers
+                ? worstHolding.name
+                : "Insufficient daily performance data"
+            }
+            change={showMovers ? worstHolding.change : 0}
           />
         </div>
 

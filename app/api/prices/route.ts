@@ -16,6 +16,10 @@ import {
   matchInstrument,
 } from "@/lib/services/instruments";
 import { getDefaultPortfolioPriceSeed } from "@/lib/services/portfolio/priceSeed";
+import {
+  normalizeMarketQuote,
+  parseMarketNumber,
+} from "@/lib/services/prices/marketQuote";
 import type { InstrumentMatchInput } from "@/lib/types/instrument";
 
 export const dynamic = "force-dynamic";
@@ -73,10 +77,14 @@ type HoldingPrice = {
   baseCurrency: "EUR";
   exchangeRateToEur: number | null;
   priceEur: number;
+  currentPrice: number | null;
   previousCloseOriginal: number | null;
   previousCloseEur: number | null;
+  previousClose: number | null;
   change: number | null;
   changePercent: number | null;
+  currency: Currency | null;
+  dataStatus: "live" | "delayed" | "stale" | "unavailable";
   open: number | null;
   high: number | null;
   low: number | null;
@@ -115,6 +123,23 @@ function inferCurrency(value: string | null | undefined): Currency {
     return normalized;
   }
   return "EUR";
+}
+
+function inferCurrencyFromProviderSymbol(
+  providerSymbol: string,
+  fallback: Currency = "EUR",
+): Currency {
+  const exchange = providerSymbol.split(".").pop()?.trim().toUpperCase();
+  switch (exchange) {
+    case "US":
+      return "USD";
+    case "LSE":
+      return "GBP";
+    case "SW":
+      return "CHF";
+    default:
+      return fallback;
+  }
 }
 
 async function fetchRealtimeData(
@@ -158,14 +183,35 @@ const getCachedFxRates = unstable_cache(
       throw new Error("No valid EUR/USD exchange rate was received.");
     }
 
+    let gbp: number | null = null;
+    let chf: number | null = null;
+
+    try {
+      const eurGbp = await fetchRealtimeData("EURGBP.FOREX", apiKey);
+      if (isFinitePositiveNumber(eurGbp.close)) {
+        gbp = 1 / eurGbp.close;
+      }
+    } catch {
+      // Optional cross-rate — GBP listings fail individually when unavailable.
+    }
+
+    try {
+      const eurChf = await fetchRealtimeData("EURCHF.FOREX", apiKey);
+      if (isFinitePositiveNumber(eurChf.close)) {
+        chf = 1 / eurChf.close;
+      }
+    } catch {
+      // Optional cross-rate — CHF listings fail individually when unavailable.
+    }
+
     return {
       EUR: 1,
       USD: 1 / eurUsd.close,
-      GBP: null,
-      CHF: null,
+      GBP: gbp,
+      CHF: chf,
     } satisfies FxRates;
   },
-  ["investment-os-eodhd-fx-rates"],
+  ["investment-os-eodhd-fx-rates-v2"],
   { revalidate: CACHE_SECONDS, tags: ["market-fx"] },
 );
 
@@ -200,7 +246,9 @@ async function resolvePriceTarget(
       providerSymbol: input.providerSymbol,
       isin: input.isin ?? null,
       name: input.instrumentName ?? input.name ?? userSymbol,
-      currency: input.currency ?? "EUR",
+      currency:
+        input.currency ??
+        inferCurrencyFromProviderSymbol(input.providerSymbol),
     };
   }
 
@@ -213,7 +261,7 @@ async function resolvePriceTarget(
   };
 
   const resolved = await matchInstrument(matchInput);
-  if (!resolved.providerSymbol || resolved.requiresConfirmation) {
+  if (!resolved.providerSymbol) {
     return null;
   }
 
@@ -224,7 +272,7 @@ async function resolvePriceTarget(
     providerSymbol: resolved.providerSymbol,
     isin: resolved.isin,
     name: resolved.instrumentName ?? input.name ?? userSymbol,
-    currency: input.currency ?? "EUR",
+    currency: inferCurrencyFromProviderSymbol(resolved.providerSymbol),
   };
 }
 
@@ -233,10 +281,14 @@ async function fetchHoldingPrice(
   fxRates: FxRates,
 ): Promise<HoldingPrice> {
   const data = await getCachedProviderQuote(target.providerSymbol);
-  const quoteCurrency = inferCurrency(data.currency ?? target.currency);
+  const quoteCurrency = inferCurrency(
+    data.currency ?? inferCurrencyFromProviderSymbol(target.providerSymbol, target.currency),
+  );
   const originalPrice = data.close as number;
-  const previousCloseOriginal = isFinitePositiveNumber(data.previousClose)
-    ? data.previousClose
+  const previousCloseOriginal = isFinitePositiveNumber(
+    parseMarketNumber(data.previousClose),
+  )
+    ? (parseMarketNumber(data.previousClose) as number)
     : null;
 
   const priceEur = convertToEur(originalPrice, quoteCurrency, fxRates);
@@ -245,9 +297,27 @@ async function fetchHoldingPrice(
       ? convertToEur(previousCloseOriginal, quoteCurrency, fxRates)
       : null;
 
+  const changeOriginal = parseMarketNumber(data.change);
+  const changeEur =
+    changeOriginal !== null
+      ? convertToEur(changeOriginal, quoteCurrency, fxRates)
+      : previousCloseEur !== null
+        ? priceEur - previousCloseEur
+        : null;
+
   const updatedAt = data.timestamp
     ? new Date(data.timestamp * 1000).toISOString()
     : new Date().toISOString();
+
+  const normalized = normalizeMarketQuote({
+    symbol: target.symbol,
+    priceEur,
+    previousCloseEur,
+    changeEur,
+    changePercent: parseMarketNumber(data.change_p),
+    originalCurrency: quoteCurrency,
+    updatedAt,
+  });
 
   return {
     symbol: target.symbol,
@@ -260,14 +330,18 @@ async function fetchHoldingPrice(
     baseCurrency: "EUR",
     exchangeRateToEur: fxRates[quoteCurrency],
     priceEur,
+    currentPrice: normalized.currentPrice,
     previousCloseOriginal,
     previousCloseEur,
-    change: typeof data.change === "number" ? data.change : null,
-    changePercent: typeof data.change_p === "number" ? data.change_p : null,
-    open: typeof data.open === "number" ? data.open : null,
-    high: typeof data.high === "number" ? data.high : null,
-    low: typeof data.low === "number" ? data.low : null,
-    volume: typeof data.volume === "number" ? data.volume : null,
+    previousClose: normalized.previousClose,
+    change: normalized.change,
+    changePercent: normalized.changePercent,
+    currency: quoteCurrency,
+    dataStatus: normalized.dataStatus,
+    open: parseMarketNumber(data.open),
+    high: parseMarketNumber(data.high),
+    low: parseMarketNumber(data.low),
+    volume: parseMarketNumber(data.volume),
     timestamp: typeof data.timestamp === "number" ? data.timestamp : null,
     updatedAt,
   };

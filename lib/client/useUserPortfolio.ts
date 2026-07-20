@@ -8,6 +8,7 @@ import {
   loadUserPortfolioHoldings,
   recoverLegacyPortfolioToUser,
   dismissLegacyPortfolioRecovery,
+  tryRefreshPortfolioPrices,
   writePortfolioToStorage,
   type LegacyRecoveryOffer,
   type StoredPortfolioHolding,
@@ -276,6 +277,43 @@ export function useUserPortfolio() {
     },
     [pushRemoteHoldings, syncState.status, userSub],
   );
+
+  useEffect(() => {
+    if (!authReady || !userSub || !portfolioReady || holdings.length === 0) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const refreshPrices = async () => {
+      const current = loadUserPortfolioHoldings(userSub);
+      if (current.length === 0 || cancelled) {
+        return;
+      }
+
+      const result = await tryRefreshPortfolioPrices(userSub, current);
+      if (cancelled || !result.updated) {
+        return;
+      }
+
+      saveHoldings(result.holdings);
+    };
+
+    void refreshPrices();
+
+    const handleRefresh = () => {
+      void refreshPrices();
+    };
+
+    window.addEventListener("focus", handleRefresh);
+    window.addEventListener("storage", handleRefresh);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener("focus", handleRefresh);
+      window.removeEventListener("storage", handleRefresh);
+    };
+  }, [authReady, holdings.length, portfolioReady, saveHoldings, userSub]);
 
   const migratePortfolio = useCallback(async () => {
     if (!userSub || syncRequestRef.current) return false;

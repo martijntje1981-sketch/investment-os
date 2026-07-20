@@ -128,10 +128,15 @@ function parsePriceCache(raw: string | null): CachedPortfolioPrice[] {
           : undefined,
         isin: item.isin ? String(item.isin).trim().toUpperCase() : null,
         price: item.price,
+        previousClose:
+          typeof item.previousClose === "number" ? item.previousClose : undefined,
+        change: typeof item.change === "number" ? item.change : undefined,
         changePercent:
           typeof item.changePercent === "number"
             ? item.changePercent
             : undefined,
+        currency: typeof item.currency === "string" ? item.currency : null,
+        dataStatus: item.dataStatus,
         updatedAt:
           typeof item.updatedAt === "string" ? item.updatedAt : undefined,
       }));

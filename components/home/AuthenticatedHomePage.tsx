@@ -85,6 +85,9 @@ export default function AuthenticatedHomePage() {
                 totalValue={summary.totalValue}
                 todayChange={summary.todayChange}
                 todayPercent={summary.todayPercent}
+                hasDailyData={summary.hasDailyData}
+                performanceCoverageComplete={summary.performanceCoverageComplete}
+                dailyPerformanceCoverageMessage={summary.dailyPerformanceCoverageMessage}
                 bestHolding={summary.bestHolding}
                 worstHolding={summary.worstHolding}
                 lastUpdatedAt={summary.latestUpdatedAt}

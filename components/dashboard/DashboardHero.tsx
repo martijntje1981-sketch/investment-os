@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { Target, TrendingDown, TrendingUp } from "lucide-react";
 
@@ -23,6 +25,8 @@ export function DashboardHero({ summary }: { summary: DashboardSummary }) {
     summary.todayChange >= 0 ? "text-emerald-300" : "text-red-300";
   const totalTone =
     summary.totalReturn >= 0 ? "text-emerald-300" : "text-red-300";
+  const showTodayMove =
+    summary.hasDailyData && summary.performanceCoverageComplete;
 
   return (
     <section className="overflow-hidden rounded-[28px] border border-slate-800 bg-slate-950 text-white shadow-2xl sm:rounded-[32px]">
@@ -39,22 +43,30 @@ export function DashboardHero({ summary }: { summary: DashboardSummary }) {
         <p className="mt-4 text-xs font-semibold text-slate-500">
           Last portfolio update: {formatMarketUpdateTime(summary.lastUpdatedAt)}
         </p>
+        {summary.dailyPerformanceCoverageMessage ? (
+          <p className="mt-3 text-xs font-medium text-slate-400">
+            {summary.dailyPerformanceCoverageMessage}
+          </p>
+        ) : null}
       </div>
 
       <div className="grid gap-px bg-white/10 sm:grid-cols-2 lg:grid-cols-4">
         <HeroMetric
           label="Today's move"
           value={
-            summary.hasDailyData
+            showTodayMove
               ? signedCurrency(summary.todayChange)
-              : "Awaiting data"
+              : summary.hasDailyData
+                ? "Partial data"
+                : "Awaiting data"
           }
           detail={
-            summary.hasDailyData
+            showTodayMove
               ? signedPercent(summary.todayPercent)
-              : "Previous-close prices required"
+              : summary.dailyPerformanceCoverageMessage ??
+                "Previous-close prices required"
           }
-          valueClassName={summary.hasDailyData ? todayTone : "text-slate-300"}
+          valueClassName={showTodayMove ? todayTone : "text-slate-300"}
         />
         <HeroMetric
           label="Total gain / loss"
@@ -133,15 +145,23 @@ export function DashboardMoverCard({
   label,
   mover,
   tone,
+  performanceCoverageComplete,
 }: {
   label: string;
   mover: DashboardSummary["bestMover"];
   tone: "positive" | "negative";
+  performanceCoverageComplete: boolean;
 }) {
   const toneClasses =
     tone === "positive"
       ? "border-emerald-200 bg-emerald-50/60"
       : "border-red-200 bg-red-50/60";
+
+  const emptyMessage = !performanceCoverageComplete
+    ? tone === "positive"
+      ? "Insufficient daily performance data to determine the biggest winner."
+      : "Insufficient daily performance data to determine the biggest loser."
+    : `No ${tone === "positive" ? "positive" : "negative"} mover today based on available price data.`;
 
   return (
     <article className={`rounded-[24px] border p-5 ${toneClasses}`}>
@@ -164,15 +184,14 @@ export function DashboardMoverCard({
               <TrendingDown className="h-4 w-4 text-red-600" />
             )}
             <p className="text-sm font-black text-slate-950">
-              {signedPercent(mover.changePercent)} · {signedCurrency(mover.changeAmount)}
+              {signedPercent(mover.changePercent)}
+              <span aria-hidden="true"> · </span>
+              {signedCurrency(mover.changeAmount)}
             </p>
           </div>
         </>
       ) : (
-        <p className="mt-4 text-sm leading-6 text-slate-600">
-          No {tone === "positive" ? "positive" : "negative"} mover today based on
-          available price data.
-        </p>
+        <p className="mt-4 text-sm leading-6 text-slate-600">{emptyMessage}</p>
       )}
     </article>
   );

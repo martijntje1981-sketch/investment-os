@@ -39,7 +39,10 @@ export type StoredPortfolioHolding = {
   matchConfidence?: number;
   requiresConfirmation?: boolean;
   matchWarnings?: string[];
-  changePercent?: number;
+  changePercent?: number | null;
+  previousClose?: number | null;
+  changeAmount?: number | null;
+  priceDataStatus?: "live" | "delayed" | "stale" | "unavailable";
   updatedAt?: string;
   /** ISO timestamp when currentPrice was last known to be valid. */
   marketPriceUpdatedAt?: string;
@@ -60,15 +63,24 @@ export type PriceApiQuote = {
   providerSymbol?: string;
   eodhdSymbol?: string;
   isin?: string | null;
+  /** @deprecated Use currentPrice — kept for backward compatibility. */
   priceEur: number;
+  currentPrice?: number | null;
+  previousClose?: number | null;
+  change?: number | null;
   changePercent?: number | null;
-  updatedAt?: string;
+  currency?: string | null;
+  updatedAt?: string | null;
+  dataStatus?: "live" | "delayed" | "stale" | "unavailable";
 };
 
 export type PriceApiResponse = {
   success?: boolean;
   prices?: PriceApiQuote[];
   error?: string;
+  errors?: string[];
+  requested?: number;
+  received?: number;
 };
 
 export type CachedPortfolioPrice = {
@@ -76,7 +88,11 @@ export type CachedPortfolioPrice = {
   providerSymbol?: string;
   isin?: string | null;
   price: number;
-  changePercent?: number;
+  previousClose?: number | null;
+  change?: number | null;
+  changePercent?: number | null;
+  currency?: string | null;
+  dataStatus?: "live" | "delayed" | "stale" | "unavailable";
   updatedAt?: string;
 };
 

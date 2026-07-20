@@ -26,6 +26,11 @@ function buildDriverSentence(summary: DashboardSummary): string {
     return "Today's move cannot be measured yet because previous-close prices are not available for all holdings.";
   }
 
+  if (!summary.performanceCoverageComplete) {
+    return summary.dailyPerformanceCoverageMessage ??
+      "Today's move is incomplete because previous-close prices are missing for some holdings.";
+  }
+
   const { symbol, move } = summary.topDailyDriver;
   return `The largest daily driver is ${symbol}, contributing ${formatSignedCurrency(move)} to today's portfolio move.`;
 }
@@ -65,6 +70,10 @@ function buildOpportunitySentence(summary: DashboardSummary): string {
 function buildConclusionSentence(summary: DashboardSummary): string {
   if (!summary.hasDailyData) {
     return "Conclusion: refresh prices or upload complete holdings to unlock a fuller daily read.";
+  }
+
+  if (!summary.performanceCoverageComplete) {
+    return "Conclusion: daily performance is still partial — refresh prices until every investment reports a previous close.";
   }
 
   if (summary.todayChange >= 0) {

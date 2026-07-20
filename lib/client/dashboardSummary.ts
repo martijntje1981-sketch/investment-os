@@ -1,8 +1,12 @@
 import { summarizeAuthenticatedHomePortfolio } from "@/lib/client/authenticatedHomePortfolio";
 import {
   buildPortfolioAnalysis,
-  getHoldingMarketValue,
 } from "@/lib/client/portfolioAnalysis";
+import {
+  formatDailyPerformanceCoverageMessage,
+  pickBestAndWorstMovers,
+  summarizeDailyPerformance,
+} from "@/lib/client/dailyPerformance";
 import { buildPortfolioPerformance } from "@/lib/client/portfolioPerformance";
 import {
   computeGoalProgress,
@@ -28,6 +32,10 @@ export type DashboardSummary = {
   todayChange: number;
   todayPercent: number;
   hasDailyData: boolean;
+  validPerformanceCount: number;
+  eligibleMarketHoldingCount: number;
+  performanceCoverageComplete: boolean;
+  dailyPerformanceCoverageMessage: string | null;
   bestMover: DashboardMover | null;
   worstMover: DashboardMover | null;
   lastUpdatedAt: string | null;
@@ -61,40 +69,19 @@ export function buildDashboardSummary(
   hasSavedGoal: boolean,
 ): DashboardSummary {
   const snapshot = summarizeAuthenticatedHomePortfolio(holdings);
+  const daily = summarizeDailyPerformance(holdings);
   const analysis = buildPortfolioAnalysis(holdings);
   const performance = buildPortfolioPerformance(holdings);
   const investedCapital = performance.investedCapital;
   const totalReturn = performance.totalReturn;
   const totalReturnPercent = performance.totalReturnPercent;
 
-  const performers = holdings
-    .filter((holding) => holding.assetType !== "cash")
-    .map((holding) => {
-      const value = getHoldingMarketValue(holding) ?? 0;
-      const changePercent =
-        typeof holding.changePercent === "number" &&
-        Number.isFinite(holding.changePercent) &&
-        holding.changePercent > -100
-          ? holding.changePercent
-          : null;
+  const { bestMover: bestPerformer, worstMover: worstPerformer } =
+    pickBestAndWorstMovers(daily);
 
-      let move = 0;
-      if (changePercent !== null && value > 0) {
-        move = value - value / (1 + changePercent / 100);
-      }
-
-      return { holding, move, changePercent: changePercent ?? 0, hasMove: changePercent !== null };
-    })
-    .filter((item) => item.hasMove);
-
-  const sortedByMove = [...performers].sort((a, b) => b.move - a.move);
-  const bestPerformer = sortedByMove.find((item) => item.move > 0);
-  const worstPerformer = [...performers]
-    .filter((item) => item.move < 0)
-    .sort((a, b) => a.move - b.move)[0];
-
-  const topDailyDriver = [...performers]
-    .sort((a, b) => Math.abs(b.move) - Math.abs(a.move))[0];
+  const topDailyDriver = [...daily.performers].sort(
+    (a, b) => Math.abs(b.move) - Math.abs(a.move),
+  )[0];
 
   const goalProgress =
     goal && hasSavedGoal ? computeGoalProgress(snapshot.totalValue, goal) : 0;
@@ -110,7 +97,11 @@ export function buildDashboardSummary(
     hasUnvaluedInvestments: performance.hasUnvaluedInvestments,
     todayChange: snapshot.todayChange,
     todayPercent: snapshot.todayPercent,
-    hasDailyData: performers.length > 0,
+    hasDailyData: daily.hasDailyData,
+    validPerformanceCount: daily.validPerformanceCount,
+    eligibleMarketHoldingCount: daily.eligibleMarketHoldingCount,
+    performanceCoverageComplete: daily.performanceCoverageComplete,
+    dailyPerformanceCoverageMessage: formatDailyPerformanceCoverageMessage(daily),
     bestMover: bestPerformer
       ? buildMover(
           bestPerformer.holding,

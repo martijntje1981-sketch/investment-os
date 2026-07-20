@@ -88,7 +88,7 @@ export default function PortfolioAnalysisPage() {
         <div className="text-center">
           <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-slate-950" />
           <p className="mt-4 text-sm font-semibold text-slate-500">
-            Loading analysisΓÇª
+            Loading analysis…
           </p>
         </div>
       </main>
@@ -174,7 +174,7 @@ export default function PortfolioAnalysisPage() {
                   value={
                     hasValuedPositions
                       ? formatPortfolioCurrency(analysis.totalValue)
-                      : "ΓÇö"
+                      : "—"
                   }
                   detail={
                     hasValuedPositions
@@ -206,7 +206,7 @@ export default function PortfolioAnalysisPage() {
                       ? analysis.largestPosition.holding.assetType === "cash"
                         ? analysis.largestPosition.holding.symbol
                         : analysis.largestPosition.holding.symbol
-                      : "ΓÇö"
+                      : "—"
                   }
                   detail={
                     analysis.largestPosition
@@ -236,9 +236,15 @@ export default function PortfolioAnalysisPage() {
                         <div className="mb-2 flex items-center justify-between gap-3 text-sm">
                           <div className="min-w-0">
                             <p className="truncate font-black">
-                              {position.holding.assetType === "cash"
-                                ? position.holding.name
-                                : `${position.holding.symbol} ┬╖ ${position.holding.name}`}
+                              {position.holding.assetType === "cash" ? (
+                                position.holding.name
+                              ) : (
+                                <>
+                                  {position.holding.symbol}
+                                  <span aria-hidden="true"> · </span>
+                                  {position.holding.name}
+                                </>
+                              )}
                             </p>
                             <p className="text-slate-500">
                               {formatPortfolioCurrency(position.value)}
@@ -297,7 +303,7 @@ export default function PortfolioAnalysisPage() {
                             ? formatPortfolioPercent(
                                 analysis.largestPosition.weightPercent,
                               )
-                            : "ΓÇö"
+                            : "—"
                         }
                       />
                       <MetricRow
@@ -347,7 +353,13 @@ export default function PortfolioAnalysisPage() {
                           <MetricRow
                             key={item.label}
                             label={item.label}
-                            value={`${formatPortfolioCurrency(item.value)} ┬╖ ${formatPortfolioPercent(item.weightPercent)}`}
+                            value={
+                              <>
+                                {formatPortfolioCurrency(item.value)}
+                                <span aria-hidden="true"> · </span>
+                                {formatPortfolioPercent(item.weightPercent)}
+                              </>
+                            }
                           />
                         ))}
                       </div>
@@ -363,7 +375,13 @@ export default function PortfolioAnalysisPage() {
                             <MetricRow
                               key={item.currency}
                               label={item.currency}
-                              value={`${formatPortfolioCurrency(item.value, item.currency)} ┬╖ ${formatPortfolioPercent(item.weightPercent)}`}
+                              value={
+                                <>
+                                  {formatPortfolioCurrency(item.value, item.currency)}
+                                  <span aria-hidden="true"> · </span>
+                                  {formatPortfolioPercent(item.weightPercent)}
+                                </>
+                              }
                             />
                           ))}
                         </div>
@@ -457,7 +475,13 @@ function SummaryCard({
   );
 }
 
-function MetricRow({ label, value }: { label: string; value: string }) {
+function MetricRow({
+  label,
+  value,
+}: {
+  label: string;
+  value: React.ReactNode;
+}) {
   return (
     <div className="flex items-center justify-between gap-3 text-sm">
       <span className="text-slate-500">{label}</span>

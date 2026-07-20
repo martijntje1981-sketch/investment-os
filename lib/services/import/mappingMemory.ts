@@ -88,6 +88,53 @@ export function findSavedImportMapping(
   return readMappings(userSub).find((item) => item.lookupKey === key) ?? null;
 }
 
+/** Resolves a confirmed import mapping for a saved portfolio holding. */
+export function findSavedMappingForHolding(
+  userSub: string,
+  holding: Pick<
+    StoredPortfolioHoldingLike,
+    "symbol" | "isin" | "exchange" | "name"
+  >,
+): SavedImportMapping | null {
+  const mappings = readMappings(userSub);
+  if (mappings.length === 0) return null;
+
+  const byKey = new Map(mappings.map((item) => [item.lookupKey, item]));
+  const isin = normalizeKeyPart(holding.isin);
+  if (isin) {
+    const match = byKey.get(`isin:${isin}`);
+    if (match) return match;
+  }
+
+  const symbol = normalizeKeyPart(holding.symbol);
+  const exchange = normalizeKeyPart(holding.exchange);
+  if (symbol && exchange) {
+    const match = byKey.get(`ticker:${symbol}@${exchange}`);
+    if (match) return match;
+  }
+  if (symbol) {
+    const match = byKey.get(`ticker:${symbol}`);
+    if (match) return match;
+  }
+
+  const name = String(holding.name ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+  if (name.length >= 4) {
+    return byKey.get(`name:${name}`) ?? null;
+  }
+
+  return null;
+}
+
+type StoredPortfolioHoldingLike = {
+  symbol: string;
+  isin?: string | null;
+  exchange?: string | null;
+  name?: string;
+};
+
 export function applySavedMappingToRow(
   row: ImportRow,
   mapping: SavedImportMapping,
