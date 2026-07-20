@@ -12,7 +12,7 @@ export function DashboardGoalCard({ summary }: { summary: DashboardSummary }) {
       : 0;
 
   return (
-    <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+    <section className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm md:rounded-[28px] md:p-6">
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-700">
@@ -31,14 +31,14 @@ export function DashboardGoalCard({ summary }: { summary: DashboardSummary }) {
         </div>
       </div>
 
-      <div className="mt-5 h-2.5 overflow-hidden rounded-full bg-slate-100">
+      <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-slate-100 md:mt-5">
         <div
           className="h-full rounded-full bg-gradient-to-r from-blue-600 via-violet-600 to-fuchsia-500"
           style={{ width: `${progressWidth}%` }}
         />
       </div>
 
-      <div className="mt-5 grid gap-3 sm:grid-cols-3">
+      <div className="mt-4 grid gap-2.5 md:mt-5 md:gap-3 sm:grid-cols-3">
         <GoalStat
           label="Current value"
           value={formatPortfolioCurrency(summary.portfolioValue)}
@@ -77,7 +77,7 @@ export function DashboardGoalCard({ summary }: { summary: DashboardSummary }) {
 
 function GoalStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-3">
+    <div className="rounded-[18px] border border-slate-200 bg-slate-50 px-3.5 py-2.5 md:px-4 md:py-3">
       <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
         {label}
       </p>

@@ -63,8 +63,8 @@ export default function DashboardPage() {
 
   return (
     <>
-      <main className="min-h-screen max-w-full overflow-x-hidden bg-[#F4F7FB] px-4 pb-32 pt-4 text-slate-950 sm:px-8 sm:pt-6">
-        <div className="mx-auto w-full max-w-6xl space-y-8 sm:space-y-10">
+      <main className="min-h-screen max-w-full overflow-x-hidden bg-[#F4F7FB] px-4 pb-28 pt-3 text-slate-950 md:px-8 md:pb-32 md:pt-6">
+        <div className="mx-auto w-full max-w-6xl space-y-5 md:space-y-10">
           <PortfolioSyncBanner
             syncState={syncState}
             migrationPreview={migrationPreview}
@@ -97,7 +97,7 @@ export default function DashboardPage() {
                 isLoading={analystLoading}
               />
 
-              <section className="grid gap-4 sm:grid-cols-2">
+              <section className="grid gap-3 sm:grid-cols-2 md:gap-4">
                 <DashboardMoverCard
                   label="Biggest winner"
                   mover={summary.bestMover}

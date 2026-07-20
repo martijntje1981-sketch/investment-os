@@ -29,28 +29,28 @@ export function DashboardHero({ summary }: { summary: DashboardSummary }) {
     summary.hasDailyData && summary.performanceCoverageComplete;
 
   return (
-    <section className="overflow-hidden rounded-[28px] border border-slate-800 bg-slate-950 text-white shadow-2xl sm:rounded-[32px]">
-      <div className="border-b border-white/10 px-5 py-5 sm:px-8 sm:py-7">
+    <section className="overflow-hidden rounded-[24px] border border-slate-800 bg-slate-950 text-white shadow-2xl md:rounded-[32px]">
+      <div className="border-b border-white/10 px-4 py-3.5 md:px-8 md:py-7">
         <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
           Portfolio overview
         </p>
-        <p className="mt-3 text-sm font-semibold text-slate-400">
+        <p className="mt-2 text-sm font-semibold text-slate-400 md:mt-3">
           Total portfolio value
         </p>
-        <p className="mt-1 text-4xl font-black tracking-[-0.06em] sm:text-6xl">
+        <p className="mt-0.5 text-3xl font-black tracking-[-0.06em] md:mt-1 md:text-6xl">
           {formatPortfolioCurrency(summary.portfolioValue)}
         </p>
-        <p className="mt-4 text-xs font-semibold text-slate-500">
+        <p className="mt-2.5 text-[11px] font-semibold text-slate-500 md:mt-4 md:text-xs">
           Last portfolio update: {formatMarketUpdateTime(summary.lastUpdatedAt)}
         </p>
         {summary.dailyPerformanceCoverageMessage ? (
-          <p className="mt-3 text-xs font-medium text-slate-400">
+          <p className="mt-2 text-[11px] font-medium leading-snug text-slate-400 md:mt-3 md:text-xs">
             {summary.dailyPerformanceCoverageMessage}
           </p>
         ) : null}
       </div>
 
-      <div className="grid gap-px bg-white/10 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-px bg-white/10 lg:grid-cols-4">
         <HeroMetric
           label="Today's move"
           value={
@@ -128,15 +128,19 @@ function HeroMetric({
   icon?: React.ReactNode;
 }) {
   return (
-    <div className="bg-slate-950 px-5 py-5 sm:px-6">
+    <div className="min-h-[44px] bg-slate-950 px-3.5 py-3 md:px-6 md:py-5">
       <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">
         {icon}
         {label}
       </div>
-      <p className={`mt-3 text-2xl font-black tracking-[-0.04em] ${valueClassName}`}>
+      <p
+        className={`mt-2 text-xl font-black tracking-[-0.04em] md:mt-3 md:text-2xl ${valueClassName}`}
+      >
         {value}
       </p>
-      <p className="mt-1 text-xs font-semibold text-slate-400">{detail}</p>
+      <p className="mt-0.5 text-[11px] font-semibold leading-snug text-slate-400 md:mt-1 md:text-xs">
+        {detail}
+      </p>
     </div>
   );
 }
@@ -164,7 +168,7 @@ export function DashboardMoverCard({
     : `No ${tone === "positive" ? "positive" : "negative"} mover today based on available price data.`;
 
   return (
-    <article className={`rounded-[24px] border p-5 ${toneClasses}`}>
+    <article className={`rounded-[24px] border p-4 md:p-5 ${toneClasses}`}>
       <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">
         {label}
       </p>
