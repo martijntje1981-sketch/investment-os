@@ -22,14 +22,17 @@ import {
 } from "@/lib/client/portfolioSyncApi";
 import {
   applyRemoteSnapshotToLocalCache,
+  markConflictResolutionVerified,
   resolveConflictWithPushedSnapshot,
   resolveConflictWithRemoteSnapshot,
+  verifyPortfolioSyncAfterReRead,
   type ClientPortfolioSyncState,
   readPortfolioSyncMeta,
   recordMigrationSuccess,
   recordSyncFailure,
   resolveClientSyncState,
 } from "@/lib/client/portfolioSyncState";
+import { logPortfolioSyncDiagnostics } from "@/lib/client/portfolioSyncDebug";
 import { useAuthenticatedUserSub } from "@/lib/client/useAuthenticatedUserSub";
 import { readSavedUserGoal } from "@/lib/client/userGoalStorage";
 import { readImportMappingsFromCache } from "@/lib/services/import/mappingMemory";
@@ -394,6 +397,12 @@ export function useUserPortfolio() {
     setSyncState({ status: "syncing" });
 
     const goal = readSavedUserGoal(userSub);
+    logPortfolioSyncDiagnostics("use cloud portfolio clicked", {
+      action: "use_cloud_portfolio",
+      localFingerprint: conflict.localFingerprint,
+      cloudFingerprint: conflict.remoteFingerprint,
+    });
+
     const resolved = resolveConflictWithRemoteSnapshot(
       userSub,
       conflict.remoteSnapshot,
@@ -409,6 +418,28 @@ export function useUserPortfolio() {
       });
       return false;
     }
+
+    const verified = await verifyPortfolioSyncAfterReRead(
+      userSub,
+      fetchRemotePortfolio,
+    );
+
+    if (!verified.ok) {
+      recordSyncFailure(userSub, verified.message);
+      setSyncState({
+        ...conflict,
+        errorMessage: verified.message,
+      });
+      return false;
+    }
+
+    const goalAfterVerify = readSavedUserGoal(userSub);
+    markConflictResolutionVerified(
+      userSub,
+      resolved.holdings,
+      goalAfterVerify,
+      verified.remoteSnapshot,
+    );
 
     setHoldings(applyCachedPrices(userSub, resolved.holdings));
     setSyncState({ status: "ready", source: "remote" });
@@ -426,11 +457,23 @@ export function useUserPortfolio() {
     const goal = readSavedUserGoal(userSub);
     const importMappings = readImportMappingsFromCache(userSub);
 
+    logPortfolioSyncDiagnostics("keep device copy clicked", {
+      action: "keep_device_copy",
+      localFingerprint: conflict.localFingerprint,
+      cloudFingerprint: conflict.remoteFingerprint,
+    });
+
     const result = await pushPortfolioToRemote({
       idempotencyKey: `conflict-local:${userSub}:${crypto.randomUUID()}`,
       holdings: localHoldings,
       goal,
       importMappings,
+    });
+
+    logPortfolioSyncDiagnostics("keep device copy cloud write", {
+      action: "keep_device_copy",
+      cloudWriteResult: result.ok ? "ok" : "error",
+      cloudWriteError: result.ok ? null : "error" in result ? result.error : "unknown",
     });
 
     if (!result.ok) {
@@ -461,6 +504,28 @@ export function useUserPortfolio() {
       });
       return false;
     }
+
+    const verified = await verifyPortfolioSyncAfterReRead(
+      userSub,
+      fetchRemotePortfolio,
+    );
+
+    if (!verified.ok) {
+      recordSyncFailure(userSub, verified.message);
+      setSyncState({
+        ...conflict,
+        errorMessage: verified.message,
+      });
+      return false;
+    }
+
+    const goalAfterVerify = readSavedUserGoal(userSub);
+    markConflictResolutionVerified(
+      userSub,
+      resolved.holdings,
+      goalAfterVerify,
+      verified.remoteSnapshot,
+    );
 
     setHoldings(applyCachedPrices(userSub, resolved.holdings));
     setSyncState({ status: "ready", source: "local" });

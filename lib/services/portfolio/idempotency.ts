@@ -96,11 +96,6 @@ export function holdingContentIdentity(
     return `cash:${normalizeSymbol(holding.symbol || holding.currency || "EUR")}`;
   }
 
-  const isin = normalizeOptionalSymbol(holding.isin);
-  if (isin && /^[A-Z0-9]{12}$/.test(isin)) {
-    return `investment:isin:${isin}`;
-  }
-
   return `investment:symbol:${normalizeSymbol(holding.symbol)}`;
 }
 
@@ -110,9 +105,6 @@ type ContentFingerprintHolding = {
   purchasePrice: number;
   assetType: "cash" | "investment";
   currency: string;
-  isin: string | null;
-  providerSymbol: string | null;
-  exchange: string | null;
 };
 
 /** Normalizes holdings for stable portfolio-content comparison. */
@@ -131,9 +123,6 @@ export function normalizeHoldingsForContentFingerprint(
         ),
         assetType,
         currency: normalizeSymbol(holding.currency ?? "EUR"),
-        isin: normalizeOptionalSymbol(holding.isin),
-        providerSymbol: normalizeOptionalSymbol(holding.providerSymbol),
-        exchange: normalizeOptionalSymbol(holding.exchange),
       };
     })
     .sort((a, b) => a.identity.localeCompare(b.identity));

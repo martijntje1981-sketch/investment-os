@@ -212,7 +212,18 @@ export function createPortfolioRepository(supabase: SupabaseClient) {
   }
 
   async function upsertGoal(userId: string, goal: GoalSettings | null) {
-    if (!goal) return;
+    if (!goal) {
+      const existing = await fetchActiveGoal(userId);
+      if (existing?.id) {
+        const { error } = await supabase
+          .from("financial_goals")
+          .update({ is_active: false })
+          .eq("id", existing.id)
+          .eq("user_id", userId);
+        if (error) throw error;
+      }
+      return;
+    }
 
     const existing = await fetchActiveGoal(userId);
     const payload = mapGoalToDbInsert(goal, userId);

@@ -591,6 +591,136 @@ describe("client portfolio sync state", () => {
     );
   });
 
+  it("clears local goal when remote snapshot has no goal", () => {
+    const goal = {
+      targetValue: 500000,
+      targetYear: 2035,
+      monthlyContribution: 1000,
+      expectedAnnualReturn: 8,
+    };
+    localStorage.setItem(goalStorageKey(USER_ID), JSON.stringify(goal));
+
+    applyRemoteSnapshotToLocalCache(USER_ID, emptySnapshot());
+
+    expect(localStorage.getItem(goalStorageKey(USER_ID))).toBeNull();
+  });
+
+  it("treats ISIN on cloud and symbol-only local as aligned content", () => {
+    const local = [
+      holding("legacy-1", "VWCE", {
+        quantity: 10,
+        purchasePrice: 100,
+      }),
+    ];
+    const remote = snapshotWith([
+      holding("cloud-1", "VWCE", {
+        quantity: 10,
+        purchasePrice: 100,
+        isin: "IE00BK5BQT80",
+        providerSymbol: "VWCE.AS",
+        exchange: "AS",
+      }),
+    ]);
+
+    const resolution = resolvePortfolioSyncState(local, remote, USER_ID);
+    expect(resolution.kind).toBe("aligned");
+  });
+
+  it("treats local goal and absent cloud goal as conflict before apply", () => {
+    const goal = {
+      targetValue: 500000,
+      targetYear: 2035,
+      monthlyContribution: 1000,
+      expectedAnnualReturn: 8,
+    };
+    const local = [holding("1", "VWCE")];
+    const remote = snapshotWith([holding("2", "VWCE")]);
+
+    const resolution = resolvePortfolioSyncState(
+      local,
+      remote,
+      USER_ID,
+      goal,
+    );
+    expect(resolution.kind).toBe("conflict");
+  });
+
+  it("aligns after use-cloud when local had goal but cloud does not", () => {
+    const goal = {
+      targetValue: 500000,
+      targetYear: 2035,
+      monthlyContribution: 1000,
+      expectedAnnualReturn: 8,
+    };
+    localStorage.setItem(goalStorageKey(USER_ID), JSON.stringify(goal));
+
+    const local = [holding("legacy-1", "VWCE")];
+    const remote = snapshotWith([holding("cloud-1", "VWCE")]);
+
+    const resolved = resolveConflictWithRemoteSnapshot(
+      USER_ID,
+      remote,
+      local,
+      goal,
+    );
+    expect(resolved.ok).toBe(true);
+
+    const reloadedLocal = JSON.parse(
+      localStorage.getItem(portfolioStorageKey(USER_ID)) ?? "[]",
+    ) as StoredPortfolioHolding[];
+
+    const afterReload = resolveClientSyncState(
+      USER_ID,
+      reloadedLocal,
+      remote,
+      false,
+      null,
+      [],
+    );
+    expect(afterReload.status).toBe("ready");
+    expect(localStorage.getItem(goalStorageKey(USER_ID))).toBeNull();
+  });
+
+  it("verifies matching fingerprints after re-read", async () => {
+    const local = [holding("legacy-1", "VWCE")];
+    const remote = snapshotWith([holding("cloud-1", "VWCE")]);
+
+    resolveConflictWithRemoteSnapshot(USER_ID, remote, local, null);
+
+    const { verifyPortfolioSyncAfterReRead } = await import(
+      "@/lib/client/portfolioSyncState"
+    );
+
+    const verified = await verifyPortfolioSyncAfterReRead(
+      USER_ID,
+      async () => ({ ok: true as const, snapshot: remote }),
+    );
+
+    expect(verified.ok).toBe(true);
+    if (verified.ok) {
+      expect(verified.localFingerprint).toBe(verified.cloudFingerprint);
+    }
+  });
+
+  it("fails re-read verification when cloud still differs", async () => {
+    const local = [holding("legacy-1", "VWCE")];
+    const remote = snapshotWith([holding("cloud-1", "VWCE")]);
+    const staleCloud = snapshotWith([holding("cloud-2", "IWDA")]);
+
+    resolveConflictWithRemoteSnapshot(USER_ID, remote, local, null);
+
+    const { verifyPortfolioSyncAfterReRead } = await import(
+      "@/lib/client/portfolioSyncState"
+    );
+
+    const verified = await verifyPortfolioSyncAfterReRead(
+      USER_ID,
+      async () => ({ ok: true as const, snapshot: staleCloud }),
+    );
+
+    expect(verified.ok).toBe(false);
+  });
+
   it("keeps conflict unresolved when pushed snapshot verification fails", () => {
     const local = [holding("legacy-1", "VWCE")];
     const mismatched = snapshotWith([holding("cloud-1", "IWDA")]);

@@ -77,6 +77,12 @@ export function writeUserGoal(userSub: string, goal: GoalSettings): void {
   );
 }
 
+export function clearUserGoal(userSub: string): void {
+  assertUserSub(userSub);
+  localStorage.removeItem(goalStorageKey(userSub));
+  localStorage.removeItem(annualContributionKey(userSub));
+}
+
 export function dispatchGoalUpdated(userSub: string): void {
   assertUserSub(userSub);
   window.dispatchEvent(

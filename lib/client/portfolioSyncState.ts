@@ -8,10 +8,20 @@ import type {
   RemotePortfolioSnapshot,
 } from "@/lib/services/portfolio/types";
 import { PORTFOLIO_SYNC_VERSION } from "@/lib/services/portfolio/types";
-import { portfolioSyncMetaKey } from "@/lib/client/portfolioStorageKeys";
-import type { PortfolioSyncMeta } from "@/lib/client/portfolioSyncApi";
-import { writePortfolioToStorage } from "@/lib/client/userPortfolioStorage";
-import { writeUserGoal } from "@/lib/client/userGoalStorage";
+import {
+  portfolioStorageKey,
+  portfolioSyncMetaKey,
+} from "@/lib/client/portfolioStorageKeys";
+import type {
+  FetchRemotePortfolioResult,
+  PortfolioSyncMeta,
+} from "@/lib/client/portfolioSyncApi";
+import {
+  buildSyncFingerprintDiagnostics,
+  logPortfolioSyncDiagnostics,
+} from "@/lib/client/portfolioSyncDebug";
+import { writePortfolioToStorage, readPortfolioFromStorage } from "@/lib/client/userPortfolioStorage";
+import { writeUserGoal, clearUserGoal, readSavedUserGoal } from "@/lib/client/userGoalStorage";
 import { writeImportMappingsToCache } from "@/lib/services/import/mappingMemory";
 import { mergeRemoteMarketPrice } from "@/lib/client/portfolioPerformance";
 import {
@@ -162,6 +172,8 @@ export function applyRemoteSnapshotToLocalCache(
 
   if (snapshot.goal) {
     writeUserGoal(userSub, snapshot.goal);
+  } else {
+    clearUserGoal(userSub);
   }
 
   if (snapshot.importMappings.length > 0) {
@@ -178,8 +190,78 @@ export function applyRemoteSnapshotToLocalCache(
 }
 
 export type ConflictResolutionResult =
-  | { ok: true; holdings: StoredPortfolioHolding[] }
+  | { ok: true; holdings: StoredPortfolioHolding[]; remoteSnapshot: RemotePortfolioSnapshot }
   | { ok: false; message: string };
+
+export type ReReadVerificationResult =
+  | {
+      ok: true;
+      localFingerprint: string;
+      cloudFingerprint: string;
+      remoteSnapshot: RemotePortfolioSnapshot;
+    }
+  | { ok: false; message: string; localFingerprint: string; cloudFingerprint: string | null };
+
+/** Re-reads local storage and cloud portfolio; both fingerprints must match. */
+export async function verifyPortfolioSyncAfterReRead(
+  userSub: string,
+  fetchRemotePortfolio: () => Promise<FetchRemotePortfolioResult>,
+): Promise<ReReadVerificationResult> {
+  const localHoldings = readPortfolioFromStorage(userSub);
+  const localGoal = readSavedUserGoal(userSub);
+  const localFingerprint = portfolioContentFingerprint(localHoldings, localGoal);
+
+  const remoteResult = await fetchRemotePortfolio();
+  if (!remoteResult.ok) {
+    const message =
+      "error" in remoteResult
+        ? remoteResult.error
+        : "Could not re-read cloud portfolio after resolution.";
+    logPortfolioSyncDiagnostics("re-read failed", {
+      userSub,
+      message,
+      localFingerprint,
+    });
+    return {
+      ok: false,
+      message,
+      localFingerprint,
+      cloudFingerprint: null,
+    };
+  }
+
+  const cloudFingerprint = portfolioContentFingerprint(
+    remoteResult.snapshot.holdings,
+    remoteResult.snapshot.goal,
+  );
+
+  logPortfolioSyncDiagnostics("re-read fingerprints", {
+    ...buildSyncFingerprintDiagnostics(
+      userSub,
+      localHoldings,
+      remoteResult.snapshot,
+      localGoal,
+    ),
+    fingerprintsMatch: localFingerprint === cloudFingerprint,
+  });
+
+  if (localFingerprint !== cloudFingerprint) {
+    return {
+      ok: false,
+      message:
+        "Resolution did not persist — local and cloud portfolios still differ after re-read.",
+      localFingerprint,
+      cloudFingerprint,
+    };
+  }
+
+  return {
+    ok: true,
+    localFingerprint,
+    cloudFingerprint,
+    remoteSnapshot: remoteResult.snapshot,
+  };
+}
 
 /** Applies the cloud portfolio locally and verifies content alignment. */
 export function resolveConflictWithRemoteSnapshot(
@@ -188,15 +270,26 @@ export function resolveConflictWithRemoteSnapshot(
   localHoldings: StoredPortfolioHolding[],
   localGoal: GoalSettings | null,
 ): ConflictResolutionResult {
+  logPortfolioSyncDiagnostics("resolve use-cloud before apply", {
+    action: "use_cloud_portfolio",
+    ...buildSyncFingerprintDiagnostics(
+      userSub,
+      localHoldings,
+      remoteSnapshot,
+      localGoal,
+    ),
+  });
+
   const merged = applyRemoteSnapshotToLocalCache(userSub, remoteSnapshot, {
     preserveLocalPrices: localHoldings,
   });
+  const goalAfterApply = readSavedUserGoal(userSub);
 
   if (
     !portfoliosContentMatch(
       merged,
       remoteSnapshot.holdings,
-      localGoal,
+      goalAfterApply,
       remoteSnapshot.goal,
     )
   ) {
@@ -207,17 +300,17 @@ export function resolveConflictWithRemoteSnapshot(
     };
   }
 
-  writePortfolioSyncMeta(userSub, {
-    ...readPortfolioSyncMeta(userSub),
-    version: PORTFOLIO_SYNC_VERSION,
-    lastResolvedContentFingerprint: portfolioContentFingerprint(
-      merged,
-      localGoal,
+  logPortfolioSyncDiagnostics("resolve use-cloud after local write", {
+    action: "use_cloud_portfolio",
+    localWriteKey: portfolioStorageKey(userSub),
+    localFingerprint: portfolioContentFingerprint(merged, goalAfterApply),
+    cloudFingerprint: portfolioContentFingerprint(
+      remoteSnapshot.holdings,
+      remoteSnapshot.goal,
     ),
-    lastSyncError: null,
   });
 
-  return { ok: true, holdings: merged };
+  return { ok: true, holdings: merged, remoteSnapshot };
 }
 
 /** Applies a pushed cloud snapshot locally and verifies content alignment. */
@@ -227,6 +320,12 @@ export function resolveConflictWithPushedSnapshot(
   localHoldings: StoredPortfolioHolding[],
   localGoal: GoalSettings | null,
 ): ConflictResolutionResult {
+  logPortfolioSyncDiagnostics("resolve keep-local before apply", {
+    action: "keep_device_copy",
+    cloudWritePath: "PUT /api/portfolio",
+    ...buildSyncFingerprintDiagnostics(userSub, localHoldings, snapshot, localGoal),
+  });
+
   if (
     !portfoliosContentMatch(
       localHoldings,
@@ -245,12 +344,13 @@ export function resolveConflictWithPushedSnapshot(
   const merged = applyRemoteSnapshotToLocalCache(userSub, snapshot, {
     preserveLocalPrices: localHoldings,
   });
+  const goalAfterApply = readSavedUserGoal(userSub);
 
   if (
     !portfoliosContentMatch(
       merged,
       snapshot.holdings,
-      localGoal,
+      goalAfterApply,
       snapshot.goal,
     )
   ) {
@@ -261,17 +361,33 @@ export function resolveConflictWithPushedSnapshot(
     };
   }
 
+  logPortfolioSyncDiagnostics("resolve keep-local after local write", {
+    action: "keep_device_copy",
+    localWriteKey: portfolioStorageKey(userSub),
+    localFingerprint: portfolioContentFingerprint(merged, goalAfterApply),
+    cloudFingerprint: portfolioContentFingerprint(
+      snapshot.holdings,
+      snapshot.goal,
+    ),
+  });
+
+  return { ok: true, holdings: merged, remoteSnapshot: snapshot };
+}
+
+export function markConflictResolutionVerified(
+  userSub: string,
+  holdings: StoredPortfolioHolding[],
+  goal: GoalSettings | null,
+  remoteSnapshot: RemotePortfolioSnapshot,
+): void {
   writePortfolioSyncMeta(userSub, {
     ...readPortfolioSyncMeta(userSub),
     version: PORTFOLIO_SYNC_VERSION,
-    lastResolvedContentFingerprint: portfolioContentFingerprint(
-      merged,
-      localGoal,
-    ),
+    lastResolvedContentFingerprint: portfolioContentFingerprint(holdings, goal),
+    lastSuccessfulRemoteAt:
+      remoteSnapshot.remoteUpdatedAt ?? new Date().toISOString(),
     lastSyncError: null,
   });
-
-  return { ok: true, holdings: merged };
 }
 
 export function recordSyncFailure(userSub: string, message: string): void {
