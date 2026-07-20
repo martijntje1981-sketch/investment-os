@@ -2,6 +2,10 @@
 
 import { Card } from "@/components/ui/Card";
 import { formatEuro, formatPercent } from "@/lib/home-data";
+import {
+  formatMarketUpdateTime,
+  getMarketStatuses,
+} from "@/lib/client/marketStatus";
 
 type Holding = {
   name: string;
@@ -14,140 +18,9 @@ type PortfolioSnapshotProps = {
   todayPercent: number;
   bestHolding: Holding;
   worstHolding: Holding;
-
-  // Optioneel, zodat de bestaande pagina niet kapotgaat.
   lastUpdatedAt?: string | null;
   isRefreshing?: boolean;
 };
-
-type MarketStatus = {
-  label: string;
-  status: "open" | "closed" | "always-open";
-  statusLabel: string;
-};
-
-function getTimeParts(
-  date: Date,
-  timeZone: string,
-): {
-  weekday: string;
-  hour: number;
-  minute: number;
-} {
-  const parts = new Intl.DateTimeFormat("en-GB", {
-    timeZone,
-    weekday: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-  }).formatToParts(date);
-
-  const weekday =
-    parts.find((part) => part.type === "weekday")?.value ?? "";
-  const hour = Number(
-    parts.find((part) => part.type === "hour")?.value ?? "0",
-  );
-  const minute = Number(
-    parts.find((part) => part.type === "minute")?.value ?? "0",
-  );
-
-  return {
-    weekday,
-    hour,
-    minute,
-  };
-}
-
-function isMarketOpen({
-  date,
-  timeZone,
-  openHour,
-  openMinute,
-  closeHour,
-  closeMinute,
-}: {
-  date: Date;
-  timeZone: string;
-  openHour: number;
-  openMinute: number;
-  closeHour: number;
-  closeMinute: number;
-}) {
-  const { weekday, hour, minute } = getTimeParts(date, timeZone);
-
-  const isWeekday = !["Sat", "Sun"].includes(weekday);
-
-  if (!isWeekday) {
-    return false;
-  }
-
-  const currentMinutes = hour * 60 + minute;
-  const openingMinutes = openHour * 60 + openMinute;
-  const closingMinutes = closeHour * 60 + closeMinute;
-
-  return (
-    currentMinutes >= openingMinutes &&
-    currentMinutes < closingMinutes
-  );
-}
-
-function getMarketStatuses(date: Date): MarketStatus[] {
-  const europeOpen = isMarketOpen({
-    date,
-    timeZone: "Europe/Amsterdam",
-    openHour: 9,
-    openMinute: 0,
-    closeHour: 17,
-    closeMinute: 30,
-  });
-
-  const usaOpen = isMarketOpen({
-    date,
-    timeZone: "America/New_York",
-    openHour: 9,
-    openMinute: 30,
-    closeHour: 16,
-    closeMinute: 0,
-  });
-
-  return [
-    {
-      label: "Europe",
-      status: europeOpen ? "open" : "closed",
-      statusLabel: europeOpen ? "Market open" : "Market closed",
-    },
-    {
-      label: "United States",
-      status: usaOpen ? "open" : "closed",
-      statusLabel: usaOpen ? "Market open" : "Market closed",
-    },
-    {
-      label: "Crypto",
-      status: "always-open",
-      statusLabel: "Open 24/7",
-    },
-  ];
-}
-
-function formatUpdateTime(value?: string | null) {
-  if (!value) {
-    return "Not available yet";
-  }
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "Not available yet";
-  }
-
-  return new Intl.DateTimeFormat("en-GB", {
-    timeZone: "Europe/Amsterdam",
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
-}
 
 function getPerformanceColor(value: number) {
   if (value > 0) {
@@ -228,7 +101,7 @@ function MarketStatusCard({
   lastUpdatedAt?: string | null;
   isRefreshing: boolean;
 }) {
-  const statuses = getMarketStatuses(new Date());
+  const statuses = getMarketStatuses();
 
   return (
     <Card className="p-5 sm:p-6">
@@ -288,7 +161,7 @@ function MarketStatusCard({
           <span className="font-medium text-[#0F172A]">
             {isRefreshing
               ? "Refreshing…"
-              : formatUpdateTime(lastUpdatedAt)}
+              : formatMarketUpdateTime(lastUpdatedAt)}
           </span>
         </p>
       </div>
