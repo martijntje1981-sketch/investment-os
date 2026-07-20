@@ -79,6 +79,14 @@ function snapshotWith(holdings: StoredPortfolioHolding[]): RemotePortfolioSnapsh
       created_at: "2026-01-01T00:00:00.000Z",
       updated_at: "2026-01-01T00:00:00.000Z",
       deleted_at: null,
+      last_market_price:
+        item.assetType === "cash"
+          ? 1
+          : item.currentPrice > 0
+            ? item.currentPrice
+            : null,
+      last_market_price_at:
+        item.currentPrice > 0 ? item.marketPriceUpdatedAt ?? item.updatedAt : null,
     })),
     null,
     [],
@@ -402,6 +410,20 @@ describe("client portfolio sync state", () => {
     );
   });
 
+  it("restores synced last market price from remote snapshot on second device", () => {
+    const remote = snapshotWith([
+      holding("remote-1", "TESTSYNC", {
+        currentPrice: 120,
+        marketPriceUpdatedAt: "2026-07-20T10:00:00.000Z",
+      }),
+    ]);
+
+    const merged = applyRemoteSnapshotToLocalCache(USER_ID, remote);
+
+    expect(merged[0]?.currentPrice).toBe(120);
+    expect(merged[0]?.marketPriceUpdatedAt).toBe("2026-07-20T10:00:00.000Z");
+  });
+
   it("writes goal to local cache when included in remote snapshot", () => {
     const remote = {
       ...emptySnapshot(),
@@ -443,5 +465,21 @@ describe("migration SQL security", () => {
     expect(sql).toMatch(/user_id = auth\.uid\(\)/);
     expect(sql).not.toMatch(/DROP TABLE/i);
     expect(sql).not.toMatch(/TRUNCATE/i);
+  });
+
+  it("includes cached market price columns for cross-device sync", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { resolve } = await import("node:path");
+    const sql = readFileSync(
+      resolve(
+        process.cwd(),
+        "supabase/migrations/20260720110000_phase2_holding_market_price.sql",
+      ),
+      "utf8",
+    );
+
+    expect(sql).toMatch(/last_market_price/);
+    expect(sql).toMatch(/last_market_price_at/);
+    expect(sql).not.toMatch(/DROP TABLE/i);
   });
 });

@@ -76,6 +76,8 @@ export type DbHoldingRow = {
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
+  last_market_price?: number | string | null;
+  last_market_price_at?: string | null;
   holding_instrument_mappings?: DbMappingRow | DbMappingRow[] | null;
 };
 

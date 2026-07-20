@@ -13,6 +13,7 @@ import type { PortfolioSyncMeta } from "@/lib/client/portfolioSyncApi";
 import { writePortfolioToStorage } from "@/lib/client/userPortfolioStorage";
 import { writeUserGoal } from "@/lib/client/userGoalStorage";
 import { writeImportMappingsToCache } from "@/lib/services/import/mappingMemory";
+import { mergeRemoteMarketPrice } from "@/lib/client/portfolioPerformance";
 
 export type ClientPortfolioSyncState =
   | { status: "loading" }
@@ -123,21 +124,27 @@ export function applyRemoteSnapshotToLocalCache(
   const priceBySymbol = new Map(
     (options?.preserveLocalPrices ?? []).map((holding) => [
       `${holding.symbol}:${holding.assetType ?? "investment"}`,
-      holding.currentPrice,
+      holding,
     ]),
   );
 
   const holdings = snapshot.holdings.map((holding) => {
     const key = `${holding.symbol}:${holding.assetType ?? "investment"}`;
-    const cachedPrice = priceBySymbol.get(key);
+    const localHolding = priceBySymbol.get(key);
+    const mergedPrice = mergeRemoteMarketPrice(
+      holding,
+      localHolding?.currentPrice,
+    );
+
     return {
       ...holding,
-      currentPrice:
-        holding.assetType === "cash"
-          ? 1
-          : cachedPrice && cachedPrice > 0
-            ? cachedPrice
-            : holding.currentPrice,
+      currentPrice: mergedPrice,
+      marketPriceUpdatedAt:
+        mergedPrice > 0
+          ? holding.marketPriceUpdatedAt ??
+            localHolding?.marketPriceUpdatedAt ??
+            holding.updatedAt
+          : undefined,
     };
   });
 

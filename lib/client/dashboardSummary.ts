@@ -3,6 +3,7 @@ import {
   buildPortfolioAnalysis,
   getHoldingMarketValue,
 } from "@/lib/client/portfolioAnalysis";
+import { buildPortfolioPerformance } from "@/lib/client/portfolioPerformance";
 import {
   computeGoalProgress,
   isGoalAchieved,
@@ -22,6 +23,8 @@ export type DashboardSummary = {
   investedCapital: number;
   totalReturn: number;
   totalReturnPercent: number;
+  canShowPerformance: boolean;
+  hasUnvaluedInvestments: boolean;
   todayChange: number;
   todayPercent: number;
   hasDailyData: boolean;
@@ -38,15 +41,6 @@ export type DashboardSummary = {
   concentrationWeightPercent: number;
   observations: string[];
 };
-
-function calculateInvestedCapital(holdings: StoredPortfolioHolding[]): number {
-  return holdings.reduce((total, holding) => {
-    if (!Number.isFinite(holding.quantity) || !Number.isFinite(holding.purchasePrice)) {
-      return total;
-    }
-    return total + holding.quantity * holding.purchasePrice;
-  }, 0);
-}
 
 function buildMover(
   holding: StoredPortfolioHolding,
@@ -68,10 +62,10 @@ export function buildDashboardSummary(
 ): DashboardSummary {
   const snapshot = summarizeAuthenticatedHomePortfolio(holdings);
   const analysis = buildPortfolioAnalysis(holdings);
-  const investedCapital = calculateInvestedCapital(holdings);
-  const totalReturn = snapshot.totalValue - investedCapital;
-  const totalReturnPercent =
-    investedCapital > 0 ? (totalReturn / investedCapital) * 100 : 0;
+  const performance = buildPortfolioPerformance(holdings);
+  const investedCapital = performance.investedCapital;
+  const totalReturn = performance.totalReturn;
+  const totalReturnPercent = performance.totalReturnPercent;
 
   const performers = holdings
     .filter((holding) => holding.assetType !== "cash")
@@ -112,6 +106,8 @@ export function buildDashboardSummary(
     investedCapital,
     totalReturn,
     totalReturnPercent,
+    canShowPerformance: performance.canShowPerformance,
+    hasUnvaluedInvestments: performance.hasUnvaluedInvestments,
     todayChange: snapshot.todayChange,
     todayPercent: snapshot.todayPercent,
     hasDailyData: performers.length > 0,

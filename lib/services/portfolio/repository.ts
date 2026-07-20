@@ -78,6 +78,8 @@ export function createPortfolioRepository(supabase: SupabaseClient) {
         created_at,
         updated_at,
         deleted_at,
+        last_market_price,
+        last_market_price_at,
         holding_instrument_mappings (
           holding_id,
           isin,
@@ -347,6 +349,31 @@ export function createPortfolioRepository(supabase: SupabaseClient) {
     if (error && !isUniqueViolation(error)) throw error;
   }
 
+  async function syncHoldingMarketPrice(
+    userId: string,
+    holdingId: string,
+    holding: StoredPortfolioHolding,
+  ) {
+    if (holding.assetType === "cash") return;
+
+    const price = Number(holding.currentPrice);
+    if (!Number.isFinite(price) || price <= 0) return;
+
+    const { error } = await supabase
+      .from("holdings")
+      .update({
+        last_market_price: price,
+        last_market_price_at:
+          holding.marketPriceUpdatedAt ??
+          holding.updatedAt ??
+          new Date().toISOString(),
+      })
+      .eq("id", holdingId)
+      .eq("user_id", userId);
+
+    if (error) throw error;
+  }
+
   async function reconcileHolding(
     userId: string,
     portfolioId: string,
@@ -391,6 +418,7 @@ export function createPortfolioRepository(supabase: SupabaseClient) {
       approxEqual(remoteQty, desiredQty) &&
       approxEqual(remotePrice, desiredPrice)
     ) {
+      await syncHoldingMarketPrice(userId, holdingId, holding);
       return holdingId;
     }
 
@@ -411,6 +439,8 @@ export function createPortfolioRepository(supabase: SupabaseClient) {
     if (desiredQty > 0) {
       await applyHoldingLedger(userId, portfolioId, holding, prefix);
     }
+
+    await syncHoldingMarketPrice(userId, holdingId, holding);
 
     return holdingId;
   }

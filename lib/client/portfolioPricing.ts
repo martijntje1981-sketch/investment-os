@@ -106,6 +106,12 @@ export function normalizeHoldingForSave(
     name: holding.name.trim(),
     purchasePrice,
     currentPrice,
+    marketPriceUpdatedAt:
+      currentPrice > 0
+        ? holding.marketPriceUpdatedAt ??
+          holding.updatedAt ??
+          new Date().toISOString()
+        : holding.marketPriceUpdatedAt,
   };
 }
 
@@ -220,6 +226,7 @@ export function applyPricesToHoldings<T extends StoredPortfolioHolding>(
           ? quote.changePercent
           : holding.changePercent,
       updatedAt: quote.updatedAt ?? holding.updatedAt,
+      marketPriceUpdatedAt: quote.updatedAt ?? new Date().toISOString(),
     };
   });
 }

@@ -5,6 +5,7 @@ import {
   portfolioFingerprint,
   resolveRemoteHoldingId,
 } from "@/lib/services/portfolio/idempotency";
+import { isValidMarketPrice } from "@/lib/client/portfolioPerformance";
 import type {
   DbGoalRow,
   DbHoldingRow,
@@ -33,6 +34,17 @@ function readMapping(row: DbHoldingRow): DbMappingRow | null {
   return Array.isArray(mapping) ? (mapping[0] ?? null) : mapping;
 }
 
+export function resolveStoredMarketPrice(
+  row: Pick<DbHoldingRow, "asset_type" | "last_market_price">,
+): number {
+  if (row.asset_type === "cash") {
+    return 1;
+  }
+
+  const cached = toNumber(row.last_market_price);
+  return isValidMarketPrice(cached) ? cached : 0;
+}
+
 export function mapDbHoldingToStored(
   row: DbHoldingRow,
   localId?: string,
@@ -51,7 +63,8 @@ export function mapDbHoldingToStored(
     name: row.name,
     quantity,
     purchasePrice: assetType === "cash" ? 1 : purchasePrice,
-    currentPrice: assetType === "cash" ? 1 : 0,
+    currentPrice: resolveStoredMarketPrice(row),
+    marketPriceUpdatedAt: row.last_market_price_at ?? undefined,
     currency: "EUR",
     assetType,
     isin: normalizeIsin(mapping?.isin),

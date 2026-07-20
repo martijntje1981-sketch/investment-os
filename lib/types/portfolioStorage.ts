@@ -41,6 +41,8 @@ export type StoredPortfolioHolding = {
   matchWarnings?: string[];
   changePercent?: number;
   updatedAt?: string;
+  /** ISO timestamp when currentPrice was last known to be valid. */
+  marketPriceUpdatedAt?: string;
 };
 
 /** Payload sent to POST /api/prices and POST /api/briefing. */

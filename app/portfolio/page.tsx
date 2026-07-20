@@ -25,7 +25,8 @@ import {
   HoldingDividendMeta,
 } from "@/components/analysis/DividendIntelligenceSection";
 import { HoldingAnalystMeta } from "@/components/analysis/AnalystIntelligenceSection";
-import { getHoldingMarketValue } from "@/lib/client/portfolioAnalysis";
+import { getHoldingMarketValue, buildPortfolioAnalysis } from "@/lib/client/portfolioAnalysis";
+import { buildPortfolioPerformance } from "@/lib/client/portfolioPerformance";
 import {
   normalizeHoldingForSave,
   tryRefreshPortfolioPrices,
@@ -66,10 +67,6 @@ function money(value: number, decimals = 0) {
 
 function percent(value: number) {
   return `${value >= 0 ? "+" : ""}${value.toFixed(1)}%`;
-}
-
-function valueOf(holding: Holding) {
-  return getHoldingMarketValue(holding) ?? 0;
 }
 
 function costOf(holding: Holding) {
@@ -140,12 +137,21 @@ export default function PortfolioPage() {
     }
   }, [holdings, saveHoldings, userSub]);
 
-  const totalValue = useMemo(() => holdings.reduce((sum, holding) => sum + valueOf(holding), 0), [holdings]);
-  const investedCost = useMemo(() => holdings.reduce((sum, holding) => sum + costOf(holding), 0), [holdings]);
-  const totalReturn = totalValue - investedCost;
-  const totalReturnPercent = investedCost > 0 ? totalReturn / investedCost * 100 : 0;
-  const cashValue = holdings.filter((holding) => holding.assetType === "cash").reduce((sum, holding) => sum + valueOf(holding), 0);
-  const largest = [...holdings].sort((a, b) => valueOf(b) - valueOf(a))[0];
+  const portfolioAnalysis = useMemo(
+    () => buildPortfolioAnalysis(holdings),
+    [holdings],
+  );
+  const performance = useMemo(
+    () => buildPortfolioPerformance(holdings),
+    [holdings],
+  );
+  const totalValue = portfolioAnalysis.totalValue;
+  const totalReturn = performance.totalReturn;
+  const totalReturnPercent = performance.totalReturnPercent;
+  const cashValue = performance.cashValue;
+  const largest = portfolioAnalysis.largestPosition?.holding ?? null;
+  const largestWeightPercent =
+    portfolioAnalysis.largestPosition?.weightPercent ?? 0;
 
   if (!portfolioReady) {
     return (
@@ -252,9 +258,9 @@ export default function PortfolioPage() {
 
           <section className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <Metric icon={<CircleDollarSign className="h-5 w-5" />} label="Total value" value={money(totalValue)} />
-            <Metric icon={<BarChart3 className="h-5 w-5" />} label="Since purchase" value={`${totalReturn >= 0 ? "+" : ""}${money(totalReturn)}`} detail={percent(totalReturnPercent)} tone={totalReturn >= 0 ? "positive" : "negative"} />
+            <Metric icon={<BarChart3 className="h-5 w-5" />} label="Since purchase" value={performance.canShowPerformance ? `${totalReturn >= 0 ? "+" : ""}${money(totalReturn)}` : "Unavailable"} detail={performance.canShowPerformance ? percent(totalReturnPercent) : "Price data required"} tone={performance.canShowPerformance ? (totalReturn >= 0 ? "positive" : "negative") : "neutral"} />
             <Metric icon={<Banknote className="h-5 w-5" />} label="Cash" value={money(cashValue)} detail={totalValue > 0 ? `${(cashValue / totalValue * 100).toFixed(1)}% of portfolio` : "0.0% of portfolio"} />
-            <Metric icon={<PieChart className="h-5 w-5" />} label="Largest position" value={largest?.symbol ?? "—"} detail={largest && totalValue > 0 ? `${(valueOf(largest) / totalValue * 100).toFixed(1)}% of portfolio` : "No holdings"} />
+            <Metric icon={<PieChart className="h-5 w-5" />} label="Largest position" value={largest?.symbol ?? "—"} detail={largest && totalValue > 0 ? `${largestWeightPercent.toFixed(1)}% of portfolio` : holdings.length > 0 ? "Awaiting price data" : "No holdings"} />
           </section>
 
           <section className="mt-7 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
@@ -276,9 +282,15 @@ export default function PortfolioPage() {
             ) : (
               <div className="divide-y divide-slate-200">
                 {holdings.map((holding) => {
-                  const holdingValue = valueOf(holding);
-                  const holdingReturn = holdingValue - costOf(holding);
-                  const allocation = totalValue > 0 ? holdingValue / totalValue * 100 : 0;
+                  const holdingValue = getHoldingMarketValue(holding);
+                  const holdingReturn =
+                    holdingValue === null
+                      ? null
+                      : holdingValue - costOf(holding);
+                  const allocation =
+                    totalValue > 0 && holdingValue !== null
+                      ? (holdingValue / totalValue) * 100
+                      : 0;
                   const dividendQuote =
                     holding.assetType === "investment"
                       ? findDividendQuoteForHolding(holding, dividendQuotes)
@@ -302,11 +314,11 @@ export default function PortfolioPage() {
                         <p className="font-black">{holding.name}</p>
                         <p className="mt-1 text-xs text-slate-500">{holding.assetType === "cash" ? "Cash holding" : `${holding.quantity.toLocaleString("en-GB")} units`}</p>
                       </div>
-                      <div><p className="text-xs font-bold uppercase text-slate-400 lg:hidden">Value</p><p className="font-black">{holding.assetType !== "cash" && holding.currentPrice <= 0 ? "Price pending" : money(holdingValue)}</p></div>
-                      <div><p className="text-xs font-bold uppercase text-slate-400 lg:hidden">Allocation</p><p className="font-bold">{allocation.toFixed(1)}%</p></div>
+                      <div><p className="text-xs font-bold uppercase text-slate-400 lg:hidden">Value</p><p className="font-black">{holdingValue === null ? "Price pending" : money(holdingValue)}</p></div>
+                      <div><p className="text-xs font-bold uppercase text-slate-400 lg:hidden">Allocation</p><p className="font-bold">{holdingValue === null ? "—" : `${allocation.toFixed(1)}%`}</p></div>
                       <div>
                         <p className="text-xs font-bold uppercase text-slate-400 lg:hidden">Return</p>
-                        <p className={`font-bold ${holdingReturn >= 0 ? "text-emerald-700" : "text-red-700"}`}>{holding.assetType === "cash" ? "Stable" : `${holdingReturn >= 0 ? "+" : ""}${money(holdingReturn)}`}</p>
+                        <p className={`font-bold ${holdingReturn === null ? "text-slate-500" : holdingReturn >= 0 ? "text-emerald-700" : "text-red-700"}`}>{holding.assetType === "cash" ? "Stable" : holdingReturn === null ? "Price pending" : `${holdingReturn >= 0 ? "+" : ""}${money(holdingReturn)}`}</p>
                       </div>
                       <div className="flex items-center justify-end gap-1">
                         {holding.assetType === "investment" && <Link href={`/holding/${holding.symbol}`} aria-label={`View ${holding.name}`} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"><ChevronRight className="h-5 w-5" /></Link>}
@@ -346,7 +358,7 @@ export default function PortfolioPage() {
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">Portfolio insight</p>
                 <p className="mt-3 max-w-3xl leading-7 text-slate-200">
-                  {largest && totalValue > 0 ? `${largest.symbol} is your largest position at ${(valueOf(largest) / totalValue * 100).toFixed(1)}%. ` : ""}
+                  {largest && totalValue > 0 ? `${largest.symbol} is your largest position at ${largestWeightPercent.toFixed(1)}%. ` : performance.hasUnvaluedInvestments ? "Some holdings are excluded until market prices are available. " : ""}
                   {cashValue > 0 && totalValue > 0 ? `Cash represents ${(cashValue / totalValue * 100).toFixed(1)}% of total portfolio value.` : "No cash holding is currently recorded."}
                 </p>
               </div>

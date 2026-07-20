@@ -58,9 +58,21 @@ export function DashboardHero({ summary }: { summary: DashboardSummary }) {
         />
         <HeroMetric
           label="Total gain / loss"
-          value={signedCurrency(summary.totalReturn)}
-          detail={signedPercent(summary.totalReturnPercent)}
-          valueClassName={totalTone}
+          value={
+            summary.canShowPerformance
+              ? signedCurrency(summary.totalReturn)
+              : "Unavailable"
+          }
+          detail={
+            summary.canShowPerformance
+              ? signedPercent(summary.totalReturnPercent)
+              : summary.hasUnvaluedInvestments
+                ? "Some holdings lack price data"
+                : "Price data required"
+          }
+          valueClassName={
+            summary.canShowPerformance ? totalTone : "text-slate-300"
+          }
         />
         <HeroMetric
           label="Goal progress"
