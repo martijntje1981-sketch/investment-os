@@ -72,6 +72,10 @@ export type PriceApiQuote = {
   currency?: string | null;
   updatedAt?: string | null;
   dataStatus?: "live" | "delayed" | "stale" | "unavailable";
+  cacheStatus?: "fresh" | "stale" | "unavailable";
+  provider?: string;
+  isStale?: boolean;
+  unavailableReason?: string | null;
 };
 
 export type PriceApiResponse = {
