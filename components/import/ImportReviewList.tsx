@@ -1,10 +1,17 @@
 "use client";
 
-import { AlertCircle, Check, ChevronRight } from "lucide-react";
+import { AlertCircle, Check } from "lucide-react";
 import { useState } from "react";
 
 import NumericInput from "@/components/NumericInput";
 import { ExchangeFieldEditor } from "@/components/import/ExchangeFieldEditor";
+import {
+  ListingCandidatePicker,
+  SelectedListingSummary,
+} from "@/components/instruments/ListingCandidatePicker";
+import {
+  buildListingCandidates,
+} from "@/lib/services/instruments/listingConfirmation";
 import {
   extractionFieldLabel,
   getExtractionFieldsNeedingReview,
@@ -100,7 +107,7 @@ function ImportReviewCard({
   const confidence = roundConfidencePercent(
     row.matchConfidence ?? row.extractionConfidence,
   );
-  const alternatives = buildCandidateOptions(row);
+  const alternatives = buildListingCandidates(row);
   const uncertainFields = getExtractionFieldsNeedingReview(row);
   const otherUncertainFields = uncertainFields.filter((field) => field !== "exchange");
   const [exchangeFieldActive, setExchangeFieldActive] = useState(false);
@@ -192,51 +199,27 @@ function ImportReviewCard({
         ) : null}
 
         {needsMatchReview && alternatives.length > 0 ? (
-          <div>
-            <p className="mb-2 text-[11px] font-black uppercase tracking-[0.1em] text-slate-400">
-              Likely matches
-            </p>
-            <div className="space-y-2">
-              {alternatives.map((candidate) => (
-                <button
-                  key={
-                    candidate.providerSymbol ??
-                    `${candidate.instrumentName ?? "unknown"}-${candidate.exchange ?? "na"}`
-                  }
-                  type="button"
-                  onClick={() => onSelectCandidate(candidate)}
-                  className="flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left hover:border-blue-300 hover:bg-blue-50"
-                >
-                  <div className="min-w-0">
-                    <p className="text-sm font-bold text-slate-900">
-                      {candidate.instrumentName ?? candidate.providerSymbol}
-                    </p>
-                    <p className="mt-1 text-xs font-semibold text-slate-600">
-                      {formatListingLine(candidate)}
-                    </p>
-                    {candidate.isin ? (
-                      <p className="mt-1 text-xs text-slate-500">
-                        ISIN: {candidate.isin}
-                      </p>
-                    ) : null}
-                  </div>
-                  <ChevronRight className="h-4 w-4 shrink-0 text-slate-400" />
-                </button>
-              ))}
-            </div>
-          </div>
+          <ListingCandidatePicker
+            source={row}
+            selectedProviderSymbol={row.providerSymbol}
+            onSelect={onSelectCandidate}
+            title="Likely matches"
+          />
         ) : null}
 
         {row.providerSymbol ? (
-          <div className="rounded-2xl bg-slate-50 px-4 py-3">
-            <p className="text-[11px] font-black uppercase tracking-[0.1em] text-slate-400">
-              Selected match
-            </p>
-            <p className="mt-1 text-sm font-bold text-slate-900">
-              {row.instrumentName ?? row.name}
-            </p>
-            <p className="text-xs text-slate-500">{row.providerSymbol}</p>
-          </div>
+          <SelectedListingSummary
+            listing={{
+              providerSymbol: row.providerSymbol,
+              instrumentName: row.instrumentName ?? row.name,
+              exchange: row.exchange ?? null,
+              isin: row.isin ?? null,
+              matchMethod: row.matchMethod ?? "unresolved",
+              confidence: row.matchConfidence ?? 0.8,
+              requiresConfirmation: false,
+              warnings: [],
+            }}
+          />
         ) : null}
 
         {purchaseDateError ? (
@@ -405,48 +388,4 @@ function OptionalPurchaseDateField({
       />
     </label>
   );
-}
-
-function formatListingLine(candidate: ResolvedInstrument): string {
-  const ticker =
-    candidate.providerSymbol?.split(".")[0] ??
-    candidate.instrumentName?.split(" ")[0] ??
-    "—";
-  const exchange = candidate.exchange ?? "—";
-  const currency = candidate.providerSymbol?.endsWith(".US")
-    ? "USD"
-    : candidate.providerSymbol?.endsWith(".LSE")
-      ? "GBP"
-      : "EUR";
-
-  return `${ticker} · ${exchange} · ${currency}`;
-}
-
-function buildCandidateOptions(row: ImportRow): ResolvedInstrument[] {
-  const options: ResolvedInstrument[] = [];
-
-  if (row.providerSymbol) {
-    options.push({
-      providerSymbol: row.providerSymbol,
-      instrumentName: row.instrumentName ?? null,
-      exchange: row.exchange ?? null,
-      isin: row.isin ?? null,
-      matchMethod: row.matchMethod ?? "unresolved",
-      confidence: row.matchConfidence ?? 0.8,
-      requiresConfirmation: false,
-      warnings: [],
-    });
-  }
-
-  for (const candidate of row.candidates ?? []) {
-    if (!candidate.providerSymbol) continue;
-    if (
-      options.some((item) => item.providerSymbol === candidate.providerSymbol)
-    ) {
-      continue;
-    }
-    options.push(candidate);
-  }
-
-  return options.slice(0, 4);
 }

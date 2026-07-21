@@ -5,6 +5,7 @@
 
 import type { ImportRow } from "@/lib/services/import/types";
 import type { ResolvedInstrument } from "@/lib/types/instrument";
+import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 import { importMappingStorageKey } from "@/lib/client/importMappingStorageKeys";
 
 export type SavedImportMapping = {
@@ -200,6 +201,42 @@ export function rememberConfirmedImportMappings(
   }
 
   writeMappings(userSub, Array.from(byKey.values()));
+}
+
+export function rememberConfirmedHolding(
+  userSub: string,
+  holding: Pick<
+    StoredPortfolioHolding,
+    | "symbol"
+    | "isin"
+    | "exchange"
+    | "name"
+    | "providerSymbol"
+    | "instrumentName"
+    | "matchMethod"
+  >,
+): void {
+  if (!holding.providerSymbol) return;
+
+  rememberConfirmedImportMappings(userSub, [
+    {
+      id: crypto.randomUUID(),
+      symbol: holding.symbol,
+      name: holding.name,
+      quantity: 0,
+      purchasePrice: 0,
+      currentPrice: 0,
+      purchaseDate: null,
+      assetType: "investment",
+      currency: "EUR",
+      isin: holding.isin ?? null,
+      exchange: holding.exchange ?? null,
+      providerSymbol: holding.providerSymbol,
+      instrumentName: holding.instrumentName ?? null,
+      matchMethod: holding.matchMethod as ResolvedInstrument["matchMethod"] | undefined,
+      userConfirmed: true,
+    },
+  ]);
 }
 
 export function mappingToResolved(mapping: SavedImportMapping): ResolvedInstrument {

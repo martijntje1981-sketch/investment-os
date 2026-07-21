@@ -6,7 +6,7 @@ import { normalizeHoldingForSave } from "@/lib/client/portfolioPricing";
 import { annotateImportRow } from "@/lib/services/import/confidencePolicy";
 import type { ImportRow } from "@/lib/services/import/types";
 import { normalizeImportPurchaseDate } from "@/lib/services/import/purchaseDate";
-import { applyResolvedToHolding } from "@/lib/services/instruments/applyResolved";
+import { applySelectedListing } from "@/lib/services/instruments/listingConfirmation";
 import type { ResolvedInstrument } from "@/lib/types/instrument";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
@@ -19,7 +19,7 @@ export function applyMatchResultToImportRow(
     ...resolved.warnings,
   ].filter(Boolean);
 
-  const merged = applyResolvedToHolding(
+  const merged = applySelectedListing(
     {
       ...row,
       matchWarnings: row.matchWarnings,

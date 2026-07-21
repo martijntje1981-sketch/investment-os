@@ -40,4 +40,19 @@ export type {
   StoredInstrumentFields,
 } from "@/lib/types/instrument";
 
-export type { EodhdIdMappingRow, EodhdSearchRow } from "./eodhdClient";
+export {
+  applySelectedListing,
+  buildListingCandidates,
+  draftToImportRow,
+  formatListingDetails,
+  formatListingLine,
+  holdingToMatchInput,
+  importRowToStoredHolding,
+  investmentNeedsListingConfirmation,
+} from "./listingConfirmation";
+export type { ListingCandidateSource, ListingDisplay } from "./listingConfirmation";
+export {
+  looksLikeProviderSymbolInput,
+  parseProviderSymbolInput,
+} from "./providerSymbolInput";
+export type { ParsedProviderSymbol } from "./providerSymbolInput";

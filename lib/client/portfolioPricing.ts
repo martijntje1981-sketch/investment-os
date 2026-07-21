@@ -114,6 +114,14 @@ export function normalizeHoldingForSave(
     name: holding.name.trim(),
     purchasePrice,
     currentPrice,
+    isin: holding.isin ?? null,
+    exchange: holding.exchange ?? null,
+    providerSymbol: holding.providerSymbol ?? null,
+    instrumentName: holding.instrumentName ?? null,
+    matchMethod: holding.matchMethod,
+    matchConfidence: holding.matchConfidence,
+    matchWarnings: holding.matchWarnings,
+    requiresConfirmation: holding.requiresConfirmation,
     priceDataStatus:
       currentPrice > 0
         ? holding.priceDataStatus
@@ -323,6 +331,16 @@ export function applyPricesToHoldings<T extends StoredPortfolioHolding>(
         providerSymbol: holding.providerSymbol,
         isin: holding.isin,
       });
+      if (
+        holding.providerSymbol &&
+        Number.isFinite(holding.currentPrice) &&
+        holding.currentPrice > 0
+      ) {
+        return {
+          ...holding,
+          priceDataStatus: "stale",
+        };
+      }
       return clearMissingDailyFields
         ? clearHoldingDailyPerformance(holding)
         : holding;

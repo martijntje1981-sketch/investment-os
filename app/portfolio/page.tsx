@@ -8,10 +8,12 @@ import {
   BriefcaseBusiness,
   ChevronRight,
   CircleDollarSign,
+  Loader2,
   Pencil,
   PieChart,
   Plus,
   RefreshCw,
+  Search,
   Sparkles,
   Trash2,
   Upload,
@@ -22,11 +24,19 @@ import NumericInput from "@/components/NumericInput";
 import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
 import PortfolioSyncBanner from "@/components/PortfolioSyncBanner";
 import {
+  ListingCandidatePicker,
+  SelectedListingSummary,
+} from "@/components/instruments/ListingCandidatePicker";
+import {
   HoldingDividendMeta,
 } from "@/components/analysis/DividendIntelligenceSection";
 import { HoldingAnalystMeta } from "@/components/analysis/AnalystIntelligenceSection";
 import { getHoldingMarketValue, buildPortfolioAnalysis } from "@/lib/client/portfolioAnalysis";
 import { buildPortfolioPerformance } from "@/lib/client/portfolioPerformance";
+import {
+  applyManualListingSelection,
+  lookupManualHoldingListing,
+} from "@/lib/client/manualHoldingMatch";
 import {
   normalizeHoldingForSave,
   tryRefreshPortfolioPrices,
@@ -38,6 +48,9 @@ import {
   calculateImpliedUpsidePercent,
 } from "@/lib/services/analyst/analystCalculations";
 import { formatDividendFrequency } from "@/lib/services/dividends";
+import { rememberConfirmedHolding } from "@/lib/services/import/mappingMemory";
+import { investmentNeedsListingConfirmation } from "@/lib/services/instruments/listingConfirmation";
+import type { ResolvedInstrument } from "@/lib/types/instrument";
 import { usePortfolioDividends } from "@/lib/client/usePortfolioDividends";
 import { usePortfolioAnalyst } from "@/lib/client/usePortfolioAnalyst";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
@@ -104,6 +117,11 @@ export default function PortfolioPage() {
   const [editorOpen, setEditorOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [message, setMessage] = useState("Portfolio prices use the latest available market data.");
+  const [listingCandidates, setListingCandidates] = useState<ResolvedInstrument[]>([]);
+  const [listingWarnings, setListingWarnings] = useState<string[]>([]);
+  const [listingLookupPending, setListingLookupPending] = useState(false);
+  const [listingConfirmed, setListingConfirmed] = useState(false);
+  const [editorError, setEditorError] = useState<string | null>(null);
 
   const refreshPrices = useCallback(async () => {
     if (!userSub) return;
@@ -164,6 +182,14 @@ export default function PortfolioPage() {
     );
   }
 
+  function resetListingState(confirmed: boolean) {
+    setListingCandidates([]);
+    setListingWarnings([]);
+    setListingLookupPending(false);
+    setListingConfirmed(confirmed);
+    setEditorError(null);
+  }
+
   function openAdd(assetType: AssetType) {
     setDraft({
       ...emptyDraft,
@@ -174,21 +200,86 @@ export default function PortfolioPage() {
       purchasePrice: assetType === "cash" ? 1 : 0,
       currentPrice: assetType === "cash" ? 1 : 0,
     });
+    resetListingState(assetType === "cash");
     setEditorOpen(true);
   }
 
   function openEdit(holding: Holding) {
     setDraft({ ...holding });
+    resetListingState(
+      holding.assetType === "cash" || Boolean(holding.providerSymbol),
+    );
     setEditorOpen(true);
+  }
+
+  async function lookupListing() {
+    if (draft.assetType === "cash") return;
+
+    setListingLookupPending(true);
+    setEditorError(null);
+    setListingWarnings([]);
+
+    try {
+      const result = await lookupManualHoldingListing(draft);
+      setDraft(result.holding);
+      setListingCandidates(result.candidates);
+      setListingWarnings(result.warnings);
+
+      const uniqueCandidates = result.candidates.filter(
+        (candidate, index, list) =>
+          list.findIndex(
+            (item) => item.providerSymbol === candidate.providerSymbol,
+          ) === index,
+      );
+
+      if (result.holding.providerSymbol) {
+        setListingConfirmed(
+          uniqueCandidates.length <= 1 &&
+            result.holding.requiresConfirmation !== true,
+        );
+      } else {
+        setListingConfirmed(false);
+      }
+    } catch (error) {
+      setEditorError(
+        error instanceof Error ? error.message : "Instrument lookup failed.",
+      );
+      setListingConfirmed(false);
+    } finally {
+      setListingLookupPending(false);
+    }
+  }
+
+  function selectListing(candidate: ResolvedInstrument) {
+    const next = applyManualListingSelection(draft, candidate);
+    setDraft(next);
+    setListingConfirmed(true);
+    setEditorError(null);
   }
 
   function submitHolding(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (
+      draft.assetType !== "cash" &&
+      investmentNeedsListingConfirmation(draft)
+    ) {
+      setEditorError(
+        "Select a confirmed listing before saving. Use Find listing or enter a provider symbol such as VWCE.XETRA.",
+      );
+      return;
+    }
+
     const cleaned = normalizeHoldingForSave(draft);
     const exists = holdings.some((holding) => holding.id === cleaned.id);
     const next = exists
       ? holdings.map((holding) => (holding.id === cleaned.id ? cleaned : holding))
       : [...holdings, cleaned];
+
+    if (userSub && cleaned.providerSymbol) {
+      rememberConfirmedHolding(userSub, cleaned);
+    }
+
     saveHoldings(next);
     if (cleaned.assetType !== "cash" && cleaned.currentPrice <= 0) {
       setMessage(
@@ -383,19 +474,107 @@ export default function PortfolioPage() {
               </div>
             ) : (
               <div className="mt-7 space-y-5">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="Symbol" value={draft.symbol} onChange={(value) => setDraft({ ...draft, symbol: value })} />
-                  <Field label="Name" value={draft.name} onChange={(value) => setDraft({ ...draft, name: value })} />
-                </div>
+                <Field
+                  label="Ticker, ISIN, or provider symbol"
+                  value={draft.symbol}
+                  onChange={(value) => {
+                    setDraft({ ...draft, symbol: value, providerSymbol: null });
+                    setListingConfirmed(false);
+                  }}
+                />
+                <Field
+                  label="ISIN (optional)"
+                  value={draft.isin ?? ""}
+                  onChange={(value) => {
+                    setDraft({ ...draft, isin: value || null, providerSymbol: null });
+                    setListingConfirmed(false);
+                  }}
+                />
+                <Field
+                  label="Instrument name (optional)"
+                  value={draft.name}
+                  onChange={(value) => {
+                    setDraft({ ...draft, name: value, providerSymbol: null });
+                    setListingConfirmed(false);
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => void lookupListing()}
+                  disabled={listingLookupPending}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold disabled:opacity-50"
+                >
+                  {listingLookupPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Search className="h-4 w-4" />
+                  )}
+                  Find listing
+                </button>
+
+                {listingWarnings.length > 0 ? (
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                    {listingWarnings.map((warning) => (
+                      <p key={warning}>{warning}</p>
+                    ))}
+                  </div>
+                ) : null}
+
+                {listingCandidates.length > 0 && !listingConfirmed ? (
+                  <ListingCandidatePicker
+                    source={{
+                      providerSymbol: draft.providerSymbol,
+                      instrumentName: draft.instrumentName ?? draft.name,
+                      exchange: draft.exchange,
+                      isin: draft.isin,
+                      matchMethod: draft.matchMethod as ResolvedInstrument["matchMethod"] | undefined,
+                      matchConfidence: draft.matchConfidence,
+                      candidates: listingCandidates,
+                    }}
+                    selectedProviderSymbol={draft.providerSymbol}
+                    onSelect={selectListing}
+                  />
+                ) : null}
+
+                {draft.providerSymbol && listingConfirmed ? (
+                  <SelectedListingSummary
+                    listing={{
+                      providerSymbol: draft.providerSymbol,
+                      instrumentName: draft.instrumentName ?? draft.name,
+                      exchange: draft.exchange ?? null,
+                      isin: draft.isin ?? null,
+                      matchMethod:
+                        (draft.matchMethod as ResolvedInstrument["matchMethod"]) ??
+                        "ticker_exchange",
+                      confidence: draft.matchConfidence ?? 1,
+                      requiresConfirmation: false,
+                      warnings: [],
+                    }}
+                  />
+                ) : null}
+
                 <Field label="Quantity" type="number" min="0" step="any" value={draft.quantity} onChange={(value) => setDraft({ ...draft, quantity: Number(value) })} />
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Field label="Average purchase price" type="number" prefix="€" min="0" step="any" value={draft.purchasePrice} onChange={(value) => setDraft({ ...draft, purchasePrice: Number(value) })} />
                   <Field label="Current price" type="number" prefix="€" min="0" step="any" value={draft.currentPrice} onChange={(value) => setDraft({ ...draft, currentPrice: Number(value) })} />
                 </div>
+
+                {editorError ? (
+                  <p className="text-sm font-semibold text-red-700">{editorError}</p>
+                ) : null}
               </div>
             )}
 
-            <button type="submit" className="mt-7 w-full rounded-xl bg-slate-950 px-5 py-3.5 text-sm font-bold text-white">Save holding</button>
+            <button
+              type="submit"
+              disabled={
+                draft.assetType !== "cash" &&
+                (!listingConfirmed || investmentNeedsListingConfirmation(draft))
+              }
+              className="mt-7 w-full rounded-xl bg-slate-950 px-5 py-3.5 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Save holding
+            </button>
           </form>
         </div>
       )}

@@ -165,4 +165,50 @@ describe("portfolio save without live quotes", () => {
     expect(loaded).toHaveLength(1);
     expect(loaded[0]?.currentPrice).toBe(112.5);
   });
+
+  it("marks existing prices stale when refresh returns no quote but providerSymbol exists", () => {
+    const existing = holding({
+      symbol: "VWCE",
+      currentPrice: 105,
+      providerSymbol: "VWCE.XETRA",
+      priceDataStatus: "live",
+    });
+
+    const updated = applyPricesToHoldings([existing], []);
+
+    expect(updated[0]?.providerSymbol).toBe("VWCE.XETRA");
+    expect(updated[0]?.currentPrice).toBe(105);
+    expect(updated[0]?.priceDataStatus).toBe("stale");
+  });
+
+  it("preserves providerSymbol and last price when refresh fails with HTTP 402", async () => {
+    const existing = [
+      holding({
+        symbol: "VWCE",
+        purchasePrice: 95,
+        currentPrice: 105,
+        providerSymbol: "VWCE.XETRA",
+        priceDataStatus: "live",
+      }),
+    ];
+    writePortfolioToStorage(USER, existing);
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        json: async () => ({
+          success: false,
+          error: "EODHD returned 402: payment required",
+        }),
+      }),
+    );
+
+    const result = await tryRefreshPortfolioPrices(USER, existing);
+
+    expect(result.updated).toBe(false);
+    expect(result.rateLimited).toBe(true);
+    expect(result.holdings[0]?.providerSymbol).toBe("VWCE.XETRA");
+    expect(result.holdings[0]?.currentPrice).toBe(105);
+  });
 });
