@@ -23,12 +23,14 @@ export async function saveImportedPortfolio(input: {
   userSub: string;
   holdings: StoredPortfolioHolding[];
   newProviderSymbols?: string[];
+  idempotencyKey?: string;
 }): Promise<ImportSaveResult> {
   const goal = readSavedUserGoal(input.userSub);
   const importMappings = readImportMappingsFromCache(input.userSub);
 
   const pushResult = await pushPortfolioToRemote({
-    idempotencyKey: `import:${input.userSub}:${crypto.randomUUID()}`,
+    idempotencyKey:
+      input.idempotencyKey ?? `import:${input.userSub}:${crypto.randomUUID()}`,
     holdings: input.holdings,
     goal,
     importMappings,

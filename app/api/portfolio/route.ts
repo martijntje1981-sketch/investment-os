@@ -4,6 +4,10 @@ import { createClient } from "@/lib/supabase/server";
 import { sanitizeLocalHoldings } from "@/lib/services/portfolio/mappers";
 import { createPortfolioRepository } from "@/lib/services/portfolio/repository";
 import {
+  formatSupabaseError,
+  supabaseErrorCode,
+} from "@/lib/services/portfolio/supabaseErrors";
+import {
   PortfolioSyncError,
   syncPortfolioSnapshot,
 } from "@/lib/services/portfolio/syncService";
@@ -110,8 +114,8 @@ export async function PUT(request: Request) {
     return NextResponse.json(
       {
         success: false,
-        code: SYNC_ERROR_CODES.PROVIDER_FAILURE,
-        error: "Failed to sync portfolio.",
+        code: supabaseErrorCode(error) ?? SYNC_ERROR_CODES.PROVIDER_FAILURE,
+        error: formatSupabaseError(error),
       },
       { status: 500 },
     );

@@ -89,6 +89,7 @@ export function finalizeImportRowForSave(row: ImportRow): StoredPortfolioHolding
     providerSymbol: row.providerSymbol ?? null,
     instrumentName: row.instrumentName ?? null,
     matchMethod: row.matchMethod,
+    confirmationSource: row.confirmationSource,
     matchConfidence: row.matchConfidence,
     requiresConfirmation: ready ? false : row.requiresConfirmation ?? true,
     matchWarnings: row.matchWarnings,

@@ -3,6 +3,7 @@
  * Stored in localStorage alongside portfolio data (no DB migration required).
  */
 
+import type { ListingConfirmationSource } from "@/lib/services/instruments/listingConfirmationSource";
 import type { ImportRow } from "@/lib/services/import/types";
 import type { ResolvedInstrument } from "@/lib/types/instrument";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
@@ -17,6 +18,7 @@ export type SavedImportMapping = {
   instrumentName: string | null;
   providerSymbol: string;
   matchMethod: ResolvedInstrument["matchMethod"];
+  confirmationSource?: ListingConfirmationSource;
   confirmedAt: string;
 };
 
@@ -150,6 +152,7 @@ export function applySavedMappingToRow(
     providerSymbol: mapping.providerSymbol,
     instrumentName: mapping.instrumentName ?? row.instrumentName ?? null,
     matchMethod: mapping.matchMethod,
+    confirmationSource: mapping.confirmationSource,
     matchConfidence: 1,
     requiresConfirmation: false,
     matchWarnings: [],
@@ -196,6 +199,7 @@ export function rememberConfirmedImportMappings(
       instrumentName: row.instrumentName ?? null,
       providerSymbol: row.providerSymbol,
       matchMethod: row.matchMethod ?? "ticker_exchange",
+      confirmationSource: row.confirmationSource,
       confirmedAt: new Date().toISOString(),
     });
   }

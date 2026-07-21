@@ -9,9 +9,13 @@ import {
   ListingCandidatePicker,
   SelectedListingSummary,
 } from "@/components/instruments/ListingCandidatePicker";
+import { ExactListingSymbolField } from "@/components/import/ExactListingSymbolField";
 import {
   buildListingCandidates,
 } from "@/lib/services/instruments/listingConfirmation";
+import {
+  shouldShowExactListingFallback,
+} from "@/lib/services/import/confidencePolicy";
 import {
   extractionFieldLabel,
   getExtractionFieldsNeedingReview,
@@ -40,6 +44,7 @@ type ImportReviewListProps = {
     exchangeCode: string | null,
     confirmed: boolean,
   ) => void;
+  onManualExactListing: (id: string, providerSymbol: string) => void;
   onRemove: (id: string) => void;
 };
 
@@ -49,6 +54,7 @@ export function ImportReviewList({
   onSelectCandidate,
   onFieldChange,
   onExchangeCommit,
+  onManualExactListing,
   onRemove,
 }: ImportReviewListProps) {
   if (rows.length === 0) return null;
@@ -78,6 +84,9 @@ export function ImportReviewList({
           onExchangeCommit={(exchangeCode, confirmed) =>
             onExchangeCommit(row.id, exchangeCode, confirmed)
           }
+          onManualExactListing={(providerSymbol) =>
+            onManualExactListing(row.id, providerSymbol)
+          }
           onRemove={() => onRemove(row.id)}
         />
       ))}
@@ -91,6 +100,7 @@ function ImportReviewCard({
   onSelectCandidate,
   onFieldChange,
   onExchangeCommit,
+  onManualExactListing,
   onRemove,
 }: {
   row: ImportRow;
@@ -101,6 +111,7 @@ function ImportReviewCard({
     value: string | number,
   ) => void;
   onExchangeCommit: (exchangeCode: string | null, confirmed: boolean) => void;
+  onManualExactListing: (providerSymbol: string) => void;
   onRemove: () => void;
 }) {
   const tier = row.reviewTier ?? "review";
@@ -122,6 +133,8 @@ function ImportReviewCard({
   const purchaseDateError = getPurchaseDateValidationError(row.purchaseDate);
   const showOptionalPurchaseDate =
     row.assetType !== "cash" && !uncertainFields.includes("purchaseDate");
+  const showExactListingFallback =
+    needsMatchReview && shouldShowExactListingFallback(row, alternatives.length);
 
   return (
     <article className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm">
@@ -204,6 +217,13 @@ function ImportReviewCard({
             selectedProviderSymbol={row.providerSymbol}
             onSelect={onSelectCandidate}
             title="Likely matches"
+          />
+        ) : null}
+
+        {showExactListingFallback ? (
+          <ExactListingSymbolField
+            disabled={Boolean(row.providerSymbol?.trim())}
+            onApply={onManualExactListing}
           />
         ) : null}
 

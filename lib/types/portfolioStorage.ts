@@ -36,6 +36,7 @@ export type StoredPortfolioHolding = {
   providerSymbol?: string | null;
   instrumentName?: string | null;
   matchMethod?: string;
+  confirmationSource?: string;
   matchConfidence?: number;
   requiresConfirmation?: boolean;
   matchWarnings?: string[];

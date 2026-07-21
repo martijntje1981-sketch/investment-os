@@ -3,6 +3,8 @@
  * the match engine, pricing, and future broker integrations.
  */
 
+import type { ListingConfirmationSource } from "@/lib/services/instruments/listingConfirmationSource";
+
 /** Raw identifiers supplied by OCR, CSV, manual entry, or broker feeds. */
 export type InstrumentMatchInput = {
   /** Broker or product ticker — never inferred when missing. */
@@ -28,6 +30,8 @@ export type ResolvedInstrument = {
   isin: string | null;
   /** How the instrument was matched. */
   matchMethod: "isin" | "ticker_exchange" | "name_exchange" | "unresolved";
+  /** How the listing was confirmed when not from automatic provider match. */
+  confirmationSource?: ListingConfirmationSource;
   /** Match confidence from 0 (none) to 1 (high). */
   confidence: number;
   /** True when the user must confirm before relying on this match. */

@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 
 import type { GoalSettings, StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 import type { SavedImportMapping } from "@/lib/services/import/mappingMemory";
+import { resolveHoldingIdForSync } from "@/lib/services/portfolio/holdingUniqueness";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -158,7 +159,7 @@ function normalizeForFingerprint(
   return holdings
     .map((holding) => ({
       id: userId
-        ? resolveRemoteHoldingId(userId, holding.id)
+        ? resolveHoldingIdForSync(userId, holding)
         : holding.id,
       symbol: String(holding.symbol ?? "")
         .trim()

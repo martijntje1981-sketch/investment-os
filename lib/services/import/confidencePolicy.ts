@@ -46,6 +46,21 @@ function isProviderUnavailableRow(row: ImportRow): boolean {
   );
 }
 
+export function isImportProviderLookupUnavailable(row: ImportRow): boolean {
+  return isProviderUnavailableRow(row);
+}
+
+export function shouldShowExactListingFallback(
+  row: ImportRow,
+  candidateCount: number,
+): boolean {
+  if (row.assetType === "cash" || row.providerSymbol?.trim()) {
+    return false;
+  }
+
+  return isProviderUnavailableRow(row) || candidateCount === 0;
+}
+
 export function buildReviewReason(row: ImportRow, tier: ImportReviewTier): string | null {
   if (tier === "auto") return null;
 

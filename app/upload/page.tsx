@@ -11,9 +11,9 @@
  * Future broker feeds plug into the same ImportRow pipeline.
  */
 
-import { ChangeEvent, DragEvent, useMemo, useRef, useState } from "react";
+import { ChangeEvent, DragEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertCircle, Check, Info, Sparkles } from "lucide-react";
+import { AlertCircle, Check, Info, RefreshCw, Sparkles } from "lucide-react";
 
 import BottomNavigation from "@/components/home/BottomNav";
 import { ImportAutoHoldingsList, ImportSummaryCard } from "@/components/import/ImportSummaryCard";
@@ -24,8 +24,18 @@ import { ImportReviewList } from "@/components/import/ImportReviewList";
 import { ImportTrustBanner } from "@/components/import/ImportTrustBanner";
 import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
 import { matchSingleImportRow, runImportPipeline } from "@/lib/client/importMatchClient";
+import {
+  applyManualExactListingToImportRow,
+} from "@/lib/services/instruments/listingConfirmation";
+import { parseProviderSymbolInput } from "@/lib/services/instruments/providerSymbolInput";
 import { resolveExchangeForMatching } from "@/lib/services/instruments/exchangeNormalizer";
 import { saveImportedPortfolio } from "@/lib/client/importSavePortfolio";
+import {
+  clearPendingImportSession,
+  createImportIdempotencyKey,
+  readPendingImportSession,
+  writePendingImportSession,
+} from "@/lib/client/importSessionStorage";
 import type { ExtractionReviewField } from "@/lib/services/extraction/fieldConfidence";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 import {
@@ -61,6 +71,8 @@ export default function UploadPage() {
 
   const imageInput = useRef<HTMLInputElement>(null);
   const sheetInput = useRef<HTMLInputElement>(null);
+  const importIdempotencyKeyRef = useRef<string | null>(null);
+  const importModeRef = useRef<"replace" | "merge">("replace");
 
   const [phase, setPhase] = useState<ImportPhase>("choose");
   const [rows, setRows] = useState<ImportRow[]>([]);
@@ -73,6 +85,50 @@ export default function UploadPage() {
   const [importNotice, setImportNotice] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [syncFailed, setSyncFailed] = useState(false);
+
+  useEffect(() => {
+    if (!userSub) return;
+
+    const pending = readPendingImportSession(userSub);
+    if (!pending || pending.rows.length === 0) return;
+
+    setRows(pending.rows);
+    setBroker(pending.broker);
+    setSource(pending.source);
+    setPhase("ready");
+    importIdempotencyKeyRef.current = pending.idempotencyKey;
+    importModeRef.current = pending.mode;
+    if (pending.syncError) {
+      setSyncFailed(true);
+      setError(pending.syncError);
+    }
+  }, [userSub]);
+
+  function persistImportSession(
+    nextRows: ImportRow[],
+    mode: "replace" | "merge",
+    syncError?: string | null,
+    syncErrorCode?: string | null,
+  ) {
+    if (!userSub || nextRows.length === 0) return;
+
+    if (!importIdempotencyKeyRef.current) {
+      importIdempotencyKeyRef.current = createImportIdempotencyKey(userSub);
+    }
+
+    writePendingImportSession(userSub, {
+      version: 1,
+      rows: nextRows,
+      broker,
+      source,
+      mode,
+      idempotencyKey: importIdempotencyKeyRef.current,
+      syncError: syncError ?? null,
+      syncErrorCode: syncErrorCode ?? null,
+      updatedAt: new Date().toISOString(),
+    });
+  }
 
   const plan = useMemo(() => buildImportReviewPlan(rows), [rows]);
 
@@ -125,6 +181,24 @@ export default function UploadPage() {
       setRows(result.rows);
       setBroker(result.broker);
       setSource(importSource);
+      importIdempotencyKeyRef.current = userSub
+        ? createImportIdempotencyKey(userSub)
+        : null;
+      importModeRef.current = "replace";
+      setSyncFailed(false);
+      if (userSub) {
+        writePendingImportSession(userSub, {
+          version: 1,
+          rows: result.rows,
+          broker: result.broker,
+          source: importSource,
+          mode: "replace",
+          idempotencyKey: importIdempotencyKeyRef.current!,
+          syncError: null,
+          syncErrorCode: null,
+          updatedAt: new Date().toISOString(),
+        });
+      }
       if (result.matchQuotaWarning) {
         setImportNotice(result.matchQuotaWarning);
       }
@@ -171,6 +245,12 @@ export default function UploadPage() {
   }
 
   function resetImport() {
+    if (userSub) {
+      clearPendingImportSession(userSub);
+    }
+    importIdempotencyKeyRef.current = null;
+    importModeRef.current = "replace";
+    setSyncFailed(false);
     setRows([]);
     setBroker(null);
     setSource(null);
@@ -219,6 +299,19 @@ export default function UploadPage() {
       .catch(() => {
         // Keep editable row state; user can still pick a candidate manually.
       });
+  }
+
+  function applyManualExactListing(id: string, providerSymbol: string) {
+    const parsed = parseProviderSymbolInput(providerSymbol);
+    if (!parsed.ok) {
+      return;
+    }
+
+    setRows((current) =>
+      current.map((row) =>
+        row.id === id ? applyManualExactListingToImportRow(row, parsed) : row,
+      ),
+    );
   }
 
   function commitRowExchange(
@@ -344,9 +437,12 @@ export default function UploadPage() {
       return;
     }
 
+    importModeRef.current = mode;
     setIsSaving(true);
     setError("");
     setImportNotice("");
+    setSyncFailed(false);
+    persistImportSession(rows, mode);
 
     try {
       const prepared = finalizeImportRowsForSave(rows);
@@ -359,19 +455,28 @@ export default function UploadPage() {
       const saved = await saveImportedPortfolio({
         userSub,
         holdings: next,
-        newProviderSymbols: prepared
-          .map((holding) => holding.providerSymbol)
-          .filter((symbol): symbol is string => Boolean(symbol)),
+        idempotencyKey: importIdempotencyKeyRef.current ?? undefined,
+        newProviderSymbols: syncFailed
+          ? []
+          : prepared
+              .map((holding) => holding.providerSymbol)
+              .filter((symbol): symbol is string => Boolean(symbol)),
       });
 
       if (!saved.ok) {
-        setError(
+        const message =
           saved.stage === "cloud_save"
             ? saved.message
-            : `${saved.message} Your import was not completed.`,
-        );
+            : `${saved.message} Your import was not completed.`;
+        setSyncFailed(true);
+        setError(message);
+        persistImportSession(rows, mode, message);
         return;
       }
+
+      clearPendingImportSession(userSub);
+      importIdempotencyKeyRef.current = null;
+      setSyncFailed(false);
 
       const messages = [
         saved.priceWarning ??
@@ -380,14 +485,20 @@ export default function UploadPage() {
       setSuccessMessage(messages.join(" "));
       window.setTimeout(() => router.push("/dashboard"), 900);
     } catch (caught) {
-      setError(
+      const message =
         caught instanceof Error
           ? caught.message
-          : "Your portfolio could not be saved.",
-      );
+          : "Your portfolio could not be saved.";
+      setSyncFailed(true);
+      setError(message);
+      persistImportSession(rows, mode, message);
     } finally {
       setIsSaving(false);
     }
+  }
+
+  function retrySync() {
+    void importPortfolio(importModeRef.current);
   }
 
   return (
@@ -491,6 +602,7 @@ export default function UploadPage() {
                 onSelectCandidate={pickCandidate}
                 onFieldChange={updateRowField}
                 onExchangeCommit={commitRowExchange}
+                onManualExactListing={applyManualExactListing}
                 onRemove={removeRow}
               />
 
@@ -531,6 +643,17 @@ export default function UploadPage() {
                       Add to existing portfolio
                     </button>
                   ) : null}
+                  {syncFailed ? (
+                    <button
+                      type="button"
+                      disabled={!plan.readyToImport || isSaving}
+                      onClick={retrySync}
+                      className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl border border-red-300 bg-red-50 px-5 py-3 text-sm font-bold text-red-900 disabled:opacity-40"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                      {isSaving ? "Retrying sync…" : "Retry sync"}
+                    </button>
+                  ) : null}
                   <button
                     type="button"
                     disabled={!plan.readyToImport || isSaving}
@@ -538,7 +661,7 @@ export default function UploadPage() {
                     className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white disabled:opacity-40"
                   >
                     <Check className="h-4 w-4" />
-                    {isSaving ? "Importing…" : "Import portfolio"}
+                    {isSaving ? "Importing…" : syncFailed ? "Import portfolio again" : "Import portfolio"}
                   </button>
                 </div>
               </section>

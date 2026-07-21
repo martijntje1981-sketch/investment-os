@@ -1,10 +1,8 @@
 import type { GoalSettings, StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 import type { SavedImportMapping } from "@/lib/services/import/mappingMemory";
 
-import {
-  portfolioFingerprint,
-  resolveRemoteHoldingId,
-} from "@/lib/services/portfolio/idempotency";
+import { portfolioFingerprint } from "@/lib/services/portfolio/idempotency";
+import { resolveHoldingIdForSync } from "@/lib/services/portfolio/holdingUniqueness";
 import { isValidMarketPrice } from "@/lib/client/portfolioPerformance";
 import {
   normalizePassiveIncomeTarget,
@@ -123,9 +121,9 @@ export function mapStoredHoldingToDbInsert(
   userId: string,
   portfolioId: string,
   sortOrder: number,
+  holdingId = resolveHoldingIdForSync(userId, holding),
 ) {
   const assetType = holding.assetType === "cash" ? "cash" : "investment";
-  const holdingId = resolveRemoteHoldingId(userId, holding.id);
 
   return {
     id: holdingId,
@@ -149,12 +147,12 @@ export function mapStoredMappingToDbInsert(
   holding: StoredPortfolioHolding,
   userId: string,
   portfolioId: string,
+  holdingId = resolveHoldingIdForSync(userId, holding),
 ) {
   if (holding.assetType === "cash") return null;
   if (!holding.providerSymbol) return null;
 
   const isin = normalizeIsin(holding.isin);
-  const holdingId = resolveRemoteHoldingId(userId, holding.id);
 
   return {
     holding_id: holdingId,

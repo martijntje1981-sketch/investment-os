@@ -2,6 +2,7 @@
  * Import pipeline types — shared by screenshot, spreadsheet, and future broker feeds.
  */
 
+import type { ListingConfirmationSource } from "@/lib/services/instruments/listingConfirmationSource";
 import type { ResolvedInstrument } from "@/lib/types/instrument";
 import type { ExtractionFieldConfidence } from "@/lib/services/extraction/types";
 
@@ -29,6 +30,7 @@ export type ImportRow = {
   providerSymbol?: string | null;
   instrumentName?: string | null;
   matchMethod?: ResolvedInstrument["matchMethod"];
+  confirmationSource?: ListingConfirmationSource;
   matchConfidence?: number;
   requiresConfirmation?: boolean;
   matchWarnings?: string[];

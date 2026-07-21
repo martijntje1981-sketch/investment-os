@@ -1,4 +1,5 @@
 import { buildProviderSymbol } from "@/lib/services/instruments/eodhdClient";
+import type { ListingConfirmationSource } from "@/lib/services/instruments/listingConfirmationSource";
 import {
   resolveExchangeForMatching,
 } from "@/lib/services/instruments/exchangeNormalizer";
@@ -10,6 +11,7 @@ export type ParsedProviderSymbol =
       providerSymbol: string;
       ticker: string;
       exchange: string;
+      confirmationSource: ListingConfirmationSource;
       resolved: ResolvedInstrument;
     }
   | {
@@ -69,6 +71,7 @@ export function parseProviderSymbolInput(
     providerSymbol,
     ticker,
     exchange,
+    confirmationSource: "manual_exact_listing",
     resolved: {
       providerSymbol,
       instrumentName: null,

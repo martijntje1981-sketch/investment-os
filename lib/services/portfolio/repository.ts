@@ -6,7 +6,6 @@ import {
   approxEqual,
   buildHoldingLedgerIdempotencyKey,
   isUniqueViolation,
-  resolveRemoteHoldingId,
 } from "@/lib/services/portfolio/idempotency";
 import {
   mapDbGoalToStored,
@@ -25,6 +24,10 @@ import type {
   RemotePortfolioSnapshot,
 } from "@/lib/services/portfolio/types";
 import { PORTFOLIO_SYNC_VERSION } from "@/lib/services/portfolio/types";
+import {
+  holdingUniqueKey,
+  resolveHoldingIdForSync,
+} from "@/lib/services/portfolio/holdingUniqueness";
 
 export type PortfolioRepository = ReturnType<typeof createPortfolioRepository>;
 
@@ -35,16 +38,29 @@ function toNumber(value: number | string | null | undefined): number {
 
 export function createPortfolioRepository(supabase: SupabaseClient) {
   async function getPrimaryPortfolioId(userId: string): Promise<string> {
-    const { data, error } = await supabase
+    const { data: primaries, error } = await supabase
       .from("portfolios")
-      .select("id")
+      .select("id, created_at")
       .eq("user_id", userId)
       .eq("is_primary", true)
-      .maybeSingle();
+      .order("created_at", { ascending: true })
+      .order("id", { ascending: true });
 
     if (error) throw error;
 
-    if (data?.id) return data.id;
+    if (primaries && primaries.length > 1) {
+      const canonical = primaries[0]!;
+      const duplicateIds = primaries.slice(1).map((row) => row.id as string);
+      const { error: demoteError } = await supabase
+        .from("portfolios")
+        .update({ is_primary: false })
+        .eq("user_id", userId)
+        .in("id", duplicateIds);
+      if (demoteError) throw demoteError;
+      return canonical.id;
+    }
+
+    if (primaries?.[0]?.id) return primaries[0].id as string;
 
     const { data: created, error: createError } = await supabase
       .from("portfolios")
@@ -259,13 +275,70 @@ export function createPortfolioRepository(supabase: SupabaseClient) {
     if (error) throw error;
   }
 
+  /** Active holding for one instrument slot (natural key). Excludes soft-deleted rows. */
+  async function findHoldingByUniqueKey(
+    userId: string,
+    portfolioId: string,
+    holding: StoredPortfolioHolding,
+  ): Promise<{ id: string } | null> {
+    const key = holdingUniqueKey(holding);
+
+    let query = supabase
+      .from("holdings")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("portfolio_id", portfolioId)
+      .eq("asset_type", key.assetType)
+      .is("deleted_at", null);
+
+    if (key.assetType === "cash") {
+      query = query.eq("currency", key.currency);
+    } else {
+      query = query.eq("symbol", key.symbol).eq("currency", key.currency);
+    }
+
+    const { data, error } = await query.maybeSingle();
+    if (error) throw error;
+    return data ?? null;
+  }
+
+  async function updateHoldingRow(
+    userId: string,
+    holdingId: string,
+    holding: StoredPortfolioHolding,
+    sortOrder: number,
+  ) {
+    const { error: updateError } = await supabase
+      .from("holdings")
+      .update({
+        name: holding.name.trim() || holding.symbol,
+        symbol:
+          holding.assetType === "cash"
+            ? String(holding.currency).toUpperCase()
+            : String(holding.symbol).trim().toUpperCase(),
+        sort_order: sortOrder,
+        deleted_at: null,
+      })
+      .eq("id", holdingId)
+      .eq("user_id", userId);
+
+    if (updateError) throw updateError;
+  }
+
   async function ensureHoldingExists(
     userId: string,
     portfolioId: string,
     holding: StoredPortfolioHolding,
     sortOrder: number,
   ) {
-    const holdingId = resolveRemoteHoldingId(userId, holding.id);
+    const active = await findHoldingByUniqueKey(userId, portfolioId, holding);
+    if (active) {
+      await updateHoldingRow(userId, active.id, holding, sortOrder);
+      return active.id;
+    }
+
+    const holdingId = resolveHoldingIdForSync(userId, holding);
+    // Primary-key lookup: may return a soft-deleted tombstone to revive by deterministic id.
     const { data: existing, error: readError } = await supabase
       .from("holdings")
       .select("id, deleted_at")
@@ -275,33 +348,25 @@ export function createPortfolioRepository(supabase: SupabaseClient) {
 
     if (readError) throw readError;
 
-    if (existing?.deleted_at) {
-      const { error: reviveError } = await supabase
-        .from("holdings")
-        .update({ deleted_at: null, sort_order: sortOrder })
-        .eq("id", holdingId)
-        .eq("user_id", userId);
-      if (reviveError) throw reviveError;
-    } else if (!existing) {
-      const { error: insertError } = await supabase
-        .from("holdings")
-        .insert(mapStoredHoldingToDbInsert(holding, userId, portfolioId, sortOrder));
-      if (insertError && !isUniqueViolation(insertError)) throw insertError;
-    } else {
-      const { error: updateError } = await supabase
-        .from("holdings")
-        .update({
-          name: holding.name.trim() || holding.symbol,
-          symbol:
-            holding.assetType === "cash"
-              ? String(holding.currency).toUpperCase()
-              : String(holding.symbol).trim().toUpperCase(),
-          sort_order: sortOrder,
-          deleted_at: null,
-        })
-        .eq("id", holdingId)
-        .eq("user_id", userId);
-      if (updateError) throw updateError;
+    if (existing) {
+      await updateHoldingRow(userId, holdingId, holding, sortOrder);
+      return holdingId;
+    }
+
+    const { error: insertError } = await supabase
+      .from("holdings")
+      .insert(
+        mapStoredHoldingToDbInsert(holding, userId, portfolioId, sortOrder, holdingId),
+      );
+
+    if (insertError) {
+      if (!isUniqueViolation(insertError)) throw insertError;
+
+      const raced = await findHoldingByUniqueKey(userId, portfolioId, holding);
+      if (!raced) throw insertError;
+
+      await updateHoldingRow(userId, raced.id, holding, sortOrder);
+      return raced.id;
     }
 
     return holdingId;
@@ -311,8 +376,14 @@ export function createPortfolioRepository(supabase: SupabaseClient) {
     userId: string,
     portfolioId: string,
     holding: StoredPortfolioHolding,
+    holdingId: string,
   ) {
-    const mapping = mapStoredMappingToDbInsert(holding, userId, portfolioId);
+    const mapping = mapStoredMappingToDbInsert(
+      holding,
+      userId,
+      portfolioId,
+      holdingId,
+    );
     if (!mapping) return;
 
     const { error } = await supabase
@@ -327,8 +398,8 @@ export function createPortfolioRepository(supabase: SupabaseClient) {
     portfolioId: string,
     holding: StoredPortfolioHolding,
     prefix: "migrate" | "sync",
+    holdingId: string,
   ) {
-    const holdingId = resolveRemoteHoldingId(userId, holding.id);
     const assetType = holding.assetType === "cash" ? "cash" : "investment";
     const txnType = assetType === "cash" ? "deposit" : "buy";
     const unitPrice = assetType === "cash" ? 1 : holding.purchasePrice;
@@ -389,7 +460,7 @@ export function createPortfolioRepository(supabase: SupabaseClient) {
     userId: string,
     portfolioId: string,
     holding: StoredPortfolioHolding,
-    remoteRow: DbHoldingRow | undefined,
+    remoteById: Map<string, DbHoldingRow>,
     prefix: "migrate" | "sync",
     sortOrder: number,
   ) {
@@ -400,7 +471,9 @@ export function createPortfolioRepository(supabase: SupabaseClient) {
       sortOrder,
     );
 
-    await upsertHoldingMapping(userId, portfolioId, holding);
+    const remoteRow = remoteById.get(holdingId);
+
+    await upsertHoldingMapping(userId, portfolioId, holding, holdingId);
 
     const desiredQty = holding.quantity;
     const desiredPrice =
@@ -448,12 +521,25 @@ export function createPortfolioRepository(supabase: SupabaseClient) {
     }
 
     if (desiredQty > 0) {
-      await applyHoldingLedger(userId, portfolioId, holding, prefix);
+      await applyHoldingLedger(userId, portfolioId, holding, prefix, holdingId);
     }
 
     await syncHoldingMarketPrice(userId, holdingId, holding);
 
     return holdingId;
+  }
+
+  async function softDeleteHoldingsByIds(userId: string, holdingIds: Set<string>) {
+    if (holdingIds.size === 0) return;
+
+    const deletedAt = new Date().toISOString();
+    const { error: updateError } = await supabase
+      .from("holdings")
+      .update({ deleted_at: deletedAt })
+      .eq("user_id", userId)
+      .in("id", [...holdingIds]);
+
+    if (updateError) throw updateError;
   }
 
   async function softDeleteMissingHoldings(
@@ -496,32 +582,44 @@ export function createPortfolioRepository(supabase: SupabaseClient) {
     const remoteById = new Map(
       remoteRows.map((row) => [row.id, row]),
     );
+    const remoteIdsBefore = new Set(remoteRows.map((row) => row.id));
 
     const keepIds = new Set<string>();
+    const newlyCreatedIds = new Set<string>();
 
-    for (let index = 0; index < holdings.length; index += 1) {
-      const holding = holdings[index]!;
-      const holdingId = await reconcileHolding(
-        userId,
-        portfolioId,
-        holding,
-        remoteById.get(resolveRemoteHoldingId(userId, holding.id)),
-        prefix,
-        index,
-      );
-      keepIds.add(holdingId);
-    }
+    try {
+      for (let index = 0; index < holdings.length; index += 1) {
+        const holding = holdings[index]!;
+        const holdingId = await reconcileHolding(
+          userId,
+          portfolioId,
+          holding,
+          remoteById,
+          prefix,
+          index,
+        );
+        keepIds.add(holdingId);
+        if (!remoteIdsBefore.has(holdingId)) {
+          newlyCreatedIds.add(holdingId);
+        }
+      }
 
-    if (prefix === "sync") {
-      await softDeleteMissingHoldings(userId, keepIds);
-    }
+      if (prefix === "sync") {
+        await softDeleteMissingHoldings(userId, keepIds);
+      }
 
-    if (goal !== undefined) {
-      await upsertGoal(userId, goal ?? null);
-    }
+      if (goal !== undefined) {
+        await upsertGoal(userId, goal ?? null);
+      }
 
-    if (importMappings) {
-      await upsertImportMappings(userId, importMappings);
+      if (importMappings) {
+        await upsertImportMappings(userId, importMappings);
+      }
+    } catch (error) {
+      if (newlyCreatedIds.size > 0) {
+        await softDeleteHoldingsByIds(userId, newlyCreatedIds);
+      }
+      throw error;
     }
 
     return fetchSnapshot(userId);

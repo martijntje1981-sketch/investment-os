@@ -1,5 +1,7 @@
 import { applyResolvedToHolding } from "@/lib/services/instruments/applyResolved";
 import type { ImportRow } from "@/lib/services/import/types";
+import { annotateImportRow } from "@/lib/services/import/confidencePolicy";
+import type { ParsedProviderSymbol } from "@/lib/services/instruments/providerSymbolInput";
 import type { InstrumentMatchInput, ResolvedInstrument } from "@/lib/types/instrument";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 export type ListingCandidateSource = {
@@ -182,4 +184,27 @@ export function investmentNeedsListingConfirmation(
   holding: Pick<StoredPortfolioHolding, "assetType" | "providerSymbol">,
 ): boolean {
   return holding.assetType !== "cash" && !holding.providerSymbol;
+}
+
+/** Applies a locally validated exact provider symbol without calling the provider API. */
+export function applyManualExactListingToImportRow(
+  row: ImportRow,
+  parsed: Extract<ParsedProviderSymbol, { ok: true }>,
+): ImportRow {
+  if (row.providerSymbol?.trim()) {
+    return row;
+  }
+
+  return annotateImportRow({
+    ...row,
+    symbol: parsed.ticker,
+    exchange: parsed.exchange,
+    providerSymbol: parsed.providerSymbol,
+    matchMethod: "ticker_exchange",
+    matchConfidence: 1,
+    confirmationSource: "manual_exact_listing",
+    requiresConfirmation: true,
+    matchWarnings: [],
+    userConfirmed: false,
+  });
 }

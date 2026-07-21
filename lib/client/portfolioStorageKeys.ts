@@ -82,3 +82,8 @@ export function portfolioSyncMetaKey(userSub: string): string {
   assertUserSub(userSub);
   return `investment-os-portfolio-sync-meta:${userSub}`;
 }
+
+export function pendingImportSessionKey(userSub: string): string {
+  assertUserSub(userSub);
+  return `investment-os-pending-import:${userSub}`;
+}
