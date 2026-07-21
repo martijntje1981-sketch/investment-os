@@ -4,6 +4,7 @@ import {
   findExchangeOption,
   searchExchanges,
 } from "@/lib/services/instruments/exchangeSearch";
+import { normalizeExchange } from "@/lib/services/instruments/exchangeNormalizer";
 
 describe("searchExchanges", () => {
   it("returns no results for queries shorter than two characters", async () => {
@@ -16,6 +17,11 @@ describe("searchExchanges", () => {
 
     const amsterdam = await searchExchanges("Amsterdam");
     expect(amsterdam.some((item) => item.code === "AS")).toBe(true);
+  });
+
+  it("maps EPA to Euronext Paris", async () => {
+    const paris = await searchExchanges("EPA");
+    expect(paris[0]?.code).toBe("PA");
   });
 
   it("ignores aborted searches", async () => {
@@ -35,10 +41,15 @@ describe("findExchangeOption", () => {
     });
   });
 
-  it("keeps unknown manual codes as fallback options", () => {
-    expect(findExchangeOption("CUSTOM")).toEqual({
-      code: "CUSTOM",
-      label: "CUSTOM",
+  it("maps EPA to Euronext Paris", () => {
+    expect(findExchangeOption("EPA")).toEqual({
+      code: "PA",
+      label: "Euronext Paris",
     });
+    expect(normalizeExchange("EPA")).toBe("PA");
+  });
+
+  it("returns null for unknown exchange codes", () => {
+    expect(findExchangeOption("CUSTOM")).toBeNull();
   });
 });

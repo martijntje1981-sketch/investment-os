@@ -24,7 +24,7 @@ import {
   isEodhdQuotaExhausted,
   markEodhdQuotaExhausted,
 } from "./eodhdQuotaGuard";
-import { exchangesMatch, normalizeExchange } from "./exchangeNormalizer";
+import { exchangesMatch, exchangeResolutionMessage, normalizeProviderExchangeCode, resolveExchangeForMatching } from "./exchangeNormalizer";
 import { isValidIsin, normalizeIsin } from "./validation";
 import type {
   InstrumentMatchInput,
@@ -112,7 +112,10 @@ function rowToResolved(
   warnings: string[] = [],
 ): ResolvedInstrument {
   const code = row.Code?.trim().toUpperCase() ?? "";
-  const exchange = normalizeExchange(row.Exchange) ?? row.Exchange?.trim().toUpperCase() ?? null;
+  const exchange =
+    normalizeProviderExchangeCode(row.Exchange) ??
+    row.Exchange?.trim().toUpperCase() ??
+    null;
   const providerSymbol =
     code && exchange ? buildProviderSymbol(code, exchange) : null;
 
@@ -152,6 +155,65 @@ function disambiguateRows<T extends EodhdIdMappingRow | EodhdSearchRow>(
 
 function normalizeSearchName(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+function appendWarnings(
+  resolved: ResolvedInstrument,
+  extraWarnings: Array<string | null | undefined>,
+): ResolvedInstrument {
+  const warnings = [
+    ...extraWarnings.filter((warning): warning is string => Boolean(warning)),
+    ...resolved.warnings,
+  ];
+  return {
+    ...resolved,
+    warnings: [...new Set(warnings)],
+  };
+}
+
+async function buildTickerListingCandidates(
+  ticker: string,
+  instrumentName: string | null,
+  limit = 6,
+): Promise<ResolvedInstrument[]> {
+  const searchRows = await safeFetchSearch(ticker, { limit: 15 });
+  if (!searchRows) return [];
+
+  const exactCodeRows = searchRows.filter(
+    (row) => row.Code?.trim().toUpperCase() === ticker,
+  );
+  const rows = exactCodeRows.length > 0 ? exactCodeRows : searchRows;
+
+  const scored = rows
+    .map((row) => ({
+      row,
+      score: instrumentName
+        ? nameSimilarity(instrumentName, row.Name ?? "")
+        : row.Code?.trim().toUpperCase() === ticker
+          ? 1
+          : 0.5,
+    }))
+    .sort((a, b) => b.score - a.score);
+
+  return scored.slice(0, limit).map(({ row, score }) =>
+    rowToResolved(row, "ticker_exchange", Math.max(0.55, score * 0.75), normalizeIsin(row.ISIN), [
+      "Possible listing",
+    ]),
+  );
+}
+
+function unresolvedWithCandidates(
+  warnings: string[],
+  candidates: ResolvedInstrument[],
+): ResolvedInstrument {
+  if (candidates.length === 0) {
+    return unresolved(warnings);
+  }
+
+  return finalize({
+    ...unresolved(warnings),
+    candidates,
+  });
 }
 
 function nameSimilarity(a: string, b: string): number {
@@ -199,8 +261,9 @@ async function resolveByIsin(
 async function resolveByTickerAndExchange(
   ticker: string,
   exchange: string,
+  instrumentName: string | null = null,
 ): Promise<ResolvedInstrument> {
-  const normalizedExchange = normalizeExchange(exchange);
+  const normalizedExchange = resolveExchangeForMatching(exchange);
   if (!normalizedExchange) {
     return unresolved(["Exchange could not be normalized for ticker lookup."]);
   }
@@ -237,14 +300,23 @@ async function resolveByTickerAndExchange(
     return unresolved([MATCHING_UNAVAILABLE_WARNING]);
   }
 
-  const exactCode = searchRows.filter(
-    (row) =>
-      row.Code?.trim().toUpperCase() === ticker &&
-      exchangesMatch(row.Exchange, normalizedExchange),
+  const exchangeMatchedRows = searchRows.filter((row) =>
+    exchangesMatch(row.Exchange, normalizedExchange),
+  );
+
+  if (exchangeMatchedRows.length === 0) {
+    return unresolvedWithCandidates(
+      [`No listing found for ${ticker} on ${normalizedExchange}.`],
+      await buildTickerListingCandidates(ticker, instrumentName),
+    );
+  }
+
+  const exactCode = exchangeMatchedRows.filter(
+    (row) => row.Code?.trim().toUpperCase() === ticker,
   );
 
   const { best: searchBest, ambiguous: searchAmbiguous } = disambiguateRows(
-    exactCode.length > 0 ? exactCode : searchRows,
+    exactCode.length > 0 ? exactCode : exchangeMatchedRows,
     normalizedExchange,
   );
 
@@ -275,9 +347,10 @@ async function resolveByTickerAndExchange(
     });
   }
 
-  return unresolved([
-    `No EODHD listing found for ${ticker} on ${normalizedExchange}.`,
-  ]);
+  return unresolvedWithCandidates(
+    [`No listing found for ${ticker} on ${normalizedExchange}.`],
+    await buildTickerListingCandidates(ticker, instrumentName),
+  );
 }
 
 async function resolveByTickerOnly(
@@ -391,8 +464,9 @@ async function resolveByTickerWithNameHint(
 async function resolveByNameAndExchange(
   instrumentName: string,
   exchange: string,
+  ticker: string | null = null,
 ): Promise<ResolvedInstrument> {
-  const normalizedExchange = normalizeExchange(exchange);
+  const normalizedExchange = resolveExchangeForMatching(exchange);
   if (!normalizedExchange) {
     return unresolved(["Exchange could not be normalized for name lookup."]);
   }
@@ -406,9 +480,13 @@ async function resolveByNameAndExchange(
   }
 
   if (searchRows.length === 0) {
-    return unresolved([
-      `No EODHD listing found for "${instrumentName}" on ${normalizedExchange}.`,
-    ]);
+    const candidates = ticker
+      ? await buildTickerListingCandidates(ticker, instrumentName)
+      : [];
+    return unresolvedWithCandidates(
+      [`No listing found for "${instrumentName}" on ${normalizedExchange}.`],
+      candidates,
+    );
   }
 
   const scored = searchRows
@@ -456,8 +534,8 @@ async function resolveByNameAndExchange(
 }
 
 /**
- * Resolves a single instrument using the strict ISIN → ticker → name cascade.
- * Cash holdings are skipped and returned as unresolved without API calls.
+ * Resolves a single instrument using ISIN → ticker → name, with exchange
+ * used only to disambiguate listings.
  */
 export async function matchInstrument(
   input: InstrumentMatchInput,
@@ -472,10 +550,11 @@ export async function matchInstrument(
 
   const ticker = cleanTicker(input.ticker);
   const isin = normalizeIsin(input.isin);
-  const exchange = normalizeExchange(input.exchange);
+  const rawExchange = input.exchange?.trim().toUpperCase() || null;
+  const exchange = resolveExchangeForMatching(rawExchange);
+  const exchangeWarning = exchangeResolutionMessage(rawExchange);
   const instrumentName = cleanName(input.instrumentName);
 
-  // Guard: if ticker looks like an ISIN, treat it as ISIN — never as ticker.
   let effectiveIsin = isin;
   let effectiveTicker = ticker;
   if (!effectiveIsin && isValidIsin(ticker)) {
@@ -483,53 +562,88 @@ export async function matchInstrument(
     effectiveTicker = "";
   }
 
-  // 1. ISIN — primary path via EODHD ID Mapping.
+  // 1. ISIN — primary path; exchange disambiguates when multiple listings exist.
   if (effectiveIsin) {
-    return resolveByIsin(effectiveIsin, exchange);
+    const result = await resolveByIsin(effectiveIsin, exchange);
+    return appendWarnings(result, [exchangeWarning]);
   }
 
-  // 2. Ticker + Exchange.
+  // 2. Ticker + exchange — honour a confirmed exchange before guessing globally.
   if (effectiveTicker && exchange) {
-    return resolveByTickerAndExchange(effectiveTicker, exchange);
+    const result = await resolveByTickerAndExchange(
+      effectiveTicker,
+      exchange,
+      instrumentName || null,
+    );
+    if (result.providerSymbol || (result.candidates?.length ?? 0) > 0) {
+      return appendWarnings(result, [exchangeWarning]);
+    }
   }
 
-  // 3. Instrument Name + Exchange.
-  if (instrumentName && exchange) {
-    return resolveByNameAndExchange(instrumentName, exchange);
-  }
-
-  // Ticker without exchange — try a unique listing before asking the user.
-  if (effectiveTicker && !exchange) {
+  // 3. Ticker — auto-select only when a single listing exists.
+  if (effectiveTicker) {
     const tickerOnly = await resolveByTickerOnly(
       effectiveTicker,
       instrumentName || null,
     );
-    if (tickerOnly.providerSymbol || (tickerOnly.candidates?.length ?? 0) > 0) {
-      return tickerOnly;
+    if (tickerOnly.providerSymbol) {
+      return appendWarnings(tickerOnly, [exchangeWarning]);
+    }
+    if ((tickerOnly.candidates?.length ?? 0) > 0) {
+      return appendWarnings(tickerOnly, [exchangeWarning]);
     }
   }
 
-  // Demo-seed fallback: ticker + name without exchange (holdings.ts seed data).
-  if (effectiveTicker && instrumentName && !exchange) {
-    return resolveByTickerWithNameHint(effectiveTicker, instrumentName);
+  // 4. Instrument name + exchange.
+  if (instrumentName && exchange) {
+    const result = await resolveByNameAndExchange(
+      instrumentName,
+      exchange,
+      effectiveTicker || null,
+    );
+    if (result.providerSymbol || (result.candidates?.length ?? 0) > 0) {
+      return appendWarnings(result, [exchangeWarning]);
+    }
+  }
+
+  // 5. Instrument name with ticker hint when no exchange was confirmed.
+  if (instrumentName && effectiveTicker && !exchange) {
+    const result = await resolveByTickerWithNameHint(
+      effectiveTicker,
+      instrumentName,
+    );
+    if (result.providerSymbol || (result.candidates?.length ?? 0) > 0) {
+      return appendWarnings(result, [exchangeWarning]);
+    }
   }
 
   const warnings: string[] = [];
+  if (exchangeWarning) {
+    warnings.push(exchangeWarning);
+  }
   if (!effectiveIsin && !effectiveTicker && !instrumentName) {
     warnings.push("No ISIN, ticker, or instrument name was provided.");
-  } else if (effectiveTicker && !exchange) {
+  } else if (effectiveTicker && !exchange && !exchangeWarning) {
     warnings.push(
       "Ticker provided without exchange — add an exchange or an ISIN to resolve.",
     );
-  } else if (instrumentName && !exchange) {
+  } else if (instrumentName && !exchange && !exchangeWarning) {
     warnings.push(
       "Instrument name provided without exchange — add an exchange or an ISIN to resolve.",
     );
   } else {
-    warnings.push("Insufficient identifiers to resolve this instrument.");
+    warnings.push("Could not match this holding to a listed instrument.");
   }
 
-  return unresolved(warnings);
+  const candidates =
+    effectiveTicker !== ""
+      ? await buildTickerListingCandidates(
+          effectiveTicker,
+          instrumentName || null,
+        )
+      : [];
+
+  return unresolvedWithCandidates(warnings, candidates);
 }
 
 /** Resolves multiple instruments with bounded concurrency. */

@@ -41,9 +41,9 @@ describe("ExchangeFieldEditor input behaviour", () => {
     expect(formatExchangeInputValue(selected!.code)).toBe("Xetra");
   });
 
-  it("keeps manual text when no search result matches", () => {
+  it("does not accept unknown exchange text as a provider code", () => {
     const typed = "Unknown venue";
-    expect(findExchangeOption(typed)?.code).toBe("UNKNOWNVENUE");
+    expect(findExchangeOption(typed)).toBeNull();
     expect(typed).toBe("Unknown venue");
   });
 });

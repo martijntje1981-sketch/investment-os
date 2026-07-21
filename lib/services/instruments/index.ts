@@ -16,7 +16,14 @@ export {
   getEodhdApiKey,
 } from "./eodhdClient";
 
-export { exchangesMatch, normalizeExchange } from "./exchangeNormalizer";
+export {
+  exchangesMatch,
+  exchangeResolutionMessage,
+  isKnownProviderExchange,
+  normalizeExchange,
+  normalizeProviderExchangeCode,
+  resolveExchangeForMatching,
+} from "./exchangeNormalizer";
 export {
   findExchangeOption,
   formatExchangeInputValue,

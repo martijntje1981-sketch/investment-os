@@ -23,7 +23,8 @@ import { ImportProcessingState } from "@/components/import/ImportProcessingState
 import { ImportReviewList } from "@/components/import/ImportReviewList";
 import { ImportTrustBanner } from "@/components/import/ImportTrustBanner";
 import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
-import { runImportPipeline, matchSingleImportRow } from "@/lib/client/importMatchClient";
+import { matchSingleImportRow, runImportPipeline } from "@/lib/client/importMatchClient";
+import { resolveExchangeForMatching } from "@/lib/services/instruments/exchangeNormalizer";
 import { saveImportedPortfolio } from "@/lib/client/importSavePortfolio";
 import type { ExtractionReviewField } from "@/lib/services/extraction/fieldConfidence";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
@@ -225,13 +226,22 @@ export default function UploadPage() {
     exchangeCode: string | null,
     confirmed: boolean,
   ) {
+    if (!confirmed || !exchangeCode) {
+      return;
+    }
+
+    const normalizedExchange = resolveExchangeForMatching(exchangeCode);
+    if (!normalizedExchange) {
+      return;
+    }
+
     setRows((current) => {
       const updated = current.map((row) => {
         if (row.id !== id) return row;
 
         const next: ImportRow = {
           ...clearMatchState(row),
-          exchange: exchangeCode,
+          exchange: normalizedExchange,
         };
 
         if (confirmed && next.extractionFieldConfidence) {
@@ -245,7 +255,7 @@ export default function UploadPage() {
       });
 
       const changed = updated.find((row) => row.id === id);
-      if (changed && confirmed && exchangeCode) {
+      if (changed) {
         rematchRow(id, changed);
       }
 

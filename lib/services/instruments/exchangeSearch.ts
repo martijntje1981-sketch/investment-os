@@ -1,4 +1,8 @@
-import { normalizeExchange } from "@/lib/services/instruments/exchangeNormalizer";
+import {
+  isKnownProviderExchange,
+  normalizeExchange,
+  resolveExchangeForMatching,
+} from "@/lib/services/instruments/exchangeNormalizer";
 
 export type ExchangeOption = {
   code: string;
@@ -13,67 +17,67 @@ const EXCHANGE_CATALOG: ExchangeCatalogEntry[] = [
   {
     code: "XETRA",
     label: "Xetra",
-    searchTerms: ["xetra", "xetr", "xfra", "frankfurt", "germany", "de"],
+    searchTerms: ["xetra", "xetr", "xfra", "frankfurt", "germany", "de", "xet"],
   },
   {
     code: "AS",
     label: "Euronext Amsterdam",
-    searchTerms: ["amsterdam", "ams", "euronext amsterdam", "euronext"],
+    searchTerms: ["amsterdam", "ams", "xams", "euronext amsterdam"],
   },
   {
     code: "PA",
     label: "Euronext Paris",
-    searchTerms: ["paris", "pa", "euronext paris"],
+    searchTerms: ["paris", "pa", "epa", "xpar", "xepa", "euronext paris"],
   },
   {
     code: "BR",
     label: "Euronext Brussels",
-    searchTerms: ["brussels", "br", "euronext brussels"],
+    searchTerms: ["brussels", "br", "xbru", "euronext brussels"],
   },
   {
     code: "LSE",
     label: "London Stock Exchange",
-    searchTerms: ["lse", "lon", "london"],
+    searchTerms: ["lse", "lon", "london", "xlon"],
   },
   {
     code: "US",
     label: "US markets",
-    searchTerms: ["us", "nasdaq", "nyse", "arca", "united states"],
+    searchTerms: ["us", "nasdaq", "nyse", "arca", "xnas", "xnys", "united states"],
   },
   {
     code: "SW",
     label: "SIX Swiss Exchange",
-    searchTerms: ["sw", "six", "swiss", "zurich"],
+    searchTerms: ["sw", "six", "swiss", "zurich", "xswx"],
   },
   {
     code: "MI",
     label: "Borsa Italiana",
-    searchTerms: ["mi", "milan", "italy"],
+    searchTerms: ["mi", "milan", "italy", "xmil"],
   },
   {
     code: "MC",
     label: "Bolsa de Madrid",
-    searchTerms: ["mc", "madrid", "spain"],
+    searchTerms: ["mc", "madrid", "spain", "xmad"],
   },
   {
     code: "ST",
     label: "Nasdaq Stockholm",
-    searchTerms: ["st", "stockholm", "sweden"],
+    searchTerms: ["st", "stockholm", "sweden", "xsto"],
   },
   {
     code: "HE",
     label: "Nasdaq Helsinki",
-    searchTerms: ["he", "helsinki", "finland"],
+    searchTerms: ["he", "helsinki", "finland", "xhel"],
   },
   {
     code: "IR",
     label: "Euronext Dublin",
-    searchTerms: ["ir", "dublin", "ireland"],
+    searchTerms: ["ir", "dublin", "ireland", "xdub"],
   },
   {
     code: "VI",
     label: "Vienna Stock Exchange",
-    searchTerms: ["vi", "vienna", "austria"],
+    searchTerms: ["vi", "vienna", "austria", "xvie"],
   },
 ];
 
@@ -96,31 +100,24 @@ function scoreExchangeMatch(entry: ExchangeCatalogEntry, query: string): number 
   return 0;
 }
 
+function catalogEntryForCode(code: string): ExchangeCatalogEntry | undefined {
+  return EXCHANGE_CATALOG.find((entry) => entry.code === code);
+}
+
 export function findExchangeOption(
   value: string | null | undefined,
 ): ExchangeOption | null {
   if (!value?.trim()) return null;
 
-  const normalizedCode = normalizeExchange(value);
-  if (normalizedCode) {
-    const byCode = EXCHANGE_CATALOG.find((entry) => entry.code === normalizedCode);
-    if (byCode) {
-      return { code: byCode.code, label: byCode.label };
-    }
-    return { code: normalizedCode, label: normalizedCode };
+  const providerCode = resolveExchangeForMatching(value);
+  if (!providerCode) return null;
+
+  const entry = catalogEntryForCode(providerCode);
+  if (entry) {
+    return { code: entry.code, label: entry.label };
   }
 
-  const lowered = value.trim().toLowerCase();
-  const byLabel = EXCHANGE_CATALOG.find(
-    (entry) =>
-      entry.label.toLowerCase() === lowered ||
-      entry.searchTerms.includes(lowered),
-  );
-  if (byLabel) {
-    return { code: byLabel.code, label: byLabel.label };
-  }
-
-  return null;
+  return { code: providerCode, label: providerCode };
 }
 
 export function formatExchangeInputValue(
@@ -149,6 +146,7 @@ export function searchExchanges(
       return;
     }
 
+    const direct = findExchangeOption(trimmed);
     const ranked = EXCHANGE_CATALOG.map((entry) => ({
       entry,
       score: scoreExchangeMatch(entry, trimmed),
@@ -157,17 +155,18 @@ export function searchExchanges(
       .sort((a, b) => b.score - a.score)
       .map(({ entry }) => ({ code: entry.code, label: entry.label }));
 
-    const normalized = normalizeExchange(trimmed);
-    if (
-      normalized &&
-      !ranked.some((item) => item.code === normalized) &&
-      normalized.includes(trimmed.toUpperCase().replace(/[^A-Z0-9]/g, ""))
-    ) {
-      ranked.unshift({ code: normalized, label: normalized });
+    if (direct && !ranked.some((item) => item.code === direct.code)) {
+      ranked.unshift(direct);
     }
 
     resolve(ranked.slice(0, 8));
   });
+}
+
+export function isRecognizedExchangeInput(
+  value: string | null | undefined,
+): boolean {
+  return isKnownProviderExchange(value);
 }
 
 function createAbortError(): Error {
@@ -175,3 +174,6 @@ function createAbortError(): Error {
   error.name = "AbortError";
   return error;
 }
+
+// Re-export for callers that need raw normalization checks in tests.
+export { normalizeExchange };
