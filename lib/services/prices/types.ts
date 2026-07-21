@@ -123,6 +123,20 @@ export type PriceServiceMetricsSnapshot = {
   providerCalls: number;
   providerFailures: number;
   quotaFailures: number;
+  providerCooldowns: number;
+  mappingCallsPrevented: number;
+  events: Partial<
+    Record<
+      | "cache_hit"
+      | "cache_stale"
+      | "fresh_fetch"
+      | "deduplicated"
+      | "provider_cooldown"
+      | "provider_error"
+      | "stale_fallback",
+      number
+    >
+  >;
 };
 
 export type MarketDataProvider = {

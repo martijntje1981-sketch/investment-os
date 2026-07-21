@@ -1,4 +1,8 @@
 import { getEodhdApiKey } from "@/lib/services/instruments/eodhdClient";
+import { EODHD_PROVIDER_ID } from "@/lib/services/instruments/eodhdQuotaGuard";
+import {
+  assertProviderAvailable,
+} from "@/lib/services/marketData/providerCircuitBreaker";
 import {
   normalizeMarketQuote,
   parseMarketNumber,
@@ -77,6 +81,8 @@ async function fetchEodhdRealtimeData(
   providerSymbol: string,
   apiKey: string,
 ): Promise<EodhdRealtimeResponse> {
+  assertProviderAvailable(EODHD_PROVIDER_ID);
+
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 12_000);
 

@@ -127,7 +127,9 @@ export default function PortfolioPage() {
     if (!userSub) return;
     setIsRefreshing(true);
     try {
-      const result = await tryRefreshPortfolioPrices(userSub, holdings);
+      const result = await tryRefreshPortfolioPrices(userSub, holdings, {
+        forceRefresh: true,
+      });
       if (result.updated) {
         saveHoldings(result.holdings);
         const updatedCount = result.holdings.filter(
@@ -281,6 +283,23 @@ export default function PortfolioPage() {
     }
 
     saveHoldings(next);
+
+    if (
+      userSub &&
+      cleaned.assetType !== "cash" &&
+      cleaned.providerSymbol &&
+      cleaned.currentPrice <= 0
+    ) {
+      void tryRefreshPortfolioPrices(userSub, next, {
+        onlyProviderSymbols: [cleaned.providerSymbol],
+        skipIfCacheFresh: true,
+      }).then((result) => {
+        if (result.updated) {
+          saveHoldings(result.holdings);
+        }
+      });
+    }
+
     if (cleaned.assetType !== "cash" && cleaned.currentPrice <= 0) {
       setMessage(
         "Holding saved. Current price is temporarily unavailable and will be refreshed later.",

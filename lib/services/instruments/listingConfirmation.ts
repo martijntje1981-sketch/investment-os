@@ -101,6 +101,10 @@ export function applySelectedListing<
     matchWarnings?: string[];
   },
 >(holding: T, candidate: ResolvedInstrument): T {
+  if (!candidate.providerSymbol || candidate.matchMethod === "unresolved") {
+    return applyResolvedToHolding(holding, candidate);
+  }
+
   return applyResolvedToHolding(holding, {
     ...candidate,
     requiresConfirmation: false,

@@ -5,6 +5,22 @@
  * resolution logic so the engine stays provider-agnostic at its core.
  */
 
+import {
+  buildIdMappingLookupKey,
+  buildSearchLookupKey,
+  readPersistedInstrumentLookup,
+  writePersistedInstrumentLookup,
+} from "@/lib/services/marketData/persistentMappingCache";
+import {
+  classifyHttpProviderError,
+  isProviderQuotaOrRateLimit,
+} from "@/lib/services/marketData/providerErrors";
+import {
+  assertProviderAvailable,
+  recordProviderCircuitFailure,
+} from "@/lib/services/marketData/providerCircuitBreaker";
+import { EODHD_PROVIDER_ID } from "@/lib/services/instruments/eodhdQuotaGuard";
+
 export type EodhdIdMappingRow = {
   Code?: string;
   Exchange?: string;
@@ -100,6 +116,16 @@ export async function fetchIdMapping(
   filters: IdMappingFilters,
   apiKey: string = getEodhdApiKey(),
 ): Promise<EodhdIdMappingRow[]> {
+  assertProviderAvailable(EODHD_PROVIDER_ID);
+
+  const lookupKey = buildIdMappingLookupKey(filters);
+  const cached = await readPersistedInstrumentLookup<EodhdIdMappingRow[]>(
+    lookupKey,
+  );
+  if (cached) {
+    return cached;
+  }
+
   const url = new URL("https://eodhd.com/api/id-mapping");
   url.searchParams.set("api_token", apiKey);
   url.searchParams.set("fmt", "json");
@@ -122,6 +148,14 @@ export async function fetchIdMapping(
 
   if (!response.ok) {
     const details = await response.text();
+    const normalized = classifyHttpProviderError(
+      response.status,
+      details,
+      response.headers.get("retry-after"),
+    );
+    if (isProviderQuotaOrRateLimit(normalized)) {
+      recordProviderCircuitFailure(EODHD_PROVIDER_ID, new EodhdProviderError(response.status, details));
+    }
     throw new EodhdProviderError(
       response.status,
       `EODHD id-mapping returned ${response.status}: ${details}`,
@@ -129,7 +163,13 @@ export async function fetchIdMapping(
   }
 
   const data = (await response.json()) as unknown;
-  return parseJsonArray<EodhdIdMappingRow>(data);
+  const rows = parseJsonArray<EodhdIdMappingRow>(data);
+  await writePersistedInstrumentLookup({
+    lookupKey,
+    lookupType: "id_mapping",
+    result: rows,
+  });
+  return rows;
 }
 
 /**
@@ -143,6 +183,16 @@ export async function fetchSearch(
 ): Promise<EodhdSearchRow[]> {
   const trimmed = query.trim();
   if (!trimmed) return [];
+
+  assertProviderAvailable(EODHD_PROVIDER_ID);
+
+  const lookupKey = buildSearchLookupKey(trimmed, options.exchange);
+  const cached = await readPersistedInstrumentLookup<EodhdSearchRow[]>(
+    lookupKey,
+  );
+  if (cached) {
+    return cached;
+  }
 
   const url = new URL(
     `https://eodhd.com/api/search/${encodeURIComponent(trimmed)}`,
@@ -168,6 +218,14 @@ export async function fetchSearch(
 
   if (!response.ok) {
     const details = await response.text();
+    const normalized = classifyHttpProviderError(
+      response.status,
+      details,
+      response.headers.get("retry-after"),
+    );
+    if (isProviderQuotaOrRateLimit(normalized)) {
+      recordProviderCircuitFailure(EODHD_PROVIDER_ID, new EodhdProviderError(response.status, details));
+    }
     throw new EodhdProviderError(
       response.status,
       `EODHD search returned ${response.status}: ${details}`,
@@ -175,5 +233,11 @@ export async function fetchSearch(
   }
 
   const data = (await response.json()) as unknown;
-  return parseJsonArray<EodhdSearchRow>(data);
+  const rows = parseJsonArray<EodhdSearchRow>(data);
+  await writePersistedInstrumentLookup({
+    lookupKey,
+    lookupType: "search",
+    result: rows,
+  });
+  return rows;
 }

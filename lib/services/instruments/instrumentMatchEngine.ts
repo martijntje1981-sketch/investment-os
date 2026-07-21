@@ -35,8 +35,7 @@ import type {
 /** Minimum confidence below which user confirmation is required. */
 const CONFIRMATION_THRESHOLD = 0.85;
 
-const MATCHING_UNAVAILABLE_WARNING =
-  "Instrument lookup is temporarily unavailable — confirm this holding manually.";
+import { MATCHING_UNAVAILABLE_WARNING } from "@/lib/services/marketData/providerErrors";
 
 function handleProviderFailure(error: unknown): void {
   if (isEodhdQuotaOrRateLimitError(error)) {

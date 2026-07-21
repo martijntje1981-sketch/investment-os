@@ -4,6 +4,7 @@
  * Match Engine remains the source of truth; this layer only classifies UX tiers.
  */
 
+import { MATCHING_UNAVAILABLE_WARNING } from "@/lib/services/marketData/providerErrors";
 import type { ImportReviewTier, ImportRow, ImportReviewPlan } from "@/lib/services/import/types";
 import { aggregateFieldExtractionConfidence } from "@/lib/services/extraction/fieldConfidence";
 
@@ -36,10 +37,22 @@ export function effectiveImportConfidence(row: ImportRow): number {
   return Math.min(match, extraction);
 }
 
+function isProviderUnavailableRow(row: ImportRow): boolean {
+  const warnings = row.matchWarnings ?? [];
+  return warnings.some(
+    (warning) =>
+      warning.includes(MATCHING_UNAVAILABLE_WARNING) ||
+      /temporarily unavailable|quota|rate.?limit|402|429/i.test(warning),
+  );
+}
+
 export function buildReviewReason(row: ImportRow, tier: ImportReviewTier): string | null {
   if (tier === "auto") return null;
 
   if (row.assetType !== "cash" && (!row.providerSymbol || row.matchMethod === "unresolved")) {
+    if (isProviderUnavailableRow(row)) {
+      return MATCHING_UNAVAILABLE_WARNING;
+    }
     return "We could not match this holding to a listed instrument.";
   }
 

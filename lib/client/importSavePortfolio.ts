@@ -22,6 +22,7 @@ export type ImportSaveResult =
 export async function saveImportedPortfolio(input: {
   userSub: string;
   holdings: StoredPortfolioHolding[];
+  newProviderSymbols?: string[];
 }): Promise<ImportSaveResult> {
   const goal = readSavedUserGoal(input.userSub);
   const importMappings = readImportMappingsFromCache(input.userSub);
@@ -63,6 +64,10 @@ export async function saveImportedPortfolio(input: {
   const priceResult = await tryRefreshPortfolioPrices(
     input.userSub,
     loadUserPortfolioHoldings(input.userSub),
+    {
+      onlyProviderSymbols: input.newProviderSymbols,
+      skipIfCacheFresh: true,
+    },
   );
 
   if (!priceResult.updated) {

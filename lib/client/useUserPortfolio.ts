@@ -296,7 +296,9 @@ export function useUserPortfolio() {
         return;
       }
 
-      const result = await tryRefreshPortfolioPrices(userSub, current);
+      const result = await tryRefreshPortfolioPrices(userSub, current, {
+        skipIfCacheFresh: true,
+      });
       if (cancelled || !result.updated) {
         return;
       }
@@ -318,7 +320,9 @@ export function useUserPortfolio() {
       window.removeEventListener("focus", handleRefresh);
       window.removeEventListener("storage", handleRefresh);
     };
-  }, [authReady, holdings.length, portfolioReady, saveHoldings, userSub]);
+    // Intentionally omit holdings.length — navigation must not re-trigger price refresh.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authReady, portfolioReady, saveHoldings, userSub]);
 
   const migratePortfolio = useCallback(async () => {
     if (!userSub || syncRequestRef.current) return false;

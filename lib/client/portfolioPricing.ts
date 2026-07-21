@@ -32,6 +32,7 @@ import {
   type MarketDataStatus,
 } from "@/lib/services/prices/marketQuote";
 import { logHoldingDailyData } from "@/lib/client/holdingDailyDataDebug";
+import { CLIENT_PRICE_CACHE_FRESH_MS } from "@/lib/services/marketData/cachePolicy";
 import { findSavedMappingForHolding } from "@/lib/services/import/mappingMemory";
 
 export {
@@ -133,6 +134,49 @@ export function normalizeHoldingForSave(
           new Date().toISOString()
         : holding.marketPriceUpdatedAt,
   };
+}
+
+export type PriceRefreshOptions = {
+  forceRefresh?: boolean;
+  onlyProviderSymbols?: string[];
+  skipIfCacheFresh?: boolean;
+};
+
+let refreshInFlight: Promise<unknown> | null = null;
+
+export function readPriceCacheUpdatedAt(userSub: string): number | null {
+  assertUserSub(userSub);
+
+  try {
+    const cached = localStorage.getItem(priceCacheKey(userSub));
+    const parsed = cached ? (JSON.parse(cached) as CachedPortfolioPrice[]) : [];
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      return null;
+    }
+
+    const timestamps = parsed
+      .map((item) => Date.parse(item.updatedAt ?? ""))
+      .filter((value) => Number.isFinite(value));
+
+    if (timestamps.length === 0) {
+      return null;
+    }
+
+    return Math.max(...timestamps);
+  } catch {
+    return null;
+  }
+}
+
+export function isPriceCacheFresh(
+  userSub: string,
+  now = Date.now(),
+): boolean {
+  const updatedAt = readPriceCacheUpdatedAt(userSub);
+  if (updatedAt === null) {
+    return false;
+  }
+  return now - updatedAt < CLIENT_PRICE_CACHE_FRESH_MS;
 }
 
 export type PriceRefreshResult<T extends StoredPortfolioHolding> = {
@@ -418,19 +462,38 @@ export function applyCachedPrices<T extends StoredPortfolioHolding>(
  */
 export async function refreshPortfolioPrices<
   T extends StoredPortfolioHolding,
->(userSub: string, holdings: T[]): Promise<T[]> {
+>(
+  userSub: string,
+  holdings: T[],
+  options?: PriceRefreshOptions,
+): Promise<T[]> {
   assertUserSub(userSub);
 
   const payload = buildPriceRequestPayload(holdings, userSub);
+  const filteredPayload =
+    options?.onlyProviderSymbols && options.onlyProviderSymbols.length > 0
+      ? payload.filter((item) =>
+          item.providerSymbol
+            ? options.onlyProviderSymbols!.some(
+                (symbol) =>
+                  symbol.trim().toUpperCase() ===
+                  item.providerSymbol!.trim().toUpperCase(),
+              )
+            : false,
+        )
+      : payload;
+
+  if (filteredPayload.length === 0) {
+    return holdings;
+  }
 
   const response = await fetch("/api/prices", {
-    method: payload.length > 0 ? "POST" : "GET",
-    ...(payload.length > 0
-      ? {
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ holdings: payload }),
-        }
-      : {}),
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      holdings: filteredPayload,
+      forceRefresh: options?.forceRefresh ?? false,
+    }),
     cache: "no-store",
   });
 
@@ -442,9 +505,9 @@ export async function refreshPortfolioPrices<
   const normalizedQuotes = normalizePriceApiQuotes(data.prices);
 
   console.log("[price api coverage]", {
-    requested: data.requested ?? payload.length,
+    requested: data.requested ?? filteredPayload.length,
     received: data.received ?? normalizedQuotes.length,
-    payloadHoldings: payload.length,
+    payloadHoldings: filteredPayload.length,
   });
 
   if (data.errors?.length) {
@@ -478,22 +541,54 @@ export async function refreshPortfolioPrices<
  */
 export async function tryRefreshPortfolioPrices<
   T extends StoredPortfolioHolding,
->(userSub: string, holdings: T[]): Promise<PriceRefreshResult<T>> {
+>(
+  userSub: string,
+  holdings: T[],
+  options?: PriceRefreshOptions,
+): Promise<PriceRefreshResult<T>> {
   if (holdings.length === 0) {
     return { holdings, updated: false };
   }
 
-  try {
-    const refreshed = await refreshPortfolioPrices(userSub, holdings);
-    return { holdings: refreshed, updated: true };
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Market data unavailable";
+  if (
+    options?.skipIfCacheFresh &&
+    !options.forceRefresh &&
+    isPriceCacheFresh(userSub)
+  ) {
     return {
-      holdings,
+      holdings: applyCachedPrices(userSub, holdings),
       updated: false,
-      message,
-      rateLimited: isRateLimitedPriceError(message),
+      message: "Using cached market prices.",
     };
   }
+
+  if (refreshInFlight) {
+    await refreshInFlight.catch(() => undefined);
+    return {
+      holdings: applyCachedPrices(userSub, holdings),
+      updated: false,
+      message: "Price refresh already in progress.",
+    };
+  }
+
+  const run = (async () => {
+    try {
+      const refreshed = await refreshPortfolioPrices(userSub, holdings, options);
+      return { holdings: refreshed, updated: true } satisfies PriceRefreshResult<T>;
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Market data unavailable";
+      return {
+        holdings,
+        updated: false,
+        message,
+        rateLimited: isRateLimitedPriceError(message),
+      } satisfies PriceRefreshResult<T>;
+    } finally {
+      refreshInFlight = null;
+    }
+  })();
+
+  refreshInFlight = run;
+  return run;
 }

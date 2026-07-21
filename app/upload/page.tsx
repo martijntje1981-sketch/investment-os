@@ -359,6 +359,9 @@ export default function UploadPage() {
       const saved = await saveImportedPortfolio({
         userSub,
         holdings: next,
+        newProviderSymbols: prepared
+          .map((holding) => holding.providerSymbol)
+          .filter((symbol): symbol is string => Boolean(symbol)),
       });
 
       if (!saved.ok) {

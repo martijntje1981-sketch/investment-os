@@ -71,9 +71,13 @@ describe("POST /api/prices", () => {
       }),
     );
 
-    expect(loadPricesForHoldings).toHaveBeenCalledWith([
-      { symbol: "VWCE", providerSymbol: "VWCE.XETRA" },
-    ]);
+    expect(loadPricesForHoldings).toHaveBeenCalledWith(
+      [{ symbol: "VWCE", providerSymbol: "VWCE.XETRA" }],
+      {
+        forceRefresh: false,
+        onlyProviderSymbols: undefined,
+      },
+    );
 
     const payload = await response.json();
     expect(response.status).toBe(200);

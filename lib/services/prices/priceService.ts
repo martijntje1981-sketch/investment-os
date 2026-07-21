@@ -8,6 +8,7 @@ import {
   getQuoteCacheTtlMs,
   readCachedQuote,
   readNegativeCache,
+  resetMarketPriceCacheForTests,
   setInFlightQuote,
   writeCachedQuote,
   writeNegativeCache,
@@ -18,8 +19,11 @@ import {
   recordPriceCacheHit,
   recordPriceCacheMiss,
   recordPriceDedup,
+  recordPriceServiceEvent,
   recordProviderCall,
   recordProviderFailure,
+  recordProviderCooldown,
+  resetPriceServiceMetricsForTests,
 } from "@/lib/services/prices/observability";
 import { createProviderRouter } from "@/lib/services/prices/providerRouter";
 import {
@@ -27,9 +31,24 @@ import {
   ProviderQuoteError,
 } from "@/lib/services/prices/providers/eodhdMarketDataProvider";
 import {
+  DEFAULT_MARKET_DATA_CACHE_POLICY,
+} from "@/lib/services/marketData/cachePolicy";
+import {
+  assertProviderAvailable,
+  getProviderCircuitReason,
+  isProviderCircuitOpen,
+  recordProviderCircuitFailure,
+  resetProviderCircuitForTests,
+} from "@/lib/services/marketData/providerCircuitBreaker";
+import {
+  readPersistedQuote,
+  writePersistedQuote,
+} from "@/lib/services/marketData/persistentQuoteCache";
+import { EODHD_PROVIDER_ID } from "@/lib/services/instruments/eodhdQuotaGuard";
+import {
   dedupeResolvedTargets,
   resolveDefaultWatchlist,
-  resolvePriceTargets,
+  resolveQuotePriceTargets,
 } from "@/lib/services/prices/resolvePriceTargets";
 import type {
   HoldingPrice,
@@ -64,7 +83,34 @@ type FxRates = Record<PriceCurrency, number | null>;
 let fxCache: { rates: FxRates; expiresAt: number } | null = null;
 let fxInFlight: Promise<FxRates> | null = null;
 
-const FX_CACHE_TTL_MS = 12 * 60 * 1000;
+const FX_CACHE_TTL_MS = DEFAULT_MARKET_DATA_CACHE_POLICY.fxFreshMs;
+
+export type LoadPricesOptions = {
+  forceRefresh?: boolean;
+  onlyProviderSymbols?: string[];
+};
+
+async function readQuoteFromCaches(
+  cacheKey: string,
+  forceRefresh: boolean,
+): Promise<{ quote: NormalizedProviderQuote; fresh: boolean } | null> {
+  if (forceRefresh) {
+    return null;
+  }
+
+  const memory = readCachedQuote(cacheKey);
+  if (memory) {
+    return memory;
+  }
+
+  const persisted = await readPersistedQuote(cacheKey);
+  if (!persisted) {
+    return null;
+  }
+
+  writeCachedQuote(cacheKey, persisted.quote, persisted.quote.providerSymbol);
+  return { quote: persisted.quote, fresh: persisted.fresh };
+}
 
 function unavailableMessage(kind: ProviderFailureKind): string {
   switch (kind) {
@@ -87,10 +133,18 @@ function isCircuitBreakerFailure(kind: ProviderFailureKind): boolean {
   return kind === "quota_exhausted" || kind === "rate_limited";
 }
 
-async function getFxRates(): Promise<FxRates> {
+async function getFxRates(forceRefresh = false): Promise<FxRates> {
   const now = Date.now();
-  if (fxCache && now <= fxCache.expiresAt) {
+  if (!forceRefresh && fxCache && now <= fxCache.expiresAt) {
     return fxCache.rates;
+  }
+
+  if (isProviderCircuitOpen(EODHD_PROVIDER_ID)) {
+    recordProviderCooldown(EODHD_PROVIDER_ID);
+    if (fxCache) {
+      return fxCache.rates;
+    }
+    return { EUR: 1, USD: null, GBP: null, CHF: null };
   }
 
   if (fxInFlight) {
@@ -99,6 +153,7 @@ async function getFxRates(): Promise<FxRates> {
   }
 
   fxInFlight = (async () => {
+    assertProviderAvailable(EODHD_PROVIDER_ID);
     recordProviderCall();
     const rates = await fetchEodhdFxRates();
     fxCache = { rates, expiresAt: Date.now() + FX_CACHE_TTL_MS };
@@ -115,15 +170,27 @@ async function getFxRates(): Promise<FxRates> {
 async function fetchAndCacheQuote(
   target: ResolvedPriceTarget,
   provider: MarketDataProvider,
+  forceRefresh = false,
 ): Promise<NormalizedProviderQuote> {
   const cacheKey = buildQuoteCacheKey(provider.id, target.providerSymbol);
 
   try {
-    const fxRates = await getFxRates();
+    assertProviderAvailable(provider.id);
+    const fxRates = await getFxRates(forceRefresh);
     recordProviderCall();
     const raw = await provider.getQuote(target.providerSymbol);
     const quote = provider.normalizeQuote(target, raw, fxRates);
     writeCachedQuote(cacheKey, quote, target.providerSymbol);
+    await writePersistedQuote({
+      cacheKey,
+      providerId: provider.id,
+      providerSymbol: target.providerSymbol,
+      quote,
+    });
+    recordPriceServiceEvent("fresh_fetch", {
+      providerId: provider.id,
+      providerSymbol: target.providerSymbol,
+    });
     return quote;
   } catch (error) {
     const kind =
@@ -131,12 +198,21 @@ async function fetchAndCacheQuote(
     recordProviderFailure(kind === "quota_exhausted");
 
     if (isCircuitBreakerFailure(kind)) {
+      recordProviderCircuitFailure(provider.id, error);
       writeNegativeCache(cacheKey, unavailableMessage(kind));
+      recordProviderCooldown(provider.id);
     }
 
-    const cached = readCachedQuote(cacheKey);
+    const cached = await readQuoteFromCaches(cacheKey, false);
     if (cached) {
-      return cached.quote;
+      recordPriceServiceEvent("stale_fallback", {
+        providerId: provider.id,
+        providerSymbol: target.providerSymbol,
+      });
+      return {
+        ...cached.quote,
+        unavailableReason: unavailableMessage(kind),
+      };
     }
 
     throw error instanceof Error
@@ -150,7 +226,8 @@ async function refreshQuoteInBackground(
   provider: MarketDataProvider,
   cacheKey: string,
 ): Promise<void> {
-  if (readNegativeCache(cacheKey)) {
+  if (readNegativeCache(cacheKey) || isProviderCircuitOpen(provider.id)) {
+    recordProviderCooldown(provider.id);
     return;
   }
 
@@ -160,14 +237,16 @@ async function refreshQuoteInBackground(
     return;
   }
 
-  const promise = fetchAndCacheQuote(target, provider).catch(() => undefined);
+  const promise = fetchAndCacheQuote(target, provider, false).catch(() => undefined);
   setInFlightQuote(cacheKey, promise as Promise<NormalizedProviderQuote>);
   await promise;
 }
 
 export async function getNormalizedQuote(
   target: ResolvedPriceTarget,
+  options?: { forceRefresh?: boolean },
 ): Promise<NormalizedProviderQuote> {
+  const forceRefresh = options?.forceRefresh ?? false;
   const provider = getActiveRouter().selectProvider(target.providerSymbol);
   if (!provider) {
     return buildUnavailableQuote(
@@ -179,9 +258,33 @@ export async function getNormalizedQuote(
 
   const cacheKey = buildQuoteCacheKey(provider.id, target.providerSymbol);
 
+  if (isProviderCircuitOpen(provider.id)) {
+    recordProviderCooldown(provider.id);
+    const cached = await readQuoteFromCaches(cacheKey, false);
+    if (cached) {
+      recordPriceCacheHit();
+      recordPriceServiceEvent("provider_cooldown", {
+        providerId: provider.id,
+        providerSymbol: target.providerSymbol,
+      });
+      return {
+        ...cached.quote,
+        unavailableReason:
+          getProviderCircuitReason(provider.id) ??
+          unavailableMessage("quota_exhausted"),
+      };
+    }
+    return buildUnavailableQuote(
+      target,
+      provider.id,
+      getProviderCircuitReason(provider.id) ??
+        unavailableMessage("quota_exhausted"),
+    );
+  }
+
   const negativeReason = readNegativeCache(cacheKey);
-  if (negativeReason) {
-    const cached = readCachedQuote(cacheKey);
+  if (negativeReason && !forceRefresh) {
+    const cached = await readQuoteFromCaches(cacheKey, false);
     if (cached) {
       recordPriceCacheHit();
       return {
@@ -192,14 +295,22 @@ export async function getNormalizedQuote(
     return buildUnavailableQuote(target, provider.id, negativeReason);
   }
 
-  const cached = readCachedQuote(cacheKey);
+  const cached = await readQuoteFromCaches(cacheKey, forceRefresh);
   if (cached?.fresh) {
     recordPriceCacheHit();
+    recordPriceServiceEvent("cache_hit", {
+      providerId: provider.id,
+      providerSymbol: target.providerSymbol,
+    });
     return cached.quote;
   }
 
-  if (cached && !cached.fresh) {
+  if (cached && !cached.fresh && !forceRefresh) {
     recordPriceCacheHit();
+    recordPriceServiceEvent("cache_stale", {
+      providerId: provider.id,
+      providerSymbol: target.providerSymbol,
+    });
     void refreshQuoteInBackground(target, provider, cacheKey);
     return cached.quote;
   }
@@ -209,19 +320,23 @@ export async function getNormalizedQuote(
   const inFlight = getInFlightQuote(cacheKey);
   if (inFlight) {
     recordPriceDedup();
+    recordPriceServiceEvent("deduplicated", {
+      providerId: provider.id,
+      providerSymbol: target.providerSymbol,
+    });
     return inFlight;
   }
 
-  const promise = fetchAndCacheQuote(target, provider);
+  const promise = fetchAndCacheQuote(target, provider, forceRefresh);
   setInFlightQuote(cacheKey, promise);
   return promise;
 }
 
 async function quoteToHoldingPrice(
   target: ResolvedPriceTarget,
+  options?: { forceRefresh?: boolean },
 ): Promise<HoldingPrice> {
-  const provider = getActiveRouter().selectProvider(target.providerSymbol);
-  const quote = await getNormalizedQuote(target);
+  const quote = await getNormalizedQuote(target, options);
 
   if (
     quote.dataStatus === "unavailable" ||
@@ -268,12 +383,15 @@ function buildPricePayload(
 
 export async function loadPricesForTargets(
   targets: ResolvedPriceTarget[],
+  options?: LoadPricesOptions,
 ): Promise<PricePayload> {
   const uniqueTargets = dedupeResolvedTargets(targets);
-  const fxRates = await getFxRates();
+  const fxRates = await getFxRates(options?.forceRefresh ?? false);
 
   const results = await Promise.allSettled(
-    uniqueTargets.map((target) => quoteToHoldingPrice(target)),
+    uniqueTargets.map((target) =>
+      quoteToHoldingPrice(target, { forceRefresh: options?.forceRefresh }),
+    ),
   );
 
   const prices = results
@@ -302,10 +420,13 @@ export async function loadPricesForTargets(
 
 export async function loadPricesForHoldings(
   holdings: PriceHoldingInput[],
+  options?: LoadPricesOptions,
 ): Promise<PricePayload> {
-  const { targets, errors: resolutionErrors } =
-    await resolvePriceTargets(holdings);
-  const payload = await loadPricesForTargets(targets);
+  const { targets, errors: resolutionErrors } = resolveQuotePriceTargets(
+    holdings,
+    { onlyProviderSymbols: options?.onlyProviderSymbols },
+  );
+  const payload = await loadPricesForTargets(targets, options);
   return {
     ...payload,
     errors: [...resolutionErrors, ...payload.errors],
@@ -329,4 +450,7 @@ export function resetPriceServiceStateForTests(): void {
   fxInFlight = null;
   testProviders = null;
   defaultRouter = null;
+  resetMarketPriceCacheForTests();
+  resetProviderCircuitForTests();
+  resetPriceServiceMetricsForTests();
 }

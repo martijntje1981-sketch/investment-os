@@ -22,30 +22,22 @@ export function buildQuoteCacheKey(
   return `${providerId}:${providerSymbol.trim().toUpperCase()}`;
 }
 
-export function isCryptoProviderSymbol(providerSymbol: string): boolean {
-  const exchange = providerSymbol.split(".").pop()?.toUpperCase() ?? "";
-  return exchange === "CC" || exchange === "CRYPTO";
-}
-
-export function isLikelyMarketOpen(now = new Date()): boolean {
-  const utcHour = now.getUTCHours();
-  const day = now.getUTCDay();
-  if (day === 0 || day === 6) {
-    return false;
-  }
-  return utcHour >= 8 && utcHour <= 22;
-}
+import {
+  getQuoteFreshTtlMs,
+  getQuoteStaleWindowMs,
+  isCryptoProviderSymbol,
+  isLikelyMarketOpen,
+} from "@/lib/services/marketData/cachePolicy";
 
 export function getQuoteCacheTtlMs(providerSymbol: string, now = new Date()): number {
-  if (isCryptoProviderSymbol(providerSymbol)) {
-    return 7 * 60 * 1000;
-  }
-  return isLikelyMarketOpen(now) ? 12 * 60 * 1000 : 45 * 60 * 1000;
+  return getQuoteFreshTtlMs(providerSymbol, undefined, now);
 }
 
-export function getNegativeCacheTtlMs(): number {
-  return 20 * 60 * 1000;
+function getQuoteStaleTtlMs(providerSymbol: string, now = new Date()): number {
+  return getQuoteStaleWindowMs(providerSymbol, undefined, now);
 }
+
+export { isCryptoProviderSymbol, isLikelyMarketOpen };
 
 export function readCachedQuote(key: string): {
   quote: NormalizedProviderQuote;
@@ -80,12 +72,17 @@ export function writeCachedQuote(
   providerSymbol: string,
 ): void {
   const ttlMs = getQuoteCacheTtlMs(providerSymbol);
+  const staleMs = getQuoteStaleTtlMs(providerSymbol);
   const now = Date.now();
   quoteCache.set(key, {
     quote: { ...quote, isStale: false, cacheStatus: "fresh" },
     expiresAt: now + ttlMs,
-    staleUntil: now + ttlMs * 2,
+    staleUntil: now + staleMs,
   });
+}
+
+export function getNegativeCacheTtlMs(): number {
+  return 20 * 60 * 1000;
 }
 
 export function readNegativeCache(key: string): string | null {

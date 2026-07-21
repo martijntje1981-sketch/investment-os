@@ -24,6 +24,64 @@ function inferCurrencyFromProviderSymbol(
   }
 }
 
+export function resolveQuotePriceTarget(
+  input: PriceHoldingInput,
+): ResolvedPriceTarget | null {
+  const userSymbol = input.symbol.trim().toUpperCase();
+
+  if (!input.providerSymbol?.trim()) {
+    return null;
+  }
+
+  return {
+    symbol: userSymbol || input.providerSymbol.split(".")[0] || input.providerSymbol,
+    providerSymbol: input.providerSymbol,
+    isin: input.isin ?? null,
+    name: input.instrumentName ?? input.name ?? userSymbol,
+    currency:
+      input.currency ??
+      inferCurrencyFromProviderSymbol(input.providerSymbol),
+  };
+}
+
+export function resolveQuotePriceTargets(
+  holdings: PriceHoldingInput[],
+  options?: { onlyProviderSymbols?: string[] },
+): { targets: ResolvedPriceTarget[]; errors: string[] } {
+  const only = options?.onlyProviderSymbols
+    ? new Set(options.onlyProviderSymbols.map((symbol) => symbol.trim().toUpperCase()))
+    : null;
+
+  const targets: ResolvedPriceTarget[] = [];
+  const errors: string[] = [];
+
+  for (const holding of holdings) {
+    if (only && holding.providerSymbol) {
+      const key = holding.providerSymbol.trim().toUpperCase();
+      if (!only.has(key)) {
+        continue;
+      }
+    }
+
+    if (!holding.providerSymbol?.trim()) {
+      const label = holding.symbol || holding.isin || holding.name || "Unknown";
+      errors.push(
+        `${label}: missing confirmed providerSymbol — quote refresh skipped (matching is import-only).`,
+      );
+      continue;
+    }
+
+    const target = resolveQuotePriceTarget(holding);
+    if (!target) {
+      continue;
+    }
+
+    targets.push(target);
+  }
+
+  return { targets, errors };
+}
+
 export async function resolvePriceTarget(
   input: PriceHoldingInput,
 ): Promise<ResolvedPriceTarget | null> {

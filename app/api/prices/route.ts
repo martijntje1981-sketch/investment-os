@@ -51,11 +51,13 @@ export async function GET() {
 
 type PostBody = {
   holdings?: PriceHoldingInput[];
+  forceRefresh?: boolean;
+  onlyProviderSymbols?: string[];
 };
 
 /**
  * POST — fetch live prices for caller-supplied holdings.
- * Uses stored providerSymbol when available; otherwise resolves via Match Engine.
+ * Uses stored providerSymbol only; instrument matching is import/manual-only.
  */
 export async function POST(request: Request) {
   try {
@@ -69,7 +71,10 @@ export async function POST(request: Request) {
       );
     }
 
-    const payload = await loadPricesForHoldings(holdings);
+    const payload = await loadPricesForHoldings(holdings, {
+      forceRefresh: body.forceRefresh ?? false,
+      onlyProviderSymbols: body.onlyProviderSymbols,
+    });
     return jsonResponse(payload, payload.success ? 200 : 503);
   } catch (error) {
     console.error("Prices API POST error:", error);

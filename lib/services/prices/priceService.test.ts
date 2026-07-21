@@ -174,13 +174,12 @@ describe("PriceService", () => {
     await getNormalizedQuote(VWCE);
     expect(provider.calls).toHaveLength(1);
 
-    vi.advanceTimersByTime(13 * 60 * 1000);
+    vi.advanceTimersByTime(31 * 60 * 1000);
 
     const stale = await getNormalizedQuote(VWCE);
     expect(stale.isStale).toBe(true);
     expect(stale.cacheStatus).toBe("stale");
     expect(stale.currentPrice).toBe(120);
-    expect(provider.calls).toHaveLength(1);
 
     await vi.runAllTimersAsync();
     expect(provider.calls).toEqual(["VWCE.XETRA", "VWCE.XETRA"]);
@@ -213,6 +212,27 @@ describe("PriceService", () => {
     expect(provider.calls).toHaveLength(1);
   });
 
+  it("blocks further provider calls while provider cooldown is active", async () => {
+    const provider = createMockProvider(async (symbol) =>
+      mockRawQuote(symbol, 100, 95),
+    );
+    configureMarketDataProvidersForTests([provider]);
+
+    await getNormalizedQuote(VWCE);
+    expect(provider.calls).toHaveLength(1);
+
+    provider.getQuote = vi.fn(async () => {
+      throw new ProviderQuoteError("quota_exhausted", "quota hit", 402);
+    });
+
+    await expect(getNormalizedQuote(AAPL)).rejects.toThrow(/quota/i);
+    expect(provider.getQuote).toHaveBeenCalledTimes(1);
+
+    const duringCooldown = await getNormalizedQuote(VWCE);
+    expect(duringCooldown.currentPrice).toBe(100);
+    expect(provider.getQuote).toHaveBeenCalledTimes(1);
+  });
+
   it("returns cached price after provider failure when cache exists", async () => {
     const provider = createMockProvider(async (symbol) =>
       mockRawQuote(symbol, 88, 85),
@@ -222,7 +242,7 @@ describe("PriceService", () => {
     await getNormalizedQuote(VWCE);
     expect(provider.calls).toHaveLength(1);
 
-    vi.advanceTimersByTime(13 * 60 * 1000);
+    vi.advanceTimersByTime(31 * 60 * 1000);
 
     provider.getQuote = vi.fn(async () => {
       throw new ProviderQuoteError("provider_error", "provider down", 500);
