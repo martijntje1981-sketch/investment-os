@@ -1,9 +1,14 @@
+"use client";
+
 import { AlertCircle, Check, ChevronRight } from "lucide-react";
+import { useState } from "react";
 
 import NumericInput from "@/components/NumericInput";
+import { ExchangeFieldEditor } from "@/components/import/ExchangeFieldEditor";
 import {
   extractionFieldLabel,
   getExtractionFieldsNeedingReview,
+  shouldReviewExchange,
   type ExtractionReviewField,
 } from "@/lib/services/extraction/fieldConfidence";
 import {
@@ -23,6 +28,11 @@ type ImportReviewListProps = {
     field: ExtractionReviewField,
     value: string | number,
   ) => void;
+  onExchangeCommit: (
+    id: string,
+    exchangeCode: string | null,
+    confirmed: boolean,
+  ) => void;
   onRemove: (id: string) => void;
 };
 
@@ -31,6 +41,7 @@ export function ImportReviewList({
   onConfirm,
   onSelectCandidate,
   onFieldChange,
+  onExchangeCommit,
   onRemove,
 }: ImportReviewListProps) {
   if (rows.length === 0) return null;
@@ -57,6 +68,9 @@ export function ImportReviewList({
           onConfirm={() => onConfirm(row.id)}
           onSelectCandidate={(candidate) => onSelectCandidate(row.id, candidate)}
           onFieldChange={(field, value) => onFieldChange(row.id, field, value)}
+          onExchangeCommit={(exchangeCode, confirmed) =>
+            onExchangeCommit(row.id, exchangeCode, confirmed)
+          }
           onRemove={() => onRemove(row.id)}
         />
       ))}
@@ -69,6 +83,7 @@ function ImportReviewCard({
   onConfirm,
   onSelectCandidate,
   onFieldChange,
+  onExchangeCommit,
   onRemove,
 }: {
   row: ImportRow;
@@ -78,6 +93,7 @@ function ImportReviewCard({
     field: ExtractionReviewField,
     value: string | number,
   ) => void;
+  onExchangeCommit: (exchangeCode: string | null, confirmed: boolean) => void;
   onRemove: () => void;
 }) {
   const tier = row.reviewTier ?? "review";
@@ -86,6 +102,12 @@ function ImportReviewCard({
   );
   const alternatives = buildCandidateOptions(row);
   const uncertainFields = getExtractionFieldsNeedingReview(row);
+  const otherUncertainFields = uncertainFields.filter((field) => field !== "exchange");
+  const [exchangeFieldActive, setExchangeFieldActive] = useState(false);
+  const showExchangeField =
+    shouldReviewExchange(row) || exchangeFieldActive;
+  const showFieldEditors =
+    otherUncertainFields.length > 0 || showExchangeField;
   const needsMatchReview =
     tier === "blocked" ||
     !row.providerSymbol ||
@@ -139,12 +161,22 @@ function ImportReviewCard({
       </div>
 
       <div className="space-y-4 px-5 py-4 sm:px-6">
-        {uncertainFields.length > 0 ? (
+        {showFieldEditors ? (
           <div className="space-y-3">
             <p className="text-[11px] font-black uppercase tracking-[0.1em] text-amber-700">
               Check these fields
             </p>
-            {uncertainFields.map((field) => (
+            {showExchangeField ? (
+              <ExchangeFieldEditor
+                key={`${row.id}-exchange`}
+                exchange={row.exchange}
+                providerSymbol={row.providerSymbol}
+                onCommit={onExchangeCommit}
+                onFocusChange={setExchangeFieldActive}
+                required={needsMatchReview && !row.providerSymbol}
+              />
+            ) : null}
+            {otherUncertainFields.map((field) => (
               <UncertainFieldEditor
                 key={field}
                 field={field}
@@ -169,21 +201,24 @@ function ImportReviewCard({
                 <button
                   key={
                     candidate.providerSymbol ??
-                    candidate.instrumentName ??
-                    "unknown"
+                    `${candidate.instrumentName ?? "unknown"}-${candidate.exchange ?? "na"}`
                   }
                   type="button"
                   onClick={() => onSelectCandidate(candidate)}
                   className="flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left hover:border-blue-300 hover:bg-blue-50"
                 >
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-bold text-slate-900">
+                    <p className="text-sm font-bold text-slate-900">
                       {candidate.instrumentName ?? candidate.providerSymbol}
                     </p>
-                    <p className="text-xs text-slate-500">
-                      {candidate.providerSymbol}
-                      {candidate.exchange ? ` · ${candidate.exchange}` : ""}
+                    <p className="mt-1 text-xs font-semibold text-slate-600">
+                      {formatListingLine(candidate)}
                     </p>
+                    {candidate.isin ? (
+                      <p className="mt-1 text-xs text-slate-500">
+                        ISIN: {candidate.isin}
+                      </p>
+                    ) : null}
                   </div>
                   <ChevronRight className="h-4 w-4 shrink-0 text-slate-400" />
                 </button>
@@ -334,9 +369,7 @@ function UncertainFieldEditor({
       ? row.name
       : field === "isin"
         ? row.isin ?? ""
-        : field === "ticker"
-          ? row.symbol
-          : row.exchange ?? "";
+        : row.symbol;
 
   return (
     <label className="block">
@@ -372,6 +405,21 @@ function OptionalPurchaseDateField({
       />
     </label>
   );
+}
+
+function formatListingLine(candidate: ResolvedInstrument): string {
+  const ticker =
+    candidate.providerSymbol?.split(".")[0] ??
+    candidate.instrumentName?.split(" ")[0] ??
+    "—";
+  const exchange = candidate.exchange ?? "—";
+  const currency = candidate.providerSymbol?.endsWith(".US")
+    ? "USD"
+    : candidate.providerSymbol?.endsWith(".LSE")
+      ? "GBP"
+      : "EUR";
+
+  return `${ticker} · ${exchange} · ${currency}`;
 }
 
 function buildCandidateOptions(row: ImportRow): ResolvedInstrument[] {

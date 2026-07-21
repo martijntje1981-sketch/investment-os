@@ -70,7 +70,7 @@ export function getExtractionFieldsNeedingReview(
   ) {
     fields.push("ticker");
   }
-  if (fieldConfidence(row, "exchange") < EXTRACTION_FIELD_REVIEW_THRESHOLD) {
+  if (shouldReviewExchange(row)) {
     fields.push("exchange");
   }
   if (
@@ -112,4 +112,43 @@ export function aggregateFieldExtractionConfidence(
 
 export function hasUncertainExtraction(row: ImportRow): boolean {
   return getExtractionFieldsNeedingReview(row).length > 0;
+}
+
+/** Exchange is only editable when matching still needs a listing choice. */
+export function shouldReviewExchange(row: ImportRow): boolean {
+  if (row.assetType === "cash") return false;
+
+  const matchConfidence = row.matchConfidence ?? 0;
+  const hasResolvedListing =
+    Boolean(row.providerSymbol) &&
+    Boolean(row.exchange) &&
+    row.matchMethod !== "unresolved" &&
+    matchConfidence >= EXTRACTION_FIELD_REVIEW_THRESHOLD &&
+    !row.requiresConfirmation &&
+    (row.candidates?.length ?? 0) <= 1;
+
+  if (hasResolvedListing) {
+    return false;
+  }
+
+  if ((row.candidates?.length ?? 0) > 1) {
+    return true;
+  }
+
+  if (
+    row.isin &&
+    (!row.providerSymbol || row.matchMethod === "unresolved" || (row.candidates?.length ?? 0) > 0)
+  ) {
+    return true;
+  }
+
+  if (
+    (!row.providerSymbol || row.matchMethod === "unresolved") &&
+    row.symbol.trim() &&
+    !row.isin
+  ) {
+    return fieldConfidence(row, "exchange") < EXTRACTION_FIELD_REVIEW_THRESHOLD;
+  }
+
+  return fieldConfidence(row, "exchange") < EXTRACTION_FIELD_REVIEW_THRESHOLD;
 }

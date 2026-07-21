@@ -193,6 +193,66 @@ export default function UploadPage() {
     );
   }
 
+  function clearMatchState(row: ImportRow): ImportRow {
+    return {
+      ...row,
+      providerSymbol: null,
+      matchMethod: undefined,
+      matchConfidence: undefined,
+      requiresConfirmation: undefined,
+      matchWarnings: undefined,
+      userConfirmed: false,
+      candidates: undefined,
+    };
+  }
+
+  function rematchRow(id: string, row: ImportRow) {
+    if (row.assetType === "cash") return;
+
+    void matchSingleImportRow(row)
+      .then((matched) => {
+        setRows((rowsNow) =>
+          rowsNow.map((item) => (item.id === id ? matched : item)),
+        );
+      })
+      .catch(() => {
+        // Keep editable row state; user can still pick a candidate manually.
+      });
+  }
+
+  function commitRowExchange(
+    id: string,
+    exchangeCode: string | null,
+    confirmed: boolean,
+  ) {
+    setRows((current) => {
+      const updated = current.map((row) => {
+        if (row.id !== id) return row;
+
+        const next: ImportRow = {
+          ...clearMatchState(row),
+          exchange: exchangeCode,
+        };
+
+        if (confirmed && next.extractionFieldConfidence) {
+          next.extractionFieldConfidence = {
+            ...next.extractionFieldConfidence,
+            exchange: 1,
+          };
+        }
+
+        return annotateImportRow(next);
+      });
+
+      const changed = updated.find((row) => row.id === id);
+      if (changed && confirmed && exchangeCode) {
+        rematchRow(id, changed);
+      }
+
+      return updated;
+    });
+  }
+
   function updateRowField(
     id: string,
     field: ExtractionReviewField,
@@ -202,7 +262,7 @@ export default function UploadPage() {
       const updated = current.map((row) => {
         if (row.id !== id) return row;
 
-        const next: ImportRow = { ...row };
+        let next: ImportRow = { ...row };
         const numeric =
           typeof value === "number" ? value : Number(value);
 
@@ -215,9 +275,6 @@ export default function UploadPage() {
             break;
           case "ticker":
             next.symbol = String(value).trim().toUpperCase();
-            break;
-          case "exchange":
-            next.exchange = String(value).trim().toUpperCase() || null;
             break;
           case "quantity":
             next.quantity = numeric;
@@ -234,38 +291,26 @@ export default function UploadPage() {
             break;
         }
 
-        if (["isin", "ticker", "exchange", "name"].includes(field)) {
-          next.providerSymbol = null;
-          next.matchMethod = undefined;
-          next.matchConfidence = undefined;
-          next.requiresConfirmation = undefined;
-          next.matchWarnings = undefined;
-          next.userConfirmed = false;
-          next.candidates = undefined;
+        if (["isin", "ticker", "name"].includes(field)) {
+          next = clearMatchState(next);
         }
 
-        if (next.extractionFieldConfidence) {
-          next.extractionFieldConfidence = {
-            ...next.extractionFieldConfidence,
-            [field === "ticker" ? "ticker" : field]: 1,
-          };
+        if (["isin", "ticker", "name"].includes(field)) {
+          if (next.extractionFieldConfidence) {
+            next.extractionFieldConfidence = {
+              ...next.extractionFieldConfidence,
+              [field === "ticker" ? "ticker" : field]: 1,
+            };
+          }
         }
 
         return annotateImportRow(next);
       });
 
-      if (["isin", "ticker", "exchange", "name"].includes(field)) {
+      if (["isin", "ticker", "name"].includes(field)) {
         const changed = updated.find((row) => row.id === id);
         if (changed && changed.assetType !== "cash") {
-          void matchSingleImportRow(changed)
-            .then((matched) => {
-              setRows((rowsNow) =>
-                rowsNow.map((item) => (item.id === id ? matched : item)),
-              );
-            })
-            .catch(() => {
-              // Keep editable row state; user can still pick a candidate manually.
-            });
+          rematchRow(id, changed);
         }
       }
 
@@ -432,6 +477,7 @@ export default function UploadPage() {
                 onConfirm={confirmRow}
                 onSelectCandidate={pickCandidate}
                 onFieldChange={updateRowField}
+                onExchangeCommit={commitRowExchange}
                 onRemove={removeRow}
               />
 

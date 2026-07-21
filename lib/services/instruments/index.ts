@@ -17,6 +17,12 @@ export {
 } from "./eodhdClient";
 
 export { exchangesMatch, normalizeExchange } from "./exchangeNormalizer";
+export {
+  findExchangeOption,
+  formatExchangeInputValue,
+  searchExchanges,
+  type ExchangeOption,
+} from "./exchangeSearch";
 export { isValidIsin, normalizeIsin, splitIsinFromTicker } from "./validation";
 
 export type {

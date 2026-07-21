@@ -280,6 +280,50 @@ async function resolveByTickerAndExchange(
   ]);
 }
 
+async function resolveByTickerOnly(
+  ticker: string,
+  instrumentName: string | null,
+): Promise<ResolvedInstrument> {
+  const searchRows = await safeFetchSearch(ticker, { limit: 15 });
+  if (searchRows === null) {
+    return unresolved([MATCHING_UNAVAILABLE_WARNING]);
+  }
+
+  const exactCodeRows = searchRows.filter(
+    (row) => row.Code?.trim().toUpperCase() === ticker,
+  );
+
+  if (exactCodeRows.length === 1) {
+    return rowToResolved(
+      exactCodeRows[0],
+      "ticker_exchange",
+      0.9,
+      normalizeIsin(exactCodeRows[0].ISIN),
+    );
+  }
+
+  if (exactCodeRows.length > 1) {
+    return finalize({
+      ...unresolved([
+        "Multiple listings match this ticker — confirm the exchange.",
+      ]),
+      candidates: exactCodeRows.map((row) =>
+        rowToResolved(row, "ticker_exchange", 0.65, normalizeIsin(row.ISIN), [
+          "Possible listing",
+        ]),
+      ),
+    });
+  }
+
+  if (instrumentName) {
+    return resolveByTickerWithNameHint(ticker, instrumentName);
+  }
+
+  return unresolved([
+    `No EODHD listing found for ticker ${ticker}. Add an ISIN or exchange to resolve.`,
+  ]);
+}
+
 /**
  * Backward-compatible seed lookup when only ticker + name are known
  * (demo portfolio in holdings.ts). Uses exact ticker matches ranked by name.
@@ -452,6 +496,17 @@ export async function matchInstrument(
   // 3. Instrument Name + Exchange.
   if (instrumentName && exchange) {
     return resolveByNameAndExchange(instrumentName, exchange);
+  }
+
+  // Ticker without exchange — try a unique listing before asking the user.
+  if (effectiveTicker && !exchange) {
+    const tickerOnly = await resolveByTickerOnly(
+      effectiveTicker,
+      instrumentName || null,
+    );
+    if (tickerOnly.providerSymbol || (tickerOnly.candidates?.length ?? 0) > 0) {
+      return tickerOnly;
+    }
   }
 
   // Demo-seed fallback: ticker + name without exchange (holdings.ts seed data).
