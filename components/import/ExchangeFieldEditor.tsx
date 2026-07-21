@@ -56,11 +56,12 @@ export function ExchangeFieldEditor({
       return;
     }
 
+    setIsSearchingExchanges(true);
+
     const controller = new AbortController();
 
     const timer = window.setTimeout(async () => {
       try {
-        setIsSearchingExchanges(true);
         const results = await searchExchanges(query, {
           signal: controller.signal,
         });

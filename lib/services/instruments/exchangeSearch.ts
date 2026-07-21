@@ -1,8 +1,4 @@
-import {
-  isKnownProviderExchange,
-  normalizeExchange,
-  resolveExchangeForMatching,
-} from "@/lib/services/instruments/exchangeNormalizer";
+import { resolveExchangeForMatching } from "@/lib/services/instruments/exchangeNormalizer";
 
 export type ExchangeOption = {
   code: string;
@@ -81,6 +77,14 @@ const EXCHANGE_CATALOG: ExchangeCatalogEntry[] = [
   },
 ];
 
+/** Minimum score for an unambiguous exact catalog or alias match. */
+const EXACT_MATCH_SCORE = 90;
+
+type RankedExchangeMatch = {
+  option: ExchangeOption;
+  score: number;
+};
+
 function scoreExchangeMatch(entry: ExchangeCatalogEntry, query: string): number {
   const normalized = query.trim().toLowerCase();
   if (!normalized) return 0;
@@ -100,24 +104,72 @@ function scoreExchangeMatch(entry: ExchangeCatalogEntry, query: string): number 
   return 0;
 }
 
-function catalogEntryForCode(code: string): ExchangeCatalogEntry | undefined {
-  return EXCHANGE_CATALOG.find((entry) => entry.code === code);
+/**
+ * Single exchange lookup: ranks catalog entries for any user input.
+ * Combines catalog label/term scoring with provider alias normalization.
+ */
+function rankExchangeMatches(query: string): RankedExchangeMatch[] {
+  const trimmed = query.trim();
+  if (!trimmed) return [];
+
+  const providerCode = resolveExchangeForMatching(trimmed);
+
+  return EXCHANGE_CATALOG.map((entry) => {
+    let score = scoreExchangeMatch(entry, trimmed);
+    if (providerCode === entry.code) {
+      score = Math.max(score, 100);
+    }
+
+    return {
+      option: { code: entry.code, label: entry.label },
+      score,
+    };
+  })
+    .filter((item) => item.score > 0)
+    .sort(
+      (a, b) =>
+        b.score - a.score ||
+        a.option.label.localeCompare(b.option.label),
+    );
+}
+
+/** Picks one exchange when the ranked lookup is exact and unambiguous. */
+function pickExactExchangeMatch(
+  ranked: RankedExchangeMatch[],
+): ExchangeOption | null {
+  if (ranked.length === 0) return null;
+
+  const topScore = ranked[0].score;
+  const topMatches = ranked.filter((item) => item.score === topScore);
+
+  if (topScore >= 95) {
+    return ranked[0].option;
+  }
+
+  if (topScore >= EXACT_MATCH_SCORE && topMatches.length === 1) {
+    return topMatches[0].option;
+  }
+
+  return null;
+}
+
+/** Resolves user input to ranked catalog matches and an optional exact match. */
+export function resolveExchangeInput(query: string): {
+  exact: ExchangeOption | null;
+  matches: ExchangeOption[];
+} {
+  const ranked = rankExchangeMatches(query);
+  return {
+    exact: pickExactExchangeMatch(ranked),
+    matches: ranked.map((item) => item.option),
+  };
 }
 
 export function findExchangeOption(
   value: string | null | undefined,
 ): ExchangeOption | null {
   if (!value?.trim()) return null;
-
-  const providerCode = resolveExchangeForMatching(value);
-  if (!providerCode) return null;
-
-  const entry = catalogEntryForCode(providerCode);
-  if (entry) {
-    return { code: entry.code, label: entry.label };
-  }
-
-  return { code: providerCode, label: providerCode };
+  return resolveExchangeInput(value).exact;
 }
 
 export function formatExchangeInputValue(
@@ -129,7 +181,7 @@ export function formatExchangeInputValue(
 
 export function searchExchanges(
   query: string,
-  options: { signal?: AbortSignal } = {},
+  options: { signal?: AbortSignal; limit?: number } = {},
 ): Promise<ExchangeOption[]> {
   if (options.signal?.aborted) {
     return Promise.reject(createAbortError());
@@ -146,27 +198,15 @@ export function searchExchanges(
       return;
     }
 
-    const direct = findExchangeOption(trimmed);
-    const ranked = EXCHANGE_CATALOG.map((entry) => ({
-      entry,
-      score: scoreExchangeMatch(entry, trimmed),
-    }))
-      .filter((item) => item.score > 0)
-      .sort((a, b) => b.score - a.score)
-      .map(({ entry }) => ({ code: entry.code, label: entry.label }));
-
-    if (direct && !ranked.some((item) => item.code === direct.code)) {
-      ranked.unshift(direct);
-    }
-
-    resolve(ranked.slice(0, 8));
+    const { matches } = resolveExchangeInput(trimmed);
+    resolve(matches.slice(0, options.limit ?? 8));
   });
 }
 
 export function isRecognizedExchangeInput(
   value: string | null | undefined,
 ): boolean {
-  return isKnownProviderExchange(value);
+  return findExchangeOption(value) !== null;
 }
 
 function createAbortError(): Error {
@@ -175,5 +215,4 @@ function createAbortError(): Error {
   return error;
 }
 
-// Re-export for callers that need raw normalization checks in tests.
-export { normalizeExchange };
+export { normalizeExchange } from "@/lib/services/instruments/exchangeNormalizer";

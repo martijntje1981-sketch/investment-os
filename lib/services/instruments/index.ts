@@ -27,6 +27,7 @@ export {
 export {
   findExchangeOption,
   formatExchangeInputValue,
+  resolveExchangeInput,
   searchExchanges,
   type ExchangeOption,
 } from "./exchangeSearch";
