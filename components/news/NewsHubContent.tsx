@@ -81,15 +81,6 @@ export function NewsHubContent({
 
   return (
     <div className="min-w-0 space-y-5 sm:space-y-6">
-      <header className="min-w-0">
-        <h1 className="text-2xl font-black tracking-[-0.03em] text-slate-950 sm:text-3xl">
-          News
-        </h1>
-        <p className="mt-1 text-sm leading-relaxed text-slate-600 sm:text-base">
-          Premium market intelligence — personalized, deduplicated, and ranked for your portfolio.
-        </p>
-      </header>
-
       <NewsBriefingIntelligence
         intelligence={intelligence}
         portfolioItems={briefing.allPortfolioItems}

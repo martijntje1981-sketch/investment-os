@@ -30,7 +30,9 @@ describe("news hub UI structure", () => {
     expect(hubSource).not.toContain("matchMedia");
     expect(hubSource).not.toContain("PortfolioNewsPreview");
     expect(newsPage).not.toContain("BottomNavigation");
-    expect(newsPage).toContain("max-w-3xl");
+    expect(newsPage).toContain("PageContainer");
+    expect(newsPage).toContain("PageHero");
+    expect(newsPage).toContain("Market Intelligence");
   });
 
   it("keeps quota-safe news search client-side without provider calls", () => {

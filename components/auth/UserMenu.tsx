@@ -17,6 +17,7 @@ const protectedRoutes = [
   "/news",
   "/discover",
   "/goals",
+  "/settings",
   "/holding",
 ];
 
@@ -104,6 +105,13 @@ export default function UserMenu() {
           </div>
 
           <nav className="border-b border-slate-100 px-2 py-2">
+            <Link
+              href="/settings"
+              className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+            >
+              <UserRound className="h-4 w-4" />
+              Settings
+            </Link>
             <Link
               href="/news"
               className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50"

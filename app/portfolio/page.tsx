@@ -20,6 +20,8 @@ import {
   X,
 } from "lucide-react";
 import BottomNavigation from "@/components/home/BottomNav";
+import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer";
+import { PageHero } from "@/components/layout/PageHero";
 import NumericInput from "@/components/NumericInput";
 import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
 import PortfolioSyncBanner from "@/components/PortfolioSyncBanner";
@@ -177,14 +179,7 @@ export default function PortfolioPage() {
     portfolioAnalysis.largestPosition?.weightPercent ?? 0;
 
   if (!portfolioReady) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-50">
-        <div className="text-center">
-          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-slate-950" />
-          <p className="mt-4 text-sm font-semibold text-slate-500">Loading portfolio…</p>
-        </div>
-      </main>
-    );
+    return <AppPageLoading />;
   }
 
   function resetListingState() {
@@ -291,27 +286,35 @@ export default function PortfolioPage() {
 
   return (
     <>
-      <main className="min-h-screen max-w-full overflow-x-hidden bg-slate-50 px-4 pb-28 pt-7 text-slate-950 sm:px-8 sm:pt-12">
-        <div className="mx-auto w-full max-w-6xl">
-          <header className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-700">Portfolio</p>
-              <h1 className="mt-3 text-4xl font-black tracking-[-0.05em] sm:text-6xl">Your investments</h1>
-              <p className="mt-4 max-w-2xl leading-7 text-slate-600">Manage investments and cash from one clear overview.</p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <button onClick={() => void refreshPrices()} disabled={isRefreshing} className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold disabled:opacity-50">
+      <PageContainer>
+        <PageHero
+          title="Portfolio"
+          subtitle="View and manage all your holdings in one place."
+          actions={
+            <>
+              <button
+                onClick={() => void refreshPrices()}
+                disabled={isRefreshing}
+                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-bold text-white hover:bg-white/15 disabled:opacity-50"
+              >
                 <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
                 Refresh live prices
               </button>
-              <button onClick={() => openAdd("cash")} className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold">
+              <button
+                onClick={() => openAdd("cash")}
+                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-bold text-white hover:bg-white/15"
+              >
                 <Banknote className="h-4 w-4" /> Add cash
               </button>
-              <button onClick={() => openAdd("investment")} className="inline-flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-bold text-white">
+              <button
+                onClick={() => openAdd("investment")}
+                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-slate-950"
+              >
                 <Plus className="h-4 w-4" /> Add investment
               </button>
-            </div>
-          </header>
+            </>
+          }
+        />
 
           <PortfolioSyncBanner
             syncState={syncState}
@@ -340,16 +343,16 @@ export default function PortfolioPage() {
             onDismiss={dismissRecovery}
           />
 
-          <div className="mt-6 rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-800">{message}</div>
+          <div className="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-800">{message}</div>
 
-          <section className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <Metric icon={<CircleDollarSign className="h-5 w-5" />} label="Total value" value={money(totalValue)} />
             <Metric icon={<BarChart3 className="h-5 w-5" />} label="Since purchase" value={performance.canShowPerformance ? `${totalReturn >= 0 ? "+" : ""}${money(totalReturn)}` : "Unavailable"} detail={performance.canShowPerformance ? percent(totalReturnPercent) : "Price data required"} tone={performance.canShowPerformance ? (totalReturn >= 0 ? "positive" : "negative") : "neutral"} />
             <Metric icon={<Banknote className="h-5 w-5" />} label="Cash" value={money(cashValue)} detail={totalValue > 0 ? `${(cashValue / totalValue * 100).toFixed(1)}% of portfolio` : "0.0% of portfolio"} />
             <Metric icon={<PieChart className="h-5 w-5" />} label="Largest position" value={largest?.symbol ?? "—"} detail={largest && totalValue > 0 ? `${largestWeightPercent.toFixed(1)}% of portfolio` : holdings.length > 0 ? "Awaiting price data" : "No holdings"} />
           </section>
 
-          <section className="mt-7 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
+          <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
             <div className="flex items-center justify-between border-b border-slate-200 px-5 py-5 sm:px-7">
               <div>
                 <h2 className="text-xl font-black">Holdings</h2>
@@ -366,7 +369,8 @@ export default function PortfolioPage() {
                 <button onClick={() => openAdd("investment")} className="mt-6 rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white">Add first holding</button>
               </div>
             ) : (
-              <div className="divide-y divide-slate-200">
+              <div className="overflow-x-auto">
+              <div className="min-w-[720px] divide-y divide-slate-200">
                 {holdings.map((holding) => {
                   const holdingValue = getHoldingMarketValue(holding);
                   const estimatedPrice = isEstimatedHoldingPrice(holding);
@@ -450,10 +454,11 @@ export default function PortfolioPage() {
                   );
                 })}
               </div>
+              </div>
             )}
           </section>
 
-          <section className="mt-7 rounded-[28px] bg-slate-950 p-6 text-white sm:p-8">
+          <section className="rounded-[28px] bg-slate-950 p-6 text-white sm:p-8">
             <div className="flex items-start gap-4">
               <div className="rounded-2xl bg-violet-500/20 p-3 text-violet-300"><Sparkles className="h-5 w-5" /></div>
               <div>
@@ -465,8 +470,7 @@ export default function PortfolioPage() {
               </div>
             </div>
           </section>
-        </div>
-      </main>
+      </PageContainer>
       <BottomNavigation />
 
       {editorOpen && (

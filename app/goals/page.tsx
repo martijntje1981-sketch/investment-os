@@ -13,6 +13,8 @@ import {
   TrendingUp,
 } from "lucide-react";
 import BottomNavigation from "@/components/home/BottomNav";
+import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer";
+import { PageHero } from "@/components/layout/PageHero";
 import { PassiveIncomeGoalCard } from "@/components/goals/PassiveIncomeGoalCard";
 import {
   GoalCoachCard,
@@ -186,38 +188,27 @@ export default function GoalsPage() {
   }
 
   if (!portfolioReady) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-50">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-slate-950" />
-      </main>
-    );
+    return <AppPageLoading />;
   }
 
   return (
     <>
-      <main className="min-h-screen max-w-full overflow-x-hidden bg-slate-50 px-4 pb-28 pt-6 text-slate-950 sm:px-8 sm:pt-10">
-        <div className="mx-auto w-full max-w-6xl">
-          <Link
-            href="/dashboard"
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 shadow-sm"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Dashboard
-          </Link>
+      <PageContainer>
+        <PageHero
+          title="Goals"
+          subtitle="Track your progress towards your long-term financial target."
+          actions={
+            <Link
+              href="/dashboard"
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-bold text-white hover:bg-white/15"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Dashboard
+            </Link>
+          }
+        />
 
-          <header className="mt-8 max-w-3xl">
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-violet-600">
-              Your financial goal
-            </p>
-            <h1 className="mt-3 text-4xl font-black tracking-[-0.05em] sm:text-6xl">
-              Know where you are heading.
-            </h1>
-            <p className="mt-4 text-base leading-7 text-slate-600 sm:text-lg">
-              Set one clear target. Investment OS uses your current portfolio to show whether your plan is on track.
-            </p>
-          </header>
-
-          <div className="mt-8 grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
+          <div className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
             <form
               onSubmit={handleSubmit}
               className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm sm:p-8"
@@ -360,14 +351,13 @@ export default function GoalsPage() {
             </section>
           </div>
 
-          <div className="mt-6">
+          <div>
             <PassiveIncomeGoalCard
               snapshot={dividendSnapshot}
               passiveIncomeTarget={savedGoal?.passiveIncomeTarget ?? goal.passiveIncomeTarget}
             />
           </div>
-        </div>
-      </main>
+      </PageContainer>
       <BottomNavigation />
     </>
   );

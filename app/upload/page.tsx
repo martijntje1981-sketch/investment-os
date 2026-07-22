@@ -16,6 +16,8 @@ import { useRouter } from "next/navigation";
 import { AlertCircle, Check, Info, RefreshCw, Sparkles } from "lucide-react";
 
 import BottomNavigation from "@/components/home/BottomNav";
+import { PageContainer } from "@/components/layout/PageContainer";
+import { PageHero } from "@/components/layout/PageHero";
 import { ImportAutoHoldingsList, ImportSummaryCard } from "@/components/import/ImportSummaryCard";
 import { ImportDropzone } from "@/components/import/ImportDropzone";
 import { ImportMethodPicker } from "@/components/import/ImportMethodPicker";
@@ -503,19 +505,11 @@ export default function UploadPage() {
 
   return (
     <>
-      <main className="min-h-screen max-w-full overflow-x-hidden bg-[#F4F7FB] px-4 pb-28 pt-7 text-slate-950 sm:px-8 sm:pt-12">
-        <div className="mx-auto max-w-3xl">
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-700">
-            Portfolio setup
-          </p>
-          <h1 className="mt-3 text-4xl font-black tracking-[-0.05em] sm:text-5xl">
-            Import your portfolio
-          </h1>
-          <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-600 sm:text-base">
-            Upload a screenshot or spreadsheet. Investment OS reads your
-            holdings, matches every instrument, and builds your portfolio in
-            seconds.
-          </p>
+      <PageContainer>
+        <PageHero
+          title="Import Portfolio"
+          subtitle="Add holdings from a screenshot, spreadsheet or manual entry."
+        />
 
           <PortfolioRecoveryBanner
             offer={recoveryOffer}
@@ -525,12 +519,10 @@ export default function UploadPage() {
 
           {phase === "choose" ? (
             <>
-              <div className="mt-8">
-                <ImportMethodPicker
+              <ImportMethodPicker
                   onScreenshotClick={() => imageInput.current?.click()}
                   onSpreadsheetClick={() => sheetInput.current?.click()}
                 />
-              </div>
 
               <ImportDropzone
                 isDragging={isDragging}
@@ -587,7 +579,7 @@ export default function UploadPage() {
           ) : null}
 
           {phase === "ready" && rows.length > 0 ? (
-            <div className="mt-8 space-y-5">
+            <div className="space-y-5">
               <ImportSummaryCard
                 plan={plan}
                 broker={broker}
@@ -669,8 +661,7 @@ export default function UploadPage() {
           ) : null}
 
           {phase === "choose" ? <ImportTrustBanner /> : null}
-        </div>
-      </main>
+      </PageContainer>
       <BottomNavigation />
     </>
   );

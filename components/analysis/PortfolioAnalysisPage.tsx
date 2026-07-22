@@ -17,6 +17,8 @@ import {
 import { DividendIntelligenceSection } from "@/components/analysis/DividendIntelligenceSection";
 import { AnalystIntelligenceSection } from "@/components/analysis/AnalystIntelligenceSection";
 import BottomNavigation from "@/components/home/BottomNav";
+import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer";
+import { PageHero } from "@/components/layout/PageHero";
 import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
 import {
   buildPortfolioAnalysis,
@@ -83,16 +85,7 @@ export default function PortfolioAnalysisPage() {
   );
 
   if (!portfolioReady) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-50">
-        <div className="text-center">
-          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-slate-950" />
-          <p className="mt-4 text-sm font-semibold text-slate-500">
-            Loading analysis…
-          </p>
-        </div>
-      </main>
-    );
+    return <AppPageLoading />;
   }
 
   const hasHoldings = holdings.length > 0;
@@ -100,23 +93,16 @@ export default function PortfolioAnalysisPage() {
 
   return (
     <>
-      <main className="min-h-screen max-w-full overflow-x-hidden bg-slate-50 px-4 pb-28 pt-7 text-slate-950 sm:px-8 sm:pt-12">
-        <div className="mx-auto w-full max-w-6xl">
-          <header className="max-w-3xl">
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-700">
-              Analysis
-            </p>
-            <h1 className="mt-3 text-4xl font-black tracking-[-0.05em] sm:text-5xl">
-              Portfolio Analysis
-            </h1>
-            <p className="mt-4 leading-7 text-slate-600">
-              Insights are calculated from your saved holdings and the latest
-              available portfolio prices.
-            </p>
-            <p className="mt-3 text-sm font-semibold text-slate-500">
+      <PageContainer>
+        <PageHero
+          title="Portfolio Analysis"
+          subtitle="Understand performance, risk, allocation and portfolio trends."
+          stats={
+            <p className="text-sm text-slate-400">
               Last portfolio update: {formatUpdatedAt(analysis.lastUpdatedAt)}
             </p>
-          </header>
+          }
+        />
 
           <PortfolioRecoveryBanner
             offer={recoveryOffer}
@@ -127,7 +113,7 @@ export default function PortfolioAnalysisPage() {
           />
 
           {!hasHoldings ? (
-            <section className="mt-10 rounded-[28px] border border-slate-200 bg-white p-8 text-center shadow-sm sm:p-12">
+            <section className="rounded-[28px] border border-slate-200 bg-white p-8 text-center shadow-sm sm:p-12">
               <BriefcaseBusiness className="mx-auto h-10 w-10 text-slate-300" />
               <h2 className="mt-4 text-2xl font-black">No portfolio to analyse yet</h2>
               <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-500">
@@ -443,8 +429,7 @@ export default function PortfolioAnalysisPage() {
               </section>
             </>
           )}
-        </div>
-      </main>
+      </PageContainer>
       <BottomNavigation />
     </>
   );

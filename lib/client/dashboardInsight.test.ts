@@ -171,7 +171,8 @@ describe("home and dashboard hierarchy", () => {
       "utf8",
     );
 
-    expect(home).toContain("Your portfolio today");
+    expect(home).toContain("Welcome back");
+    expect(home).toContain("PageHero");
     expect(home).not.toContain("Latest News");
     expect(home).not.toContain("BottomNavigation");
     expect(home).toContain("readNewsCache");

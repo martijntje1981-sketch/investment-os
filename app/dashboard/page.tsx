@@ -11,6 +11,8 @@ import { DashboardSummary } from "@/components/dashboard/DashboardSummary";
 import { HoldingsToday } from "@/components/dashboard/HoldingsToday";
 import { DashboardInsightCard } from "@/components/dashboard/DashboardInsightCard";
 import { DashboardMarketStatus } from "@/components/dashboard/DashboardMarketStatus";
+import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer";
+import { PageHero } from "@/components/layout/PageHero";
 import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
 import PortfolioSyncBanner from "@/components/PortfolioSyncBanner";
 import { buildDashboardInsightSections } from "@/lib/client/dashboardInsight";
@@ -71,17 +73,17 @@ export default function DashboardPage() {
   const marketsClosed = useMemo(() => areMajorMarketsClosed(), []);
 
   if (!portfolioReady) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-[#F4F7FB]">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-slate-950" />
-      </main>
-    );
+    return <AppPageLoading />;
   }
 
   return (
-    <main className="min-h-screen max-w-full overflow-x-clip bg-[#F4F7FB] px-4 pb-28 pt-3 text-slate-950 md:px-8 md:pb-32 md:pt-6">
-      <div className="mx-auto w-full min-w-0 max-w-6xl space-y-5 md:space-y-6">
-        <PortfolioSyncBanner
+    <PageContainer>
+      <PageHero
+        title="Portfolio Dashboard"
+        subtitle="Monitor performance, allocation and progress towards your goal."
+      />
+
+      <PortfolioSyncBanner
           syncState={syncState}
           migrationPreview={migrationPreview}
           onMigrate={() => void migratePortfolio()}
@@ -145,7 +147,6 @@ export default function DashboardPage() {
           Investment OS is a monitoring tool. It does not provide personal
           financial advice.
         </p>
-      </div>
-    </main>
+    </PageContainer>
   );
 }

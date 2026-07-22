@@ -7,8 +7,12 @@ import { DiscoverMissedTeaser } from "@/components/discover/DiscoverSections";
 import { TodaysDecisionBlock } from "@/components/investor/TodaysDecisionBlock";
 import { PortfolioSnapshot } from "@/components/home/PortfolioSnapshot";
 import { HomeIntelligenceSummary } from "@/components/home/HomeIntelligenceSummary";
+import { HomePageHeroStats } from "@/components/layout/HomePageHeroStats";
+import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer";
+import { PageHero } from "@/components/layout/PageHero";
 import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
 import { summarizeAuthenticatedHomePortfolio } from "@/lib/client/authenticatedHomePortfolio";
+import { useAuthenticatedFirstName } from "@/lib/client/useAuthenticatedFirstName";
 import { isNewsCacheFresh, readNewsCache } from "@/lib/client/portfolioNews";
 import { buildDiscoverSnapshot } from "@/lib/services/discover/buildDiscoverSnapshot";
 import { portfolioContentFingerprint } from "@/lib/services/portfolio/idempotency";
@@ -20,13 +24,6 @@ import { useGoalProgress } from "@/lib/client/useGoalProgress";
 import { buildInvestmentIntelligence } from "@/lib/services/news/investmentIntelligence";
 import { useUserGoal } from "@/lib/client/useUserGoal";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
-
-function getDailyGreeting() {
-  const hour = new Date().getHours();
-  if (hour < 12) return "Good morning";
-  if (hour < 18) return "Good afternoon";
-  return "Good evening";
-}
 
 export default function AuthenticatedHomePage() {
   const {
@@ -89,27 +86,31 @@ export default function AuthenticatedHomePage() {
     [cachedBriefing, goalProgress, marketsClosed],
   );
 
-  const greeting = useMemo(() => getDailyGreeting(), []);
+  const firstName = useAuthenticatedFirstName();
 
   if (!portfolioReady) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-50">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-slate-950" />
-      </main>
-    );
+    return <AppPageLoading />;
   }
 
-  return (
-    <main className="min-h-screen max-w-full overflow-x-clip bg-[#F8FAFC] px-4 pb-28 pt-6 text-slate-950 sm:px-8 sm:pt-8">
-      <div className="mx-auto w-full min-w-0 max-w-6xl space-y-5">
-        <header>
-          <p className="text-sm font-semibold text-slate-500">{greeting}</p>
-          <h1 className="mt-1 text-2xl font-black tracking-[-0.03em] text-slate-950 sm:text-3xl">
-            Your portfolio today
-          </h1>
-        </header>
+  const welcomeTitle = firstName ? `Welcome back, ${firstName}` : "Welcome back";
 
-        <PortfolioRecoveryBanner
+  return (
+    <PageContainer>
+      <PageHero
+        title={welcomeTitle}
+        subtitle="Your portfolio, markets and long-term progress at a glance."
+        stats={
+          summary.holdingCount > 0 ? (
+            <HomePageHeroStats
+              summary={summary}
+              goalProgress={goalProgress}
+              hasSavedGoal={hasSavedGoal}
+            />
+          ) : null
+        }
+      />
+
+      <PortfolioRecoveryBanner
           offer={recoveryOffer}
           onRecover={() => {
             recoverPortfolio();
@@ -165,7 +166,6 @@ export default function AuthenticatedHomePage() {
             }
           />
         )}
-      </div>
-    </main>
+    </PageContainer>
   );
 }
