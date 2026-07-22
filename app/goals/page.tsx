@@ -14,8 +14,21 @@ import {
 } from "lucide-react";
 import BottomNavigation from "@/components/home/BottomNav";
 import { PassiveIncomeGoalCard } from "@/components/goals/PassiveIncomeGoalCard";
+import {
+  GoalCoachCard,
+  GoalInsightCard,
+  GoalMilestonesRow,
+  GoalWhatIfCard,
+} from "@/components/goals/GoalIntelligenceBlocks";
 import NumericInput from "@/components/NumericInput";
 import { getHoldingMarketValue } from "@/lib/client/portfolioAnalysis";
+import {
+  buildGoalCoach,
+  buildGoalCurrencyMilestones,
+  buildGoalInsight,
+  buildGoalScenarioComparison,
+} from "@/lib/services/goals/goalCoach";
+import { buildGoalProgressEngine } from "@/lib/services/goals/goalProgressEngine";
 import { loadUserPortfolioHoldings } from "@/lib/client/portfolioPricing";
 import {
   computeGoalProgress,
@@ -108,6 +121,41 @@ export default function GoalsPage() {
   );
 
   const difference = projectedValue - goal.targetValue;
+
+  const engineProgress = useMemo(() => {
+    const normalized = sanitizeGoalForSave(goal);
+    return buildGoalProgressEngine({
+      currentPortfolioValue: portfolioValue,
+      goal: hasSavedGoal && savedGoal ? savedGoal : normalized,
+      hasSavedGoal: hasSavedGoal || Boolean(normalized),
+    });
+  }, [goal, hasSavedGoal, portfolioValue, savedGoal]);
+
+  const coachGoal = hasSavedGoal && savedGoal ? savedGoal : goal;
+
+  const goalIntelligence = useMemo(() => {
+    if (!engineProgress.hasGoal) {
+      return null;
+    }
+
+    return {
+      coach: buildGoalCoach({
+        progress: engineProgress,
+        goal: coachGoal,
+        projectedValueAtTargetYear: projectedValue,
+      }),
+      milestones: buildGoalCurrencyMilestones(portfolioValue, coachGoal.targetValue),
+      scenarios: buildGoalScenarioComparison({
+        currentValue: portfolioValue,
+        goal: coachGoal,
+      }),
+      insight: buildGoalInsight({
+        progress: engineProgress,
+        goal: coachGoal,
+        projectedValueAtTargetYear: projectedValue,
+      }),
+    };
+  }, [coachGoal, engineProgress, portfolioValue, projectedValue]);
   const health = projectedValue >= goal.targetValue
     ? "On track"
     : projectedValue >= goal.targetValue * 0.85
@@ -300,6 +348,15 @@ export default function GoalsPage() {
                   This projection is an estimate based on your inputs. Returns are not guaranteed and this is not financial advice.
                 </p>
               </div>
+
+              {goalIntelligence ? (
+                <div className="mt-6 space-y-4">
+                  <GoalCoachCard coach={goalIntelligence.coach} />
+                  <GoalMilestonesRow milestones={goalIntelligence.milestones} />
+                  <GoalWhatIfCard comparison={goalIntelligence.scenarios} />
+                  <GoalInsightCard insight={goalIntelligence.insight} />
+                </div>
+              ) : null}
             </section>
           </div>
 

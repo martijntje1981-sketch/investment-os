@@ -3,6 +3,10 @@ import { TrendingUp } from "lucide-react";
 
 import { formatPortfolioCurrency, formatPortfolioPercent } from "@/lib/client/portfolioAnalysis";
 import { hasPassiveIncomeTarget } from "@/lib/client/goalPassiveIncome";
+import {
+  buildGoalDividendMessage,
+  getGoalDividendReliability,
+} from "@/lib/services/goals/goalDividendStatus";
 import { computePassiveIncomeProgress } from "@/lib/services/dividends";
 import type { PortfolioDividendSnapshot } from "@/lib/types/dividends";
 
@@ -18,6 +22,9 @@ export function PassiveIncomeGoalCard({
     passiveIncomeTarget,
   );
   const hasTarget = hasPassiveIncomeTarget(passiveIncomeTarget);
+  const reliability = getGoalDividendReliability(snapshot);
+  const dividendMessage = buildGoalDividendMessage(reliability);
+  const showIncome = reliability === "reliable";
 
   return (
     <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
@@ -38,7 +45,11 @@ export function PassiveIncomeGoalCard({
       <div className="mt-5 grid gap-3 sm:grid-cols-3">
         <Stat
           label="Current annual income"
-          value={formatPortfolioCurrency(snapshot.estimatedAnnualIncomeEur)}
+          value={
+            showIncome
+              ? formatPortfolioCurrency(snapshot.estimatedAnnualIncomeEur)
+              : "Unavailable"
+          }
         />
         <Stat
           label="Target passive income"
@@ -50,11 +61,13 @@ export function PassiveIncomeGoalCard({
         />
         <Stat
           label="Progress"
-          value={hasTarget ? formatPortfolioPercent(progress) : "—"}
+          value={hasTarget && showIncome ? formatPortfolioPercent(progress) : "—"}
         />
       </div>
 
-      {hasTarget ? (
+      <p className="mt-3 text-sm leading-relaxed text-slate-500">{dividendMessage}</p>
+
+      {hasTarget && showIncome ? (
         <div className="mt-5 h-2.5 overflow-hidden rounded-full bg-slate-100">
           <div
             className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-500"
