@@ -36,6 +36,7 @@ function importScreenshotHoldings(): StoredPortfolioHolding[] {
       id: "row-iwda",
       symbol: "IWDA",
       name: "iShares Core MSCI World",
+      isin: "IE00B4L5Y983",
       providerSymbol: "IWDA.AS",
     }),
     holding({
@@ -44,6 +45,7 @@ function importScreenshotHoldings(): StoredPortfolioHolding[] {
       name: "Strategy Inc",
       quantity: 3,
       purchasePrice: 50,
+      isin: "NL0015001K93",
       providerSymbol: "STRC.AS",
     }),
     holding({
@@ -52,6 +54,7 @@ function importScreenshotHoldings(): StoredPortfolioHolding[] {
       name: "ASML Holding",
       quantity: 2,
       purchasePrice: 700,
+      isin: "NL0010273215",
       providerSymbol: "ASML.AS",
     }),
     holding({
@@ -99,6 +102,12 @@ function createMockSupabase(initialHoldings: Array<Record<string, unknown>>) {
         state[`is:${column}`] = value;
         return builder;
       }),
+      not: vi.fn((column: string, op: string, value: unknown) => {
+        state[`not:${column}`] = op;
+        state[`not:${column}:value`] = value;
+        return builder;
+      }),
+      limit: vi.fn(() => builder),
       in: vi.fn(() => builder),
       order: vi.fn(() => builder),
       maybeSingle: vi.fn(async (): Promise<QueryResult> => {
@@ -119,11 +128,24 @@ function createMockSupabase(initialHoldings: Array<Record<string, unknown>>) {
             state.asset_type && (state.symbol || state.currency);
           if (isNaturalKeyLookup) {
             const activeOnly = state["is:deleted_at"] === null;
-            const matches = holdings.filter((row) =>
-              naturalKeyMatches(row, state, activeOnly),
+            const softDeletedOnly =
+              state["not:deleted_at"] === "is" &&
+              state["not:deleted_at:value"] === null;
+            let matches = holdings.filter((row) =>
+              naturalKeyMatches(row, state, false),
             );
 
-            if (!activeOnly && matches.length > 1) {
+            if (activeOnly) {
+              matches = matches.filter((row) => !row.deleted_at);
+            } else if (softDeletedOnly) {
+              matches = matches
+                .filter((row) => Boolean(row.deleted_at))
+                .sort((left, right) =>
+                  String(right.deleted_at).localeCompare(String(left.deleted_at)),
+                );
+            }
+
+            if (activeOnly && matches.length > 1) {
               return {
                 data: null,
                 error: {
@@ -136,8 +158,6 @@ function createMockSupabase(initialHoldings: Array<Record<string, unknown>>) {
               };
             }
 
-            expect(activeOnly).toBe(true);
-            expect(matches.length).toBeLessThanOrEqual(1);
             return { data: matches[0] ?? null, error: null };
           }
         }
@@ -192,14 +212,34 @@ function createMockSupabase(initialHoldings: Array<Record<string, unknown>>) {
       upsert: vi.fn(async (payload: Record<string, unknown>) => {
         if (table === "holding_instrument_mappings") {
           const holdingId = payload.holding_id as string;
+          const portfolioId = payload.portfolio_id as string;
+          const isin = payload.isin as string | null | undefined;
           const existingIndex = mappings.findIndex(
             (row) => row.holding_id === holdingId,
           );
           if (existingIndex >= 0) {
             mappings[existingIndex] = payload;
-          } else {
-            mappings.push(payload);
+            return { data: payload, error: null };
           }
+
+          if (isin) {
+            const conflicting = mappings.find(
+              (row) => row.portfolio_id === portfolioId && row.isin === isin,
+            );
+            if (conflicting) {
+              return {
+                data: null,
+                error: {
+                  code: "23505",
+                  message:
+                    'duplicate key value violates unique constraint "holding_instrument_mappings_portfolio_isin_idx"',
+                  details: `Key (portfolio_id, isin)=(${portfolioId}, ${isin}) already exists.`,
+                },
+              };
+            }
+          }
+
+          mappings.push(payload);
         }
         return { data: payload, error: null };
       }),
@@ -378,7 +418,12 @@ describe("createPortfolioRepository natural-key sync", () => {
     const repo = createPortfolioRepository(supabase);
     const payload = [
       holding(),
-      holding({ id: "other-row", symbol: "IWDA", providerSymbol: "IWDA.AS" }),
+      holding({
+        id: "other-row",
+        symbol: "IWDA",
+        isin: "IE00B4L5Y983",
+        providerSymbol: "IWDA.AS",
+      }),
     ];
 
     await repo.applySnapshot(USER_ID, payload, null, [], "sync");
@@ -433,5 +478,55 @@ describe("createPortfolioRepository natural-key sync", () => {
     expect(symbols).toEqual(
       expect.arrayContaining(["VWCE", "IWDA", "STRC", "ASML", "EUR"]),
     );
+  });
+
+  it("revives a soft-deleted legacy holding instead of violating holding_instrument_mappings_portfolio_isin_idx", async () => {
+    const legacyId = "33333333-3333-4333-8333-333333333333";
+    const naturalId = resolveHoldingIdForSync(USER_ID, holding());
+    expect(naturalId).not.toBe(legacyId);
+
+    const { supabase, holdings, mappings } = createMockSupabase([
+      {
+        id: legacyId,
+        portfolio_id: PORTFOLIO_ID,
+        user_id: USER_ID,
+        asset_type: "investment",
+        symbol: "VWCE",
+        name: "Old VWCE",
+        quantity: 0,
+        average_cost: 0,
+        currency: "EUR",
+        sort_order: 0,
+        deleted_at: "2026-07-21T10:00:00.000Z",
+      },
+    ]);
+    mappings.push({
+      holding_id: legacyId,
+      user_id: USER_ID,
+      portfolio_id: PORTFOLIO_ID,
+      isin: "IE00BK5BQT80",
+      provider_symbol: "VWCE.XETRA",
+    });
+
+    const repo = createPortfolioRepository(supabase);
+
+    await expect(
+      repo.applySnapshot(USER_ID, [holding()], null, [], "sync"),
+    ).resolves.toBeDefined();
+
+    const active = holdings.filter((row) => !row.deleted_at);
+    expect(active).toHaveLength(1);
+    expect(active[0]?.id).toBe(legacyId);
+    expect(holdings.some((row) => row.id === naturalId && !row.deleted_at)).toBe(
+      false,
+    );
+    expect(mappings).toHaveLength(1);
+    expect(mappings[0]?.holding_id).toBe(legacyId);
+    expect(mappings[0]?.isin).toBe("IE00BK5BQT80");
+
+    await expect(
+      repo.applySnapshot(USER_ID, [holding()], null, [], "sync"),
+    ).resolves.toBeDefined();
+    expect(holdings.filter((row) => !row.deleted_at)).toHaveLength(1);
   });
 });

@@ -280,6 +280,7 @@ export function createPortfolioRepository(supabase: SupabaseClient) {
     userId: string,
     portfolioId: string,
     holding: StoredPortfolioHolding,
+    options?: { includeSoftDeleted?: boolean },
   ): Promise<{ id: string } | null> {
     const key = holdingUniqueKey(holding);
 
@@ -288,8 +289,15 @@ export function createPortfolioRepository(supabase: SupabaseClient) {
       .select("id")
       .eq("user_id", userId)
       .eq("portfolio_id", portfolioId)
-      .eq("asset_type", key.assetType)
-      .is("deleted_at", null);
+      .eq("asset_type", key.assetType);
+
+    if (options?.includeSoftDeleted) {
+      query = query.not("deleted_at", "is", null).order("deleted_at", {
+        ascending: false,
+      });
+    } else {
+      query = query.is("deleted_at", null);
+    }
 
     if (key.assetType === "cash") {
       query = query.eq("currency", key.currency);
@@ -297,7 +305,7 @@ export function createPortfolioRepository(supabase: SupabaseClient) {
       query = query.eq("symbol", key.symbol).eq("currency", key.currency);
     }
 
-    const { data, error } = await query.maybeSingle();
+    const { data, error } = await query.limit(1).maybeSingle();
     if (error) throw error;
     return data ?? null;
   }
@@ -335,6 +343,14 @@ export function createPortfolioRepository(supabase: SupabaseClient) {
     if (active) {
       await updateHoldingRow(userId, active.id, holding, sortOrder);
       return active.id;
+    }
+
+    const softDeleted = await findHoldingByUniqueKey(userId, portfolioId, holding, {
+      includeSoftDeleted: true,
+    });
+    if (softDeleted) {
+      await updateHoldingRow(userId, softDeleted.id, holding, sortOrder);
+      return softDeleted.id;
     }
 
     const holdingId = resolveHoldingIdForSync(userId, holding);

@@ -18,6 +18,10 @@ export function formatSupabaseError(error: unknown): string {
     return error instanceof Error ? error.message : "Unknown database error.";
   }
 
+  if (error.code === "23505") {
+    return "This import conflicts with an existing portfolio record. Retry the import; if it persists, use portfolio recovery or contact support.";
+  }
+
   const parts: string[] = [];
 
   if (error.code) {
