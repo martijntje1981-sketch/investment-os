@@ -77,6 +77,34 @@ describe("news hub UI structure", () => {
     expect(source).toContain('href: "/news"');
     expect(source).toContain('label: "News"');
   });
+
+  it("keeps quota-safe news search client-side without provider calls", () => {
+    const hubSource = readFileSync(
+      path.resolve(process.cwd(), "components/news/NewsHubContent.tsx"),
+      "utf8",
+    );
+    const searchSource = readFileSync(
+      path.resolve(process.cwd(), "components/news/NewsSearchBar.tsx"),
+      "utf8",
+    );
+
+    expect(hubSource).toContain("NewsSearchBar");
+    expect(hubSource).toContain("filterNewsItems");
+    expect(hubSource).not.toContain("fetch(\"/api/news\"");
+    expect(searchSource).toContain("NEWS_SEARCH_PLACEHOLDER");
+    expect(searchSource).toContain("Escape");
+  });
+
+  it("uses compact mobile-friendly search layout without widening the page", () => {
+    const searchSource = readFileSync(
+      path.resolve(process.cwd(), "components/news/NewsSearchBar.tsx"),
+      "utf8",
+    );
+
+    expect(searchSource).toContain("min-w-0");
+    expect(searchSource).toContain("flex-wrap");
+    expect(searchSource).not.toContain("overflow-x-auto");
+  });
 });
 
 describe("news safety boundaries after phase 3", () => {
