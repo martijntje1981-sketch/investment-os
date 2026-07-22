@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { BriefcaseBusiness, Globe2 } from "lucide-react";
 
+import { PortfolioIntelligencePanel } from "@/components/intelligence/PortfolioIntelligencePanel";
 import { NewsDataStatusBanner, countNewsHubVerifiedItems } from "@/components/news/NewsDataStatusBanner";
 import { NewsEmptyState } from "@/components/news/NewsEmptyState";
 import { NewsFeedItem } from "@/components/news/NewsFeedItem";
@@ -11,8 +12,8 @@ import { NewsSearchBar } from "@/components/news/NewsSearchBar";
 import { NewsSectionHeader } from "@/components/news/NewsSectionHeader";
 import { PortfolioNewsPreview } from "@/components/news/PortfolioNewsPreview";
 import { formatNewsRefreshedAt } from "@/components/news/newsFormatting";
-import { TodaysMarketBriefHero } from "@/components/news/TodaysMarketBrief";
 import { UpcomingEventsStrip } from "@/components/news/UpcomingEventsStrip";
+import type { InvestmentIntelligence } from "@/lib/services/news/investmentIntelligence";
 import type { NewsHubTab } from "@/lib/navigation/newsHubRoutes";
 import {
   buildNewsHubLayout,
@@ -31,11 +32,13 @@ const MOBILE_PORTFOLIO_PREVIEW_COUNT = 2;
 
 export function NewsHubContent({
   payload,
+  intelligence,
   isStale,
   onRefresh,
   isRefreshing,
 }: {
   payload: NewsApiResponse;
+  intelligence: InvestmentIntelligence;
   isStale: boolean;
   onRefresh: () => void;
   isRefreshing: boolean;
@@ -117,8 +120,8 @@ export function NewsHubContent({
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      <TodaysMarketBriefHero
-        brief={payload.marketBrief}
+      <PortfolioIntelligencePanel
+        intelligence={intelligence}
         onRefresh={onRefresh}
         isRefreshing={isRefreshing}
       />

@@ -5,8 +5,8 @@ import { NewsHubContent } from "@/components/news/NewsHubContent";
 import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
 import {
   EMPTY_NEWS_RESPONSE,
-  usePortfolioNews,
-} from "@/lib/client/usePortfolioNews";
+  useInvestmentIntelligence,
+} from "@/lib/client/useInvestmentIntelligence";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 
 export default function NewsPage() {
@@ -19,11 +19,8 @@ export default function NewsPage() {
     dismissRecovery,
   } = useUserPortfolio();
 
-  const { payload, isLoading, isStale, reload } = usePortfolioNews(
-    holdings,
-    userSub,
-    portfolioReady,
-  );
+  const { payload, intelligence, isLoading, isStale, reload } =
+    useInvestmentIntelligence(holdings, userSub, portfolioReady);
 
   if (!portfolioReady) {
     return (
@@ -47,6 +44,7 @@ export default function NewsPage() {
 
           <NewsHubContent
             payload={payload ?? EMPTY_NEWS_RESPONSE}
+            intelligence={intelligence}
             isStale={isStale}
             onRefresh={() => void reload()}
             isRefreshing={isLoading}

@@ -90,6 +90,7 @@ describe("news hub UI structure", () => {
     );
 
     expect(hubSource).toContain("NewsSearchBar");
+    expect(hubSource).toContain("PortfolioIntelligencePanel");
     expect(hubSource).toContain("filterNewsItems");
     expect(hubSource).not.toContain("fetch(\"/api/news\"");
     expect(searchSource).toContain("NEWS_SEARCH_PLACEHOLDER");

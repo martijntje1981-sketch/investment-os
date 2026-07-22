@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import BottomNavigation from "@/components/home/BottomNav";
+import { PortfolioIntelligencePanel } from "@/components/intelligence/PortfolioIntelligencePanel";
 import { DashboardEmptyState } from "@/components/dashboard/DashboardEmptyState";
 import { DashboardDividendCard } from "@/components/dashboard/DashboardDividendCard";
 import { DashboardAnalystCard } from "@/components/dashboard/DashboardAnalystCard";
@@ -17,6 +18,7 @@ import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
 import PortfolioSyncBanner from "@/components/PortfolioSyncBanner";
 import { buildDashboardInsight } from "@/lib/client/dashboardInsight";
 import { buildDashboardSummary } from "@/lib/client/dashboardSummary";
+import { useInvestmentIntelligence } from "@/lib/client/useInvestmentIntelligence";
 import { usePortfolioDividends } from "@/lib/client/usePortfolioDividends";
 import { usePortfolioAnalyst } from "@/lib/client/usePortfolioAnalyst";
 import { useUserGoal } from "@/lib/client/useUserGoal";
@@ -42,6 +44,9 @@ export default function DashboardPage() {
     usePortfolioDividends(holdings, userSub, holdings.length > 0);
   const { snapshot: analystSnapshot, isLoading: analystLoading } =
     usePortfolioAnalyst(holdings, userSub, holdings.length > 0);
+
+  const { intelligence, isLoading: newsLoading, reload: reloadNews } =
+    useInvestmentIntelligence(holdings, userSub, holdings.length > 0);
 
   const summary = useMemo(
     () => buildDashboardSummary(holdings, goal, hasSavedGoal),
@@ -86,6 +91,12 @@ export default function DashboardPage() {
             <DashboardEmptyState />
           ) : holdings.length > 0 ? (
             <>
+              <PortfolioIntelligencePanel
+                intelligence={intelligence}
+                onRefresh={() => void reloadNews()}
+                isRefreshing={newsLoading}
+                compact
+              />
               <DashboardHero summary={summary} />
               <DashboardInsightCard insight={insight} />
               <DashboardDividendCard
