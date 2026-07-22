@@ -3,11 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { BriefcaseBusiness, Globe2 } from "lucide-react";
 
-import { CollapsibleMarketVideos } from "@/components/news/CollapsibleMarketVideos";
-import { MarketCategoryFilters } from "@/components/news/MarketCategoryFilters";
-import { NewsArticleCard } from "@/components/news/NewsArticleCard";
 import { NewsDataStatusBanner, countNewsHubVerifiedItems } from "@/components/news/NewsDataStatusBanner";
 import { NewsEmptyState } from "@/components/news/NewsEmptyState";
+import { NewsFeedItem } from "@/components/news/NewsFeedItem";
 import { NewsHubTabs } from "@/components/news/NewsHubTabs";
 import { NewsSearchBar } from "@/components/news/NewsSearchBar";
 import { NewsSectionHeader } from "@/components/news/NewsSectionHeader";
@@ -16,12 +14,10 @@ import { formatNewsRefreshedAt } from "@/components/news/newsFormatting";
 import { TodaysMarketBriefHero } from "@/components/news/TodaysMarketBrief";
 import { UpcomingEventsStrip } from "@/components/news/UpcomingEventsStrip";
 import type { NewsHubTab } from "@/lib/navigation/newsHubRoutes";
-import type { MarketNewsCategoryFilter } from "@/lib/navigation/newsHubRoutes";
 import {
-  filterMarketNewsByCategory,
-  mergePortfolioSectionItems,
-  selectAboveFoldPortfolioItems,
-} from "@/lib/services/news/newsHubModel";
+  buildNewsHubLayout,
+  buildRankedSearchResults,
+} from "@/lib/services/news/newsFeedRanking";
 import {
   NEWS_SEARCH_EMPTY_MESSAGE,
   collectSearchableNewsItems,
@@ -45,63 +41,37 @@ export function NewsHubContent({
   isRefreshing: boolean;
 }) {
   const [activeTab, setActiveTab] = useState<NewsHubTab>("market");
-  const [marketCategory, setMarketCategory] =
-    useState<MarketNewsCategoryFilter>("all");
   const [portfolioExpanded, setPortfolioExpanded] = useState(false);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchScope, setSearchScope] = useState<NewsSearchScopeFilter>("all");
+  const [showMoreVideos, setShowMoreVideos] = useState(false);
   const portfolioSectionRef = useRef<HTMLElement | null>(null);
 
-  const portfolioItems = useMemo(
-    () =>
-      mergePortfolioSectionItems({
-        portfolioNews: payload.portfolioNews,
-        dividendNews: payload.dividendNews,
-        analystNews: payload.analystNews,
-      }),
-    [payload.analystNews, payload.dividendNews, payload.portfolioNews],
-  );
+  const allItems = useMemo(() => collectSearchableNewsItems(payload), [payload]);
 
-  const filteredMarketNews = useMemo(
-    () =>
-      filterNewsItems(
-        filterMarketNewsByCategory(payload.macroNews, marketCategory),
-        searchQuery,
-        searchScope,
-      ),
-    [marketCategory, payload.macroNews, searchQuery, searchScope],
-  );
-
-  const filteredPortfolioItems = useMemo(
-    () => filterNewsItems(portfolioItems, searchQuery, searchScope),
-    [portfolioItems, searchQuery, searchScope],
-  );
-
-  const filteredMarketVideos = useMemo(
-    () => filterNewsItems(payload.marketVideos, searchQuery, searchScope),
-    [payload.marketVideos, searchQuery, searchScope],
+  const filteredItems = useMemo(
+    () => filterNewsItems(allItems, searchQuery, searchScope),
+    [allItems, searchQuery, searchScope],
   );
 
   const isSearchActive = isNewsSearchActive(searchQuery, searchScope);
 
-  const searchResultCount = useMemo(
-    () =>
-      filterNewsItems(
-        collectSearchableNewsItems(payload),
-        searchQuery,
-        searchScope,
-      ).length,
-    [payload, searchQuery, searchScope],
+  const layout = useMemo(
+    () => buildNewsHubLayout(filteredItems),
+    [filteredItems],
   );
 
+  const searchResults = useMemo(
+    () => buildRankedSearchResults(filteredItems),
+    [filteredItems],
+  );
+
+  const searchResultCount = filteredItems.length;
+
   const previewItems = useMemo(
-    () =>
-      selectAboveFoldPortfolioItems(
-        filteredPortfolioItems,
-        MOBILE_PORTFOLIO_PREVIEW_COUNT,
-      ),
-    [filteredPortfolioItems],
+    () => layout.topPortfolioStories.slice(0, MOBILE_PORTFOLIO_PREVIEW_COUNT),
+    [layout.topPortfolioStories],
   );
 
   useEffect(() => {
@@ -115,12 +85,13 @@ export function NewsHubContent({
   const showMobilePreview =
     isMobileViewport &&
     !isSearchActive &&
-    filteredPortfolioItems.length > MOBILE_PORTFOLIO_PREVIEW_COUNT &&
+    layout.topPortfolioStories.length > MOBILE_PORTFOLIO_PREVIEW_COUNT &&
     !portfolioExpanded;
 
   function clearSearch() {
     setSearchQuery("");
     setSearchScope("all");
+    setShowMoreVideos(false);
   }
 
   function expandPortfolioSection() {
@@ -137,6 +108,12 @@ export function NewsHubContent({
     () => countNewsHubVerifiedItems(payload),
     [payload],
   );
+
+  const hasVisibleContent =
+    !isSearchActive &&
+    (layout.topPortfolioStories.length > 0 ||
+      layout.marketsMacro.length > 0 ||
+      layout.latestRelevantFeed.length > 0);
 
   return (
     <div className="space-y-6 sm:space-y-8">
@@ -181,17 +158,33 @@ export function NewsHubContent({
         />
       ) : null}
 
-      {showMobilePreview ? (
-        <PortfolioNewsPreview
-          items={previewItems}
-          totalCount={filteredPortfolioItems.length}
-          onViewAll={expandPortfolioSection}
-        />
+      {isSearchActive && searchResultCount > 0 ? (
+        <section className="space-y-6">
+          <NewsSectionHeader
+            eyebrow="Search results"
+            title="Matching verified content"
+            description="Articles and videos from your loaded brief, ranked by relevance."
+            icon={<Globe2 className="h-6 w-6" />}
+          />
+          <div className="grid gap-6">
+            {searchResults.map((item) => (
+              <NewsFeedItem key={item.id} item={item} />
+            ))}
+          </div>
+        </section>
       ) : null}
 
-      {isSearchActive && searchResultCount === 0 ? null : (
+      {!isSearchActive && hasVisibleContent ? (
         <>
-          {(filteredPortfolioItems.length > 0 || !isSearchActive) ? (
+          {showMobilePreview ? (
+            <PortfolioNewsPreview
+              items={previewItems}
+              totalCount={layout.topPortfolioStories.length}
+              onViewAll={expandPortfolioSection}
+            />
+          ) : null}
+
+          {(layout.topPortfolioStories.length > 0 || !isSearchActive) ? (
             <section
               ref={portfolioSectionRef}
               id="portfolio-news"
@@ -199,14 +192,14 @@ export function NewsHubContent({
             >
               <NewsSectionHeader
                 eyebrow="For your portfolio"
-                title="Relevant to your holdings"
-                description="Matched using confirmed provider symbols and verified instrument mappings wherever available."
+                title="Top stories for your portfolio"
+                description="Verified headlines and videos matched to your holdings."
                 icon={<BriefcaseBusiness className="h-6 w-6" />}
               />
-              {filteredPortfolioItems.length > 0 ? (
+              {layout.topPortfolioStories.length > 0 ? (
                 <div className="grid gap-6">
-                  {filteredPortfolioItems.map((item) => (
-                    <NewsArticleCard key={item.id} item={item} variant="portfolio" />
+                  {layout.topPortfolioStories.map((item) => (
+                    <NewsFeedItem key={item.id} item={item} />
                   ))}
                 </div>
               ) : (
@@ -220,56 +213,70 @@ export function NewsHubContent({
             </section>
           ) : null}
 
-          {!isSearchActive ? (
-            <div className="space-y-3">
-              <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">
-                Explore next
-              </p>
-              <p className="text-sm text-slate-600">
-                Today&apos;s brief and portfolio headlines are above. Choose market news or
-                verified upcoming events below.
-              </p>
-              <NewsHubTabs activeTab={activeTab} onTabChange={setActiveTab} />
-            </div>
-          ) : null}
-
-          {(isSearchActive || activeTab === "market") &&
-          (filteredMarketNews.length > 0 || !isSearchActive) ? (
-            <section className="space-y-6" role="tabpanel">
+          {layout.marketsMacro.length > 0 ? (
+            <section className="space-y-6">
               <NewsSectionHeader
-                eyebrow="Market news"
-                title="Broader market context"
-                description="Macro, equities, crypto, commodities, and geopolitics from verified sources."
+                eyebrow="Market context"
+                title="Markets & macro"
+                description="Broader developments likely to affect multiple holdings."
                 icon={<Globe2 className="h-6 w-6" />}
               />
-              {!isSearchActive ? (
-                <MarketCategoryFilters
-                  activeCategory={marketCategory}
-                  onCategoryChange={setMarketCategory}
-                />
-              ) : null}
-              {filteredMarketNews.length > 0 ? (
-                <div className="grid gap-6">
-                  {filteredMarketNews.map((item) => (
-                    <NewsArticleCard key={item.id} item={item} variant="macro" />
-                  ))}
-                </div>
-              ) : (
-                <NewsEmptyState
-                  title={
-                    marketCategory === "all"
-                      ? "No market stories available"
-                      : `No ${marketCategory} stories in the current feed`
-                  }
-                  description="Verified market feeds may be quiet right now, or sources may be temporarily unavailable."
-                  actionLabel="Refresh brief"
-                  onAction={onRefresh}
-                />
-              )}
+              <div className="grid gap-6">
+                {layout.marketsMacro.map((item) => (
+                  <NewsFeedItem key={item.id} item={item} />
+                ))}
+              </div>
             </section>
           ) : null}
 
-          {!isSearchActive && activeTab === "events" ? (
+          {layout.latestRelevantFeed.length > 0 ? (
+            <section className="space-y-6">
+              <NewsSectionHeader
+                eyebrow="Ranked feed"
+                title="Latest relevant news"
+                description="Mixed verified articles and videos, ordered by portfolio relevance."
+                icon={<Globe2 className="h-6 w-6" />}
+              />
+              <div className="grid gap-6">
+                {layout.latestRelevantFeed.map((item) => (
+                  <NewsFeedItem key={item.id} item={item} />
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          {layout.moreVideos.length > 0 ? (
+            <section className="space-y-4">
+              <button
+                type="button"
+                onClick={() => setShowMoreVideos((value) => !value)}
+                className="text-sm font-bold text-blue-700 transition hover:text-blue-900"
+              >
+                {showMoreVideos
+                  ? "Hide additional videos"
+                  : `More videos (${layout.moreVideos.length})`}
+              </button>
+              {showMoreVideos ? (
+                <div className="grid gap-6 sm:grid-cols-2">
+                  {layout.moreVideos.map((item) => (
+                    <NewsFeedItem key={item.id} item={item} />
+                  ))}
+                </div>
+              ) : null}
+            </section>
+          ) : null}
+
+          <div className="space-y-3">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">
+              Explore next
+            </p>
+            <p className="text-sm text-slate-600">
+              Upcoming events and calendar data below.
+            </p>
+            <NewsHubTabs activeTab={activeTab} onTabChange={setActiveTab} />
+          </div>
+
+          {activeTab === "events" ? (
             <section className="space-y-6" role="tabpanel">
               <UpcomingEventsStrip
                 events={payload.upcomingEvents}
@@ -277,12 +284,17 @@ export function NewsHubContent({
               />
             </section>
           ) : null}
-
-          {(filteredMarketVideos.length > 0 || !isSearchActive) ? (
-            <CollapsibleMarketVideos videos={filteredMarketVideos} />
-          ) : null}
         </>
-      )}
+      ) : null}
+
+      {!isSearchActive && !hasVisibleContent ? (
+        <NewsEmptyState
+          title="No verified news available"
+          description="Verified news feeds may be quiet right now, or sources may be temporarily unavailable."
+          actionLabel="Refresh brief"
+          onAction={onRefresh}
+        />
+      ) : null}
 
       <p className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-center text-xs leading-6 text-slate-500 sm:text-sm">
         News summaries and interpretations are for information only and are not

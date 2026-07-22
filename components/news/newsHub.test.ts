@@ -28,14 +28,15 @@ describe("news hub UI structure", () => {
     expect(previewSource).not.toContain("NewsArticleCard");
   });
 
-  it("renders market videos in a collapsed secondary section", () => {
-    const source = readFileSync(
-      path.resolve(process.cwd(), "components/news/CollapsibleMarketVideos.tsx"),
+  it("renders ranked mixed feed instead of a bottom-only video section", () => {
+    const hubSource = readFileSync(
+      path.resolve(process.cwd(), "components/news/NewsHubContent.tsx"),
       "utf8",
     );
 
-    expect(source).toContain("useState(false)");
-    expect(source).toContain("Secondary coverage");
+    expect(hubSource).toContain("Latest relevant news");
+    expect(hubSource).toContain("NewsFeedItem");
+    expect(hubSource).not.toContain("CollapsibleMarketVideos");
   });
 
   it("redirects legacy /briefing to /news", () => {
