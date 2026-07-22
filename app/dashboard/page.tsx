@@ -1,22 +1,20 @@
 "use client";
 
 import { useMemo } from "react";
-import BottomNavigation from "@/components/home/BottomNav";
-import { PortfolioIntelligencePanel } from "@/components/intelligence/PortfolioIntelligencePanel";
 import { DashboardEmptyState } from "@/components/dashboard/DashboardEmptyState";
 import { DashboardDividendCard } from "@/components/dashboard/DashboardDividendCard";
 import { DashboardAnalystCard } from "@/components/dashboard/DashboardAnalystCard";
 import { DashboardGoalProgressCard } from "@/components/dashboard/DashboardGoalProgressCard";
+import { DashboardIntelligenceSummary } from "@/components/dashboard/DashboardIntelligenceSummary";
 import {
-  DashboardHero,
   DashboardMoverCard,
+  DashboardPortfolioHero,
 } from "@/components/dashboard/DashboardHero";
 import { DashboardInsightCard } from "@/components/dashboard/DashboardInsightCard";
 import { DashboardMarketStatus } from "@/components/dashboard/DashboardMarketStatus";
-import { DashboardQuickActions } from "@/components/dashboard/DashboardQuickActions";
 import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
 import PortfolioSyncBanner from "@/components/PortfolioSyncBanner";
-import { buildDashboardInsight } from "@/lib/client/dashboardInsight";
+import { buildDashboardInsightSections } from "@/lib/client/dashboardInsight";
 import { buildDashboardSummary } from "@/lib/client/dashboardSummary";
 import { useInvestmentIntelligence } from "@/lib/client/useInvestmentIntelligence";
 import { usePortfolioDividends } from "@/lib/client/usePortfolioDividends";
@@ -47,16 +45,19 @@ export default function DashboardPage() {
   const { snapshot: analystSnapshot, isLoading: analystLoading } =
     usePortfolioAnalyst(holdings, userSub, holdings.length > 0);
 
-  const { intelligence, isLoading: newsLoading, reload: reloadNews } =
-    useInvestmentIntelligence(holdings, userSub, holdings.length > 0);
+  const { intelligence } = useInvestmentIntelligence(
+    holdings,
+    userSub,
+    holdings.length > 0,
+  );
 
   const summary = useMemo(
     () => buildDashboardSummary(holdings, goal, hasSavedGoal),
     [goal, hasSavedGoal, holdings],
   );
 
-  const insight = useMemo(
-    () => buildDashboardInsight(summary),
+  const insightSections = useMemo(
+    () => buildDashboardInsightSections(summary),
     [summary],
   );
 
@@ -69,39 +70,33 @@ export default function DashboardPage() {
   }
 
   return (
-    <>
-      <main className="min-h-screen max-w-full overflow-x-hidden bg-[#F4F7FB] px-4 pb-28 pt-3 text-slate-950 md:px-8 md:pb-32 md:pt-6">
-        <div className="mx-auto w-full max-w-6xl space-y-5 md:space-y-10">
-          <PortfolioSyncBanner
-            syncState={syncState}
-            migrationPreview={migrationPreview}
-            onMigrate={() => void migratePortfolio()}
-            onRetry={() => void retrySync()}
-            onUseRemote={useRemotePortfolio}
-            onKeepLocal={keepLocalPortfolio}
-          />
+    <main className="min-h-screen max-w-full overflow-x-clip bg-[#F4F7FB] px-4 pb-28 pt-3 text-slate-950 md:px-8 md:pb-32 md:pt-6">
+      <div className="mx-auto w-full min-w-0 max-w-6xl space-y-5 md:space-y-6">
+        <PortfolioSyncBanner
+          syncState={syncState}
+          migrationPreview={migrationPreview}
+          onMigrate={() => void migratePortfolio()}
+          onRetry={() => void retrySync()}
+          onUseRemote={useRemotePortfolio}
+          onKeepLocal={keepLocalPortfolio}
+        />
 
-          <PortfolioRecoveryBanner
-            offer={recoveryOffer}
-            onRecover={() => {
-              recoverPortfolio();
-            }}
-            onDismiss={dismissRecovery}
-          />
+        <PortfolioRecoveryBanner
+          offer={recoveryOffer}
+          onRecover={() => {
+            recoverPortfolio();
+          }}
+          onDismiss={dismissRecovery}
+        />
 
-          {holdings.length === 0 && syncState.status !== "loading" ? (
-            <DashboardEmptyState />
-          ) : holdings.length > 0 ? (
-            <>
-              <PortfolioIntelligencePanel
-                intelligence={intelligence}
-                onRefresh={() => void reloadNews()}
-                isRefreshing={newsLoading}
-                compact
-              />
-              <DashboardGoalProgressCard progress={goalProgress} />
-              <DashboardHero summary={summary} />
-              <DashboardInsightCard insight={insight} />
+        {holdings.length === 0 && syncState.status !== "loading" ? (
+          <DashboardEmptyState />
+        ) : holdings.length > 0 ? (
+          <>
+            <DashboardPortfolioHero summary={summary} />
+            <DashboardIntelligenceSummary intelligence={intelligence} />
+            <DashboardGoalProgressCard progress={goalProgress} />
+            <section className="space-y-5 md:space-y-6">
               <DashboardDividendCard
                 snapshot={dividendSnapshot}
                 isLoading={dividendsLoading}
@@ -110,35 +105,31 @@ export default function DashboardPage() {
                 snapshot={analystSnapshot}
                 isLoading={analystLoading}
               />
+            </section>
+            <DashboardInsightCard sections={insightSections} />
+            <section className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
+              <DashboardMoverCard
+                label="Biggest winner"
+                mover={summary.bestMover}
+                tone="positive"
+                performanceCoverageComplete={summary.performanceCoverageComplete}
+              />
+              <DashboardMoverCard
+                label="Biggest loser"
+                mover={summary.worstMover}
+                tone="negative"
+                performanceCoverageComplete={summary.performanceCoverageComplete}
+              />
+            </section>
+            <DashboardMarketStatus lastUpdatedAt={summary.lastUpdatedAt} />
+          </>
+        ) : null}
 
-              <section className="grid gap-3 sm:grid-cols-2 md:gap-4">
-                <DashboardMoverCard
-                  label="Biggest winner"
-                  mover={summary.bestMover}
-                  tone="positive"
-                  performanceCoverageComplete={summary.performanceCoverageComplete}
-                />
-                <DashboardMoverCard
-                  label="Biggest loser"
-                  mover={summary.worstMover}
-                  tone="negative"
-                  performanceCoverageComplete={summary.performanceCoverageComplete}
-                />
-              </section>
-
-              <DashboardMarketStatus lastUpdatedAt={summary.lastUpdatedAt} />
-            </>
-          ) : null}
-
-          <DashboardQuickActions />
-
-          <p className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-center text-xs leading-6 text-slate-500 sm:text-sm">
-            Investment OS is a monitoring tool. It does not provide personal
-            financial advice.
-          </p>
-        </div>
-      </main>
-      <BottomNavigation />
-    </>
+        <p className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-center text-sm leading-relaxed text-slate-500">
+          Investment OS is a monitoring tool. It does not provide personal
+          financial advice.
+        </p>
+      </div>
+    </main>
   );
 }

@@ -83,6 +83,30 @@ function buildConclusionSentence(summary: DashboardSummary): string {
   return "Conclusion: today's pullback warrants monitoring, but long-term goal progress matters more than one session.";
 }
 
+export type DashboardInsightSections = {
+  mainRisk: string;
+  mainOpportunity: string;
+  recommendation: string;
+};
+
+export function buildDashboardInsightSections(
+  summary: DashboardSummary,
+): DashboardInsightSections {
+  if (summary.holdingCount === 0) {
+    return {
+      mainRisk: "No holdings saved yet.",
+      mainOpportunity: "Upload your portfolio to unlock daily insights.",
+      recommendation: "Start with a screenshot import, then review holdings before saving.",
+    };
+  }
+
+  return {
+    mainRisk: limitWords(buildRiskSentence(summary), 28),
+    mainOpportunity: limitWords(buildOpportunitySentence(summary), 28),
+    recommendation: limitWords(buildConclusionSentence(summary), 28),
+  };
+}
+
 export function buildDashboardInsight(summary: DashboardSummary): string {
   if (summary.holdingCount === 0) {
     return limitWords(

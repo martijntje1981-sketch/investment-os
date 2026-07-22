@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
 
-import { buildDashboardInsight } from "@/lib/client/dashboardInsight";
+import {
+  buildDashboardInsight,
+  buildDashboardInsightSections,
+} from "@/lib/client/dashboardInsight";
 import { buildDashboardSummary } from "@/lib/client/dashboardSummary";
+import {
+  AFTER_MARKET_CLOSE,
+  formatTodayMoveValue,
+  RANKING_AFTER_CLOSE,
+} from "@/lib/client/investorOverviewCopy";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
 function holding(
@@ -70,5 +78,104 @@ describe("dashboardInsight", () => {
     );
     expect(liveInsight.split(/\s+/).length).toBeLessThanOrEqual(80);
     expect(liveInsight.toLowerCase()).toContain("conclusion");
+  });
+
+  it("returns concise insight sections for the dashboard card", () => {
+    const sections = buildDashboardInsightSections(
+      buildDashboardSummary(
+        [holding({ symbol: "VWCE", name: "Vanguard FTSE All-World" })],
+        null,
+        false,
+      ),
+    );
+
+    expect(sections.mainRisk.length).toBeGreaterThan(0);
+    expect(sections.mainOpportunity.length).toBeGreaterThan(0);
+    expect(sections.recommendation.length).toBeGreaterThan(0);
+  });
+});
+
+describe("investor overview copy", () => {
+  it("uses friendly after-close messaging instead of technical labels", () => {
+    expect(
+      formatTodayMoveValue({
+        hasDailyData: false,
+        performanceCoverageComplete: false,
+        formatValue: () => "+€100",
+      }),
+    ).toBe(AFTER_MARKET_CLOSE);
+    expect(RANKING_AFTER_CLOSE).toContain("after market close");
+  });
+});
+
+describe("home and dashboard hierarchy", () => {
+  it("leads the dashboard with portfolio value before intelligence", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { resolve } = await import("node:path");
+
+    const dashboard = readFileSync(
+      resolve(process.cwd(), "app/dashboard/page.tsx"),
+      "utf8",
+    );
+    const hero = readFileSync(
+      resolve(process.cwd(), "components/dashboard/DashboardHero.tsx"),
+      "utf8",
+    );
+
+    expect(dashboard.indexOf("<DashboardPortfolioHero")).toBeLessThan(
+      dashboard.indexOf("<DashboardIntelligenceSummary"),
+    );
+    expect(dashboard).not.toContain("DashboardQuickActions");
+    expect(dashboard).not.toContain("PortfolioIntelligencePanel");
+    expect(dashboard).not.toContain("DashboardPortfolioOverview");
+    expect(dashboard).not.toContain("BottomNavigation");
+    expect(dashboard).toContain("buildDashboardInsightSections");
+    expect(hero).toContain("Total gain / loss");
+    expect(hero).toContain("Holdings");
+  });
+
+  it("presents home as a daily portfolio overview without duplicate navigation", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { resolve } = await import("node:path");
+
+    const home = readFileSync(
+      resolve(process.cwd(), "components/home/AuthenticatedHomePage.tsx"),
+      "utf8",
+    );
+    const snapshot = readFileSync(
+      resolve(process.cwd(), "components/home/PortfolioSnapshot.tsx"),
+      "utf8",
+    );
+    const intelligence = readFileSync(
+      resolve(process.cwd(), "components/dashboard/DashboardIntelligenceSummary.tsx"),
+      "utf8",
+    );
+
+    expect(home).toContain("Your portfolio today");
+    expect(home).not.toContain("Latest News");
+    expect(home).not.toContain("BottomNavigation");
+    expect(home).toContain("readNewsCache");
+    expect(home).toContain("HomeIntelligenceSummary");
+    expect(snapshot).toContain("Total portfolio value");
+    expect(snapshot).toContain("Today&apos;s %");
+    expect(snapshot).not.toContain("Awaiting data");
+    expect(snapshot).toContain("RANKING_AFTER_CLOSE");
+    expect(intelligence).toContain("slice(0, 3)");
+    expect(intelligence).not.toContain("Portfolio impact");
+    expect(intelligence).not.toContain("Must watch");
+  });
+
+  it("uses concise AI insight blocks on the dashboard", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { resolve } = await import("node:path");
+
+    const insightCard = readFileSync(
+      resolve(process.cwd(), "components/dashboard/DashboardInsightCard.tsx"),
+      "utf8",
+    );
+
+    expect(insightCard).toContain("Main risk");
+    expect(insightCard).toContain("Main opportunity");
+    expect(insightCard).toContain("Current conclusion");
   });
 });

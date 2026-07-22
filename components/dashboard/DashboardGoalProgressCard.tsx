@@ -39,7 +39,7 @@ export function DashboardGoalProgressCard({
               Goal progress
             </p>
             <h2 className="mt-2 text-xl font-black tracking-[-0.03em] text-slate-950 sm:text-2xl">
-              {progress.hasGoal ? "🎯 Goal" : "Set your goal"}
+              Goal Progress
             </h2>
           </div>
           <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-50 text-violet-700">
