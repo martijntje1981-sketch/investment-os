@@ -4,10 +4,12 @@ import {
   buildMigrationIdempotencyKey,
   hashPayload,
   portfolioFingerprint,
+  portfoliosPersistedMatch,
 } from "@/lib/services/portfolio/idempotency";
 import { buildSyncPreview, sanitizeLocalHoldings } from "@/lib/services/portfolio/mappers";
 import { isSuspiciousCashOnlyShrink } from "@/lib/services/portfolio/portfolioPersistenceGuard";
 import type { PortfolioRepository } from "@/lib/services/portfolio/repository";
+import { verifyPersistedPortfolioSnapshot } from "@/lib/services/portfolio/syncVerification";
 import type {
   PortfolioMigrateRequest,
   PortfolioSyncRequest,
@@ -15,16 +17,8 @@ import type {
 } from "@/lib/services/portfolio/types";
 import { SYNC_ERROR_CODES } from "@/lib/services/portfolio/types";
 
-function verifySnapshotMatchesRequest(
-  snapshot: RemotePortfolioSnapshot,
-  holdings: StoredPortfolioHolding[],
-  userId: string,
-): boolean {
-  return (
-    portfolioFingerprint(snapshot.holdings, userId) ===
-    portfolioFingerprint(holdings, userId)
-  );
-}
+const SYNC_VERIFICATION_FAILED_MESSAGE =
+  "Cloud sync could not be verified. Your latest changes may not have reached every device yet.";
 
 export class PortfolioSyncError extends Error {
   code: string;
@@ -65,7 +59,10 @@ export async function migrateLocalPortfolio(
     idempotencyKey,
   );
   if (existingEvent?.status === "completed") {
-    return repo.fetchSnapshot(userId);
+    const snapshot = await repo.fetchSnapshot(userId);
+    if (portfoliosPersistedMatch(holdings, snapshot.holdings)) {
+      return snapshot;
+    }
   }
 
   const remoteBefore = await repo.fetchSnapshot(userId);
@@ -108,7 +105,14 @@ export async function migrateLocalPortfolio(
     throw error;
   }
 
-  if (!verifySnapshotMatchesRequest(snapshot, holdings, userId)) {
+  if (
+    !(await verifyPersistedPortfolioSnapshot(
+      repo,
+      userId,
+      holdings,
+      snapshot,
+    ))
+  ) {
     await repo.recordSyncEvent(
       userId,
       "migrate",
@@ -118,7 +122,7 @@ export async function migrateLocalPortfolio(
     );
     throw new PortfolioSyncError(
       SYNC_ERROR_CODES.PROVIDER_FAILURE,
-      "Migration verification failed after remote write.",
+      SYNC_VERIFICATION_FAILED_MESSAGE,
     );
   }
 
@@ -142,7 +146,7 @@ export async function syncPortfolioSnapshot(
   );
   if (existingEvent?.status === "completed") {
     const snapshot = await repo.fetchSnapshot(userId);
-    if (verifySnapshotMatchesRequest(snapshot, holdings, userId)) {
+    if (portfoliosPersistedMatch(holdings, snapshot.holdings)) {
       return snapshot;
     }
   }
@@ -185,7 +189,14 @@ export async function syncPortfolioSnapshot(
     throw error;
   }
 
-  if (!verifySnapshotMatchesRequest(snapshot, holdings, userId)) {
+  if (
+    !(await verifyPersistedPortfolioSnapshot(
+      repo,
+      userId,
+      holdings,
+      snapshot,
+    ))
+  ) {
     await repo.recordSyncEvent(
       userId,
       "sync",
@@ -195,7 +206,7 @@ export async function syncPortfolioSnapshot(
     );
     throw new PortfolioSyncError(
       SYNC_ERROR_CODES.PROVIDER_FAILURE,
-      "Sync verification failed after remote write.",
+      SYNC_VERIFICATION_FAILED_MESSAGE,
     );
   }
 

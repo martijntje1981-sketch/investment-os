@@ -152,6 +152,107 @@ export function portfoliosContentMatch(
   );
 }
 
+type SyncVerificationHolding = ContentFingerprintHolding & {
+  providerSymbol?: string | null;
+  isin?: string | null;
+};
+
+function normalizeIsinForVerification(value: unknown): string | null {
+  if (value == null) return null;
+  const normalized = String(value).trim().toUpperCase();
+  return /^[A-Z0-9]{12}$/.test(normalized) ? normalized : null;
+}
+
+function normalizeSingleForSyncVerification(
+  holding: StoredPortfolioHolding,
+  includeInstrumentFields: boolean,
+): SyncVerificationHolding {
+  const assetType: "cash" | "investment" =
+    holding.assetType === "cash" ? "cash" : "investment";
+  const base: SyncVerificationHolding = {
+    identity: holdingContentIdentity(holding),
+    quantity: roundFingerprintNumber(Number(holding.quantity) || 0),
+    purchasePrice: roundFingerprintNumber(
+      assetType === "cash" ? 1 : Number(holding.purchasePrice) || 0,
+    ),
+    assetType,
+    currency: normalizeSymbol(holding.currency ?? "EUR"),
+  };
+
+  if (includeInstrumentFields && assetType === "investment") {
+    return {
+      ...base,
+      providerSymbol: normalizeOptionalSymbol(holding.providerSymbol),
+      isin: normalizeIsinForVerification(holding.isin),
+    };
+  }
+
+  return base;
+}
+
+/** Canonical persisted fields for post-write sync verification. */
+export function normalizeHoldingsForSyncVerification(
+  holdings: StoredPortfolioHolding[],
+): SyncVerificationHolding[] {
+  return holdings
+    .map((holding) =>
+      normalizeSingleForSyncVerification(
+        holding,
+        Boolean(holding.providerSymbol?.trim()),
+      ),
+    )
+    .sort((a, b) => a.identity.localeCompare(b.identity));
+}
+
+export function portfolioSyncVerificationFingerprint(
+  holdings: StoredPortfolioHolding[],
+): string {
+  return hashPayload(normalizeHoldingsForSyncVerification(holdings));
+}
+
+/** Compares written vs read-back holdings using canonical business fields only. */
+export function portfoliosPersistedMatch(
+  written: StoredPortfolioHolding[],
+  readBack: StoredPortfolioHolding[],
+): boolean {
+  const readByIdentity = new Map(
+    readBack.map((holding) => [holdingContentIdentity(holding), holding]),
+  );
+
+  const writtenIdentities = written
+    .map((holding) => holdingContentIdentity(holding))
+    .sort();
+  const readBackIdentities = readBack
+    .map((holding) => holdingContentIdentity(holding))
+    .sort();
+
+  if (writtenIdentities.join("|") !== readBackIdentities.join("|")) {
+    return false;
+  }
+
+  for (const item of written) {
+    const identity = holdingContentIdentity(item);
+    const remote = readByIdentity.get(identity);
+    if (!remote) return false;
+
+    const includeInstrumentFields = Boolean(item.providerSymbol?.trim());
+    const expected = normalizeSingleForSyncVerification(
+      item,
+      includeInstrumentFields,
+    );
+    const actual = normalizeSingleForSyncVerification(
+      remote,
+      includeInstrumentFields,
+    );
+
+    if (hashPayload(expected) !== hashPayload(actual)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 function normalizeForFingerprint(
   holdings: StoredPortfolioHolding[],
   userId?: string,
