@@ -179,6 +179,73 @@ describe("buildDashboardPortfolioSnapshot", () => {
     expect(row?.dailyChangeAmount).toBeCloseTo(240, 0);
   });
 
+  it("exposes since-inception return from buildPortfolioPerformance", () => {
+    const snapshot = buildDashboardPortfolioSnapshot(
+      [
+        holding({
+          symbol: "VWCE",
+          currentPrice: 120,
+          previousClose: 118,
+          purchasePrice: 100,
+          quantity: 10,
+        }),
+      ],
+      null,
+      false,
+    );
+
+    expect(snapshot.canShowPerformance).toBe(true);
+    expect(snapshot.totalReturnPercent).toBeCloseTo(20, 5);
+    expect(snapshot.investedAssetsValue).toBe(1200);
+  });
+
+  it("includes cash cost basis in existing performance totals when cash is held", () => {
+    const snapshot = buildDashboardPortfolioSnapshot(
+      [
+        holding({
+          symbol: "VWCE",
+          currentPrice: 120,
+          previousClose: 118,
+          purchasePrice: 100,
+          quantity: 10,
+        }),
+        holding({
+          symbol: "CASH",
+          assetType: "cash",
+          currentPrice: 1,
+          quantity: 30_000,
+          purchasePrice: 1,
+        }),
+      ],
+      null,
+      false,
+    );
+
+    expect(snapshot.canShowPerformance).toBe(true);
+    expect(snapshot.totalReturnPercent).toBeCloseTo(0.645, 2);
+    expect(snapshot.investedAssetsValue).toBe(1200);
+    expect(snapshot.cashValue).toBe(30_000);
+  });
+
+  it("marks since-inception return unavailable when cost basis is incomplete", () => {
+    const snapshot = buildDashboardPortfolioSnapshot(
+      [
+        holding({ symbol: "VWCE", currentPrice: 110, quantity: 10 }),
+        holding({
+          symbol: "MISSING",
+          currentPrice: 0,
+          purchasePrice: 0,
+          quantity: 5,
+        }),
+      ],
+      null,
+      false,
+    );
+
+    expect(snapshot.canShowPerformance).toBe(false);
+    expect(snapshot.hasUnvaluedInvestments).toBe(true);
+  });
+
   it("reports missing goal state without inventing defaults", () => {
     const snapshot = buildDashboardPortfolioSnapshot([], null, false);
 

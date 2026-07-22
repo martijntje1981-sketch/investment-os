@@ -1,6 +1,33 @@
 import { formatPortfolioCurrency } from "@/lib/client/portfolioAnalysis";
 import { formatMarketUpdateTime } from "@/lib/client/marketStatus";
+import { formatSignedPortfolioPercent } from "@/lib/client/portfolioMovementFormat";
 import type { DashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
+
+function sinceInceptionToneClass(
+  snapshot: DashboardPortfolioSnapshot,
+): string {
+  if (!snapshot.canShowPerformance) {
+    return "text-slate-400";
+  }
+
+  if (snapshot.totalReturnPercent > 0) {
+    return "text-emerald-300";
+  }
+
+  if (snapshot.totalReturnPercent < 0) {
+    return "text-red-300";
+  }
+
+  return "text-slate-300";
+}
+
+function sinceInceptionLabel(snapshot: DashboardPortfolioSnapshot): string {
+  if (!snapshot.canShowPerformance) {
+    return "Return unavailable";
+  }
+
+  return `${formatSignedPortfolioPercent(snapshot.totalReturnPercent)} since inception`;
+}
 
 export function PortfolioValueCard({
   snapshot,
@@ -18,9 +45,10 @@ export function PortfolioValueCard({
       <p className="mt-2 text-3xl font-black tracking-[-0.04em] sm:text-4xl">
         {formatPortfolioCurrency(snapshot.portfolioValue)}
       </p>
-      <p className="mt-2 text-sm text-slate-400">
-        {snapshot.isStale ? "Stale prices · " : null}
-        Last update: {formatMarketUpdateTime(snapshot.lastUpdatedAt)}
+      <p
+        className={`mt-1.5 text-sm font-semibold ${sinceInceptionToneClass(snapshot)}`}
+      >
+        {sinceInceptionLabel(snapshot)}
       </p>
       {showBreakdown ? (
         <p className="mt-2 text-sm text-slate-500">
@@ -29,6 +57,10 @@ export function PortfolioValueCard({
           Cash {formatPortfolioCurrency(snapshot.cashValue)}
         </p>
       ) : null}
+      <p className="mt-2 text-sm text-slate-400">
+        {snapshot.isStale ? "Stale prices · " : null}
+        Last update: {formatMarketUpdateTime(snapshot.lastUpdatedAt)}
+      </p>
     </article>
   );
 }
