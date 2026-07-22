@@ -23,6 +23,7 @@ import {
   isGoalAchieved,
   sanitizeGoalForSave,
 } from "@/lib/client/userGoalStorage";
+import { projectPortfolioValue } from "@/lib/services/goals/goalProgressEngine";
 import { formatOptionalPassiveIncomeDisplay } from "@/lib/client/goalPassiveIncome";
 import { parseOptionalNumericInput, sanitizeNumericInput } from "@/lib/client/numericInput";
 import { useUserGoal } from "@/lib/client/useUserGoal";
@@ -59,14 +60,12 @@ function projectValue(
   annualReturn: number,
   months: number,
 ) {
-  const monthlyRate = Math.pow(1 + annualReturn / 100, 1 / 12) - 1;
-  let value = startingValue;
-
-  for (let month = 0; month < months; month += 1) {
-    value = value * (1 + monthlyRate) + monthlyContribution;
-  }
-
-  return value;
+  return projectPortfolioValue(
+    startingValue,
+    monthlyContribution,
+    annualReturn,
+    months,
+  );
 }
 
 export default function GoalsPage() {

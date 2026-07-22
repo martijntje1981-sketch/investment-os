@@ -6,7 +6,7 @@ import { PortfolioIntelligencePanel } from "@/components/intelligence/PortfolioI
 import { DashboardEmptyState } from "@/components/dashboard/DashboardEmptyState";
 import { DashboardDividendCard } from "@/components/dashboard/DashboardDividendCard";
 import { DashboardAnalystCard } from "@/components/dashboard/DashboardAnalystCard";
-import { DashboardGoalCard } from "@/components/dashboard/DashboardGoalCard";
+import { DashboardGoalProgressCard } from "@/components/dashboard/DashboardGoalProgressCard";
 import {
   DashboardHero,
   DashboardMoverCard,
@@ -21,6 +21,7 @@ import { buildDashboardSummary } from "@/lib/client/dashboardSummary";
 import { useInvestmentIntelligence } from "@/lib/client/useInvestmentIntelligence";
 import { usePortfolioDividends } from "@/lib/client/usePortfolioDividends";
 import { usePortfolioAnalyst } from "@/lib/client/usePortfolioAnalyst";
+import { useGoalProgress } from "@/lib/client/useGoalProgress";
 import { useUserGoal } from "@/lib/client/useUserGoal";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 
@@ -40,6 +41,7 @@ export default function DashboardPage() {
     dismissRecovery,
   } = useUserPortfolio();
   const { goal, hasSavedGoal } = useUserGoal();
+  const goalProgress = useGoalProgress({ holdings, goal, hasSavedGoal });
   const { snapshot: dividendSnapshot, isLoading: dividendsLoading } =
     usePortfolioDividends(holdings, userSub, holdings.length > 0);
   const { snapshot: analystSnapshot, isLoading: analystLoading } =
@@ -97,6 +99,7 @@ export default function DashboardPage() {
                 isRefreshing={newsLoading}
                 compact
               />
+              <DashboardGoalProgressCard progress={goalProgress} />
               <DashboardHero summary={summary} />
               <DashboardInsightCard insight={insight} />
               <DashboardDividendCard
@@ -124,7 +127,6 @@ export default function DashboardPage() {
               </section>
 
               <DashboardMarketStatus lastUpdatedAt={summary.lastUpdatedAt} />
-              <DashboardGoalCard summary={summary} />
             </>
           ) : null}
 
