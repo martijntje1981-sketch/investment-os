@@ -27,6 +27,7 @@ export type ImportRow = {
   extractionWarnings?: string[];
   isin?: string | null;
   exchange?: string | null;
+  pricingExchange?: string | null;
   providerSymbol?: string | null;
   instrumentName?: string | null;
   matchMethod?: ResolvedInstrument["matchMethod"];

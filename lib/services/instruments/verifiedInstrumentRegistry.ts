@@ -14,10 +14,13 @@ import type { ResolvedInstrument } from "@/lib/types/instrument";
 
 export type VerifiedInstrumentEntry = {
   ticker: string;
+  /** Canonical EODHD pricing exchange code. */
   exchange: string;
   providerSymbol: string;
   instrumentName: string;
   isin?: string | null;
+  /** Purchase venues that map to this instrument but quote on {@link exchange}. */
+  purchaseExchangeAliases?: readonly string[];
 };
 
 const VERIFIED_INSTRUMENTS: VerifiedInstrumentEntry[] = [
@@ -54,7 +57,22 @@ const VERIFIED_INSTRUMENTS: VerifiedInstrumentEntry[] = [
     providerSymbol: "IB1T.XETRA",
     instrumentName: "iShares Bitcoin ETP",
   },
+  {
+    ticker: "4COP",
+    exchange: "XETRA",
+    providerSymbol: "4COP.XETRA",
+    instrumentName: "Global X Copper Miners UCITS ETF",
+    isin: "IE0003Z9E2Y3",
+    purchaseExchangeAliases: ["TDG", "TRADEGATE", "TG"],
+  },
 ];
+
+const PURCHASE_EXCHANGE_ALIASES: Record<string, string> = {
+  TDG: "TDG",
+  TRADEGATE: "TDG",
+  TG: "TDG",
+  TRADEGATEBSX: "TDG",
+};
 
 const byProviderSymbol = new Map<string, VerifiedInstrumentEntry>();
 const byIsin = new Map<string, VerifiedInstrumentEntry[]>();
@@ -78,6 +96,60 @@ for (const entry of VERIFIED_INSTRUMENTS) {
       byIsin.set(normalizedIsin, existing);
     }
   }
+}
+
+/** Normalizes broker purchase venue labels (e.g. Tradegate → TDG). */
+export function normalizePurchaseExchange(
+  raw: string | null | undefined,
+): string | null {
+  if (!raw?.trim()) return null;
+
+  const cleaned = raw.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (!cleaned) return null;
+
+  return PURCHASE_EXCHANGE_ALIASES[cleaned] ?? cleaned;
+}
+
+function entryMatchesPurchaseExchange(
+  entry: VerifiedInstrumentEntry,
+  rawExchange: string | null | undefined,
+): boolean {
+  const purchaseExchange = normalizePurchaseExchange(rawExchange);
+  if (!purchaseExchange || !entry.purchaseExchangeAliases?.length) {
+    return false;
+  }
+
+  return entry.purchaseExchangeAliases.some(
+    (alias) => normalizePurchaseExchange(alias) === purchaseExchange,
+  );
+}
+
+export function resolveVerifiedPurchaseExchange(
+  rawExchange: string | null | undefined,
+  entry: VerifiedInstrumentEntry,
+): string | null {
+  if (!entryMatchesPurchaseExchange(entry, rawExchange)) {
+    return null;
+  }
+
+  return normalizePurchaseExchange(rawExchange);
+}
+
+export function lookupVerifiedByTickerPurchaseExchange(
+  ticker: string | null | undefined,
+  rawExchange: string | null | undefined,
+): { entry: VerifiedInstrumentEntry; purchaseExchange: string } | null {
+  const normalizedTicker = ticker?.trim().toUpperCase();
+  const purchaseExchange = normalizePurchaseExchange(rawExchange);
+  if (!normalizedTicker || !purchaseExchange) return null;
+
+  for (const entry of VERIFIED_INSTRUMENTS) {
+    if (entry.ticker.toUpperCase() !== normalizedTicker) continue;
+    if (!entryMatchesPurchaseExchange(entry, purchaseExchange)) continue;
+    return { entry, purchaseExchange };
+  }
+
+  return null;
 }
 
 export function listVerifiedInstruments(): readonly VerifiedInstrumentEntry[] {
@@ -132,17 +204,54 @@ export type VerifiedInstrumentLookupInput = {
   providerSymbol?: string | null;
 };
 
+export type VerifiedInstrumentResolution = {
+  entry: VerifiedInstrumentEntry;
+  purchaseExchange?: string | null;
+};
+
 /** Resolves a verified entry using ISIN → providerSymbol → ticker+exchange order. */
 export function lookupVerifiedInstrument(
   input: VerifiedInstrumentLookupInput,
 ): VerifiedInstrumentEntry | null {
+  return resolveVerifiedInstrument(input)?.entry ?? null;
+}
+
+export function resolveVerifiedInstrument(
+  input: VerifiedInstrumentLookupInput,
+): VerifiedInstrumentResolution | null {
   const byIsinMatch = lookupVerifiedByIsin(input.isin, input.exchange);
-  if (byIsinMatch) return byIsinMatch;
+  if (byIsinMatch) {
+    return {
+      entry: byIsinMatch,
+      purchaseExchange: resolveVerifiedPurchaseExchange(input.exchange, byIsinMatch),
+    };
+  }
 
   const bySymbol = lookupVerifiedByProviderSymbol(input.providerSymbol);
-  if (bySymbol) return bySymbol;
+  if (bySymbol) {
+    return {
+      entry: bySymbol,
+      purchaseExchange: resolveVerifiedPurchaseExchange(input.exchange, bySymbol),
+    };
+  }
 
-  return lookupVerifiedByTickerExchange(input.ticker, input.exchange);
+  const byTickerExchange = lookupVerifiedByTickerExchange(input.ticker, input.exchange);
+  if (byTickerExchange) {
+    return { entry: byTickerExchange };
+  }
+
+  const byPurchaseExchange = lookupVerifiedByTickerPurchaseExchange(
+    input.ticker,
+    input.exchange,
+  );
+  if (byPurchaseExchange) {
+    return {
+      entry: byPurchaseExchange.entry,
+      purchaseExchange: byPurchaseExchange.purchaseExchange,
+    };
+  }
+
+  return null;
 }
 
 export function verifiedEntryToResolved(
@@ -150,13 +259,18 @@ export function verifiedEntryToResolved(
   matchMethod: ResolvedInstrument["matchMethod"] = entry.isin
     ? "isin"
     : "ticker_exchange",
+  options?: { purchaseExchange?: string | null },
 ): ResolvedInstrument {
   const confirmationSource: ListingConfirmationSource = "verified_mapping";
+  const purchaseExchange = options?.purchaseExchange?.trim().toUpperCase() ?? null;
+  const usesAlternatePricing =
+    Boolean(purchaseExchange) && !exchangesMatch(purchaseExchange, entry.exchange);
 
   return {
     providerSymbol: entry.providerSymbol,
     instrumentName: entry.instrumentName,
-    exchange: entry.exchange,
+    exchange: usesAlternatePricing ? purchaseExchange : entry.exchange,
+    pricingExchange: usesAlternatePricing ? entry.exchange : null,
     isin: entry.isin ?? null,
     matchMethod,
     confirmationSource,

@@ -33,6 +33,8 @@ export type StoredPortfolioHolding = {
   assetType?: "investment" | "cash";
   isin?: string | null;
   exchange?: string | null;
+  /** EODHD exchange used for live quotes when purchase venue differs (e.g. Tradegate). */
+  pricingExchange?: string | null;
   providerSymbol?: string | null;
   instrumentName?: string | null;
   matchMethod?: string;

@@ -235,6 +235,7 @@ function ImportReviewCard({
               instrumentName: row.instrumentName ?? row.name,
               exchange: row.exchange ?? null,
               isin: row.isin ?? null,
+              pricingExchange: row.pricingExchange ?? null,
               matchMethod: row.matchMethod ?? "unresolved",
               confidence: row.matchConfidence ?? 0.8,
               requiresConfirmation: false,

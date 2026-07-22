@@ -64,4 +64,20 @@ describe("enrichHoldingsWithVerifiedMappings", () => {
     expect(enriched.providerSymbol).toBeNull();
     expect(enriched.confirmationSource).toBe("manual_entry");
   });
+
+  it("enriches 4COP on Tradegate with Xetra pricing and preserved TDG exchange", () => {
+    const enriched = enrichHoldingWithVerifiedMapping(
+      manualHolding({
+        symbol: "4COP",
+        name: "Global X Copper Miners UCITS ETF",
+        exchange: "Tradegate",
+        isin: "IE0003Z9E2Y3",
+      }),
+    );
+
+    expect(enriched.providerSymbol).toBe("4COP.XETRA");
+    expect(enriched.exchange).toBe("TDG");
+    expect(enriched.pricingExchange).toBe("XETRA");
+    expect(enriched.confirmationSource).toBe("verified_mapping");
+  });
 });

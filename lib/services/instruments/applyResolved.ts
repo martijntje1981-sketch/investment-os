@@ -15,6 +15,7 @@ export function applyResolvedToHolding<
     symbol: string;
     isin?: string | null;
     exchange?: string | null;
+    pricingExchange?: string | null;
     name: string;
     providerSymbol?: string | null;
     instrumentName?: string | null;
@@ -33,6 +34,7 @@ export function applyResolvedToHolding<
     exchange: resolved.exchange ?? holding.exchange ?? null,
     providerSymbol: resolved.providerSymbol,
     instrumentName: resolved.instrumentName ?? holding.instrumentName ?? null,
+    pricingExchange: resolved.pricingExchange ?? holding.pricingExchange ?? null,
     matchMethod: resolved.matchMethod,
     matchConfidence: resolved.confidence,
     requiresConfirmation: resolved.requiresConfirmation,

@@ -22,7 +22,39 @@ export type ListingDisplay = {
   isin: string;
   providerSymbol: string;
   summaryLine: string;
+  pricingSourceNote: string | null;
 };
+
+export function formatExchangeLabel(code: string | null | undefined): string {
+  switch (code?.trim().toUpperCase()) {
+    case "XETRA":
+      return "Xetra";
+    case "TDG":
+      return "Tradegate";
+    case "AS":
+      return "Euronext Amsterdam";
+    default:
+      return code?.trim() || "—";
+  }
+}
+
+export function describePricingSource(
+  listing: Pick<
+    ResolvedInstrument,
+    "exchange" | "pricingExchange" | "providerSymbol"
+  >,
+): string | null {
+  if (!listing.pricingExchange?.trim()) {
+    return null;
+  }
+
+  const pricingLabel = formatExchangeLabel(listing.pricingExchange);
+  const purchaseLabel = listing.exchange
+    ? formatExchangeLabel(listing.exchange)
+    : "your broker";
+
+  return `Live prices use the ${pricingLabel} listing (${listing.providerSymbol ?? "—"}). Your ${purchaseLabel} purchase is preserved.`;
+}
 
 function inferListingCurrency(providerSymbol: string | null | undefined): string {
   if (!providerSymbol) return "EUR";
@@ -54,6 +86,7 @@ export function formatListingDetails(
     isin: candidate.isin ?? "—",
     providerSymbol,
     summaryLine: `${ticker} · ${candidate.exchange ?? "—"} · ${inferListingCurrency(candidate.providerSymbol)}`,
+    pricingSourceNote: describePricingSource(candidate),
   };
 }
 
@@ -171,6 +204,7 @@ export function importRowToStoredHolding(
     assetType: row.assetType,
     isin: row.isin ?? null,
     exchange: row.exchange ?? null,
+    pricingExchange: row.pricingExchange ?? null,
     providerSymbol: row.providerSymbol ?? null,
     instrumentName: row.instrumentName ?? null,
     matchMethod: row.matchMethod,

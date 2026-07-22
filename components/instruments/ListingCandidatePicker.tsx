@@ -82,6 +82,11 @@ export function SelectedListingSummary({
         {details.instrumentName}
       </p>
       <p className="mt-1 text-xs text-slate-600">{details.summaryLine}</p>
+      {details.pricingSourceNote ? (
+        <p className="mt-2 text-xs font-semibold text-emerald-900">
+          {details.pricingSourceNote}
+        </p>
+      ) : null}
       <p className="text-xs text-slate-500">{details.providerSymbol}</p>
     </div>
   );

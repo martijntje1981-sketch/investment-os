@@ -2,7 +2,10 @@
  * Idempotent enrichment for manual holdings that match the verified registry.
  */
 
-import { lookupVerifiedInstrument, verifiedEntryToResolved } from "@/lib/services/instruments/verifiedInstrumentRegistry";
+import {
+  resolveVerifiedInstrument,
+  verifiedEntryToResolved,
+} from "@/lib/services/instruments/verifiedInstrumentRegistry";
 import { applyResolvedToHolding } from "@/lib/services/instruments/applyResolved";
 import type { ResolvedInstrument } from "@/lib/types/instrument";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
@@ -18,17 +21,19 @@ export function enrichHoldingWithVerifiedMapping(
     return holding;
   }
 
-  const entry = lookupVerifiedInstrument({
+  const resolution = resolveVerifiedInstrument({
     ticker: holding.symbol,
     isin: holding.isin,
     exchange: holding.exchange,
   });
 
-  if (!entry) {
+  if (!resolution) {
     return holding;
   }
 
-  const resolved = verifiedEntryToResolved(entry);
+  const resolved = verifiedEntryToResolved(resolution.entry, undefined, {
+    purchaseExchange: resolution.purchaseExchange,
+  });
   const enriched = applyResolvedToHolding(
     {
       ...holding,

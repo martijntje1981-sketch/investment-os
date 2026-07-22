@@ -95,6 +95,7 @@ export function finalizeImportRowForSave(row: ImportRow): StoredPortfolioHolding
     assetType: row.assetType,
     isin: row.isin ?? null,
     exchange: row.exchange ?? null,
+    pricingExchange: row.pricingExchange ?? null,
     providerSymbol: row.providerSymbol ?? null,
     instrumentName: row.instrumentName ?? null,
     matchMethod: row.matchMethod,

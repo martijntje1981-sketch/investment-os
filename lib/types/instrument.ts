@@ -38,6 +38,8 @@ export type ResolvedInstrument = {
   requiresConfirmation: boolean;
   /** Human-readable warnings about ambiguity or missing data. */
   warnings: string[];
+  /** EODHD exchange used for live quotes when the purchase venue differs. */
+  pricingExchange?: string | null;
   /** Alternative listings when multiple matches exist. */
   candidates?: ResolvedInstrument[];
 };

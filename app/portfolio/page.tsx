@@ -56,6 +56,7 @@ import {
 } from "@/lib/services/analyst/analystCalculations";
 import { formatDividendFrequency } from "@/lib/services/dividends";
 import { rememberConfirmedHolding } from "@/lib/services/import/mappingMemory";
+import { describePricingSource } from "@/lib/services/instruments/listingConfirmation";
 import {
   holdingMatchStatusLabel,
   resolveHoldingMatchStatus,
@@ -442,6 +443,15 @@ export default function PortfolioPage() {
                             ? "Cash holding"
                             : `${holding.quantity.toLocaleString("en-GB")} units · ${holdingMatchStatusLabel(matchStatus)}`}
                         </p>
+                        {holding.pricingExchange && holding.providerSymbol ? (
+                          <p className="mt-1 text-xs font-semibold text-slate-600">
+                            {describePricingSource({
+                              exchange: holding.exchange ?? null,
+                              pricingExchange: holding.pricingExchange,
+                              providerSymbol: holding.providerSymbol,
+                            })}
+                          </p>
+                        ) : null}
                       </div>
                       <div><p className="text-xs font-bold uppercase text-slate-400 lg:hidden">Value</p><p className="font-black">{holdingValue === null ? "Price pending" : money(holdingValue)}{estimatedPrice && holdingValue !== null ? <span className="ml-1 text-xs font-semibold text-amber-700">est.</span> : null}</p></div>
                       <div><p className="text-xs font-bold uppercase text-slate-400 lg:hidden">Allocation</p><p className="font-bold">{holdingValue === null ? "—" : `${allocation.toFixed(1)}%`}</p></div>
@@ -599,6 +609,7 @@ export default function PortfolioPage() {
                       instrumentName: draft.instrumentName ?? draft.name,
                       exchange: draft.exchange ?? null,
                       isin: draft.isin ?? null,
+                      pricingExchange: draft.pricingExchange ?? null,
                       matchMethod:
                         (draft.matchMethod as ResolvedInstrument["matchMethod"]) ??
                         "ticker_exchange",

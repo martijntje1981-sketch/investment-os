@@ -120,4 +120,20 @@ describe("matchInstrument verified mappings", () => {
     expect(parsed.confirmationSource).toBe("verified_mapping");
     expect(parsed.resolved.instrumentName).toContain("VanEck");
   });
+
+  it("matches 4COP on Tradegate to Xetra pricing without EODHD", async () => {
+    const resolved = await matchInstrument({
+      ticker: "4COP",
+      exchange: "Tradegate",
+      assetType: "investment",
+    });
+
+    expect(resolved.providerSymbol).toBe("4COP.XETRA");
+    expect(resolved.exchange).toBe("TDG");
+    expect(resolved.pricingExchange).toBe("XETRA");
+    expect(resolved.isin).toBe("IE0003Z9E2Y3");
+    expect(resolved.confirmationSource).toBe("verified_mapping");
+    expect(fetchIdMapping).not.toHaveBeenCalled();
+    expect(fetchSearch).not.toHaveBeenCalled();
+  });
 });

@@ -16,6 +16,11 @@ const EXCHANGE_CATALOG: ExchangeCatalogEntry[] = [
     searchTerms: ["xetra", "xetr", "xfra", "frankfurt", "germany", "de", "xet"],
   },
   {
+    code: "TDG",
+    label: "Tradegate",
+    searchTerms: ["tradegate", "tdg", "tg", "trade gate", "tradegate bsx"],
+  },
+  {
     code: "AS",
     label: "Euronext Amsterdam",
     searchTerms: ["amsterdam", "ams", "xams", "euronext amsterdam"],

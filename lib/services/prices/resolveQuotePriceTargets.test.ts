@@ -76,4 +76,18 @@ describe("resolveQuotePriceTargets", () => {
 
     expect(target?.providerSymbol).toBe("VWCE.XETRA");
   });
+
+  it("quotes 4COP Tradegate holdings through the verified Xetra listing", () => {
+    const target = resolveQuotePriceTarget({
+      symbol: "4COP",
+      providerSymbol: "4COP.XETRA",
+      exchange: "TDG",
+      isin: "IE0003Z9E2Y3",
+      name: "Global X Copper Miners UCITS ETF",
+    });
+
+    expect(target?.providerSymbol).toBe("4COP.XETRA");
+    expect(target?.symbol).toBe("4COP");
+    expect(target?.currency).toBe("EUR");
+  });
 });

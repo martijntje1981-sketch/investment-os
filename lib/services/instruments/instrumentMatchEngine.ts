@@ -33,6 +33,8 @@ import {
   lookupVerifiedByIsin,
   lookupVerifiedByProviderSymbol,
   lookupVerifiedByTickerExchange,
+  lookupVerifiedByTickerPurchaseExchange,
+  resolveVerifiedPurchaseExchange,
   verifiedEntryToResolved,
 } from "./verifiedInstrumentRegistry";
 import { isValidIsin, normalizeIsin } from "./validation";
@@ -580,9 +582,12 @@ export async function matchInstrument(
   if (effectiveIsin) {
     const verified = lookupVerifiedByIsin(effectiveIsin, exchange);
     if (verified) {
-      return appendWarnings(verifiedEntryToResolved(verified, "isin"), [
-        exchangeWarning,
-      ]);
+      return appendWarnings(
+        verifiedEntryToResolved(verified, "isin", {
+          purchaseExchange: resolveVerifiedPurchaseExchange(rawExchange, verified),
+        }),
+        [exchangeWarning],
+      );
     }
   }
 
@@ -598,7 +603,23 @@ export async function matchInstrument(
     }
   }
 
-  // 3. Ticker + normalized exchange against verified mappings.
+  // 3. Ticker + purchase exchange alias (e.g. Tradegate → Xetra pricing).
+  if (effectiveTicker && rawExchange) {
+    const purchaseMatch = lookupVerifiedByTickerPurchaseExchange(
+      effectiveTicker,
+      rawExchange,
+    );
+    if (purchaseMatch) {
+      return appendWarnings(
+        verifiedEntryToResolved(purchaseMatch.entry, "ticker_exchange", {
+          purchaseExchange: purchaseMatch.purchaseExchange,
+        }),
+        [exchangeWarning],
+      );
+    }
+  }
+
+  // 4. Ticker + normalized exchange against verified mappings.
   if (effectiveTicker && exchange) {
     const verified = lookupVerifiedByTickerExchange(effectiveTicker, exchange);
     if (verified) {
@@ -609,7 +630,7 @@ export async function matchInstrument(
     }
   }
 
-  // 4. External provider search when the instrument circuit is available.
+  // 5. External provider search when the instrument circuit is available.
   if (effectiveIsin && !instrumentUnavailable) {
     const result = await resolveByIsin(effectiveIsin, exchange);
     if (externalResultUsable(result)) {
