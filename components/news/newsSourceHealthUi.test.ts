@@ -19,7 +19,7 @@ describe("news hub warning UI", () => {
       "utf8",
     );
 
-    expect(bannerSource).toContain("NEWS_PARTIAL_SOURCES_MESSAGE");
+    expect(bannerSource).toContain("resolveNewsPageWarning");
     expect(bannerSource).not.toContain("EODHD");
     expect(bannerSource).toContain("Wire headlines last updated");
   });
