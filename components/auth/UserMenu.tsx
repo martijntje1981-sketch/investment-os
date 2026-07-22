@@ -15,6 +15,7 @@ const protectedRoutes = [
   "/analysis",
   "/briefing",
   "/news",
+  "/discover",
   "/goals",
   "/holding",
 ];

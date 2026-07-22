@@ -31,6 +31,7 @@ type PortfolioSnapshotProps = {
   isRefreshing?: boolean;
   todaysDecision?: ReactNode;
   intelligenceSummary?: ReactNode;
+  discoverTeaser?: ReactNode;
 };
 
 function getPerformanceColor(value: number) {
@@ -153,6 +154,7 @@ export function PortfolioSnapshot({
   isRefreshing = false,
   todaysDecision,
   intelligenceSummary,
+  discoverTeaser,
 }: PortfolioSnapshotProps) {
   const showTodayMove = hasDailyData && performanceCoverageComplete;
   const showMovers = performanceCoverageComplete;
@@ -230,6 +232,12 @@ export function PortfolioSnapshot({
         {intelligenceSummary ? (
           <div className="border-t border-slate-100 px-5 py-4 sm:px-6">
             {intelligenceSummary}
+          </div>
+        ) : null}
+
+        {discoverTeaser ? (
+          <div className="border-t border-slate-100 px-5 py-4 sm:px-6">
+            {discoverTeaser}
           </div>
         ) : null}
 

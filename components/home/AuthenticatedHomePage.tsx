@@ -3,12 +3,15 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { BriefcaseBusiness, Upload } from "lucide-react";
+import { DiscoverMissedTeaser } from "@/components/discover/DiscoverSections";
 import { TodaysDecisionBlock } from "@/components/investor/TodaysDecisionBlock";
 import { PortfolioSnapshot } from "@/components/home/PortfolioSnapshot";
 import { HomeIntelligenceSummary } from "@/components/home/HomeIntelligenceSummary";
 import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
 import { summarizeAuthenticatedHomePortfolio } from "@/lib/client/authenticatedHomePortfolio";
-import { readNewsCache } from "@/lib/client/portfolioNews";
+import { isNewsCacheFresh, readNewsCache } from "@/lib/client/portfolioNews";
+import { buildDiscoverSnapshot } from "@/lib/services/discover/buildDiscoverSnapshot";
+import { portfolioContentFingerprint } from "@/lib/services/portfolio/idempotency";
 import {
   areMajorMarketsClosed,
   buildTodaysDecision,
@@ -47,10 +50,30 @@ export default function AuthenticatedHomePage() {
     const cached = readNewsCache(userSub);
     if (!cached) return null;
     return {
+      response: cached.response,
+      cachedAt: cached.cachedAt,
       intelligence: buildInvestmentIntelligence(cached.response),
       upcomingEvents: cached.response.upcomingEvents,
     };
   }, [userSub]);
+
+  const discoverSnapshot = useMemo(() => {
+    if (holdings.length === 0) return null;
+    const portfolioFingerprint = portfolioContentFingerprint(holdings, goal);
+    const newsStale = cachedBriefing
+      ? !isNewsCacheFresh(cachedBriefing.cachedAt)
+      : true;
+
+    return buildDiscoverSnapshot({
+      holdings,
+      portfolioFingerprint,
+      newsPayload: cachedBriefing?.response ?? null,
+      intelligence: cachedBriefing?.intelligence ?? null,
+      intelligenceFromCache: Boolean(cachedBriefing),
+      newsStale,
+      goalProgress,
+    });
+  }, [cachedBriefing, goal, goalProgress, holdings]);
 
   const marketsClosed = useMemo(() => areMajorMarketsClosed(), []);
 
@@ -132,6 +155,13 @@ export default function AuthenticatedHomePage() {
                 marketsClosed={marketsClosed}
                 embedded
               />
+            }
+            discoverTeaser={
+              discoverSnapshot ? (
+                <DiscoverMissedTeaser
+                  items={discoverSnapshot.thingsYouMayHaveMissed}
+                />
+              ) : null
             }
           />
         )}

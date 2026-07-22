@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ArrowUpRight, Sparkles, TrendingUp } from "lucide-react";
 
+import { DiscoverMissedTeaser } from "@/components/discover/DiscoverSections";
 import { TodaysDecisionBlock } from "@/components/investor/TodaysDecisionBlock";
 import { formatNewsRefreshedAt } from "@/components/news/newsFormatting";
 import {
@@ -12,6 +13,7 @@ import {
 import type { GoalProgress } from "@/lib/services/goals/goalProgressEngine";
 import type { InvestmentIntelligence } from "@/lib/services/news/investmentIntelligence";
 import type { UpcomingMarketEvent } from "@/lib/types/newsContent";
+import type { MissedItem } from "@/lib/services/discover/types";
 
 const STATUS_STYLES: Record<
   InvestmentIntelligence["portfolioStatus"],
@@ -29,6 +31,7 @@ export function DashboardIntelligenceSummary({
   upcomingEvents = [],
   marketsClosed,
   intelligenceFromCache = false,
+  missedItems = [],
 }: {
   intelligence: InvestmentIntelligence;
   goalProgress?: Pick<
@@ -38,6 +41,7 @@ export function DashboardIntelligenceSummary({
   upcomingEvents?: UpcomingMarketEvent[];
   marketsClosed?: boolean;
   intelligenceFromCache?: boolean;
+  missedItems?: MissedItem[];
 }) {
   const topBullets = intelligence.todayMatters.slice(0, 3);
   const todaysDecision = buildTodaysDecision({
@@ -114,6 +118,10 @@ export function DashboardIntelligenceSummary({
             </p>
           )}
         </div>
+
+        {missedItems.length > 0 ? (
+          <DiscoverMissedTeaser items={missedItems} variant="dark" />
+        ) : null}
       </div>
     </section>
   );

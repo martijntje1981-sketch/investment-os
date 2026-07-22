@@ -73,6 +73,11 @@ export function newsCacheKey(userSub: string): string {
   return `investment-os-news-cache:${userSub}`;
 }
 
+export function discoverCacheKey(userSub: string, portfolioFingerprint: string): string {
+  assertUserSub(userSub);
+  return `investment-os-discover-cache:${userSub}:${portfolioFingerprint}`;
+}
+
 export function legacyRecoveryDismissedKey(userSub: string): string {
   assertUserSub(userSub);
   return `investment-os-legacy-recovery-dismissed:${userSub}`;

@@ -16,6 +16,7 @@ import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
 import PortfolioSyncBanner from "@/components/PortfolioSyncBanner";
 import { buildDashboardInsightSections } from "@/lib/client/dashboardInsight";
 import { buildDashboardSummary } from "@/lib/client/dashboardSummary";
+import { useDiscoverSnapshot } from "@/lib/client/discoverSnapshot";
 import { areMajorMarketsClosed } from "@/lib/client/todaysDecision";
 import { useInvestmentIntelligence } from "@/lib/client/useInvestmentIntelligence";
 import { usePortfolioDividends } from "@/lib/client/usePortfolioDividends";
@@ -51,6 +52,12 @@ export default function DashboardPage() {
     userSub,
     holdings.length > 0,
   );
+  const { snapshot: discoverSnapshot } = useDiscoverSnapshot({
+    userSub,
+    holdings,
+    goal,
+    enabled: portfolioReady && holdings.length > 0,
+  });
 
   const summary = useMemo(
     () => buildDashboardSummary(holdings, goal, hasSavedGoal),
@@ -102,6 +109,7 @@ export default function DashboardPage() {
                 goalProgress={goalProgress}
                 upcomingEvents={payload.upcomingEvents}
                 marketsClosed={marketsClosed}
+                missedItems={discoverSnapshot?.thingsYouMayHaveMissed ?? []}
               />
             <DashboardGoalProgressCard progress={goalProgress} />
             <section className="space-y-5 md:space-y-6">
