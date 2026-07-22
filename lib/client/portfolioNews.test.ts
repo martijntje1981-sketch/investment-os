@@ -49,8 +49,10 @@ function response(): NewsApiResponse {
       feedsState: "live",
       eventsState: "empty",
       eodhdNewsAvailable: true,
+      eodhdLastUpdated: null,
       sourceCount: 1,
       activeSourceNames: ["EODHD News"],
+      unavailableSourceCount: 0,
     },
     sourceErrors: [],
     fetchedAt: "2026-07-20T08:00:00.000Z",
@@ -130,16 +132,12 @@ describe("portfolioNews cache", () => {
             feedsState: "unavailable",
             eventsState: "provider_unavailable",
             eodhdNewsAvailable: false,
+            eodhdLastUpdated: null,
             sourceCount: 0,
             activeSourceNames: [],
+            unavailableSourceCount: 1,
           },
-          sourceErrors: [
-            {
-              sourceId: "eodhd-news",
-              sourceName: "EODHD News",
-              error: "EODHD news unavailable — API key not configured.",
-            },
-          ],
+          sourceErrors: [],
           fetchedAt: "2026-07-20T08:00:00.000Z",
         }),
       }),
@@ -149,7 +147,7 @@ describe("portfolioNews cache", () => {
 
     expect(result.response.success).toBe(true);
     expect(result.response.dataStatus.feedsState).toBe("unavailable");
-    expect(result.response.sourceErrors[0]?.sourceName).toBe("EODHD News");
+    expect(result.response.dataStatus.unavailableSourceCount).toBe(1);
   });
 
   it("keeps partial provider content when one source fails", async () => {
@@ -163,16 +161,12 @@ describe("portfolioNews cache", () => {
             feedsState: "partial",
             eventsState: "provider_unavailable",
             eodhdNewsAvailable: true,
+            eodhdLastUpdated: null,
             sourceCount: 1,
             activeSourceNames: ["CNBC Television"],
+            unavailableSourceCount: 1,
           },
-          sourceErrors: [
-            {
-              sourceId: "eodhd-news",
-              sourceName: "EODHD News",
-              error: "Some EODHD news requests failed.",
-            },
-          ],
+          sourceErrors: [],
         }),
       }),
     );
@@ -180,7 +174,7 @@ describe("portfolioNews cache", () => {
     const result = await tryRefreshPortfolioNews("user-1", [holding]);
 
     expect(result.response.dataStatus.feedsState).toBe("partial");
-    expect(result.response.sourceErrors).toHaveLength(1);
+    expect(result.response.dataStatus.unavailableSourceCount).toBe(1);
   });
 
   it("returns degraded content for unauthenticated users instead of throwing", async () => {

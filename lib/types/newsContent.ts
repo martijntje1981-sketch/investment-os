@@ -117,8 +117,12 @@ export type NewsDataStatus = {
   feedsState: NewsDataState;
   eventsState: EventsDataState;
   eodhdNewsAvailable: boolean;
+  /** ISO timestamp when wire headlines were last successfully fetched. */
+  eodhdLastUpdated: string | null;
   sourceCount: number;
   activeSourceNames: string[];
+  /** Internal count of sources that failed this refresh (not shown in UI). */
+  unavailableSourceCount: number;
 };
 
 export type NewsApiResponse = {

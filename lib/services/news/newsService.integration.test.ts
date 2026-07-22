@@ -102,6 +102,8 @@ describe("buildNewsResponse integration", () => {
       sourceErrors: [],
       fetchedAt: "2026-07-20T08:00:00.000Z",
       eodhdAvailable: false,
+      eodhdLastUpdated: null,
+      eodhdServedFromCache: false,
     });
 
     const { buildNewsResponse } = await import("@/lib/services/news/newsService");
@@ -133,6 +135,8 @@ describe("buildNewsResponse integration", () => {
       sourceErrors: [],
       fetchedAt: "2026-07-20T08:00:00.000Z",
       eodhdAvailable: true,
+      eodhdLastUpdated: "2026-07-20T08:00:00.000Z",
+      eodhdServedFromCache: false,
     });
 
     const { buildNewsResponse } = await import("@/lib/services/news/newsService");
@@ -164,12 +168,15 @@ describe("buildNewsResponse integration", () => {
       ],
       fetchedAt: "2026-07-20T08:00:00.000Z",
       eodhdAvailable: true,
+      eodhdLastUpdated: "2026-07-20T08:00:00.000Z",
+      eodhdServedFromCache: false,
     });
 
     const { buildNewsResponse } = await import("@/lib/services/news/newsService");
     const payload = await buildNewsResponse([holding]);
 
     expect(payload.dataStatus.feedsState).toBe("partial");
-    expect(payload.sourceErrors).toHaveLength(1);
+    expect(payload.dataStatus.unavailableSourceCount).toBe(1);
+    expect(payload.sourceErrors).toEqual([]);
   });
 });

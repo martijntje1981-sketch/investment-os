@@ -30,11 +30,20 @@ export async function buildNewsResponse(
   const profiles = await resolveNewsHoldingProfiles(holdings);
   const providerSymbols = providerSymbolsFromProfiles(profiles);
 
-  const [{ items, sourceErrors, fetchedAt, eodhdAvailable }, upcomingResult] =
-    await Promise.all([
-      fetchSharedRawNewsItems(providerSymbols),
-      fetchUpcomingMarketEvents(),
-    ]);
+  const [
+    {
+      items,
+      sourceErrors,
+      fetchedAt,
+      eodhdAvailable,
+      eodhdLastUpdated,
+      eodhdServedFromCache,
+    },
+    upcomingResult,
+  ] = await Promise.all([
+    fetchSharedRawNewsItems(providerSymbols),
+    fetchUpcomingMarketEvents(),
+  ]);
 
   const financialItems = filterFinancialNewsItems(items);
   const categorized = assignMarketCategories(financialItems);
@@ -57,14 +66,19 @@ export async function buildNewsResponse(
     new Set(enriched.map((item) => item.sourceName)),
   );
 
+  const unavailableSourceCount =
+    sourceErrors.length + (!eodhdAvailable && !eodhdServedFromCache ? 1 : 0);
+
+  const wireUnavailable = !eodhdAvailable;
+
   const feedsState =
     enriched.length === 0
-      ? sourceErrors.length > 0
-        ? "unavailable"
-        : "unavailable"
-      : sourceErrors.length > 0
-        ? "partial"
-        : "live";
+      ? "unavailable"
+      : eodhdServedFromCache && wireUnavailable && eodhdLastUpdated
+        ? "cached"
+        : sourceErrors.length > 0 || (wireUnavailable && !eodhdServedFromCache)
+          ? "partial"
+          : "live";
 
   const marketBrief = buildTodaysMarketBrief(
     portfolioNews,
@@ -86,10 +100,12 @@ export async function buildNewsResponse(
       feedsState,
       eventsState: upcomingResult.state,
       eodhdNewsAvailable: eodhdAvailable,
+      eodhdLastUpdated,
       sourceCount: activeSourceNames.length,
       activeSourceNames,
+      unavailableSourceCount,
     },
-    sourceErrors,
+    sourceErrors: [],
     fetchedAt,
   };
 }

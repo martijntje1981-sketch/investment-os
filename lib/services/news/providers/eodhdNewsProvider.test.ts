@@ -15,7 +15,7 @@ describe("eodhdNewsProvider", () => {
 
     expect(result.items).toEqual([]);
     expect(result.providerAvailable).toBe(false);
-    expect(result.error).toContain("API key");
+    expect(result.error).toBe("wire_news_unconfigured");
   });
 
   it("maps valid EODHD articles with publication time and symbols", async () => {

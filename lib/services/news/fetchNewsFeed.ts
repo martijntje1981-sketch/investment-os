@@ -44,6 +44,8 @@ export async function fetchSharedRawNewsItems(providerSymbols: string[]): Promis
   sourceErrors: Array<{ sourceId: string; sourceName: string; error: string }>;
   fetchedAt: string;
   eodhdAvailable: boolean;
+  eodhdLastUpdated: string | null;
+  eodhdServedFromCache: boolean;
 }> {
   const fetchedAt = new Date().toISOString();
 
@@ -53,11 +55,13 @@ export async function fetchSharedRawNewsItems(providerSymbols: string[]): Promis
   ]);
 
   const sourceErrors = [...youtube.sourceErrors];
+
   if (eodhd.error) {
-    sourceErrors.push({
-      sourceId: eodhd.sourceId,
-      sourceName: eodhd.sourceName,
-      error: eodhd.error,
+    console.info("[news] wire_news_source_unavailable", {
+      errorCode: eodhd.error,
+      servedFromCache: eodhd.servedFromCache,
+      lastSuccessfulUpdate: eodhd.lastSuccessfulUpdate,
+      diagnostics: eodhd.diagnostics,
     });
   }
 
@@ -66,6 +70,8 @@ export async function fetchSharedRawNewsItems(providerSymbols: string[]): Promis
     sourceErrors,
     fetchedAt,
     eodhdAvailable: eodhd.providerAvailable,
+    eodhdLastUpdated: eodhd.lastSuccessfulUpdate,
+    eodhdServedFromCache: eodhd.servedFromCache,
   };
 }
 

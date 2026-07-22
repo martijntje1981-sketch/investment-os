@@ -6,7 +6,7 @@ import { BriefcaseBusiness, Globe2 } from "lucide-react";
 import { CollapsibleMarketVideos } from "@/components/news/CollapsibleMarketVideos";
 import { MarketCategoryFilters } from "@/components/news/MarketCategoryFilters";
 import { NewsArticleCard } from "@/components/news/NewsArticleCard";
-import { NewsDataStatusBanner } from "@/components/news/NewsDataStatusBanner";
+import { NewsDataStatusBanner, countNewsHubVerifiedItems } from "@/components/news/NewsDataStatusBanner";
 import { NewsEmptyState } from "@/components/news/NewsEmptyState";
 import { NewsHubTabs } from "@/components/news/NewsHubTabs";
 import { NewsSectionHeader } from "@/components/news/NewsSectionHeader";
@@ -86,6 +86,11 @@ export function NewsHubContent({
     });
   }
 
+  const verifiedItemCount = useMemo(
+    () => countNewsHubVerifiedItems(payload),
+    [payload],
+  );
+
   return (
     <div className="space-y-6 sm:space-y-8">
       <TodaysMarketBriefHero
@@ -98,20 +103,9 @@ export function NewsHubContent({
         dataStatus={payload.dataStatus}
         fetchedAt={payload.fetchedAt}
         isStale={isStale}
+        verifiedItemCount={verifiedItemCount}
+        sourceErrorCount={payload.dataStatus.unavailableSourceCount}
       />
-
-      {payload.sourceErrors?.length ? (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          <p className="font-semibold">Some sources are temporarily unavailable.</p>
-          <ul className="mt-2 space-y-1">
-            {payload.sourceErrors.map((sourceError) => (
-              <li key={`${sourceError.sourceId}:${sourceError.sourceName}`}>
-                {sourceError.sourceName}: {sourceError.error}
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
 
       <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500 sm:text-sm">
         Last refreshed: {formatNewsRefreshedAt(payload.fetchedAt)}

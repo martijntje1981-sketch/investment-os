@@ -32,8 +32,10 @@ describe("newsResponseFactory", () => {
         feedsState: "unavailable",
         eventsState: "provider_unavailable",
         eodhdNewsAvailable: false,
+        eodhdLastUpdated: null,
         sourceCount: 0,
         activeSourceNames: [],
+        unavailableSourceCount: 0,
       },
       sourceErrors: [],
       fetchedAt: "2026-07-20T08:00:00.000Z",
@@ -56,6 +58,8 @@ describe("safeBuildNewsResponse", () => {
         sourceErrors: [],
         fetchedAt: "2026-07-20T08:00:00.000Z",
         eodhdAvailable: false,
+        eodhdLastUpdated: null,
+        eodhdServedFromCache: false,
       }),
     }));
     vi.doMock("@/lib/services/news/upcomingEvents", () => ({

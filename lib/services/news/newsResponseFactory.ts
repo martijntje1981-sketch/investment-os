@@ -28,8 +28,10 @@ export function createDegradedNewsResponse(input?: {
       feedsState: "unavailable",
       eventsState: "provider_unavailable",
       eodhdNewsAvailable: false,
+      eodhdLastUpdated: null,
       sourceCount: 0,
       activeSourceNames: [],
+      unavailableSourceCount: 0,
     },
     sourceErrors,
     fetchedAt,
@@ -57,6 +59,11 @@ export function coerceNewsApiResponse(
       marketVideos: value.marketVideos ?? [],
       upcomingEvents: value.upcomingEvents ?? [],
       sourceErrors: value.sourceErrors ?? [],
+      dataStatus: {
+        ...value.dataStatus,
+        eodhdLastUpdated: value.dataStatus.eodhdLastUpdated ?? null,
+        unavailableSourceCount: value.dataStatus.unavailableSourceCount ?? 0,
+      },
     };
   }
 
