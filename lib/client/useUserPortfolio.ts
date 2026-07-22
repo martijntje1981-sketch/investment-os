@@ -8,7 +8,6 @@ import {
   loadUserPortfolioHoldings,
   recoverLegacyPortfolioToUser,
   dismissLegacyPortfolioRecovery,
-  tryRefreshPortfolioPrices,
   writePortfolioToStorage,
   type LegacyRecoveryOffer,
   type StoredPortfolioHolding,
@@ -382,45 +381,12 @@ export function useUserPortfolio() {
   );
 
   useEffect(() => {
-    if (!authReady || !userSub || !portfolioReady || holdings.length === 0) {
+    if (!authReady || !userSub) {
       return;
     }
 
-    let cancelled = false;
-
-    const refreshPrices = async () => {
-      const current = loadUserPortfolioHoldings(userSub);
-      if (current.length === 0 || cancelled) {
-        return;
-      }
-
-      const result = await tryRefreshPortfolioPrices(userSub, current, {
-        skipIfCacheFresh: true,
-      });
-      if (cancelled || !result.updated) {
-        return;
-      }
-
-      saveHoldings(result.holdings);
-    };
-
-    void refreshPrices();
-
-    const handleRefresh = () => {
-      void refreshPrices();
-    };
-
-    window.addEventListener("focus", handleRefresh);
-    window.addEventListener("storage", handleRefresh);
-
-    return () => {
-      cancelled = true;
-      window.removeEventListener("focus", handleRefresh);
-      window.removeEventListener("storage", handleRefresh);
-    };
-    // Intentionally omit holdings.length — navigation must not re-trigger price refresh.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authReady, portfolioReady, saveHoldings, userSub]);
+    setHoldings(loadUserPortfolioHoldings(userSub));
+  }, [authReady, portfolioReady, userSub]);
 
   const migratePortfolio = useCallback(async () => {
     if (!userSub || syncRequestRef.current) return false;

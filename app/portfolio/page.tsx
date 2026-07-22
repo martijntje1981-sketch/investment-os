@@ -43,12 +43,14 @@ import {
   lookupManualHoldingListing,
 } from "@/lib/client/manualHoldingMatch";
 import {
-  countQuotablePriceHoldings,
+  buildLiveRefreshPreviewMessage,
+  countUniqueQuotableProviderSymbols,
+  refreshLivePortfolioPrices,
+} from "@/lib/client/livePortfolioPriceRefresh";
+import {
   normalizeHoldingForSave,
-  tryRefreshPortfolioPrices,
   type StoredPortfolioHolding,
 } from "@/lib/client/portfolioPricing";
-import { NO_QUOTABLE_HOLDINGS_MESSAGE } from "@/lib/services/prices/types";
 import { findDividendQuoteForHolding } from "@/lib/client/portfolioDividends";
 import { findAnalystQuoteForHolding } from "@/lib/client/portfolioAnalyst";
 import {
@@ -135,45 +137,24 @@ export default function PortfolioPage() {
   const [lookupUnavailable, setLookupUnavailable] = useState(false);
   const [editorError, setEditorError] = useState<string | null>(null);
 
-  const refreshPrices = useCallback(async (options?: { forceRefresh?: boolean }) => {
+  const refreshPrices = useCallback(async () => {
     if (!userSub) return;
+    const uniqueCount = countUniqueQuotableProviderSymbols(holdings, userSub);
+    if (uniqueCount === 0) {
+      setMessage(
+        "No holdings are eligible for live pricing yet. Add a matched listing or provider symbol, then refresh again.",
+      );
+      return;
+    }
+
+    setMessage(buildLiveRefreshPreviewMessage(uniqueCount));
     setIsRefreshing(true);
     try {
-      const quotableCount = countQuotablePriceHoldings(holdings, userSub);
-      const result = await tryRefreshPortfolioPrices(userSub, holdings, {
-        skipIfCacheFresh: !options?.forceRefresh,
-        forceRefresh: options?.forceRefresh ?? false,
-      });
-      if (result.message === NO_QUOTABLE_HOLDINGS_MESSAGE) {
-        setMessage(
-          quotableCount === 0
-            ? "No holdings are eligible for live pricing yet. Add a matched listing or provider symbol, then refresh again."
-            : result.message,
-        );
-        return;
-      }
+      const result = await refreshLivePortfolioPrices(userSub, holdings);
       if (result.updated) {
         saveHoldings(result.holdings);
-        const updatedCount = result.holdings.filter(
-          (holding, index) =>
-            holding.assetType !== "cash" &&
-            holding.currentPrice !== holdings[index]?.currentPrice,
-        ).length;
-        setMessage(
-          updatedCount > 0
-            ? `${updatedCount} market prices updated via providerSymbol. Cash remains fixed at its entered value.`
-            : "Market prices refreshed. Cash remains fixed at its entered value.",
-        );
-      } else if (result.rateLimited && quotableCount > 0) {
-        setMessage(
-          "Market data is temporarily rate-limited. Your holdings remain saved and unvalued positions stay excluded from totals.",
-        );
-      } else {
-        setMessage(
-          result.message ??
-            "Market data unavailable. Stored values remain visible.",
-        );
       }
+      setMessage(result.message);
     } finally {
       setIsRefreshing(false);
     }
@@ -291,22 +272,6 @@ export default function PortfolioPage() {
 
     saveHoldings(next);
 
-    if (
-      userSub &&
-      cleaned.assetType !== "cash" &&
-      cleaned.providerSymbol &&
-      cleaned.currentPrice <= 0
-    ) {
-      void tryRefreshPortfolioPrices(userSub, next, {
-        onlyProviderSymbols: [cleaned.providerSymbol],
-        skipIfCacheFresh: true,
-      }).then((result) => {
-        if (result.updated) {
-          saveHoldings(result.holdings);
-        }
-      });
-    }
-
     if (cleaned.assetType !== "cash" && isEstimatedHoldingPrice(cleaned)) {
       setMessage(
         "Holding saved with an estimated price until live market data is available.",
@@ -337,10 +302,7 @@ export default function PortfolioPage() {
             <div className="flex flex-wrap gap-2">
               <button onClick={() => void refreshPrices()} disabled={isRefreshing} className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold disabled:opacity-50">
                 <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
-                Refresh prices
-              </button>
-              <button onClick={() => void refreshPrices({ forceRefresh: true })} disabled={isRefreshing} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-700 disabled:opacity-50">
-                Hard refresh
+                Refresh live prices
               </button>
               <button onClick={() => openAdd("cash")} className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold">
                 <Banknote className="h-4 w-4" /> Add cash

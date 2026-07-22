@@ -89,6 +89,17 @@ export type PriceApiResponse = {
   errors?: string[];
   requested?: number;
   received?: number;
+  lastSuccessfulUpdate?: string | null;
+  quoteSource?: "cache" | "provider" | "mixed";
+  refreshSummary?: {
+    uniqueSymbols?: string[];
+    cacheHits?: number;
+    providerCallsRequired?: number;
+    providerCallsMade?: number;
+    skippedSymbols?: string[];
+    circuitOpen?: boolean;
+    estimateOnly?: boolean;
+  };
 };
 
 export type CachedPortfolioPrice = {
@@ -102,6 +113,9 @@ export type CachedPortfolioPrice = {
   currency?: string | null;
   dataStatus?: "live" | "delayed" | "stale" | "unavailable";
   updatedAt?: string;
+  provider?: string | null;
+  quoteSource?: "cache" | "provider" | "mixed" | null;
+  lastSuccessfulUpdate?: string | null;
 };
 
 export type GoalSettings = {

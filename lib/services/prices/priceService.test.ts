@@ -165,7 +165,7 @@ describe("PriceService", () => {
     expect(provider.calls).toEqual(["VWCE.XETRA"]);
   });
 
-  it("returns stale cache immediately and refreshes once in the background", async () => {
+  it("returns stale cache without background provider calls by default", async () => {
     const provider = createMockProvider(async (symbol) =>
       mockRawQuote(symbol, 120, 115),
     );
@@ -174,15 +174,13 @@ describe("PriceService", () => {
     await getNormalizedQuote(VWCE);
     expect(provider.calls).toHaveLength(1);
 
-    vi.advanceTimersByTime(31 * 60 * 1000);
+    vi.advanceTimersByTime(12 * 60 * 60 * 1000 + 30 * 60 * 1000);
 
     const stale = await getNormalizedQuote(VWCE);
     expect(stale.isStale).toBe(true);
     expect(stale.cacheStatus).toBe("stale");
     expect(stale.currentPrice).toBe(120);
-
-    await vi.runAllTimersAsync();
-    expect(provider.calls).toEqual(["VWCE.XETRA", "VWCE.XETRA"]);
+    expect(provider.calls).toEqual(["VWCE.XETRA"]);
   });
 
   it("deduplicates duplicate symbols in a batch request", async () => {
@@ -259,7 +257,7 @@ describe("PriceService", () => {
     await getNormalizedQuote(VWCE);
     expect(provider.calls).toHaveLength(1);
 
-    vi.advanceTimersByTime(31 * 60 * 1000);
+    vi.advanceTimersByTime(12 * 60 * 60 * 1000 + 30 * 60 * 1000);
 
     provider.getQuote = vi.fn(async () => {
       throw new ProviderQuoteError("provider_error", "provider down", 500);

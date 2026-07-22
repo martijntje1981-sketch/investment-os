@@ -1,0 +1,279 @@
+/**
+ * Explicit, quota-safe live price refresh for the user's portfolio.
+ * Only this path should be used for manual "Refresh live prices" actions.
+ */
+
+import {
+  applyCachedPrices,
+  applyPricesToHoldings,
+  buildPriceRequestPayload,
+  filterQuotablePricePayloadForRefresh,
+  isLivePriceRefreshInFlight,
+  isRateLimitedPriceError,
+  normalizePriceApiQuotes,
+  writePriceCache,
+} from "@/lib/client/portfolioPricing";
+import { NO_QUOTABLE_HOLDINGS_MESSAGE } from "@/lib/services/prices/types";
+import type {
+  PriceApiResponse,
+  StoredPortfolioHolding,
+} from "@/lib/types/portfolioStorage";
+
+export const LIVE_PRICE_REFRESH_COOLDOWN_MS = 60_000;
+
+export type LivePriceRefreshResult<T extends StoredPortfolioHolding> = {
+  holdings: T[];
+  updated: boolean;
+  uniqueRequested: number;
+  updatedCount: number;
+  totalQuotable: number;
+  message: string;
+  quotaExhausted: boolean;
+  inProgress: boolean;
+  cooldownRemainingMs: number;
+};
+
+let lastLiveRefreshCompletedAt = 0;
+let liveRefreshInFlight: Promise<LivePriceRefreshResult<StoredPortfolioHolding>> | null =
+  null;
+
+export function countUniqueQuotableProviderSymbols(
+  holdings: StoredPortfolioHolding[],
+  userSub?: string,
+): number {
+  const symbols = new Set<string>();
+  for (const item of buildPriceRequestPayload(holdings, userSub)) {
+    const providerSymbol = item.providerSymbol?.trim().toUpperCase();
+    if (providerSymbol) {
+      symbols.add(providerSymbol);
+    }
+  }
+  return symbols.size;
+}
+
+export function getLivePriceRefreshCooldownRemainingMs(
+  now = Date.now(),
+): number {
+  if (lastLiveRefreshCompletedAt <= 0) {
+    return 0;
+  }
+  return Math.max(0, LIVE_PRICE_REFRESH_COOLDOWN_MS - (now - lastLiveRefreshCompletedAt));
+}
+
+export function buildLiveRefreshPreviewMessage(uniqueCount: number): string {
+  return `This will request live prices for ${uniqueCount} unique holdings.`;
+}
+
+function buildLiveRefreshSuccessMessage(updatedCount: number): string {
+  return `Live prices updated for ${updatedCount} holdings.`;
+}
+
+function buildPartialRefreshMessage(
+  updatedCount: number,
+  totalQuotable: number,
+): string {
+  return `Updated ${updatedCount} of ${totalQuotable} holdings. Last known prices are shown for the remainder.`;
+}
+
+function buildQuotaExhaustedMessage(): string {
+  return "The market-data limit has been reached. Your last available prices remain visible.";
+}
+
+function countUpdatedHoldings<T extends StoredPortfolioHolding>(
+  before: T[],
+  after: T[],
+): number {
+  return after.filter((holding, index) => {
+    const previous = before[index];
+    if (!previous || holding.assetType === "cash") {
+      return false;
+    }
+    return holding.currentPrice !== previous.currentPrice;
+  }).length;
+}
+
+function isQuotaExhaustedResponse(data: PriceApiResponse, message: string): boolean {
+  if (isRateLimitedPriceError(message)) {
+    return true;
+  }
+  return Boolean(data.refreshSummary?.circuitOpen);
+}
+
+export async function refreshLivePortfolioPrices<
+  T extends StoredPortfolioHolding,
+>(userSub: string, holdings: T[]): Promise<LivePriceRefreshResult<T>> {
+  const totalQuotable = countUniqueQuotableProviderSymbols(holdings, userSub);
+  const uniqueRequested = totalQuotable;
+
+  if (holdings.length === 0 || totalQuotable === 0) {
+    return {
+      holdings: applyCachedPrices(userSub, holdings),
+      updated: false,
+      uniqueRequested: 0,
+      updatedCount: 0,
+      totalQuotable: 0,
+      message: NO_QUOTABLE_HOLDINGS_MESSAGE,
+      quotaExhausted: false,
+      inProgress: false,
+      cooldownRemainingMs: 0,
+    };
+  }
+
+  const cooldownRemainingMs = getLivePriceRefreshCooldownRemainingMs();
+  if (cooldownRemainingMs > 0) {
+    return {
+      holdings: applyCachedPrices(userSub, holdings),
+      updated: false,
+      uniqueRequested,
+      updatedCount: 0,
+      totalQuotable,
+      message: "Live price refresh is cooling down. Your last available prices remain visible.",
+      quotaExhausted: false,
+      inProgress: false,
+      cooldownRemainingMs,
+    };
+  }
+
+  if (liveRefreshInFlight || isLivePriceRefreshInFlight()) {
+    return {
+      holdings: applyCachedPrices(userSub, holdings),
+      updated: false,
+      uniqueRequested,
+      updatedCount: 0,
+      totalQuotable,
+      message: "Live price refresh already in progress.",
+      quotaExhausted: false,
+      inProgress: true,
+      cooldownRemainingMs: getLivePriceRefreshCooldownRemainingMs(),
+    };
+  }
+
+  const quotablePayload = filterQuotablePricePayloadForRefresh(
+    buildPriceRequestPayload(holdings, userSub),
+  );
+
+  const run = (async (): Promise<LivePriceRefreshResult<T>> => {
+    const response = await fetch("/api/prices", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        holdings: quotablePayload,
+        forceRefresh: false,
+        estimateOnly: false,
+      }),
+      cache: "no-store",
+    });
+
+    const data = (await response.json()) as PriceApiResponse;
+
+    if (!response.ok && !data.success && !data.refreshSummary) {
+      throw new Error(data.error ?? data.message ?? "Market data unavailable");
+    }
+
+    const normalizedQuotes = normalizePriceApiQuotes(data.prices);
+    const cachedHoldings = applyCachedPrices(userSub, holdings);
+
+    if (isQuotaExhaustedResponse(data, data.message ?? data.error ?? "")) {
+      lastLiveRefreshCompletedAt = Date.now();
+      return {
+        holdings: cachedHoldings,
+        updated: false,
+        uniqueRequested,
+        updatedCount: 0,
+        totalQuotable,
+        message: buildQuotaExhaustedMessage(),
+        quotaExhausted: true,
+        inProgress: false,
+        cooldownRemainingMs: getLivePriceRefreshCooldownRemainingMs(),
+      };
+    }
+
+    if (normalizedQuotes.length === 0) {
+      lastLiveRefreshCompletedAt = Date.now();
+      const received = data.received ?? 0;
+      return {
+        holdings: cachedHoldings,
+        updated: false,
+        uniqueRequested,
+        updatedCount: 0,
+        totalQuotable,
+        message:
+          received > 0
+            ? buildPartialRefreshMessage(received, totalQuotable)
+            : buildQuotaExhaustedMessage(),
+        quotaExhausted: received === 0,
+        inProgress: false,
+        cooldownRemainingMs: getLivePriceRefreshCooldownRemainingMs(),
+      };
+    }
+
+    writePriceCache(userSub, data.prices, {
+      lastSuccessfulUpdate: data.lastSuccessfulUpdate ?? new Date().toISOString(),
+      quoteSource: data.quoteSource ?? "provider",
+    });
+
+    const refreshed = applyPricesToHoldings(holdings, data.prices, {
+      clearMissingDailyFields: true,
+    });
+    const updatedCount = Math.max(
+      countUpdatedHoldings(holdings, refreshed),
+      normalizedQuotes.length,
+    );
+    lastLiveRefreshCompletedAt = Date.now();
+
+    if (normalizedQuotes.length >= totalQuotable) {
+      return {
+        holdings: refreshed,
+        updated: true,
+        uniqueRequested,
+        updatedCount: normalizedQuotes.length,
+        totalQuotable,
+        message: buildLiveRefreshSuccessMessage(normalizedQuotes.length),
+        quotaExhausted: false,
+        inProgress: false,
+        cooldownRemainingMs: getLivePriceRefreshCooldownRemainingMs(),
+      };
+    }
+
+    return {
+      holdings: refreshed,
+      updated: updatedCount > 0,
+      uniqueRequested,
+      updatedCount,
+      totalQuotable,
+      message: buildPartialRefreshMessage(updatedCount, totalQuotable),
+      quotaExhausted: false,
+      inProgress: false,
+      cooldownRemainingMs: getLivePriceRefreshCooldownRemainingMs(),
+    };
+  })();
+
+  liveRefreshInFlight = run as Promise<LivePriceRefreshResult<StoredPortfolioHolding>>;
+
+  try {
+    return await run;
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Market data unavailable";
+    return {
+      holdings: applyCachedPrices(userSub, holdings),
+      updated: false,
+      uniqueRequested,
+      updatedCount: 0,
+      totalQuotable,
+      message: isRateLimitedPriceError(message)
+        ? buildQuotaExhaustedMessage()
+        : "Live prices could not be refreshed. Your last available prices remain visible.",
+      quotaExhausted: isRateLimitedPriceError(message),
+      inProgress: false,
+      cooldownRemainingMs: getLivePriceRefreshCooldownRemainingMs(),
+    };
+  } finally {
+    liveRefreshInFlight = null;
+  }
+}
+
+export function resetLivePriceRefreshStateForTests(): void {
+  lastLiveRefreshCompletedAt = 0;
+  liveRefreshInFlight = null;
+}

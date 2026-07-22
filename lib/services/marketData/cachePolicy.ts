@@ -28,13 +28,13 @@ export type MarketDataCachePolicy = {
 
 export const DEFAULT_MARKET_DATA_CACHE_POLICY: MarketDataCachePolicy = {
   quoteFreshMs: {
-    equityMarketHours: 30 * 60 * 1000,
-    equityOffHours: 6 * 60 * 60 * 1000,
+    equityMarketHours: 12 * 60 * 60 * 1000,
+    equityOffHours: 12 * 60 * 60 * 1000,
     crypto: 15 * 60 * 1000,
   },
   quoteStaleWindowMs: {
-    equityMarketHours: 60 * 60 * 1000,
-    equityOffHours: 24 * 60 * 60 * 1000,
+    equityMarketHours: 7 * 24 * 60 * 60 * 1000,
+    equityOffHours: 7 * 24 * 60 * 60 * 1000,
     crypto: 30 * 60 * 1000,
   },
   fxFreshMs: 60 * 60 * 1000,
@@ -48,7 +48,7 @@ export const DEFAULT_MARKET_DATA_CACHE_POLICY: MarketDataCachePolicy = {
 };
 
 /** Client-side guard before calling POST /api/prices on navigation. */
-export const CLIENT_PRICE_CACHE_FRESH_MS = 30 * 60 * 1000;
+export const CLIENT_PRICE_CACHE_FRESH_MS = 12 * 60 * 60 * 1000;
 
 export function isCryptoProviderSymbol(providerSymbol: string): boolean {
   const exchange = providerSymbol.split(".").pop()?.toUpperCase() ?? "";

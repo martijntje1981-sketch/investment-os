@@ -124,6 +124,15 @@ export type PriceRefreshOptions = {
 
 let refreshInFlight: Promise<unknown> | null = null;
 
+export function isLivePriceRefreshInFlight(): boolean {
+  return refreshInFlight !== null;
+}
+
+export async function waitForLivePriceRefreshCompletion(): Promise<void> {
+  if (!refreshInFlight) return;
+  await refreshInFlight.catch(() => undefined);
+}
+
 export function readPriceCacheUpdatedAt(userSub: string): number | null {
   assertUserSub(userSub);
 
@@ -179,6 +188,12 @@ function filterQuotablePricePayload(
   payload: PortfolioInstrumentPayload[],
 ): PortfolioInstrumentPayload[] {
   return payload.filter((item) => Boolean(item.providerSymbol?.trim()));
+}
+
+export function filterQuotablePricePayloadForRefresh(
+  payload: PortfolioInstrumentPayload[],
+): PortfolioInstrumentPayload[] {
+  return filterQuotablePricePayload(payload);
 }
 
 function resolveQuotableRefreshPayload(
@@ -414,6 +429,10 @@ export function applyPricesToHoldings<T extends StoredPortfolioHolding>(
 export function writePriceCache(
   userSub: string,
   quotes: PriceApiQuote[] | undefined,
+  metadata?: {
+    lastSuccessfulUpdate?: string | null;
+    quoteSource?: "cache" | "provider" | "mixed" | null;
+  },
 ): void {
   assertUserSub(userSub);
 
@@ -431,7 +450,11 @@ export function writePriceCache(
         typeof quote.changePercent === "number" ? quote.changePercent : undefined,
       currency: quote.currency ?? null,
       dataStatus: quote.dataStatus,
-      updatedAt: quote.updatedAt ?? undefined,
+      updatedAt: quote.updatedAt ?? metadata?.lastSuccessfulUpdate ?? undefined,
+      provider: quote.provider ?? null,
+      quoteSource: metadata?.quoteSource ?? "provider",
+      lastSuccessfulUpdate:
+        metadata?.lastSuccessfulUpdate ?? quote.updatedAt ?? null,
     }));
 
   localStorage.setItem(priceCacheKey(userSub), JSON.stringify(cache));

@@ -107,6 +107,10 @@ export type PriceRefreshLogSummary = {
   providerCallsMade: number;
   cacheHits: number;
   cacheMisses: number;
+  uniqueSymbols?: string[];
+  skippedSymbols?: string[];
+  circuitOpen?: boolean;
+  providerCallsRequired?: number | null;
 };
 
 export function logPriceRefreshSummary(summary: PriceRefreshLogSummary): void {

@@ -53,6 +53,7 @@ type PostBody = {
   holdings?: PriceHoldingInput[];
   forceRefresh?: boolean;
   onlyProviderSymbols?: string[];
+  estimateOnly?: boolean;
 };
 
 /**
@@ -74,8 +75,12 @@ export async function POST(request: Request) {
     const payload = await loadPricesForHoldings(holdings, {
       forceRefresh: body.forceRefresh ?? false,
       onlyProviderSymbols: body.onlyProviderSymbols,
+      estimateOnly: body.estimateOnly ?? false,
     });
-    const status = payload.success ? 200 : 503;
+    const status =
+      body.estimateOnly || payload.success
+        ? 200
+        : 503;
     return jsonResponse(payload, status);
   } catch (error) {
     console.error("Prices API POST error:", error);

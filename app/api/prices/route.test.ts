@@ -76,6 +76,7 @@ describe("POST /api/prices", () => {
       {
         forceRefresh: false,
         onlyProviderSymbols: undefined,
+        estimateOnly: false,
       },
     );
 

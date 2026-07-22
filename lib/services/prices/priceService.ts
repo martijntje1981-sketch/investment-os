@@ -51,6 +51,7 @@ import {
   resolveDefaultWatchlist,
   resolveQuotePriceTargets,
 } from "@/lib/services/prices/resolvePriceTargets";
+import { estimatePriceRefreshForTargets } from "@/lib/services/prices/estimatePriceRefresh";
 import {
   NO_QUOTABLE_HOLDINGS_MESSAGE,
   type HoldingPrice,
@@ -59,6 +60,7 @@ import {
   type PriceCurrency,
   type PriceHoldingInput,
   type PricePayload,
+  type PriceRefreshSummary,
   type ProviderFailureKind,
   type ResolvedPriceTarget,
 } from "@/lib/services/prices/types";
@@ -90,6 +92,8 @@ const FX_CACHE_TTL_MS = DEFAULT_MARKET_DATA_CACHE_POLICY.fxFreshMs;
 export type LoadPricesOptions = {
   forceRefresh?: boolean;
   onlyProviderSymbols?: string[];
+  allowBackgroundRefresh?: boolean;
+  estimateOnly?: boolean;
 };
 
 const DEFAULT_FX_RATES: FxRates = { EUR: 1, USD: null, GBP: null, CHF: null };
@@ -254,7 +258,12 @@ async function refreshQuoteInBackground(
   target: ResolvedPriceTarget,
   provider: MarketDataProvider,
   cacheKey: string,
+  enabled: boolean,
 ): Promise<void> {
+  if (!enabled) {
+    return;
+  }
+
   if (readNegativeCache(cacheKey) || isProviderCircuitOpen(provider.id)) {
     recordProviderCooldown(provider.id);
     return;
@@ -273,7 +282,7 @@ async function refreshQuoteInBackground(
 
 export async function getNormalizedQuote(
   target: ResolvedPriceTarget,
-  options?: { forceRefresh?: boolean },
+  options?: { forceRefresh?: boolean; allowBackgroundRefresh?: boolean },
 ): Promise<NormalizedProviderQuote> {
   const provider = getActiveRouter().selectProvider(target.providerSymbol);
   if (!provider) {
@@ -343,7 +352,12 @@ export async function getNormalizedQuote(
       providerId: provider.id,
       providerSymbol: target.providerSymbol,
     });
-    void refreshQuoteInBackground(target, provider, cacheKey);
+    void refreshQuoteInBackground(
+      target,
+      provider,
+      cacheKey,
+      options?.allowBackgroundRefresh ?? false,
+    );
     return cached.quote;
   }
 
@@ -385,13 +399,44 @@ async function quoteToHoldingPrice(
   return convertQuoteToHoldingPrice(target, quote, fxRates);
 }
 
+function resolveQuoteSource(
+  prices: HoldingPrice[],
+  metricsBefore: ReturnType<typeof getPriceServiceMetricsSnapshot>,
+): "cache" | "provider" | "mixed" {
+  const providerCallsMade =
+    getPriceServiceMetricsSnapshot().providerCalls - metricsBefore.providerCalls;
+  if (providerCallsMade <= 0) {
+    return "cache";
+  }
+  if (prices.length === 0) {
+    return "provider";
+  }
+  const cacheHits =
+    getPriceServiceMetricsSnapshot().cacheHits - metricsBefore.cacheHits;
+  return cacheHits > 0 ? "mixed" : "provider";
+}
+
 function buildPricePayload(
   prices: HoldingPrice[],
   errors: string[],
   requested: number,
   fxRates: FxRates,
-  options?: { message?: string; forceSuccess?: boolean },
+  options?: {
+    message?: string;
+    forceSuccess?: boolean;
+    metricsBefore?: ReturnType<typeof getPriceServiceMetricsSnapshot>;
+    refreshSummary?: PriceRefreshSummary;
+  },
 ): PricePayload {
+  const metricsBefore =
+    options?.metricsBefore ?? getPriceServiceMetricsSnapshot();
+  const lastSuccessfulUpdate =
+    prices
+      .map((price) => price.updatedAt)
+      .filter(Boolean)
+      .sort()
+      .at(-1) ?? null;
+
   return {
     success: options?.forceSuccess ?? prices.length > 0,
     message: options?.message,
@@ -412,6 +457,9 @@ function buildPricePayload(
       durationSeconds: Math.round(getQuoteCacheTtlMs("VWCE.XETRA") / 1000),
     },
     metrics: getPriceServiceMetricsSnapshot(),
+    lastSuccessfulUpdate,
+    quoteSource: resolveQuoteSource(prices, metricsBefore),
+    refreshSummary: options?.refreshSummary,
   };
 }
 
@@ -431,16 +479,22 @@ function logRefreshOutcome(
   skipped: number,
   quotable: number,
   metricsBefore: ReturnType<typeof getPriceServiceMetricsSnapshot>,
+  refreshSummary?: PriceRefreshSummary,
 ): void {
   const metricsAfter = getPriceServiceMetricsSnapshot();
-  logPriceRefreshSummary({
+  const summary = {
     holdingsRequested,
     holdingsSkipped: skipped,
     holdingsQuotable: quotable,
     providerCallsMade: metricsAfter.providerCalls - metricsBefore.providerCalls,
     cacheHits: metricsAfter.cacheHits - metricsBefore.cacheHits,
     cacheMisses: metricsAfter.cacheMisses - metricsBefore.cacheMisses,
-  });
+    uniqueSymbols: refreshSummary?.uniqueSymbols ?? [],
+    skippedSymbols: refreshSummary?.skippedSymbols ?? [],
+    circuitOpen: refreshSummary?.circuitOpen ?? false,
+    providerCallsRequired: refreshSummary?.providerCallsRequired ?? null,
+  };
+  logPriceRefreshSummary(summary);
 }
 
 export async function loadPricesForTargets(
@@ -506,12 +560,32 @@ export async function loadPricesForHoldings(
     return payload;
   }
 
+  const estimate = await estimatePriceRefreshForTargets(targets);
+  if (options?.estimateOnly) {
+    logRefreshOutcome(holdingsRequested, skipped, targets.length, metricsBefore, estimate);
+    return buildPricePayload([], resolutionErrors, holdingsRequested, DEFAULT_FX_RATES, {
+      forceSuccess: true,
+      metricsBefore,
+      refreshSummary: estimate,
+      message: "Price refresh estimate ready.",
+    });
+  }
+
   const payload = await loadPricesForTargets(targets, options);
-  logRefreshOutcome(holdingsRequested, skipped, targets.length, metricsBefore);
+  const refreshSummary: PriceRefreshSummary = {
+    ...estimate,
+    providerCallsMade:
+      (payload.metrics?.providerCalls ?? 0) - metricsBefore.providerCalls,
+  };
+
+  logRefreshOutcome(holdingsRequested, skipped, targets.length, metricsBefore, refreshSummary);
   return {
     ...payload,
     errors: [...resolutionErrors, ...payload.errors],
     requested: holdingsRequested,
+    refreshSummary,
+    quoteSource: payload.quoteSource,
+    lastSuccessfulUpdate: payload.lastSuccessfulUpdate,
   };
 }
 

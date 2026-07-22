@@ -118,6 +118,19 @@ export type PricePayload = {
     durationSeconds: number;
   };
   metrics?: PriceServiceMetricsSnapshot;
+  lastSuccessfulUpdate?: string | null;
+  quoteSource?: "cache" | "provider" | "mixed";
+  refreshSummary?: PriceRefreshSummary;
+};
+
+export type PriceRefreshSummary = {
+  uniqueSymbols: string[];
+  cacheHits: number;
+  providerCallsRequired: number;
+  providerCallsMade: number;
+  skippedSymbols: string[];
+  circuitOpen: boolean;
+  estimateOnly?: boolean;
 };
 
 export type PriceServiceMetricsSnapshot = {
