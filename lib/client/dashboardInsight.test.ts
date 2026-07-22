@@ -6,7 +6,8 @@ import {
 } from "@/lib/client/dashboardInsight";
 import { buildDashboardSummary } from "@/lib/client/dashboardSummary";
 import {
-  AFTER_MARKET_CLOSE,
+  DAILY_PERFORMANCE_AFTER_CLOSE,
+  formatTodayMoveDetail,
   formatTodayMoveValue,
   RANKING_AFTER_CLOSE,
 } from "@/lib/client/investorOverviewCopy";
@@ -103,7 +104,15 @@ describe("investor overview copy", () => {
         performanceCoverageComplete: false,
         formatValue: () => "+€100",
       }),
-    ).toBe(AFTER_MARKET_CLOSE);
+    ).toBe("—");
+    expect(
+      formatTodayMoveDetail({
+        hasDailyData: false,
+        performanceCoverageComplete: false,
+        formatPercent: () => "+1.2%",
+      }),
+    ).toBe(DAILY_PERFORMANCE_AFTER_CLOSE);
+    expect(RANKING_AFTER_CLOSE).toContain("ranking");
     expect(RANKING_AFTER_CLOSE).toContain("after market close");
   });
 });
@@ -156,11 +165,13 @@ describe("home and dashboard hierarchy", () => {
     expect(home).not.toContain("BottomNavigation");
     expect(home).toContain("readNewsCache");
     expect(home).toContain("HomeIntelligenceSummary");
+    expect(home).toContain("TodaysDecisionBlock");
     expect(snapshot).toContain("Total portfolio value");
     expect(snapshot).toContain("Today&apos;s %");
     expect(snapshot).not.toContain("Awaiting data");
     expect(snapshot).toContain("RANKING_AFTER_CLOSE");
     expect(intelligence).toContain("slice(0, 3)");
+    expect(intelligence).toContain("TodaysDecisionBlock");
     expect(intelligence).not.toContain("Portfolio impact");
     expect(intelligence).not.toContain("Must watch");
   });

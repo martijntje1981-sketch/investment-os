@@ -29,6 +29,7 @@ type PortfolioSnapshotProps = {
   worstHolding: Holding;
   lastUpdatedAt?: string | null;
   isRefreshing?: boolean;
+  todaysDecision?: ReactNode;
   intelligenceSummary?: ReactNode;
 };
 
@@ -150,6 +151,7 @@ export function PortfolioSnapshot({
   worstHolding,
   lastUpdatedAt,
   isRefreshing = false,
+  todaysDecision,
   intelligenceSummary,
 }: PortfolioSnapshotProps) {
   const showTodayMove = hasDailyData && performanceCoverageComplete;
@@ -218,6 +220,12 @@ export function PortfolioSnapshot({
             </p>
           </div>
         </div>
+
+        {todaysDecision ? (
+          <div className="border-t border-slate-100 px-5 py-4 sm:px-6">
+            {todaysDecision}
+          </div>
+        ) : null}
 
         {intelligenceSummary ? (
           <div className="border-t border-slate-100 px-5 py-4 sm:px-6">

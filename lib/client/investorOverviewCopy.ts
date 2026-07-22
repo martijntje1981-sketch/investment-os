@@ -1,8 +1,9 @@
 /** Friendly display copy for Home and Dashboard — presentation only. */
 
-export const AFTER_MARKET_CLOSE = "Available after market close";
-export const WAITING_MARKET_CLOSE = "Waiting for today's market close";
-export const RANKING_AFTER_CLOSE = "Ranking available after market close.";
+export const DAILY_PERFORMANCE_AFTER_CLOSE =
+  "Today's performance will appear after market close.";
+export const RANKING_AFTER_CLOSE =
+  "Today's ranking will appear after market close.";
 
 export function formatTodayMoveValue(input: {
   hasDailyData: boolean;
@@ -17,7 +18,7 @@ export function formatTodayMoveValue(input: {
     return "Partial update";
   }
 
-  return AFTER_MARKET_CLOSE;
+  return "—";
 }
 
 export function formatTodayMoveDetail(input: {
@@ -34,7 +35,7 @@ export function formatTodayMoveDetail(input: {
     return input.coverageMessage;
   }
 
-  return WAITING_MARKET_CLOSE;
+  return DAILY_PERFORMANCE_AFTER_CLOSE;
 }
 
 export function formatMoverUnavailableMessage(

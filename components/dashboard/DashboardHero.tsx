@@ -12,6 +12,7 @@ import type { DashboardSummary } from "@/lib/client/dashboardSummary";
 import {
   formatTodayMoveDetail,
   formatTodayMoveValue,
+  RANKING_AFTER_CLOSE,
 } from "@/lib/client/investorOverviewCopy";
 
 function signedCurrency(value: number) {
@@ -158,7 +159,7 @@ export function DashboardMoverCard({
         <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
           {label}
         </p>
-        <p className="mt-2 text-base text-slate-500">Available after market close.</p>
+        <p className="mt-2 text-base text-slate-500">{RANKING_AFTER_CLOSE}</p>
       </article>
     );
   }

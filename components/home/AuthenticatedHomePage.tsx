@@ -3,12 +3,19 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { BriefcaseBusiness, Upload } from "lucide-react";
+import { TodaysDecisionBlock } from "@/components/investor/TodaysDecisionBlock";
 import { PortfolioSnapshot } from "@/components/home/PortfolioSnapshot";
 import { HomeIntelligenceSummary } from "@/components/home/HomeIntelligenceSummary";
 import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
 import { summarizeAuthenticatedHomePortfolio } from "@/lib/client/authenticatedHomePortfolio";
 import { readNewsCache } from "@/lib/client/portfolioNews";
-import { deriveInvestmentIntelligence } from "@/lib/client/useInvestmentIntelligence";
+import {
+  areMajorMarketsClosed,
+  buildTodaysDecision,
+} from "@/lib/client/todaysDecision";
+import { useGoalProgress } from "@/lib/client/useGoalProgress";
+import { buildInvestmentIntelligence } from "@/lib/services/news/investmentIntelligence";
+import { useUserGoal } from "@/lib/client/useUserGoal";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 
 function getDailyGreeting() {
@@ -27,18 +34,37 @@ export default function AuthenticatedHomePage() {
     recoverPortfolio,
     dismissRecovery,
   } = useUserPortfolio();
+  const { goal, hasSavedGoal } = useUserGoal();
+  const goalProgress = useGoalProgress({ holdings, goal, hasSavedGoal });
 
   const summary = useMemo(
     () => summarizeAuthenticatedHomePortfolio(holdings),
     [holdings],
   );
 
-  const cachedIntelligence = useMemo(() => {
+  const cachedBriefing = useMemo(() => {
     if (!userSub) return null;
     const cached = readNewsCache(userSub);
     if (!cached) return null;
-    return deriveInvestmentIntelligence(cached.response);
+    return {
+      intelligence: buildInvestmentIntelligence(cached.response),
+      upcomingEvents: cached.response.upcomingEvents,
+    };
   }, [userSub]);
+
+  const marketsClosed = useMemo(() => areMajorMarketsClosed(), []);
+
+  const todaysDecision = useMemo(
+    () =>
+      buildTodaysDecision({
+        intelligence: cachedBriefing?.intelligence ?? null,
+        intelligenceFromCache: Boolean(cachedBriefing),
+        upcomingEvents: cachedBriefing?.upcomingEvents,
+        goalProgress,
+        marketsClosed,
+      }),
+    [cachedBriefing, goalProgress, marketsClosed],
+  );
 
   const greeting = useMemo(() => getDailyGreeting(), []);
 
@@ -87,25 +113,27 @@ export default function AuthenticatedHomePage() {
             </Link>
           </section>
         ) : (
-          <div className="space-y-4">
-            <PortfolioSnapshot
-              totalValue={summary.totalValue}
-              todayChange={summary.todayChange}
-              todayPercent={summary.todayPercent}
-              hasDailyData={summary.hasDailyData}
-              performanceCoverageComplete={summary.performanceCoverageComplete}
-              dailyPerformanceCoverageMessage={summary.dailyPerformanceCoverageMessage}
-              bestHolding={summary.bestHolding}
-              worstHolding={summary.worstHolding}
-              lastUpdatedAt={summary.latestUpdatedAt}
-              intelligenceSummary={
-                <HomeIntelligenceSummary
-                  intelligence={cachedIntelligence}
-                  embedded
-                />
-              }
-            />
-          </div>
+          <PortfolioSnapshot
+            totalValue={summary.totalValue}
+            todayChange={summary.todayChange}
+            todayPercent={summary.todayPercent}
+            hasDailyData={summary.hasDailyData}
+            performanceCoverageComplete={summary.performanceCoverageComplete}
+            dailyPerformanceCoverageMessage={summary.dailyPerformanceCoverageMessage}
+            bestHolding={summary.bestHolding}
+            worstHolding={summary.worstHolding}
+            lastUpdatedAt={summary.latestUpdatedAt}
+            todaysDecision={<TodaysDecisionBlock decision={todaysDecision} />}
+            intelligenceSummary={
+              <HomeIntelligenceSummary
+                intelligence={cachedBriefing?.intelligence ?? null}
+                intelligenceFromCache={Boolean(cachedBriefing)}
+                goalProgress={goalProgress}
+                marketsClosed={marketsClosed}
+                embedded
+              />
+            }
+          />
         )}
       </div>
     </main>

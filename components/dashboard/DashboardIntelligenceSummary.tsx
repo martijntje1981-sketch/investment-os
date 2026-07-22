@@ -3,8 +3,15 @@
 import Link from "next/link";
 import { ArrowUpRight, Sparkles, TrendingUp } from "lucide-react";
 
+import { TodaysDecisionBlock } from "@/components/investor/TodaysDecisionBlock";
 import { formatNewsRefreshedAt } from "@/components/news/newsFormatting";
+import {
+  buildIntelligenceDisplayMessage,
+  buildTodaysDecision,
+} from "@/lib/client/todaysDecision";
+import type { GoalProgress } from "@/lib/services/goals/goalProgressEngine";
 import type { InvestmentIntelligence } from "@/lib/services/news/investmentIntelligence";
+import type { UpcomingMarketEvent } from "@/lib/types/newsContent";
 
 const STATUS_STYLES: Record<
   InvestmentIntelligence["portfolioStatus"],
@@ -18,10 +25,34 @@ const STATUS_STYLES: Record<
 
 export function DashboardIntelligenceSummary({
   intelligence,
+  goalProgress = null,
+  upcomingEvents = [],
+  marketsClosed,
+  intelligenceFromCache = false,
 }: {
   intelligence: InvestmentIntelligence;
+  goalProgress?: Pick<
+    GoalProgress,
+    "hasGoal" | "currentTrajectory" | "status" | "goalReached"
+  > | null;
+  upcomingEvents?: UpcomingMarketEvent[];
+  marketsClosed?: boolean;
+  intelligenceFromCache?: boolean;
 }) {
   const topBullets = intelligence.todayMatters.slice(0, 3);
+  const todaysDecision = buildTodaysDecision({
+    intelligence,
+    intelligenceFromCache,
+    upcomingEvents,
+    goalProgress,
+    marketsClosed,
+  });
+  const summaryMessage = buildIntelligenceDisplayMessage({
+    intelligence,
+    intelligenceFromCache,
+    goalProgress,
+    marketsClosed,
+  });
 
   return (
     <section className="overflow-hidden rounded-[24px] border border-slate-800 bg-slate-950 text-white shadow-xl md:rounded-[28px]">
@@ -52,12 +83,14 @@ export function DashboardIntelligenceSummary({
       </div>
 
       <div className="space-y-3 px-4 py-4 md:px-6 md:py-5">
+        <TodaysDecisionBlock decision={todaysDecision} variant="dark" />
+
         <div className="rounded-[18px] border border-white/10 bg-white/[0.04] p-4">
           <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-400">
             Summary
           </p>
-          <p className="mt-2 text-base leading-relaxed text-slate-100 line-clamp-3">
-            {intelligence.portfolioSummary}
+          <p className="mt-2 line-clamp-2 text-base leading-relaxed text-slate-100">
+            {summaryMessage}
           </p>
         </div>
 
