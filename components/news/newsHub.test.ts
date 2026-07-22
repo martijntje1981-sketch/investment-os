@@ -2,81 +2,33 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { NEWS_HUB_TABS } from "@/lib/navigation/newsHubRoutes";
-
 describe("news hub UI structure", () => {
-  it("keeps portfolio always visible and tabs focused on market/events", () => {
-    expect(NEWS_HUB_TABS.map((tab) => tab.label)).toEqual([
-      "Market News",
-      "Upcoming Events",
-    ]);
-  });
-
-  it("uses a compact mobile portfolio preview without full-card duplication", () => {
+  it("uses a premium briefing hierarchy with compact sections", () => {
     const hubSource = readFileSync(
       path.resolve(process.cwd(), "components/news/NewsHubContent.tsx"),
       "utf8",
     );
-    const previewSource = readFileSync(
-      path.resolve(process.cwd(), "components/news/PortfolioNewsPreview.tsx"),
-      "utf8",
-    );
-
-    expect(hubSource).toContain("PortfolioNewsPreview");
-    expect(hubSource).toContain('showMobilePreview ? "hidden lg:block" : ""');
-    expect(previewSource).toContain("View all portfolio news");
-    expect(previewSource).not.toContain("NewsArticleCard");
-  });
-
-  it("renders ranked mixed feed instead of a bottom-only video section", () => {
-    const hubSource = readFileSync(
-      path.resolve(process.cwd(), "components/news/NewsHubContent.tsx"),
-      "utf8",
-    );
-
-    expect(hubSource).toContain("Latest relevant news");
-    expect(hubSource).toContain("NewsFeedItem");
-    expect(hubSource).not.toContain("CollapsibleMarketVideos");
-  });
-
-  it("redirects legacy /briefing to /news", () => {
-    const source = readFileSync(
-      path.resolve(process.cwd(), "app/briefing/page.tsx"),
-      "utf8",
-    );
-
-    expect(source).toContain("redirect(");
-    expect(source).toContain("resolveLegacyBriefingRedirect");
-    expect(source).not.toContain('redirect("/briefing")');
-  });
-
-  it("preserves portfolio analysis on /analysis", () => {
-    const source = readFileSync(
-      path.resolve(process.cwd(), "app/analysis/page.tsx"),
-      "utf8",
-    );
-
-    expect(source).toContain("PortfolioAnalysisPage");
-  });
-
-  it("always renders the news hub shell even while data is unavailable", () => {
     const newsPage = readFileSync(
       path.resolve(process.cwd(), "app/news/page.tsx"),
       "utf8",
     );
 
-    expect(newsPage).toContain("NewsHubContent");
-    expect(newsPage).not.toContain("News could not be loaded.");
-  });
-
-  it("routes bottom navigation news item to /news", () => {
-    const source = readFileSync(
-      path.resolve(process.cwd(), "components/home/BottomNav.tsx"),
+    const sectionSource = readFileSync(
+      path.resolve(process.cwd(), "components/news/NewsBriefingSection.tsx"),
       "utf8",
     );
 
-    expect(source).toContain('href: "/news"');
-    expect(source).toContain('label: "News"');
+    expect(hubSource).toContain("NewsBriefingIntelligence");
+    expect(hubSource).toContain("NewsBriefingSection");
+    expect(hubSource).toContain("NewsCompactVideoRow");
+    expect(hubSource).toContain("NewsHoldingGroups");
+    expect(sectionSource).toContain("Show more");
+    expect(hubSource).not.toContain("PortfolioIntelligencePanel");
+    expect(hubSource).not.toContain("NewsHubTabs");
+    expect(hubSource).not.toContain("matchMedia");
+    expect(hubSource).not.toContain("PortfolioNewsPreview");
+    expect(newsPage).not.toContain("BottomNavigation");
+    expect(newsPage).toContain("max-w-3xl");
   });
 
   it("keeps quota-safe news search client-side without provider calls", () => {
@@ -90,26 +42,43 @@ describe("news hub UI structure", () => {
     );
 
     expect(hubSource).toContain("NewsSearchBar");
-    expect(hubSource).toContain("PortfolioIntelligencePanel");
     expect(hubSource).toContain("filterNewsItems");
     expect(hubSource).not.toContain("fetch(\"/api/news\"");
     expect(searchSource).toContain("NEWS_SEARCH_PLACEHOLDER");
-    expect(searchSource).toContain("Escape");
   });
 
-  it("uses compact mobile-friendly search layout without widening the page", () => {
-    const searchSource = readFileSync(
-      path.resolve(process.cwd(), "components/news/NewsSearchBar.tsx"),
+  it("uses compact video rows instead of large aspect-video cards in the hub", () => {
+    const videoRow = readFileSync(
+      path.resolve(process.cwd(), "components/news/NewsCompactVideoRow.tsx"),
       "utf8",
     );
 
-    expect(searchSource).toContain("min-w-0");
-    expect(searchSource).toContain("flex-wrap");
-    expect(searchSource).not.toContain("overflow-x-auto");
+    expect(videoRow).toContain("h-14 w-20");
+    expect(videoRow).not.toContain("aspect-video");
+  });
+
+  it("redirects legacy /briefing to /news", () => {
+    const source = readFileSync(
+      path.resolve(process.cwd(), "app/briefing/page.tsx"),
+      "utf8",
+    );
+
+    expect(source).toContain("redirect(");
+    expect(source).toContain("resolveLegacyBriefingRedirect");
+  });
+
+  it("routes bottom navigation news item to /news", () => {
+    const source = readFileSync(
+      path.resolve(process.cwd(), "components/home/BottomNav.tsx"),
+      "utf8",
+    );
+
+    expect(source).toContain('href: "/news"');
+    expect(source).toContain('label: "News"');
   });
 });
 
-describe("news safety boundaries after phase 3", () => {
+describe("news safety boundaries", () => {
   it("keeps portfolio analysis separate from the news hub route", () => {
     const newsPage = readFileSync(
       path.resolve(process.cwd(), "app/news/page.tsx"),

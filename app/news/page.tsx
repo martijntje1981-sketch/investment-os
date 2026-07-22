@@ -1,6 +1,5 @@
 "use client";
 
-import BottomNavigation from "@/components/home/BottomNav";
 import { NewsHubContent } from "@/components/news/NewsHubContent";
 import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
 import {
@@ -31,27 +30,24 @@ export default function NewsPage() {
   }
 
   return (
-    <>
-      <main className="min-h-screen max-w-full overflow-x-hidden bg-[#F4F7FB] px-4 pb-32 pt-3 text-slate-950 sm:px-8 sm:pt-6">
-        <div className="mx-auto w-full max-w-7xl space-y-6 sm:space-y-8">
-          <PortfolioRecoveryBanner
-            offer={recoveryOffer}
-            onRecover={() => {
-              recoverPortfolio();
-            }}
-            onDismiss={dismissRecovery}
-          />
+    <main className="min-h-screen max-w-full overflow-x-clip bg-[#F4F7FB] px-4 pb-28 pt-4 text-slate-950 sm:px-8 sm:pt-6">
+      <div className="mx-auto w-full min-w-0 max-w-3xl space-y-5 sm:space-y-6">
+        <PortfolioRecoveryBanner
+          offer={recoveryOffer}
+          onRecover={() => {
+            recoverPortfolio();
+          }}
+          onDismiss={dismissRecovery}
+        />
 
-          <NewsHubContent
-            payload={payload ?? EMPTY_NEWS_RESPONSE}
-            intelligence={intelligence}
-            isStale={isStale}
-            onRefresh={() => void reload()}
-            isRefreshing={isLoading}
-          />
-        </div>
-      </main>
-      <BottomNavigation />
-    </>
+        <NewsHubContent
+          payload={payload ?? EMPTY_NEWS_RESPONSE}
+          intelligence={intelligence}
+          isStale={isStale}
+          onRefresh={() => void reload()}
+          isRefreshing={isLoading}
+        />
+      </div>
+    </main>
   );
 }

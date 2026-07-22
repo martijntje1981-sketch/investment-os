@@ -238,7 +238,7 @@ describe("investment intelligence reuse", () => {
     expect(dashboard).toContain("DashboardIntelligenceSummary");
     expect(dashboard).not.toContain("PortfolioIntelligencePanel");
     expect(news).toContain("useInvestmentIntelligence");
-    expect(hub).toContain("PortfolioIntelligencePanel");
+    expect(hub).toContain("NewsBriefingIntelligence");
     expect(hub).not.toContain("TodaysMarketBriefHero");
   });
 });

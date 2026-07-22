@@ -1,23 +1,29 @@
 "use client";
 
-import { PlayCircle } from "lucide-react";
-
 import { MarketVideoCard } from "@/components/news/MarketVideoCard";
 import { NewsArticleCard } from "@/components/news/NewsArticleCard";
+import { NewsCompactArticleRow } from "@/components/news/NewsCompactArticleRow";
+import { NewsCompactVideoRow } from "@/components/news/NewsCompactVideoRow";
 import { isStrongPortfolioItem } from "@/lib/services/news/newsFeedRanking";
 import type { NewsContentItem } from "@/lib/types/newsContent";
 
-export function NewsFeedItem({ item }: { item: NewsContentItem }) {
-  if (item.sourceType === "youtube") {
-    return (
-      <div className="relative">
-        <span className="absolute right-4 top-4 z-10 inline-flex items-center gap-1 rounded-full bg-violet-600 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-white">
-          <PlayCircle className="h-3 w-3" />
-          Video
-        </span>
-        <MarketVideoCard item={item} />
-      </div>
+export function NewsFeedItem({
+  item,
+  compact = true,
+}: {
+  item: NewsContentItem;
+  compact?: boolean;
+}) {
+  if (compact) {
+    return item.sourceType === "youtube" ? (
+      <NewsCompactVideoRow item={item} />
+    ) : (
+      <NewsCompactArticleRow item={item} />
     );
+  }
+
+  if (item.sourceType === "youtube") {
+    return <MarketVideoCard item={item} />;
   }
 
   return (
