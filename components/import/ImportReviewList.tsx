@@ -13,6 +13,7 @@ import { ExactListingSymbolField } from "@/components/import/ExactListingSymbolF
 import {
   buildListingCandidates,
 } from "@/lib/services/instruments/listingConfirmation";
+import { canConfirmImportRow } from "@/lib/services/portfolio/holdingValidation";
 import {
   shouldShowExactListingFallback,
 } from "@/lib/services/import/confidencePolicy";
@@ -193,7 +194,7 @@ function ImportReviewCard({
                 providerSymbol={row.providerSymbol}
                 onCommit={onExchangeCommit}
                 onFocusChange={setExchangeFieldActive}
-                required={needsMatchReview && !row.providerSymbol}
+                allowFreeText
               />
             ) : null}
             {otherUncertainFields.map((field) => (
@@ -249,9 +250,7 @@ function ImportReviewCard({
         <button
           type="button"
           onClick={onConfirm}
-          disabled={
-            (!row.providerSymbol && needsMatchReview) || purchaseDateError !== null
-          }
+          disabled={!canConfirmImportRow(row) || purchaseDateError !== null}
           className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
         >
           <Check className="h-4 w-4" />

@@ -1,4 +1,5 @@
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
+import { resolveHoldingDisplayPrice } from "@/lib/client/holdingDisplayPrice";
 
 export type AnalysisHolding = StoredPortfolioHolding;
 
@@ -46,18 +47,12 @@ export function getHoldingMarketValue(holding: AnalysisHolding): number | null {
     return null;
   }
 
-  if (holding.assetType === "cash") {
-    const price = Number.isFinite(holding.currentPrice) && holding.currentPrice > 0
-      ? holding.currentPrice
-      : 1;
-    return holding.quantity * price;
-  }
-
-  if (!Number.isFinite(holding.currentPrice) || holding.currentPrice <= 0) {
+  const { price } = resolveHoldingDisplayPrice(holding);
+  if (price === null || price <= 0) {
     return null;
   }
 
-  return holding.quantity * holding.currentPrice;
+  return holding.quantity * price;
 }
 
 export function buildValuedPositions(holdings: AnalysisHolding[]): {

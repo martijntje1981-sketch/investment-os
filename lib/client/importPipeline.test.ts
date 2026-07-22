@@ -265,7 +265,7 @@ describe("screenshot import pipeline decoupled from pricing", () => {
     );
 
     const matched = await matchImportRowsViaApi([importRow()]);
-    expect(matched.rows[0]?.reviewTier).toBe("blocked");
+    expect(matched.rows[0]?.reviewTier).toBe("review");
     expect(
       vi
         .mocked(fetch)

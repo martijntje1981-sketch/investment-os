@@ -2,9 +2,11 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 
+import { resolveExchangeForMatching } from "@/lib/services/instruments/exchangeNormalizer";
 import {
   findExchangeOption,
   formatExchangeInputValue,
+  getCommonExchangeOptions,
   searchExchanges,
   type ExchangeOption,
 } from "@/lib/services/instruments/exchangeSearch";
@@ -15,6 +17,7 @@ type ExchangeFieldEditorProps = {
   onCommit: (exchangeCode: string | null, confirmed: boolean) => void;
   onFocusChange?: (active: boolean) => void;
   required?: boolean;
+  allowFreeText?: boolean;
 };
 
 export function ExchangeFieldEditor({
@@ -23,6 +26,7 @@ export function ExchangeFieldEditor({
   onCommit,
   onFocusChange,
   required = false,
+  allowFreeText = false,
 }: ExchangeFieldEditorProps) {
   const listboxId = useId();
   const isTypingRef = useRef(false);
@@ -114,6 +118,12 @@ export function ExchangeFieldEditor({
     onCommit(option.code, true);
   }
 
+  function commitFreeTextExchange(trimmed: string) {
+    const normalized = resolveExchangeForMatching(trimmed) ?? trimmed.toUpperCase();
+    setValidationMessage(null);
+    onCommit(normalized, false);
+  }
+
   function handleBlur() {
     window.setTimeout(() => {
       setShowSuggestions(false);
@@ -128,6 +138,8 @@ export function ExchangeFieldEditor({
       if (!trimmed) {
         if (required) {
           setValidationMessage("Select a listed exchange to match this holding.");
+        } else {
+          onCommit(null, false);
         }
         isTypingRef.current = false;
         onFocusChange?.(false);
@@ -140,6 +152,13 @@ export function ExchangeFieldEditor({
         setSelectedExchange(matched);
         setExchangeInputValue(matched.label);
         onCommit(matched.code, true);
+        onFocusChange?.(false);
+        return;
+      }
+
+      if (allowFreeText) {
+        isTypingRef.current = false;
+        commitFreeTextExchange(trimmed);
         onFocusChange?.(false);
         return;
       }
@@ -180,6 +199,11 @@ export function ExchangeFieldEditor({
             onFocusChange?.(true);
             if (exchangeInputValue.trim().length >= 2) {
               setShowSuggestions(true);
+              return;
+            }
+            if (allowFreeText) {
+              setExchangeSuggestions(getCommonExchangeOptions());
+              setShowSuggestions(true);
             }
           }}
           onBlur={handleBlur}
@@ -194,7 +218,9 @@ export function ExchangeFieldEditor({
 
         {showEmptyState ? (
           <p className="mt-1.5 text-xs font-semibold text-amber-800">
-            No exchange found. Try the exchange name or code.
+            {allowFreeText
+              ? "No exchange match found. You can keep your text or leave this blank."
+              : "No exchange found. Try the exchange name or code."}
           </p>
         ) : null}
 

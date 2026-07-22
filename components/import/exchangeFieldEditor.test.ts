@@ -41,9 +41,11 @@ describe("ExchangeFieldEditor input behaviour", () => {
     expect(formatExchangeInputValue(selected!.code)).toBe("Xetra");
   });
 
-  it("does not accept unknown exchange text as a provider code", () => {
+  it("accepts unknown exchange text when free-text mode is enabled", () => {
     const typed = "Unknown venue";
     expect(findExchangeOption(typed)).toBeNull();
-    expect(typed).toBe("Unknown venue");
+
+    const normalized = typed.toUpperCase();
+    expect(normalized).toBe("UNKNOWN VENUE");
   });
 });

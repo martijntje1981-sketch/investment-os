@@ -15,6 +15,7 @@ import {
 } from "@/lib/services/prices/cache/marketPriceCache";
 import {
   getPriceServiceMetricsSnapshot,
+  logPriceRefreshSummary,
   logPriceServiceMetrics,
   recordPriceCacheHit,
   recordPriceCacheMiss,
@@ -50,15 +51,16 @@ import {
   resolveDefaultWatchlist,
   resolveQuotePriceTargets,
 } from "@/lib/services/prices/resolvePriceTargets";
-import type {
-  HoldingPrice,
-  MarketDataProvider,
-  NormalizedProviderQuote,
-  PriceCurrency,
-  PriceHoldingInput,
-  PricePayload,
-  ProviderFailureKind,
-  ResolvedPriceTarget,
+import {
+  NO_QUOTABLE_HOLDINGS_MESSAGE,
+  type HoldingPrice,
+  type MarketDataProvider,
+  type NormalizedProviderQuote,
+  type PriceCurrency,
+  type PriceHoldingInput,
+  type PricePayload,
+  type ProviderFailureKind,
+  type ResolvedPriceTarget,
 } from "@/lib/services/prices/types";
 
 let defaultRouter: ReturnType<typeof createProviderRouter> | null = null;
@@ -89,6 +91,12 @@ export type LoadPricesOptions = {
   forceRefresh?: boolean;
   onlyProviderSymbols?: string[];
 };
+
+const DEFAULT_FX_RATES: FxRates = { EUR: 1, USD: null, GBP: null, CHF: null };
+
+function effectiveForceRefresh(requested: boolean, providerId = EODHD_PROVIDER_ID): boolean {
+  return requested && !isProviderCircuitOpen(providerId);
+}
 
 async function readQuoteFromCaches(
   cacheKey: string,
@@ -135,7 +143,9 @@ function isCircuitBreakerFailure(kind: ProviderFailureKind): boolean {
 
 async function getFxRates(forceRefresh = false): Promise<FxRates> {
   const now = Date.now();
-  if (!forceRefresh && fxCache && now <= fxCache.expiresAt) {
+  const refreshLive = effectiveForceRefresh(forceRefresh);
+
+  if (!refreshLive && fxCache && now <= fxCache.expiresAt) {
     return fxCache.rates;
   }
 
@@ -246,7 +256,6 @@ export async function getNormalizedQuote(
   target: ResolvedPriceTarget,
   options?: { forceRefresh?: boolean },
 ): Promise<NormalizedProviderQuote> {
-  const forceRefresh = options?.forceRefresh ?? false;
   const provider = getActiveRouter().selectProvider(target.providerSymbol);
   if (!provider) {
     return buildUnavailableQuote(
@@ -256,6 +265,10 @@ export async function getNormalizedQuote(
     );
   }
 
+  const forceRefresh = effectiveForceRefresh(
+    options?.forceRefresh ?? false,
+    provider.id,
+  );
   const cacheKey = buildQuoteCacheKey(provider.id, target.providerSymbol);
 
   if (isProviderCircuitOpen(provider.id)) {
@@ -358,9 +371,11 @@ function buildPricePayload(
   errors: string[],
   requested: number,
   fxRates: FxRates,
+  options?: { message?: string; forceSuccess?: boolean },
 ): PricePayload {
   return {
-    success: prices.length > 0,
+    success: options?.forceSuccess ?? prices.length > 0,
+    message: options?.message,
     baseCurrency: "EUR",
     fxRates: {
       EUR: fxRates.EUR,
@@ -381,16 +396,49 @@ function buildPricePayload(
   };
 }
 
+function buildNoQuotablePayload(
+  holdingsRequested: number,
+  skipped: number,
+  errors: string[],
+): PricePayload {
+  return buildPricePayload([], errors, holdingsRequested, DEFAULT_FX_RATES, {
+    message: NO_QUOTABLE_HOLDINGS_MESSAGE,
+    forceSuccess: true,
+  });
+}
+
+function logRefreshOutcome(
+  holdingsRequested: number,
+  skipped: number,
+  quotable: number,
+  metricsBefore: ReturnType<typeof getPriceServiceMetricsSnapshot>,
+): void {
+  const metricsAfter = getPriceServiceMetricsSnapshot();
+  logPriceRefreshSummary({
+    holdingsRequested,
+    holdingsSkipped: skipped,
+    holdingsQuotable: quotable,
+    providerCallsMade: metricsAfter.providerCalls - metricsBefore.providerCalls,
+    cacheHits: metricsAfter.cacheHits - metricsBefore.cacheHits,
+    cacheMisses: metricsAfter.cacheMisses - metricsBefore.cacheMisses,
+  });
+}
+
 export async function loadPricesForTargets(
   targets: ResolvedPriceTarget[],
   options?: LoadPricesOptions,
 ): Promise<PricePayload> {
   const uniqueTargets = dedupeResolvedTargets(targets);
-  const fxRates = await getFxRates(options?.forceRefresh ?? false);
+  if (uniqueTargets.length === 0) {
+    return buildPricePayload([], [], 0, DEFAULT_FX_RATES);
+  }
+
+  const forceRefresh = effectiveForceRefresh(options?.forceRefresh ?? false);
+  const fxRates = await getFxRates(forceRefresh);
 
   const results = await Promise.allSettled(
     uniqueTargets.map((target) =>
-      quoteToHoldingPrice(target, { forceRefresh: options?.forceRefresh }),
+      quoteToHoldingPrice(target, { forceRefresh }),
     ),
   );
 
@@ -422,15 +470,29 @@ export async function loadPricesForHoldings(
   holdings: PriceHoldingInput[],
   options?: LoadPricesOptions,
 ): Promise<PricePayload> {
-  const { targets, errors: resolutionErrors } = resolveQuotePriceTargets(
+  const metricsBefore = getPriceServiceMetricsSnapshot();
+  const holdingsRequested = holdings.length;
+  const { targets, errors: resolutionErrors, skipped } = resolveQuotePriceTargets(
     holdings,
     { onlyProviderSymbols: options?.onlyProviderSymbols },
   );
+
+  if (targets.length === 0) {
+    const payload = buildNoQuotablePayload(
+      holdingsRequested,
+      skipped,
+      resolutionErrors,
+    );
+    logRefreshOutcome(holdingsRequested, skipped, 0, metricsBefore);
+    return payload;
+  }
+
   const payload = await loadPricesForTargets(targets, options);
+  logRefreshOutcome(holdingsRequested, skipped, targets.length, metricsBefore);
   return {
     ...payload,
     errors: [...resolutionErrors, ...payload.errors],
-    requested: holdings.length,
+    requested: holdingsRequested,
   };
 }
 

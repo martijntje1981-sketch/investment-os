@@ -46,10 +46,24 @@ describe("import confidence policy", () => {
     expect(tier).toBe("review");
   });
 
-  it("blocks uncertain unresolved holdings", () => {
+  it("routes unresolved holdings with identifiers to review", () => {
     expect(
       classifyImportRow(
         row({
+          providerSymbol: null,
+          matchMethod: "unresolved",
+          matchConfidence: 0.4,
+        }),
+      ),
+    ).toBe("review");
+  });
+
+  it("blocks unresolved holdings without identifiers", () => {
+    expect(
+      classifyImportRow(
+        row({
+          symbol: "",
+          name: "",
           providerSymbol: null,
           matchMethod: "unresolved",
           matchConfidence: 0.4,

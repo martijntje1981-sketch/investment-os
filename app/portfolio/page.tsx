@@ -31,7 +31,12 @@ import {
   HoldingDividendMeta,
 } from "@/components/analysis/DividendIntelligenceSection";
 import { HoldingAnalystMeta } from "@/components/analysis/AnalystIntelligenceSection";
-import { getHoldingMarketValue, buildPortfolioAnalysis } from "@/lib/client/portfolioAnalysis";
+import { ExchangeFieldEditor } from "@/components/import/ExchangeFieldEditor";
+import {
+  getHoldingMarketValue,
+  buildPortfolioAnalysis,
+} from "@/lib/client/portfolioAnalysis";
+import { isEstimatedHoldingPrice } from "@/lib/client/holdingDisplayPrice";
 import { buildPortfolioPerformance } from "@/lib/client/portfolioPerformance";
 import {
   applyManualListingSelection,
@@ -42,6 +47,7 @@ import {
   tryRefreshPortfolioPrices,
   type StoredPortfolioHolding,
 } from "@/lib/client/portfolioPricing";
+import { NO_QUOTABLE_HOLDINGS_MESSAGE } from "@/lib/services/prices/types";
 import { findDividendQuoteForHolding } from "@/lib/client/portfolioDividends";
 import { findAnalystQuoteForHolding } from "@/lib/client/portfolioAnalyst";
 import {
@@ -49,7 +55,11 @@ import {
 } from "@/lib/services/analyst/analystCalculations";
 import { formatDividendFrequency } from "@/lib/services/dividends";
 import { rememberConfirmedHolding } from "@/lib/services/import/mappingMemory";
-import { investmentNeedsListingConfirmation } from "@/lib/services/instruments/listingConfirmation";
+import {
+  holdingMatchStatusLabel,
+  resolveHoldingMatchStatus,
+  validateManualHoldingForSave,
+} from "@/lib/services/portfolio/holdingValidation";
 import type { ResolvedInstrument } from "@/lib/types/instrument";
 import { usePortfolioDividends } from "@/lib/client/usePortfolioDividends";
 import { usePortfolioAnalyst } from "@/lib/client/usePortfolioAnalyst";
@@ -120,16 +130,21 @@ export default function PortfolioPage() {
   const [listingCandidates, setListingCandidates] = useState<ResolvedInstrument[]>([]);
   const [listingWarnings, setListingWarnings] = useState<string[]>([]);
   const [listingLookupPending, setListingLookupPending] = useState(false);
-  const [listingConfirmed, setListingConfirmed] = useState(false);
+  const [lookupUnavailable, setLookupUnavailable] = useState(false);
   const [editorError, setEditorError] = useState<string | null>(null);
 
-  const refreshPrices = useCallback(async () => {
+  const refreshPrices = useCallback(async (options?: { forceRefresh?: boolean }) => {
     if (!userSub) return;
     setIsRefreshing(true);
     try {
       const result = await tryRefreshPortfolioPrices(userSub, holdings, {
-        forceRefresh: true,
+        skipIfCacheFresh: !options?.forceRefresh,
+        forceRefresh: options?.forceRefresh ?? false,
       });
+      if (result.message === NO_QUOTABLE_HOLDINGS_MESSAGE) {
+        setMessage(result.message);
+        return;
+      }
       if (result.updated) {
         saveHoldings(result.holdings);
         const updatedCount = result.holdings.filter(
@@ -184,11 +199,11 @@ export default function PortfolioPage() {
     );
   }
 
-  function resetListingState(confirmed: boolean) {
+  function resetListingState() {
     setListingCandidates([]);
     setListingWarnings([]);
     setListingLookupPending(false);
-    setListingConfirmed(confirmed);
+    setLookupUnavailable(false);
     setEditorError(null);
   }
 
@@ -202,15 +217,13 @@ export default function PortfolioPage() {
       purchasePrice: assetType === "cash" ? 1 : 0,
       currentPrice: assetType === "cash" ? 1 : 0,
     });
-    resetListingState(assetType === "cash");
+    resetListingState();
     setEditorOpen(true);
   }
 
   function openEdit(holding: Holding) {
     setDraft({ ...holding });
-    resetListingState(
-      holding.assetType === "cash" || Boolean(holding.providerSymbol),
-    );
+    resetListingState();
     setEditorOpen(true);
   }
 
@@ -220,33 +233,24 @@ export default function PortfolioPage() {
     setListingLookupPending(true);
     setEditorError(null);
     setListingWarnings([]);
+    setLookupUnavailable(false);
 
     try {
       const result = await lookupManualHoldingListing(draft);
       setDraft(result.holding);
       setListingCandidates(result.candidates);
       setListingWarnings(result.warnings);
+      setLookupUnavailable(result.quotaUnavailable);
 
-      const uniqueCandidates = result.candidates.filter(
-        (candidate, index, list) =>
-          list.findIndex(
-            (item) => item.providerSymbol === candidate.providerSymbol,
-          ) === index,
-      );
-
-      if (result.holding.providerSymbol) {
-        setListingConfirmed(
-          uniqueCandidates.length <= 1 &&
-            result.holding.requiresConfirmation !== true,
-        );
-      } else {
-        setListingConfirmed(false);
+      if (result.quotaUnavailable || result.candidates.length === 0) {
+        setEditorError(null);
       }
-    } catch (error) {
-      setEditorError(
-        error instanceof Error ? error.message : "Instrument lookup failed.",
-      );
-      setListingConfirmed(false);
+    } catch {
+      setLookupUnavailable(true);
+      setListingWarnings([
+        "Instrument lookup is temporarily unavailable. You can continue manually and save your holding.",
+      ]);
+      setEditorError(null);
     } finally {
       setListingLookupPending(false);
     }
@@ -255,20 +259,16 @@ export default function PortfolioPage() {
   function selectListing(candidate: ResolvedInstrument) {
     const next = applyManualListingSelection(draft, candidate);
     setDraft(next);
-    setListingConfirmed(true);
     setEditorError(null);
+    setLookupUnavailable(false);
   }
 
   function submitHolding(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (
-      draft.assetType !== "cash" &&
-      investmentNeedsListingConfirmation(draft)
-    ) {
-      setEditorError(
-        "Select a confirmed listing before saving. Use Find listing or enter a provider symbol such as VWCE.XETRA.",
-      );
+    const validation = validateManualHoldingForSave(draft);
+    if (!validation.ok) {
+      setEditorError(validation.message);
       return;
     }
 
@@ -300,7 +300,11 @@ export default function PortfolioPage() {
       });
     }
 
-    if (cleaned.assetType !== "cash" && cleaned.currentPrice <= 0) {
+    if (cleaned.assetType !== "cash" && isEstimatedHoldingPrice(cleaned)) {
+      setMessage(
+        "Holding saved with an estimated price until live market data is available.",
+      );
+    } else if (cleaned.assetType !== "cash" && cleaned.currentPrice <= 0) {
       setMessage(
         "Holding saved. Current price is temporarily unavailable and will be refreshed later.",
       );
@@ -327,6 +331,9 @@ export default function PortfolioPage() {
               <button onClick={() => void refreshPrices()} disabled={isRefreshing} className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold disabled:opacity-50">
                 <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
                 Refresh prices
+              </button>
+              <button onClick={() => void refreshPrices({ forceRefresh: true })} disabled={isRefreshing} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-700 disabled:opacity-50">
+                Hard refresh
               </button>
               <button onClick={() => openAdd("cash")} className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold">
                 <Banknote className="h-4 w-4" /> Add cash
@@ -393,6 +400,8 @@ export default function PortfolioPage() {
               <div className="divide-y divide-slate-200">
                 {holdings.map((holding) => {
                   const holdingValue = getHoldingMarketValue(holding);
+                  const estimatedPrice = isEstimatedHoldingPrice(holding);
+                  const matchStatus = resolveHoldingMatchStatus(holding);
                   const holdingReturn =
                     holdingValue === null
                       ? null
@@ -422,9 +431,13 @@ export default function PortfolioPage() {
                       <div><span className={`inline-flex rounded-xl px-3 py-2 text-sm font-black ${holding.assetType === "cash" ? "bg-emerald-100 text-emerald-800" : "bg-slate-950 text-white"}`}>{holding.symbol}</span></div>
                       <div>
                         <p className="font-black">{holding.name}</p>
-                        <p className="mt-1 text-xs text-slate-500">{holding.assetType === "cash" ? "Cash holding" : `${holding.quantity.toLocaleString("en-GB")} units`}</p>
+                        <p className="mt-1 text-xs text-slate-500">
+                          {holding.assetType === "cash"
+                            ? "Cash holding"
+                            : `${holding.quantity.toLocaleString("en-GB")} units · ${holdingMatchStatusLabel(matchStatus)}`}
+                        </p>
                       </div>
-                      <div><p className="text-xs font-bold uppercase text-slate-400 lg:hidden">Value</p><p className="font-black">{holdingValue === null ? "Price pending" : money(holdingValue)}</p></div>
+                      <div><p className="text-xs font-bold uppercase text-slate-400 lg:hidden">Value</p><p className="font-black">{holdingValue === null ? "Price pending" : money(holdingValue)}{estimatedPrice && holdingValue !== null ? <span className="ml-1 text-xs font-semibold text-amber-700">est.</span> : null}</p></div>
                       <div><p className="text-xs font-bold uppercase text-slate-400 lg:hidden">Allocation</p><p className="font-bold">{holdingValue === null ? "—" : `${allocation.toFixed(1)}%`}</p></div>
                       <div>
                         <p className="text-xs font-bold uppercase text-slate-400 lg:hidden">Return</p>
@@ -480,7 +493,8 @@ export default function PortfolioPage() {
 
       {editorOpen && (
         <div className="fixed inset-0 z-[80] flex items-end justify-center bg-slate-950/60 p-0 backdrop-blur-sm sm:items-center sm:p-5">
-          <form onSubmit={submitHolding} className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-t-[28px] bg-white p-6 shadow-2xl sm:rounded-[28px] sm:p-8">
+          <form onSubmit={submitHolding} className="flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-t-[28px] bg-white shadow-2xl sm:rounded-[28px]">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 sm:p-8">
             <div className="flex items-center justify-between">
               <div><p className="text-xs font-black uppercase tracking-[0.14em] text-blue-700">{draft.assetType === "cash" ? "Cash" : "Investment"}</p><h2 className="mt-2 text-2xl font-black">{holdings.some((item) => item.id === draft.id) ? "Edit holding" : "Add holding"}</h2></div>
               <button type="button" onClick={() => setEditorOpen(false)} className="rounded-xl p-2 hover:bg-slate-100"><X className="h-5 w-5" /></button>
@@ -495,26 +509,38 @@ export default function PortfolioPage() {
               <div className="mt-7 space-y-5">
                 <Field
                   label="Ticker, ISIN, or provider symbol"
+                  required={false}
                   value={draft.symbol}
                   onChange={(value) => {
                     setDraft({ ...draft, symbol: value, providerSymbol: null });
-                    setListingConfirmed(false);
                   }}
                 />
                 <Field
                   label="ISIN (optional)"
+                  required={false}
                   value={draft.isin ?? ""}
                   onChange={(value) => {
                     setDraft({ ...draft, isin: value || null, providerSymbol: null });
-                    setListingConfirmed(false);
                   }}
                 />
                 <Field
                   label="Instrument name (optional)"
+                  required={false}
                   value={draft.name}
                   onChange={(value) => {
                     setDraft({ ...draft, name: value, providerSymbol: null });
-                    setListingConfirmed(false);
+                  }}
+                />
+                <ExchangeFieldEditor
+                  exchange={draft.exchange}
+                  providerSymbol={draft.providerSymbol}
+                  allowFreeText
+                  onCommit={(exchangeCode) => {
+                    setDraft({
+                      ...draft,
+                      exchange: exchangeCode,
+                      providerSymbol: null,
+                    });
                   }}
                 />
                 <button
@@ -536,10 +562,15 @@ export default function PortfolioPage() {
                     {listingWarnings.map((warning) => (
                       <p key={warning}>{warning}</p>
                     ))}
+                    {lookupUnavailable ? (
+                      <p className="mt-2 font-semibold">
+                        Your entries are kept. You can save without finding a listing.
+                      </p>
+                    ) : null}
                   </div>
                 ) : null}
 
-                {listingCandidates.length > 0 && !listingConfirmed ? (
+                {listingCandidates.length > 0 ? (
                   <ListingCandidatePicker
                     source={{
                       providerSymbol: draft.providerSymbol,
@@ -555,7 +586,7 @@ export default function PortfolioPage() {
                   />
                 ) : null}
 
-                {draft.providerSymbol && listingConfirmed ? (
+                {draft.providerSymbol ? (
                   <SelectedListingSummary
                     listing={{
                       providerSymbol: draft.providerSymbol,
@@ -574,8 +605,8 @@ export default function PortfolioPage() {
 
                 <Field label="Quantity" type="number" min="0" step="any" value={draft.quantity} onChange={(value) => setDraft({ ...draft, quantity: Number(value) })} />
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="Average purchase price" type="number" prefix="€" min="0" step="any" value={draft.purchasePrice} onChange={(value) => setDraft({ ...draft, purchasePrice: Number(value) })} />
-                  <Field label="Current price" type="number" prefix="€" min="0" step="any" value={draft.currentPrice} onChange={(value) => setDraft({ ...draft, currentPrice: Number(value) })} />
+                  <Field label="Average purchase price" type="number" prefix="€" min="0" step="any" required={false} value={draft.purchasePrice} onChange={(value) => setDraft({ ...draft, purchasePrice: Number(value) })} />
+                  <Field label="Current price" type="number" prefix="€" min="0" step="any" required={false} value={draft.currentPrice} onChange={(value) => setDraft({ ...draft, currentPrice: Number(value) })} />
                 </div>
 
                 {editorError ? (
@@ -583,17 +614,16 @@ export default function PortfolioPage() {
                 ) : null}
               </div>
             )}
+            </div>
 
+            <div className="shrink-0 border-t border-slate-100 bg-white p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-6">
             <button
               type="submit"
-              disabled={
-                draft.assetType !== "cash" &&
-                (!listingConfirmed || investmentNeedsListingConfirmation(draft))
-              }
-              className="mt-7 w-full rounded-xl bg-slate-950 px-5 py-3.5 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+              className="w-full rounded-xl bg-slate-950 px-5 py-3.5 text-sm font-bold text-white"
             >
               Save holding
             </button>
+            </div>
           </form>
         </div>
       )}
@@ -605,7 +635,7 @@ function Metric({ icon, label, value, detail, tone = "neutral" }: { icon: React.
   return <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-700">{icon}</div><p className="mt-4 text-xs font-black uppercase tracking-[0.12em] text-slate-400">{label}</p><p className={`mt-2 text-2xl font-black ${tone === "positive" ? "text-emerald-700" : tone === "negative" ? "text-red-700" : "text-slate-950"}`}>{value}</p>{detail && <p className="mt-1 text-sm text-slate-500">{detail}</p>}</article>;
 }
 
-function Field({ label, value, onChange, type = "text", prefix, min, step }: { label: string; value: string | number; onChange: (value: string) => void; type?: string; prefix?: string; min?: string; step?: string }) {
+function Field({ label, value, onChange, type = "text", prefix, min, step, required = type === "number" }: { label: string; value: string | number; onChange: (value: string) => void; type?: string; prefix?: string; min?: string; step?: string; required?: boolean }) {
   if (type === "number") {
     return (
       <label className="block">
@@ -613,7 +643,7 @@ function Field({ label, value, onChange, type = "text", prefix, min, step }: { l
         <span className="mt-2 flex items-center rounded-xl border border-slate-200 bg-slate-50 px-4 focus-within:border-blue-400">
           {prefix && <span className="font-bold text-slate-400">{prefix}</span>}
           <NumericInput
-            required
+            required={required}
             value={Number(value)}
             min={min ? Number(min) : undefined}
             placeholder={step === "0.01" ? "0.00" : "0"}
@@ -625,5 +655,5 @@ function Field({ label, value, onChange, type = "text", prefix, min, step }: { l
     );
   }
 
-  return <label className="block"><span className="text-sm font-bold text-slate-700">{label}</span><span className="mt-2 flex items-center rounded-xl border border-slate-200 bg-slate-50 px-4 focus-within:border-blue-400">{prefix && <span className="font-bold text-slate-400">{prefix}</span>}<input required type={type} min={min} step={step} value={value} onChange={(event) => onChange(event.target.value)} className="min-w-0 flex-1 bg-transparent px-2 py-3.5 font-bold outline-none" /></span></label>;
+  return <label className="block"><span className="text-sm font-bold text-slate-700">{label}</span><span className="mt-2 flex items-center rounded-xl border border-slate-200 bg-slate-50 px-4 focus-within:border-blue-400">{prefix && <span className="font-bold text-slate-400">{prefix}</span>}<input required={required} type={type} min={min} step={step} value={value} onChange={(event) => onChange(event.target.value)} className="min-w-0 flex-1 bg-transparent px-2 py-3.5 font-bold outline-none" /></span></label>;
 }

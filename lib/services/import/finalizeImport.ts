@@ -2,9 +2,13 @@
  * Finalize import rows for portfolio storage.
  */
 
-import { normalizeHoldingForSave } from "@/lib/client/portfolioPricing";
 import { annotateImportRow } from "@/lib/services/import/confidencePolicy";
 import type { ImportRow } from "@/lib/services/import/types";
+import {
+  canConfirmImportRow,
+  hasImportRowIdentifier,
+  prepareManualHoldingForSave,
+} from "@/lib/services/portfolio/holdingValidation";
 import { normalizeImportPurchaseDate } from "@/lib/services/import/purchaseDate";
 import { applySelectedListing } from "@/lib/services/instruments/listingConfirmation";
 import type { ResolvedInstrument } from "@/lib/types/instrument";
@@ -44,6 +48,9 @@ export function confirmImportRow(row: ImportRow): ImportRow {
     purchaseDate: normalizeImportPurchaseDate(row.purchaseDate),
     userConfirmed: true,
     requiresConfirmation: false,
+    confirmationSource: row.providerSymbol
+      ? row.confirmationSource ?? "user_candidate"
+      : "manual_entry",
   });
 }
 
@@ -75,7 +82,7 @@ export function finalizeImportRowForSave(row: ImportRow): StoredPortfolioHolding
   const ready =
     row.reviewTier === "auto" || row.userConfirmed || row.assetType === "cash";
 
-  return normalizeHoldingForSave({
+  return prepareManualHoldingForSave({
     id: row.id,
     symbol: row.symbol,
     name: row.name,
@@ -111,16 +118,29 @@ export function canImportRows(rows: ImportRow[]): {
   }
 
   for (const row of rows) {
-    if (!row.name.trim() || row.quantity < 0) {
+    if (!canConfirmImportRow(row)) {
+      return { ok: false, message: "Some holdings are incomplete." };
+    }
+  }
+
+  return finalizeImportRowsGate(rows);
+}
+
+function finalizeImportRowsGate(rows: ImportRow[]): {
+  ok: boolean;
+  message?: string;
+} {
+  for (const row of rows) {
+    if (!row.name.trim() || row.quantity <= 0) {
       return { ok: false, message: "Some holdings are incomplete." };
     }
 
     if (row.assetType === "cash") continue;
 
-    if (!row.symbol.trim() && !row.isin) {
+    if (!hasImportRowIdentifier(row)) {
       return {
         ok: false,
-        message: "Each investment needs a ticker or ISIN before import.",
+        message: "Each investment needs a ticker, ISIN, or instrument name.",
       };
     }
 
@@ -135,13 +155,6 @@ export function canImportRows(rows: ImportRow[]): {
       return {
         ok: false,
         message: "Confirm the holdings flagged for review before importing.",
-      };
-    }
-
-    if (!row.providerSymbol && !row.userConfirmed) {
-      return {
-        ok: false,
-        message: "Match every investment to a listed instrument before import.",
       };
     }
   }

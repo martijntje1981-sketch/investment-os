@@ -34,6 +34,8 @@ import {
 import { logHoldingDailyData } from "@/lib/client/holdingDailyDataDebug";
 import { CLIENT_PRICE_CACHE_FRESH_MS } from "@/lib/services/marketData/cachePolicy";
 import { findSavedMappingForHolding } from "@/lib/services/import/mappingMemory";
+import { NO_QUOTABLE_HOLDINGS_MESSAGE } from "@/lib/services/prices/types";
+import { prepareManualHoldingForSave } from "@/lib/services/portfolio/holdingValidation";
 
 export {
   LEGACY_PORTFOLIO_STORAGE_KEY,
@@ -87,53 +89,11 @@ export function isInvestmentPricePending(
   return !Number.isFinite(holding.currentPrice) || holding.currentPrice <= 0;
 }
 
-/** Persist a holding without inferring market price from purchase price. */
+/** Persist a holding without requiring provider lookup or live market data. */
 export function normalizeHoldingForSave(
   holding: StoredPortfolioHolding,
 ): StoredPortfolioHolding {
-  if (holding.assetType === "cash") {
-    return {
-      ...holding,
-      symbol: holding.symbol || "EUR",
-      name: holding.name || "EUR Cash",
-      purchasePrice: 1,
-      currentPrice: 1,
-    };
-  }
-
-  const purchasePrice = Number.isFinite(holding.purchasePrice)
-    ? holding.purchasePrice
-    : 0;
-  const currentPrice =
-    Number.isFinite(holding.currentPrice) && holding.currentPrice > 0
-      ? holding.currentPrice
-      : 0;
-
-  return {
-    ...holding,
-    symbol: holding.symbol.trim().toUpperCase(),
-    name: holding.name.trim(),
-    purchasePrice,
-    currentPrice,
-    isin: holding.isin ?? null,
-    exchange: holding.exchange ?? null,
-    providerSymbol: holding.providerSymbol ?? null,
-    instrumentName: holding.instrumentName ?? null,
-    matchMethod: holding.matchMethod,
-    matchConfidence: holding.matchConfidence,
-    matchWarnings: holding.matchWarnings,
-    requiresConfirmation: holding.requiresConfirmation,
-    priceDataStatus:
-      currentPrice > 0
-        ? holding.priceDataStatus
-        : holding.priceDataStatus ?? "unavailable",
-    marketPriceUpdatedAt:
-      currentPrice > 0
-        ? holding.marketPriceUpdatedAt ??
-          holding.updatedAt ??
-          new Date().toISOString()
-        : holding.marketPriceUpdatedAt,
-  };
+  return prepareManualHoldingForSave(holding);
 }
 
 export type PriceRefreshOptions = {
@@ -185,6 +145,43 @@ export type PriceRefreshResult<T extends StoredPortfolioHolding> = {
   message?: string;
   rateLimited?: boolean;
 };
+
+export function countQuotablePriceHoldings(
+  holdings: StoredPortfolioHolding[],
+  userSub?: string,
+): number {
+  return buildPriceRequestPayload(holdings, userSub).filter((item) =>
+    Boolean(item.providerSymbol?.trim()),
+  ).length;
+}
+
+function filterQuotablePricePayload(
+  payload: PortfolioInstrumentPayload[],
+): PortfolioInstrumentPayload[] {
+  return payload.filter((item) => Boolean(item.providerSymbol?.trim()));
+}
+
+function resolveQuotableRefreshPayload(
+  holdings: StoredPortfolioHolding[],
+  userSub: string,
+  options?: PriceRefreshOptions,
+): PortfolioInstrumentPayload[] {
+  const payload = buildPriceRequestPayload(holdings, userSub);
+  const scopedPayload =
+    options?.onlyProviderSymbols && options.onlyProviderSymbols.length > 0
+      ? payload.filter((item) =>
+          item.providerSymbol
+            ? options.onlyProviderSymbols!.some(
+                (symbol) =>
+                  symbol.trim().toUpperCase() ===
+                  item.providerSymbol!.trim().toUpperCase(),
+              )
+            : false,
+        )
+      : payload;
+
+  return filterQuotablePricePayload(scopedPayload);
+}
 
 export function isRateLimitedPriceError(message: string): boolean {
   return /402|rate.?limit|daily.?limit|quota|too many requests|429|payment required/i.test(
@@ -466,48 +463,44 @@ export async function refreshPortfolioPrices<
   userSub: string,
   holdings: T[],
   options?: PriceRefreshOptions,
-): Promise<T[]> {
+): Promise<{ holdings: T[]; fetched: boolean }> {
   assertUserSub(userSub);
 
-  const payload = buildPriceRequestPayload(holdings, userSub);
-  const filteredPayload =
-    options?.onlyProviderSymbols && options.onlyProviderSymbols.length > 0
-      ? payload.filter((item) =>
-          item.providerSymbol
-            ? options.onlyProviderSymbols!.some(
-                (symbol) =>
-                  symbol.trim().toUpperCase() ===
-                  item.providerSymbol!.trim().toUpperCase(),
-              )
-            : false,
-        )
-      : payload;
-
-  if (filteredPayload.length === 0) {
-    return holdings;
+  const quotablePayload = resolveQuotableRefreshPayload(holdings, userSub, options);
+  if (quotablePayload.length === 0) {
+    return { holdings, fetched: false };
   }
 
   const response = await fetch("/api/prices", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      holdings: filteredPayload,
+      holdings: quotablePayload,
       forceRefresh: options?.forceRefresh ?? false,
     }),
     cache: "no-store",
   });
 
   const data = (await response.json()) as PriceApiResponse;
-  if (!response.ok || !data.success) {
-    throw new Error(data.error ?? "Market data unavailable");
+  if (!response.ok || (!data.success && !data.message)) {
+    throw new Error(data.error ?? data.message ?? "Market data unavailable");
+  }
+
+  if (data.message === NO_QUOTABLE_HOLDINGS_MESSAGE) {
+    return { holdings, fetched: false };
+  }
+
+  if (!data.success) {
+    throw new Error(data.message ?? "Market data unavailable");
   }
 
   const normalizedQuotes = normalizePriceApiQuotes(data.prices);
 
   console.log("[price api coverage]", {
-    requested: data.requested ?? filteredPayload.length,
+    requested: data.requested ?? quotablePayload.length,
     received: data.received ?? normalizedQuotes.length,
-    payloadHoldings: filteredPayload.length,
+    payloadHoldings: quotablePayload.length,
+    skipped: buildPriceRequestPayload(holdings, userSub).length - quotablePayload.length,
   });
 
   if (data.errors?.length) {
@@ -533,7 +526,7 @@ export async function refreshPortfolioPrices<
     clearMissingDailyFields: true,
   });
   logHoldingDailyData(refreshed, "after /api/prices refresh");
-  return refreshed;
+  return { holdings: refreshed, fetched: true };
 }
 
 /**
@@ -548,6 +541,14 @@ export async function tryRefreshPortfolioPrices<
 ): Promise<PriceRefreshResult<T>> {
   if (holdings.length === 0) {
     return { holdings, updated: false };
+  }
+
+  if (countQuotablePriceHoldings(holdings, userSub) === 0) {
+    return {
+      holdings: applyCachedPrices(userSub, holdings),
+      updated: false,
+      message: NO_QUOTABLE_HOLDINGS_MESSAGE,
+    };
   }
 
   if (
@@ -573,7 +574,18 @@ export async function tryRefreshPortfolioPrices<
 
   const run = (async () => {
     try {
-      const refreshed = await refreshPortfolioPrices(userSub, holdings, options);
+      const { holdings: refreshed, fetched } = await refreshPortfolioPrices(
+        userSub,
+        holdings,
+        options,
+      );
+      if (!fetched) {
+        return {
+          holdings: applyCachedPrices(userSub, refreshed),
+          updated: false,
+          message: NO_QUOTABLE_HOLDINGS_MESSAGE,
+        } satisfies PriceRefreshResult<T>;
+      }
       return { holdings: refreshed, updated: true } satisfies PriceRefreshResult<T>;
     } catch (error) {
       const message =

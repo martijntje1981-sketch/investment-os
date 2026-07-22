@@ -179,6 +179,13 @@ export function formatExchangeInputValue(
   return option?.label ?? exchange?.trim() ?? "";
 }
 
+export function getCommonExchangeOptions(limit = 8): ExchangeOption[] {
+  return EXCHANGE_CATALOG.slice(0, limit).map((entry) => ({
+    code: entry.code,
+    label: entry.label,
+  }));
+}
+
 export function searchExchanges(
   query: string,
   options: { signal?: AbortSignal; limit?: number } = {},

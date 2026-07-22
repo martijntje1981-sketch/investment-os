@@ -98,4 +98,40 @@ describe("POST /api/prices", () => {
     expect(response.status).toBe(400);
     expect(loadPricesForHoldings).not.toHaveBeenCalled();
   });
+
+  it("returns 200 when PriceService reports no quotable holdings", async () => {
+    vi.mocked(loadPricesForHoldings).mockResolvedValueOnce({
+      success: true,
+      message: "No holdings available for live pricing.",
+      baseCurrency: "EUR",
+      fxRates: {
+        EUR: 1,
+        USD_TO_EUR: null,
+        GBP_TO_EUR: null,
+        CHF_TO_EUR: null,
+      },
+      prices: [],
+      errors: ["VWCE: missing confirmed providerSymbol — quote refresh skipped (matching is import-only)."],
+      requested: 1,
+      received: 0,
+      generatedAt: "2026-07-22T09:00:00.000Z",
+      cache: { enabled: true, durationSeconds: 720 },
+    });
+
+    const response = await POST(
+      new Request("http://localhost/api/prices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          holdings: [{ symbol: "VWCE", name: "Vanguard FTSE All-World" }],
+        }),
+      }),
+    );
+
+    const payload = await response.json();
+    expect(response.status).toBe(200);
+    expect(payload.success).toBe(true);
+    expect(payload.message).toBe("No holdings available for live pricing.");
+    expect(payload.prices).toEqual([]);
+  });
 });

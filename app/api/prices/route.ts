@@ -75,7 +75,8 @@ export async function POST(request: Request) {
       forceRefresh: body.forceRefresh ?? false,
       onlyProviderSymbols: body.onlyProviderSymbols,
     });
-    return jsonResponse(payload, payload.success ? 200 : 503);
+    const status = payload.success ? 200 : 503;
+    return jsonResponse(payload, status);
   } catch (error) {
     console.error("Prices API POST error:", error);
     return NextResponse.json(

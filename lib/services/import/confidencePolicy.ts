@@ -7,6 +7,7 @@
 import { MATCHING_UNAVAILABLE_WARNING } from "@/lib/services/marketData/providerErrors";
 import type { ImportReviewTier, ImportRow, ImportReviewPlan } from "@/lib/services/import/types";
 import { aggregateFieldExtractionConfidence } from "@/lib/services/extraction/fieldConfidence";
+import { hasImportRowIdentifier } from "@/lib/services/portfolio/holdingValidation";
 
 /** Auto-import when effective confidence is at or above this value. */
 export const AUTO_IMPORT_THRESHOLD = 0.94;
@@ -97,7 +98,10 @@ export function classifyImportRow(row: ImportRow): ImportReviewTier {
   const confidence = effectiveImportConfidence(row);
 
   if (!row.providerSymbol || row.matchMethod === "unresolved") {
-    return confidence >= REVIEW_THRESHOLD ? "review" : "blocked";
+    if (!hasImportRowIdentifier(row)) {
+      return "blocked";
+    }
+    return "review";
   }
 
   if (confidence >= AUTO_IMPORT_THRESHOLD && !row.requiresConfirmation) {

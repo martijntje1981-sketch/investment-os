@@ -16,7 +16,7 @@ describe("resolveQuotePriceTargets", () => {
   });
 
   it("never calls matchInstrument for quote resolution", () => {
-    const { targets, errors } = resolveQuotePriceTargets([
+    const { targets, errors, skipped } = resolveQuotePriceTargets([
       {
         symbol: "VWCE",
         providerSymbol: "VWCE.XETRA",
@@ -27,12 +27,13 @@ describe("resolveQuotePriceTargets", () => {
 
     expect(matchInstrument).not.toHaveBeenCalled();
     expect(errors).toEqual([]);
+    expect(skipped).toBe(0);
     expect(targets).toHaveLength(1);
     expect(targets[0]?.providerSymbol).toBe("VWCE.XETRA");
   });
 
   it("skips holdings without providerSymbol and records an error", () => {
-    const { targets, errors } = resolveQuotePriceTargets([
+    const { targets, errors, skipped } = resolveQuotePriceTargets([
       {
         symbol: "VWCE",
         name: "Vanguard FTSE All-World UCITS ETF",
@@ -41,6 +42,7 @@ describe("resolveQuotePriceTargets", () => {
 
     expect(matchInstrument).not.toHaveBeenCalled();
     expect(targets).toEqual([]);
+    expect(skipped).toBe(1);
     expect(errors[0]).toMatch(/missing confirmed providerSymbol/i);
   });
 

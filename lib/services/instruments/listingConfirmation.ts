@@ -183,7 +183,9 @@ export function importRowToStoredHolding(
 export function investmentNeedsListingConfirmation(
   holding: Pick<StoredPortfolioHolding, "assetType" | "providerSymbol">,
 ): boolean {
-  return holding.assetType !== "cash" && !holding.providerSymbol;
+  // Listing confirmation is optional; manual save validation lives in holdingValidation.ts.
+  void holding;
+  return false;
 }
 
 /** Applies a locally validated exact provider symbol without calling the provider API. */

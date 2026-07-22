@@ -90,8 +90,8 @@ describe("listingConfirmation", () => {
     ]);
   });
 
-  it("requires listing confirmation when providerSymbol is missing", () => {
-    expect(investmentNeedsListingConfirmation(draft())).toBe(true);
+  it("listing confirmation is optional for manual save", () => {
+    expect(investmentNeedsListingConfirmation(draft())).toBe(false);
     expect(
       investmentNeedsListingConfirmation(
         draft({ providerSymbol: "VWCE.XETRA" }),

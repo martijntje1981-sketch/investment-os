@@ -81,6 +81,7 @@ export type PriceApiQuote = {
 
 export type PriceApiResponse = {
   success?: boolean;
+  message?: string;
   prices?: PriceApiQuote[];
   error?: string;
   errors?: string[];

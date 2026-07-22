@@ -3,12 +3,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { buildPortfolioAnalysis } from "@/lib/client/portfolioAnalysis";
 import {
   applyPricesToHoldings,
+  countQuotablePriceHoldings,
   isRateLimitedPriceError,
   loadUserPortfolioHoldings,
   normalizeHoldingForSave,
   tryRefreshPortfolioPrices,
   writePortfolioToStorage,
 } from "@/lib/client/portfolioPricing";
+import { NO_QUOTABLE_HOLDINGS_MESSAGE } from "@/lib/services/prices/types";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
 const USER = "auth-sub-save-tests";
@@ -36,7 +38,31 @@ describe("portfolio save without live quotes", () => {
     vi.restoreAllMocks();
   });
 
-  it("persists holdings with pending prices instead of inferring purchase price", () => {
+  it("skips price refresh when no holdings have providerSymbol", async () => {
+    const holdings = [
+      holding({
+        symbol: "VWCE",
+        purchasePrice: 95,
+        currentPrice: 95,
+        providerSymbol: null,
+      }),
+    ];
+    writePortfolioToStorage(USER, holdings);
+
+    const fetchSpy = vi.fn();
+    vi.stubGlobal("fetch", fetchSpy);
+
+    expect(countQuotablePriceHoldings(holdings, USER)).toBe(0);
+
+    const result = await tryRefreshPortfolioPrices(USER, holdings);
+
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(result.updated).toBe(false);
+    expect(result.message).toBe(NO_QUOTABLE_HOLDINGS_MESSAGE);
+    expect(loadUserPortfolioHoldings(USER)).toHaveLength(1);
+  });
+
+  it("uses purchase price as estimated display price when live quote is missing", () => {
     const saved = normalizeHoldingForSave(
       holding({
         symbol: "VWCE",
@@ -47,16 +73,17 @@ describe("portfolio save without live quotes", () => {
       }),
     );
 
-    expect(saved.currentPrice).toBe(0);
+    expect(saved.currentPrice).toBe(95);
     expect(saved.purchasePrice).toBe(95);
     expect(saved.providerSymbol).toBe("VWCE.XETRA");
     expect(saved.isin).toBe("IE00BK5BQT80");
+    expect(saved.priceDataStatus).toBe("unavailable");
 
     writePortfolioToStorage(USER, [saved]);
     const loaded = loadUserPortfolioHoldings(USER);
 
     expect(loaded).toHaveLength(1);
-    expect(loaded[0]?.currentPrice).toBe(0);
+    expect(loaded[0]?.currentPrice).toBe(95);
     expect(loaded[0]?.purchasePrice).toBe(95);
   });
 
@@ -101,15 +128,14 @@ describe("portfolio save without live quotes", () => {
     expect(isRateLimitedPriceError("Market data unavailable")).toBe(false);
   });
 
-  it("excludes unavailable prices from portfolio valuation", () => {
+  it("includes estimated purchase-price valuations in portfolio totals", () => {
     const analysis = buildPortfolioAnalysis([
       holding({ symbol: "AAA", currentPrice: 100, quantity: 5 }),
       holding({ symbol: "BBB", currentPrice: 0, quantity: 8, purchasePrice: 50 }),
     ]);
 
-    expect(analysis.totalValue).toBe(500);
-    expect(analysis.unvaluedHoldings).toHaveLength(1);
-    expect(analysis.unvaluedHoldings[0]?.symbol).toBe("BBB");
+    expect(analysis.totalValue).toBe(900);
+    expect(analysis.unvaluedHoldings).toHaveLength(0);
   });
 
   it("updates an existing holding on later price refresh without duplication", async () => {

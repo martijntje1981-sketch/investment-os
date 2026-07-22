@@ -95,8 +95,12 @@ export type HoldingPrice = {
   updatedAt: string;
 };
 
+export const NO_QUOTABLE_HOLDINGS_MESSAGE =
+  "No holdings available for live pricing.";
+
 export type PricePayload = {
   success: boolean;
+  message?: string;
   baseCurrency: "EUR";
   fxRates: {
     EUR: number | null;

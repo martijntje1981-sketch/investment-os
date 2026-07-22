@@ -253,6 +253,7 @@ describe("legacy price cache recovery", () => {
           id: "pending-id",
           symbol: "PENDING",
           currentPrice: 0,
+          purchasePrice: 0,
           providerSymbol: null,
         }),
       ]),

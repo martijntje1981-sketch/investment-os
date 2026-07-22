@@ -47,23 +47,26 @@ export function resolveQuotePriceTarget(
 export function resolveQuotePriceTargets(
   holdings: PriceHoldingInput[],
   options?: { onlyProviderSymbols?: string[] },
-): { targets: ResolvedPriceTarget[]; errors: string[] } {
+): { targets: ResolvedPriceTarget[]; errors: string[]; skipped: number } {
   const only = options?.onlyProviderSymbols
     ? new Set(options.onlyProviderSymbols.map((symbol) => symbol.trim().toUpperCase()))
     : null;
 
   const targets: ResolvedPriceTarget[] = [];
   const errors: string[] = [];
+  let skipped = 0;
 
   for (const holding of holdings) {
     if (only && holding.providerSymbol) {
       const key = holding.providerSymbol.trim().toUpperCase();
       if (!only.has(key)) {
+        skipped += 1;
         continue;
       }
     }
 
     if (!holding.providerSymbol?.trim()) {
+      skipped += 1;
       const label = holding.symbol || holding.isin || holding.name || "Unknown";
       errors.push(
         `${label}: missing confirmed providerSymbol — quote refresh skipped (matching is import-only).`,
@@ -79,7 +82,7 @@ export function resolveQuotePriceTargets(
     targets.push(target);
   }
 
-  return { targets, errors };
+  return { targets, errors, skipped };
 }
 
 export async function resolvePriceTarget(

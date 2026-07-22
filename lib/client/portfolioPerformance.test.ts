@@ -95,9 +95,9 @@ describe("portfolio market price helpers", () => {
     expect(merged).toBe(125);
   });
 
-  it("does not show false -100% loss when price is unavailable", () => {
+  it("does not show false -100% loss when no usable price exists", () => {
     const performance = buildPortfolioPerformance([
-      holding({ currentPrice: 0 }),
+      holding({ currentPrice: 0, purchasePrice: 0 }),
     ]);
 
     expect(performance.totalValue).toBe(0);
@@ -105,6 +105,17 @@ describe("portfolio market price helpers", () => {
     expect(performance.totalReturn).toBe(0);
     expect(performance.canShowPerformance).toBe(false);
     expect(performance.hasUnvaluedInvestments).toBe(true);
+  });
+
+  it("uses estimated purchase price in performance totals when live price is missing", () => {
+    const performance = buildPortfolioPerformance([
+      holding({ currentPrice: 0, purchasePrice: 100 }),
+    ]);
+
+    expect(performance.totalValue).toBe(700);
+    expect(performance.investedCapital).toBe(700);
+    expect(performance.totalReturn).toBe(0);
+    expect(performance.canShowPerformance).toBe(true);
   });
 
   it("shows correct gain when last known price is restored after sync", () => {
@@ -117,10 +128,15 @@ describe("portfolio market price helpers", () => {
     expect(performance.canShowPerformance).toBe(true);
   });
 
-  it("excludes unvalued holdings from largest-position performance totals", () => {
+  it("excludes holdings without any usable price from performance totals", () => {
     const performance = buildPortfolioPerformance([
       holding({ symbol: "VWCE", currentPrice: 110, quantity: 10 }),
-      holding({ symbol: "MISSING", currentPrice: 0, quantity: 5 }),
+      holding({
+        symbol: "MISSING",
+        currentPrice: 0,
+        purchasePrice: 0,
+        quantity: 5,
+      }),
     ]);
 
     expect(performance.totalValue).toBe(1100);

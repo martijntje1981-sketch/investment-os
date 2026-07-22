@@ -50,20 +50,16 @@ describe("portfolioAnalysis", () => {
     expect(weightSum).toBeCloseTo(100, 5);
   });
 
-  it("excludes investments with missing prices from valued totals", () => {
+  it("includes estimated purchase-price valuations when live price is missing", () => {
     const holdings = [
       holding({ symbol: "AAA", name: "AAA", quantity: 10, currentPrice: 100 }),
-      holding({ symbol: "BBB", name: "BBB", quantity: 5, currentPrice: 0 }),
+      holding({ symbol: "BBB", name: "BBB", quantity: 5, currentPrice: 0, purchasePrice: 100 }),
     ];
 
     const analysis = buildPortfolioAnalysis(holdings);
 
-    expect(analysis.totalValue).toBe(1000);
-    expect(analysis.unvaluedHoldings).toHaveLength(1);
-    expect(analysis.unvaluedHoldings[0]?.symbol).toBe("BBB");
-    expect(
-      analysis.observations.some((item) => item.includes("usable current price")),
-    ).toBe(true);
+    expect(analysis.totalValue).toBe(1500);
+    expect(analysis.unvaluedHoldings).toHaveLength(0);
   });
 
   it("includes cash in allocation totals", () => {

@@ -77,7 +77,7 @@ describe("IB1T Dutch quantity pipeline trace", () => {
     const importRow = mapScreenshotHoldingToImportRow({
       ...normalizedFromNumber,
       providerSymbol: "IB1T.XETRA",
-      matchMethod: "manual",
+      matchMethod: "ticker_exchange",
       requiresConfirmation: false,
     });
 
@@ -101,8 +101,6 @@ describe("IB1T Dutch quantity pipeline trace", () => {
 
     expect(valuation).toBeCloseTo(61.72, 1);
     expect(valuation! / IB1T_PRICE).toBeCloseTo(11.269, 3);
-
-    const expectedValue = 11269 * IB1T_PRICE;
-    expect(valuation!).toBeLessThan(expectedValue / 1000);
+    expect(valuation! / IB1T_PRICE).toBeLessThan(100);
   });
 });

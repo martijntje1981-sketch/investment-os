@@ -99,3 +99,16 @@ export function logPriceServiceMetrics(context: string): void {
   const snapshot = getPriceServiceMetricsSnapshot();
   console.info(`[price-service] ${context}`, snapshot);
 }
+
+export type PriceRefreshLogSummary = {
+  holdingsRequested: number;
+  holdingsSkipped: number;
+  holdingsQuotable: number;
+  providerCallsMade: number;
+  cacheHits: number;
+  cacheMisses: number;
+};
+
+export function logPriceRefreshSummary(summary: PriceRefreshLogSummary): void {
+  console.info("[price-service] refresh_summary", summary);
+}

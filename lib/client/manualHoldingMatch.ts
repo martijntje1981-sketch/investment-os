@@ -120,18 +120,17 @@ export async function lookupManualHoldingListing(
   const data = (await response.json()) as MatchApiResponse;
 
   if (!response.ok || !data.success || !data.results?.[0]) {
-    if (isMatchProviderFailure(data.message)) {
-      return {
-        holding: draft,
-        candidates: [],
-        warnings: [
-          "Instrument lookup is temporarily unavailable. You can enter a full provider symbol such as VWCE.XETRA instead.",
-        ],
-        quotaUnavailable: true,
-      };
-    }
-
-    throw new Error(data.message ?? "Instrument matching failed.");
+    const unavailable = isMatchProviderFailure(data.message);
+    return {
+      holding: draft,
+      candidates: [],
+      warnings: [
+        unavailable
+          ? "Instrument lookup is temporarily unavailable. You can continue manually and save your holding."
+          : "We couldn't find a listing right now. You can continue manually and save your holding.",
+      ],
+      quotaUnavailable: unavailable,
+    };
   }
 
   const matched = applyMatchResultToImportRow(seedRow, data.results[0].resolved);
