@@ -224,7 +224,7 @@ export function buildGoalCoach(input: {
       headline: "You're slightly behind schedule.",
       body:
         monthlyGap && monthlyGap > 0
-          ? `Increasing monthly contributions by ${formatCurrency(Math.min(monthlyGap, CONTRIBUTION_BUMP))} would bring you closer to your target pace.`
+          ? `Increasing monthly contributions by ${formatCurrency(Math.min(monthlyGap, CONTRIBUTION_BUMP))} would bring you back on track.`
           : `Adding ${formatCurrency(CONTRIBUTION_BUMP)}/month improves the projected completion to ${bumpCompletion}.`,
       reason: `Why: The current projection of ${formatCurrency(projectedValueAtTargetYear)} is below the ${formatCurrency(goal.targetValue)} target by ${goal.targetYear}.`,
       actionLine: `Current projected completion: ${projectedCompletion}.`,
