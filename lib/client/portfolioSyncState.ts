@@ -18,6 +18,7 @@ import type {
 } from "@/lib/client/portfolioSyncApi";
 import {
   buildSyncFingerprintDiagnostics,
+  logPortfolioPersistenceEvent,
   logPortfolioSyncDiagnostics,
 } from "@/lib/client/portfolioSyncDebug";
 import { writePortfolioToStorage, readPortfolioFromStorage } from "@/lib/client/userPortfolioStorage";
@@ -28,6 +29,12 @@ import {
   portfolioContentFingerprint,
   portfoliosContentMatch,
 } from "@/lib/services/portfolio/idempotency";
+import {
+  countEnrichedHoldings,
+  shouldApplyRemoteSnapshot,
+  summarizePortfolioHoldings,
+  validatePortfolioBeforeSave,
+} from "@/lib/services/portfolio/portfolioPersistenceGuard";
 
 export type ClientPortfolioSyncState =
   | { status: "loading" }
@@ -135,18 +142,64 @@ export function resolveClientSyncState(
 export function applyRemoteSnapshotToLocalCache(
   userSub: string,
   snapshot: RemotePortfolioSnapshot,
-  options?: { preserveLocalPrices?: StoredPortfolioHolding[] },
+  options?: {
+    preserveLocalPrices?: StoredPortfolioHolding[];
+    sentHoldings?: StoredPortfolioHolding[];
+    context?: "hydrate" | "push_response" | "conflict_resolution";
+    force?: boolean;
+  },
 ): StoredPortfolioHolding[] {
+  const localHoldings = options?.preserveLocalPrices ?? readPortfolioFromStorage(userSub);
+  const localGoal = readSavedUserGoal(userSub);
+  const decision = options?.force
+    ? { apply: true as const, reason: "forced", stale: false }
+    : shouldApplyRemoteSnapshot(localHoldings, snapshot.holdings, {
+        sentHoldings: options?.sentHoldings,
+        localGoal,
+        remoteGoal: snapshot.goal,
+        context: options?.context ?? "push_response",
+      });
+
+  const beforeSummary = summarizePortfolioHoldings(localHoldings);
+  const remoteSummary = summarizePortfolioHoldings(snapshot.holdings);
+
+  logPortfolioPersistenceEvent("remote snapshot apply decision", {
+    userSub,
+    context: options?.context ?? "push_response",
+    apply: decision.apply,
+    reason: decision.reason,
+    stale: "stale" in decision ? decision.stale : false,
+    before: beforeSummary,
+    remote: remoteSummary,
+    sent: options?.sentHoldings
+      ? summarizePortfolioHoldings(options.sentHoldings)
+      : null,
+  });
+
+  if (!decision.apply) {
+    logPortfolioSyncDiagnostics("stale remote snapshot rejected", {
+      userSub,
+      reason: decision.reason,
+      localHoldingCount: beforeSummary.total,
+      remoteHoldingCount: remoteSummary.total,
+    });
+    return localHoldings;
+  }
+
+  const priceById = new Map(
+    localHoldings.map((holding) => [holding.id, holding]),
+  );
   const priceBySymbol = new Map(
-    (options?.preserveLocalPrices ?? []).map((holding) => [
+    localHoldings.map((holding) => [
       `${holding.symbol}:${holding.assetType ?? "investment"}`,
       holding,
     ]),
   );
 
   const holdings = snapshot.holdings.map((holding) => {
-    const key = `${holding.symbol}:${holding.assetType ?? "investment"}`;
-    const localHolding = priceBySymbol.get(key);
+    const localHolding =
+      priceById.get(holding.id) ??
+      priceBySymbol.get(`${holding.symbol}:${holding.assetType ?? "investment"}`);
     const mergedPrice = mergeRemoteMarketPrice(
       holding,
       localHolding?.currentPrice,
@@ -154,6 +207,18 @@ export function applyRemoteSnapshotToLocalCache(
 
     return {
       ...holding,
+      providerSymbol: holding.providerSymbol ?? localHolding?.providerSymbol ?? null,
+      exchange: holding.exchange ?? localHolding?.exchange ?? null,
+      instrumentName:
+        holding.instrumentName ?? localHolding?.instrumentName ?? null,
+      isin: holding.isin ?? localHolding?.isin ?? null,
+      confirmationSource:
+        holding.confirmationSource ?? localHolding?.confirmationSource,
+      matchMethod: holding.matchMethod ?? localHolding?.matchMethod,
+      matchConfidence: holding.matchConfidence ?? localHolding?.matchConfidence,
+      requiresConfirmation:
+        holding.requiresConfirmation ?? localHolding?.requiresConfirmation,
+      matchWarnings: holding.matchWarnings ?? localHolding?.matchWarnings,
       currentPrice: mergedPrice,
       changePercent: localHolding?.changePercent ?? holding.changePercent,
       previousClose: localHolding?.previousClose ?? holding.previousClose,
@@ -168,6 +233,15 @@ export function applyRemoteSnapshotToLocalCache(
     };
   });
 
+  const validation = validatePortfolioBeforeSave(holdings);
+  if (!validation.ok) {
+    logPortfolioSyncDiagnostics("remote snapshot validation failed", {
+      userSub,
+      message: validation.message,
+    });
+    return localHoldings;
+  }
+
   writePortfolioToStorage(userSub, holdings);
 
   if (snapshot.goal) {
@@ -181,9 +255,18 @@ export function applyRemoteSnapshotToLocalCache(
   }
 
   writePortfolioSyncMeta(userSub, {
+    ...readPortfolioSyncMeta(userSub),
     version: PORTFOLIO_SYNC_VERSION,
     lastSuccessfulRemoteAt: snapshot.remoteUpdatedAt ?? new Date().toISOString(),
     lastSyncError: null,
+    lastLocalInvestmentCount: remoteSummary.investments,
+    lastLocalTotalCount: remoteSummary.total,
+  });
+
+  logPortfolioPersistenceEvent("remote snapshot applied", {
+    userSub,
+    after: summarizePortfolioHoldings(holdings),
+    enrichmentCount: countEnrichedHoldings(localHoldings, holdings),
   });
 
   return holdings;
@@ -282,6 +365,8 @@ export function resolveConflictWithRemoteSnapshot(
 
   const merged = applyRemoteSnapshotToLocalCache(userSub, remoteSnapshot, {
     preserveLocalPrices: localHoldings,
+    context: "conflict_resolution",
+    force: true,
   });
   const goalAfterApply = readSavedUserGoal(userSub);
 
@@ -343,6 +428,9 @@ export function resolveConflictWithPushedSnapshot(
 
   const merged = applyRemoteSnapshotToLocalCache(userSub, snapshot, {
     preserveLocalPrices: localHoldings,
+    sentHoldings: localHoldings,
+    context: "conflict_resolution",
+    force: true,
   });
   const goalAfterApply = readSavedUserGoal(userSub);
 
@@ -395,6 +483,31 @@ export function recordSyncFailure(userSub: string, message: string): void {
   writePortfolioSyncMeta(userSub, {
     ...meta,
     lastSyncError: message,
+  });
+}
+
+export function recordLocalPortfolioSave(
+  userSub: string,
+  holdings: StoredPortfolioHolding[],
+  revision: number,
+): void {
+  const summary = summarizePortfolioHoldings(holdings);
+  writePortfolioSyncMeta(userSub, {
+    ...readPortfolioSyncMeta(userSub),
+    version: PORTFOLIO_SYNC_VERSION,
+    lastLocalRevision: revision,
+    lastLocalSaveAt: new Date().toISOString(),
+    lastLocalInvestmentCount: summary.investments,
+    lastLocalTotalCount: summary.total,
+    lastSyncError: null,
+  });
+
+  logPortfolioPersistenceEvent("local portfolio saved", {
+    userSub,
+    revision,
+    total: summary.total,
+    investments: summary.investments,
+    cash: summary.cash,
   });
 }
 

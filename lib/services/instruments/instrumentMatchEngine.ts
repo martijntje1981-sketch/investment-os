@@ -21,10 +21,20 @@ import {
   type EodhdSearchRow,
 } from "./eodhdClient";
 import {
-  isEodhdQuotaExhausted,
-  markEodhdQuotaExhausted,
+  isEodhdInstrumentQuotaExhausted,
+  markEodhdInstrumentQuotaExhausted,
 } from "./eodhdQuotaGuard";
 import { exchangesMatch, exchangeResolutionMessage, normalizeProviderExchangeCode, resolveExchangeForMatching } from "./exchangeNormalizer";
+import {
+  looksLikeProviderSymbolInput,
+  parseProviderSymbolInput,
+} from "./providerSymbolInput";
+import {
+  lookupVerifiedByIsin,
+  lookupVerifiedByProviderSymbol,
+  lookupVerifiedByTickerExchange,
+  verifiedEntryToResolved,
+} from "./verifiedInstrumentRegistry";
 import { isValidIsin, normalizeIsin } from "./validation";
 import type {
   InstrumentMatchInput,
@@ -39,14 +49,14 @@ import { MATCHING_UNAVAILABLE_WARNING } from "@/lib/services/marketData/provider
 
 function handleProviderFailure(error: unknown): void {
   if (isEodhdQuotaOrRateLimitError(error)) {
-    markEodhdQuotaExhausted();
+    markEodhdInstrumentQuotaExhausted(error);
   }
 }
 
 async function safeFetchIdMapping(
   filters: Parameters<typeof fetchIdMapping>[0],
 ): Promise<EodhdIdMappingRow[] | null> {
-  if (isEodhdQuotaExhausted()) {
+  if (isEodhdInstrumentQuotaExhausted()) {
     return null;
   }
 
@@ -62,7 +72,7 @@ async function safeFetchSearch(
   query: string,
   options: Parameters<typeof fetchSearch>[1] = {},
 ): Promise<EodhdSearchRow[] | null> {
-  if (isEodhdQuotaExhausted()) {
+  if (isEodhdInstrumentQuotaExhausted()) {
     return null;
   }
 
@@ -154,6 +164,14 @@ function disambiguateRows<T extends EodhdIdMappingRow | EodhdSearchRow>(
 
 function normalizeSearchName(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+function externalResultUsable(result: ResolvedInstrument): boolean {
+  return (
+    Boolean(result.providerSymbol) ||
+    (result.candidates?.length ?? 0) > 0 ||
+    result.warnings.includes(MATCHING_UNAVAILABLE_WARNING)
+  );
 }
 
 function appendWarnings(
@@ -533,8 +551,8 @@ async function resolveByNameAndExchange(
 }
 
 /**
- * Resolves a single instrument using ISIN → ticker → name, with exchange
- * used only to disambiguate listings.
+ * Resolves a single instrument using verified mappings first, then
+ * ISIN → ticker+exchange → name via EODHD when the instrument circuit allows.
  */
 export async function matchInstrument(
   input: InstrumentMatchInput,
@@ -543,16 +561,13 @@ export async function matchInstrument(
     return unresolved([]);
   }
 
-  if (isEodhdQuotaExhausted()) {
-    return unresolved([MATCHING_UNAVAILABLE_WARNING]);
-  }
-
   const ticker = cleanTicker(input.ticker);
   const isin = normalizeIsin(input.isin);
   const rawExchange = input.exchange?.trim().toUpperCase() || null;
   const exchange = resolveExchangeForMatching(rawExchange);
   const exchangeWarning = exchangeResolutionMessage(rawExchange);
   const instrumentName = cleanName(input.instrumentName);
+  const instrumentUnavailable = isEodhdInstrumentQuotaExhausted();
 
   let effectiveIsin = isin;
   let effectiveTicker = ticker;
@@ -561,57 +576,85 @@ export async function matchInstrument(
     effectiveTicker = "";
   }
 
-  // 1. ISIN — primary path; exchange disambiguates when multiple listings exist.
+  // 1. ISIN against verified mappings.
   if (effectiveIsin) {
-    const result = await resolveByIsin(effectiveIsin, exchange);
-    return appendWarnings(result, [exchangeWarning]);
+    const verified = lookupVerifiedByIsin(effectiveIsin, exchange);
+    if (verified) {
+      return appendWarnings(verifiedEntryToResolved(verified, "isin"), [
+        exchangeWarning,
+      ]);
+    }
   }
 
-  // 2. Ticker + exchange — honour a confirmed exchange before guessing globally.
+  // 2. Exact provider symbol input.
+  if (looksLikeProviderSymbolInput(effectiveTicker)) {
+    const parsed = parseProviderSymbolInput(effectiveTicker);
+    if (parsed.ok) {
+      const verified = lookupVerifiedByProviderSymbol(parsed.providerSymbol);
+      const resolved = verified
+        ? verifiedEntryToResolved(verified, "ticker_exchange")
+        : parsed.resolved;
+      return appendWarnings(resolved, [exchangeWarning]);
+    }
+  }
+
+  // 3. Ticker + normalized exchange against verified mappings.
   if (effectiveTicker && exchange) {
+    const verified = lookupVerifiedByTickerExchange(effectiveTicker, exchange);
+    if (verified) {
+      return appendWarnings(
+        verifiedEntryToResolved(verified, "ticker_exchange"),
+        [exchangeWarning],
+      );
+    }
+  }
+
+  // 4. External provider search when the instrument circuit is available.
+  if (effectiveIsin && !instrumentUnavailable) {
+    const result = await resolveByIsin(effectiveIsin, exchange);
+    if (externalResultUsable(result)) {
+      return appendWarnings(result, [exchangeWarning]);
+    }
+  }
+
+  if (effectiveTicker && exchange && !instrumentUnavailable) {
     const result = await resolveByTickerAndExchange(
       effectiveTicker,
       exchange,
       instrumentName || null,
     );
-    if (result.providerSymbol || (result.candidates?.length ?? 0) > 0) {
+    if (externalResultUsable(result)) {
       return appendWarnings(result, [exchangeWarning]);
     }
   }
 
-  // 3. Ticker — auto-select only when a single listing exists.
-  if (effectiveTicker) {
+  if (effectiveTicker && !instrumentUnavailable) {
     const tickerOnly = await resolveByTickerOnly(
       effectiveTicker,
       instrumentName || null,
     );
-    if (tickerOnly.providerSymbol) {
-      return appendWarnings(tickerOnly, [exchangeWarning]);
-    }
-    if ((tickerOnly.candidates?.length ?? 0) > 0) {
+    if (externalResultUsable(tickerOnly)) {
       return appendWarnings(tickerOnly, [exchangeWarning]);
     }
   }
 
-  // 4. Instrument name + exchange.
-  if (instrumentName && exchange) {
+  if (instrumentName && exchange && !instrumentUnavailable) {
     const result = await resolveByNameAndExchange(
       instrumentName,
       exchange,
       effectiveTicker || null,
     );
-    if (result.providerSymbol || (result.candidates?.length ?? 0) > 0) {
+    if (externalResultUsable(result)) {
       return appendWarnings(result, [exchangeWarning]);
     }
   }
 
-  // 5. Instrument name with ticker hint when no exchange was confirmed.
-  if (instrumentName && effectiveTicker && !exchange) {
+  if (instrumentName && effectiveTicker && !exchange && !instrumentUnavailable) {
     const result = await resolveByTickerWithNameHint(
       effectiveTicker,
       instrumentName,
     );
-    if (result.providerSymbol || (result.candidates?.length ?? 0) > 0) {
+    if (externalResultUsable(result)) {
       return appendWarnings(result, [exchangeWarning]);
     }
   }
@@ -630,12 +673,14 @@ export async function matchInstrument(
     warnings.push(
       "Instrument name provided without exchange — add an exchange or an ISIN to resolve.",
     );
+  } else if (instrumentUnavailable) {
+    warnings.push(MATCHING_UNAVAILABLE_WARNING);
   } else {
     warnings.push("Could not match this holding to a listed instrument.");
   }
 
   const candidates =
-    effectiveTicker !== ""
+    effectiveTicker !== "" && !instrumentUnavailable
       ? await buildTickerListingCandidates(
           effectiveTicker,
           instrumentName || null,

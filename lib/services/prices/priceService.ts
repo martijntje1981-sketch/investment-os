@@ -45,7 +45,7 @@ import {
   readPersistedQuote,
   writePersistedQuote,
 } from "@/lib/services/marketData/persistentQuoteCache";
-import { EODHD_PROVIDER_ID } from "@/lib/services/instruments/eodhdQuotaGuard";
+import { EODHD_QUOTE_PROVIDER_ID } from "@/lib/services/instruments/eodhdQuoteGuard";
 import {
   dedupeResolvedTargets,
   resolveDefaultWatchlist,
@@ -94,7 +94,7 @@ export type LoadPricesOptions = {
 
 const DEFAULT_FX_RATES: FxRates = { EUR: 1, USD: null, GBP: null, CHF: null };
 
-function effectiveForceRefresh(requested: boolean, providerId = EODHD_PROVIDER_ID): boolean {
+function effectiveForceRefresh(requested: boolean, providerId = EODHD_QUOTE_PROVIDER_ID): boolean {
   return requested && !isProviderCircuitOpen(providerId);
 }
 
@@ -149,8 +149,8 @@ async function getFxRates(forceRefresh = false): Promise<FxRates> {
     return fxCache.rates;
   }
 
-  if (isProviderCircuitOpen(EODHD_PROVIDER_ID)) {
-    recordProviderCooldown(EODHD_PROVIDER_ID);
+  if (isProviderCircuitOpen(EODHD_QUOTE_PROVIDER_ID)) {
+    recordProviderCooldown(EODHD_QUOTE_PROVIDER_ID);
     if (fxCache) {
       return fxCache.rates;
     }
@@ -163,11 +163,30 @@ async function getFxRates(forceRefresh = false): Promise<FxRates> {
   }
 
   fxInFlight = (async () => {
-    assertProviderAvailable(EODHD_PROVIDER_ID);
+    assertProviderAvailable(EODHD_QUOTE_PROVIDER_ID);
     recordProviderCall();
-    const rates = await fetchEodhdFxRates();
-    fxCache = { rates, expiresAt: Date.now() + FX_CACHE_TTL_MS };
-    return rates;
+    try {
+      const rates = await fetchEodhdFxRates();
+      fxCache = { rates, expiresAt: Date.now() + FX_CACHE_TTL_MS };
+      return rates;
+    } catch (error) {
+      const kind =
+        error instanceof ProviderQuoteError
+          ? error.kind
+          : ("provider_error" as const);
+      recordProviderFailure(kind === "quota_exhausted");
+
+      if (isCircuitBreakerFailure(kind)) {
+        recordProviderCircuitFailure(EODHD_QUOTE_PROVIDER_ID, error);
+        recordProviderCooldown(EODHD_QUOTE_PROVIDER_ID);
+      }
+
+      if (fxCache) {
+        return fxCache.rates;
+      }
+
+      return DEFAULT_FX_RATES;
+    }
   })();
 
   try {

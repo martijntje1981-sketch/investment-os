@@ -19,6 +19,7 @@ function holding(
   overrides: Partial<StoredPortfolioHolding> & Pick<StoredPortfolioHolding, "symbol">,
 ): StoredPortfolioHolding {
   return {
+    ...overrides,
     id: overrides.id ?? "holding-1",
     symbol: overrides.symbol,
     name: overrides.name ?? `${overrides.symbol} Fund`,
@@ -29,6 +30,8 @@ function holding(
     assetType: overrides.assetType ?? "investment",
     providerSymbol: overrides.providerSymbol ?? null,
     isin: overrides.isin ?? null,
+    exchange: overrides.exchange ?? null,
+    confirmationSource: overrides.confirmationSource,
   };
 }
 
@@ -236,5 +239,64 @@ describe("portfolio save without live quotes", () => {
     expect(result.rateLimited).toBe(true);
     expect(result.holdings[0]?.providerSymbol).toBe("VWCE.XETRA");
     expect(result.holdings[0]?.currentPrice).toBe(105);
+  });
+
+  it("auto-enriches manual holdings on load when verified mapping exists", () => {
+    writePortfolioToStorage(USER, [
+      holding({
+        symbol: "AIFS",
+        exchange: "Xetra",
+        providerSymbol: null,
+        confirmationSource: "manual_entry",
+      }),
+    ]);
+
+    const loaded = loadUserPortfolioHoldings(USER);
+    expect(loaded[0]?.providerSymbol).toBe("AIFS.XETRA");
+    expect(loaded[0]?.confirmationSource).toBe("verified_mapping");
+
+    const reloaded = loadUserPortfolioHoldings(USER);
+    expect(reloaded).toHaveLength(1);
+    expect(reloaded[0]?.providerSymbol).toBe("AIFS.XETRA");
+  });
+
+  it("posts only quotable holdings to /api/prices", async () => {
+    const holdings = [
+      holding({
+        symbol: "AIFS",
+        exchange: "XETRA",
+        providerSymbol: "AIFS.XETRA",
+        confirmationSource: "verified_mapping",
+      }),
+      holding({
+        id: "holding-2",
+        symbol: "UNKNOWN",
+        providerSymbol: null,
+      }),
+    ];
+
+    const fetchSpy = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        success: true,
+        prices: [
+          {
+            symbol: "AIFS",
+            providerSymbol: "AIFS.XETRA",
+            priceEur: 9.5,
+            currentPrice: 9.5,
+          },
+        ],
+      }),
+    });
+    vi.stubGlobal("fetch", fetchSpy);
+
+    await tryRefreshPortfolioPrices(USER, holdings);
+
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    const body = JSON.parse(String(fetchSpy.mock.calls[0]?.[1]?.body));
+    expect(body.forceRefresh).toBe(false);
+    expect(body.holdings).toHaveLength(1);
+    expect(body.holdings[0]?.providerSymbol).toBe("AIFS.XETRA");
   });
 });

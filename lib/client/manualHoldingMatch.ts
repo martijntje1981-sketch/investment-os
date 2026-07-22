@@ -21,6 +21,8 @@ import {
 import type { ResolvedInstrument } from "@/lib/types/instrument";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
+import { MATCHING_UNAVAILABLE_WARNING } from "@/lib/services/marketData/providerErrors";
+
 type MatchApiResult = {
   input: ReturnType<typeof importRowToMatchInput>;
   resolved: ResolvedInstrument;
@@ -46,16 +48,21 @@ function isMatchProviderFailure(message: string | undefined): boolean {
   );
 }
 
+function warningsIndicateLookupUnavailable(warnings: string[]): boolean {
+  return warnings.some((warning) => warning.includes(MATCHING_UNAVAILABLE_WARNING));
+}
+
 function mergeLookupResult(
   draft: StoredPortfolioHolding,
   row: ImportRow,
 ): ManualListingLookupResult {
   const holding = importRowToStoredHolding(row);
+  const warnings = row.matchWarnings ?? [];
   return {
     holding,
     candidates: row.candidates ?? [],
-    warnings: row.matchWarnings ?? [],
-    quotaUnavailable: false,
+    warnings,
+    quotaUnavailable: warningsIndicateLookupUnavailable(warnings),
   };
 }
 
@@ -92,15 +99,18 @@ export async function lookupManualHoldingListing(
       };
     }
 
-    const holding = applySelectedListing(
-      {
-        ...draft,
-        symbol: parsed.ticker,
-        exchange: parsed.exchange,
-        matchMethod: draft.matchMethod as ResolvedInstrument["matchMethod"] | undefined,
-      },
-      parsed.resolved,
-    ) as StoredPortfolioHolding;
+    const holding = {
+      ...applySelectedListing(
+        {
+          ...draft,
+          symbol: parsed.ticker,
+          exchange: parsed.exchange,
+          matchMethod: draft.matchMethod as ResolvedInstrument["matchMethod"] | undefined,
+        },
+        parsed.resolved,
+      ),
+      confirmationSource: parsed.confirmationSource,
+    } as StoredPortfolioHolding;
 
     return {
       holding,
@@ -134,7 +144,27 @@ export async function lookupManualHoldingListing(
   }
 
   const matched = applyMatchResultToImportRow(seedRow, data.results[0].resolved);
-  return mergeLookupResult(draft, annotateImportRow(matched));
+  const annotated = annotateImportRow(matched);
+
+  if (annotated.providerSymbol) {
+    return mergeLookupResult(draft, annotated);
+  }
+
+  const warnings = annotated.matchWarnings ?? [];
+  const lookupUnavailable = warningsIndicateLookupUnavailable(warnings);
+
+  return {
+    holding: draft,
+    candidates: annotated.candidates ?? [],
+    warnings: lookupUnavailable
+      ? [
+          "Instrument lookup is temporarily unavailable. You can continue manually and save your holding.",
+        ]
+      : warnings.length > 0
+        ? warnings
+        : ["No listing matched this holding. You can continue manually and save your holding."],
+    quotaUnavailable: lookupUnavailable,
+  };
 }
 
 export function applyManualListingSelection(

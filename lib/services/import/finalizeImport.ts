@@ -33,6 +33,8 @@ export function applyMatchResultToImportRow(
 
   const next: ImportRow = {
     ...merged,
+    confirmationSource:
+      resolved.confirmationSource ?? merged.confirmationSource ?? undefined,
     extractionWarnings:
       mergedWarnings.length > 0 ? mergedWarnings : row.extractionWarnings,
     candidates: resolved.candidates ?? row.candidates,

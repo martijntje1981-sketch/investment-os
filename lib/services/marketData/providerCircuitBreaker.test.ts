@@ -7,7 +7,8 @@ import {
   recordProviderCircuitFailure,
   resetProviderCircuitForTests,
 } from "@/lib/services/marketData/providerCircuitBreaker";
-import { EODHD_PROVIDER_ID } from "@/lib/services/instruments/eodhdQuotaGuard";
+import { EODHD_INSTRUMENT_PROVIDER_ID } from "@/lib/services/instruments/eodhdQuotaGuard";
+import { EODHD_QUOTE_PROVIDER_ID } from "@/lib/services/instruments/eodhdQuoteGuard";
 
 describe("providerCircuitBreaker", () => {
   beforeEach(() => {
@@ -21,24 +22,27 @@ describe("providerCircuitBreaker", () => {
     resetProviderCircuitForTests();
   });
 
-  it("opens the circuit on HTTP 402 quota failures", () => {
+  it("opens the instrument circuit independently from quotes", () => {
     recordProviderCircuitFailure(
-      EODHD_PROVIDER_ID,
+      EODHD_INSTRUMENT_PROVIDER_ID,
       new ProviderQuoteError("quota_exhausted", "quota hit", 402),
     );
 
-    expect(isProviderCircuitOpen(EODHD_PROVIDER_ID)).toBe(true);
-    expect(() => assertProviderAvailable(EODHD_PROVIDER_ID)).toThrow(/quota/i);
+    expect(isProviderCircuitOpen(EODHD_INSTRUMENT_PROVIDER_ID)).toBe(true);
+    expect(isProviderCircuitOpen(EODHD_QUOTE_PROVIDER_ID)).toBe(false);
+    expect(() => assertProviderAvailable(EODHD_INSTRUMENT_PROVIDER_ID)).toThrow(
+      /quota/i,
+    );
   });
 
   it("closes the circuit after the cooldown expires", () => {
     recordProviderCircuitFailure(
-      EODHD_PROVIDER_ID,
+      EODHD_INSTRUMENT_PROVIDER_ID,
       new ProviderQuoteError("quota_exhausted", "quota hit", 402),
     );
 
     vi.advanceTimersByTime(6 * 60 * 60 * 1000 + 1);
 
-    expect(isProviderCircuitOpen(EODHD_PROVIDER_ID)).toBe(false);
+    expect(isProviderCircuitOpen(EODHD_INSTRUMENT_PROVIDER_ID)).toBe(false);
   });
 });

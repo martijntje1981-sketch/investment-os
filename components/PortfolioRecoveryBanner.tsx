@@ -2,9 +2,10 @@
 
 import { Banknote, BriefcaseBusiness, RotateCcw, X } from "lucide-react";
 import type { LegacyRecoveryOffer } from "@/lib/client/portfolioPricing";
+import type { PortfolioBackupRecoveryOffer } from "@/lib/client/portfolioLocalBackup";
 
 type PortfolioRecoveryBannerProps = {
-  offer: LegacyRecoveryOffer | null;
+  offer: LegacyRecoveryOffer | PortfolioBackupRecoveryOffer | null;
   onRecover: () => void;
   onDismiss: () => void;
 };
@@ -16,6 +17,8 @@ export default function PortfolioRecoveryBanner({
 }: PortfolioRecoveryBannerProps) {
   if (!offer) return null;
 
+  const isBackup = "source" in offer && offer.source === "local_backup";
+
   return (
     <section className="mt-6 rounded-[24px] border border-blue-200 bg-blue-50 p-5 shadow-sm sm:p-6">
       <div className="flex items-start justify-between gap-4">
@@ -25,17 +28,14 @@ export default function PortfolioRecoveryBanner({
           </div>
           <div>
             <h2 className="text-lg font-black text-slate-950">
-              Existing portfolio found on this browser
+              {isBackup
+                ? "Complete portfolio backup found on this device"
+                : "Existing portfolio found on this browser"}
             </h2>
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              We found {offer.holdingCount}{" "}
-              {offer.holdingCount === 1 ? "holding" : "holdings"} saved before
-              sign-in scoping was enabled, including {offer.investmentCount}{" "}
-              {offer.investmentCount === 1 ? "investment" : "investments"}
-              {offer.cashCount > 0
-                ? ` and ${offer.cashCount} cash ${offer.cashCount === 1 ? "balance" : "balances"}`
-                : ""}
-              .
+              {isBackup
+                ? `A saved backup on this device still contains ${offer.investmentCount} ${offer.investmentCount === 1 ? "investment" : "investments"} and ${offer.cashCount} cash ${offer.cashCount === 1 ? "balance" : "balances"}.`
+                : `We found ${offer.holdingCount} ${offer.holdingCount === 1 ? "holding" : "holdings"} saved before sign-in scoping was enabled, including ${offer.investmentCount} ${offer.investmentCount === 1 ? "investment" : "investments"}${offer.cashCount > 0 ? ` and ${offer.cashCount} cash ${offer.cashCount === 1 ? "balance" : "balances"}` : ""}.`}
             </p>
             {offer.cashCurrencies.length > 0 && (
               <p className="mt-2 flex flex-wrap items-center gap-2 text-xs font-semibold text-blue-800">

@@ -177,6 +177,7 @@ export function importRowToStoredHolding(
     matchConfidence: row.matchConfidence,
     requiresConfirmation: row.requiresConfirmation,
     matchWarnings: row.matchWarnings,
+    confirmationSource: row.confirmationSource,
   };
 }
 

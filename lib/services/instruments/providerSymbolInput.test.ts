@@ -20,7 +20,7 @@ describe("providerSymbolInput", () => {
     expect(parsed.providerSymbol).toBe("VWCE.XETRA");
     expect(parsed.ticker).toBe("VWCE");
     expect(parsed.exchange).toBe("XETRA");
-    expect(parsed.confirmationSource).toBe("manual_exact_listing");
+    expect(parsed.confirmationSource).toBe("verified_mapping");
     expect(parsed.resolved.providerSymbol).toBe("VWCE.XETRA");
   });
 

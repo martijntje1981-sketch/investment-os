@@ -36,6 +36,12 @@ import { CLIENT_PRICE_CACHE_FRESH_MS } from "@/lib/services/marketData/cachePoli
 import { findSavedMappingForHolding } from "@/lib/services/import/mappingMemory";
 import { NO_QUOTABLE_HOLDINGS_MESSAGE } from "@/lib/services/prices/types";
 import { prepareManualHoldingForSave } from "@/lib/services/portfolio/holdingValidation";
+import {
+  enrichHoldingsWithVerifiedMappings,
+  holdingsChangedByVerifiedEnrichment,
+} from "@/lib/services/portfolio/enrichHoldingsWithVerifiedMappings";
+import { writePortfolioBackupIfComplete } from "@/lib/client/portfolioLocalBackup";
+import { recordLocalPortfolioSave, readPortfolioSyncMeta } from "@/lib/client/portfolioSyncState";
 
 export {
   LEGACY_PORTFOLIO_STORAGE_KEY,
@@ -77,7 +83,21 @@ export type { StoredPortfolioHolding, PortfolioInstrumentPayload };
 export function loadUserPortfolioHoldings(
   userSub: string,
 ): StoredPortfolioHolding[] {
-  const holdings = applyCachedPrices(userSub, readPortfolioFromStorage(userSub));
+  const raw = readPortfolioFromStorage(userSub);
+  const enriched = enrichHoldingsWithVerifiedMappings(raw);
+
+  if (holdingsChangedByVerifiedEnrichment(raw, enriched)) {
+    writePortfolioToStorage(userSub, enriched);
+    writePortfolioBackupIfComplete(userSub, enriched);
+    const meta = readPortfolioSyncMeta(userSub);
+    recordLocalPortfolioSave(
+      userSub,
+      enriched,
+      (meta.lastLocalRevision ?? 0) + 1,
+    );
+  }
+
+  const holdings = applyCachedPrices(userSub, enriched);
   logHoldingDailyData(holdings, "after cache apply");
   return holdings;
 }

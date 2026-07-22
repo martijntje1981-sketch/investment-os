@@ -18,7 +18,7 @@ import {
   recordProviderCircuitFailure,
   resetProviderCircuitForTests,
 } from "@/lib/services/marketData/providerCircuitBreaker";
-import { EODHD_PROVIDER_ID } from "@/lib/services/instruments/eodhdQuotaGuard";
+import { EODHD_INSTRUMENT_PROVIDER_ID } from "@/lib/services/instruments/eodhdQuotaGuard";
 import { matchInstrument } from "@/lib/services/instruments/instrumentMatchEngine";
 import type { ImportRow } from "@/lib/services/import/types";
 
@@ -69,13 +69,19 @@ describe("manual exact listing fallback", () => {
     expect(shouldShowExactListingFallback(row, 0)).toBe(true);
   });
 
-  it("parses valid exact listings and marks manual_exact_listing", () => {
-    for (const input of ["VWCE.XETRA", "NUKL.XETRA", "STRC.AS", "21ST.XETRA"]) {
+  it("parses valid exact listings and marks verified_mapping when known", () => {
+    for (const input of ["VWCE.XETRA", "NUKL.XETRA", "STRC.AS"]) {
       const parsed = parseProviderSymbolInput(input);
       expect(parsed.ok, input).toBe(true);
       if (!parsed.ok) continue;
-      expect(parsed.confirmationSource).toBe("manual_exact_listing");
+      expect(parsed.confirmationSource).toBe("verified_mapping");
       expect(parsed.providerSymbol).toBe(input);
+    }
+
+    const unknownListing = parseProviderSymbolInput("21ST.XETRA");
+    expect(unknownListing.ok).toBe(true);
+    if (unknownListing.ok) {
+      expect(unknownListing.confirmationSource).toBe("manual_exact_listing");
     }
   });
 
@@ -87,10 +93,10 @@ describe("manual exact listing fallback", () => {
 
   it("valid exact listing enables confirmation during provider cooldown", () => {
     recordProviderCircuitFailure(
-      EODHD_PROVIDER_ID,
+      EODHD_INSTRUMENT_PROVIDER_ID,
       new Error("quota hit"),
     );
-    expect(isProviderCircuitOpen(EODHD_PROVIDER_ID)).toBe(true);
+    expect(isProviderCircuitOpen(EODHD_INSTRUMENT_PROVIDER_ID)).toBe(true);
 
     const parsed = parseProviderSymbolInput("VWCE.XETRA");
     expect(parsed.ok).toBe(true);

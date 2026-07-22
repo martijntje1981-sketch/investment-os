@@ -97,15 +97,33 @@ describe("instrument matching under EODHD quota failure", () => {
 
     const resolved = await matchInstrument({
       ticker: null,
-      isin: "IE00BK5BQT80",
+      isin: "IE00B4L5Y983",
       exchange: "XETRA",
-      instrumentName: "Vanguard FTSE All-World",
+      instrumentName: "Unknown Fund",
       assetType: "investment",
     });
 
     expect(resolved.matchMethod).toBe("unresolved");
     expect(resolved.providerSymbol).toBeNull();
     expect(resolved.warnings.join(" ")).toMatch(/temporarily unavailable/i);
+  });
+
+  it("still matches verified ISINs locally when EODHD returns 402", async () => {
+    vi.mocked(fetchIdMapping).mockRejectedValue(
+      new EodhdProviderError(402, "EODHD id-mapping returned 402: quota"),
+    );
+
+    const resolved = await matchInstrument({
+      ticker: null,
+      isin: "IE00BK5BQT80",
+      exchange: "XETRA",
+      instrumentName: "Vanguard FTSE All-World",
+      assetType: "investment",
+    });
+
+    expect(resolved.matchMethod).toBe("isin");
+    expect(resolved.providerSymbol).toBe("VWCE.XETRA");
+    expect(fetchIdMapping).not.toHaveBeenCalled();
   });
 
   it("skips further EODHD calls in the same session after 402", async () => {
@@ -115,9 +133,9 @@ describe("instrument matching under EODHD quota failure", () => {
 
     await matchInstrument({
       ticker: null,
-      isin: "IE00BK5BQT80",
+      isin: "IE00B4L5Y983",
       exchange: "XETRA",
-      instrumentName: "Vanguard FTSE All-World",
+      instrumentName: "Unknown Fund",
       assetType: "investment",
     });
 

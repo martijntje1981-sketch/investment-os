@@ -365,7 +365,7 @@ describe("portfolio migration service", () => {
 });
 
 describe("portfolio ongoing sync", () => {
-  it("deduplicates sync requests via idempotency key", async () => {
+  it("deduplicates sync requests via idempotency key when payload matches", async () => {
     const repo = createMockRepo({
       findCompletedSyncEvent: vi.fn(async () => ({
         id: "sync-1",
@@ -388,6 +388,59 @@ describe("portfolio ongoing sync", () => {
     );
 
     expect(repo.applySnapshot).not.toHaveBeenCalled();
+  });
+
+  it("re-applies sync when idempotency key matches but payload differs", async () => {
+    const repo = createMockRepo({
+      findCompletedSyncEvent: vi.fn(async () => ({
+        id: "sync-1",
+        status: "completed",
+        payload_hash: "hash",
+        completed_at: "2026-01-01T00:00:00.000Z",
+      })),
+      fetchSnapshot: vi.fn(async () =>
+        snapshotWith([holding("1", "VWCE")]),
+      ),
+    });
+
+    await syncPortfolioSnapshot(
+      repo,
+      USER_ID,
+      {
+        idempotencyKey: "sync:dedupe",
+        holdings: [holding("1", "VWCE"), holding("2", "STRC")],
+      },
+      null,
+      [],
+    );
+
+    expect(repo.applySnapshot).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects cash-only sync that would remove existing investments", async () => {
+    const repo = createMockRepo({
+      fetchSnapshot: vi.fn(async () =>
+        snapshotWith([
+          holding("1", "VWCE"),
+          holding("cash", "EUR", { assetType: "cash", quantity: 1000, purchasePrice: 1 }),
+        ]),
+      ),
+    });
+
+    await expect(
+      syncPortfolioSnapshot(
+        repo,
+        USER_ID,
+        {
+          idempotencyKey: "sync:partial",
+          holdings: [
+            holding("cash", "EUR", { assetType: "cash", quantity: 1000, purchasePrice: 1 }),
+          ],
+        },
+        null,
+        [],
+      ),
+    ).rejects.toMatchObject({ code: "partial_save" });
   });
 });
 

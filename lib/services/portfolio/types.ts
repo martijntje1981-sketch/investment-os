@@ -125,4 +125,5 @@ export const SYNC_ERROR_CODES = {
   VALIDATION: "validation",
   PROVIDER_FAILURE: "provider_failure",
   IDEMPOTENT_REPLAY: "idempotent_replay",
+  PARTIAL_SAVE: "partial_save",
 } as const;

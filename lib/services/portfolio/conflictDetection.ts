@@ -2,8 +2,8 @@ import type { GoalSettings, StoredPortfolioHolding } from "@/lib/types/portfolio
 import { buildSyncPreview } from "@/lib/services/portfolio/mappers";
 import {
   portfolioContentFingerprint,
-  portfolioFingerprint,
 } from "@/lib/services/portfolio/idempotency";
+import { summarizePortfolioHoldings } from "@/lib/services/portfolio/portfolioPersistenceGuard";
 import type {
   PortfolioSyncPreview,
   PortfolioSyncResolution,
@@ -40,6 +40,21 @@ export function resolvePortfolioSyncState(
 
   if (remoteCount > 0 && localCount === 0) {
     return { kind: "remote_only", snapshot: remoteSnapshot };
+  }
+
+  const localSummary = summarizePortfolioHoldings(localHoldings);
+  const remoteSummary = summarizePortfolioHoldings(remoteSnapshot.holdings);
+
+  if (
+    localSummary.investments > remoteSummary.investments &&
+    remoteSummary.investments === 0 &&
+    localCount > remoteCount
+  ) {
+    return {
+      kind: "conflict",
+      localFingerprint,
+      remoteFingerprint,
+    };
   }
 
   if (localFingerprint === remoteFingerprint) {

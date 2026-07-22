@@ -3,6 +3,10 @@ import type { ListingConfirmationSource } from "@/lib/services/instruments/listi
 import {
   resolveExchangeForMatching,
 } from "@/lib/services/instruments/exchangeNormalizer";
+import {
+  lookupVerifiedByProviderSymbol,
+  verifiedEntryToResolved,
+} from "@/lib/services/instruments/verifiedInstrumentRegistry";
 import type { ResolvedInstrument } from "@/lib/types/instrument";
 
 export type ParsedProviderSymbol =
@@ -65,22 +69,32 @@ export function parseProviderSymbolInput(
   }
 
   const providerSymbol = buildProviderSymbol(ticker, exchange);
+  const verified = lookupVerifiedByProviderSymbol(providerSymbol);
+  const confirmationSource: ListingConfirmationSource = verified
+    ? "verified_mapping"
+    : "manual_exact_listing";
+  const resolved: ResolvedInstrument = verified
+    ? verifiedEntryToResolved(verified, "ticker_exchange")
+    : {
+        providerSymbol,
+        instrumentName: null,
+        exchange,
+        isin: null,
+        matchMethod: "ticker_exchange",
+        confidence: 1,
+        requiresConfirmation: false,
+        warnings: [],
+      };
 
   return {
     ok: true,
     providerSymbol,
     ticker,
     exchange,
-    confirmationSource: "manual_exact_listing",
+    confirmationSource,
     resolved: {
-      providerSymbol,
-      instrumentName: null,
-      exchange,
-      isin: null,
-      matchMethod: "ticker_exchange",
-      confidence: 1,
-      requiresConfirmation: false,
-      warnings: [],
+      ...resolved,
+      confirmationSource,
     },
   };
 }

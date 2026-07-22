@@ -1,5 +1,5 @@
 import { getEodhdApiKey } from "@/lib/services/instruments/eodhdClient";
-import { EODHD_PROVIDER_ID } from "@/lib/services/instruments/eodhdQuotaGuard";
+import { EODHD_QUOTE_PROVIDER_ID } from "@/lib/services/instruments/eodhdQuoteGuard";
 import {
   assertProviderAvailable,
 } from "@/lib/services/marketData/providerCircuitBreaker";
@@ -81,7 +81,7 @@ async function fetchEodhdRealtimeData(
   providerSymbol: string,
   apiKey: string,
 ): Promise<EodhdRealtimeResponse> {
-  assertProviderAvailable(EODHD_PROVIDER_ID);
+  assertProviderAvailable(EODHD_QUOTE_PROVIDER_ID);
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 12_000);
@@ -168,7 +168,7 @@ export function createEodhdMarketDataProvider(
   apiKey: string = getEodhdApiKey(),
 ): MarketDataProvider {
   return {
-    id: "eodhd",
+    id: EODHD_QUOTE_PROVIDER_ID,
     supports: () => true,
     async getQuote(providerSymbol: string): Promise<ProviderRawQuote> {
       const data = await fetchEodhdRealtimeData(providerSymbol, apiKey);

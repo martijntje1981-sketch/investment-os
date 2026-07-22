@@ -23,16 +23,27 @@ import {
 import {
   applyRemoteSnapshotToLocalCache,
   markConflictResolutionVerified,
+  readPortfolioSyncMeta,
+  recordLocalPortfolioSave,
+  recordSyncFailure,
+  resolveClientSyncState,
   resolveConflictWithPushedSnapshot,
   resolveConflictWithRemoteSnapshot,
   verifyPortfolioSyncAfterReRead,
-  type ClientPortfolioSyncState,
-  readPortfolioSyncMeta,
   recordMigrationSuccess,
-  recordSyncFailure,
-  resolveClientSyncState,
+  type ClientPortfolioSyncState,
 } from "@/lib/client/portfolioSyncState";
-import { logPortfolioSyncDiagnostics } from "@/lib/client/portfolioSyncDebug";
+import { logPortfolioSyncDiagnostics, logPortfolioPersistenceEvent } from "@/lib/client/portfolioSyncDebug";
+import {
+  getPortfolioBackupRecoveryOffer,
+  restorePortfolioFromBackup,
+  writePortfolioBackupIfComplete,
+} from "@/lib/client/portfolioLocalBackup";
+import {
+  buildPortfolioSaveIdempotencyKey,
+  summarizePortfolioHoldings,
+  validatePortfolioBeforeSave,
+} from "@/lib/services/portfolio/portfolioPersistenceGuard";
 import { useAuthenticatedUserSub } from "@/lib/client/useAuthenticatedUserSub";
 import { readSavedUserGoal } from "@/lib/client/userGoalStorage";
 import { readImportMappingsFromCache } from "@/lib/services/import/mappingMemory";
@@ -47,7 +58,7 @@ export function useUserPortfolio() {
   const [holdings, setHoldings] = useState<StoredPortfolioHolding[]>([]);
   const [portfolioReady, setPortfolioReady] = useState(false);
   const [recoveryOffer, setRecoveryOffer] =
-    useState<LegacyRecoveryOffer | null>(null);
+    useState<LegacyRecoveryOffer | import("@/lib/client/portfolioLocalBackup").PortfolioBackupRecoveryOffer | null>(null);
   const [syncState, setSyncState] = useState<ClientPortfolioSyncState>({
     status: "loading",
   });
@@ -56,7 +67,11 @@ export function useUserPortfolio() {
 
   const remoteHydratedRef = useRef(false);
   const syncRequestRef = useRef<string | null>(null);
-  const saveRequestRef = useRef<{ key: string } | null>(null);
+  const saveSequenceRef = useRef(0);
+  const saveRequestRef = useRef<{
+    sequence: number;
+    key: string;
+  } | null>(null);
 
   const reloadPortfolio = useCallback(() => {
     if (!userSub) {
@@ -66,7 +81,9 @@ export function useUserPortfolio() {
     }
 
     setHoldings(loadUserPortfolioHoldings(userSub));
-    setRecoveryOffer(getLegacyRecoveryOffer(userSub));
+    setRecoveryOffer(
+      getLegacyRecoveryOffer(userSub) ?? getPortfolioBackupRecoveryOffer(userSub),
+    );
   }, [userSub]);
 
   const hydrateFromRemote = useCallback(
@@ -153,6 +170,7 @@ export function useUserPortfolio() {
       ) {
         const merged = applyRemoteSnapshotToLocalCache(userSub, remoteSnapshot, {
           preserveLocalPrices: localHoldings,
+          context: "hydrate",
         });
         setHoldings(applyCachedPrices(userSub, merged));
         dispatchPortfolioUpdated(userSub);
@@ -179,6 +197,7 @@ export function useUserPortfolio() {
     remoteHydratedRef.current = false;
     syncRequestRef.current = null;
     saveRequestRef.current = null;
+    saveSequenceRef.current = 0;
 
     if (!authReady) {
       setHoldings([]);
@@ -223,30 +242,74 @@ export function useUserPortfolio() {
   }, [reloadPortfolio, userSub]);
 
   const pushRemoteHoldings = useCallback(
-    async (next: StoredPortfolioHolding[]) => {
+    async (
+      next: StoredPortfolioHolding[],
+      options: { idempotencyKey: string; sequence: number },
+    ) => {
       if (!userSub) return;
-
-      const saveKey =
-        saveRequestRef.current?.key ?? crypto.randomUUID();
-      saveRequestRef.current = { key: saveKey };
 
       const goal = readSavedUserGoal(userSub);
       const importMappings = readImportMappingsFromCache(userSub);
 
+      logPortfolioPersistenceEvent("cloud push started", {
+        userSub,
+        revision: options.sequence,
+        idempotencyKey: options.idempotencyKey,
+        ...summarizePortfolioHoldings(next),
+      });
+
       const result = await pushPortfolioToRemote({
-        idempotencyKey: `save:${userSub}:${saveKey}`,
+        idempotencyKey: options.idempotencyKey,
         holdings: next,
         goal,
         importMappings,
       });
 
-      if (saveRequestRef.current?.key !== saveKey) return;
+      if (saveRequestRef.current?.sequence !== options.sequence) {
+        logPortfolioPersistenceEvent("stale cloud push ignored", {
+          userSub,
+          revision: options.sequence,
+          activeRevision: saveRequestRef.current?.sequence ?? null,
+        });
+        return;
+      }
 
       if (result.ok) {
-        applyRemoteSnapshotToLocalCache(userSub, result.snapshot, {
+        const merged = applyRemoteSnapshotToLocalCache(userSub, result.snapshot, {
           preserveLocalPrices: next,
+          sentHoldings: next,
+          context: "push_response",
         });
+        const mergedSummary = summarizePortfolioHoldings(merged);
+        const sentSummary = summarizePortfolioHoldings(next);
+
+        if (mergedSummary.investments < sentSummary.investments) {
+          logPortfolioSyncDiagnostics("push response rejected as stale", {
+            userSub,
+            sentInvestments: sentSummary.investments,
+            mergedInvestments: mergedSummary.investments,
+          });
+          setSyncState({
+            status: "sync_error",
+            message:
+              "Cloud sync returned an incomplete portfolio. Your device copy was kept.",
+            retryable: true,
+          });
+          recordSyncFailure(
+            userSub,
+            "Cloud sync returned an incomplete portfolio.",
+          );
+          setHoldings(applyCachedPrices(userSub, next));
+          return;
+        }
+
+        setHoldings(applyCachedPrices(userSub, merged));
         recordSyncFailure(userSub, "");
+        logPortfolioPersistenceEvent("cloud push applied", {
+          userSub,
+          revision: options.sequence,
+          ...mergedSummary,
+        });
         return;
       }
 
@@ -266,10 +329,36 @@ export function useUserPortfolio() {
     (next: StoredPortfolioHolding[]) => {
       if (!userSub) return;
 
+      const validation = validatePortfolioBeforeSave(next);
+      if (!validation.ok) {
+        logPortfolioSyncDiagnostics("local save rejected", {
+          userSub,
+          message: validation.message,
+        });
+        return;
+      }
+
+      const revision =
+        Math.max(
+          saveSequenceRef.current,
+          readPortfolioSyncMeta(userSub).lastLocalRevision ?? 0,
+        ) + 1;
+      saveSequenceRef.current = revision;
+
       writePortfolioToStorage(userSub, next);
+      writePortfolioBackupIfComplete(userSub, next);
+      recordLocalPortfolioSave(userSub, next, revision);
       dispatchPortfolioUpdated(userSub);
       setHoldings(applyCachedPrices(userSub, next));
-      setRecoveryOffer(getLegacyRecoveryOffer(userSub));
+      setRecoveryOffer(
+        getLegacyRecoveryOffer(userSub) ?? getPortfolioBackupRecoveryOffer(userSub),
+      );
+
+      logPortfolioPersistenceEvent("save holdings", {
+        userSub,
+        revision,
+        ...summarizePortfolioHoldings(next),
+      });
 
       if (
         syncState.status === "conflict" ||
@@ -278,7 +367,16 @@ export function useUserPortfolio() {
         return;
       }
 
-      void pushRemoteHoldings(next);
+      const goal = readSavedUserGoal(userSub);
+      const idempotencyKey = buildPortfolioSaveIdempotencyKey(
+        userSub,
+        next,
+        goal,
+        revision,
+      );
+      saveRequestRef.current = { sequence: revision, key: idempotencyKey };
+
+      void pushRemoteHoldings(next, { idempotencyKey, sequence: revision });
     },
     [pushRemoteHoldings, syncState.status, userSub],
   );
@@ -539,6 +637,10 @@ export function useUserPortfolio() {
 
   const recoverPortfolio = useCallback(() => {
     if (!userSub) return false;
+    if (restorePortfolioFromBackup(userSub)) {
+      reloadPortfolio();
+      return true;
+    }
     const recovered = recoverLegacyPortfolioToUser(userSub);
     if (recovered) reloadPortfolio();
     return recovered;

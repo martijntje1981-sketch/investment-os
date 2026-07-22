@@ -14,7 +14,7 @@ import {
   recordProviderCircuitFailure,
   resetProviderCircuitForTests,
 } from "@/lib/services/marketData/providerCircuitBreaker";
-import { EODHD_PROVIDER_ID } from "@/lib/services/instruments/eodhdQuotaGuard";
+import { EODHD_QUOTE_PROVIDER_ID } from "@/lib/services/instruments/eodhdQuoteGuard";
 import {
   fetchIdMapping,
   fetchSearch,
@@ -82,10 +82,10 @@ describe("STRC.AS manual listing flow (provider unavailable)", () => {
     vi.mocked(matchInstrument).mockReset();
 
     recordProviderCircuitFailure(
-      EODHD_PROVIDER_ID,
+      EODHD_QUOTE_PROVIDER_ID,
       new Error("You exceeded your daily API requests limit."),
     );
-    expect(isProviderCircuitOpen(EODHD_PROVIDER_ID)).toBe(true);
+    expect(isProviderCircuitOpen(EODHD_QUOTE_PROVIDER_ID)).toBe(true);
   });
 
   it("completes upload review with STRC.AS without EODHD lookup", () => {

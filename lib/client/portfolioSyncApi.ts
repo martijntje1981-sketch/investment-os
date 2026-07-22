@@ -12,6 +12,10 @@ export type PortfolioSyncMeta = {
   lastSuccessfulRemoteAt?: string;
   lastResolvedContentFingerprint?: string;
   lastSyncError?: string | null;
+  lastLocalRevision?: number;
+  lastLocalSaveAt?: string;
+  lastLocalInvestmentCount?: number;
+  lastLocalTotalCount?: number;
 };
 
 export type FetchRemotePortfolioResult =

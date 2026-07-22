@@ -70,7 +70,7 @@ function mockRawQuote(
 
 function createMockProvider(
   handler: (symbol: string) => Promise<ProviderRawQuote>,
-  id = "eodhd",
+  id = "eodhd-quotes",
 ): MarketDataProvider & { calls: string[] } {
   const calls: string[] = [];
   return {

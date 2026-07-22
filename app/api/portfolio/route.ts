@@ -106,7 +106,13 @@ export async function PUT(request: Request) {
     if (error instanceof PortfolioSyncError) {
       return NextResponse.json(
         { success: false, code: error.code, error: error.message },
-        { status: error.code === SYNC_ERROR_CODES.CONFLICT ? 409 : 400 },
+        {
+          status:
+            error.code === SYNC_ERROR_CODES.CONFLICT ||
+            error.code === SYNC_ERROR_CODES.PARTIAL_SAVE
+              ? 409
+              : 400,
+        },
       );
     }
 

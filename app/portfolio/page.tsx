@@ -43,6 +43,7 @@ import {
   lookupManualHoldingListing,
 } from "@/lib/client/manualHoldingMatch";
 import {
+  countQuotablePriceHoldings,
   normalizeHoldingForSave,
   tryRefreshPortfolioPrices,
   type StoredPortfolioHolding,
@@ -137,12 +138,17 @@ export default function PortfolioPage() {
     if (!userSub) return;
     setIsRefreshing(true);
     try {
+      const quotableCount = countQuotablePriceHoldings(holdings, userSub);
       const result = await tryRefreshPortfolioPrices(userSub, holdings, {
         skipIfCacheFresh: !options?.forceRefresh,
         forceRefresh: options?.forceRefresh ?? false,
       });
       if (result.message === NO_QUOTABLE_HOLDINGS_MESSAGE) {
-        setMessage(result.message);
+        setMessage(
+          quotableCount === 0
+            ? "No holdings are eligible for live pricing yet. Add a matched listing or provider symbol, then refresh again."
+            : result.message,
+        );
         return;
       }
       if (result.updated) {
@@ -157,7 +163,7 @@ export default function PortfolioPage() {
             ? `${updatedCount} market prices updated via providerSymbol. Cash remains fixed at its entered value.`
             : "Market prices refreshed. Cash remains fixed at its entered value.",
         );
-      } else if (result.rateLimited) {
+      } else if (result.rateLimited && quotableCount > 0) {
         setMessage(
           "Market data is temporarily rate-limited. Your holdings remain saved and unvalued positions stay excluded from totals.",
         );

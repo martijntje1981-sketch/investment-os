@@ -6,6 +6,7 @@ import {
   portfolioFingerprint,
 } from "@/lib/services/portfolio/idempotency";
 import { buildSyncPreview, sanitizeLocalHoldings } from "@/lib/services/portfolio/mappers";
+import { isSuspiciousCashOnlyShrink } from "@/lib/services/portfolio/portfolioPersistenceGuard";
 import type { PortfolioRepository } from "@/lib/services/portfolio/repository";
 import type {
   PortfolioMigrateRequest,
@@ -140,7 +141,21 @@ export async function syncPortfolioSnapshot(
     request.idempotencyKey,
   );
   if (existingEvent?.status === "completed") {
-    return repo.fetchSnapshot(userId);
+    const snapshot = await repo.fetchSnapshot(userId);
+    if (verifySnapshotMatchesRequest(snapshot, holdings, userId)) {
+      return snapshot;
+    }
+  }
+
+  const remoteBefore = await repo.fetchSnapshot(userId);
+  if (
+    remoteBefore.holdingCount > 0 &&
+    isSuspiciousCashOnlyShrink(remoteBefore.holdings, holdings)
+  ) {
+    throw new PortfolioSyncError(
+      SYNC_ERROR_CODES.PARTIAL_SAVE,
+      "Refusing partial portfolio save that would remove all investments while keeping cash.",
+    );
   }
 
   const payloadHash = hashPayload({
@@ -168,6 +183,20 @@ export async function syncPortfolioSnapshot(
       "failed",
     );
     throw error;
+  }
+
+  if (!verifySnapshotMatchesRequest(snapshot, holdings, userId)) {
+    await repo.recordSyncEvent(
+      userId,
+      "sync",
+      request.idempotencyKey,
+      payloadHash,
+      "failed",
+    );
+    throw new PortfolioSyncError(
+      SYNC_ERROR_CODES.PROVIDER_FAILURE,
+      "Sync verification failed after remote write.",
+    );
   }
 
   await repo.recordSyncEvent(

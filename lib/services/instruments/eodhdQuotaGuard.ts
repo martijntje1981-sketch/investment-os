@@ -1,6 +1,6 @@
 /**
- * Session-scoped guard to avoid repeated EODHD calls after quota exhaustion (402/429).
- * Delegates to the shared provider-wide circuit breaker.
+ * Session-scoped guard for EODHD instrument search / id-mapping calls.
+ * Separate from quote refresh — quote rate limits must not block matching.
  */
 
 import {
@@ -11,28 +11,58 @@ import {
   resetProviderCircuitForTests,
 } from "@/lib/services/marketData/providerCircuitBreaker";
 
-export const EODHD_PROVIDER_ID = "eodhd";
+export const EODHD_INSTRUMENT_PROVIDER_ID = "eodhd-instruments";
 
-export function markEodhdQuotaExhausted(): void {
+/** @deprecated Use EODHD_INSTRUMENT_PROVIDER_ID — kept for instrument API client code. */
+export const EODHD_PROVIDER_ID = EODHD_INSTRUMENT_PROVIDER_ID;
+
+export function markEodhdInstrumentQuotaExhausted(error?: unknown): void {
   recordProviderCircuitFailure(
-    EODHD_PROVIDER_ID,
-    new Error("EODHD id-mapping returned 402: quota exhausted"),
+    EODHD_INSTRUMENT_PROVIDER_ID,
+    error instanceof Error
+      ? error
+      : new Error("EODHD instrument API returned quota or rate limit"),
   );
 }
 
+/** @deprecated Use markEodhdInstrumentQuotaExhausted */
+export function markEodhdQuotaExhausted(error?: unknown): void {
+  markEodhdInstrumentQuotaExhausted(error);
+}
+
+export function isEodhdInstrumentQuotaExhausted(): boolean {
+  return isProviderCircuitOpen(EODHD_INSTRUMENT_PROVIDER_ID);
+}
+
+/** @deprecated Use isEodhdInstrumentQuotaExhausted */
 export function isEodhdQuotaExhausted(): boolean {
-  return isProviderCircuitOpen(EODHD_PROVIDER_ID);
+  return isEodhdInstrumentQuotaExhausted();
 }
 
+export function getEodhdInstrumentBlockReason(): string | null {
+  return getProviderCircuitReason(EODHD_INSTRUMENT_PROVIDER_ID);
+}
+
+/** @deprecated Use getEodhdInstrumentBlockReason */
 export function getEodhdQuotaBlockReason(): string | null {
-  return getProviderCircuitReason(EODHD_PROVIDER_ID);
+  return getEodhdInstrumentBlockReason();
 }
 
+export function assertEodhdInstrumentAvailable(): void {
+  assertProviderAvailable(EODHD_INSTRUMENT_PROVIDER_ID);
+}
+
+/** @deprecated Use assertEodhdInstrumentAvailable */
 export function assertEodhdAvailable(): void {
-  assertProviderAvailable(EODHD_PROVIDER_ID);
+  assertEodhdInstrumentAvailable();
 }
 
 /** Test-only reset. */
+export function resetEodhdInstrumentGuardForTests(): void {
+  resetProviderCircuitForTests(EODHD_INSTRUMENT_PROVIDER_ID);
+}
+
+/** @deprecated Use resetEodhdInstrumentGuardForTests */
 export function resetEodhdQuotaGuardForTests(): void {
-  resetProviderCircuitForTests(EODHD_PROVIDER_ID);
+  resetEodhdInstrumentGuardForTests();
 }
