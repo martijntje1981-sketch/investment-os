@@ -1,4 +1,5 @@
 import type { NewsContentItem } from "@/lib/types/newsContent";
+import { getSourceQualityScore } from "@/lib/services/news/newsSourceQuality";
 
 const SOURCE_PRIORITY: Record<NewsContentItem["sourceType"], number> = {
   news: 3,
@@ -23,9 +24,15 @@ function clusterKey(title: string): string {
 
 function itemPriority(item: NewsContentItem): number {
   const sourceScore = SOURCE_PRIORITY[item.sourceType] ?? 0;
+  const qualityScore = getSourceQualityScore(item.sourceName);
   const relevance = item.relevanceScore;
   const recency = Date.parse(item.publishedAt) || 0;
-  return sourceScore * 1_000_000 + relevance * 1_000 + recency / 1_000_000;
+  return (
+    sourceScore * 1_000_000 +
+    qualityScore * 10_000 +
+    relevance * 1_000 +
+    recency / 1_000_000
+  );
 }
 
 /** Cross-source deduplication preferring wire articles over video duplicates. */
@@ -46,7 +53,14 @@ export function deduplicateCrossSourceNews(
       byCluster.get(titleKey) ??
       byCluster.get(cluster);
 
-    if (existing) continue;
+    if (existing) {
+      if (itemPriority(item) > itemPriority(existing)) {
+        byCluster.set(urlKey, item);
+        if (titleKey) byCluster.set(titleKey, item);
+        if (cluster) byCluster.set(cluster, item);
+      }
+      continue;
+    }
 
     byCluster.set(urlKey, item);
     if (titleKey) byCluster.set(titleKey, item);

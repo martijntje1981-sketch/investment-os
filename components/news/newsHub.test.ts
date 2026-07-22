@@ -19,9 +19,11 @@ describe("news hub UI structure", () => {
     );
 
     expect(hubSource).toContain("NewsBriefingIntelligence");
-    expect(hubSource).toContain("NewsBriefingSection");
+    expect(hubSource).toContain("NewsMarketBriefSection");
+    expect(hubSource).toContain("NewsForPortfolioSection");
+    expect(hubSource).toContain("NewsMacroGroupsSection");
+    expect(hubSource).toContain("NewsMarketsTodaySection");
     expect(hubSource).toContain("NewsCompactVideoRow");
-    expect(hubSource).toContain("NewsHoldingGroups");
     expect(sectionSource).toContain("Show more");
     expect(hubSource).not.toContain("PortfolioIntelligencePanel");
     expect(hubSource).not.toContain("NewsHubTabs");

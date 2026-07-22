@@ -1,12 +1,9 @@
 import { STRONG_PORTFOLIO_MATCH_SCORE } from "@/lib/services/news/relevanceMatching";
+import {
+  getSourceQualityScore,
+  isTrustedVideoSource,
+} from "@/lib/services/news/newsSourceQuality";
 import type { NewsContentItem } from "@/lib/types/newsContent";
-
-const VERIFIED_SOURCE_QUALITY: Record<string, number> = {
-  "EODHD News": 30,
-  "Bloomberg Television": 25,
-  "CNBC Television": 25,
-  "Coin Bureau": 15,
-};
 
 const LOW_QUALITY_VIDEO_PATTERN =
   /\b(like and subscribe|smash that like|hit the bell|subscribe to|channel trailer|official trailer|watch live|going live|live stream starts|livestream starts|premiere in|members-only|members only)\b/i;
@@ -86,7 +83,7 @@ export function computeNewsRankScore(
   }
 
   score += recencyBoost(item.publishedAt, now);
-  score += VERIFIED_SOURCE_QUALITY[item.sourceName] ?? 10;
+  score += getSourceQualityScore(item.sourceName);
 
   if ((item.summary?.length ?? 0) > 40 || (item.description?.length ?? 0) > 40) {
     score += 20;
@@ -95,6 +92,8 @@ export function computeNewsRankScore(
   if (item.sourceType === "youtube") {
     if (isLowQualityVideo(item)) {
       score -= 500;
+    } else if (!isTrustedVideoSource(item.sourceName)) {
+      score -= 120;
     } else if (isStrongPortfolioItem(item)) {
       score += 60;
     } else if (!isStrongMacroItem(item)) {

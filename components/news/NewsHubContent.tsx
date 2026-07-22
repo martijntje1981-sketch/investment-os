@@ -8,15 +8,16 @@ import {
   NewsBriefingIntelligence,
 } from "@/components/news/NewsBriefingIntelligence";
 import { NewsBriefingSection } from "@/components/news/NewsBriefingSection";
+import { NewsBriefingSkeleton } from "@/components/news/NewsBriefingSkeleton";
 import { NewsCompactArticleRow } from "@/components/news/NewsCompactArticleRow";
-import {
-  NewsCompactEventRow,
-  NewsMarketCalendar,
-} from "@/components/news/NewsCompactEventsList";
+import { NewsCompactEventRow } from "@/components/news/NewsCompactEventsList";
 import { NewsCompactVideoRow } from "@/components/news/NewsCompactVideoRow";
 import { NewsDataStatusBanner, countNewsHubVerifiedItems } from "@/components/news/NewsDataStatusBanner";
 import { NewsEmptyState } from "@/components/news/NewsEmptyState";
-import { NewsHoldingGroups } from "@/components/news/NewsHoldingGroups";
+import { NewsForPortfolioSection } from "@/components/news/NewsForPortfolioSection";
+import { NewsMacroGroupsSection } from "@/components/news/NewsMacroGroupsSection";
+import { NewsMarketBriefSection } from "@/components/news/NewsMarketBriefSection";
+import { NewsMarketsTodaySection } from "@/components/news/NewsMarketsTodaySection";
 import { NewsSearchBar } from "@/components/news/NewsSearchBar";
 import { formatNewsRefreshedAt } from "@/components/news/newsFormatting";
 import type { InvestmentIntelligence } from "@/lib/services/news/investmentIntelligence";
@@ -66,9 +67,10 @@ export function NewsHubContent({
   );
 
   const hasBriefingContent =
-    briefing.allPortfolioItems.length > 0 ||
-    briefing.allMacroItems.length > 0 ||
-    briefing.allMarketItems.length > 0 ||
+    briefing.marketBriefHeadlines.length > 0 ||
+    briefing.portfolioCards.length > 0 ||
+    briefing.macroGroups.length > 0 ||
+    briefing.marketsToday.length > 0 ||
     briefing.allVideos.length > 0 ||
     briefing.upcomingEvents.totalCount > 0;
 
@@ -81,10 +83,10 @@ export function NewsHubContent({
     <div className="min-w-0 space-y-5 sm:space-y-6">
       <header className="min-w-0">
         <h1 className="text-2xl font-black tracking-[-0.03em] text-slate-950 sm:text-3xl">
-          Today&apos;s briefing
+          News
         </h1>
         <p className="mt-1 text-sm leading-relaxed text-slate-600 sm:text-base">
-          What matters today for your portfolio — concise, verified, and easy to scan.
+          Premium market intelligence — personalized, deduplicated, and ranked for your portfolio.
         </p>
       </header>
 
@@ -124,6 +126,8 @@ export function NewsHubContent({
         </>
       ) : null}
 
+      {isRefreshing && !isSearchActive ? <NewsBriefingSkeleton /> : null}
+
       {isSearchActive && filteredItems.length === 0 ? (
         <NewsEmptyState
           title={NEWS_SEARCH_EMPTY_MESSAGE}
@@ -152,45 +156,19 @@ export function NewsHubContent({
         />
       ) : null}
 
-      {!isSearchActive && hasBriefingContent ? (
+      {!isSearchActive && hasBriefingContent && !isRefreshing ? (
         <div className="min-w-0 space-y-6 sm:space-y-7">
-          <NewsHoldingGroups groups={briefing.holdingGroups} />
-
-          <NewsBriefingSection
-            id="news-portfolio"
-            title="Portfolio News"
-            description="Top portfolio-matched headlines and updates."
-            allItems={briefing.allPortfolioItems}
-            emptyTitle="No portfolio matches yet"
-            emptyDescription="Add holdings with confirmed instrument mappings to unlock verified portfolio headlines."
-            renderItem={(item) => <NewsCompactArticleRow item={item} />}
-          />
-
-          <NewsBriefingSection
-            id="news-macro"
-            title="Macro"
-            description="Macro developments with likely portfolio relevance."
-            allItems={briefing.allMacroItems}
-            emptyTitle="No macro coverage"
-            emptyDescription="Macro headlines will appear when verified sources publish relevant updates."
-            renderItem={(item) => <NewsCompactArticleRow item={item} />}
-          />
-
-          <NewsBriefingSection
-            id="news-market"
-            title="Market News"
-            description="Broader market context beyond direct portfolio matches."
-            allItems={briefing.allMarketItems}
-            emptyTitle="No market headlines"
-            emptyDescription="General market news will appear when available in the loaded brief."
-            renderItem={(item) => <NewsCompactArticleRow item={item} />}
-          />
+          <NewsMarketBriefSection headlines={briefing.marketBriefHeadlines} />
+          <NewsForPortfolioSection cards={briefing.portfolioCards} />
+          <NewsMacroGroupsSection groups={briefing.macroGroups} />
+          <NewsMarketsTodaySection regions={briefing.marketsToday} />
 
           <NewsBriefingSection
             id="news-videos"
             title="Videos"
-            description="Compact market videos matched to your brief."
+            description="Trusted market channels only — Bloomberg TV, CNBC, Coin Bureau."
             allItems={briefing.allVideos}
+            previewLimit={5}
             emptyTitle="No videos"
             emptyDescription="Verified market videos will appear here when available."
             renderItem={(item) => <NewsCompactVideoRow item={item} />}
@@ -199,21 +177,17 @@ export function NewsHubContent({
           <NewsBriefingSection
             id="news-upcoming-events"
             title="Upcoming Events"
-            description="Verified catalysts on the calendar."
+            description="Earnings, central bank decisions, CPI, and macro catalysts."
             allItems={payload.upcomingEvents}
+            previewLimit={5}
             emptyTitle="No upcoming events"
             emptyDescription="Calendar events will appear when verified by the events provider."
             renderItem={(event) => <NewsCompactEventRow event={event} />}
           />
-
-          <NewsMarketCalendar
-            events={payload.upcomingEvents}
-            eventsState={payload.dataStatus.eventsState}
-          />
         </div>
       ) : null}
 
-      {!isSearchActive && !hasBriefingContent ? (
+      {!isSearchActive && !hasBriefingContent && !isRefreshing ? (
         <NewsEmptyState
           title="No verified news available"
           description="Verified news feeds may be quiet right now, or sources may be temporarily unavailable."
