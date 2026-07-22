@@ -35,6 +35,22 @@ describe("news hub UI structure", () => {
     expect(newsPage).toContain("Market Intelligence");
   });
 
+  it("uses a premium light portfolio intelligence card with readable headings", () => {
+    const intelligenceSource = readFileSync(
+      path.resolve(process.cwd(), "components/news/NewsBriefingIntelligence.tsx"),
+      "utf8",
+    );
+
+    expect(intelligenceSource).toContain("border border-slate-200 bg-white");
+    expect(intelligenceSource).toContain("Today&apos;s portfolio summary");
+    expect(intelligenceSource).toContain("What matters for your portfolio");
+    expect(intelligenceSource).toContain("Top story");
+    expect(intelligenceSource).not.toContain("What Matters Today");
+    expect(intelligenceSource).not.toContain("Must Watch");
+    expect(intelligenceSource).toContain('variant="light"');
+    expect(intelligenceSource).not.toContain('variant="dark"');
+  });
+
   it("keeps quota-safe news search client-side without provider calls", () => {
     const hubSource = readFileSync(
       path.resolve(process.cwd(), "components/news/NewsHubContent.tsx"),
