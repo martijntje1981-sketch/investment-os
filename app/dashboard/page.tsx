@@ -6,16 +6,15 @@ import { DashboardDividendCard } from "@/components/dashboard/DashboardDividendC
 import { DashboardAnalystCard } from "@/components/dashboard/DashboardAnalystCard";
 import { DashboardGoalProgressCard } from "@/components/dashboard/DashboardGoalProgressCard";
 import { DashboardIntelligenceSummary } from "@/components/dashboard/DashboardIntelligenceSummary";
-import {
-  DashboardMoverCard,
-  DashboardPortfolioHero,
-} from "@/components/dashboard/DashboardHero";
+import { DashboardMoverCard } from "@/components/dashboard/DashboardHero";
+import { DashboardSummary } from "@/components/dashboard/DashboardSummary";
+import { HoldingsToday } from "@/components/dashboard/HoldingsToday";
 import { DashboardInsightCard } from "@/components/dashboard/DashboardInsightCard";
 import { DashboardMarketStatus } from "@/components/dashboard/DashboardMarketStatus";
 import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
 import PortfolioSyncBanner from "@/components/PortfolioSyncBanner";
 import { buildDashboardInsightSections } from "@/lib/client/dashboardInsight";
-import { buildDashboardSummary } from "@/lib/client/dashboardSummary";
+import { buildDashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
 import { useDiscoverSnapshot } from "@/lib/client/discoverSnapshot";
 import { areMajorMarketsClosed } from "@/lib/client/todaysDecision";
 import { useInvestmentIntelligence } from "@/lib/client/useInvestmentIntelligence";
@@ -59,14 +58,14 @@ export default function DashboardPage() {
     enabled: portfolioReady && holdings.length > 0,
   });
 
-  const summary = useMemo(
-    () => buildDashboardSummary(holdings, goal, hasSavedGoal),
+  const snapshot = useMemo(
+    () => buildDashboardPortfolioSnapshot(holdings, goal, hasSavedGoal),
     [goal, hasSavedGoal, holdings],
   );
 
   const insightSections = useMemo(
-    () => buildDashboardInsightSections(summary),
-    [summary],
+    () => buildDashboardInsightSections(snapshot),
+    [snapshot],
   );
 
   const marketsClosed = useMemo(() => areMajorMarketsClosed(), []);
@@ -103,8 +102,9 @@ export default function DashboardPage() {
           <DashboardEmptyState />
         ) : holdings.length > 0 ? (
           <>
-            <DashboardPortfolioHero summary={summary} />
-              <DashboardIntelligenceSummary
+            <DashboardSummary snapshot={snapshot} />
+            <HoldingsToday snapshot={snapshot} />
+            <DashboardIntelligenceSummary
                 intelligence={intelligence}
                 goalProgress={goalProgress}
                 upcomingEvents={payload.upcomingEvents}
@@ -126,18 +126,18 @@ export default function DashboardPage() {
             <section className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
               <DashboardMoverCard
                 label="Biggest winner"
-                mover={summary.bestMover}
+                mover={snapshot.bestMover}
                 tone="positive"
-                performanceCoverageComplete={summary.performanceCoverageComplete}
+                performanceCoverageComplete={snapshot.performanceCoverageComplete}
               />
               <DashboardMoverCard
                 label="Biggest loser"
-                mover={summary.worstMover}
+                mover={snapshot.worstMover}
                 tone="negative"
-                performanceCoverageComplete={summary.performanceCoverageComplete}
+                performanceCoverageComplete={snapshot.performanceCoverageComplete}
               />
             </section>
-            <DashboardMarketStatus lastUpdatedAt={summary.lastUpdatedAt} />
+            <DashboardMarketStatus lastUpdatedAt={snapshot.lastUpdatedAt} />
           </>
         ) : null}
 

@@ -118,7 +118,7 @@ describe("investor overview copy", () => {
 });
 
 describe("home and dashboard hierarchy", () => {
-  it("leads the dashboard with portfolio value before intelligence", async () => {
+  it("leads the dashboard with portfolio summary before intelligence", async () => {
     const { readFileSync } = await import("node:fs");
     const { resolve } = await import("node:path");
 
@@ -126,12 +126,19 @@ describe("home and dashboard hierarchy", () => {
       resolve(process.cwd(), "app/dashboard/page.tsx"),
       "utf8",
     );
-    const hero = readFileSync(
-      resolve(process.cwd(), "components/dashboard/DashboardHero.tsx"),
+    const summary = readFileSync(
+      resolve(process.cwd(), "components/dashboard/DashboardSummary.tsx"),
+      "utf8",
+    );
+    const holdingsToday = readFileSync(
+      resolve(process.cwd(), "components/dashboard/HoldingsToday.tsx"),
       "utf8",
     );
 
-    expect(dashboard.indexOf("<DashboardPortfolioHero")).toBeLessThan(
+    expect(dashboard.indexOf("<DashboardSummary")).toBeLessThan(
+      dashboard.indexOf("<DashboardIntelligenceSummary"),
+    );
+    expect(dashboard.indexOf("<HoldingsToday")).toBeLessThan(
       dashboard.indexOf("<DashboardIntelligenceSummary"),
     );
     expect(dashboard).not.toContain("DashboardQuickActions");
@@ -139,8 +146,12 @@ describe("home and dashboard hierarchy", () => {
     expect(dashboard).not.toContain("DashboardPortfolioOverview");
     expect(dashboard).not.toContain("BottomNavigation");
     expect(dashboard).toContain("buildDashboardInsightSections");
-    expect(hero).toContain("Total gain / loss");
-    expect(hero).toContain("Holdings");
+    expect(summary).toContain("PortfolioValueCard");
+    expect(summary).toContain("TodayCard");
+    expect(summary).toContain("GoalProgressCard");
+    expect(holdingsToday).toContain("Your holdings today");
+    expect(holdingsToday).toContain("md:hidden");
+    expect(holdingsToday).toContain("hidden md:block");
   });
 
   it("presents home as a daily portfolio overview without duplicate navigation", async () => {

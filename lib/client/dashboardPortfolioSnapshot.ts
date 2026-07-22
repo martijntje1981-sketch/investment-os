@@ -1,0 +1,104 @@
+import { buildDashboardSummary, type DashboardSummary } from "@/lib/client/dashboardSummary";
+import {
+  computeHoldingDayMove,
+  resolveHoldingChangePercent,
+} from "@/lib/client/dailyPerformance";
+import {
+  getHoldingMarketValue,
+} from "@/lib/client/portfolioAnalysis";
+import { buildPortfolioPerformance } from "@/lib/client/portfolioPerformance";
+import type { GoalSettings } from "@/lib/types/portfolioStorage";
+import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
+
+export type DashboardHoldingPriceStatus = "available" | "unavailable";
+export type DashboardHoldingChangeStatus = "available" | "unavailable";
+
+export type DashboardHoldingRow = {
+  id: string;
+  name: string;
+  symbol: string;
+  assetType: StoredPortfolioHolding["assetType"];
+  currentValue: number | null;
+  dailyChangeAmount: number | null;
+  dailyChangePercent: number | null;
+  priceStatus: DashboardHoldingPriceStatus;
+  changeStatus: DashboardHoldingChangeStatus;
+  lastUpdatedAt: string | null;
+  isStale: boolean;
+};
+
+export type DashboardPortfolioSnapshot = DashboardSummary & {
+  investedAssetsValue: number;
+  cashValue: number;
+  isStale: boolean;
+  marketHoldings: DashboardHoldingRow[];
+  goalTargetYear: number | null;
+};
+
+function buildDashboardHoldingRow(
+  holding: StoredPortfolioHolding,
+): DashboardHoldingRow | null {
+  if (holding.assetType === "cash") {
+    return null;
+  }
+
+  if (!Number.isFinite(holding.quantity) || holding.quantity <= 0) {
+    return null;
+  }
+
+  const currentValue = getHoldingMarketValue(holding);
+  const dailyChangePercent = resolveHoldingChangePercent(holding);
+  const dailyChangeAmount =
+    currentValue !== null && dailyChangePercent !== null
+      ? computeHoldingDayMove(holding, currentValue)
+      : null;
+
+  return {
+    id: holding.id,
+    name: holding.name || holding.symbol,
+    symbol: holding.symbol,
+    assetType: holding.assetType,
+    currentValue,
+    dailyChangeAmount,
+    dailyChangePercent,
+    priceStatus: currentValue !== null ? "available" : "unavailable",
+    changeStatus:
+      currentValue !== null && dailyChangePercent !== null
+        ? "available"
+        : "unavailable",
+    lastUpdatedAt: holding.marketPriceUpdatedAt ?? holding.updatedAt ?? null,
+    isStale: holding.priceDataStatus === "stale",
+  };
+}
+
+export function buildDashboardPortfolioSnapshot(
+  holdings: StoredPortfolioHolding[],
+  goal: GoalSettings | null,
+  hasSavedGoal: boolean,
+): DashboardPortfolioSnapshot {
+  const summary = buildDashboardSummary(holdings, goal, hasSavedGoal);
+  const performance = buildPortfolioPerformance(holdings);
+
+  const marketHoldings = holdings
+    .map((holding) => buildDashboardHoldingRow(holding))
+    .filter((row): row is DashboardHoldingRow => row !== null)
+    .sort((left, right) => {
+      const leftValue = left.currentValue ?? 0;
+      const rightValue = right.currentValue ?? 0;
+      return rightValue - leftValue;
+    });
+
+  const isStale = holdings.some(
+    (holding) =>
+      holding.assetType !== "cash" && holding.priceDataStatus === "stale",
+  );
+
+  return {
+    ...summary,
+    investedAssetsValue: Math.max(0, summary.portfolioValue - performance.cashValue),
+    cashValue: performance.cashValue,
+    isStale,
+    marketHoldings,
+    goalTargetYear: goal && hasSavedGoal ? goal.targetYear : null,
+  };
+}
