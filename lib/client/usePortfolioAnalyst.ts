@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
   buildAnalystSnapshotFromCache,
+  isAnalystCacheFresh,
   readAnalystCache,
   tryRefreshPortfolioAnalyst,
 } from "@/lib/client/portfolioAnalyst";
@@ -43,7 +44,12 @@ export function usePortfolioAnalyst(
     if (!userSub) return [];
     return readAnalystCache(userSub)?.recentActions ?? [];
   });
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(() => {
+    if (!enabled || !userSub) return false;
+    if (holdings.every((holding) => holding.assetType === "cash")) return false;
+    const cache = readAnalystCache(userSub);
+    return !(cache && isAnalystCacheFresh(cache.cachedAt));
+  });
   const [ready, setReady] = useState(false);
 
   const investmentCount = useMemo(
@@ -62,7 +68,12 @@ export function usePortfolioAnalyst(
       return;
     }
 
-    setIsLoading(true);
+    const cache = userSub ? readAnalystCache(userSub) : null;
+    const hasFreshCache = Boolean(cache && isAnalystCacheFresh(cache.cachedAt));
+
+    if (!hasFreshCache) {
+      setIsLoading(true);
+    }
     try {
       const result = await tryRefreshPortfolioAnalyst(userSub, holdings);
       setSnapshot(result.snapshot);

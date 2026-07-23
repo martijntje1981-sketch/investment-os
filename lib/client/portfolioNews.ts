@@ -7,12 +7,28 @@ import { coerceNewsApiResponse } from "@/lib/services/news/newsResponseFactory";
 import type { NewsApiResponse } from "@/lib/types/newsContent";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
-const CACHE_MAX_AGE_MS = 1000 * 60 * 45;
+export const NEWS_CACHE_MAX_AGE_MS = 1000 * 60 * 45;
 
 type NewsCachePayload = {
   response: NewsApiResponse;
   cachedAt: string;
 };
+
+export type NewsRefreshResult = {
+  response: NewsApiResponse;
+  fromCache: boolean;
+  isStale: boolean;
+};
+
+let newsRefreshInFlight: Promise<NewsRefreshResult> | null = null;
+
+export function isNewsRefreshInFlight(): boolean {
+  return newsRefreshInFlight !== null;
+}
+
+export function resetNewsRefreshStateForTests(): void {
+  newsRefreshInFlight = null;
+}
 
 export function readNewsCache(userSub: string): NewsCachePayload | null {
   if (typeof window === "undefined") return null;
@@ -38,10 +54,13 @@ export function writeNewsCache(userSub: string, response: NewsApiResponse): void
   );
 }
 
-export function isNewsCacheFresh(cachedAt: string | undefined): boolean {
+export function isNewsCacheFresh(
+  cachedAt: string | undefined,
+  now = Date.now(),
+): boolean {
   if (!cachedAt) return false;
-  const age = Date.now() - new Date(cachedAt).getTime();
-  return Number.isFinite(age) && age >= 0 && age < CACHE_MAX_AGE_MS;
+  const age = now - new Date(cachedAt).getTime();
+  return Number.isFinite(age) && age >= 0 && age < NEWS_CACHE_MAX_AGE_MS;
 }
 
 async function readNewsResponse(response: Response): Promise<NewsApiResponse> {
@@ -72,7 +91,7 @@ function isRenderableNewsPayload(value: unknown): value is NewsApiResponse {
   );
 }
 
-export async function refreshPortfolioNews(
+async function fetchPortfolioNewsFromApi(
   userSub: string,
   holdings: StoredPortfolioHolding[],
 ): Promise<NewsApiResponse> {
@@ -88,10 +107,44 @@ export async function refreshPortfolioNews(
   return data;
 }
 
+async function runSharedNewsRefresh(
+  userSub: string,
+  holdings: StoredPortfolioHolding[],
+): Promise<NewsRefreshResult> {
+  if (newsRefreshInFlight) {
+    return newsRefreshInFlight;
+  }
+
+  const run = (async (): Promise<NewsRefreshResult> => {
+    const response = await fetchPortfolioNewsFromApi(userSub, holdings);
+    return {
+      response,
+      fromCache: false,
+      isStale: response.dataStatus.feedsState !== "live",
+    };
+  })();
+
+  newsRefreshInFlight = run;
+
+  try {
+    return await run;
+  } finally {
+    newsRefreshInFlight = null;
+  }
+}
+
+export async function refreshPortfolioNews(
+  userSub: string,
+  holdings: StoredPortfolioHolding[],
+): Promise<NewsApiResponse> {
+  const result = await runSharedNewsRefresh(userSub, holdings);
+  return result.response;
+}
+
 export async function tryRefreshPortfolioNews(
   userSub: string | null,
   holdings: StoredPortfolioHolding[],
-): Promise<{ response: NewsApiResponse; fromCache: boolean; isStale: boolean }> {
+): Promise<NewsRefreshResult> {
   const cached = userSub ? readNewsCache(userSub) : null;
 
   if (userSub && cached && isNewsCacheFresh(cached.cachedAt)) {
@@ -123,12 +176,7 @@ export async function tryRefreshPortfolioNews(
   }
 
   try {
-    const response = await refreshPortfolioNews(userSub, holdings);
-    return {
-      response,
-      fromCache: false,
-      isStale: response.dataStatus.feedsState !== "live",
-    };
+    return await runSharedNewsRefresh(userSub, holdings);
   } catch {
     if (cached) {
       return { response: cached.response, fromCache: true, isStale: true };

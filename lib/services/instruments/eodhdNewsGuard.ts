@@ -1,6 +1,6 @@
 /**
  * Session-scoped guard for EODHD news API calls.
- * Shares quota with quote/instrument APIs — respects quote circuit when open.
+ * Uses a dedicated circuit breaker — independent from live quote pricing.
  */
 
 import {
@@ -10,7 +10,6 @@ import {
   recordProviderCircuitFailure,
   resetProviderCircuitForTests,
 } from "@/lib/services/marketData/providerCircuitBreaker";
-import { EODHD_QUOTE_PROVIDER_ID } from "@/lib/services/instruments/eodhdQuoteGuard";
 
 export const EODHD_NEWS_PROVIDER_ID = "eodhd-news";
 
@@ -28,17 +27,11 @@ export function isEodhdNewsQuotaExhausted(): boolean {
 }
 
 export function isEodhdNewsFetchBlocked(): boolean {
-  return (
-    isProviderCircuitOpen(EODHD_NEWS_PROVIDER_ID) ||
-    isProviderCircuitOpen(EODHD_QUOTE_PROVIDER_ID)
-  );
+  return isProviderCircuitOpen(EODHD_NEWS_PROVIDER_ID);
 }
 
 export function getEodhdNewsBlockReason(): string | null {
-  return (
-    getProviderCircuitReason(EODHD_NEWS_PROVIDER_ID) ??
-    getProviderCircuitReason(EODHD_QUOTE_PROVIDER_ID)
-  );
+  return getProviderCircuitReason(EODHD_NEWS_PROVIDER_ID);
 }
 
 export function assertEodhdNewsAvailable(): void {

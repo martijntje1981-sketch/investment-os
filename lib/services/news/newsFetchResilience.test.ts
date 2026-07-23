@@ -1,9 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { EODHD_NEWS_PROVIDER_ID } from "@/lib/services/instruments/eodhdNewsGuard";
+import { resetEodhdNewsGuardForTests } from "@/lib/services/instruments/eodhdNewsGuard";
 import { EODHD_QUOTE_PROVIDER_ID } from "@/lib/services/instruments/eodhdQuoteGuard";
-import {
-  resetEodhdNewsGuardForTests,
-} from "@/lib/services/instruments/eodhdNewsGuard";
 import {
   buildEodhdNewsCacheKey,
   resetEodhdNewsCacheForTests,
@@ -53,12 +52,12 @@ describe("eodhd news resilience", () => {
     vi.unstubAllGlobals();
   });
 
-  it("serves stale cached wire headlines when the circuit breaker is open", async () => {
+  it("serves stale cached wire headlines when the news circuit breaker is open", async () => {
     const cacheKey = buildEodhdNewsCacheKey(["AAPL.US"]);
     writeEodhdNewsCache(cacheKey, [wireItem("cached-1")], "2026-07-19T08:00:00.000Z");
 
     recordProviderCircuitFailure(
-      EODHD_QUOTE_PROVIDER_ID,
+      EODHD_NEWS_PROVIDER_ID,
       new Error("EODHD News returned 402"),
     );
 
@@ -78,9 +77,30 @@ describe("eodhd news resilience", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("does not call EODHD again on repeated visits while the circuit is open", async () => {
+  it("does not block news fetches when only the live-price circuit is open", async () => {
     recordProviderCircuitFailure(
       EODHD_QUOTE_PROVIDER_ID,
+      new Error("EODHD quotes returned 402"),
+    );
+
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => [],
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await fetchEodhdNewsFeed({
+      providerSymbols: ["AAPL.US"],
+      fetchedAt: "2026-07-20T08:00:00.000Z",
+      apiKey: "test-key",
+    });
+
+    expect(fetchMock).toHaveBeenCalled();
+  });
+
+  it("does not call EODHD again on repeated visits while the news circuit is open", async () => {
+    recordProviderCircuitFailure(
+      EODHD_NEWS_PROVIDER_ID,
       new Error("EODHD News returned 402"),
     );
 

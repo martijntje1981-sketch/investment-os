@@ -34,7 +34,11 @@ export function usePortfolioDividends(
     if (!userSub) return [];
     return readDividendCache(userSub)?.quotes ?? [];
   });
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(() => {
+    if (!enabled || !userSub) return false;
+    if (holdings.every((holding) => holding.assetType === "cash")) return false;
+    return buildDividendSnapshotFromCache(holdings, userSub) === null;
+  });
   const [ready, setReady] = useState(false);
 
   const investmentCount = useMemo(
@@ -50,7 +54,13 @@ export function usePortfolioDividends(
       return;
     }
 
-    setIsLoading(true);
+    const hasFreshCache =
+      Boolean(userSub) &&
+      buildDividendSnapshotFromCache(holdings, userSub) !== null;
+
+    if (!hasFreshCache) {
+      setIsLoading(true);
+    }
     try {
       const result = await tryRefreshPortfolioDividends(userSub, holdings);
       setSnapshot(result.snapshot);

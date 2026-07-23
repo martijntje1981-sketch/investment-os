@@ -19,6 +19,19 @@ type DividendCachePayload = {
   cachedAt: string;
 };
 
+let dividendRefreshInFlight: Promise<{
+  snapshot: PortfolioDividendSnapshot;
+  updated: boolean;
+}> | null = null;
+
+export function isDividendRefreshInFlight(): boolean {
+  return dividendRefreshInFlight !== null;
+}
+
+export function resetDividendRefreshStateForTests(): void {
+  dividendRefreshInFlight = null;
+}
+
 export function readDividendCache(userSub: string): DividendCachePayload | null {
   if (typeof window === "undefined") return null;
   try {
@@ -125,12 +138,23 @@ export async function tryRefreshPortfolioDividends(
     return { snapshot: cached, updated: false };
   }
 
-  try {
-    const result = await refreshPortfolioDividends(userSub, holdings);
-    return { snapshot: result.snapshot, updated: result.updated };
-  } catch {
-    return { snapshot: emptySnapshot, updated: false };
+  if (dividendRefreshInFlight) {
+    return dividendRefreshInFlight;
   }
+
+  const run = (async () => {
+    try {
+      const result = await refreshPortfolioDividends(userSub, holdings);
+      return { snapshot: result.snapshot, updated: result.updated };
+    } catch {
+      return { snapshot: emptySnapshot, updated: false };
+    } finally {
+      dividendRefreshInFlight = null;
+    }
+  })();
+
+  dividendRefreshInFlight = run;
+  return run;
 }
 
 export { findDividendQuoteForHolding };

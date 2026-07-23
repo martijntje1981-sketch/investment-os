@@ -24,6 +24,19 @@ type AnalystCachePayload = {
   providerAvailable: boolean;
 };
 
+let analystRefreshInFlight: Promise<{
+  snapshot: PortfolioAnalystSnapshot;
+  updated: boolean;
+}> | null = null;
+
+export function isAnalystRefreshInFlight(): boolean {
+  return analystRefreshInFlight !== null;
+}
+
+export function resetAnalystRefreshStateForTests(): void {
+  analystRefreshInFlight = null;
+}
+
 function markQuotesCached(quotes: AnalystApiQuote[]): AnalystApiQuote[] {
   return quotes.map((quote) =>
     quote.coverageState === "live"
@@ -207,16 +220,27 @@ export async function tryRefreshPortfolioAnalyst(
     return { snapshot: cached, updated: false };
   }
 
-  try {
-    const result = await refreshPortfolioAnalyst(userSub, holdings);
-    return { snapshot: result.snapshot, updated: result.updated };
-  } catch {
-    const stale = buildAnalystSnapshotFromCache(holdings, userSub);
-    if (stale) {
-      return { snapshot: stale, updated: false };
-    }
-    return { snapshot: emptySnapshot, updated: false };
+  if (analystRefreshInFlight) {
+    return analystRefreshInFlight;
   }
+
+  const run = (async () => {
+    try {
+      const result = await refreshPortfolioAnalyst(userSub, holdings);
+      return { snapshot: result.snapshot, updated: result.updated };
+    } catch {
+      const stale = buildAnalystSnapshotFromCache(holdings, userSub);
+      if (stale) {
+        return { snapshot: stale, updated: false };
+      }
+      return { snapshot: emptySnapshot, updated: false };
+    } finally {
+      analystRefreshInFlight = null;
+    }
+  })();
+
+  analystRefreshInFlight = run;
+  return run;
 }
 
 export { findAnalystQuoteForHolding };

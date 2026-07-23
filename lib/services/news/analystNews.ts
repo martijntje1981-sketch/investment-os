@@ -2,8 +2,11 @@
  * Analyst-related news detection, deduplication, and action normalization.
  */
 
+import {
+  buildEodhdNewsCacheKey,
+  readEodhdNewsCache,
+} from "@/lib/services/news/cache/eodhdNewsCache";
 import { filterFinancialNewsItems } from "@/lib/services/news/financialContentFilter";
-import { fetchSharedRawNewsItems } from "@/lib/services/news/fetchNewsFeed";
 import {
   rankPortfolioNews,
   resolveNewsHoldingProfiles,
@@ -216,8 +219,13 @@ export async function buildAnalystActionsFromNews(
     .map((profile) => profile.providerSymbol)
     .filter((symbol): symbol is string => Boolean(symbol));
 
-  const { items } = await fetchSharedRawNewsItems(providerSymbols);
-  const financialItems = filterFinancialNewsItems(items);
+  const cacheKey = buildEodhdNewsCacheKey(providerSymbols);
+  const cachedNews = readEodhdNewsCache(cacheKey);
+  if (!cachedNews) {
+    return [];
+  }
+
+  const financialItems = filterFinancialNewsItems(cachedNews.items);
   const personalized = await personalizeNewsItemsForAnalyst(
     financialItems,
     investments as StoredPortfolioHolding[],
