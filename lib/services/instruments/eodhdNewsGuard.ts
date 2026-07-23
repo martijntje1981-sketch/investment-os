@@ -4,6 +4,10 @@
  */
 
 import {
+  EODHD_API_PROVIDER_ID,
+  getEodhdDailyBudgetBlockReason,
+} from "@/lib/services/marketData/eodhdDailyQuota";
+import {
   assertProviderAvailable,
   getProviderCircuitReason,
   isProviderCircuitOpen,
@@ -20,21 +24,37 @@ export function markEodhdNewsQuotaExhausted(error?: unknown): void {
       ? error
       : new Error("EODHD news API returned quota or rate limit"),
   );
+  recordProviderCircuitFailure(
+    EODHD_API_PROVIDER_ID,
+    error instanceof Error
+      ? error
+      : new Error("EODHD news API returned quota or rate limit"),
+  );
 }
 
 export function isEodhdNewsQuotaExhausted(): boolean {
-  return isProviderCircuitOpen(EODHD_NEWS_PROVIDER_ID);
+  return (
+    isProviderCircuitOpen(EODHD_NEWS_PROVIDER_ID) ||
+    isProviderCircuitOpen(EODHD_API_PROVIDER_ID)
+  );
 }
 
 export function isEodhdNewsFetchBlocked(): boolean {
-  return isProviderCircuitOpen(EODHD_NEWS_PROVIDER_ID);
+  return isEodhdNewsQuotaExhausted();
 }
 
 export function getEodhdNewsBlockReason(): string | null {
-  return getProviderCircuitReason(EODHD_NEWS_PROVIDER_ID);
+  return (
+    getEodhdDailyBudgetBlockReason() ??
+    getProviderCircuitReason(EODHD_API_PROVIDER_ID) ??
+    getProviderCircuitReason(EODHD_NEWS_PROVIDER_ID)
+  );
 }
 
 export function assertEodhdNewsAvailable(): void {
+  if (isProviderCircuitOpen(EODHD_API_PROVIDER_ID)) {
+    assertProviderAvailable(EODHD_API_PROVIDER_ID);
+  }
   assertProviderAvailable(EODHD_NEWS_PROVIDER_ID);
 }
 

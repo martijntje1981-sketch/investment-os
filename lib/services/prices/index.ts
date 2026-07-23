@@ -2,6 +2,7 @@ export {
   loadDefaultWatchlistPrices,
   loadPricesForHoldings,
   loadPricesForTargets,
+  loadSnapshotPricesForHoldings,
   getNormalizedQuote,
   resetPriceServiceStateForTests,
 } from "@/lib/services/prices/priceService";

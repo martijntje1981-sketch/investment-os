@@ -3,6 +3,8 @@
  */
 
 import { getEodhdApiKey } from "@/lib/services/instruments/eodhdClient";
+import { executeEodhdApiCall } from "@/lib/services/marketData/eodhdApiCall";
+import { markEodhdDailyQuotaExhausted } from "@/lib/services/marketData/eodhdDailyQuota";
 
 export type EodhdFundamentalsHighlights = {
   DividendShare?: number | null;
@@ -52,28 +54,33 @@ export async function fetchFundamentalsHighlights(
   url.searchParams.set("fmt", "json");
   url.searchParams.set("filter", "Highlights,General");
 
-  const response = await fetch(url.toString(), {
-    method: "GET",
-    headers: { Accept: "application/json" },
-    cache: "no-store",
+  return executeEodhdApiCall(async () => {
+    const response = await fetch(url.toString(), {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    });
+
+    if (response.status === 404) {
+      return { highlights: null, currency: null };
+    }
+
+    if (!response.ok) {
+      if (response.status === 402) {
+        await markEodhdDailyQuotaExhausted();
+      }
+      const details = await response.text();
+      throw new Error(
+        `EODHD fundamentals returned ${response.status}: ${details}`,
+      );
+    }
+
+    const data = (await response.json()) as FundamentalsResponse;
+    return {
+      highlights: data.Highlights ?? null,
+      currency: data.General?.CurrencyCode ?? null,
+    };
   });
-
-  if (response.status === 404) {
-    return { highlights: null, currency: null };
-  }
-
-  if (!response.ok) {
-    const details = await response.text();
-    throw new Error(
-      `EODHD fundamentals returned ${response.status}: ${details}`,
-    );
-  }
-
-  const data = (await response.json()) as FundamentalsResponse;
-  return {
-    highlights: data.Highlights ?? null,
-    currency: data.General?.CurrencyCode ?? null,
-  };
 }
 
 export async function fetchUpcomingCalendarDividends(
@@ -93,23 +100,28 @@ export async function fetchUpcomingCalendarDividends(
   url.searchParams.set("from", from);
   url.searchParams.set("to", to);
 
-  const response = await fetch(url.toString(), {
-    method: "GET",
-    headers: { Accept: "application/json" },
-    cache: "no-store",
+  return executeEodhdApiCall(async () => {
+    const response = await fetch(url.toString(), {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    });
+
+    if (response.status === 404) return [];
+
+    if (!response.ok) {
+      if (response.status === 402) {
+        await markEodhdDailyQuotaExhausted();
+      }
+      const details = await response.text();
+      throw new Error(
+        `EODHD dividend calendar returned ${response.status}: ${details}`,
+      );
+    }
+
+    const data = (await response.json()) as CalendarResponse;
+    return Array.isArray(data.symbols) ? data.symbols : [];
   });
-
-  if (response.status === 404) return [];
-
-  if (!response.ok) {
-    const details = await response.text();
-    throw new Error(
-      `EODHD dividend calendar returned ${response.status}: ${details}`,
-    );
-  }
-
-  const data = (await response.json()) as CalendarResponse;
-  return Array.isArray(data.symbols) ? data.symbols : [];
 }
 
 export function extractYieldFromHighlights(

@@ -194,6 +194,46 @@ export async function refreshLivePortfolioPrices<
       totalQuotable,
     });
 
+    const estimateResponse = await fetch("/api/prices", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        holdings: quotablePayload,
+        forceRefresh: true,
+        estimateOnly: true,
+      }),
+      cache: "no-store",
+    });
+
+    const estimateData = (await estimateResponse.json()) as PriceApiResponse;
+    const totalRequired =
+      estimateData.refreshSummary?.totalCallsRequired ??
+      (estimateData.refreshSummary?.providerCallsRequired ?? uniqueRequested);
+    const canAfford =
+      estimateData.canAffordRefresh ??
+      (estimateData.eodhdBudget
+        ? totalRequired <= estimateData.eodhdBudget.spendableRemaining
+        : true);
+
+    if (!canAfford) {
+      logLivePriceRefreshTrace("budget_blocked", {
+        totalRequired,
+        spendableRemaining: estimateData.eodhdBudget?.spendableRemaining ?? null,
+      });
+      return {
+        holdings: applyCachedPrices(userSub, holdings),
+        updated: false,
+        uniqueRequested,
+        updatedCount: 0,
+        totalQuotable,
+        message:
+          "The market-data limit has been reached. Your last available prices remain visible.",
+        quotaExhausted: true,
+        inProgress: false,
+        cooldownRemainingMs: 0,
+      };
+    }
+
     const response = await fetch("/api/prices", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

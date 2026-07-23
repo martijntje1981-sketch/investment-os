@@ -315,4 +315,29 @@ describe("PriceService", () => {
     expect(quote.change).toBe(10);
     expect(quote.changePercent).toBe(10);
   });
+
+  it("does not call the provider in snapshotOnly mode without cache", async () => {
+    const provider = createMockProvider(async (symbol) =>
+      mockRawQuote(symbol, 110, 100),
+    );
+    configureMarketDataProvidersForTests([provider]);
+
+    const quote = await getNormalizedQuote(VWCE, { snapshotOnly: true });
+    expect(provider.calls).toEqual([]);
+    expect(quote.dataStatus).toBe("unavailable");
+  });
+
+  it("serves cached quotes in snapshotOnly mode", async () => {
+    const provider = createMockProvider(async (symbol) =>
+      mockRawQuote(symbol, 110, 100),
+    );
+    configureMarketDataProvidersForTests([provider]);
+
+    await getNormalizedQuote(VWCE);
+    expect(provider.calls).toEqual(["VWCE.XETRA"]);
+
+    const snapshotQuote = await getNormalizedQuote(VWCE, { snapshotOnly: true });
+    expect(provider.calls).toEqual(["VWCE.XETRA"]);
+    expect(snapshotQuote.currentPrice).toBe(110);
+  });
 });

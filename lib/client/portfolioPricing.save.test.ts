@@ -293,9 +293,12 @@ describe("portfolio save without live quotes", () => {
 
     await tryRefreshPortfolioPrices(USER, holdings);
 
-    expect(fetchSpy).toHaveBeenCalledTimes(1);
-    const body = JSON.parse(String(fetchSpy.mock.calls[0]?.[1]?.body));
-    expect(body.forceRefresh).toBe(false);
+    const pricesCall = fetchSpy.mock.calls.find(([url, init]) => {
+      return String(url).includes("/api/prices") && init?.method === "POST";
+    });
+    expect(pricesCall).toBeTruthy();
+    const body = JSON.parse(String(pricesCall?.[1]?.body));
+    expect(body.forceRefresh).toBeUndefined();
     expect(body.holdings).toHaveLength(1);
     expect(body.holdings[0]?.providerSymbol).toBe("AIFS.XETRA");
   });

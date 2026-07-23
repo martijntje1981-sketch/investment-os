@@ -73,6 +73,7 @@ export async function POST(request: Request) {
     const body = (await request.json()) as PostBody;
     const holdings = Array.isArray(body.holdings) ? body.holdings : [];
     const forceRefresh = body.forceRefresh ?? false;
+    const snapshotOnly = !forceRefresh && !(body.estimateOnly ?? false);
 
     if (holdings.length === 0) {
       return NextResponse.json(
@@ -84,11 +85,13 @@ export async function POST(request: Request) {
     logMarketDataRefreshTrace("api_route_post", {
       holdingsCount: holdings.length,
       forceRefresh,
+      snapshotOnly,
       estimateOnly: body.estimateOnly ?? false,
     });
 
     const payload = await loadPricesForHoldings(holdings, {
       forceRefresh,
+      snapshotOnly,
       onlyProviderSymbols: body.onlyProviderSymbols,
       estimateOnly: body.estimateOnly ?? false,
     });

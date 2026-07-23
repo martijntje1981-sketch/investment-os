@@ -99,7 +99,17 @@ export type PriceApiResponse = {
     skippedSymbols?: string[];
     circuitOpen?: boolean;
     estimateOnly?: boolean;
+    fxCallsRequired?: number;
+    totalCallsRequired?: number;
   };
+  eodhdBudget?: {
+    usageDate: string;
+    callsUsed: number;
+    dailyLimit: number;
+    recoveryReserve: number;
+    spendableRemaining: number;
+  };
+  canAffordRefresh?: boolean;
 };
 
 export type CachedPortfolioPrice = {

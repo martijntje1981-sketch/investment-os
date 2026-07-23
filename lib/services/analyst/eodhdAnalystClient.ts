@@ -6,6 +6,8 @@
  */
 
 import { getEodhdApiKey } from "@/lib/services/instruments/eodhdClient";
+import { executeEodhdApiCall } from "@/lib/services/marketData/eodhdApiCall";
+import { markEodhdDailyQuotaExhausted } from "@/lib/services/marketData/eodhdDailyQuota";
 
 export type EodhdAnalystRatings = {
   Rating?: number | null;
@@ -47,34 +49,39 @@ export async function fetchEodhdAnalystFundamentals(
   url.searchParams.set("fmt", "json");
   url.searchParams.set("filter", "AnalystRatings,Highlights,General");
 
-  const response = await fetch(url.toString(), {
-    method: "GET",
-    headers: { Accept: "application/json" },
-    cache: "no-store",
-  });
+  return executeEodhdApiCall(async () => {
+    const response = await fetch(url.toString(), {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    });
 
-  if (response.status === 404) {
+    if (response.status === 404) {
+      return {
+        ratings: null,
+        wallStreetTargetPrice: null,
+        currency: null,
+        instrumentType: null,
+      };
+    }
+
+    if (!response.ok) {
+      if (response.status === 402) {
+        await markEodhdDailyQuotaExhausted();
+      }
+      const details = await response.text();
+      throw new Error(
+        `EODHD analyst fundamentals returned ${response.status}: ${details}`,
+      );
+    }
+
+    const data = (await response.json()) as FundamentalsResponse;
     return {
-      ratings: null,
-      wallStreetTargetPrice: null,
-      currency: null,
-      instrumentType: null,
+      ratings: data.AnalystRatings ?? null,
+      wallStreetTargetPrice:
+        data.Highlights?.WallStreetTargetPrice ?? null,
+      currency: data.General?.CurrencyCode ?? null,
+      instrumentType: data.General?.Type ?? null,
     };
-  }
-
-  if (!response.ok) {
-    const details = await response.text();
-    throw new Error(
-      `EODHD analyst fundamentals returned ${response.status}: ${details}`,
-    );
-  }
-
-  const data = (await response.json()) as FundamentalsResponse;
-  return {
-    ratings: data.AnalystRatings ?? null,
-    wallStreetTargetPrice:
-      data.Highlights?.WallStreetTargetPrice ?? null,
-    currency: data.General?.CurrencyCode ?? null,
-    instrumentType: data.General?.Type ?? null,
-  };
+  });
 }

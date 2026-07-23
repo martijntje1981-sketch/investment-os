@@ -25,6 +25,7 @@ import { usePortfolioAnalyst } from "@/lib/client/usePortfolioAnalyst";
 import { useGoalProgress } from "@/lib/client/useGoalProgress";
 import { useUserGoal } from "@/lib/client/useUserGoal";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
+import { useMarketSnapshotMetadata } from "@/lib/client/useMarketSnapshotMetadata";
 
 export default function DashboardPage() {
   const {
@@ -59,11 +60,16 @@ export default function DashboardPage() {
     goal,
     enabled: portfolioReady && holdings.length > 0,
   });
+  const { lastRefreshedAt: snapshotRefreshedAt } = useMarketSnapshotMetadata(
+    portfolioReady && holdings.length > 0,
+  );
 
   const snapshot = useMemo(
     () => buildDashboardPortfolioSnapshot(holdings, goal, hasSavedGoal),
     [goal, hasSavedGoal, holdings],
   );
+
+  const marketUpdatedAt = snapshotRefreshedAt ?? snapshot.lastUpdatedAt;
 
   const insightSections = useMemo(
     () => buildDashboardInsightSections(snapshot),
@@ -139,7 +145,7 @@ export default function DashboardPage() {
                 performanceCoverageComplete={snapshot.performanceCoverageComplete}
               />
             </section>
-            <DashboardMarketStatus lastUpdatedAt={snapshot.lastUpdatedAt} />
+            <DashboardMarketStatus lastUpdatedAt={marketUpdatedAt} />
           </>
         ) : null}
 

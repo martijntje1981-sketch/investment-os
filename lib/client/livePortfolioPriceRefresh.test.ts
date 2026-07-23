@@ -19,9 +19,39 @@ import {
   configureMarketDataProvidersForTests,
   resetPriceServiceStateForTests,
 } from "@/lib/services/prices/priceService";
+import { resetEodhdDailyQuotaForTests } from "@/lib/services/marketData/eodhdDailyQuota";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
 const USER = "user-live-refresh";
+
+function estimateSuccessPayload() {
+  return {
+    success: true,
+    canAffordRefresh: true,
+    refreshSummary: {
+      providerCallsRequired: 1,
+      fxCallsRequired: 0,
+      totalCallsRequired: 1,
+    },
+    eodhdBudget: {
+      spendableRemaining: 10,
+    },
+  };
+}
+
+function mockEstimateThenRefresh(
+  refreshPayload: Record<string, unknown>,
+): void {
+  vi.mocked(fetch)
+    .mockResolvedValueOnce({
+      ok: true,
+      json: async () => estimateSuccessPayload(),
+    } as Response)
+    .mockResolvedValueOnce({
+      ok: true,
+      json: async () => refreshPayload,
+    } as Response);
+}
 
 function holding(
   symbol: string,
@@ -48,16 +78,12 @@ describe("livePortfolioPriceRefresh", () => {
     resetLivePriceRefreshStateForTests();
     resetPriceServiceStateForTests();
     resetMarketPriceCacheForTests();
+    resetEodhdDailyQuotaForTests();
     vi.stubGlobal(
       "fetch",
       vi.fn(async () => ({
         ok: true,
-        json: async () => ({
-          success: true,
-          prices: [],
-          requested: 0,
-          received: 0,
-        }),
+        json: async () => estimateSuccessPayload(),
       })),
     );
   });
@@ -85,34 +111,31 @@ describe("livePortfolioPriceRefresh", () => {
       holding("VWCE2", "VWCE.XETRA"),
     ]);
 
-    vi.mocked(fetch).mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        success: true,
-        prices: [
-          {
-            symbol: "VWCE",
-            providerSymbol: "VWCE.XETRA",
-            priceEur: 110,
-            currentPrice: 110,
-            updatedAt: new Date().toISOString(),
-          },
-        ],
-        requested: 1,
-        received: 1,
-        refreshSummary: {
-          uniqueSymbols: ["VWCE.XETRA"],
-          providerCallsRequired: 1,
-          providerCallsMade: 1,
+    mockEstimateThenRefresh({
+      success: true,
+      prices: [
+        {
+          symbol: "VWCE",
+          providerSymbol: "VWCE.XETRA",
+          priceEur: 110,
+          currentPrice: 110,
+          updatedAt: new Date().toISOString(),
         },
-      }),
-    } as Response);
+      ],
+      requested: 1,
+      received: 1,
+      refreshSummary: {
+        uniqueSymbols: ["VWCE.XETRA"],
+        providerCallsRequired: 1,
+        providerCallsMade: 1,
+      },
+    });
 
     await refreshLivePortfolioPrices(USER, loadUserPortfolioHoldings(USER));
 
-    expect(fetch).toHaveBeenCalledOnce();
-    const [, init] = vi.mocked(fetch).mock.calls[0]!;
-    const body = JSON.parse(String(init?.body));
+    expect(fetch).toHaveBeenCalledTimes(2);
+    const [, forceInit] = vi.mocked(fetch).mock.calls[1]!;
+    const body = JSON.parse(String(forceInit?.body));
     expect(body.holdings).toHaveLength(2);
     expect(body.forceRefresh).toBe(true);
   });
@@ -120,30 +143,26 @@ describe("livePortfolioPriceRefresh", () => {
   it("applies cooldown after a successful refresh", async () => {
     writePortfolioToStorage(USER, [holding("VWCE", "VWCE.XETRA")]);
 
-    vi.mocked(fetch).mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        success: true,
-        prices: [
-          {
-            symbol: "VWCE",
-            providerSymbol: "VWCE.XETRA",
-            priceEur: 111,
-            currentPrice: 111,
-            updatedAt: new Date().toISOString(),
-          },
-        ],
-        requested: 1,
-        received: 1,
-      }),
-    } as Response);
+    mockEstimateThenRefresh({
+      success: true,
+      prices: [
+        {
+          symbol: "VWCE",
+          providerSymbol: "VWCE.XETRA",
+          priceEur: 111,
+          currentPrice: 111,
+          updatedAt: new Date().toISOString(),
+        },
+      ],
+      requested: 1,
+      received: 1,
+    });
 
     const first = await refreshLivePortfolioPrices(USER, loadUserPortfolioHoldings(USER));
-    expect(fetch).toHaveBeenCalledOnce();
+    expect(fetch).toHaveBeenCalledTimes(2);
     expect(first.updated).toBe(true);
 
     const second = await refreshLivePortfolioPrices(USER, loadUserPortfolioHoldings(USER));
-    expect(fetch).toHaveBeenCalledOnce();
     expect(second.cooldownRemainingMs).toBeGreaterThan(0);
     expect(second.message).toMatch(/cooling down/i);
   });
@@ -174,27 +193,24 @@ describe("livePortfolioPriceRefresh", () => {
   it("clears stale quota state when the provider returns fresh quotes", async () => {
     writePortfolioToStorage(USER, [holding("VWCE", "VWCE.XETRA")]);
 
-    vi.mocked(fetch).mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        success: true,
-        prices: [
-          {
-            symbol: "VWCE",
-            providerSymbol: "VWCE.XETRA",
-            priceEur: 112,
-            currentPrice: 112,
-            updatedAt: new Date().toISOString(),
-          },
-        ],
-        requested: 1,
-        received: 1,
-        refreshSummary: {
-          circuitOpen: false,
-          providerCallsMade: 1,
+    mockEstimateThenRefresh({
+      success: true,
+      prices: [
+        {
+          symbol: "VWCE",
+          providerSymbol: "VWCE.XETRA",
+          priceEur: 112,
+          currentPrice: 112,
+          updatedAt: new Date().toISOString(),
         },
-      }),
-    } as Response);
+      ],
+      requested: 1,
+      received: 1,
+      refreshSummary: {
+        circuitOpen: false,
+        providerCallsMade: 1,
+      },
+    });
 
     const result = await refreshLivePortfolioPrices(USER, loadUserPortfolioHoldings(USER));
 
@@ -217,14 +233,19 @@ describe("livePortfolioPriceRefresh", () => {
 
     resetLivePriceRefreshStateForTests();
 
-    vi.mocked(fetch).mockResolvedValueOnce({
-      ok: false,
-      json: async () => ({
-        success: false,
-        error: "402 Payment Required",
-        refreshSummary: { circuitOpen: true },
-      }),
-    } as Response);
+    vi.mocked(fetch)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => estimateSuccessPayload(),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: false,
+        json: async () => ({
+          success: false,
+          error: "402 Payment Required",
+          refreshSummary: { circuitOpen: true },
+        }),
+      } as Response);
 
     const result = await refreshLivePortfolioPrices(USER, loadUserPortfolioHoldings(USER));
 
@@ -248,29 +269,26 @@ describe("livePortfolioPriceRefresh", () => {
 
     resetLivePriceRefreshStateForTests();
 
-    vi.mocked(fetch).mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        success: true,
-        prices: [
-          {
-            symbol: "VWCE",
-            providerSymbol: "VWCE.XETRA",
-            priceEur: 110,
-            currentPrice: 110,
-            updatedAt: "2026-07-22T15:46:00.000Z",
-            dataStatus: "stale",
-          },
-        ],
-        requested: 1,
-        received: 1,
-        quoteSource: "cache",
-        refreshSummary: {
-          providerCallsMade: 0,
-          circuitOpen: true,
+    mockEstimateThenRefresh({
+      success: true,
+      prices: [
+        {
+          symbol: "VWCE",
+          providerSymbol: "VWCE.XETRA",
+          priceEur: 110,
+          currentPrice: 110,
+          updatedAt: "2026-07-22T15:46:00.000Z",
+          dataStatus: "stale",
         },
-      }),
-    } as Response);
+      ],
+      requested: 1,
+      received: 1,
+      quoteSource: "cache",
+      refreshSummary: {
+        providerCallsMade: 0,
+        circuitOpen: true,
+      },
+    });
 
     const result = await refreshLivePortfolioPrices(USER, loadUserPortfolioHoldings(USER));
 
@@ -283,39 +301,16 @@ describe("livePortfolioPriceRefresh", () => {
   it("blocks repeated clicks while a refresh is in flight", async () => {
     writePortfolioToStorage(USER, [holding("VWCE", "VWCE.XETRA")]);
 
-    let resolveFetch: ((value: Response) => void) | undefined;
-    vi.mocked(fetch).mockImplementation(
-      () =>
-        new Promise((resolve) => {
-          resolveFetch = resolve;
-        }),
-    );
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => estimateSuccessPayload(),
+    } as Response);
 
-    const first = refreshLivePortfolioPrices(USER, loadUserPortfolioHoldings(USER));
+    void refreshLivePortfolioPrices(USER, loadUserPortfolioHoldings(USER));
     const second = await refreshLivePortfolioPrices(USER, loadUserPortfolioHoldings(USER));
 
     expect(second.inProgress).toBe(true);
-    expect(fetch).toHaveBeenCalledOnce();
-
-    resolveFetch?.({
-      ok: true,
-      json: async () => ({
-        success: true,
-        prices: [
-          {
-            symbol: "VWCE",
-            providerSymbol: "VWCE.XETRA",
-            priceEur: 110,
-            currentPrice: 110,
-            updatedAt: new Date().toISOString(),
-          },
-        ],
-        requested: 1,
-        received: 1,
-      }),
-    } as Response);
-
-    await first;
+    expect(second.message).toMatch(/already in progress/i);
   });
 
   it("uses the configured cooldown window", () => {

@@ -12,6 +12,8 @@ import {
 } from "@/lib/client/portfolioPricing";
 import { portfolioStorageKey } from "@/lib/client/portfolioStorageKeys";
 import { resetEodhdQuotaGuardForTests } from "@/lib/services/instruments/eodhdQuotaGuard";
+import { resetEodhdDailyQuotaForTests } from "@/lib/services/marketData/eodhdDailyQuota";
+import { resetProviderCircuitForTests } from "@/lib/services/marketData/providerCircuitBreaker";
 import {
   EodhdProviderError,
   fetchIdMapping,
@@ -87,6 +89,8 @@ function remoteSnapshot(holdings: StoredPortfolioHolding[]) {
 describe("instrument matching under EODHD quota failure", () => {
   beforeEach(() => {
     resetEodhdQuotaGuardForTests();
+    resetEodhdDailyQuotaForTests();
+    resetProviderCircuitForTests();
     vi.mocked(fetchIdMapping).mockReset();
   });
 

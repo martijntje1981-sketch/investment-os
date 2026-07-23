@@ -75,6 +75,7 @@ describe("POST /api/prices", () => {
       [{ symbol: "VWCE", providerSymbol: "VWCE.XETRA" }],
       {
         forceRefresh: false,
+        snapshotOnly: true,
         onlyProviderSymbols: undefined,
         estimateOnly: false,
       },

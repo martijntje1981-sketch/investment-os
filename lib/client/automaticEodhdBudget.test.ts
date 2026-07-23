@@ -21,11 +21,15 @@ import {
 } from "@/lib/client/livePortfolioPriceRefresh";
 import { newsCacheKey } from "@/lib/client/portfolioStorageKeys";
 import { createEmptyMarketBrief } from "@/lib/services/news/marketBrief";
+import {
+  EODHD_API_PROVIDER_ID,
+  recordEodhdApiCalls,
+  resetEodhdDailyQuotaForTests,
+} from "@/lib/services/marketData/eodhdDailyQuota";
 import { EODHD_NEWS_PROVIDER_ID } from "@/lib/services/instruments/eodhdNewsGuard";
-import { EODHD_QUOTE_PROVIDER_ID } from "@/lib/services/instruments/eodhdQuoteGuard";
+import { isEodhdNewsFetchBlocked } from "@/lib/services/instruments/eodhdNewsGuard";
 import {
   isProviderCircuitOpen,
-  recordProviderCircuitFailure,
   resetProviderCircuitForTests,
 } from "@/lib/services/marketData/providerCircuitBreaker";
 import { buildAnalystActionsFromNews } from "@/lib/services/news/analystNews";
@@ -111,6 +115,7 @@ describe("automatic EODHD budget controls", () => {
     resetDividendRefreshStateForTests();
     resetAnalystRefreshStateForTests();
     resetLivePriceRefreshStateForTests();
+    resetEodhdDailyQuotaForTests();
     resetProviderCircuitForTests();
     resetEodhdNewsCacheForTests();
     vi.restoreAllMocks();
@@ -259,14 +264,11 @@ describe("automatic EODHD budget controls", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("keeps the live-price circuit independent from intelligence quota failures", () => {
-    recordProviderCircuitFailure(
-      EODHD_NEWS_PROVIDER_ID,
-      new Error("EODHD news returned 402"),
-    );
+  it("shares one persistent daily budget across intelligence and price endpoints", async () => {
+    await recordEodhdApiCalls(16);
 
-    expect(isProviderCircuitOpen(EODHD_NEWS_PROVIDER_ID)).toBe(true);
-    expect(isProviderCircuitOpen(EODHD_QUOTE_PROVIDER_ID)).toBe(false);
+    expect(isProviderCircuitOpen(EODHD_API_PROVIDER_ID)).toBe(true);
+    expect(isEodhdNewsFetchBlocked()).toBe(true);
   });
 
   it("preserves manual live price refresh behavior", async () => {

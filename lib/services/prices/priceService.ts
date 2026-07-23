@@ -56,6 +56,15 @@ import {
   resolveQuotePriceTargets,
 } from "@/lib/services/prices/resolvePriceTargets";
 import { estimatePriceRefreshForTargets } from "@/lib/services/prices/estimatePriceRefresh";
+import { getMarketSnapshotMetadata } from "@/lib/services/marketSnapshot/marketSnapshotService";
+import {
+  assertCanSpendEodhdCalls,
+  getEodhdDailyUsage,
+} from "@/lib/services/marketData/eodhdDailyQuota";
+import {
+  estimateFxProviderCalls,
+  requiredFxCurrenciesForSymbols,
+} from "@/lib/services/marketSnapshot/snapshotSymbolFilter";
 import {
   NO_QUOTABLE_HOLDINGS_MESSAGE,
   type HoldingPrice,
@@ -95,6 +104,7 @@ const FX_CACHE_TTL_MS = DEFAULT_MARKET_DATA_CACHE_POLICY.fxFreshMs;
 
 export type LoadPricesOptions = {
   forceRefresh?: boolean;
+  snapshotOnly?: boolean;
   onlyProviderSymbols?: string[];
   allowBackgroundRefresh?: boolean;
   estimateOnly?: boolean;
@@ -149,9 +159,23 @@ function isCircuitBreakerFailure(kind: ProviderFailureKind): boolean {
   return kind === "quota_exhausted" || kind === "rate_limited";
 }
 
-async function getFxRates(forceRefresh = false): Promise<FxRates> {
+async function getFxRates(options?: {
+  forceRefresh?: boolean;
+  snapshotOnly?: boolean;
+  requiredCurrencies?: PriceCurrency[];
+}): Promise<FxRates> {
   const now = Date.now();
-  const refreshLive = effectiveForceRefresh(forceRefresh);
+  const refreshLive = effectiveForceRefresh(options?.forceRefresh ?? false);
+  const snapshotOnly = options?.snapshotOnly ?? false;
+  const requiredCurrencies =
+    options?.requiredCurrencies ?? (["EUR", "USD", "GBP", "CHF"] as PriceCurrency[]);
+
+  if (snapshotOnly && !refreshLive) {
+    if (fxCache) {
+      return fxCache.rates;
+    }
+    return DEFAULT_FX_RATES;
+  }
 
   if (!refreshLive && fxCache && now <= fxCache.expiresAt) {
     return fxCache.rates;
@@ -176,7 +200,9 @@ async function getFxRates(forceRefresh = false): Promise<FxRates> {
     }
     recordProviderCall();
     try {
-      const rates = await fetchEodhdFxRates();
+      const rates = await fetchEodhdFxRates(undefined, {
+        requiredCurrencies,
+      });
       fxCache = { rates, expiresAt: Date.now() + FX_CACHE_TTL_MS };
       return rates;
     } catch (error) {
@@ -217,7 +243,7 @@ async function fetchAndCacheQuote(
     if (!forceRefresh) {
       assertProviderAvailable(provider.id);
     }
-    const fxRates = await getFxRates(forceRefresh);
+    const fxRates = await getFxRates({ forceRefresh });
     recordProviderCall();
     const raw = await provider.getQuote(target.providerSymbol);
     const quote = provider.normalizeQuote(target, raw, fxRates);
@@ -311,7 +337,11 @@ async function refreshQuoteInBackground(
 
 export async function getNormalizedQuote(
   target: ResolvedPriceTarget,
-  options?: { forceRefresh?: boolean; allowBackgroundRefresh?: boolean },
+  options?: {
+    forceRefresh?: boolean;
+    allowBackgroundRefresh?: boolean;
+    snapshotOnly?: boolean;
+  },
 ): Promise<NormalizedProviderQuote> {
   const provider = getActiveRouter().selectProvider(target.providerSymbol);
   if (!provider) {
@@ -325,6 +355,7 @@ export async function getNormalizedQuote(
   const forceRefresh = effectiveForceRefresh(
     options?.forceRefresh ?? false,
   );
+  const snapshotOnly = options?.snapshotOnly ?? false;
   const cacheKey = buildQuoteCacheKey(provider.id, target.providerSymbol);
 
   if (isProviderCircuitOpen(provider.id) && !forceRefresh) {
@@ -380,13 +411,28 @@ export async function getNormalizedQuote(
       providerId: provider.id,
       providerSymbol: target.providerSymbol,
     });
-    void refreshQuoteInBackground(
-      target,
-      provider,
-      cacheKey,
-      options?.allowBackgroundRefresh ?? false,
-    );
+    if (!snapshotOnly) {
+      void refreshQuoteInBackground(
+        target,
+        provider,
+        cacheKey,
+        options?.allowBackgroundRefresh ?? false,
+      );
+    }
     return cached.quote;
+  }
+
+  if (snapshotOnly && !forceRefresh) {
+    if (cached) {
+      recordPriceCacheHit();
+      return cached.quote;
+    }
+    recordPriceCacheMiss();
+    return buildUnavailableQuote(
+      target,
+      provider.id,
+      "No cached market snapshot is available yet.",
+    );
   }
 
   recordPriceCacheMiss();
@@ -408,7 +454,7 @@ export async function getNormalizedQuote(
 
 async function quoteToHoldingPrice(
   target: ResolvedPriceTarget,
-  options?: { forceRefresh?: boolean },
+  options?: { forceRefresh?: boolean; snapshotOnly?: boolean },
 ): Promise<HoldingPrice> {
   const quote = await getNormalizedQuote(target, options);
 
@@ -424,8 +470,10 @@ async function quoteToHoldingPrice(
   }
 
   const forceRefresh = effectiveForceRefresh(options?.forceRefresh ?? false);
+  const snapshotOnly = options?.snapshotOnly ?? false;
   if (
     forceRefresh &&
+    !snapshotOnly &&
     (quote.dataStatus === "stale" ||
       quote.isStale ||
       quote.cacheStatus === "stale")
@@ -436,7 +484,7 @@ async function quoteToHoldingPrice(
     );
   }
 
-  const fxRates = await getFxRates(forceRefresh);
+  const fxRates = await getFxRates(options);
   return convertQuoteToHoldingPrice(target, quote, fxRates);
 }
 
@@ -467,6 +515,8 @@ function buildPricePayload(
     forceSuccess?: boolean;
     metricsBefore?: ReturnType<typeof getPriceServiceMetricsSnapshot>;
     refreshSummary?: PriceRefreshSummary;
+    eodhdBudget?: Awaited<ReturnType<typeof getEodhdDailyUsage>>;
+    canAffordRefresh?: boolean;
   },
 ): PricePayload {
   const metricsBefore =
@@ -501,6 +551,8 @@ function buildPricePayload(
     lastSuccessfulUpdate,
     quoteSource: resolveQuoteSource(prices, metricsBefore),
     refreshSummary: options?.refreshSummary,
+    eodhdBudget: options?.eodhdBudget,
+    canAffordRefresh: options?.canAffordRefresh,
   };
 }
 
@@ -548,11 +600,19 @@ export async function loadPricesForTargets(
   }
 
   const forceRefresh = effectiveForceRefresh(options?.forceRefresh ?? false);
-  const fxRates = await getFxRates(forceRefresh);
+  const snapshotOnly = options?.snapshotOnly ?? false;
+  const requiredFxCurrencies = requiredFxCurrenciesForSymbols(
+    uniqueTargets.map((target) => target.providerSymbol),
+  );
+  const fxRates = await getFxRates({
+    forceRefresh,
+    snapshotOnly,
+    requiredCurrencies: requiredFxCurrencies,
+  });
 
   const results = await Promise.allSettled(
     uniqueTargets.map((target) =>
-      quoteToHoldingPrice(target, { forceRefresh }),
+      quoteToHoldingPrice(target, { forceRefresh, snapshotOnly }),
     ),
   );
 
@@ -602,13 +662,55 @@ export async function loadPricesForHoldings(
   }
 
   const estimate = await estimatePriceRefreshForTargets(targets);
+  const fxCallsRequired = estimateFxProviderCalls(
+    targets.map((target) => target.providerSymbol),
+  );
+  const totalCallsRequired =
+    estimate.providerCallsRequired + fxCallsRequired;
+
+  if (options?.forceRefresh && !options?.estimateOnly) {
+    try {
+      await assertCanSpendEodhdCalls(totalCallsRequired);
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "EODHD daily budget insufficient for live price refresh.";
+      logRefreshOutcome(holdingsRequested, skipped, targets.length, metricsBefore, {
+        ...estimate,
+        providerCallsMade: 0,
+        circuitOpen: getProviderCircuitSnapshot(EODHD_QUOTE_PROVIDER_ID).open,
+      });
+      return buildPricePayload([], [...resolutionErrors, message], holdingsRequested, DEFAULT_FX_RATES, {
+        message,
+        forceSuccess: false,
+        metricsBefore,
+        refreshSummary: {
+          ...estimate,
+          providerCallsMade: 0,
+          fxCallsRequired,
+          totalCallsRequired,
+          circuitOpen: getProviderCircuitSnapshot(EODHD_QUOTE_PROVIDER_ID).open,
+        },
+      });
+    }
+  }
+
   if (options?.estimateOnly) {
+    const eodhdBudget = await getEodhdDailyUsage();
     logRefreshOutcome(holdingsRequested, skipped, targets.length, metricsBefore, estimate);
     return buildPricePayload([], resolutionErrors, holdingsRequested, DEFAULT_FX_RATES, {
       forceSuccess: true,
       metricsBefore,
-      refreshSummary: estimate,
+      refreshSummary: {
+        ...estimate,
+        fxCallsRequired,
+        totalCallsRequired,
+        circuitOpen: getProviderCircuitSnapshot(EODHD_QUOTE_PROVIDER_ID).open,
+      },
       message: "Price refresh estimate ready.",
+      eodhdBudget,
+      canAffordRefresh: totalCallsRequired <= eodhdBudget.spendableRemaining,
     });
   }
 
@@ -623,6 +725,7 @@ export async function loadPricesForHoldings(
   logRefreshOutcome(holdingsRequested, skipped, targets.length, metricsBefore, refreshSummary);
   logMarketDataRefreshTrace("portfolio_recalc", {
     forceRefresh: options?.forceRefresh ?? false,
+    snapshotOnly: options?.snapshotOnly ?? false,
     requested: holdingsRequested,
     quotable: targets.length,
     received: payload.received,
@@ -631,19 +734,33 @@ export async function loadPricesForHoldings(
     providerCallsMade: refreshSummary.providerCallsMade,
     lastSuccessfulUpdate: payload.lastSuccessfulUpdate,
   });
+  const marketSnapshot = await getMarketSnapshotMetadata();
   return {
     ...payload,
     errors: [...resolutionErrors, ...payload.errors],
     requested: holdingsRequested,
     refreshSummary,
     quoteSource: payload.quoteSource,
-    lastSuccessfulUpdate: payload.lastSuccessfulUpdate,
+    lastSuccessfulUpdate:
+      payload.lastSuccessfulUpdate ?? marketSnapshot.lastRefreshedAt,
+    marketSnapshot,
   };
+}
+
+export async function loadSnapshotPricesForHoldings(
+  holdings: PriceHoldingInput[],
+  options?: Omit<LoadPricesOptions, "snapshotOnly" | "forceRefresh">,
+): Promise<PricePayload> {
+  return loadPricesForHoldings(holdings, {
+    ...options,
+    snapshotOnly: true,
+    forceRefresh: false,
+  });
 }
 
 export async function loadDefaultWatchlistPrices(): Promise<PricePayload> {
   const targets = await resolveDefaultWatchlist();
-  return loadPricesForTargets(targets);
+  return loadPricesForTargets(targets, { snapshotOnly: true });
 }
 
 export function configureMarketDataProvidersForTests(

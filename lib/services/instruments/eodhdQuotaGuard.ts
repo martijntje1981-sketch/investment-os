@@ -4,6 +4,10 @@
  */
 
 import {
+  EODHD_API_PROVIDER_ID,
+  getEodhdDailyBudgetBlockReason,
+} from "@/lib/services/marketData/eodhdDailyQuota";
+import {
   assertProviderAvailable,
   getProviderCircuitReason,
   isProviderCircuitOpen,
@@ -23,6 +27,12 @@ export function markEodhdInstrumentQuotaExhausted(error?: unknown): void {
       ? error
       : new Error("EODHD instrument API returned quota or rate limit"),
   );
+  recordProviderCircuitFailure(
+    EODHD_API_PROVIDER_ID,
+    error instanceof Error
+      ? error
+      : new Error("EODHD instrument API returned quota or rate limit"),
+  );
 }
 
 /** @deprecated Use markEodhdInstrumentQuotaExhausted */
@@ -31,7 +41,10 @@ export function markEodhdQuotaExhausted(error?: unknown): void {
 }
 
 export function isEodhdInstrumentQuotaExhausted(): boolean {
-  return isProviderCircuitOpen(EODHD_INSTRUMENT_PROVIDER_ID);
+  return (
+    isProviderCircuitOpen(EODHD_INSTRUMENT_PROVIDER_ID) ||
+    isProviderCircuitOpen(EODHD_API_PROVIDER_ID)
+  );
 }
 
 /** @deprecated Use isEodhdInstrumentQuotaExhausted */
@@ -40,7 +53,11 @@ export function isEodhdQuotaExhausted(): boolean {
 }
 
 export function getEodhdInstrumentBlockReason(): string | null {
-  return getProviderCircuitReason(EODHD_INSTRUMENT_PROVIDER_ID);
+  return (
+    getEodhdDailyBudgetBlockReason() ??
+    getProviderCircuitReason(EODHD_API_PROVIDER_ID) ??
+    getProviderCircuitReason(EODHD_INSTRUMENT_PROVIDER_ID)
+  );
 }
 
 /** @deprecated Use getEodhdInstrumentBlockReason */
@@ -49,6 +66,9 @@ export function getEodhdQuotaBlockReason(): string | null {
 }
 
 export function assertEodhdInstrumentAvailable(): void {
+  if (isProviderCircuitOpen(EODHD_API_PROVIDER_ID)) {
+    assertProviderAvailable(EODHD_API_PROVIDER_ID);
+  }
   assertProviderAvailable(EODHD_INSTRUMENT_PROVIDER_ID);
 }
 

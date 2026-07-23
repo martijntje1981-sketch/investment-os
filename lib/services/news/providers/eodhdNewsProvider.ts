@@ -7,6 +7,8 @@ import {
   isEodhdNewsFetchBlocked,
   markEodhdNewsQuotaExhausted,
 } from "@/lib/services/instruments/eodhdNewsGuard";
+import { executeEodhdApiCall } from "@/lib/services/marketData/eodhdApiCall";
+import { markEodhdDailyQuotaExhausted } from "@/lib/services/marketData/eodhdDailyQuota";
 import {
   buildEodhdNewsCacheKey,
   readEodhdNewsCache,
@@ -55,17 +57,28 @@ function dedupeProviderSymbols(providerSymbols: string[]): string[] {
 }
 
 async function fetchEodhdNewsUrl(url: URL): Promise<EodhdNewsItem[]> {
-  const response = await fetch(url.toString(), {
-    headers: { Accept: "application/json" },
-    next: { revalidate: 45 * 60 },
+  return executeEodhdApiCall(async () => {
+    const response = await fetch(url.toString(), {
+      headers: { Accept: "application/json" },
+      next: { revalidate: 45 * 60 },
+    });
+
+    if (!response.ok) {
+      if (response.status === 402) {
+        await markEodhdDailyQuotaExhausted();
+      }
+      throw new Error(`EODHD News returned ${response.status}`);
+    }
+
+    const data = (await response.json()) as unknown;
+    return Array.isArray(data) ? (data as EodhdNewsItem[]) : [];
+  }).catch((error) => {
+    const normalized = normalizeProviderError(error);
+    if (normalized.kind === "quota_exhausted") {
+      markEodhdNewsQuotaExhausted(error);
+    }
+    throw error;
   });
-
-  if (!response.ok) {
-    throw new Error(`EODHD News returned ${response.status}`);
-  }
-
-  const data = (await response.json()) as unknown;
-  return Array.isArray(data) ? (data as EodhdNewsItem[]) : [];
 }
 
 function mapEodhdItem(

@@ -479,7 +479,11 @@ describe("E2E portfolio verification harness", () => {
     await tryRefreshPortfolioPrices(USER, holdings);
     vi.unstubAllGlobals();
 
-    const body = JSON.parse(String(fetchSpy.mock.calls[0]?.[1]?.body));
+    const pricesCall = fetchSpy.mock.calls.find(([url, init]) => {
+      return String(url).includes("/api/prices") && init?.method === "POST";
+    });
+    expect(pricesCall).toBeTruthy();
+    const body = JSON.parse(String(pricesCall?.[1]?.body));
     expect(body.holdings).toHaveLength(1);
     expect(body.holdings[0]?.providerSymbol).toBe("STRC.AS");
   });

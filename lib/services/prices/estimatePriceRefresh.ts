@@ -1,4 +1,5 @@
 import { buildQuoteCacheKey, readCachedQuote } from "@/lib/services/prices/cache/marketPriceCache";
+import { EODHD_API_PROVIDER_ID } from "@/lib/services/marketData/eodhdDailyQuota";
 import { EODHD_QUOTE_PROVIDER_ID } from "@/lib/services/instruments/eodhdQuoteGuard";
 import { isProviderCircuitOpen } from "@/lib/services/marketData/providerCircuitBreaker";
 import {
@@ -38,7 +39,9 @@ export async function estimatePriceRefreshForTargets(
   const skippedSymbols: string[] = [];
   let cacheHits = 0;
   let providerCallsRequired = 0;
-  const circuitOpen = isProviderCircuitOpen(EODHD_QUOTE_PROVIDER_ID);
+  const circuitOpen =
+    isProviderCircuitOpen(EODHD_QUOTE_PROVIDER_ID) ||
+    isProviderCircuitOpen(EODHD_API_PROVIDER_ID);
 
   for (const target of uniqueTargets) {
     if (circuitOpen) {

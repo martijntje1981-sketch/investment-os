@@ -1,0 +1,20 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/market-snapshot?window=eu",
+      "schedule": "30 7 * * *"
+    },
+    {
+      "path": "/api/cron/market-snapshot?window=eu",
+      "schedule": "30 8 * * *"
+    },
+    {
+      "path": "/api/cron/market-snapshot?window=us",
+      "schedule": "35 13 * * *"
+    },
+    {
+      "path": "/api/cron/market-snapshot?window=us",
+      "schedule": "35 14 * * *"
+    }
+  ]
+}

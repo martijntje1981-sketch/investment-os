@@ -77,7 +77,7 @@ describe("eodhd news resilience", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("does not block news fetches when only the live-price circuit is open", async () => {
+  it("does not block news fetches when only the legacy quote circuit is open", async () => {
     recordProviderCircuitFailure(
       EODHD_QUOTE_PROVIDER_ID,
       new Error("EODHD quotes returned 402"),

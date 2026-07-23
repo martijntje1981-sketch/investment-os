@@ -35,6 +35,7 @@ import { logHoldingDailyData } from "@/lib/client/holdingDailyDataDebug";
 import { CLIENT_PRICE_CACHE_FRESH_MS } from "@/lib/services/marketData/cachePolicy";
 import { findSavedMappingForHolding } from "@/lib/services/import/mappingMemory";
 import { NO_QUOTABLE_HOLDINGS_MESSAGE } from "@/lib/services/prices/types";
+import { syncPortfolioPricesFromSnapshot } from "@/lib/client/marketSnapshotSync";
 import { prepareManualHoldingForSave } from "@/lib/services/portfolio/holdingValidation";
 import {
   enrichHoldingsWithVerifiedMappings,
@@ -594,56 +595,50 @@ export async function tryRefreshPortfolioPrices<
     };
   }
 
-  if (
-    options?.skipIfCacheFresh &&
-    !options.forceRefresh &&
-    isPriceCacheFresh(userSub)
-  ) {
-    return {
-      holdings: applyCachedPrices(userSub, holdings),
-      updated: false,
-      message: "Using cached market prices.",
-    };
-  }
-
-  if (refreshInFlight) {
-    await refreshInFlight.catch(() => undefined);
-    return {
-      holdings: applyCachedPrices(userSub, holdings),
-      updated: false,
-      message: "Price refresh already in progress.",
-    };
-  }
-
-  const run = (async () => {
-    try {
-      const { holdings: refreshed, fetched } = await refreshPortfolioPrices(
-        userSub,
-        holdings,
-        options,
-      );
-      if (!fetched) {
-        return {
-          holdings: applyCachedPrices(userSub, refreshed),
-          updated: false,
-          message: NO_QUOTABLE_HOLDINGS_MESSAGE,
-        } satisfies PriceRefreshResult<T>;
-      }
-      return { holdings: refreshed, updated: true } satisfies PriceRefreshResult<T>;
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Market data unavailable";
+  if (options?.forceRefresh) {
+    if (refreshInFlight) {
+      await refreshInFlight.catch(() => undefined);
       return {
-        holdings,
+        holdings: applyCachedPrices(userSub, holdings),
         updated: false,
-        message,
-        rateLimited: isRateLimitedPriceError(message),
-      } satisfies PriceRefreshResult<T>;
-    } finally {
-      refreshInFlight = null;
+        message: "Price refresh already in progress.",
+      };
     }
-  })();
 
-  refreshInFlight = run;
-  return run;
+    const run = (async () => {
+      try {
+        const { holdings: refreshed, fetched } = await refreshPortfolioPrices(
+          userSub,
+          holdings,
+          options,
+        );
+        if (!fetched) {
+          return {
+            holdings: applyCachedPrices(userSub, refreshed),
+            updated: false,
+            message: NO_QUOTABLE_HOLDINGS_MESSAGE,
+          } satisfies PriceRefreshResult<T>;
+        }
+        return { holdings: refreshed, updated: true } satisfies PriceRefreshResult<T>;
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Market data unavailable";
+        return {
+          holdings,
+          updated: false,
+          message,
+          rateLimited: isRateLimitedPriceError(message),
+        } satisfies PriceRefreshResult<T>;
+      } finally {
+        refreshInFlight = null;
+      }
+    })();
+
+    refreshInFlight = run;
+    return run;
+  }
+
+  return syncPortfolioPricesFromSnapshot(userSub, holdings, {
+    skipIfLocalCacheCurrent: options?.skipIfCacheFresh ?? true,
+  });
 }

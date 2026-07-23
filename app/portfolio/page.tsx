@@ -70,6 +70,10 @@ import type { ResolvedInstrument } from "@/lib/types/instrument";
 import { usePortfolioDividends } from "@/lib/client/usePortfolioDividends";
 import { usePortfolioAnalyst } from "@/lib/client/usePortfolioAnalyst";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
+import {
+  formatMarketSnapshotRefreshLabel,
+} from "@/lib/client/marketSnapshotSync";
+import { useMarketSnapshotMetadata } from "@/lib/client/useMarketSnapshotMetadata";
 
 type AssetType = "investment" | "cash";
 type Holding = StoredPortfolioHolding;
@@ -128,6 +132,13 @@ export default function PortfolioPage() {
     holdings,
     userSub,
     holdings.length > 0,
+  );
+  const { lastRefreshedAt: snapshotRefreshedAt } = useMarketSnapshotMetadata(
+    portfolioReady && holdings.length > 0,
+  );
+  const snapshotRefreshLabel = useMemo(
+    () => formatMarketSnapshotRefreshLabel(snapshotRefreshedAt),
+    [snapshotRefreshedAt],
   );
   const [draft, setDraft] = useState<Holding>(emptyDraft);
   const [editorOpen, setEditorOpen] = useState(false);
@@ -295,7 +306,7 @@ export default function PortfolioPage() {
       <PageContainer>
         <PageHero
           title="Portfolio"
-          subtitle="View and manage all your holdings in one place."
+          subtitle={`View and manage all your holdings in one place. ${snapshotRefreshLabel}`}
           actions={
             <>
               <button

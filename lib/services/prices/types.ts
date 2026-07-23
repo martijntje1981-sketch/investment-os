@@ -121,6 +121,15 @@ export type PricePayload = {
   lastSuccessfulUpdate?: string | null;
   quoteSource?: "cache" | "provider" | "mixed";
   refreshSummary?: PriceRefreshSummary;
+  marketSnapshot?: {
+    lastRefreshedAt: string | null;
+    lastSlot: "eu_open" | "us_open" | null;
+    lastAmsterdamDate: string | null;
+    status: "completed" | "failed" | "running" | null;
+    symbolsReceived: number;
+  };
+  eodhdBudget?: EodhdBudgetSnapshot;
+  canAffordRefresh?: boolean;
 };
 
 export type PriceRefreshSummary = {
@@ -131,6 +140,16 @@ export type PriceRefreshSummary = {
   skippedSymbols: string[];
   circuitOpen: boolean;
   estimateOnly?: boolean;
+  fxCallsRequired?: number;
+  totalCallsRequired?: number;
+};
+
+export type EodhdBudgetSnapshot = {
+  usageDate: string;
+  callsUsed: number;
+  dailyLimit: number;
+  recoveryReserve: number;
+  spendableRemaining: number;
 };
 
 export type PriceServiceMetricsSnapshot = {

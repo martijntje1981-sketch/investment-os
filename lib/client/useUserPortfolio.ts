@@ -12,6 +12,7 @@ import {
   type LegacyRecoveryOffer,
   type StoredPortfolioHolding,
 } from "@/lib/client/portfolioPricing";
+import { syncPortfolioPricesFromSnapshot } from "@/lib/client/marketSnapshotSync";
 import { PORTFOLIO_HOLDINGS_UPDATED_EVENT } from "@/lib/client/portfolioStorageKeys";
 import { createPortfolioUpdatedHandler } from "@/lib/client/portfolioUpdatedEvents";
 import {
@@ -65,6 +66,7 @@ export function useUserPortfolio() {
     useState<PortfolioSyncPreview | null>(null);
 
   const remoteHydratedRef = useRef(false);
+  const snapshotSyncedRef = useRef(false);
   const syncRequestRef = useRef<string | null>(null);
   const saveSequenceRef = useRef(0);
   const saveRequestRef = useRef<{
@@ -194,6 +196,7 @@ export function useUserPortfolio() {
 
   useEffect(() => {
     remoteHydratedRef.current = false;
+    snapshotSyncedRef.current = false;
     syncRequestRef.current = null;
     saveRequestRef.current = null;
     saveSequenceRef.current = 0;
@@ -218,6 +221,27 @@ export function useUserPortfolio() {
 
     void hydrateFromRemote();
   }, [authReady, hydrateFromRemote, userSub]);
+
+  useEffect(() => {
+    if (!userSub || !portfolioReady || snapshotSyncedRef.current) {
+      return;
+    }
+
+    const currentHoldings = loadUserPortfolioHoldings(userSub);
+    if (currentHoldings.length === 0) {
+      return;
+    }
+
+    snapshotSyncedRef.current = true;
+
+    void syncPortfolioPricesFromSnapshot(userSub, currentHoldings).then(
+      (result) => {
+        if (result.updated) {
+          setHoldings(result.holdings);
+        }
+      },
+    );
+  }, [portfolioReady, userSub]);
 
   useEffect(() => {
     if (!userSub) return;
