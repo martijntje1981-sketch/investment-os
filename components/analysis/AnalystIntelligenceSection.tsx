@@ -50,6 +50,35 @@ export function AnalystIntelligenceSection({
             ? "Sell-side consensus and price targets for covered holdings in your portfolio."
             : emptyStateCopy.description}
         </p>
+        {snapshot.hasMeaningfulCoverage ? (
+          <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <HeaderMetric
+              label="Consensus"
+              value={formatAnalystConsensus(snapshot.weightedConsensus)}
+            />
+            <HeaderMetric
+              label="Avg. target"
+              value={
+                snapshot.weightedAveragePriceTarget != null
+                  ? formatPortfolioCurrency(snapshot.weightedAveragePriceTarget)
+                  : "—"
+              }
+            />
+            <HeaderMetric
+              label="Implied upside"
+              value={formatUpsideLabel(snapshot.weightedImpliedUpsidePercent)}
+            />
+            <HeaderMetric
+              label="Analyst ratings"
+              value={String(snapshot.totalAnalystRatingsCount)}
+            />
+          </dl>
+        ) : (
+          <p className="mt-4 text-sm font-semibold text-slate-200">
+            {snapshot.coveredHoldingsCount} of {snapshot.totalInvestmentsCount}{" "}
+            holdings have analyst coverage
+          </p>
+        )}
       </div>
 
       {!isLoading ? (
@@ -323,28 +352,41 @@ function getAnalystEmptyStateCopy(snapshot: PortfolioAnalystSnapshot): {
   description: string;
   body: string;
 } {
+  const coverageLine = `${snapshot.coveredHoldingsCount} of ${snapshot.totalInvestmentsCount} holdings currently have traditional analyst coverage.`;
+
   if (snapshot.coverageState === "provider_unavailable") {
     return {
-      title: "Analyst data unavailable",
+      title: "Analyst refresh temporarily unavailable",
       description:
-        "Live analyst coverage could not be loaded right now. Cached data will be shown when available.",
-      body: "Analyst data is temporarily unavailable. Your portfolio view will update automatically when provider access is restored.",
+        "Live analyst data could not be refreshed right now. Cached coverage will appear when available.",
+      body: coverageLine,
     };
   }
 
   if (snapshot.coverageState === "cached" && snapshot.updatedAt) {
     return {
-      title: "Limited analyst coverage",
+      title: "Limited traditional analyst coverage",
       description:
-        "Showing the latest cached analyst data while live refresh is pending.",
-      body: "Traditional analyst coverage is not available for most funds, ETCs and crypto assets.",
+        "Showing cached analyst data. Most ETFs, ETPs, and funds do not receive individual sell-side ratings or price targets.",
+      body: coverageLine,
     };
   }
 
   return {
-    title: "Limited analyst coverage",
+    title: "Limited traditional analyst coverage",
     description:
-      "Traditional analyst coverage is not available for most funds, ETCs and crypto assets.",
-    body: "Analyst opinion is not available for most of this portfolio because it primarily contains funds, ETCs or crypto assets.",
+      "Most ETFs, ETPs, and funds do not receive individual sell-side ratings or price targets. EODHD analyst data is primarily available for listed equities.",
+    body: coverageLine,
   };
+}
+
+function HeaderMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2">
+      <dt className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">
+        {label}
+      </dt>
+      <dd className="mt-1 text-sm font-bold text-white">{value}</dd>
+    </div>
+  );
 }

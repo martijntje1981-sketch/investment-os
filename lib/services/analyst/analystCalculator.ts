@@ -98,6 +98,28 @@ export function buildPortfolioAnalystSnapshot(
       .filter((item): item is { value: number; weight: number } => item != null),
   );
 
+  const weightedAveragePriceTarget = weightedAverage(
+    enriched
+      .map((item) => {
+        const holding = investments.find((entry) => entry.symbol === item.symbol);
+        const weight =
+          holding != null && holding.currentPrice > 0
+            ? holding.quantity * holding.currentPrice
+            : 0;
+        if (item.averagePriceTarget == null || weight <= 0) return null;
+        return {
+          value: item.averagePriceTarget,
+          weight,
+        };
+      })
+      .filter((item): item is { value: number; weight: number } => item != null),
+  );
+
+  const totalAnalystRatingsCount = enriched.reduce(
+    (sum, item) => sum + item.analystCount,
+    0,
+  );
+
   const mostBullish = rankedHoldings[0] ?? null;
   const mostCautious =
     [...rankedHoldings]
@@ -133,6 +155,8 @@ export function buildPortfolioAnalystSnapshot(
     weightedConsensus,
     weightedImpliedUpsidePercent,
     averageImpliedUpsidePercent: averageUpsideForQuotes(enriched),
+    weightedAveragePriceTarget,
+    totalAnalystRatingsCount,
     mostBullish,
     mostCautious,
     rankedHoldings,

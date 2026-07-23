@@ -145,6 +145,8 @@ describe("analyst intelligence", () => {
     expect(snapshot.weightedConsensus).toBe("Strong Buy");
     expect(snapshot.hasMeaningfulCoverage).toBe(true);
     expect(snapshot.mostBullish?.symbol).toBe("AAPL");
+    expect(snapshot.weightedAveragePriceTarget).toBeCloseTo(130, 0);
+    expect(snapshot.totalAnalystRatingsCount).toBe(8);
   });
 
   it("computes weighted consensus from position weights", () => {
@@ -188,7 +190,7 @@ describe("analyst intelligence", () => {
     });
 
     expect(snapshot.hasMeaningfulCoverage).toBe(false);
-    expect(snapshot.observations[0]).toContain("funds, ETCs, crypto assets");
+    expect(snapshot.observations[0]).toContain("holdings currently have traditional analyst coverage");
   });
 
   it("handles cached and provider unavailable states", () => {

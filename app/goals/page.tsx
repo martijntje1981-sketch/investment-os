@@ -27,8 +27,10 @@ import { getHoldingMarketValue } from "@/lib/client/portfolioAnalysis";
 import {
   buildGoalCoach,
   buildGoalCurrencyMilestones,
+  buildGoalHeroSubtitle,
   buildGoalInsight,
   buildGoalScenarioComparison,
+  estimateMonthsToReachTarget,
 } from "@/lib/services/goals/goalCoach";
 import { buildGoalProgressEngine } from "@/lib/services/goals/goalProgressEngine";
 import { loadUserPortfolioHoldings } from "@/lib/client/portfolioPricing";
@@ -158,6 +160,16 @@ export default function GoalsPage() {
       }),
     };
   }, [coachGoal, engineProgress, portfolioValue, projectedValue]);
+  const goalHeroSubtitle = useMemo(
+    () =>
+      buildGoalHeroSubtitle({
+        progress: engineProgress,
+        goal: coachGoal,
+        hasSavedGoal,
+      }),
+    [coachGoal, engineProgress, hasSavedGoal],
+  );
+
   const health = projectedValue >= goal.targetValue
     ? "On track"
     : projectedValue >= goal.targetValue * 0.85
@@ -196,7 +208,7 @@ export default function GoalsPage() {
       <PageContainer>
         <PageHero
           title="Goals"
-          subtitle="Track your progress towards your long-term financial target."
+          subtitle={goalHeroSubtitle}
           actions={
             <Link
               href="/dashboard"

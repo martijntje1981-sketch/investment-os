@@ -32,7 +32,7 @@ export function buildAnalystObservations(input: ObservationInput): string[] {
     }
 
     observations.push(
-      "Analyst opinion is not available for most of this portfolio because it primarily contains funds, ETCs, crypto assets, or listings without traditional sell-side coverage.",
+      `${input.coveredHoldingsCount} of ${input.totalInvestmentsCount} holdings currently have traditional analyst coverage. ETFs, ETPs, and funds usually do not receive individual sell-side ratings or price targets.`,
     );
     return observations;
   }

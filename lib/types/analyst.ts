@@ -94,6 +94,8 @@ export type PortfolioAnalystSnapshot = {
   weightedConsensus: NormalizedAnalystRating;
   weightedImpliedUpsidePercent: number | null;
   averageImpliedUpsidePercent: number | null;
+  weightedAveragePriceTarget: number | null;
+  totalAnalystRatingsCount: number;
   mostBullish: AnalystRankedHolding | null;
   mostCautious: AnalystRankedHolding | null;
   rankedHoldings: AnalystRankedHolding[];

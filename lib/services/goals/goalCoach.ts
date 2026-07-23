@@ -242,6 +242,40 @@ export function buildGoalCoach(input: {
   };
 }
 
+export function buildGoalHeroSubtitle(input: {
+  progress: GoalProgress;
+  goal: GoalSettings;
+  hasSavedGoal: boolean;
+}): string {
+  if (!input.hasSavedGoal || !input.progress.hasGoal) {
+    return "Set your target amount, monthly contribution, and target year to track progress.";
+  }
+
+  const { progress, goal } = input;
+  const progressLabel = progress.currentProgressPercent.toFixed(1);
+
+  if (progress.goalReached) {
+    return `You have reached your ${formatCurrency(goal.targetValue)} goal.`;
+  }
+
+  if (progress.status === "Ahead of schedule") {
+    return `You have reached ${progressLabel}% of your goal and are currently ahead of schedule.`;
+  }
+
+  if (progress.status === "On track") {
+    return `You have reached ${progressLabel}% of your goal and are on track.`;
+  }
+
+  if (
+    progress.status === "Slightly behind" ||
+    progress.status === "Behind schedule"
+  ) {
+    return `You have reached ${progressLabel}% of your ${formatCurrency(goal.targetValue)} goal by ${goal.targetYear}. Increasing your monthly contribution could help you reach your goal sooner.`;
+  }
+
+  return `Saving ${formatCurrency(goal.monthlyContribution)} per month toward ${formatCurrency(goal.targetValue)} by ${goal.targetYear}.`;
+}
+
 export function buildGoalCurrencyMilestones(
   currentValue: number,
   targetValue: number,

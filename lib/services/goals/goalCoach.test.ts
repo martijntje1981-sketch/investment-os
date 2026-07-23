@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildGoalCoach,
   buildGoalCurrencyMilestones,
+  buildGoalHeroSubtitle,
   buildGoalInsight,
   buildGoalScenarioComparison,
   estimateMonthsToReachTarget,
@@ -104,6 +105,45 @@ describe("goalCoach", () => {
 
     expect(coach.headline).toContain("reached");
     expect(coach.reason).toContain("Why:");
+  });
+});
+
+describe("buildGoalHeroSubtitle", () => {
+  it("describes on-track progress as a personalized hero subtitle", () => {
+    const subtitle = buildGoalHeroSubtitle({
+      progress: mockProgress({
+        currentProgressPercent: 48.7,
+        status: "On track",
+      }),
+      goal: baseGoal,
+      hasSavedGoal: true,
+    });
+
+    expect(subtitle).toContain("48.7%");
+    expect(subtitle).toContain("on track");
+  });
+
+  it("prompts contribution changes when the goal is behind schedule", () => {
+    const subtitle = buildGoalHeroSubtitle({
+      progress: mockProgress({
+        currentProgressPercent: 32,
+        status: "Behind schedule",
+      }),
+      goal: baseGoal,
+      hasSavedGoal: true,
+    });
+
+    expect(subtitle).toContain("Increasing your monthly contribution");
+  });
+
+  it("falls back when no goal has been saved", () => {
+    const subtitle = buildGoalHeroSubtitle({
+      progress: mockProgress({ hasGoal: false, status: "Unknown" }),
+      goal: baseGoal,
+      hasSavedGoal: false,
+    });
+
+    expect(subtitle).toContain("Set your target amount");
   });
 });
 
