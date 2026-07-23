@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import {
   readNewsCache,
+  refreshPortfolioNews,
   tryRefreshPortfolioNews,
 } from "@/lib/client/portfolioNews";
 import { createEmptyMarketBrief } from "@/lib/services/news/marketBrief";
@@ -53,6 +54,13 @@ export function usePortfolioNews(
     setIsLoading(true);
 
     try {
+      if (userSub) {
+        const response = await refreshPortfolioNews(userSub, holdings);
+        setPayload(response);
+        setIsStale(response.dataStatus.feedsState !== "live");
+        return;
+      }
+
       const result = await tryRefreshPortfolioNews(userSub, holdings);
       setPayload(result.response);
       setIsStale(result.isStale);

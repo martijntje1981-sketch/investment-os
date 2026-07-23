@@ -52,6 +52,48 @@ export function getProviderCircuitReason(
   return state.message;
 }
 
+export function getProviderCircuitSnapshot(
+  providerId: string,
+  now = Date.now(),
+): {
+  open: boolean;
+  openUntil: string | null;
+  reason: string | null;
+  failureCount: number;
+} {
+  const state = providerStates.get(providerId);
+  if (!state || now >= state.openUntil) {
+    return {
+      open: false,
+      openUntil: null,
+      reason: null,
+      failureCount: 0,
+    };
+  }
+
+  return {
+    open: true,
+    openUntil: new Date(state.openUntil).toISOString(),
+    reason: state.message,
+    failureCount: state.failureCount,
+  };
+}
+
+export function recordProviderCircuitSuccess(providerId: string): void {
+  if (!providerStates.has(providerId)) {
+    return;
+  }
+
+  const previous = providerStates.get(providerId);
+  providerStates.delete(providerId);
+
+  console.info("[market-data] provider circuit cleared after successful response", {
+    providerId,
+    previousReason: previous?.reason ?? null,
+    previousOpenUntil: previous ? new Date(previous.openUntil).toISOString() : null,
+  });
+}
+
 export function recordProviderCircuitFailure(
   providerId: string,
   error: unknown,
@@ -81,11 +123,23 @@ export function recordProviderCircuitFailure(
     );
   }
 
+  const openUntil = Date.now() + cooldownMs;
   providerStates.set(providerId, {
-    openUntil: Date.now() + cooldownMs,
+    openUntil,
     reason: normalized.kind,
     message: normalized.message,
     failureCount,
+  });
+
+  console.warn("[market-data] provider circuit opened", {
+    providerId,
+    kind: normalized.kind,
+    httpStatus: normalized.status,
+    failureCount,
+    cooldownMs,
+    openUntil: new Date(openUntil).toISOString(),
+    retryAfterMs: normalized.retryAfterMs,
+    message: normalized.message,
   });
 
   return normalized;

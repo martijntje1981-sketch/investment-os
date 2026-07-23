@@ -114,7 +114,7 @@ describe("livePortfolioPriceRefresh", () => {
     const [, init] = vi.mocked(fetch).mock.calls[0]!;
     const body = JSON.parse(String(init?.body));
     expect(body.holdings).toHaveLength(2);
-    expect(body.forceRefresh).toBe(false);
+    expect(body.forceRefresh).toBe(true);
   });
 
   it("applies cooldown after a successful refresh", async () => {
@@ -169,6 +169,38 @@ describe("livePortfolioPriceRefresh", () => {
     expect(second[0]?.currentPrice).toBe(110);
     expect(isPriceCacheFresh(USER)).toBe(true);
     expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("clears stale quota state when the provider returns fresh quotes", async () => {
+    writePortfolioToStorage(USER, [holding("VWCE", "VWCE.XETRA")]);
+
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        success: true,
+        prices: [
+          {
+            symbol: "VWCE",
+            providerSymbol: "VWCE.XETRA",
+            priceEur: 112,
+            currentPrice: 112,
+            updatedAt: new Date().toISOString(),
+          },
+        ],
+        requested: 1,
+        received: 1,
+        refreshSummary: {
+          circuitOpen: false,
+          providerCallsMade: 1,
+        },
+      }),
+    } as Response);
+
+    const result = await refreshLivePortfolioPrices(USER, loadUserPortfolioHoldings(USER));
+
+    expect(result.quotaExhausted).toBe(false);
+    expect(result.updated).toBe(true);
+    expect(result.message).toMatch(/Live prices updated/i);
   });
 
   it("preserves stale prices and shows quota message when provider is exhausted", async () => {

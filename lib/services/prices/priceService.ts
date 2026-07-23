@@ -12,6 +12,7 @@ import {
   setInFlightQuote,
   writeCachedQuote,
   writeNegativeCache,
+  clearNegativeCache,
 } from "@/lib/services/prices/cache/marketPriceCache";
 import {
   getPriceServiceMetricsSnapshot,
@@ -37,8 +38,10 @@ import {
 import {
   assertProviderAvailable,
   getProviderCircuitReason,
+  getProviderCircuitSnapshot,
   isProviderCircuitOpen,
   recordProviderCircuitFailure,
+  recordProviderCircuitSuccess,
   resetProviderCircuitForTests,
 } from "@/lib/services/marketData/providerCircuitBreaker";
 import {
@@ -98,8 +101,8 @@ export type LoadPricesOptions = {
 
 const DEFAULT_FX_RATES: FxRates = { EUR: 1, USD: null, GBP: null, CHF: null };
 
-function effectiveForceRefresh(requested: boolean, providerId = EODHD_QUOTE_PROVIDER_ID): boolean {
-  return requested && !isProviderCircuitOpen(providerId);
+function effectiveForceRefresh(requested: boolean): boolean {
+  return requested;
 }
 
 async function readQuoteFromCaches(
@@ -153,7 +156,7 @@ async function getFxRates(forceRefresh = false): Promise<FxRates> {
     return fxCache.rates;
   }
 
-  if (isProviderCircuitOpen(EODHD_QUOTE_PROVIDER_ID)) {
+  if (isProviderCircuitOpen(EODHD_QUOTE_PROVIDER_ID) && !refreshLive) {
     recordProviderCooldown(EODHD_QUOTE_PROVIDER_ID);
     if (fxCache) {
       return fxCache.rates;
@@ -167,7 +170,9 @@ async function getFxRates(forceRefresh = false): Promise<FxRates> {
   }
 
   fxInFlight = (async () => {
-    assertProviderAvailable(EODHD_QUOTE_PROVIDER_ID);
+    if (!refreshLive) {
+      assertProviderAvailable(EODHD_QUOTE_PROVIDER_ID);
+    }
     recordProviderCall();
     try {
       const rates = await fetchEodhdFxRates();
@@ -208,12 +213,16 @@ async function fetchAndCacheQuote(
   const cacheKey = buildQuoteCacheKey(provider.id, target.providerSymbol);
 
   try {
-    assertProviderAvailable(provider.id);
+    if (!forceRefresh) {
+      assertProviderAvailable(provider.id);
+    }
     const fxRates = await getFxRates(forceRefresh);
     recordProviderCall();
     const raw = await provider.getQuote(target.providerSymbol);
     const quote = provider.normalizeQuote(target, raw, fxRates);
     writeCachedQuote(cacheKey, quote, target.providerSymbol);
+    clearNegativeCache(cacheKey);
+    recordProviderCircuitSuccess(provider.id);
     await writePersistedQuote({
       cacheKey,
       providerId: provider.id,
@@ -295,11 +304,10 @@ export async function getNormalizedQuote(
 
   const forceRefresh = effectiveForceRefresh(
     options?.forceRefresh ?? false,
-    provider.id,
   );
   const cacheKey = buildQuoteCacheKey(provider.id, target.providerSymbol);
 
-  if (isProviderCircuitOpen(provider.id)) {
+  if (isProviderCircuitOpen(provider.id) && !forceRefresh) {
     recordProviderCooldown(provider.id);
     const cached = await readQuoteFromCaches(cacheKey, false);
     if (cached) {
@@ -576,6 +584,7 @@ export async function loadPricesForHoldings(
     ...estimate,
     providerCallsMade:
       (payload.metrics?.providerCalls ?? 0) - metricsBefore.providerCalls,
+    circuitOpen: getProviderCircuitSnapshot(EODHD_QUOTE_PROVIDER_ID).open,
   };
 
   logRefreshOutcome(holdingsRequested, skipped, targets.length, metricsBefore, refreshSummary);

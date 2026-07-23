@@ -5,6 +5,7 @@ import {
   assertProviderAvailable,
   isProviderCircuitOpen,
   recordProviderCircuitFailure,
+  recordProviderCircuitSuccess,
   resetProviderCircuitForTests,
 } from "@/lib/services/marketData/providerCircuitBreaker";
 import { EODHD_INSTRUMENT_PROVIDER_ID } from "@/lib/services/instruments/eodhdQuotaGuard";
@@ -44,5 +45,18 @@ describe("providerCircuitBreaker", () => {
     vi.advanceTimersByTime(6 * 60 * 60 * 1000 + 1);
 
     expect(isProviderCircuitOpen(EODHD_INSTRUMENT_PROVIDER_ID)).toBe(false);
+  });
+
+  it("clears the circuit immediately after a successful provider response", () => {
+    recordProviderCircuitFailure(
+      EODHD_QUOTE_PROVIDER_ID,
+      new ProviderQuoteError("quota_exhausted", "quota hit", 402),
+    );
+
+    expect(isProviderCircuitOpen(EODHD_QUOTE_PROVIDER_ID)).toBe(true);
+
+    recordProviderCircuitSuccess(EODHD_QUOTE_PROVIDER_ID);
+
+    expect(isProviderCircuitOpen(EODHD_QUOTE_PROVIDER_ID)).toBe(false);
   });
 });

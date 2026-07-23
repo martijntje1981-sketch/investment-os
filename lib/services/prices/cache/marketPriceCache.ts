@@ -104,6 +104,10 @@ export function writeNegativeCache(key: string, reason: string): void {
   });
 }
 
+export function clearNegativeCache(key: string): void {
+  negativeCache.delete(key);
+}
+
 export function getInFlightQuote(
   key: string,
 ): Promise<NormalizedProviderQuote> | null {

@@ -92,11 +92,45 @@ function countUpdatedHoldings<T extends StoredPortfolioHolding>(
   }).length;
 }
 
-function isQuotaExhaustedResponse(data: PriceApiResponse, message: string): boolean {
+function isQuotaExhaustedResponse(
+  data: PriceApiResponse,
+  message: string,
+  receivedQuoteCount: number,
+): boolean {
+  if (receivedQuoteCount > 0) {
+    return false;
+  }
+
   if (isRateLimitedPriceError(message)) {
     return true;
   }
-  return Boolean(data.refreshSummary?.circuitOpen);
+
+  if (isRateLimitedPriceError(data.error ?? "")) {
+    return true;
+  }
+
+  return Boolean(
+    data.errors?.some((error) => isRateLimitedPriceError(error)),
+  );
+}
+
+function logLiveRefreshResponse(
+  response: Response,
+  data: PriceApiResponse,
+): void {
+  console.info("[market-data] live refresh api response", {
+    httpStatus: response.status,
+    success: data.success,
+    requested: data.requested ?? null,
+    received: data.received ?? null,
+    quoteCount: data.prices?.length ?? 0,
+    message: data.message ?? null,
+    error: data.error ?? null,
+    circuitOpen: data.refreshSummary?.circuitOpen ?? null,
+    providerCallsRequired: data.refreshSummary?.providerCallsRequired ?? null,
+    providerCallsMade: data.refreshSummary?.providerCallsMade ?? null,
+    errors: data.errors ?? [],
+  });
 }
 
 export async function refreshLivePortfolioPrices<
@@ -158,13 +192,14 @@ export async function refreshLivePortfolioPrices<
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         holdings: quotablePayload,
-        forceRefresh: false,
+        forceRefresh: true,
         estimateOnly: false,
       }),
       cache: "no-store",
     });
 
     const data = (await response.json()) as PriceApiResponse;
+    logLiveRefreshResponse(response, data);
 
     if (!response.ok && !data.success && !data.refreshSummary) {
       throw new Error(data.error ?? data.message ?? "Market data unavailable");
@@ -173,7 +208,13 @@ export async function refreshLivePortfolioPrices<
     const normalizedQuotes = normalizePriceApiQuotes(data.prices);
     const cachedHoldings = applyCachedPrices(userSub, holdings);
 
-    if (isQuotaExhaustedResponse(data, data.message ?? data.error ?? "")) {
+    if (
+      isQuotaExhaustedResponse(
+        data,
+        data.message ?? data.error ?? "",
+        normalizedQuotes.length,
+      )
+    ) {
       lastLiveRefreshCompletedAt = Date.now();
       return {
         holdings: cachedHoldings,
