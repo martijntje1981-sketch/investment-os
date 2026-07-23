@@ -6,6 +6,7 @@ import {
   formatMissedItemMeta,
   missedItemKindLabel,
 } from "@/lib/client/discoverFormatting";
+import { MissedItemLink } from "@/components/news/IntelligenceArticleLink";
 import type { DiscoverSnapshot } from "@/lib/services/discover/types";
 
 export function DiscoverDisclaimer() {
@@ -57,24 +58,18 @@ export function ThingsYouMayHaveMissedSection({
                 </span>
               </div>
               <p className="mt-2 text-base font-semibold leading-snug text-slate-950">
-                {item.headline}
+                <MissedItemLink
+                  headline={item.headline}
+                  sourceUrl={item.sourceUrl}
+                  sourceName={item.sourceName}
+                  variant="light"
+                />
               </p>
               <p className="mt-1 text-sm leading-relaxed text-slate-600">
                 {item.explanation}
               </p>
               {meta ? (
                 <p className="mt-2 text-sm text-slate-500">{meta}</p>
-              ) : null}
-              {item.sourceUrl ? (
-                <a
-                  href={item.sourceUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-3 inline-flex min-h-[44px] items-center gap-1.5 text-sm font-semibold text-violet-700"
-                >
-                  View source
-                  <ArrowUpRight className="h-4 w-4" aria-hidden />
-                </a>
               ) : null}
             </li>
           );
@@ -234,7 +229,12 @@ export function DiscoverMissedTeaser({
           <ul className={`mt-2 space-y-2 ${isDark ? "text-slate-100" : "text-slate-700"}`}>
             {visibleItems.map((item) => (
               <li key={item.id} className="min-w-0 text-sm leading-relaxed">
-                <span className="font-semibold">{item.headline}</span>
+                <MissedItemLink
+                  headline={item.headline}
+                  sourceUrl={item.sourceUrl}
+                  sourceName={item.sourceName}
+                  variant={isDark ? "dark" : "light"}
+                />
               </li>
             ))}
           </ul>

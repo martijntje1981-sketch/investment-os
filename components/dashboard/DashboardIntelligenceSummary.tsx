@@ -6,6 +6,7 @@ import { ArrowUpRight, Sparkles, TrendingUp } from "lucide-react";
 import { DiscoverMissedTeaser } from "@/components/discover/DiscoverSections";
 import { TodaysDecisionBlock } from "@/components/investor/TodaysDecisionBlock";
 import { formatNewsRefreshedAt } from "@/components/news/newsFormatting";
+import { IntelligenceBulletRow } from "@/components/news/IntelligenceArticleLink";
 import {
   buildIntelligenceDisplayMessage,
   buildTodaysDecision,
@@ -14,6 +15,7 @@ import type { GoalProgress } from "@/lib/services/goals/goalProgressEngine";
 import type { InvestmentIntelligence } from "@/lib/services/news/investmentIntelligence";
 import type { UpcomingMarketEvent } from "@/lib/types/newsContent";
 import type { MissedItem } from "@/lib/services/discover/types";
+import { intelligenceBulletKey } from "@/lib/services/news/intelligenceBullets";
 
 const STATUS_STYLES: Record<
   InvestmentIntelligence["portfolioStatus"],
@@ -106,9 +108,11 @@ export function DashboardIntelligenceSummary({
           {topBullets.length > 0 ? (
             <ul className="mt-2 space-y-1.5 text-sm leading-6 text-slate-100">
               {topBullets.map((bullet) => (
-                <li key={bullet} className="flex gap-2">
+                <li key={intelligenceBulletKey(bullet)} className="flex gap-2">
                   <span className="text-violet-300">•</span>
-                  <span>{bullet}</span>
+                  <span className="min-w-0 flex-1">
+                    <IntelligenceBulletRow bullet={bullet} variant="dark" />
+                  </span>
                 </li>
               ))}
             </ul>

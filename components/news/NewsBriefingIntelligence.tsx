@@ -5,6 +5,8 @@ import { ArrowUpRight, Clock3, Sparkles } from "lucide-react";
 
 import { TodaysDecisionBlock } from "@/components/investor/TodaysDecisionBlock";
 import { NewsCompactArticleRow } from "@/components/news/NewsCompactArticleRow";
+import { IntelligenceBulletRow } from "@/components/news/IntelligenceArticleLink";
+import { intelligenceBulletKey } from "@/lib/services/news/intelligenceBullets";
 import { formatNewsRefreshedAt } from "@/components/news/newsFormatting";
 import {
   areMajorMarketsClosed,
@@ -146,9 +148,11 @@ export function NewsBriefingIntelligence({
           {topMatters.length > 0 ? (
             <ul className="mt-3 space-y-2.5 text-sm leading-6 text-slate-700">
               {topMatters.map((bullet) => (
-                <li key={bullet} className="flex gap-2.5">
+                <li key={intelligenceBulletKey(bullet)} className="flex gap-2.5">
                   <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-violet-500" aria-hidden />
-                  <span>{bullet}</span>
+                  <span className="min-w-0 flex-1">
+                    <IntelligenceBulletRow bullet={bullet} variant="light" />
+                  </span>
                 </li>
               ))}
             </ul>

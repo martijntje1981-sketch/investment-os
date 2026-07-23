@@ -1,8 +1,8 @@
-import type {
-  NewsApiResponse,
-  NewsContentItem,
-  UpcomingMarketEvent,
-} from "@/lib/types/newsContent";
+import {
+  bulletFromNewsItem,
+  bulletTextOnly,
+  type IntelligenceBullet,
+} from "@/lib/services/news/intelligenceBullets";
 import {
   buildNewsHubLayout,
   computeNewsRankScore,
@@ -10,6 +10,13 @@ import {
 } from "@/lib/services/news/newsFeedRanking";
 import { collectSearchableNewsItems } from "@/lib/services/news/newsSearchFilter";
 import { STRONG_PORTFOLIO_MATCH_SCORE } from "@/lib/services/news/relevanceMatching";
+import type {
+  NewsApiResponse,
+  NewsContentItem,
+  UpcomingMarketEvent,
+} from "@/lib/types/newsContent";
+
+export type { IntelligenceBullet };
 
 export type PortfolioStatus =
   | "Stable"
@@ -31,16 +38,16 @@ export type MustWatchRecommendation = {
 export type InvestmentIntelligence = {
   portfolioStatus: PortfolioStatus;
   portfolioSummary: string;
-  todayMatters: string[];
+  todayMatters: IntelligenceBullet[];
   holdingInsights: {
     positive: string[];
     neutral: string[];
     negative: string[];
   };
-  macroHighlights: string[];
+  macroHighlights: IntelligenceBullet[];
   mustWatch: MustWatchRecommendation | null;
-  keyRisks: string[];
-  opportunities: string[];
+  keyRisks: IntelligenceBullet[];
+  opportunities: IntelligenceBullet[];
   quietMarket: boolean;
   generatedAt: string;
 };
@@ -215,36 +222,42 @@ function buildTodayMatters(input: {
   portfolioItems: NewsContentItem[];
   macroItems: NewsContentItem[];
   upcomingEvents: UpcomingMarketEvent[];
-}): string[] {
-  const bullets: string[] = [];
+}): IntelligenceBullet[] {
+  const bullets: IntelligenceBullet[] = [];
 
   for (const event of input.upcomingEvents.slice(0, 2)) {
-    bullets.push(`${event.title} ${event.timeLabel}`.trim());
+    bullets.push(bulletTextOnly(`${event.title} ${event.timeLabel}`.trim()));
   }
 
   for (const item of input.macroItems.slice(0, 2)) {
-    bullets.push(stripTitleSuffix(item.title));
+    bullets.push(bulletFromNewsItem(item, stripTitleSuffix(item.title)));
   }
 
   for (const item of input.portfolioItems.slice(0, 2)) {
     if (item.matchedSymbols.length > 0) {
       bullets.push(
-        `${item.matchedSymbols.join(", ")} mentioned in verified coverage`,
+        bulletFromNewsItem(
+          item,
+          `${item.matchedSymbols.join(", ")} mentioned in verified coverage`,
+        ),
       );
     } else {
-      bullets.push(stripTitleSuffix(item.title));
+      bullets.push(bulletFromNewsItem(item, stripTitleSuffix(item.title)));
     }
   }
 
-  const unique = [...new Set(bullets.map((bullet) => bullet.trim()).filter(Boolean))];
+  const unique = bullets.filter(
+    (bullet, index, array) =>
+      array.findIndex((entry) => entry.text === bullet.text) === index,
+  );
   return unique.slice(0, 3);
 }
 
-function buildMacroHighlights(macroItems: NewsContentItem[]): string[] {
+function buildMacroHighlights(macroItems: NewsContentItem[]): IntelligenceBullet[] {
   return macroItems
     .slice(0, 3)
-    .map((item) => stripTitleSuffix(item.title))
-    .filter(Boolean);
+    .map((item) => bulletFromNewsItem(item, stripTitleSuffix(item.title)))
+    .filter((bullet) => bullet.text.length > 0);
 }
 
 function buildMustWatch(
@@ -294,12 +307,14 @@ function buildMustWatch(
 function buildKeyRisks(input: {
   holdingInsights: InvestmentIntelligence["holdingInsights"];
   macroItems: NewsContentItem[];
-}): string[] {
-  const risks: string[] = [];
+}): IntelligenceBullet[] {
+  const risks: IntelligenceBullet[] = [];
 
   if (input.holdingInsights.negative.length > 0) {
     risks.push(
-      `Verified coverage references ${input.holdingInsights.negative.join(", ")} with cautious language.`,
+      bulletTextOnly(
+        `Verified coverage references ${input.holdingInsights.negative.join(", ")} with cautious language.`,
+      ),
     );
   }
 
@@ -308,32 +323,42 @@ function buildKeyRisks(input: {
       item.impactLevel === "High Impact" &&
       /\b(inflation|fed|rate|recession|risk|volatility)\b/i.test(itemText(item))
     ) {
-      risks.push(stripTitleSuffix(item.title));
+      risks.push(bulletFromNewsItem(item, stripTitleSuffix(item.title)));
     }
   }
 
-  return [...new Set(risks)].slice(0, 3);
+  const unique = risks.filter(
+    (bullet, index, array) =>
+      array.findIndex((entry) => entry.text === bullet.text) === index,
+  );
+  return unique.slice(0, 3);
 }
 
 function buildOpportunities(input: {
   holdingInsights: InvestmentIntelligence["holdingInsights"];
   portfolioItems: NewsContentItem[];
-}): string[] {
-  const opportunities: string[] = [];
+}): IntelligenceBullet[] {
+  const opportunities: IntelligenceBullet[] = [];
 
   if (input.holdingInsights.positive.length > 0) {
     opportunities.push(
-      `Positive verified mentions for ${input.holdingInsights.positive.join(", ")}.`,
+      bulletTextOnly(
+        `Positive verified mentions for ${input.holdingInsights.positive.join(", ")}.`,
+      ),
     );
   }
 
   for (const item of input.portfolioItems) {
     if (POSITIVE_SIGNAL.test(itemText(item)) && item.matchedSymbols.length > 0) {
-      opportunities.push(stripTitleSuffix(item.title));
+      opportunities.push(bulletFromNewsItem(item, stripTitleSuffix(item.title)));
     }
   }
 
-  return [...new Set(opportunities)].slice(0, 3);
+  const unique = opportunities.filter(
+    (bullet, index, array) =>
+      array.findIndex((entry) => entry.text === bullet.text) === index,
+  );
+  return unique.slice(0, 3);
 }
 
 export function buildInvestmentIntelligence(

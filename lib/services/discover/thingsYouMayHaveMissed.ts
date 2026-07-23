@@ -1,4 +1,6 @@
 import type { InvestmentIntelligence } from "@/lib/services/news/investmentIntelligence";
+import type { IntelligenceBullet } from "@/lib/services/news/intelligenceBullets";
+import { isValidArticleUrl } from "@/lib/services/news/intelligenceBullets";
 import type { NewsApiResponse, NewsContentItem, UpcomingMarketEvent } from "@/lib/types/newsContent";
 
 import type { MissedItem, MissedItemKind } from "./types";
@@ -47,7 +49,7 @@ function newsItemToMissedItem(
     explanation,
     affectedHolding: holding,
     sourceName: item.sourceName,
-    sourceUrl: item.canonicalUrl,
+    sourceUrl: isValidArticleUrl(item.canonicalUrl) ? item.canonicalUrl : null,
   };
 }
 
@@ -64,13 +66,15 @@ function eventToMissedItem(event: UpcomingMarketEvent): MissedItem {
   };
 }
 
-function riskToMissedItem(risk: string, priority: number): MissedItem {
+function riskToMissedItem(risk: IntelligenceBullet, priority: number): MissedItem {
   return {
-    id: `holding_risk:${normalizeSubject(risk)}`,
+    id: `holding_risk:${normalizeSubject(risk.text)}`,
     kind: "holding_risk",
     priority,
-    headline: risk.replace(/\.$/, ""),
+    headline: risk.text.replace(/\.$/, ""),
     explanation: "Flagged as an elevated portfolio risk in the latest briefing.",
+    sourceName: risk.sourceName ?? null,
+    sourceUrl: isValidArticleUrl(risk.canonicalUrl) ? risk.canonicalUrl : null,
   };
 }
 
@@ -84,17 +88,23 @@ function mustWatchToMissedItem(
     headline: mustWatch.title,
     explanation: mustWatch.reason,
     sourceName: mustWatch.sourceName,
-    sourceUrl: mustWatch.canonicalUrl,
+    sourceUrl: isValidArticleUrl(mustWatch.canonicalUrl)
+      ? mustWatch.canonicalUrl
+      : null,
   };
 }
 
-function macroToMissedItem(highlight: string): MissedItem {
+function macroToMissedItem(highlight: IntelligenceBullet): MissedItem {
   return {
-    id: `macro:${normalizeSubject(highlight)}`,
+    id: `macro:${normalizeSubject(highlight.text)}`,
     kind: "macro_development",
     priority: 40,
-    headline: highlight.replace(/\.$/, ""),
+    headline: highlight.text.replace(/\.$/, ""),
     explanation: "Macro development with portfolio relevance in the latest briefing.",
+    sourceName: highlight.sourceName ?? null,
+    sourceUrl: isValidArticleUrl(highlight.canonicalUrl)
+      ? highlight.canonicalUrl
+      : null,
   };
 }
 
@@ -122,12 +132,12 @@ export function buildThingsYouMayHaveMissed(input: {
   if (intelligence?.portfolioStatus === "High Attention") {
     for (const risk of intelligence.keyRisks.slice(0, 2)) {
       if (items.length >= MAX_MISSED_ITEMS) break;
-      if (isDuplicateSubject(items, risk)) continue;
+      if (isDuplicateSubject(items, risk.text)) continue;
       items.push(riskToMissedItem(risk, 10));
     }
   } else {
     for (const risk of intelligence?.keyRisks.slice(0, 1) ?? []) {
-      if (isDuplicateSubject(items, risk)) continue;
+      if (isDuplicateSubject(items, risk.text)) continue;
       items.push(riskToMissedItem(risk, 15));
     }
   }
@@ -183,7 +193,7 @@ export function buildThingsYouMayHaveMissed(input: {
 
   for (const highlight of intelligence?.macroHighlights.slice(0, 2) ?? []) {
     if (items.length >= MAX_MISSED_ITEMS) break;
-    if (isDuplicateSubject(items, highlight)) continue;
+    if (isDuplicateSubject(items, highlight.text)) continue;
     items.push(macroToMissedItem(highlight));
   }
 

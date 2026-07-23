@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 
 import { formatNewsRefreshedAt } from "@/components/news/newsFormatting";
+import { IntelligenceBulletRow } from "@/components/news/IntelligenceArticleLink";
+import { intelligenceBulletKey } from "@/lib/services/news/intelligenceBullets";
 import type { InvestmentIntelligence } from "@/lib/services/news/investmentIntelligence";
 
 const STATUS_STYLES: Record<
@@ -128,9 +130,11 @@ export function PortfolioIntelligencePanel({
             {intelligence.todayMatters.length > 0 ? (
               <ul className="mt-4 space-y-2 text-sm leading-6 text-slate-100">
                 {intelligence.todayMatters.map((bullet) => (
-                  <li key={bullet} className="flex gap-2">
+                  <li key={intelligenceBulletKey(bullet)} className="flex gap-2">
                     <span className="text-violet-300">•</span>
-                    <span>{bullet}</span>
+                    <span className="min-w-0 flex-1">
+                      <IntelligenceBulletRow bullet={bullet} variant="dark" />
+                    </span>
                   </li>
                 ))}
               </ul>

@@ -1,5 +1,6 @@
 import { Compass } from "lucide-react";
 
+import { IntelligenceArticleLink } from "@/components/news/IntelligenceArticleLink";
 import type { TodaysDecisionResult } from "@/lib/client/todaysDecision";
 
 const TONE_STYLES = {
@@ -36,7 +37,7 @@ export function TodaysDecisionBlock({
           className={`mt-0.5 h-4 w-4 shrink-0 ${variant === "dark" ? "text-violet-300" : "text-violet-600"}`}
           aria-hidden
         />
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h3
               id="todays-decision-heading"
@@ -48,9 +49,16 @@ export function TodaysDecisionBlock({
               {decision.statusLabel}
             </span>
           </div>
-          <p className="mt-1.5 text-base font-semibold leading-snug">
-            {decision.decision}
-          </p>
+          <div className="mt-1.5">
+            <IntelligenceArticleLink
+              href={decision.sourceUrl}
+              sourceName={decision.sourceName}
+              linkLabel={decision.sourceLinkLabel ?? "Read article"}
+              variant={variant}
+            >
+              {decision.decision}
+            </IntelligenceArticleLink>
+          </div>
           {decision.reason ? (
             <p
               className={`mt-1 text-sm leading-relaxed ${

@@ -13,6 +13,7 @@ import {
 } from "@/lib/client/todaysDecision";
 import { createEmptyInvestmentIntelligence } from "@/lib/services/news/investmentIntelligence";
 import type { InvestmentIntelligence } from "@/lib/services/news/investmentIntelligence";
+import { bulletTextOnly } from "@/lib/services/news/intelligenceBullets";
 
 function intelligence(
   overrides: Partial<InvestmentIntelligence> = {},
@@ -28,8 +29,8 @@ describe("buildTodaysDecision", () => {
     const result = buildTodaysDecision({
       intelligence: intelligence({
         portfolioStatus: "High Attention",
-        keyRisks: ["Review one holding with elevated concentration risk."],
-        opportunities: ["Uranium sector momentum remains notable."],
+        keyRisks: [bulletTextOnly("Review one holding with elevated concentration risk.")],
+        opportunities: [bulletTextOnly("Uranium sector momentum remains notable.")],
       }),
       intelligenceFromCache: true,
       marketsClosed: false,
@@ -98,7 +99,7 @@ describe("buildTodaysDecision", () => {
     const result = buildTodaysDecision({
       intelligence: intelligence({
         portfolioStatus: "High Attention",
-        keyRisks: ["Buy more uranium before the rally ends."],
+        keyRisks: [bulletTextOnly("Buy more uranium before the rally ends.")],
       }),
       intelligenceFromCache: true,
       marketsClosed: false,
@@ -128,6 +129,9 @@ describe("buildTodaysDecision", () => {
     const second = buildTodaysDecision(context);
 
     expect(first).toEqual(second);
+    expect(first.sourceUrl).toBe("https://example.com/btc");
+    expect(first.sourceName).toBe("Bloomberg");
+    expect(first.sourceLinkLabel).toBe("Read article");
   });
 });
 
@@ -146,8 +150,8 @@ describe("buildIntelligenceDisplayMessage", () => {
   it("describes closed markets with useful portfolio context", () => {
     const message = buildIntelligenceDisplayMessage({
       intelligence: intelligence({
-        todayMatters: ["Uranium sector movement affects NUKL."],
-        keyRisks: ["VWCE outflows raise concern."],
+        todayMatters: [bulletTextOnly("Uranium sector movement affects NUKL.")],
+        keyRisks: [bulletTextOnly("VWCE outflows raise concern.")],
         quietMarket: false,
       }),
       intelligenceFromCache: true,

@@ -128,6 +128,9 @@ describe("investmentIntelligence", () => {
     expect(intelligence.portfolioSummary).toMatch(/holding/i);
     expect(intelligence.todayMatters.length).toBeGreaterThan(0);
     expect(intelligence.todayMatters.length).toBeLessThanOrEqual(3);
+    expect(intelligence.todayMatters.some((bullet) => bullet.canonicalUrl)).toBe(
+      true,
+    );
     expect(intelligence.holdingInsights.positive).toContain("NUKL");
     expect(intelligence.holdingInsights.negative).toContain("VWCE");
   });

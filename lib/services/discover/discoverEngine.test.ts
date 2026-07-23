@@ -6,6 +6,7 @@ import {
 } from "@/lib/services/discover/buildDiscoverSnapshot";
 import { QUIET_STATE_MESSAGE } from "@/lib/services/discover/thingsYouMayHaveMissed";
 import { buildInvestmentIntelligence } from "@/lib/services/news/investmentIntelligence";
+import { bulletTextOnly } from "@/lib/services/news/intelligenceBullets";
 import { createEmptyMarketBrief } from "@/lib/services/news/marketBrief";
 import { STRONG_PORTFOLIO_MATCH_SCORE } from "@/lib/services/news/relevanceMatching";
 import { portfolioContentFingerprint } from "@/lib/services/portfolio/idempotency";
@@ -146,7 +147,9 @@ describe("buildThingsYouMayHaveMissed", () => {
       ],
     });
     const intelligence = buildInvestmentIntelligence(newsPayload);
-    intelligence.keyRisks = ["Review one holding with elevated concentration risk."];
+    intelligence.keyRisks = [
+      bulletTextOnly("Review one holding with elevated concentration risk."),
+    ];
     intelligence.portfolioStatus = "High Attention";
 
     const snapshot = buildDiscoverSnapshot({

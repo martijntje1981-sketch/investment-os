@@ -1,6 +1,11 @@
 import { getMarketStatuses } from "@/lib/client/marketStatus";
 import type { GoalProgress } from "@/lib/services/goals/goalProgressEngine";
-import type { InvestmentIntelligence } from "@/lib/services/news/investmentIntelligence";
+import type {
+  IntelligenceBullet,
+  InvestmentIntelligence,
+  MustWatchRecommendation,
+} from "@/lib/services/news/investmentIntelligence";
+import { isValidArticleUrl } from "@/lib/services/news/intelligenceBullets";
 import type { UpcomingMarketEvent } from "@/lib/types/newsContent";
 
 const NO_MATERIAL_DEVELOPMENTS = "No material developments were detected.";
@@ -15,6 +20,9 @@ export type TodaysDecisionResult = {
   decision: string;
   reason?: string;
   tone: TodaysDecisionTone;
+  sourceUrl?: string | null;
+  sourceName?: string | null;
+  sourceLinkLabel?: "Read article" | "Open source" | "Watch video";
 };
 
 export type TodaysDecisionContext = {
@@ -73,12 +81,54 @@ function sanitizeDecisionText(text: string): string {
 
 function countPortfolioDevelopments(intelligence: InvestmentIntelligence): number {
   const unique = new Set<string>();
-  for (const item of intelligence.todayMatters) unique.add(item);
-  for (const item of intelligence.keyRisks) unique.add(item);
-  for (const item of intelligence.opportunities) unique.add(item);
-  for (const item of intelligence.macroHighlights) unique.add(item);
+  for (const item of intelligence.todayMatters) unique.add(item.text);
+  for (const item of intelligence.keyRisks) unique.add(item.text);
+  for (const item of intelligence.opportunities) unique.add(item.text);
+  for (const item of intelligence.macroHighlights) unique.add(item.text);
   if (intelligence.mustWatch) unique.add(intelligence.mustWatch.itemId);
   return unique.size;
+}
+
+function sourceFromBullet(
+  bullet: IntelligenceBullet | undefined,
+): Pick<TodaysDecisionResult, "sourceUrl" | "sourceName" | "sourceLinkLabel"> {
+  if (!bullet || !isValidArticleUrl(bullet.canonicalUrl)) {
+    return {};
+  }
+
+  return {
+    sourceUrl: bullet.canonicalUrl,
+    sourceName: bullet.sourceName ?? null,
+    sourceLinkLabel: "Read article",
+  };
+}
+
+function sourceFromMustWatch(
+  mustWatch: MustWatchRecommendation,
+): Pick<TodaysDecisionResult, "sourceUrl" | "sourceName" | "sourceLinkLabel"> {
+  if (!isValidArticleUrl(mustWatch.canonicalUrl)) {
+    return {};
+  }
+
+  return {
+    sourceUrl: mustWatch.canonicalUrl,
+    sourceName: mustWatch.sourceName,
+    sourceLinkLabel:
+      mustWatch.type === "video" ? "Watch video" : "Read article",
+  };
+}
+
+function withSource(
+  result: TodaysDecisionResult,
+  source: Pick<
+    TodaysDecisionResult,
+    "sourceUrl" | "sourceName" | "sourceLinkLabel"
+  >,
+): TodaysDecisionResult {
+  if (!source.sourceUrl) {
+    return result;
+  }
+  return { ...result, ...source };
 }
 
 function findHighImpactEvent(
@@ -117,12 +167,15 @@ export function buildTodaysDecision(
   if (intelligence?.portfolioStatus === "High Attention") {
     const risk = intelligence.keyRisks[0];
     if (risk) {
-      return {
-        statusLabel: "High attention",
-        decision: sanitizeDecisionText(risk),
-        reason: "Why: Elevated portfolio attention was detected in the latest briefing.",
-        tone: "urgent",
-      };
+      return withSource(
+        {
+          statusLabel: "High attention",
+          decision: sanitizeDecisionText(risk.text),
+          reason: "Why: Elevated portfolio attention was detected in the latest briefing.",
+          tone: "urgent",
+        },
+        sourceFromBullet(risk),
+      );
     }
     if (intelligence.holdingInsights.negative.length > 0) {
       const symbol = intelligence.holdingInsights.negative[0];
@@ -134,12 +187,15 @@ export function buildTodaysDecision(
       };
     }
     if (intelligence.todayMatters[0]) {
-      return {
-        statusLabel: "High attention",
-        decision: sanitizeDecisionText(intelligence.todayMatters[0]),
-        reason: "Why: Today's briefing flagged high-attention portfolio developments.",
-        tone: "urgent",
-      };
+      return withSource(
+        {
+          statusLabel: "High attention",
+          decision: sanitizeDecisionText(intelligence.todayMatters[0].text),
+          reason: "Why: Today's briefing flagged high-attention portfolio developments.",
+          tone: "urgent",
+        },
+        sourceFromBullet(intelligence.todayMatters[0]),
+      );
     }
   }
 
@@ -148,12 +204,15 @@ export function buildTodaysDecision(
     intelligence.portfolioStatus === "Elevated" &&
     intelligence.keyRisks[0]
   ) {
-    return {
-      statusLabel: "Elevated",
-      decision: sanitizeDecisionText(intelligence.keyRisks[0]),
-      reason: "Why: The latest briefing highlights elevated portfolio risk.",
-      tone: "elevated",
-    };
+    return withSource(
+      {
+        statusLabel: "Elevated",
+        decision: sanitizeDecisionText(intelligence.keyRisks[0].text),
+        reason: "Why: The latest briefing highlights elevated portfolio risk.",
+        tone: "elevated",
+      },
+      sourceFromBullet(intelligence.keyRisks[0]),
+    );
   }
 
   const highImpactEvent = findHighImpactEvent(context.upcomingEvents);
@@ -168,23 +227,29 @@ export function buildTodaysDecision(
 
   if (intelligence?.mustWatch) {
     const mustWatch = intelligence.mustWatch;
-    return {
-      statusLabel: "Must watch",
-      decision: sanitizeDecisionText(`Keep an eye on ${mustWatch.title}`),
-      reason: `Why: ${mustWatch.reason}`,
-      tone: "watch",
-    };
+    return withSource(
+      {
+        statusLabel: "Must watch",
+        decision: sanitizeDecisionText(`Keep an eye on ${mustWatch.title}`),
+        reason: `Why: ${mustWatch.reason}`,
+        tone: "watch",
+      },
+      sourceFromMustWatch(mustWatch),
+    );
   }
 
   const opportunity =
     intelligence?.opportunities[0] ?? intelligence?.macroHighlights[0];
   if (opportunity) {
-    return {
-      statusLabel: "Opportunity",
-      decision: sanitizeDecisionText(opportunity),
-      reason: "Why: A meaningful opportunity was noted in the latest briefing.",
-      tone: "watch",
-    };
+    return withSource(
+      {
+        statusLabel: "Opportunity",
+        decision: sanitizeDecisionText(opportunity.text),
+        reason: "Why: A meaningful opportunity was noted in the latest briefing.",
+        tone: "watch",
+      },
+      sourceFromBullet(opportunity),
+    );
   }
 
   if (context.goalProgress && isGoalConcern(context.goalProgress)) {
@@ -248,12 +313,15 @@ export function buildTodaysDecision(
   }
 
   if (intelligence.todayMatters[0]) {
-    return {
-      statusLabel: intelligence.portfolioStatus,
-      decision: sanitizeDecisionText(intelligence.todayMatters[0]),
-      reason: "Why: This stood out in today's portfolio briefing.",
-      tone: "watch",
-    };
+    return withSource(
+      {
+        statusLabel: intelligence.portfolioStatus,
+        decision: sanitizeDecisionText(intelligence.todayMatters[0].text),
+        reason: "Why: This stood out in today's portfolio briefing.",
+        tone: "watch",
+      },
+      sourceFromBullet(intelligence.todayMatters[0]),
+    );
   }
 
   return neutralFallback(
