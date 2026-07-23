@@ -18,6 +18,7 @@ import { PageHero } from "@/components/layout/PageHero";
 import { PassiveIncomeGoalCard } from "@/components/goals/PassiveIncomeGoalCard";
 import {
   GoalCoachCard,
+  GoalHeroMilestones,
   GoalInsightCard,
   GoalMilestonesRow,
   GoalWhatIfCard,
@@ -30,6 +31,7 @@ import {
   buildGoalHeroSubtitle,
   buildGoalInsight,
   buildGoalScenarioComparison,
+  buildNextGoalMilestone,
   estimateMonthsToReachTarget,
 } from "@/lib/services/goals/goalCoach";
 import { buildGoalProgressEngine } from "@/lib/services/goals/goalProgressEngine";
@@ -169,6 +171,22 @@ export default function GoalsPage() {
       }),
     [coachGoal, engineProgress, hasSavedGoal],
   );
+  const nextGoalMilestone = useMemo(() => {
+    if (!engineProgress.hasGoal || coachGoal.targetValue <= 0) {
+      return null;
+    }
+
+    return buildNextGoalMilestone({
+      currentValue: portfolioValue,
+      targetValue: coachGoal.targetValue,
+      currentProgressPercent: engineProgress.currentProgressPercent,
+    });
+  }, [
+    coachGoal.targetValue,
+    engineProgress.currentProgressPercent,
+    engineProgress.hasGoal,
+    portfolioValue,
+  ]);
 
   const health = projectedValue >= goal.targetValue
     ? "On track"
@@ -209,6 +227,11 @@ export default function GoalsPage() {
         <PageHero
           title="Goals"
           subtitle={goalHeroSubtitle}
+          stats={
+            nextGoalMilestone ? (
+              <GoalHeroMilestones milestone={nextGoalMilestone} />
+            ) : null
+          }
           actions={
             <Link
               href="/dashboard"

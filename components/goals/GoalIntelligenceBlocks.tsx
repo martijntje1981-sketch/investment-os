@@ -2,7 +2,20 @@ import type {
   GoalCoachResult,
   GoalCurrencyMilestone,
   GoalScenarioComparison,
+  NextGoalMilestone,
 } from "@/lib/services/goals/goalCoach";
+
+export function GoalHeroMilestones({ milestone }: { milestone: NextGoalMilestone }) {
+  return (
+    <div className="space-y-1.5">
+      {milestone.lines.map((line) => (
+        <p key={line} className="text-sm font-semibold leading-snug text-slate-200">
+          {line}
+        </p>
+      ))}
+    </div>
+  );
+}
 
 export function GoalCoachCard({ coach }: { coach: GoalCoachResult }) {
   return (

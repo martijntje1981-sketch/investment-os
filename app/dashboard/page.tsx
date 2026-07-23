@@ -7,6 +7,7 @@ import { DashboardAnalystCard } from "@/components/dashboard/DashboardAnalystCar
 import { DashboardGoalProgressCard } from "@/components/dashboard/DashboardGoalProgressCard";
 import { DashboardIntelligenceSummary } from "@/components/dashboard/DashboardIntelligenceSummary";
 import { DashboardMoverCard } from "@/components/dashboard/DashboardHero";
+import { DashboardPortfolioHealthCard } from "@/components/dashboard/DashboardPortfolioHealthCard";
 import { DashboardSummary } from "@/components/dashboard/DashboardSummary";
 import { HoldingsToday } from "@/components/dashboard/HoldingsToday";
 import { DashboardInsightCard } from "@/components/dashboard/DashboardInsightCard";
@@ -15,6 +16,7 @@ import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer
 import { PageHero } from "@/components/layout/PageHero";
 import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
 import PortfolioSyncBanner from "@/components/PortfolioSyncBanner";
+import { buildPortfolioAnalysis } from "@/lib/client/portfolioAnalysis";
 import { buildDashboardInsightSections } from "@/lib/client/dashboardInsight";
 import { buildDashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
 import { useDiscoverSnapshot } from "@/lib/client/discoverSnapshot";
@@ -26,6 +28,7 @@ import { useGoalProgress } from "@/lib/client/useGoalProgress";
 import { useUserGoal } from "@/lib/client/useUserGoal";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 import { useMarketSnapshotMetadata } from "@/lib/client/useMarketSnapshotMetadata";
+import { buildPortfolioHealthScore } from "@/lib/services/portfolio/portfolioHealthScore";
 
 export default function DashboardPage() {
   const {
@@ -76,6 +79,20 @@ export default function DashboardPage() {
     [snapshot],
   );
 
+  const portfolioHealth = useMemo(() => {
+    const analysis = buildPortfolioAnalysis(holdings);
+    return buildPortfolioHealthScore({
+      concentrationLevel: analysis.concentrationLevel,
+      investmentCount: analysis.investmentCount,
+      largestPositionWeightPercent: analysis.largestPosition?.weightPercent ?? null,
+      cashWeightPercent: analysis.cashWeightPercent,
+      goalProgress,
+      isStale: snapshot.isStale,
+      portfolioStatus: intelligence.portfolioStatus,
+      quietMarket: intelligence.quietMarket,
+    });
+  }, [goalProgress, holdings, intelligence.portfolioStatus, intelligence.quietMarket, snapshot.isStale]);
+
   const marketsClosed = useMemo(() => areMajorMarketsClosed(), []);
 
   if (!portfolioReady) {
@@ -111,6 +128,7 @@ export default function DashboardPage() {
         ) : holdings.length > 0 ? (
           <>
             <DashboardSummary snapshot={snapshot} />
+            <DashboardPortfolioHealthCard health={portfolioHealth} />
             <HoldingsToday snapshot={snapshot} />
             <DashboardIntelligenceSummary
                 intelligence={intelligence}

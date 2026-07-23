@@ -6,6 +6,7 @@ import {
   buildGoalHeroSubtitle,
   buildGoalInsight,
   buildGoalScenarioComparison,
+  buildNextGoalMilestone,
   estimateMonthsToReachTarget,
 } from "@/lib/services/goals/goalCoach";
 import type { GoalProgress } from "@/lib/services/goals/goalProgressEngine";
@@ -176,6 +177,42 @@ describe("buildGoalScenarioComparison", () => {
     comparison.rows.forEach((row) => {
       expect(row.completionLabel.length).toBeGreaterThan(0);
     });
+  });
+});
+
+describe("buildNextGoalMilestone", () => {
+  it("shows remaining amount until the next percent milestone", () => {
+    const milestone = buildNextGoalMilestone({
+      currentValue: 96_750,
+      targetValue: 200_000,
+      currentProgressPercent: 48.4,
+    });
+
+    expect(milestone?.lines[0]).toBe("€3,250 remaining until 50% completion.");
+    expect(milestone?.lines).toContain("48.4% completed.");
+  });
+
+  it("skips reached percent milestones and shows the next currency milestone", () => {
+    const milestone = buildNextGoalMilestone({
+      currentValue: 102_000,
+      targetValue: 200_000,
+      currentProgressPercent: 51,
+    });
+
+    expect(milestone?.lines[0]).toBe("€48,000 remaining until 75% completion.");
+    expect(milestone?.lines.some((line) => line.startsWith("Next milestone:"))).toBe(
+      true,
+    );
+  });
+
+  it("returns null when no target is set", () => {
+    expect(
+      buildNextGoalMilestone({
+        currentValue: 10_000,
+        targetValue: 0,
+        currentProgressPercent: 0,
+      }),
+    ).toBeNull();
   });
 });
 

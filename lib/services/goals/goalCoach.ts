@@ -17,6 +17,12 @@ export type GoalCurrencyMilestone = {
   reached: boolean;
 };
 
+export type NextGoalMilestone = {
+  lines: string[];
+};
+
+const PERCENT_MILESTONES = [25, 50, 75, 100] as const;
+
 export type GoalScenarioRow = {
   id: "current" | "plus_contribution" | "plus_return";
   label: string;
@@ -274,6 +280,63 @@ export function buildGoalHeroSubtitle(input: {
   }
 
   return `Saving ${formatCurrency(goal.monthlyContribution)} per month toward ${formatCurrency(goal.targetValue)} by ${goal.targetYear}.`;
+}
+
+function findNextPercentMilestone(
+  currentValue: number,
+  targetValue: number,
+): number | null {
+  if (targetValue <= 0) {
+    return null;
+  }
+
+  const currentPercent = (currentValue / targetValue) * 100;
+
+  for (const milestone of PERCENT_MILESTONES) {
+    if (currentPercent < milestone) {
+      return milestone;
+    }
+  }
+
+  return null;
+}
+
+export function buildNextGoalMilestone(input: {
+  currentValue: number;
+  targetValue: number;
+  currentProgressPercent: number;
+}): NextGoalMilestone | null {
+  const { currentValue, targetValue, currentProgressPercent } = input;
+
+  if (targetValue <= 0) {
+    return null;
+  }
+
+  const lines: string[] = [];
+  const nextPercent = findNextPercentMilestone(currentValue, targetValue);
+
+  if (nextPercent !== null && nextPercent < 100) {
+    const milestoneValue = (nextPercent / 100) * targetValue;
+    const remaining = Math.max(0, milestoneValue - currentValue);
+    lines.push(
+      `${formatCurrency(remaining)} remaining until ${nextPercent}% completion.`,
+    );
+  }
+
+  const currencyMilestones = buildGoalCurrencyMilestones(currentValue, targetValue);
+  const nextCurrencyMilestone = currencyMilestones.find(
+    (milestone) => !milestone.reached,
+  );
+
+  if (nextCurrencyMilestone) {
+    lines.push(
+      `Next milestone: ${formatCurrency(nextCurrencyMilestone.value)} portfolio value.`,
+    );
+  }
+
+  lines.push(`${currentProgressPercent.toFixed(1)}% completed.`);
+
+  return { lines };
 }
 
 export function buildGoalCurrencyMilestones(
