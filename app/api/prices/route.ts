@@ -6,6 +6,7 @@
  */
 
 import { NextResponse } from "next/server";
+import { logMarketDataRefreshTrace } from "@/lib/services/marketData/providerDiagnostics";
 import {
   loadDefaultWatchlistPrices,
   loadPricesForHoldings,
@@ -19,11 +20,18 @@ export const dynamic = "force-dynamic";
 
 const HTTP_CACHE_SECONDS = 12 * 60;
 
-function jsonResponse(payload: PricePayload, status: number) {
+function jsonResponse(
+  payload: PricePayload,
+  status: number,
+  options?: { forceRefresh?: boolean },
+) {
+  const forceRefresh = options?.forceRefresh ?? false;
   return NextResponse.json(payload, {
     status,
     headers: {
-      "Cache-Control": `public, s-maxage=${HTTP_CACHE_SECONDS}, stale-while-revalidate=${HTTP_CACHE_SECONDS * 2}`,
+      "Cache-Control": forceRefresh
+        ? "private, no-store"
+        : `public, s-maxage=${HTTP_CACHE_SECONDS}, stale-while-revalidate=${HTTP_CACHE_SECONDS * 2}`,
     },
   });
 }
@@ -64,6 +72,7 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as PostBody;
     const holdings = Array.isArray(body.holdings) ? body.holdings : [];
+    const forceRefresh = body.forceRefresh ?? false;
 
     if (holdings.length === 0) {
       return NextResponse.json(
@@ -72,8 +81,14 @@ export async function POST(request: Request) {
       );
     }
 
+    logMarketDataRefreshTrace("api_route_post", {
+      holdingsCount: holdings.length,
+      forceRefresh,
+      estimateOnly: body.estimateOnly ?? false,
+    });
+
     const payload = await loadPricesForHoldings(holdings, {
-      forceRefresh: body.forceRefresh ?? false,
+      forceRefresh,
       onlyProviderSymbols: body.onlyProviderSymbols,
       estimateOnly: body.estimateOnly ?? false,
     });
@@ -81,7 +96,16 @@ export async function POST(request: Request) {
       body.estimateOnly || payload.success
         ? 200
         : 503;
-    return jsonResponse(payload, status);
+    logMarketDataRefreshTrace("api_route_response", {
+      forceRefresh,
+      success: payload.success,
+      requested: payload.requested,
+      received: payload.received,
+      quoteSource: payload.quoteSource ?? null,
+      circuitOpen: payload.refreshSummary?.circuitOpen ?? null,
+      providerCallsMade: payload.refreshSummary?.providerCallsMade ?? null,
+    });
+    return jsonResponse(payload, status, { forceRefresh });
   } catch (error) {
     console.error("Prices API POST error:", error);
     return NextResponse.json(

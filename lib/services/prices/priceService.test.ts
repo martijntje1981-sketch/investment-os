@@ -268,6 +268,30 @@ describe("PriceService", () => {
     expect(quote.cacheStatus).toBe("stale");
   });
 
+  it("does not fall back to stale cache when forceRefresh fails", async () => {
+    const provider = createMockProvider(async (symbol) =>
+      mockRawQuote(symbol, 88, 85),
+    );
+    configureMarketDataProvidersForTests([provider]);
+
+    await getNormalizedQuote(VWCE);
+    expect(provider.calls).toHaveLength(1);
+
+    vi.advanceTimersByTime(12 * 60 * 60 * 1000 + 30 * 60 * 1000);
+
+    provider.getQuote = vi.fn(async () => {
+      throw new ProviderQuoteError("quota_exhausted", "quota hit", 402);
+    });
+
+    await expect(getNormalizedQuote(VWCE, { forceRefresh: true })).rejects.toThrow(
+      /quota/i,
+    );
+
+    const payload = await loadPricesForTargets([VWCE], { forceRefresh: true });
+    expect(payload.prices).toHaveLength(0);
+    expect(payload.errors[0]).toMatch(/quota/i);
+  });
+
   it("returns unavailable (not zero) when provider fails without cache", async () => {
     const provider = createMockProvider(async () => {
       throw new ProviderQuoteError("provider_error", "provider down", 500);

@@ -1,6 +1,6 @@
 /**
- * Temporary diagnostics for market-data provider responses.
- * Logs HTTP status, body preview, and rate-limit headers when present.
+ * Optional market-data diagnostics gated by MARKET_DATA_DEBUG=1.
+ * Logs rate-limit responses (HTTP 402/429) only — no success or body previews.
  */
 
 export type ProviderRateLimitDiagnostics = {
@@ -11,6 +11,10 @@ export type ProviderRateLimitDiagnostics = {
   responseBodyPreview: string;
   rateLimitHeaders: Record<string, string>;
 };
+
+export function isMarketDataDebugEnabled(): boolean {
+  return process.env.MARKET_DATA_DEBUG === "1";
+}
 
 function parseRetryAfterMs(value: string | null): number | null {
   if (!value) return null;
@@ -90,25 +94,63 @@ export function extractRateLimitDiagnostics(
   };
 }
 
-export function logMarketDataProviderResponse(
+/** Gated refresh-path trace for production debugging (MARKET_DATA_DEBUG=1). */
+export function logMarketDataRefreshTrace(
+  stage: string,
+  payload: Record<string, unknown>,
+): void {
+  if (!isMarketDataDebugEnabled()) {
+    return;
+  }
+
+  console.info(`[market-data-trace] ${stage}`, payload);
+}
+
+export function logMarketDataRateLimitError(
   context: string,
-  diagnostics: ProviderRateLimitDiagnostics & {
+  input: {
+    httpStatus?: number | null;
     providerSymbol?: string;
     providerId?: string;
+    retryAfterMs?: number | null;
+    remainingQuota?: string | null;
+    resetTimestamp?: string | null;
+    rateLimitHeaders?: Record<string, string>;
     circuitOpen?: boolean;
     circuitOpenUntil?: string | null;
+    kind?: string;
+    failureCount?: number;
+    cooldownMs?: number;
+    openUntil?: string | null;
   },
 ): void {
-  console.info(`[market-data] ${context}`, {
-    httpStatus: diagnostics.httpStatus,
-    providerSymbol: diagnostics.providerSymbol ?? null,
-    providerId: diagnostics.providerId ?? null,
-    remainingQuota: diagnostics.remainingQuota,
-    resetTimestamp: diagnostics.resetTimestamp,
-    retryAfterMs: diagnostics.retryAfterMs,
-    circuitOpen: diagnostics.circuitOpen ?? null,
-    circuitOpenUntil: diagnostics.circuitOpenUntil ?? null,
-    rateLimitHeaders: diagnostics.rateLimitHeaders,
-    responseBodyPreview: diagnostics.responseBodyPreview,
+  if (!isMarketDataDebugEnabled()) {
+    return;
+  }
+
+  const isRateLimitResponse =
+    input.httpStatus === 402 ||
+    input.httpStatus === 429 ||
+    input.kind === "quota_exhausted" ||
+    input.kind === "rate_limited";
+
+  if (!isRateLimitResponse) {
+    return;
+  }
+
+  console.warn(`[market-data] ${context}`, {
+    httpStatus: input.httpStatus ?? null,
+    providerSymbol: input.providerSymbol ?? null,
+    providerId: input.providerId ?? null,
+    remainingQuota: input.remainingQuota ?? null,
+    resetTimestamp: input.resetTimestamp ?? null,
+    retryAfterMs: input.retryAfterMs ?? null,
+    circuitOpen: input.circuitOpen ?? null,
+    circuitOpenUntil: input.circuitOpenUntil ?? null,
+    kind: input.kind ?? null,
+    failureCount: input.failureCount ?? null,
+    cooldownMs: input.cooldownMs ?? null,
+    openUntil: input.openUntil ?? null,
+    rateLimitHeaders: input.rateLimitHeaders ?? {},
   });
 }

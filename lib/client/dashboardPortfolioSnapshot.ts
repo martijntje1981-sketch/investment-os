@@ -1,4 +1,5 @@
 import { buildDashboardSummary, type DashboardSummary } from "@/lib/client/dashboardSummary";
+import { logLivePriceRefreshTrace } from "@/lib/client/marketDataRefreshTrace";
 import {
   computeHoldingDayMove,
   resolveHoldingChangePercent,
@@ -92,6 +93,13 @@ export function buildDashboardPortfolioSnapshot(
     (holding) =>
       holding.assetType !== "cash" && holding.priceDataStatus === "stale",
   );
+
+  logLivePriceRefreshTrace("dashboard_snapshot", {
+    isStale,
+    lastUpdatedAt: summary.lastUpdatedAt,
+    holdingCount: summary.holdingCount,
+    hasDailyData: summary.hasDailyData,
+  });
 
   return {
     ...summary,

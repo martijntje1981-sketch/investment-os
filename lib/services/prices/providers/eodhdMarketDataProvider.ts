@@ -1,12 +1,10 @@
 import { getEodhdApiKey } from "@/lib/services/instruments/eodhdClient";
 import { EODHD_QUOTE_PROVIDER_ID } from "@/lib/services/instruments/eodhdQuoteGuard";
-import {
-  getProviderCircuitSnapshot,
-  recordProviderCircuitSuccess,
-} from "@/lib/services/marketData/providerCircuitBreaker";
+import { recordProviderCircuitSuccess } from "@/lib/services/marketData/providerCircuitBreaker";
 import {
   extractRateLimitDiagnostics,
-  logMarketDataProviderResponse,
+  logMarketDataRateLimitError,
+  logMarketDataRefreshTrace,
 } from "@/lib/services/marketData/providerDiagnostics";
 import {
   normalizeMarketQuote,
@@ -103,16 +101,19 @@ async function fetchEodhdRealtimeData(
 
     const bodyText = await response.text();
     const diagnostics = extractRateLimitDiagnostics(response, bodyText);
-    const circuit = getProviderCircuitSnapshot(EODHD_QUOTE_PROVIDER_ID);
 
     if (!response.ok) {
-      logMarketDataProviderResponse("eodhd realtime error", {
-        ...diagnostics,
-        providerSymbol,
-        providerId: EODHD_QUOTE_PROVIDER_ID,
-        circuitOpen: circuit.open,
-        circuitOpenUntil: circuit.openUntil,
-      });
+      if (response.status === 402 || response.status === 429) {
+        logMarketDataRateLimitError("eodhd realtime rate limit", {
+          httpStatus: diagnostics.httpStatus,
+          providerSymbol,
+          providerId: EODHD_QUOTE_PROVIDER_ID,
+          retryAfterMs: diagnostics.retryAfterMs,
+          remainingQuota: diagnostics.remainingQuota,
+          resetTimestamp: diagnostics.resetTimestamp,
+          rateLimitHeaders: diagnostics.rateLimitHeaders,
+        });
+      }
       throw new ProviderQuoteError(
         classifyProviderFailure(response.status),
         `${providerSymbol}: EODHD returned status ${response.status}. ${diagnostics.responseBodyPreview}`,
@@ -124,13 +125,6 @@ async function fetchEodhdRealtimeData(
     try {
       data = JSON.parse(bodyText) as EodhdRealtimeResponse;
     } catch {
-      logMarketDataProviderResponse("eodhd realtime invalid json", {
-        ...diagnostics,
-        providerSymbol,
-        providerId: EODHD_QUOTE_PROVIDER_ID,
-        circuitOpen: circuit.open,
-        circuitOpenUntil: circuit.openUntil,
-      });
       throw new ProviderQuoteError(
         "provider_error",
         `${providerSymbol}: EODHD returned invalid JSON.`,
@@ -138,13 +132,6 @@ async function fetchEodhdRealtimeData(
     }
 
     if (!isFinitePositiveNumber(data.close)) {
-      logMarketDataProviderResponse("eodhd realtime incomplete quote", {
-        ...diagnostics,
-        providerSymbol,
-        providerId: EODHD_QUOTE_PROVIDER_ID,
-        circuitOpen: circuit.open,
-        circuitOpenUntil: circuit.openUntil,
-      });
       throw new ProviderQuoteError(
         "incomplete_quote",
         `${providerSymbol}: no valid market price was received.`,
@@ -152,12 +139,13 @@ async function fetchEodhdRealtimeData(
     }
 
     recordProviderCircuitSuccess(EODHD_QUOTE_PROVIDER_ID);
-    logMarketDataProviderResponse("eodhd realtime success", {
-      ...diagnostics,
+
+    logMarketDataRefreshTrace("provider_response", {
+      httpStatus: response.status,
       providerSymbol,
-      providerId: EODHD_QUOTE_PROVIDER_ID,
-      circuitOpen: false,
-      circuitOpenUntil: null,
+      hasClose: isFinitePositiveNumber(data.close),
+      timestamp: data.timestamp ?? null,
+      rateLimitHeaders: diagnostics.rateLimitHeaders,
     });
 
     return data;

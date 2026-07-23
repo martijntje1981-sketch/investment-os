@@ -44,6 +44,7 @@ import {
   recordProviderCircuitSuccess,
   resetProviderCircuitForTests,
 } from "@/lib/services/marketData/providerCircuitBreaker";
+import { logMarketDataRefreshTrace } from "@/lib/services/marketData/providerDiagnostics";
 import {
   readPersistedQuote,
   writePersistedQuote,
@@ -229,6 +230,13 @@ async function fetchAndCacheQuote(
       providerSymbol: target.providerSymbol,
       quote,
     });
+    logMarketDataRefreshTrace("cache_write", {
+      cacheKey,
+      providerSymbol: target.providerSymbol,
+      forceRefresh,
+      dataStatus: quote.dataStatus,
+      updatedAt: quote.updatedAt,
+    });
     recordPriceServiceEvent("fresh_fetch", {
       providerId: provider.id,
       providerSymbol: target.providerSymbol,
@@ -243,6 +251,18 @@ async function fetchAndCacheQuote(
       recordProviderCircuitFailure(provider.id, error);
       writeNegativeCache(cacheKey, unavailableMessage(kind));
       recordProviderCooldown(provider.id);
+    }
+
+    if (forceRefresh) {
+      logMarketDataRefreshTrace("force_refresh_provider_failure", {
+        cacheKey,
+        providerSymbol: target.providerSymbol,
+        kind,
+        status: error instanceof ProviderQuoteError ? error.status : null,
+      });
+      throw error instanceof Error
+        ? error
+        : new Error(`${target.providerSymbol}: provider error.`);
     }
 
     const cached = await readQuoteFromCaches(cacheKey, false);
@@ -403,7 +423,20 @@ async function quoteToHoldingPrice(
     );
   }
 
-  const fxRates = await getFxRates();
+  const forceRefresh = effectiveForceRefresh(options?.forceRefresh ?? false);
+  if (
+    forceRefresh &&
+    (quote.dataStatus === "stale" ||
+      quote.isStale ||
+      quote.cacheStatus === "stale")
+  ) {
+    throw new Error(
+      quote.unavailableReason ??
+        `${target.symbol}: live price refresh returned stale cached data.`,
+    );
+  }
+
+  const fxRates = await getFxRates(forceRefresh);
   return convertQuoteToHoldingPrice(target, quote, fxRates);
 }
 
@@ -588,6 +621,16 @@ export async function loadPricesForHoldings(
   };
 
   logRefreshOutcome(holdingsRequested, skipped, targets.length, metricsBefore, refreshSummary);
+  logMarketDataRefreshTrace("portfolio_recalc", {
+    forceRefresh: options?.forceRefresh ?? false,
+    requested: holdingsRequested,
+    quotable: targets.length,
+    received: payload.received,
+    quoteSource: payload.quoteSource,
+    circuitOpen: refreshSummary.circuitOpen,
+    providerCallsMade: refreshSummary.providerCallsMade,
+    lastSuccessfulUpdate: payload.lastSuccessfulUpdate,
+  });
   return {
     ...payload,
     errors: [...resolutionErrors, ...payload.errors],

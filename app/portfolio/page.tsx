@@ -153,7 +153,13 @@ export default function PortfolioPage() {
     setIsRefreshing(true);
     try {
       const result = await refreshLivePortfolioPrices(userSub, holdings);
-      if (result.updated) {
+      const hasLivePrices = result.holdings.some(
+        (holding) =>
+          holding.assetType !== "cash" &&
+          (holding.priceDataStatus === "live" ||
+            holding.priceDataStatus === "delayed"),
+      );
+      if (result.updated || hasLivePrices) {
         saveHoldings(result.holdings);
       }
       setMessage(result.message);

@@ -13,8 +13,10 @@ import {
   normalizePriceApiQuotes,
   writePriceCache,
 } from "@/lib/client/portfolioPricing";
+import { logLivePriceRefreshTrace } from "@/lib/client/marketDataRefreshTrace";
 import { NO_QUOTABLE_HOLDINGS_MESSAGE } from "@/lib/services/prices/types";
 import type {
+  PriceApiQuote,
   PriceApiResponse,
   StoredPortfolioHolding,
 } from "@/lib/types/portfolioStorage";
@@ -114,23 +116,23 @@ function isQuotaExhaustedResponse(
   );
 }
 
-function logLiveRefreshResponse(
-  response: Response,
+function isStaleOnlyRefreshResponse(
   data: PriceApiResponse,
-): void {
-  console.info("[market-data] live refresh api response", {
-    httpStatus: response.status,
-    success: data.success,
-    requested: data.requested ?? null,
-    received: data.received ?? null,
-    quoteCount: data.prices?.length ?? 0,
-    message: data.message ?? null,
-    error: data.error ?? null,
-    circuitOpen: data.refreshSummary?.circuitOpen ?? null,
-    providerCallsRequired: data.refreshSummary?.providerCallsRequired ?? null,
-    providerCallsMade: data.refreshSummary?.providerCallsMade ?? null,
-    errors: data.errors ?? [],
-  });
+  quotes: PriceApiQuote[],
+): boolean {
+  if (quotes.length === 0) {
+    return false;
+  }
+
+  const hasLiveQuote = quotes.some(
+    (quote) => quote.dataStatus === "live" || quote.dataStatus === "delayed",
+  );
+  if (hasLiveQuote) {
+    return false;
+  }
+
+  const providerCallsMade = data.refreshSummary?.providerCallsMade ?? 0;
+  return data.quoteSource === "cache" || providerCallsMade === 0;
 }
 
 export async function refreshLivePortfolioPrices<
@@ -187,6 +189,11 @@ export async function refreshLivePortfolioPrices<
   );
 
   const run = (async (): Promise<LivePriceRefreshResult<T>> => {
+    logLivePriceRefreshTrace("refresh_click", {
+      uniqueRequested,
+      totalQuotable,
+    });
+
     const response = await fetch("/api/prices", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -199,7 +206,17 @@ export async function refreshLivePortfolioPrices<
     });
 
     const data = (await response.json()) as PriceApiResponse;
-    logLiveRefreshResponse(response, data);
+
+    logLivePriceRefreshTrace("api_response", {
+      ok: response.ok,
+      success: data.success,
+      requested: data.requested ?? uniqueRequested,
+      received: data.received ?? data.prices?.length ?? 0,
+      quoteSource: data.quoteSource ?? null,
+      circuitOpen: data.refreshSummary?.circuitOpen ?? null,
+      providerCallsMade: data.refreshSummary?.providerCallsMade ?? null,
+      lastSuccessfulUpdate: data.lastSuccessfulUpdate ?? null,
+    });
 
     if (!response.ok && !data.success && !data.refreshSummary) {
       throw new Error(data.error ?? data.message ?? "Market data unavailable");
@@ -216,6 +233,28 @@ export async function refreshLivePortfolioPrices<
       )
     ) {
       lastLiveRefreshCompletedAt = Date.now();
+      logLivePriceRefreshTrace("quota_exhausted", {
+        quoteCount: normalizedQuotes.length,
+      });
+      return {
+        holdings: cachedHoldings,
+        updated: false,
+        uniqueRequested,
+        updatedCount: 0,
+        totalQuotable,
+        message: buildQuotaExhaustedMessage(),
+        quotaExhausted: true,
+        inProgress: false,
+        cooldownRemainingMs: getLivePriceRefreshCooldownRemainingMs(),
+      };
+    }
+
+    if (isStaleOnlyRefreshResponse(data, normalizedQuotes)) {
+      lastLiveRefreshCompletedAt = Date.now();
+      logLivePriceRefreshTrace("stale_only_response", {
+        quoteCount: normalizedQuotes.length,
+        quoteSource: data.quoteSource ?? null,
+      });
       return {
         holdings: cachedHoldings,
         updated: false,
@@ -261,6 +300,14 @@ export async function refreshLivePortfolioPrices<
       normalizedQuotes.length,
     );
     lastLiveRefreshCompletedAt = Date.now();
+
+    logLivePriceRefreshTrace("holdings_applied", {
+      quoteCount: normalizedQuotes.length,
+      updatedCount,
+      lastUpdatedAt:
+        refreshed.find((holding) => holding.marketPriceUpdatedAt)?.marketPriceUpdatedAt ??
+        null,
+    });
 
     if (normalizedQuotes.length >= totalQuotable) {
       return {

@@ -13,6 +13,7 @@ import {
   normalizeProviderError,
   type NormalizedProviderError,
 } from "@/lib/services/marketData/providerErrors";
+import { logMarketDataRateLimitError } from "@/lib/services/marketData/providerDiagnostics";
 
 type ProviderState = {
   openUntil: number;
@@ -84,14 +85,7 @@ export function recordProviderCircuitSuccess(providerId: string): void {
     return;
   }
 
-  const previous = providerStates.get(providerId);
   providerStates.delete(providerId);
-
-  console.info("[market-data] provider circuit cleared after successful response", {
-    providerId,
-    previousReason: previous?.reason ?? null,
-    previousOpenUntil: previous ? new Date(previous.openUntil).toISOString() : null,
-  });
 }
 
 export function recordProviderCircuitFailure(
@@ -131,16 +125,20 @@ export function recordProviderCircuitFailure(
     failureCount,
   });
 
-  console.warn("[market-data] provider circuit opened", {
-    providerId,
-    kind: normalized.kind,
-    httpStatus: normalized.status,
-    failureCount,
-    cooldownMs,
-    openUntil: new Date(openUntil).toISOString(),
-    retryAfterMs: normalized.retryAfterMs,
-    message: normalized.message,
-  });
+  if (
+    normalized.kind === "quota_exhausted" ||
+    normalized.kind === "rate_limited"
+  ) {
+    logMarketDataRateLimitError("provider circuit opened", {
+      httpStatus: normalized.status,
+      providerId,
+      kind: normalized.kind,
+      failureCount,
+      cooldownMs,
+      openUntil: new Date(openUntil).toISOString(),
+      retryAfterMs: normalized.retryAfterMs,
+    });
+  }
 
   return normalized;
 }

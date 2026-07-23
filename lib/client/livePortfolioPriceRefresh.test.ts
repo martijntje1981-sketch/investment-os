@@ -233,6 +233,53 @@ describe("livePortfolioPriceRefresh", () => {
     expect(result.holdings[0]?.currentPrice).toBe(110);
   });
 
+  it("treats stale cache-only refresh responses as quota exhaustion", async () => {
+    writePortfolioToStorage(USER, [holding("VWCE", "VWCE.XETRA")]);
+    writePriceCache(USER, [
+      {
+        symbol: "VWCE",
+        providerSymbol: "VWCE.XETRA",
+        priceEur: 110,
+        currentPrice: 110,
+        updatedAt: "2026-07-22T15:46:00.000Z",
+        dataStatus: "stale",
+      },
+    ]);
+
+    resetLivePriceRefreshStateForTests();
+
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        success: true,
+        prices: [
+          {
+            symbol: "VWCE",
+            providerSymbol: "VWCE.XETRA",
+            priceEur: 110,
+            currentPrice: 110,
+            updatedAt: "2026-07-22T15:46:00.000Z",
+            dataStatus: "stale",
+          },
+        ],
+        requested: 1,
+        received: 1,
+        quoteSource: "cache",
+        refreshSummary: {
+          providerCallsMade: 0,
+          circuitOpen: true,
+        },
+      }),
+    } as Response);
+
+    const result = await refreshLivePortfolioPrices(USER, loadUserPortfolioHoldings(USER));
+
+    expect(result.quotaExhausted).toBe(true);
+    expect(result.updated).toBe(false);
+    expect(result.message).toMatch(/market-data limit has been reached/i);
+    expect(result.holdings[0]?.priceDataStatus).toBe("stale");
+  });
+
   it("blocks repeated clicks while a refresh is in flight", async () => {
     writePortfolioToStorage(USER, [holding("VWCE", "VWCE.XETRA")]);
 
