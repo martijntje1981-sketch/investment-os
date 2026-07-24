@@ -4,13 +4,17 @@ import {
   applyCachedPrices,
   applyPricesToHoldings,
   buildPriceLookup,
+  describeQuoteSelectionForHolding,
   findQuoteForHolding,
   invalidateConflictingPriceCacheEntries,
   isQuoteCompatibleWithHolding,
   loadUserPortfolioHoldings,
+  purgeIncorrectPriceCacheEntries,
   quoteLookupKeys,
   writePortfolioToStorage,
 } from "@/lib/client/portfolioPricing";
+import { getHoldingMarketValue } from "@/lib/client/holdingValuation";
+import { buildHoldingValuation } from "@/lib/client/holdingValuation";
 import { priceCacheKey } from "@/lib/client/portfolioStorageKeys";
 import type { CachedPortfolioPrice, StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
@@ -48,6 +52,11 @@ function cacheEntry(
     price: overrides.price,
   };
 }
+
+const STRC_ISIN = "NL0015001K93";
+const STRC_WRONG_GENERIC_PRICE = 17.949111;
+const STRC_CORRECT_PRICE = 16.04;
+const STRC_QUANTITY = 450;
 
 describe("portfolio price lookup", () => {
   beforeEach(() => {
@@ -91,6 +100,234 @@ describe("portfolio price lookup", () => {
     const [updated] = applyPricesToHoldings([strcHolding], quotes);
     expect(updated?.currentPrice).toBe(16.04);
     expect(updated?.providerSymbol).toBe("STRC.AS");
+  });
+
+  it("rejects provider-less ISIN cache rows for verified listings", () => {
+    const strcHolding = holding({
+      symbol: "STRC",
+      providerSymbol: "STRC.AS",
+      isin: STRC_ISIN,
+      quantity: STRC_QUANTITY,
+    });
+
+    expect(
+      isQuoteCompatibleWithHolding(strcHolding, {
+        symbol: "STRC",
+        isin: STRC_ISIN,
+        priceEur: STRC_WRONG_GENERIC_PRICE,
+      }),
+    ).toBe(false);
+
+    const lookup = buildPriceLookup([
+      {
+        symbol: "STRC",
+        isin: STRC_ISIN,
+        priceEur: STRC_WRONG_GENERIC_PRICE,
+      },
+    ]);
+
+    expect(describeQuoteSelectionForHolding(strcHolding, lookup)).toEqual({
+      cacheKey: null,
+      quote: null,
+    });
+  });
+
+  it("documents the STRC cross-listing regression: ISIN generic row must not win", () => {
+    const strcHolding = holding({
+      symbol: "STRC",
+      providerSymbol: "STRC.AS",
+      isin: STRC_ISIN,
+      quantity: STRC_QUANTITY,
+      exchange: "AS",
+      currentPrice: 0,
+    });
+
+    const lookup = buildPriceLookup([
+      {
+        symbol: "STRC",
+        isin: STRC_ISIN,
+        priceEur: STRC_WRONG_GENERIC_PRICE,
+        updatedAt: "2026-07-24T09:00:00.000Z",
+      },
+      {
+        symbol: "STRC",
+        providerSymbol: "STRC.AS",
+        isin: STRC_ISIN,
+        priceEur: STRC_CORRECT_PRICE,
+        updatedAt: "2026-07-24T08:00:00.000Z",
+      },
+    ]);
+
+    const selection = describeQuoteSelectionForHolding(strcHolding, lookup);
+
+    expect(selection.cacheKey).toBe("STRC.AS");
+    expect(selection.quote?.priceEur).toBe(STRC_CORRECT_PRICE);
+
+    const [updated] = applyPricesToHoldings([strcHolding], [
+      {
+        symbol: "STRC",
+        isin: STRC_ISIN,
+        priceEur: STRC_WRONG_GENERIC_PRICE,
+      },
+      {
+        symbol: "STRC",
+        providerSymbol: "STRC.AS",
+        isin: STRC_ISIN,
+        priceEur: STRC_CORRECT_PRICE,
+      },
+    ]);
+
+    expect(updated?.currentPrice).toBe(STRC_CORRECT_PRICE);
+    expect(getHoldingMarketValue(updated!)).toBeCloseTo(STRC_CORRECT_PRICE * STRC_QUANTITY, 2);
+  });
+
+  it("purges generic and wrong-listing cache rows for already-verified holdings", () => {
+    writePortfolioToStorage(USER, [
+      holding({
+        symbol: "STRC",
+        providerSymbol: "STRC.AS",
+        isin: STRC_ISIN,
+        exchange: "AS",
+        quantity: STRC_QUANTITY,
+        currentPrice: STRC_WRONG_GENERIC_PRICE,
+        priceDataStatus: "live",
+      }),
+    ]);
+
+    localStorage.setItem(
+      priceCacheKey(USER),
+      JSON.stringify([
+        cacheEntry({
+          symbol: "STRC",
+          isin: STRC_ISIN,
+          price: STRC_WRONG_GENERIC_PRICE,
+        }),
+        cacheEntry({
+          symbol: "STRC",
+          providerSymbol: "STRC.PA",
+          isin: STRC_ISIN,
+          price: 32.5,
+        }),
+        cacheEntry({
+          symbol: "STRC",
+          providerSymbol: "STRC.AS",
+          isin: STRC_ISIN,
+          price: STRC_CORRECT_PRICE,
+        }),
+      ]),
+    );
+
+    const loaded = loadUserPortfolioHoldings(USER);
+    const cache = JSON.parse(
+      localStorage.getItem(priceCacheKey(USER)) ?? "[]",
+    ) as CachedPortfolioPrice[];
+
+    expect(cache.some((entry) => !entry.providerSymbol && entry.symbol === "STRC")).toBe(false);
+    expect(cache.some((entry) => entry.providerSymbol === "STRC.PA")).toBe(false);
+    expect(loaded[0]?.currentPrice).toBe(STRC_CORRECT_PRICE);
+    expect(getHoldingMarketValue(loaded[0]!)).toBeCloseTo(7218, 0);
+  });
+
+  it("keeps stale verified-listing prices when only wrong-listing quotes are fresh", () => {
+    const strcHolding = holding({
+      symbol: "STRC",
+      providerSymbol: "STRC.AS",
+      isin: STRC_ISIN,
+      quantity: STRC_QUANTITY,
+      currentPrice: STRC_CORRECT_PRICE,
+      priceDataStatus: "stale",
+    });
+
+    const [updated] = applyPricesToHoldings([strcHolding], [
+      {
+        symbol: "STRC",
+        providerSymbol: "STRC.PA",
+        isin: STRC_ISIN,
+        priceEur: 32.5,
+        updatedAt: "2026-07-24T09:00:00.000Z",
+      },
+    ]);
+
+    expect(updated?.currentPrice).toBe(STRC_CORRECT_PRICE);
+    expect(updated?.priceDataStatus).toBe("stale");
+    expect(getHoldingMarketValue(updated!)).toBeCloseTo(7218, 0);
+  });
+
+
+  it("keeps overview and detail valuations consistent after reload", () => {
+    writePortfolioToStorage(USER, [
+      holding({
+        symbol: "STRC",
+        providerSymbol: "STRC.AS",
+        isin: STRC_ISIN,
+        exchange: "AS",
+        quantity: STRC_QUANTITY,
+        currentPrice: STRC_WRONG_GENERIC_PRICE,
+        priceDataStatus: "live",
+      }),
+      holding({
+        symbol: "VWCE",
+        providerSymbol: "VWCE.XETRA",
+        isin: "IE00BK5BQT80",
+        quantity: 5,
+        currentPrice: 0,
+      }),
+    ]);
+
+    localStorage.setItem(
+      priceCacheKey(USER),
+      JSON.stringify([
+        cacheEntry({
+          symbol: "STRC",
+          isin: STRC_ISIN,
+          price: STRC_WRONG_GENERIC_PRICE,
+        }),
+        cacheEntry({
+          symbol: "STRC",
+          providerSymbol: "STRC.AS",
+          isin: STRC_ISIN,
+          price: STRC_CORRECT_PRICE,
+        }),
+        cacheEntry({
+          symbol: "VWCE",
+          providerSymbol: "VWCE.XETRA",
+          price: 112.5,
+        }),
+      ]),
+    );
+
+    const loaded = loadUserPortfolioHoldings(USER);
+    const strc = loaded.find((item) => item.symbol === "STRC");
+    const overviewValue = getHoldingMarketValue(strc!);
+    const detailValue = buildHoldingValuation(strc!, loaded).marketValue;
+
+    expect(overviewValue).toBeCloseTo(7218, 0);
+    expect(detailValue).toBe(overviewValue);
+  });
+
+  it("purges incorrect cache rows via purgeIncorrectPriceCacheEntries", () => {
+    localStorage.setItem(
+      priceCacheKey(USER),
+      JSON.stringify([
+        cacheEntry({ symbol: "STRC", price: STRC_WRONG_GENERIC_PRICE }),
+        cacheEntry({
+          symbol: "STRC",
+          providerSymbol: "STRC.AS",
+          price: STRC_CORRECT_PRICE,
+        }),
+      ]),
+    );
+
+    const remaining = purgeIncorrectPriceCacheEntries(USER, [
+      holding({
+        symbol: "STRC",
+        providerSymbol: "STRC.AS",
+        isin: STRC_ISIN,
+      }),
+    ]);
+
+    expect(remaining).toHaveLength(1);
+    expect(remaining[0]?.providerSymbol).toBe("STRC.AS");
   });
 
   it("rejects a verified holding quote from another exchange listing", () => {

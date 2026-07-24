@@ -14,11 +14,11 @@ export function PageContainer({
   return (
     <main
       className={cn(
-        "min-h-screen w-full max-w-full overflow-x-clip bg-[#F4F7FB] px-3.5 pb-28 pt-4 text-slate-950 sm:px-6 sm:pb-28 sm:pt-6",
+        "min-h-screen w-full max-w-full overflow-x-clip bg-[#F3F5F9] px-4 pb-28 pt-5 text-slate-950 sm:px-6 sm:pb-28 sm:pt-6",
         className,
       )}
     >
-      <div className="mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-4 md:gap-5">
+      <div className="mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-5 md:gap-6">
         {children}
       </div>
     </main>

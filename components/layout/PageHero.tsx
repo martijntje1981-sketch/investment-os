@@ -9,11 +9,14 @@ export function PageHero({
   subtitle,
   actions,
   stats,
+  embedded = false,
 }: {
   title: string;
   subtitle?: string;
   actions?: ReactNode;
   stats?: ReactNode;
+  /** When true, omits outer shell — for use inside a shared hero container. */
+  embedded?: boolean;
 }) {
   const hasAside = Boolean(actions || stats);
 
@@ -21,9 +24,14 @@ export function PageHero({
     <section
       aria-labelledby="app-page-hero-title"
       className={cn(
-        "min-w-0 rounded-[20px] border border-slate-800 bg-slate-950 text-white",
-        "px-3.5 py-4 sm:rounded-[24px] sm:px-6 sm:py-6",
-        "lg:min-h-[168px] lg:px-6 lg:py-6",
+        "min-w-0 text-white",
+        embedded
+          ? "px-4 py-5 sm:px-6 sm:py-6"
+          : cn(
+              "rounded-[24px] border border-slate-800/90 bg-slate-950 shadow-[0_16px_48px_rgba(15,23,42,0.28)]",
+              "px-4 py-5 sm:rounded-[28px] sm:px-6 sm:py-6",
+              "lg:min-h-[168px] lg:px-6 lg:py-6",
+            ),
         hasAside
           ? "lg:grid lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start lg:gap-x-6"
           : "lg:flex lg:flex-col lg:justify-start",
@@ -37,12 +45,12 @@ export function PageHero({
       >
         <h1
           id="app-page-hero-title"
-          className="text-xl font-black tracking-[-0.03em] sm:text-2xl lg:text-3xl"
+          className="text-2xl font-semibold tracking-[-0.03em] sm:text-3xl lg:text-[2rem]"
         >
           {title}
         </h1>
         {subtitle ? (
-          <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-400 sm:text-base">
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-400 sm:text-[15px]">
             {subtitle}
           </p>
         ) : null}

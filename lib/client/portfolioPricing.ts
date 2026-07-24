@@ -117,6 +117,8 @@ export function loadUserPortfolioHoldings(
     );
   }
 
+  purgeIncorrectPriceCacheEntries(userSub, enriched);
+
   const holdings = applyCachedPrices(userSub, enriched);
   logHoldingDailyData(holdings, "after cache apply");
   return holdings;
@@ -315,8 +317,20 @@ export function isQuoteCompatibleWithHolding(
     : null;
   const quoteProvider = resolveQuoteProviderSymbol(quote);
 
-  if (holdingProvider && quoteProvider && holdingProvider !== quoteProvider) {
-    return false;
+  if (holdingProvider) {
+    if (!quoteProvider) {
+      return false;
+    }
+
+    return holdingProvider === quoteProvider;
+  }
+
+  if (quoteProvider) {
+    const holdingTicker = normalizePortfolioSymbol(holding.symbol);
+    const quoteTicker = normalizePortfolioSymbol(quote.symbol);
+    if (quoteTicker !== holdingTicker) {
+      return false;
+    }
   }
 
   return true;
@@ -447,6 +461,23 @@ export function findQuoteForHolding(
     }
   }
   return undefined;
+}
+
+export function describeQuoteSelectionForHolding(
+  holding: StoredPortfolioHolding,
+  lookup: Map<string, PriceApiQuote>,
+): {
+  cacheKey: string | null;
+  quote: PriceApiQuote | null;
+} {
+  for (const key of holdingLookupKeys(holding)) {
+    const quote = lookup.get(key);
+    if (quote && isQuoteCompatibleWithHolding(holding, quote)) {
+      return { cacheKey: key, quote };
+    }
+  }
+
+  return { cacheKey: null, quote: null };
 }
 
 export function applyPricesToHoldings<T extends StoredPortfolioHolding>(
@@ -595,6 +626,37 @@ export function invalidateConflictingPriceCacheEntries(
 
   localStorage.setItem(priceCacheKey(userSub), JSON.stringify(remaining));
   return remaining;
+}
+
+/** Removes generic-ticker and wrong-listing cache rows for verified holdings. */
+export function purgeIncorrectPriceCacheEntries(
+  userSub: string,
+  holdings: StoredPortfolioHolding[],
+): CachedPortfolioPrice[] {
+  const verifiedHoldings = holdings.filter(
+    (holding) =>
+      holding.assetType !== "cash" && Boolean(holding.providerSymbol?.trim()),
+  );
+
+  if (verifiedHoldings.length === 0) {
+    return readPriceCacheEntries(userSub);
+  }
+
+  return invalidateConflictingPriceCacheEntries(
+    userSub,
+    verifiedHoldings.map((holding) => ({
+      before: {
+        symbol: holding.symbol,
+        isin: holding.isin ?? null,
+        providerSymbol: holding.providerSymbol ?? null,
+      },
+      after: {
+        symbol: holding.symbol,
+        isin: holding.isin ?? null,
+        providerSymbol: holding.providerSymbol ?? null,
+      },
+    })),
+  );
 }
 
 /** Applies cached prices using the same multi-key join as live pricing. */

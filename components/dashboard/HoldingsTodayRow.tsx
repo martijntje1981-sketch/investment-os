@@ -21,7 +21,7 @@ function changeToneClass(row: DashboardHoldingRow): string {
 function HoldingPriceQualityBadge({ row }: { row: DashboardHoldingRow }) {
   if (row.priceQuality === "estimated") {
     return (
-      <span className="ml-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-amber-700">
+      <span className="ml-1.5 text-[10px] font-medium uppercase tracking-[0.08em] text-amber-700">
         est.
       </span>
     );
@@ -29,8 +29,8 @@ function HoldingPriceQualityBadge({ row }: { row: DashboardHoldingRow }) {
 
   if (row.priceQuality === "stale") {
     return (
-      <span className="ml-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500">
-        Stale
+      <span className="ml-1.5 text-[10px] font-medium uppercase tracking-[0.08em] text-slate-500">
+        stale
       </span>
     );
   }
@@ -66,21 +66,21 @@ export function HoldingsTodayRow({
   if (layout === "desktop") {
     return (
       <tr className="border-b border-slate-100 last:border-b-0">
-        <td className="py-3 pr-3 align-middle">
+        <td className="py-3.5 pr-3 align-middle">
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-slate-950">
+            <p className="truncate text-sm font-medium text-slate-950">
               {row.name}
             </p>
-            <p className="mt-0.5 text-xs font-semibold uppercase tracking-[0.06em] text-slate-500">
+            <p className="mt-0.5 text-xs font-medium uppercase tracking-[0.08em] text-slate-500">
               {row.symbol}
             </p>
           </div>
         </td>
-        <td className="whitespace-nowrap py-3 pr-3 text-right align-middle text-sm font-semibold text-slate-950">
+        <td className="whitespace-nowrap py-3.5 pr-3 text-right align-middle text-sm font-medium text-slate-950">
           <HoldingValueLabel row={row} />
         </td>
         <td
-          className={`whitespace-nowrap py-3 text-right align-middle text-sm font-semibold ${changeToneClass(row)}`}
+          className={`whitespace-nowrap py-3.5 text-right align-middle text-sm font-medium ${changeToneClass(row)}`}
         >
           {changeLabel}
         </td>
@@ -89,18 +89,18 @@ export function HoldingsTodayRow({
   }
 
   return (
-    <div className="flex min-w-0 items-start justify-between gap-3 border-b border-slate-100 py-3 last:border-b-0">
+    <div className="flex min-w-0 items-start justify-between gap-4 border-b border-slate-100 py-3.5 last:border-b-0">
       <div className="min-w-0 flex-1 pr-2">
-        <p className="truncate text-sm font-semibold text-slate-950">{row.name}</p>
-        <p className="mt-0.5 text-xs font-semibold uppercase tracking-[0.06em] text-slate-500">
+        <p className="truncate text-sm font-medium text-slate-950">{row.name}</p>
+        <p className="mt-0.5 text-xs font-medium uppercase tracking-[0.08em] text-slate-500">
           {row.symbol}
         </p>
       </div>
       <div className="shrink-0 text-right">
-        <p className="text-sm font-semibold text-slate-950">
+        <p className="text-sm font-medium text-slate-950">
           <HoldingValueLabel row={row} />
         </p>
-        <p className={`mt-0.5 text-sm font-semibold ${changeToneClass(row)}`}>
+        <p className={`mt-1 text-sm font-medium ${changeToneClass(row)}`}>
           {changeLabel}
         </p>
       </div>

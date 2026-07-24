@@ -109,11 +109,6 @@ export default function DashboardPage() {
 
   return (
     <PageContainer>
-      <PageHero
-        title={heroTitle}
-        subtitle="Your daily command centre — portfolio pulse, holdings, and what matters today."
-      />
-
       <PortfolioSyncBanner
         syncState={syncState}
         migrationPreview={migrationPreview}
@@ -135,60 +130,71 @@ export default function DashboardPage() {
         <DashboardEmptyState />
       ) : holdings.length > 0 ? (
         <>
-          <DashboardSummary snapshot={snapshot} />
-
-          <DashboardTodaysDecision
-            intelligence={intelligence}
-            intelligenceFromCache={intelligenceFromCache}
-            goalProgress={goalProgress}
-            upcomingEvents={payload.upcomingEvents}
-            marketsClosed={marketsClosed}
+          <DashboardSummary
+            snapshot={snapshot}
+            welcome={
+              <PageHero
+                embedded
+                title={heroTitle}
+                subtitle="Your portfolio at a glance — value, today's move, and what needs attention."
+              />
+            }
           />
 
-          <HoldingsToday snapshot={snapshot} />
+          <div className={appPageSectionClass}>
+            <DashboardTodaysDecision
+              intelligence={intelligence}
+              intelligenceFromCache={intelligenceFromCache}
+              goalProgress={goalProgress}
+              upcomingEvents={payload.upcomingEvents}
+              marketsClosed={marketsClosed}
+            />
 
-          <DashboardIntelligencePreview
-            intelligence={intelligence}
-            goalProgress={goalProgress}
-            marketsClosed={marketsClosed}
-            intelligenceFromCache={intelligenceFromCache}
-            missedItems={discoverSnapshot?.thingsYouMayHaveMissed ?? []}
-          />
+            <HoldingsToday snapshot={snapshot} />
 
-          <section className={appPageSectionClass}>
-            <DashboardPortfolioHealthCard health={portfolioHealth} />
-            <DashboardGoalProgressCard progress={goalProgress} />
-            <section className="space-y-4 md:space-y-5">
-              <DashboardDividendCard
-                snapshot={dividendSnapshot}
-                isLoading={dividendsLoading}
-              />
-              <DashboardAnalystCard
-                snapshot={analystSnapshot}
-                isLoading={analystLoading}
-              />
+            <DashboardIntelligencePreview
+              intelligence={intelligence}
+              goalProgress={goalProgress}
+              marketsClosed={marketsClosed}
+              intelligenceFromCache={intelligenceFromCache}
+              missedItems={discoverSnapshot?.thingsYouMayHaveMissed ?? []}
+            />
+
+            <section className={appPageSectionClass}>
+              <DashboardPortfolioHealthCard health={portfolioHealth} />
+              <DashboardGoalProgressCard progress={goalProgress} />
+              <section className="space-y-5 md:space-y-6">
+                <DashboardDividendCard
+                  snapshot={dividendSnapshot}
+                  isLoading={dividendsLoading}
+                />
+                <DashboardAnalystCard
+                  snapshot={analystSnapshot}
+                  isLoading={analystLoading}
+                />
+              </section>
+              <DashboardInsightCard sections={insightSections} />
+              <section className="grid min-w-0 grid-cols-1 gap-5 sm:grid-cols-2">
+                <DashboardMoverCard
+                  label="Biggest winner"
+                  mover={snapshot.bestMover}
+                  tone="positive"
+                  performanceCoverageComplete={snapshot.performanceCoverageComplete}
+                />
+                <DashboardMoverCard
+                  label="Biggest loser"
+                  mover={snapshot.worstMover}
+                  tone="negative"
+                  performanceCoverageComplete={snapshot.performanceCoverageComplete}
+                />
+              </section>
+              <DashboardMarketStatus lastUpdatedAt={marketUpdatedAt} />
             </section>
-            <DashboardInsightCard sections={insightSections} />
-            <section className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
-              <DashboardMoverCard
-                label="Biggest winner"
-                mover={snapshot.bestMover}
-                tone="positive"
-                performanceCoverageComplete={snapshot.performanceCoverageComplete}
-              />
-              <DashboardMoverCard
-                label="Biggest loser"
-                mover={snapshot.worstMover}
-                tone="negative"
-                performanceCoverageComplete={snapshot.performanceCoverageComplete}
-              />
-            </section>
-            <DashboardMarketStatus lastUpdatedAt={marketUpdatedAt} />
-          </section>
+          </div>
         </>
       ) : null}
 
-      <p className="rounded-[20px] border border-slate-200 bg-white/80 px-4 py-3 text-center text-sm leading-relaxed text-slate-500">
+      <p className="rounded-[24px] border border-slate-200/80 bg-white/90 px-4 py-4 text-center text-sm leading-relaxed text-slate-500 shadow-sm">
         Investment OS is a monitoring tool. It does not provide personal
         financial advice.
       </p>
