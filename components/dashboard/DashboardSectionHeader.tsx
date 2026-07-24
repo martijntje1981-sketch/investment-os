@@ -1,5 +1,5 @@
 import {
-  appSectionBodyClass,
+  appDashboardDarkMutedClass,
   appSectionSubtitleClass,
   appSectionTitleClass,
 } from "@/components/layout/appSurface";
@@ -87,7 +87,7 @@ export function DashboardSectionHeader({
               className={cn(
                 "mt-1.5",
                 isFeature
-                  ? `${appSectionBodyClass} text-slate-300`
+                  ? appDashboardDarkMutedClass
                   : appSectionSubtitleClass,
               )}
             >

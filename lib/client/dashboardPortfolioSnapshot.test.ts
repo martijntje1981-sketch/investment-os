@@ -104,7 +104,7 @@ describe("buildDashboardPortfolioSnapshot", () => {
     ]);
   });
 
-  it("excludes cash from market holdings", () => {
+  it("includes cash in holdings today with stable status and portfolio weight", () => {
     const snapshot = buildDashboardPortfolioSnapshot(
       [
         holding({
@@ -119,14 +119,24 @@ describe("buildDashboardPortfolioSnapshot", () => {
           currentPrice: 1,
           quantity: 2500,
           purchasePrice: 1,
+          name: "EUR Cash",
         }),
       ],
       null,
       false,
     );
 
-    expect(snapshot.marketHoldings).toHaveLength(1);
-    expect(snapshot.marketHoldings[0]?.symbol).toBe("VWCE");
+    expect(snapshot.marketHoldings).toHaveLength(2);
+    const cashRow = snapshot.marketHoldings.find((row) => row.assetType === "cash");
+    expect(cashRow?.name).toBe("EUR Cash");
+    expect(cashRow?.currentValue).toBe(2500);
+    expect(cashRow?.portfolioWeightPercent).toBeCloseTo(96.15, 1);
+    expect(cashRow?.dailyChangeAmount).toBeNull();
+    expect(cashRow?.dailyChangePercent).toBeNull();
+    expect(snapshot.marketHoldings.map((row) => row.symbol)).toEqual([
+      "EUR",
+      "VWCE",
+    ]);
   });
 
   it("marks change unavailable when previous close is missing", () => {

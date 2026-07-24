@@ -187,7 +187,12 @@ function amsterdamDayKey(date: Date): string {
 
 /** Formats a refresh timestamp for hero copy, using "Today" when same Amsterdam day. */
 export function formatAmsterdamPriceRefreshTime(iso: string): string {
-  const target = new Date(iso);
+  const parsed = Date.parse(iso);
+  if (!Number.isFinite(parsed)) {
+    return "Unavailable";
+  }
+
+  const target = new Date(parsed);
   const time = new Intl.DateTimeFormat("en-GB", {
     timeZone: AMSTERDAM_TIME_ZONE,
     hour: "2-digit",
@@ -223,7 +228,7 @@ export function formatPortfolioHeroRefreshLabel(
   snapshotRefreshedAt: string | null | undefined,
 ): string {
   if (liveRefreshAt) {
-    return `Last updated: ${formatAmsterdamPriceRefreshTime(liveRefreshAt)} (Amsterdam)`;
+    return `Last updated: ${formatAmsterdamPriceRefreshTime(liveRefreshAt)}`;
   }
 
   return formatMarketSnapshotRefreshLabel(snapshotRefreshedAt);

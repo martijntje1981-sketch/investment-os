@@ -4,6 +4,7 @@ import {
   buildLiveRefreshPreviewMessage,
   countUniqueQuotableProviderSymbols,
   LIVE_PRICE_REFRESH_COOLDOWN_MS,
+  readLastLivePriceRefreshAt,
   refreshLivePortfolioPrices,
   resetLivePriceRefreshStateForTests,
 } from "@/lib/client/livePortfolioPriceRefresh";
@@ -14,6 +15,7 @@ import {
   writePortfolioToStorage,
   writePriceCache,
 } from "@/lib/client/portfolioPricing";
+import { lastLivePriceRefreshKey } from "@/lib/client/portfolioStorageKeys";
 import { resetMarketPriceCacheForTests } from "@/lib/services/prices/cache/marketPriceCache";
 import {
   configureMarketDataProvidersForTests,
@@ -315,5 +317,47 @@ describe("livePortfolioPriceRefresh", () => {
 
   it("uses the configured cooldown window", () => {
     expect(LIVE_PRICE_REFRESH_COOLDOWN_MS).toBeGreaterThanOrEqual(60_000);
+  });
+
+  it("records the client refresh moment, not stale API lastSuccessfulUpdate", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-07-24T19:18:00.000Z"));
+
+    writePortfolioToStorage(USER, [holding("VWCE", "VWCE.XETRA")]);
+
+    mockEstimateThenRefresh({
+      success: true,
+      lastSuccessfulUpdate: "2026-07-24T15:36:00.000Z",
+      prices: [
+        {
+          symbol: "VWCE",
+          providerSymbol: "VWCE.XETRA",
+          priceEur: 111,
+          currentPrice: 111,
+          updatedAt: "2026-07-24T15:36:00.000Z",
+        },
+      ],
+      requested: 1,
+      received: 1,
+      refreshSummary: {
+        providerCallsMade: 0,
+      },
+    });
+
+    await refreshLivePortfolioPrices(USER, loadUserPortfolioHoldings(USER));
+
+    expect(readLastLivePriceRefreshAt(USER)).toBe("2026-07-24T19:18:00.000Z");
+
+    vi.useRealTimers();
+  });
+
+  it("ignores legacy formatted refresh timestamps in localStorage", () => {
+    localStorage.setItem(
+      lastLivePriceRefreshKey(USER),
+      "Today, 17:36",
+    );
+
+    expect(readLastLivePriceRefreshAt(USER)).toBeNull();
+    expect(localStorage.getItem(lastLivePriceRefreshKey(USER))).toBeNull();
   });
 });

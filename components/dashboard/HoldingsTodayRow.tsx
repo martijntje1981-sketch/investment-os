@@ -9,6 +9,10 @@ import {
 import type { DashboardHoldingRow } from "@/lib/client/dashboardPortfolioSnapshot";
 
 function changeToneClass(row: DashboardHoldingRow): string {
+  if (row.assetType === "cash") {
+    return "text-slate-600";
+  }
+
   if (row.changeStatus !== "available") {
     return "text-slate-600";
   }
@@ -69,6 +73,27 @@ function HoldingValueLabel({ row }: { row: DashboardHoldingRow }) {
   );
 }
 
+function holdingSecondaryLabel(row: DashboardHoldingRow): string {
+  if (row.assetType === "cash") {
+    return row.portfolioWeightPercent !== null
+      ? `${row.portfolioWeightPercent.toFixed(1)}% of portfolio`
+      : row.symbol;
+  }
+
+  return row.symbol;
+}
+
+function holdingTodayLabel(row: DashboardHoldingRow): string {
+  if (row.assetType === "cash") {
+    return "Stable";
+  }
+
+  return formatHoldingTodayChange(
+    row.changeStatus === "available" ? row.dailyChangeAmount : null,
+    row.changeStatus === "available" ? row.dailyChangePercent : null,
+  );
+}
+
 export function HoldingsTodayRow({
   row,
   layout,
@@ -78,10 +103,7 @@ export function HoldingsTodayRow({
   layout: "mobile" | "desktop";
   index?: number;
 }) {
-  const changeLabel = formatHoldingTodayChange(
-    row.changeStatus === "available" ? row.dailyChangeAmount : null,
-    row.changeStatus === "available" ? row.dailyChangePercent : null,
-  );
+  const changeLabel = holdingTodayLabel(row);
   const surfaceClass = rowSurfaceClass(index, layout);
 
   if (layout === "desktop") {
@@ -90,7 +112,7 @@ export function HoldingsTodayRow({
         <td className="px-4 py-4 align-middle">
           <div className="min-w-0">
             <p className={`truncate ${appTableNameClass}`}>{row.name}</p>
-            <p className={`mt-0.5 ${appTickerClass}`}>{row.symbol}</p>
+            <p className={`mt-0.5 ${appTickerClass}`}>{holdingSecondaryLabel(row)}</p>
           </div>
         </td>
         <td
@@ -113,7 +135,7 @@ export function HoldingsTodayRow({
     >
       <div className="min-w-0 flex-1 pr-2">
         <p className={`truncate ${appTableNameClass}`}>{row.name}</p>
-        <p className={`mt-0.5 ${appTickerClass}`}>{row.symbol}</p>
+        <p className={`mt-0.5 ${appTickerClass}`}>{holdingSecondaryLabel(row)}</p>
       </div>
       <div className="shrink-0 text-right">
         <p className={appTableValueClass}>

@@ -7,10 +7,10 @@ import {
   formatTodayMoveValue,
 } from "@/lib/client/investorOverviewCopy";
 import {
+  appDashboardDarkMutedClass,
   appHeroKpiClass,
   appHeroMetricLabelClass,
   appSectionLabelClass,
-  appSectionMetaClass,
 } from "@/components/layout/appSurface";
 import type { DashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
 
@@ -19,7 +19,7 @@ function todayToneClass(
   embedded: boolean,
 ): string {
   if (!snapshot.hasDailyData || !snapshot.performanceCoverageComplete) {
-    return embedded ? "text-slate-200" : "text-slate-700";
+    return embedded ? "text-white/85" : "text-slate-700";
   }
 
   if (snapshot.todayChange > 0) {
@@ -30,7 +30,7 @@ function todayToneClass(
     return embedded ? "text-red-300" : "text-red-700";
   }
 
-  return embedded ? "text-slate-200" : "text-slate-700";
+  return embedded ? "text-white/85" : "text-slate-700";
 }
 
 export function TodayCard({
@@ -77,8 +77,8 @@ export function TodayCard({
         {showTodayMove ? amountLabel : unavailableCopy}
       </p>
       <p
-        className={`mt-2.5 ${appSectionMetaClass} ${
-          embedded ? "text-slate-300" : "text-slate-600"
+        className={`mt-2.5 ${
+          embedded ? appDashboardDarkMutedClass : "text-[13px] font-medium leading-snug text-slate-600"
         }`}
       >
         {showTodayMove

@@ -76,7 +76,23 @@ export const appSectionHeaderDividerClass = "border-b border-slate-100";
 
 /** Hero metric labels on dark surfaces. */
 export const appHeroMetricLabelClass =
-  "text-[13px] font-bold uppercase tracking-[0.1em] text-slate-300";
+  "text-[13px] font-bold uppercase tracking-[0.1em] text-white/75";
+
+/** Primary body on dark dashboard/card surfaces. */
+export const appDashboardDarkBodyClass =
+  "text-[15px] font-normal leading-relaxed text-white";
+
+/** Emphasized body on dark dashboard/card surfaces. */
+export const appDashboardDarkBodyMediumClass =
+  "text-[15px] font-medium leading-relaxed text-white/85";
+
+/** Secondary/helper copy on dark dashboard surfaces (~80% white). */
+export const appDashboardDarkMutedClass =
+  "text-[13px] font-medium leading-snug text-white/80";
+
+/** Tertiary/meta copy on dark dashboard surfaces (~75% white). */
+export const appDashboardDarkMetaClass =
+  "text-[13px] font-medium leading-snug text-white/75";
 
 /** @deprecated Use appCardValueClass */
 export const appValueClass = appCardValueClass;

@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
+  formatAmsterdamPriceRefreshTime,
+  formatPortfolioHeroRefreshLabel,
   resetMarketSnapshotSyncForTests,
   syncPortfolioPricesFromSnapshot,
 } from "@/lib/client/marketSnapshotSync";
@@ -126,5 +128,22 @@ describe("marketSnapshotSync", () => {
     expect(result.updated).toBe(false);
     expect(fetchMock).toHaveBeenCalledOnce();
     expect(String(fetchMock.mock.calls[0]?.[0])).toContain("/api/market-snapshot");
+  });
+
+  it("formats live refresh timestamps once in Amsterdam time", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-07-24T19:18:00.000Z"));
+
+    expect(formatAmsterdamPriceRefreshTime("2026-07-24T19:18:00.000Z")).toBe(
+      "Today, 21:18",
+    );
+    expect(
+      formatPortfolioHeroRefreshLabel("2026-07-24T19:18:00.000Z", null),
+    ).toBe("Last updated: Today, 21:18");
+    expect(formatAmsterdamPriceRefreshTime("2026-07-23T19:18:00.000Z")).toBe(
+      "23 Jul 2026, 21:18",
+    );
+
+    vi.useRealTimers();
   });
 });

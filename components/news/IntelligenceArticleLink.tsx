@@ -10,8 +10,8 @@ const VARIANT_STYLES = {
     label: "text-violet-700",
   },
   dark: {
-    link: "text-slate-100 hover:text-violet-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950",
-    meta: "text-slate-400",
+    link: "text-white hover:text-violet-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950",
+    meta: "text-white/75",
     label: "text-violet-200",
   },
 } as const;
@@ -82,7 +82,7 @@ export function IntelligenceBulletRow({
     return (
       <span
         className={`text-[15px] leading-relaxed ${
-          variant === "dark" ? "text-slate-200" : ""
+          variant === "dark" ? "text-white/85" : ""
         }`}
       >
         {bullet.text}

@@ -9,10 +9,10 @@ import { IntelligenceBulletRow } from "@/components/news/IntelligenceArticleLink
 import { DashboardSectionHeader } from "@/components/dashboard/DashboardSectionHeader";
 import {
   appDashboardFeatureShellClass,
+  appDashboardDarkBodyMediumClass,
+  appDashboardDarkMetaClass,
+  appDashboardDarkMutedClass,
   appHeroMetricLabelClass,
-  appSectionBodyClass,
-  appSectionBodyMediumClass,
-  appSectionMetaClass,
   appTableNameClass,
 } from "@/components/layout/appSurface";
 import { buildIntelligenceDisplayMessage } from "@/lib/client/todaysDecision";
@@ -26,7 +26,7 @@ const STATUS_STYLES: Record<
   InvestmentIntelligence["portfolioStatus"],
   string
 > = {
-  Stable: "border-white/15 bg-white/10 text-slate-200",
+  Stable: "border-white/15 bg-white/10 text-white/85",
   Watching: "border-blue-400/30 bg-blue-500/15 text-blue-100",
   Elevated: "border-violet-400/30 bg-violet-500/15 text-violet-100",
   "High Attention": "border-violet-400/40 bg-violet-500/20 text-violet-50",
@@ -89,7 +89,7 @@ export function DashboardIntelligencePreview({
           >
             {intelligence.portfolioStatus}
           </span>
-          <span className={`${appSectionMetaClass} text-slate-400`}>
+          <span className={appDashboardDarkMetaClass}>
             Updated {formatNewsRefreshedAt(intelligence.generatedAt)}
           </span>
         </div>
@@ -107,10 +107,10 @@ export function DashboardIntelligencePreview({
                 <p className={`${appTableNameClass} leading-snug text-white group-hover:text-violet-100`}>
                   {mustWatch.title}
                 </p>
-                <p className={`mt-2 ${appSectionBodyClass} text-slate-300`}>
+                <p className={`mt-2 ${appDashboardDarkMutedClass}`}>
                   {mustWatch.reason}
                 </p>
-                <span className="mt-3 inline-flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-slate-400">
+                <span className={`mt-3 inline-flex flex-wrap items-center gap-x-2 gap-y-1 ${appDashboardDarkMetaClass}`}>
                   {mustWatch.sourceName ? <span>{mustWatch.sourceName}</span> : null}
                   <span className="inline-flex items-center gap-1 font-semibold text-violet-200 group-hover:text-violet-100">
                     Read featured story
@@ -120,14 +120,14 @@ export function DashboardIntelligencePreview({
               </a>
             </div>
           ) : (
-            <p className={`mt-3 ${appSectionBodyMediumClass} text-slate-100`}>
+            <p className={`mt-3 ${appDashboardDarkBodyMediumClass}`}>
               {summaryMessage}
             </p>
           )}
         </div>
 
         {mustWatch && isValidArticleUrl(mustWatch.canonicalUrl) ? (
-          <p className={`${appSectionBodyClass} text-slate-300`}>{summaryMessage}</p>
+          <p className={appDashboardDarkMutedClass}>{summaryMessage}</p>
         ) : null}
 
         {secondaryBullets.length > 0 ? (

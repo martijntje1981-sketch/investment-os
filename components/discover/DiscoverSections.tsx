@@ -221,12 +221,12 @@ export function DiscoverMissedTeaser({
           <h3
             id="discover-teaser-heading"
             className={`text-xs font-semibold uppercase tracking-[0.08em] ${
-              isDark ? "text-slate-300" : "text-slate-500"
+              isDark ? "text-white/75" : "text-slate-500"
             }`}
           >
             Things You May Have Missed
           </h3>
-          <ul className={`mt-2 space-y-2 ${isDark ? "text-slate-100" : "text-slate-700"}`}>
+          <ul className={`mt-2 space-y-2 ${isDark ? "text-white/85" : "text-slate-700"}`}>
             {visibleItems.map((item) => (
               <li key={item.id} className="min-w-0 text-sm leading-relaxed">
                 <MissedItemLink

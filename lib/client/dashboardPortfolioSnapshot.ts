@@ -28,6 +28,7 @@ export type DashboardHoldingRow = {
   symbol: string;
   assetType: StoredPortfolioHolding["assetType"];
   currentValue: number | null;
+  portfolioWeightPercent: number | null;
   dailyChangeAmount: number | null;
   dailyChangePercent: number | null;
   priceStatus: DashboardHoldingPriceStatus;
@@ -47,13 +48,33 @@ export type DashboardPortfolioSnapshot = DashboardSummary & {
 
 function buildDashboardHoldingRow(
   holding: StoredPortfolioHolding,
+  totalValue: number,
 ): DashboardHoldingRow | null {
-  if (holding.assetType === "cash") {
+  if (!Number.isFinite(holding.quantity) || holding.quantity <= 0) {
     return null;
   }
 
-  if (!Number.isFinite(holding.quantity) || holding.quantity <= 0) {
-    return null;
+  if (holding.assetType === "cash") {
+    const currentValue = getHoldingMarketValue(holding);
+
+    return {
+      id: holding.id,
+      name: holding.name || `${holding.symbol} Cash`,
+      symbol: holding.symbol,
+      assetType: "cash",
+      currentValue,
+      portfolioWeightPercent:
+        totalValue > 0 && currentValue !== null
+          ? (currentValue / totalValue) * 100
+          : null,
+      dailyChangeAmount: null,
+      dailyChangePercent: null,
+      priceStatus: currentValue !== null ? "available" : "unavailable",
+      changeStatus: "available",
+      priceQuality: "live",
+      lastUpdatedAt: null,
+      isStale: false,
+    };
   }
 
   const currentValue = getHoldingMarketValue(holding);
@@ -78,6 +99,10 @@ function buildDashboardHoldingRow(
     symbol: holding.symbol,
     assetType: holding.assetType,
     currentValue,
+    portfolioWeightPercent:
+      totalValue > 0 && currentValue !== null
+        ? (currentValue / totalValue) * 100
+        : null,
     dailyChangeAmount,
     dailyChangePercent,
     priceStatus: currentValue !== null ? "available" : "unavailable",
@@ -98,9 +123,10 @@ export function buildDashboardPortfolioSnapshot(
 ): DashboardPortfolioSnapshot {
   const summary = buildDashboardSummary(holdings, goal, hasSavedGoal);
   const performance = buildPortfolioPerformance(holdings);
+  const totalValue = summary.portfolioValue;
 
   const marketHoldings = holdings
-    .map((holding) => buildDashboardHoldingRow(holding))
+    .map((holding) => buildDashboardHoldingRow(holding, totalValue))
     .filter((row): row is DashboardHoldingRow => row !== null)
     .sort((left, right) => {
       const leftValue = left.currentValue ?? 0;

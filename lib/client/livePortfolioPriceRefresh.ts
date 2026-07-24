@@ -61,20 +61,32 @@ export function readLastLivePriceRefreshAt(userSub: string): string | null {
       return null;
     }
 
-    const parsed = Date.parse(raw);
-    return Number.isFinite(parsed) ? new Date(parsed).toISOString() : null;
+    const trimmed = raw.trim();
+    // Ignore legacy formatted strings; only accept ISO timestamps.
+    if (!/^\d{4}-\d{2}-\d{2}T/.test(trimmed)) {
+      localStorage.removeItem(lastLivePriceRefreshKey(userSub));
+      return null;
+    }
+
+    const parsed = Date.parse(trimmed);
+    if (!Number.isFinite(parsed)) {
+      localStorage.removeItem(lastLivePriceRefreshKey(userSub));
+      return null;
+    }
+
+    return new Date(parsed).toISOString();
   } catch {
+    localStorage.removeItem(lastLivePriceRefreshKey(userSub));
     return null;
   }
 }
 
-function recordLastLivePriceRefreshAt(userSub: string, iso: string): void {
-  const parsed = Date.parse(iso);
-  if (!Number.isFinite(parsed)) {
-    return;
-  }
-
-  localStorage.setItem(lastLivePriceRefreshKey(userSub), new Date(parsed).toISOString());
+/** Persists the client refresh moment as an ISO UTC timestamp. */
+function recordLastLivePriceRefreshAt(userSub: string): void {
+  localStorage.setItem(
+    lastLivePriceRefreshKey(userSub),
+    new Date().toISOString(),
+  );
 }
 
 export function getLivePriceRefreshCooldownRemainingMs(
@@ -358,7 +370,7 @@ export async function refreshLivePortfolioPrices<
       lastSuccessfulUpdate,
       quoteSource: data.quoteSource ?? "provider",
     });
-    recordLastLivePriceRefreshAt(userSub, lastSuccessfulUpdate);
+    recordLastLivePriceRefreshAt(userSub);
 
     const refreshed = applyPricesToHoldings(holdings, data.prices, {
       clearMissingDailyFields: true,

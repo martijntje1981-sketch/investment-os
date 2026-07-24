@@ -1,14 +1,20 @@
 import { formatPortfolioCurrency } from "@/lib/client/portfolioAnalysis";
 import { formatMarketUpdateTime } from "@/lib/client/marketStatus";
 import { formatSignedPortfolioPercent } from "@/lib/client/portfolioMovementFormat";
-import { appDisplayClass, appHeroMetricLabelClass, appSectionBodyMediumClass, appSectionMetaClass } from "@/components/layout/appSurface";
+import {
+  appDashboardDarkBodyMediumClass,
+  appDashboardDarkMetaClass,
+  appDashboardDarkMutedClass,
+  appDisplayClass,
+  appHeroMetricLabelClass,
+} from "@/components/layout/appSurface";
 import type { DashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
 
 function sinceInceptionToneClass(
   snapshot: DashboardPortfolioSnapshot,
 ): string {
   if (!snapshot.canShowPerformance) {
-    return "text-slate-300";
+    return "text-white/85";
   }
 
   if (snapshot.totalReturnPercent > 0) {
@@ -19,7 +25,7 @@ function sinceInceptionToneClass(
     return "text-red-300";
   }
 
-  return "text-slate-300";
+  return "text-white/85";
 }
 
 function sinceInceptionLabel(snapshot: DashboardPortfolioSnapshot): string {
@@ -53,18 +59,18 @@ export function PortfolioValueCard({
         {formatPortfolioCurrency(snapshot.portfolioValue)}
       </p>
       <p
-        className={`mt-3 ${appSectionBodyMediumClass} ${sinceInceptionToneClass(snapshot)}`}
+        className={`mt-3 ${appDashboardDarkBodyMediumClass} ${sinceInceptionToneClass(snapshot)}`}
       >
         {sinceInceptionLabel(snapshot)}
       </p>
       {showBreakdown ? (
-        <p className={`mt-4 ${appSectionMetaClass} text-slate-300`}>
+        <p className={`mt-4 ${appDashboardDarkMutedClass}`}>
           Invested {formatPortfolioCurrency(snapshot.investedAssetsValue)}
           {" · "}
           Cash {formatPortfolioCurrency(snapshot.cashValue)}
         </p>
       ) : null}
-      <p className={`mt-4 ${appSectionMetaClass} text-slate-400`}>
+      <p className={`mt-4 ${appDashboardDarkMetaClass}`}>
         {snapshot.isStale ? "Stale prices · " : null}
         Updated {formatMarketUpdateTime(snapshot.lastUpdatedAt)}
       </p>
