@@ -23,6 +23,8 @@ import { newsCacheKey } from "@/lib/client/portfolioStorageKeys";
 import { createEmptyMarketBrief } from "@/lib/services/news/marketBrief";
 import {
   EODHD_API_PROVIDER_ID,
+  EODHD_DAILY_LIMIT,
+  EODHD_RECOVERY_RESERVE,
   recordEodhdApiCalls,
   resetEodhdDailyQuotaForTests,
 } from "@/lib/services/marketData/eodhdDailyQuota";
@@ -265,7 +267,9 @@ describe("automatic EODHD budget controls", () => {
   });
 
   it("shares one persistent daily budget across intelligence and price endpoints", async () => {
-    await recordEodhdApiCalls(16);
+    await recordEodhdApiCalls(
+      EODHD_DAILY_LIMIT - EODHD_RECOVERY_RESERVE + 1,
+    );
 
     expect(isProviderCircuitOpen(EODHD_API_PROVIDER_ID)).toBe(true);
     expect(isEodhdNewsFetchBlocked()).toBe(true);

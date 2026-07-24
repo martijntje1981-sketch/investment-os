@@ -7,6 +7,7 @@ import { getAmsterdamClock } from "@/lib/services/marketSnapshot/amsterdamSchedu
 import {
   isProviderCircuitOpen,
   recordProviderCircuitFailure,
+  recordProviderCircuitSuccess,
   resetProviderCircuitForTests,
 } from "@/lib/services/marketData/providerCircuitBreaker";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -15,9 +16,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 export const EODHD_API_PROVIDER_ID = "eodhd-api";
 
 export const EODHD_DAILY_LIMIT =
-  Number.parseInt(process.env.EODHD_DAILY_LIMIT ?? "20", 10) || 20;
+  Number.parseInt(process.env.EODHD_DAILY_LIMIT ?? "100000", 10) || 100000;
 
-export const EODHD_RECOVERY_RESERVE = 4;
+export const EODHD_RECOVERY_RESERVE =
+  Number.parseInt(process.env.EODHD_RECOVERY_RESERVE ?? "4", 10) || 4;
 
 type UsageRow = {
   usage_date: string;
@@ -101,6 +103,19 @@ export async function getEodhdDailyUsage(now = new Date()): Promise<{
   };
 }
 
+async function clearStaleEodhdQuotaCircuitIfBudgetAvailable(
+  now = new Date(),
+): Promise<void> {
+  if (!isProviderCircuitOpen(EODHD_API_PROVIDER_ID, now.getTime())) {
+    return;
+  }
+
+  const budget = await getEodhdDailyUsage(now);
+  if (budget.spendableRemaining > 0) {
+    recordProviderCircuitSuccess(EODHD_API_PROVIDER_ID);
+  }
+}
+
 export async function canSpendEodhdCalls(
   estimatedCalls: number,
   now = new Date(),
@@ -147,6 +162,8 @@ export async function recordEodhdApiCalls(
       EODHD_API_PROVIDER_ID,
       new EodhdProviderError(402, "EODHD daily API budget exhausted"),
     );
+  } else {
+    recordProviderCircuitSuccess(EODHD_API_PROVIDER_ID);
   }
 
   return next;
@@ -182,6 +199,8 @@ export async function assertEodhdApiAvailable(
   estimatedCalls = 1,
   now = new Date(),
 ): Promise<void> {
+  await clearStaleEodhdQuotaCircuitIfBudgetAvailable(now);
+
   if (isEodhdDailyBudgetBlocked(now)) {
     throw new Error("EODHD daily API budget is exhausted for today.");
   }

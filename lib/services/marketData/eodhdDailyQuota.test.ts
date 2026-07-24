@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { EodhdProviderError } from "@/lib/services/instruments/eodhdClient";
 import {
   assertCanSpendEodhdCalls,
+  assertEodhdApiAvailable,
   canSpendEodhdCalls,
   EODHD_API_PROVIDER_ID,
   EODHD_DAILY_LIMIT,
@@ -24,8 +26,14 @@ describe("eodhdDailyQuota", () => {
     resetProviderCircuitForTests();
   });
 
+  it("defaults to the paid-plan daily limit when env is unset", () => {
+    expect(EODHD_DAILY_LIMIT).toBeGreaterThanOrEqual(100000);
+  });
+
   it("reserves recovery calls from spendable budget", async () => {
     const budget = await getEodhdDailyUsage();
+    expect(budget.dailyLimit).toBe(EODHD_DAILY_LIMIT);
+    expect(budget.recoveryReserve).toBe(EODHD_RECOVERY_RESERVE);
     expect(budget.spendableRemaining).toBe(
       EODHD_DAILY_LIMIT - EODHD_RECOVERY_RESERVE,
     );
@@ -56,5 +64,18 @@ describe("eodhdDailyQuota", () => {
     expect(isProviderCircuitOpen(EODHD_API_PROVIDER_ID)).toBe(true);
     expect(isEodhdNewsFetchBlocked()).toBe(true);
     expect(isProviderCircuitOpen(EODHD_NEWS_PROVIDER_ID)).toBe(false);
+  });
+
+  it("clears a stale quota circuit when spendable budget is available", async () => {
+    recordProviderCircuitFailure(
+      EODHD_API_PROVIDER_ID,
+      new EodhdProviderError(402, "EODHD daily API budget exhausted"),
+    );
+
+    expect(isProviderCircuitOpen(EODHD_API_PROVIDER_ID)).toBe(true);
+
+    await assertEodhdApiAvailable(1);
+
+    expect(isProviderCircuitOpen(EODHD_API_PROVIDER_ID)).toBe(false);
   });
 });

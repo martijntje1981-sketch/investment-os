@@ -4,9 +4,11 @@
 
 import {
   assertEodhdApiAvailable,
+  EODHD_API_PROVIDER_ID,
   markEodhdDailyQuotaExhausted,
   recordEodhdApiCalls,
 } from "@/lib/services/marketData/eodhdDailyQuota";
+import { recordProviderCircuitSuccess } from "@/lib/services/marketData/providerCircuitBreaker";
 import { normalizeProviderError } from "@/lib/services/marketData/providerErrors";
 
 export async function executeEodhdApiCall<T>(
@@ -21,6 +23,7 @@ export async function executeEodhdApiCall<T>(
   try {
     const result = await operation();
     await recordEodhdApiCalls(recordCost);
+    recordProviderCircuitSuccess(EODHD_API_PROVIDER_ID);
     return result;
   } catch (error) {
     const normalized = normalizeProviderError(error);
