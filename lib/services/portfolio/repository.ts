@@ -8,6 +8,8 @@ import {
   isUniqueViolation,
 } from "@/lib/services/portfolio/idempotency";
 import {
+  buildHoldingMarketPriceUpdate,
+  buildRemoteSnapshot,
   mapDbGoalToStored,
   mapDbHoldingToStored,
   mapDbImportMapping,
@@ -16,7 +18,6 @@ import {
   mapStoredHoldingToDbInsert,
   mapStoredMappingToDbInsert,
 } from "@/lib/services/portfolio/mappers";
-import { buildRemoteSnapshot } from "@/lib/services/portfolio/mappers";
 import type {
   DbGoalRow,
   DbHoldingRow,
@@ -96,6 +97,7 @@ export function createPortfolioRepository(supabase: SupabaseClient) {
         deleted_at,
         last_market_price,
         last_market_price_at,
+        previous_close,
         holding_instrument_mappings (
           holding_id,
           isin,
@@ -452,20 +454,12 @@ export function createPortfolioRepository(supabase: SupabaseClient) {
     holdingId: string,
     holding: StoredPortfolioHolding,
   ) {
-    if (holding.assetType === "cash") return;
-
-    const price = Number(holding.currentPrice);
-    if (!Number.isFinite(price) || price <= 0) return;
+    const update = buildHoldingMarketPriceUpdate(holding);
+    if (!update) return;
 
     const { error } = await supabase
       .from("holdings")
-      .update({
-        last_market_price: price,
-        last_market_price_at:
-          holding.marketPriceUpdatedAt ??
-          holding.updatedAt ??
-          new Date().toISOString(),
-      })
+      .update(update)
       .eq("id", holdingId)
       .eq("user_id", userId);
 

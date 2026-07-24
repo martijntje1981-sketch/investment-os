@@ -90,6 +90,12 @@ function snapshotWith(holdings: StoredPortfolioHolding[]): RemotePortfolioSnapsh
             : null,
       last_market_price_at:
         item.currentPrice > 0 ? item.marketPriceUpdatedAt ?? item.updatedAt : null,
+      previous_close:
+        item.assetType === "cash"
+          ? null
+          : item.previousClose != null && item.previousClose > 0
+            ? item.previousClose
+            : null,
     })),
     null,
     [],
@@ -839,5 +845,21 @@ describe("migration SQL security", () => {
     expect(sql).toMatch(/last_market_price/);
     expect(sql).toMatch(/last_market_price_at/);
     expect(sql).not.toMatch(/DROP TABLE/i);
+  });
+
+  it("includes persisted previous close column for cross-device 1D performance", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { resolve } = await import("node:path");
+    const sql = readFileSync(
+      resolve(
+        process.cwd(),
+        "supabase/migrations/20260724150000_holding_previous_close.sql",
+      ),
+      "utf8",
+    );
+
+    expect(sql).toMatch(/previous_close/);
+    expect(sql).not.toMatch(/DROP TABLE/i);
+    expect(sql).not.toMatch(/NOT NULL/i);
   });
 });

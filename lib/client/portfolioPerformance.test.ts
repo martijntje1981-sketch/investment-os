@@ -9,6 +9,7 @@ import {
 import {
   mapDbHoldingToStored,
   resolveStoredMarketPrice,
+  resolveStoredPreviousClose,
 } from "@/lib/services/portfolio/mappers";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 import type { DbHoldingRow } from "@/lib/services/portfolio/types";
@@ -52,6 +53,7 @@ function dbRow(
     deleted_at: null,
     last_market_price: 120,
     last_market_price_at: "2026-07-20T10:00:00.000Z",
+    previous_close: 115,
     ...overrides,
   };
 }
@@ -77,6 +79,8 @@ describe("portfolio market price helpers", () => {
     expect(mapDbHoldingToStored(dbRow()).marketPriceUpdatedAt).toBe(
       "2026-07-20T10:00:00.000Z",
     );
+    expect(mapDbHoldingToStored(dbRow()).previousClose).toBe(115);
+    expect(resolveStoredPreviousClose(dbRow())).toBe(115);
   });
 
   it("prefers remote cached price over stale local zero", () => {

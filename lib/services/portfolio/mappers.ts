@@ -55,6 +55,46 @@ export function resolveStoredMarketPrice(
   return isValidMarketPrice(cached) ? cached : 0;
 }
 
+export function resolveStoredPreviousClose(
+  row: Pick<DbHoldingRow, "asset_type" | "previous_close">,
+): number | null {
+  if (row.asset_type === "cash") {
+    return null;
+  }
+
+  const cached = toNumber(row.previous_close);
+  return isValidMarketPrice(cached) ? cached : null;
+}
+
+/** Builds a nullish-preserving holdings price update payload for Supabase sync. */
+export function buildHoldingMarketPriceUpdate(
+  holding: StoredPortfolioHolding,
+): Record<string, string | number> | null {
+  if (holding.assetType === "cash") {
+    return null;
+  }
+
+  const price = Number(holding.currentPrice);
+  if (!Number.isFinite(price) || price <= 0) {
+    return null;
+  }
+
+  const update: Record<string, string | number> = {
+    last_market_price: price,
+    last_market_price_at:
+      holding.marketPriceUpdatedAt ??
+      holding.updatedAt ??
+      new Date().toISOString(),
+  };
+
+  const previousClose = Number(holding.previousClose);
+  if (Number.isFinite(previousClose) && previousClose > 0) {
+    update.previous_close = previousClose;
+  }
+
+  return update;
+}
+
 export function mapDbHoldingToStored(
   row: DbHoldingRow,
   localId?: string,
@@ -74,6 +114,7 @@ export function mapDbHoldingToStored(
     quantity,
     purchasePrice: assetType === "cash" ? 1 : purchasePrice,
     currentPrice: resolveStoredMarketPrice(row),
+    previousClose: resolveStoredPreviousClose(row),
     marketPriceUpdatedAt: row.last_market_price_at ?? undefined,
     currency: "EUR",
     assetType,

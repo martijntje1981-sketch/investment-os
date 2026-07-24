@@ -266,7 +266,7 @@ export function applyRemoteSnapshotToLocalCache(
       ...effectiveHolding,
       currentPrice: mergedPrice,
       changePercent: localHolding?.changePercent ?? holding.changePercent,
-      previousClose: localHolding?.previousClose ?? holding.previousClose,
+      previousClose: holding.previousClose ?? localHolding?.previousClose,
       changeAmount: localHolding?.changeAmount ?? holding.changeAmount,
       priceDataStatus: localHolding?.priceDataStatus ?? holding.priceDataStatus,
       marketPriceUpdatedAt:
