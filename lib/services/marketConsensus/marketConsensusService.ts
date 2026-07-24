@@ -1,7 +1,9 @@
 import { getEodhdApiKey, matchInstrument } from "@/lib/services/instruments";
 import { classifyMarketConsensusHolding } from "@/lib/client/marketConsensus/holdingClassification";
+import { inferAnalystCoverageKind } from "@/lib/services/analyst/assetCoverageKind";
 import { getCachedMarketConsensus } from "@/lib/services/marketConsensus/cache/consensusCache";
 import { buildPortfolioConsensusSummary } from "@/lib/services/marketConsensus/buildPortfolioConsensusSummary";
+import { normalizeConsensusResultForHolding } from "@/lib/services/marketConsensus/normalizeConsensusAvailability";
 import {
   buildStaticConsensusResult,
   getConfiguredMarketConsensusProviders,
@@ -82,8 +84,9 @@ export async function getMarketConsensusForHolding(
   context: MarketConsensusServiceContext = resolveServiceContext(),
 ): Promise<AnalystConsensusResult> {
   const category = classifyMarketConsensusHolding(holding);
+  const isFundLike = inferAnalystCoverageKind(holding) === "fund_or_etc";
 
-  if (category !== "equity") {
+  if (category !== "equity" || isFundLike) {
     return validateAndSanitizeConsensusResult(buildStaticConsensusResult(holding));
   }
 
@@ -94,15 +97,14 @@ export async function getMarketConsensusForHolding(
   const cacheKey = buildConsensusCacheKey(holding);
 
   try {
-    return await getCachedMarketConsensus(cacheKey, () =>
+    const result = await getCachedMarketConsensus(cacheKey, () =>
       fetchEquityConsensus(holding, context),
     );
+    return normalizeConsensusResultForHolding(holding, result);
   } catch {
-    return validateAndSanitizeConsensusResult({
-      ...buildStaticConsensusResult(holding),
-      availability: "error",
-      errorCode: "consensus_fetch_failed",
-    });
+    return validateAndSanitizeConsensusResult(
+      buildStaticConsensusResult(holding),
+    );
   }
 }
 

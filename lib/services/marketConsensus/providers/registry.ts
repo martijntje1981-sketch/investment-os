@@ -73,7 +73,7 @@ export const eodhdMarketConsensusProvider: MarketConsensusProvider = {
     if (quote.coverageState === "provider_unavailable") {
       return buildBaseResult(holding, {
         coverageType: "equity-analyst",
-        availability: "error",
+        availability: "unavailable",
         classification: "unavailable",
         errorCode: "provider_unavailable",
         sourceName: quote.source,

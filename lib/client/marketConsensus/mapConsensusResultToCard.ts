@@ -5,6 +5,10 @@ import {
   formatConsensusUpdatedAt,
 } from "@/lib/client/marketConsensus/consensusHelpers";
 import { classifyMarketConsensusHolding } from "@/lib/client/marketConsensus/holdingClassification";
+import {
+  normalizeConsensusResultForHolding,
+  shouldUseEtfNeutralFallback,
+} from "@/lib/services/marketConsensus/normalizeConsensusAvailability";
 import type {
   MarketConsensusCardState,
   MarketConsensusCoverageType,
@@ -50,23 +54,27 @@ function mapCardState(
     return "loading";
   }
 
-  if (result?.availability === "error") {
-    return "error";
-  }
+  const normalizedResult = result
+    ? normalizeConsensusResultForHolding(holding, result)
+    : null;
 
   const category = classifyMarketConsensusHolding(holding);
-
-  if (category === "etf") {
-    return "etf_outlook";
-  }
 
   if (category === "crypto_etp") {
     return "crypto_outlook";
   }
 
+  if (shouldUseEtfNeutralFallback(holding, normalizedResult)) {
+    return "etf_outlook";
+  }
+
+  if (normalizedResult?.availability === "error") {
+    return "error";
+  }
+
   if (
-    result?.availability === "available" &&
-    result.coverageType === "equity-analyst"
+    normalizedResult?.availability === "available" &&
+    normalizedResult.coverageType === "equity-analyst"
   ) {
     return "equity_coverage";
   }
@@ -151,8 +159,16 @@ function buildSummaryCopy(
   return result?.summary ?? MARKET_CONSENSUS_UNAVAILABLE_COPY;
 }
 
-function buildErrorMessage(result: AnalystConsensusResult | null): string | undefined {
-  if (result?.availability !== "error") {
+function buildErrorMessage(
+  holding: StoredPortfolioHolding,
+  result: AnalystConsensusResult | null,
+  state: MarketConsensusCardState,
+): string | undefined {
+  if (state !== "error" || result?.availability !== "error") {
+    return undefined;
+  }
+
+  if (shouldUseEtfNeutralFallback(holding, result)) {
     return undefined;
   }
 
@@ -165,7 +181,11 @@ export function mapConsensusResultToCard(input: {
   result: AnalystConsensusResult | null;
   isLoading: boolean;
 }): MarketConsensusHoldingCardModel {
-  const { holding, position, result, isLoading } = input;
+  const { holding, position, isLoading } = input;
+  const result =
+    input.result != null
+      ? normalizeConsensusResultForHolding(holding, input.result)
+      : null;
   const state = mapCardState(holding, result, isLoading);
   const category = classifyMarketConsensusHolding(holding);
 
@@ -241,7 +261,7 @@ export function mapConsensusResultToCard(input: {
       state === "no_coverage" && result?.availability === "unavailable"
         ? MARKET_CONSENSUS_UNAVAILABLE_COPY
         : undefined,
-    errorMessage: buildErrorMessage(result),
+    errorMessage: buildErrorMessage(holding, result, state),
     narrativeLabel:
       result?.narrativeSource === "ai"
         ? "AI summary of third-party data"

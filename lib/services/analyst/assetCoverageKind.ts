@@ -2,14 +2,22 @@
  * Detects holdings unlikely to carry traditional sell-side analyst coverage.
  */
 
+import { lookupVerifiedByProviderSymbol } from "@/lib/services/instruments/verifiedInstrumentRegistry";
 import type { AnalystCoverageKind } from "@/lib/types/analyst";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
 const FUND_OR_ETC_PATTERN =
   /\b(etf|etp|etc|ucits|fund|index|bitcoin|btc|ethereum|eth|crypto|reit trust|bond fund|income fund)\b/i;
 
+function isFundLikeLabel(label: string): boolean {
+  return FUND_OR_ETC_PATTERN.test(label);
+}
+
 export function inferAnalystCoverageKind(
-  holding: Pick<StoredPortfolioHolding, "name" | "symbol" | "assetType">,
+  holding: Pick<
+    StoredPortfolioHolding,
+    "name" | "symbol" | "providerSymbol" | "assetType"
+  >,
   instrumentType?: string | null,
 ): AnalystCoverageKind {
   if (holding.assetType === "cash") return "unsupported";
@@ -19,8 +27,13 @@ export function inferAnalystCoverageKind(
     return "fund_or_etc";
   }
 
+  const verified = lookupVerifiedByProviderSymbol(holding.providerSymbol);
+  if (verified && isFundLikeLabel(verified.instrumentName)) {
+    return "fund_or_etc";
+  }
+
   const label = `${holding.name} ${holding.symbol}`;
-  if (FUND_OR_ETC_PATTERN.test(label)) return "fund_or_etc";
+  if (isFundLikeLabel(label)) return "fund_or_etc";
 
   return "company";
 }
