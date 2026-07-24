@@ -23,7 +23,6 @@ import {
 } from "lucide-react";
 
 import MarketingHeader from "@/components/marketing/MarketingHeader";
-import AuthenticatedHomePage from "@/components/home/AuthenticatedHomePage";
 import { createClient } from "@/lib/supabase/server";
 
 const features = [
@@ -152,21 +151,12 @@ const trustItems = [
   },
 ];
 
-export default async function MarketingHomePage({
-  searchParams,
-}: {
-  searchParams: Promise<{ view?: string }>;
-}) {
-  const { view } = await searchParams;
+export default async function MarketingHomePage() {
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();
 
-  if (data.user && view !== "home") {
+  if (data.user) {
     redirect("/dashboard");
-  }
-
-  if (data.user && view === "home") {
-    return <AuthenticatedHomePage />;
   }
 
   return (

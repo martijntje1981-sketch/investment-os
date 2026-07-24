@@ -3,7 +3,6 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 const authenticatedPages = [
-  "components/home/AuthenticatedHomePage.tsx",
   "app/dashboard/page.tsx",
   "app/portfolio/page.tsx",
   "app/news/page.tsx",

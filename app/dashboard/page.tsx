@@ -5,14 +5,16 @@ import { DashboardEmptyState } from "@/components/dashboard/DashboardEmptyState"
 import { DashboardDividendCard } from "@/components/dashboard/DashboardDividendCard";
 import { DashboardAnalystCard } from "@/components/dashboard/DashboardAnalystCard";
 import { DashboardGoalProgressCard } from "@/components/dashboard/DashboardGoalProgressCard";
-import { DashboardIntelligenceSummary } from "@/components/dashboard/DashboardIntelligenceSummary";
+import { DashboardIntelligencePreview } from "@/components/dashboard/DashboardIntelligencePreview";
 import { DashboardMoverCard } from "@/components/dashboard/DashboardHero";
 import { DashboardPortfolioHealthCard } from "@/components/dashboard/DashboardPortfolioHealthCard";
 import { DashboardSummary } from "@/components/dashboard/DashboardSummary";
+import { DashboardTodaysDecision } from "@/components/dashboard/DashboardTodaysDecision";
 import { HoldingsToday } from "@/components/dashboard/HoldingsToday";
 import { DashboardInsightCard } from "@/components/dashboard/DashboardInsightCard";
 import { DashboardMarketStatus } from "@/components/dashboard/DashboardMarketStatus";
 import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer";
+import { appPageSectionClass } from "@/components/layout/appSurface";
 import { PageHero } from "@/components/layout/PageHero";
 import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
 import PortfolioSyncBanner from "@/components/PortfolioSyncBanner";
@@ -21,6 +23,7 @@ import { buildDashboardInsightSections } from "@/lib/client/dashboardInsight";
 import { buildDashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
 import { useDiscoverSnapshot } from "@/lib/client/discoverSnapshot";
 import { areMajorMarketsClosed } from "@/lib/client/todaysDecision";
+import { useAuthenticatedFirstName } from "@/lib/client/useAuthenticatedFirstName";
 import { useInvestmentIntelligence } from "@/lib/client/useInvestmentIntelligence";
 import { usePortfolioDividends } from "@/lib/client/usePortfolioDividends";
 import { usePortfolioAnalyst } from "@/lib/client/usePortfolioAnalyst";
@@ -31,6 +34,7 @@ import { useMarketSnapshotMetadata } from "@/lib/client/useMarketSnapshotMetadat
 import { buildPortfolioHealthScore } from "@/lib/services/portfolio/portfolioHealthScore";
 
 export default function DashboardPage() {
+  const firstName = useAuthenticatedFirstName();
   const {
     userSub,
     holdings,
@@ -52,7 +56,7 @@ export default function DashboardPage() {
   const { snapshot: analystSnapshot, isLoading: analystLoading } =
     usePortfolioAnalyst(holdings, userSub, holdings.length > 0);
 
-  const { intelligence, payload } = useInvestmentIntelligence(
+  const { intelligence, payload, isStale: intelligenceFromCache } = useInvestmentIntelligence(
     holdings,
     userSub,
     holdings.length > 0,
@@ -95,6 +99,10 @@ export default function DashboardPage() {
 
   const marketsClosed = useMemo(() => areMajorMarketsClosed(), []);
 
+  const heroTitle = firstName
+    ? `Welcome back, ${firstName}`
+    : "Portfolio Dashboard";
+
   if (!portfolioReady) {
     return <AppPageLoading />;
   }
@@ -102,43 +110,55 @@ export default function DashboardPage() {
   return (
     <PageContainer>
       <PageHero
-        title="Portfolio Dashboard"
-        subtitle="Monitor performance, allocation and progress towards your goal."
+        title={heroTitle}
+        subtitle="Your daily command centre — portfolio pulse, holdings, and what matters today."
       />
 
       <PortfolioSyncBanner
-          syncState={syncState}
-          migrationPreview={migrationPreview}
-          onMigrate={() => void migratePortfolio()}
-          onRetry={() => void retrySync()}
-          onUseRemote={useRemotePortfolio}
-          onKeepLocal={keepLocalPortfolio}
-        />
+        syncState={syncState}
+        migrationPreview={migrationPreview}
+        onMigrate={() => void migratePortfolio()}
+        onRetry={() => void retrySync()}
+        onUseRemote={useRemotePortfolio}
+        onKeepLocal={keepLocalPortfolio}
+      />
 
-        <PortfolioRecoveryBanner
-          offer={recoveryOffer}
-          onRecover={() => {
-            recoverPortfolio();
-          }}
-          onDismiss={dismissRecovery}
-        />
+      <PortfolioRecoveryBanner
+        offer={recoveryOffer}
+        onRecover={() => {
+          recoverPortfolio();
+        }}
+        onDismiss={dismissRecovery}
+      />
 
-        {holdings.length === 0 && syncState.status !== "loading" ? (
-          <DashboardEmptyState />
-        ) : holdings.length > 0 ? (
-          <>
-            <DashboardSummary snapshot={snapshot} />
+      {holdings.length === 0 && syncState.status !== "loading" ? (
+        <DashboardEmptyState />
+      ) : holdings.length > 0 ? (
+        <>
+          <DashboardSummary snapshot={snapshot} />
+
+          <DashboardTodaysDecision
+            intelligence={intelligence}
+            intelligenceFromCache={intelligenceFromCache}
+            goalProgress={goalProgress}
+            upcomingEvents={payload.upcomingEvents}
+            marketsClosed={marketsClosed}
+          />
+
+          <HoldingsToday snapshot={snapshot} />
+
+          <DashboardIntelligencePreview
+            intelligence={intelligence}
+            goalProgress={goalProgress}
+            marketsClosed={marketsClosed}
+            intelligenceFromCache={intelligenceFromCache}
+            missedItems={discoverSnapshot?.thingsYouMayHaveMissed ?? []}
+          />
+
+          <section className={appPageSectionClass}>
             <DashboardPortfolioHealthCard health={portfolioHealth} />
-            <HoldingsToday snapshot={snapshot} />
-            <DashboardIntelligenceSummary
-                intelligence={intelligence}
-                goalProgress={goalProgress}
-                upcomingEvents={payload.upcomingEvents}
-                marketsClosed={marketsClosed}
-                missedItems={discoverSnapshot?.thingsYouMayHaveMissed ?? []}
-              />
             <DashboardGoalProgressCard progress={goalProgress} />
-            <section className="space-y-5 md:space-y-6">
+            <section className="space-y-4 md:space-y-5">
               <DashboardDividendCard
                 snapshot={dividendSnapshot}
                 isLoading={dividendsLoading}
@@ -164,13 +184,14 @@ export default function DashboardPage() {
               />
             </section>
             <DashboardMarketStatus lastUpdatedAt={marketUpdatedAt} />
-          </>
-        ) : null}
+          </section>
+        </>
+      ) : null}
 
-        <p className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-center text-sm leading-relaxed text-slate-500">
-          Investment OS is a monitoring tool. It does not provide personal
-          financial advice.
-        </p>
+      <p className="rounded-[20px] border border-slate-200 bg-white/80 px-4 py-3 text-center text-sm leading-relaxed text-slate-500">
+        Investment OS is a monitoring tool. It does not provide personal
+        financial advice.
+      </p>
     </PageContainer>
   );
 }

@@ -118,7 +118,7 @@ describe("investor overview copy", () => {
 });
 
 describe("home and dashboard hierarchy", () => {
-  it("leads the dashboard with portfolio summary before intelligence", async () => {
+  it("leads the dashboard with summary, decision, holdings, then intelligence preview", async () => {
     const { readFileSync } = await import("node:fs");
     const { resolve } = await import("node:path");
 
@@ -134,12 +134,19 @@ describe("home and dashboard hierarchy", () => {
       resolve(process.cwd(), "components/dashboard/HoldingsToday.tsx"),
       "utf8",
     );
+    const preview = readFileSync(
+      resolve(process.cwd(), "components/dashboard/DashboardIntelligencePreview.tsx"),
+      "utf8",
+    );
 
     expect(dashboard.indexOf("<DashboardSummary")).toBeLessThan(
-      dashboard.indexOf("<DashboardIntelligenceSummary"),
+      dashboard.indexOf("<DashboardTodaysDecision"),
+    );
+    expect(dashboard.indexOf("<DashboardTodaysDecision")).toBeLessThan(
+      dashboard.indexOf("<HoldingsToday"),
     );
     expect(dashboard.indexOf("<HoldingsToday")).toBeLessThan(
-      dashboard.indexOf("<DashboardIntelligenceSummary"),
+      dashboard.indexOf("<DashboardIntelligencePreview"),
     );
     expect(dashboard).not.toContain("DashboardQuickActions");
     expect(dashboard).not.toContain("PortfolioIntelligencePanel");
@@ -152,40 +159,21 @@ describe("home and dashboard hierarchy", () => {
     expect(holdingsToday).toContain("Your holdings today");
     expect(holdingsToday).toContain("md:hidden");
     expect(holdingsToday).toContain("hidden md:block");
+    expect(preview).toContain("slice(0, 2)");
+    expect(preview).not.toContain("TodaysDecisionBlock");
   });
 
-  it("presents home as a daily portfolio overview without duplicate navigation", async () => {
+  it("redirects authenticated users away from the marketing home route", async () => {
     const { readFileSync } = await import("node:fs");
     const { resolve } = await import("node:path");
 
-    const home = readFileSync(
-      resolve(process.cwd(), "components/home/AuthenticatedHomePage.tsx"),
-      "utf8",
-    );
-    const snapshot = readFileSync(
-      resolve(process.cwd(), "components/home/PortfolioSnapshot.tsx"),
-      "utf8",
-    );
-    const intelligence = readFileSync(
-      resolve(process.cwd(), "components/dashboard/DashboardIntelligenceSummary.tsx"),
+    const homePage = readFileSync(
+      resolve(process.cwd(), "app/page.tsx"),
       "utf8",
     );
 
-    expect(home).toContain("Welcome back");
-    expect(home).toContain("PageHero");
-    expect(home).not.toContain("Latest News");
-    expect(home).not.toContain("BottomNavigation");
-    expect(home).toContain("readNewsCache");
-    expect(home).toContain("HomeIntelligenceSummary");
-    expect(home).toContain("TodaysDecisionBlock");
-    expect(snapshot).toContain("Total portfolio value");
-    expect(snapshot).toContain("Today&apos;s %");
-    expect(snapshot).not.toContain("Awaiting data");
-    expect(snapshot).toContain("RANKING_AFTER_CLOSE");
-    expect(intelligence).toContain("slice(0, 3)");
-    expect(intelligence).toContain("TodaysDecisionBlock");
-    expect(intelligence).not.toContain("Portfolio impact");
-    expect(intelligence).not.toContain("Must watch");
+    expect(homePage).toContain('redirect("/dashboard")');
+    expect(homePage).not.toContain("AuthenticatedHomePage");
   });
 
   it("uses concise AI insight blocks on the dashboard", async () => {

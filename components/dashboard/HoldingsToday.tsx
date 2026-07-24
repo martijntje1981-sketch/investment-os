@@ -3,6 +3,7 @@ import { Upload } from "lucide-react";
 
 import { HoldingsTodayRow } from "@/components/dashboard/HoldingsTodayRow";
 import { HoldingsTodaySkeleton } from "@/components/dashboard/HoldingsTodaySkeleton";
+import { appCardClass, appCardPaddingClass } from "@/components/layout/appSurface";
 import type { DashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
 
 export function HoldingsToday({
@@ -18,7 +19,7 @@ export function HoldingsToday({
 
   if (snapshot.marketHoldings.length === 0) {
     return (
-      <section className="rounded-[20px] border border-slate-200 bg-white p-4 md:p-5">
+      <section className={`${appCardClass} ${appCardPaddingClass}`}>
         <h2 className="text-base font-black tracking-[-0.02em] text-slate-950">
           Your holdings today
         </h2>
@@ -37,7 +38,7 @@ export function HoldingsToday({
   }
 
   return (
-    <section className="min-w-0 rounded-[20px] border border-slate-200 bg-white p-4 md:p-5">
+    <section className={`${appCardClass} ${appCardPaddingClass}`}>
       <h2 className="text-base font-black tracking-[-0.02em] text-slate-950">
         Your holdings today
       </h2>

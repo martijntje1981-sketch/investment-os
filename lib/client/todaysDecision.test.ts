@@ -37,7 +37,7 @@ describe("buildTodaysDecision", () => {
     });
 
     expect(result.decision).toContain("concentration risk");
-    expect(result.tone).toBe("urgent");
+    expect(result.tone).toBe("critical");
   });
 
   it("prioritizes upcoming high-impact events over neutral fallback", () => {
@@ -80,7 +80,7 @@ describe("buildTodaysDecision", () => {
     });
 
     expect(result.decision).toContain("goal trajectory");
-    expect(result.tone).toBe("watch");
+    expect(result.tone).toBe("attention");
   });
 
   it("returns a safe neutral fallback without advisory language", () => {
@@ -202,33 +202,8 @@ describe("investor overview copy", () => {
   });
 });
 
-describe("home and dashboard Today's Decision integration", () => {
-  it("renders Today's Decision on Home without an extra intelligence fetch", async () => {
-    const { readFileSync } = await import("node:fs");
-    const { resolve } = await import("node:path");
-
-    const home = readFileSync(
-      resolve(process.cwd(), "components/home/AuthenticatedHomePage.tsx"),
-      "utf8",
-    );
-    const snapshot = readFileSync(
-      resolve(process.cwd(), "components/home/PortfolioSnapshot.tsx"),
-      "utf8",
-    );
-
-    expect(home).toContain("TodaysDecisionBlock");
-    expect(home).toContain("readNewsCache");
-    expect(home).not.toContain("useInvestmentIntelligence");
-    expect(snapshot).toContain("todaysDecision");
-    expect(snapshot.indexOf("{todaysDecision ?")).toBeGreaterThan(
-      snapshot.indexOf("Today&apos;s %"),
-    );
-    expect(snapshot.indexOf("{todaysDecision ?")).toBeLessThan(
-      snapshot.indexOf("{intelligenceSummary ?"),
-    );
-  });
-
-  it("renders Today's Decision inside the dashboard intelligence card", async () => {
+describe("dashboard Today's Decision integration", () => {
+  it("renders Today's Decision as a dedicated dashboard section before holdings", async () => {
     const { readFileSync } = await import("node:fs");
     const { resolve } = await import("node:path");
 
@@ -236,21 +211,31 @@ describe("home and dashboard Today's Decision integration", () => {
       resolve(process.cwd(), "app/dashboard/page.tsx"),
       "utf8",
     );
-    const intelligence = readFileSync(
+    const decisionSection = readFileSync(
+      resolve(process.cwd(), "components/dashboard/DashboardTodaysDecision.tsx"),
+      "utf8",
+    );
+    const preview = readFileSync(
       resolve(
         process.cwd(),
-        "components/dashboard/DashboardIntelligenceSummary.tsx",
+        "components/dashboard/DashboardIntelligencePreview.tsx",
       ),
       "utf8",
     );
 
-    expect(dashboard.indexOf("<DashboardPortfolioHero")).toBeLessThan(
-      dashboard.indexOf("<DashboardIntelligenceSummary"),
+    expect(dashboard.indexOf("<DashboardSummary")).toBeLessThan(
+      dashboard.indexOf("<DashboardTodaysDecision"),
     );
-    expect(intelligence).toContain("TodaysDecisionBlock");
-    expect(intelligence).toContain("buildTodaysDecision");
-    expect(intelligence).toContain("buildIntelligenceDisplayMessage");
-    expect(intelligence).not.toContain("Available after market close");
+    expect(dashboard.indexOf("<DashboardTodaysDecision")).toBeLessThan(
+      dashboard.indexOf("<HoldingsToday"),
+    );
+    expect(dashboard.indexOf("<HoldingsToday")).toBeLessThan(
+      dashboard.indexOf("<DashboardIntelligencePreview"),
+    );
+    expect(decisionSection).toContain("TodaysDecisionBlock");
+    expect(decisionSection).toContain("buildTodaysDecision");
+    expect(preview).toContain("buildIntelligenceDisplayMessage");
+    expect(preview).not.toContain("TodaysDecisionBlock");
     expect(dashboard).not.toContain("BottomNavigation");
     expect(dashboard).not.toMatch(/innerWidth|matchMedia|useMediaQuery/);
   });

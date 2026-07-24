@@ -22,7 +22,7 @@ export function PageHero({
       aria-labelledby="app-page-hero-title"
       className={cn(
         "min-w-0 rounded-[20px] border border-slate-800 bg-slate-950 text-white",
-        "px-4 py-5 sm:rounded-[24px] sm:px-6 sm:py-6",
+        "px-3.5 py-4 sm:rounded-[24px] sm:px-6 sm:py-6",
         "lg:min-h-[168px] lg:px-6 lg:py-6",
         hasAside
           ? "lg:grid lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start lg:gap-x-6"

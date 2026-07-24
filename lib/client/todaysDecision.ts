@@ -13,7 +13,7 @@ const NO_MATERIAL_DEVELOPMENTS = "No material developments were detected.";
 const FORBIDDEN_DECISION_PATTERN =
   /\b(buy|sell|increase your position|reduce your position|guaranteed|should outperform)\b/i;
 
-export type TodaysDecisionTone = "neutral" | "watch" | "elevated" | "urgent";
+export type TodaysDecisionTone = "neutral" | "positive" | "attention" | "critical";
 
 export type TodaysDecisionResult = {
   statusLabel: string;
@@ -172,7 +172,7 @@ export function buildTodaysDecision(
           statusLabel: "High attention",
           decision: sanitizeDecisionText(risk.text),
           reason: "Why: Elevated portfolio attention was detected in the latest briefing.",
-          tone: "urgent",
+          tone: "critical",
         },
         sourceFromBullet(risk),
       );
@@ -183,7 +183,7 @@ export function buildTodaysDecision(
         statusLabel: "High attention",
         decision: `Review ${symbol} after negative signals in today's briefing.`,
         reason: "Why: One or more holdings show elevated negative signals.",
-        tone: "urgent",
+        tone: "critical",
       };
     }
     if (intelligence.todayMatters[0]) {
@@ -192,7 +192,7 @@ export function buildTodaysDecision(
           statusLabel: "High attention",
           decision: sanitizeDecisionText(intelligence.todayMatters[0].text),
           reason: "Why: Today's briefing flagged high-attention portfolio developments.",
-          tone: "urgent",
+          tone: "critical",
         },
         sourceFromBullet(intelligence.todayMatters[0]),
       );
@@ -209,7 +209,7 @@ export function buildTodaysDecision(
         statusLabel: "Elevated",
         decision: sanitizeDecisionText(intelligence.keyRisks[0].text),
         reason: "Why: The latest briefing highlights elevated portfolio risk.",
-        tone: "elevated",
+        tone: "attention",
       },
       sourceFromBullet(intelligence.keyRisks[0]),
     );
@@ -221,7 +221,7 @@ export function buildTodaysDecision(
       statusLabel: "Upcoming event",
       decision: "Review today's macro events before making changes.",
       reason: `Why: ${highImpactEvent.title} is on the calendar.`,
-      tone: "watch",
+      tone: "attention",
     };
   }
 
@@ -232,7 +232,7 @@ export function buildTodaysDecision(
         statusLabel: "Must watch",
         decision: sanitizeDecisionText(`Keep an eye on ${mustWatch.title}`),
         reason: `Why: ${mustWatch.reason}`,
-        tone: "watch",
+        tone: "attention",
       },
       sourceFromMustWatch(mustWatch),
     );
@@ -246,7 +246,7 @@ export function buildTodaysDecision(
         statusLabel: "Opportunity",
         decision: sanitizeDecisionText(opportunity.text),
         reason: "Why: A meaningful opportunity was noted in the latest briefing.",
-        tone: "watch",
+        tone: "positive",
       },
       sourceFromBullet(opportunity),
     );
@@ -260,7 +260,7 @@ export function buildTodaysDecision(
         context.goalProgress.status === "Slightly behind"
           ? "Why: Progress is slightly behind the saved target date."
           : "Why: Current progress is behind the saved target date.",
-      tone: "watch",
+      tone: "attention",
     };
   }
 
@@ -276,14 +276,14 @@ export function buildTodaysDecision(
         statusLabel: intelligence.portfolioStatus,
         decision: "Your portfolio remains on track. Stay with the current plan.",
         reason: "Why: No material risks or events were identified in the latest briefing.",
-        tone: "neutral",
+        tone: "positive",
       };
     }
     return {
       statusLabel: intelligence.portfolioStatus,
       decision: "No action required today.",
       reason: "Why: No material risks or events were identified in the latest briefing.",
-      tone: "neutral",
+      tone: "positive",
     };
   }
 
@@ -294,7 +294,7 @@ export function buildTodaysDecision(
       reason: marketsClosed
         ? "Why: Goal progress looks healthy while markets are closed."
         : "Why: Goal progress remains aligned with your saved target.",
-      tone: "neutral",
+      tone: "positive",
     };
   }
 
@@ -318,7 +318,7 @@ export function buildTodaysDecision(
         statusLabel: intelligence.portfolioStatus,
         decision: sanitizeDecisionText(intelligence.todayMatters[0].text),
         reason: "Why: This stood out in today's portfolio briefing.",
-        tone: "watch",
+        tone: "attention",
       },
       sourceFromBullet(intelligence.todayMatters[0]),
     );

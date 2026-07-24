@@ -8,19 +8,46 @@ function decision(
   overrides: Partial<TodaysDecisionResult> = {},
 ): TodaysDecisionResult {
   return {
-    statusLabel: "Must watch",
-    decision: "Keep an eye on uranium sector coverage.",
-    reason: "Why: Recent sector movement affects a portfolio holding.",
-    tone: "watch",
+    statusLabel: "Stable",
+    decision: "No urgent portfolio action is required.",
+    reason: "Why: No material risks or events were identified.",
+    tone: "neutral",
     ...overrides,
   };
 }
 
 describe("TodaysDecisionBlock", () => {
+  it("defaults to a calm neutral treatment", () => {
+    const html = renderToStaticMarkup(
+      <TodaysDecisionBlock decision={decision()} />,
+    );
+
+    expect(html).toContain("border-slate-200");
+    expect(html).toContain("bg-slate-50");
+    expect(html).not.toContain("bg-rose-50");
+  });
+
+  it("renders semantic severity variants", () => {
+    const positive = renderToStaticMarkup(
+      <TodaysDecisionBlock decision={decision({ tone: "positive" })} />,
+    );
+    const attention = renderToStaticMarkup(
+      <TodaysDecisionBlock decision={decision({ tone: "attention" })} />,
+    );
+    const critical = renderToStaticMarkup(
+      <TodaysDecisionBlock decision={decision({ tone: "critical" })} />,
+    );
+
+    expect(positive).toContain("bg-emerald-50");
+    expect(attention).toContain("bg-amber-50");
+    expect(critical).toContain("bg-rose-50");
+  });
+
   it("links the headline when a canonical source URL is available", () => {
     const html = renderToStaticMarkup(
       <TodaysDecisionBlock
         decision={decision({
+          tone: "attention",
           sourceUrl: "https://example.com/uranium",
           sourceName: "Bloomberg",
           sourceLinkLabel: "Read article",
@@ -36,10 +63,10 @@ describe("TodaysDecisionBlock", () => {
 
   it("keeps the card non-clickable when no valid source URL exists", () => {
     const html = renderToStaticMarkup(
-      <TodaysDecisionBlock decision={decision()} />,
+      <TodaysDecisionBlock decision={decision({ tone: "attention" })} />,
     );
 
     expect(html).not.toContain("<a ");
-    expect(html).toContain("Keep an eye on uranium sector coverage.");
+    expect(html).toContain("No urgent portfolio action is required.");
   });
 });

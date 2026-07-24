@@ -18,9 +18,9 @@ export function DashboardSummary({
   return (
     <section
       aria-label="Portfolio summary"
-      className="grid min-w-0 grid-cols-1 gap-3 lg:grid-cols-4"
+      className="grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4"
     >
-      <div className="min-w-0 lg:col-span-2">
+      <div className="min-w-0 md:col-span-2 lg:col-span-2">
         <PortfolioValueCard snapshot={snapshot} />
       </div>
       <TodayCard snapshot={snapshot} />

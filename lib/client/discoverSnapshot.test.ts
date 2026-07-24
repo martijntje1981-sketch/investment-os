@@ -69,21 +69,20 @@ describe("discover UI integration", () => {
       resolve(process.cwd(), "app/discover/page.tsx"),
       "utf8",
     );
-    const home = readFileSync(
-      resolve(process.cwd(), "components/home/AuthenticatedHomePage.tsx"),
-      "utf8",
-    );
     const dashboard = readFileSync(
       resolve(process.cwd(), "app/dashboard/page.tsx"),
+      "utf8",
+    );
+    const preview = readFileSync(
+      resolve(process.cwd(), "components/dashboard/DashboardIntelligencePreview.tsx"),
       "utf8",
     );
 
     expect(discoverPage).toContain("ThingsYouMayHaveMissedSection");
     expect(discoverPage).not.toContain("BottomNavigation");
-    expect(home).toContain("DiscoverMissedTeaser");
-    expect(home).toContain("buildDiscoverSnapshot");
-    expect(home).not.toContain("useInvestmentIntelligence");
+    expect(preview).toContain("DiscoverMissedTeaser");
     expect(dashboard).toContain("useDiscoverSnapshot");
+    expect(dashboard).toContain("DashboardIntelligencePreview");
     expect(discoverPage).not.toMatch(/innerWidth|matchMedia|useMediaQuery/);
   });
 });

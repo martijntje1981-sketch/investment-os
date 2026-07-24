@@ -38,7 +38,7 @@ export function PortfolioValueCard({
     snapshot.cashValue > 0 && snapshot.investedAssetsValue > 0;
 
   return (
-    <article className="min-w-0 rounded-[20px] border border-slate-800 bg-slate-950 px-4 py-4 text-white shadow-sm md:px-5 md:py-5">
+    <article className="min-w-0 rounded-[20px] border border-slate-800 bg-slate-950 px-3.5 py-3.5 text-white shadow-sm md:px-5 md:py-5">
       <p className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-400">
         Portfolio value
       </p>
