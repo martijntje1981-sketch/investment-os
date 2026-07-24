@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -27,26 +27,18 @@ import {
 } from "lucide-react";
 import BottomNavigation from "@/components/home/BottomNav";
 import {
-  applyCachedPrices,
-  readPortfolioFromStorage,
-  type StoredPortfolioHolding,
-} from "@/lib/client/portfolioPricing";
-import { useAuthenticatedUserSub } from "@/lib/client/useAuthenticatedUserSub";
+  buildHoldingValuation,
+  getHoldingCostBasis,
+  getHoldingReturnPercent,
+  getHoldingReturnValue,
+  getPortfolioTotalMarketValue,
+  isEstimatedHoldingPrice,
+  resolveHoldingDisplayPrice,
+} from "@/lib/client/holdingValuation";
+import { resolveHoldingChangePercent } from "@/lib/client/dailyPerformance";
+import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 
 type Currency = "EUR" | "USD" | "GBP";
-
-type Holding = {
-  id: number;
-  symbol: string;
-  name: string;
-  quantity: number;
-  purchasePrice: number;
-  currentPrice: number;
-  currency: Currency;
-  confidence?: "High" | "Medium" | "Low";
-  changePercent?: number;
-  updatedAt?: string;
-};
 
 type HoldingIntelligence = {
   category: string;
@@ -596,28 +588,6 @@ function formatPercentage(value: number) {
   }).format(value / 100);
 }
 
-function getHoldingValue(holding: Holding) {
-  return holding.quantity * holding.currentPrice;
-}
-
-function getCostValue(holding: Holding) {
-  return holding.quantity * holding.purchasePrice;
-}
-
-function getReturnValue(holding: Holding) {
-  return getHoldingValue(holding) - getCostValue(holding);
-}
-
-function getReturnPercentage(holding: Holding) {
-  const costValue = getCostValue(holding);
-
-  if (costValue <= 0) {
-    return 0;
-  }
-
-  return (getReturnValue(holding) / costValue) * 100;
-}
-
 function getScoreClasses(score: number) {
   if (score >= 85) {
     return {
@@ -648,57 +618,29 @@ function getScoreClasses(score: number) {
 export default function HoldingDetailPage() {
   const router = useRouter();
   const params = useParams<{ symbol: string }>();
-  const { userSub, authReady } = useAuthenticatedUserSub();
+  const { holdings, portfolioReady } = useUserPortfolio();
 
   const symbol = decodeURIComponent(params.symbol ?? "").toUpperCase();
-
-  const [holdings, setHoldings] = useState<Holding[]>([]);
-  const [isLoaded, setIsLoaded] = useState(false);
-
-  useEffect(() => {
-    if (!authReady) {
-      setHoldings([]);
-      setIsLoaded(false);
-      return;
-    }
-
-    setHoldings([]);
-    setIsLoaded(false);
-
-    if (!userSub) {
-      setIsLoaded(true);
-      return;
-    }
-
-    try {
-      const savedPortfolio = readPortfolioFromStorage(userSub);
-
-      if (Array.isArray(savedPortfolio) && savedPortfolio.length > 0) {
-        setHoldings(
-          applyCachedPrices(
-            userSub,
-            savedPortfolio as unknown as StoredPortfolioHolding[],
-          ) as unknown as Holding[],
-        );
-      }
-    } catch (error) {
-      console.error("Could not load portfolio:", error);
-    } finally {
-      setIsLoaded(true);
-    }
-  }, [authReady, userSub]);
 
   const holding = useMemo(() => {
     return holdings.find((item) => item.symbol.trim().toUpperCase() === symbol);
   }, [holdings, symbol]);
 
+  const valuation = useMemo(() => {
+    if (!holding) {
+      return null;
+    }
+
+    return buildHoldingValuation(holding, holdings);
+  }, [holding, holdings]);
+
   const totalPortfolioValue = useMemo(() => {
-    return holdings.reduce((total, item) => total + getHoldingValue(item), 0);
+    return getPortfolioTotalMarketValue(holdings);
   }, [holdings]);
 
   const intelligence = holdingIntelligence[symbol] ?? defaultIntelligence;
 
-  if (!isLoaded) {
+  if (!portfolioReady) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-50">
         <div className="text-center">
@@ -764,22 +706,28 @@ export default function HoldingDetailPage() {
     );
   }
 
-  const currentValue = getHoldingValue(holding);
-  const investedCapital = getCostValue(holding);
-  const returnValue = getReturnValue(holding);
-  const returnPercentage = getReturnPercentage(holding);
+  const currentValue = valuation?.marketValue ?? null;
+  const investedCapital = getHoldingCostBasis(holding);
+  const returnValue = getHoldingReturnValue(holding);
+  const returnPercentage = getHoldingReturnPercent(holding) ?? 0;
+  const displayPrice = resolveHoldingDisplayPrice(holding);
+  const estimatedPrice = isEstimatedHoldingPrice(holding);
 
   const allocation =
-    totalPortfolioValue > 0 ? (currentValue / totalPortfolioValue) * 100 : 0;
+    valuation?.portfolioWeightPercent ??
+    (totalPortfolioValue > 0 && currentValue !== null
+      ? (currentValue / totalPortfolioValue) * 100
+      : 0);
 
   const concentrationDifference = allocation - intelligence.concentrationLimit;
 
   const scoreClasses = getScoreClasses(intelligence.healthScore);
-  const positiveReturn = returnValue >= 0;
+  const positiveReturn = returnValue !== null && returnValue >= 0;
   const aboveLimit = concentrationDifference > 0;
-  const dailyChange = holding.changePercent;
+  const dailyChange = resolveHoldingChangePercent(holding);
   const hasDailyChange =
     typeof dailyChange === "number" && Number.isFinite(dailyChange);
+  const resolvedPrice = displayPrice.price;
   const thesisStatus =
     intelligence.healthScore >= 85
       ? "Thesis intact"
@@ -876,7 +824,11 @@ export default function HoldingDetailPage() {
             <LiveMetric
               icon={<CircleDollarSign className="h-5 w-5" />}
               label="Current price"
-              value={formatCurrency(holding.currentPrice, holding.currency)}
+              value={
+                resolvedPrice !== null
+                  ? `${formatCurrency(resolvedPrice, holding.currency)}${estimatedPrice ? " est." : ""}`
+                  : "Price pending"
+              }
               detail={holding.symbol.toUpperCase()}
             />
             <LiveMetric
@@ -920,8 +872,12 @@ export default function HoldingDetailPage() {
             <MetricCard
               icon={<CircleDollarSign className="h-5 w-5" />}
               label="Current value"
-              value={formatCurrency(currentValue, holding.currency)}
-              description={`${holding.quantity.toLocaleString("en-GB")} units`}
+              value={
+                currentValue !== null
+                  ? formatCurrency(currentValue, holding.currency)
+                  : "Price pending"
+              }
+              description={`${holding.quantity.toLocaleString("en-GB")} units${estimatedPrice && currentValue !== null ? " · estimated price" : ""}`}
             />
 
             <MetricCard
@@ -943,10 +899,14 @@ export default function HoldingDetailPage() {
                 )
               }
               label="Total return"
-              value={`${positiveReturn ? "+" : ""}${formatCurrency(
-                returnValue,
-                holding.currency,
-              )}`}
+              value={
+                returnValue === null
+                  ? "Price pending"
+                  : `${positiveReturn ? "+" : ""}${formatCurrency(
+                      returnValue,
+                      holding.currency,
+                    )}`
+              }
               description={`${returnPercentage >= 0 ? "+" : ""}${formatPercentage(
                 returnPercentage,
               )}`}
@@ -1150,7 +1110,11 @@ export default function HoldingDetailPage() {
 
                 <DetailRow
                   label="Current price"
-                  value={formatCurrency(holding.currentPrice, holding.currency)}
+                  value={
+                    resolvedPrice !== null
+                      ? `${formatCurrency(resolvedPrice, holding.currency)}${estimatedPrice ? " (estimated)" : ""}`
+                      : "Unavailable"
+                  }
                 />
 
                 <DetailRow

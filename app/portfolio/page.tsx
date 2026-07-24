@@ -34,10 +34,11 @@ import {
 } from "@/components/analysis/DividendIntelligenceSection";
 import { HoldingAnalystMeta } from "@/components/analysis/AnalystIntelligenceSection";
 import { ExchangeFieldEditor } from "@/components/import/ExchangeFieldEditor";
+import { buildPortfolioAnalysis } from "@/lib/client/portfolioAnalysis";
 import {
+  getHoldingCostBasis,
   getHoldingMarketValue,
-  buildPortfolioAnalysis,
-} from "@/lib/client/portfolioAnalysis";
+} from "@/lib/client/holdingValuation";
 import { isEstimatedHoldingPrice } from "@/lib/client/holdingDisplayPrice";
 import { buildPortfolioPerformance } from "@/lib/client/portfolioPerformance";
 import {
@@ -103,7 +104,7 @@ function percent(value: number) {
 }
 
 function costOf(holding: Holding) {
-  return holding.quantity * holding.purchasePrice;
+  return getHoldingCostBasis(holding);
 }
 
 export default function PortfolioPage() {

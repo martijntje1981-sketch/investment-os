@@ -1,13 +1,22 @@
-import { headers } from "next/headers";
-import { notFound } from "next/navigation";
+"use client";
+
+import Link from "next/link";
+import { useMemo } from "react";
+import { useParams, useRouter } from "next/navigation";
 
 import BottomNav from "@/components/home/BottomNav";
+import { AppPageLoading } from "@/components/layout/PageContainer";
 import {
-  getHoldingByTickerWithPrices,
-  type PricesApiResponse,
-} from "@/lib/services/portfolio/portfolioService";
-
-export const dynamic = "force-dynamic";
+  computeHoldingDayMove,
+  resolveHoldingChangePercent,
+} from "@/lib/client/dailyPerformance";
+import {
+  buildHoldingValuation,
+  getHoldingCostBasis,
+  isEstimatedHoldingPrice,
+  resolveHoldingDisplayPrice,
+} from "@/lib/client/holdingValuation";
+import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 
 const euro = new Intl.NumberFormat("en-GB", {
   style: "currency",
@@ -22,17 +31,12 @@ const euroTwo = new Intl.NumberFormat("en-GB", {
   maximumFractionDigits: 2,
 });
 
-const numberFormat = new Intl.NumberFormat("en-GB", {
-  maximumFractionDigits: 0,
-});
-
 function signedPercent(value: number) {
   const sign = value > 0 ? "+" : "";
-
   return `${sign}${value.toFixed(2)}%`;
 }
 
-function formatUpdateTime(value: string | null) {
+function formatUpdateTime(value: string | null | undefined) {
   if (!value) {
     return "Not available";
   }
@@ -77,89 +81,119 @@ function getMetricPerformanceClass(value: number) {
   return "text-slate-900";
 }
 
-async function getBaseUrl() {
-  const requestHeaders = await headers();
-
-  const host =
-    requestHeaders.get("x-forwarded-host") ??
-    requestHeaders.get("host");
-
-  const protocol =
-    requestHeaders.get("x-forwarded-proto") ??
-    (process.env.NODE_ENV === "development"
-      ? "http"
-      : "https");
-
-  if (host) {
-    return `${protocol}://${host}`;
+function priceQualityLabel(
+  source: ReturnType<typeof resolveHoldingDisplayPrice>["source"],
+  isStale: boolean,
+) {
+  if (source === "unavailable") {
+    return "Price unavailable";
   }
 
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
+  if (source === "estimated") {
+    return "Estimated price";
   }
 
-  return "http://localhost:3000";
+  if (isStale) {
+    return "Stale price";
+  }
+
+  return "Live price";
 }
 
-async function fetchPrices(): Promise<PricesApiResponse | null> {
-  try {
-    const baseUrl = await getBaseUrl();
+export default function HoldingPage() {
+  const router = useRouter();
+  const params = useParams<{ ticker: string }>();
+  const { holdings, portfolioReady } = useUserPortfolio();
 
-    const response = await fetch(`${baseUrl}/api/prices`, {
-      method: "GET",
-      cache: "no-store",
-      headers: {
-        Accept: "application/json",
-      },
-    });
+  const ticker = decodeURIComponent(params.ticker ?? "").trim().toUpperCase();
 
-    if (!response.ok) {
-      console.error(
-        `Holding page prices request failed: ${response.status}`,
-      );
+  const holding = useMemo(
+    () =>
+      holdings.find(
+        (item) => item.symbol.trim().toUpperCase() === ticker,
+      ),
+    [holdings, ticker],
+  );
 
+  const valuation = useMemo(() => {
+    if (!holding) {
       return null;
     }
 
-    return (await response.json()) as PricesApiResponse;
-  } catch (error) {
-    console.error(
-      "Holding page could not load live prices:",
-      error,
+    return buildHoldingValuation(holding, holdings);
+  }, [holding, holdings]);
+
+  if (!portfolioReady) {
+    return <AppPageLoading />;
+  }
+
+  if (!holding || !valuation) {
+    return (
+      <>
+        <main className="min-h-screen bg-slate-100 px-6 pb-32 pt-20">
+          <div className="mx-auto max-w-3xl rounded-3xl bg-white p-10 text-center shadow-sm">
+            <h1 className="text-3xl font-bold text-slate-900">Holding not found</h1>
+            <p className="mt-3 text-slate-600">
+              {ticker || "This investment"} is not in your saved portfolio.
+            </p>
+            <div className="mt-8 flex flex-wrap justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => router.back()}
+                className="rounded-xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-700"
+              >
+                Go back
+              </button>
+              <Link
+                href="/portfolio"
+                className="rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white"
+              >
+                Open portfolio
+              </Link>
+            </div>
+          </div>
+        </main>
+        <BottomNav />
+      </>
     );
-
-    return null;
   }
-}
 
-export default async function HoldingPage({
-  params,
-}: {
-  params: Promise<{ ticker: string }>;
-}) {
-  const { ticker } = await params;
-  const pricesResponse = await fetchPrices();
-
-  const holding = getHoldingByTickerWithPrices(
-    ticker,
-    pricesResponse,
+  const displayPrice = valuation.displayPrice;
+  const estimatedPrice = isEstimatedHoldingPrice(holding);
+  const dailyChangePercent = resolveHoldingChangePercent(holding);
+  const dayChangeValue =
+    valuation.marketValue !== null && dailyChangePercent !== null
+      ? computeHoldingDayMove(holding, valuation.marketValue)
+      : null;
+  const priceLabel = priceQualityLabel(
+    displayPrice.source,
+    holding.priceDataStatus === "stale",
   );
-
-  if (!holding) {
-    notFound();
-  }
-
-  const isLive =
-    holding.marketDataSource === "eodhd";
-
-  const stanceClass =
-    holding.stance === "Hold"
-      ? "bg-amber-100 text-amber-800"
-      : holding.stance === "Core Holding"
-        ? "bg-emerald-100 text-emerald-800"
-        : holding.stance === "Defensive Holding"
-          ? "bg-yellow-100 text-yellow-800"
-          : "bg-blue-100 text-blue-800";
+  const resolvedPrice = displayPrice.price;
+  const marketValueLabel =
+    valuation.marketValue === null
+      ? "Price pending"
+      : euro.format(valuation.marketValue);
+  const weightLabel =
+    valuation.portfolioWeightPercent === null
+      ? "—"
+      : `${valuation.portfolioWeightPercent.toFixed(1)}%`;
+  const returnPercentLabel =
+    valuation.returnPercent === null
+      ? "Price pending"
+      : signedPercent(valuation.returnPercent);
+  const returnValueLabel =
+    valuation.returnValue === null
+      ? "Price pending"
+      : `${valuation.returnValue >= 0 ? "+" : ""}${euro.format(valuation.returnValue)}`;
+  const dayChangeLabel =
+    dailyChangePercent === null
+      ? "Awaiting data"
+      : signedPercent(dailyChangePercent);
+  const dayChangeValueLabel =
+    dayChangeValue === null
+      ? "Awaiting data"
+      : `${dayChangeValue >= 0 ? "+" : ""}${euro.format(dayChangeValue)}`;
 
   return (
     <>
@@ -170,39 +204,33 @@ export default async function HoldingPage({
               <div>
                 <div className="flex flex-wrap items-center gap-3">
                   <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-slate-300">
-                    {holding.category}
-                  </span>
-
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-bold ${stanceClass}`}
-                  >
-                    {holding.stance}
+                    {holding.assetType === "cash" ? "Cash" : "Investment"}
                   </span>
 
                   <span
                     className={`rounded-full px-3 py-1 text-xs font-bold ${
-                      isLive
-                        ? "bg-emerald-500/20 text-emerald-300"
-                        : "bg-amber-500/20 text-amber-300"
+                      displayPrice.source === "unavailable"
+                        ? "bg-amber-500/20 text-amber-300"
+                        : estimatedPrice || holding.priceDataStatus === "stale"
+                          ? "bg-amber-500/20 text-amber-300"
+                          : "bg-emerald-500/20 text-emerald-300"
                     }`}
                   >
-                    {isLive ? "Live EODHD" : "Fallback data"}
+                    {priceLabel}
                   </span>
                 </div>
 
                 <h1 className="mt-5 text-4xl font-bold tracking-tight md:text-5xl">
-                  {holding.ticker}
+                  {holding.symbol}
                 </h1>
 
-                <p className="mt-2 text-lg text-slate-300">
-                  {holding.name}
-                </p>
+                <p className="mt-2 text-lg text-slate-300">{holding.name}</p>
 
                 <p className="mt-4 text-sm text-slate-400">
                   Last market update:{" "}
                   <span className="font-medium text-slate-200">
                     {formatUpdateTime(
-                      holding.marketDataUpdatedAt,
+                      holding.marketPriceUpdatedAt ?? holding.updatedAt,
                     )}
                   </span>
                 </p>
@@ -210,42 +238,40 @@ export default async function HoldingPage({
 
               <div className="grid grid-cols-2 gap-8 lg:text-right">
                 <div>
-                  <p className="text-sm text-slate-400">
-                    Current Price
-                  </p>
+                  <p className="text-sm text-slate-400">Current Price</p>
 
                   <p className="mt-2 text-3xl font-bold">
-                    {euroTwo.format(
-                      holding.currentPrice,
-                    )}
+                    {resolvedPrice !== null
+                      ? euroTwo.format(resolvedPrice)
+                      : "Unavailable"}
                   </p>
 
+                  {estimatedPrice ? (
+                    <p className="mt-1 text-sm font-semibold text-amber-300">
+                      Estimated price
+                    </p>
+                  ) : null}
+
                   <p
-                    className={`mt-1 font-semibold ${getPerformanceClass(
-                      holding.dailyChangePercent,
-                    )}`}
+                    className={`mt-1 font-semibold ${
+                      dailyChangePercent === null
+                        ? "text-slate-400"
+                        : getPerformanceClass(dailyChangePercent)
+                    }`}
                   >
-                    {signedPercent(
-                      holding.dailyChangePercent,
-                    )}{" "}
-                    today
+                    {dayChangeLabel} today
                   </p>
                 </div>
 
                 <div>
-                  <p className="text-sm text-slate-400">
-                    Investment Score
-                  </p>
+                  <p className="text-sm text-slate-400">Units</p>
 
                   <p className="mt-2 text-3xl font-bold">
-                    {holding.investmentScore}
-                    <span className="text-lg text-slate-500">
-                      /10
-                    </span>
+                    {holding.quantity.toLocaleString("en-GB")}
                   </p>
 
                   <p className="mt-1 font-semibold text-blue-400">
-                    Investment OS rating
+                    {holding.currency}
                   </p>
                 </div>
               </div>
@@ -255,44 +281,40 @@ export default async function HoldingPage({
           <section className="mt-6 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
             <MetricCard
               label="Position Value"
-              value={euro.format(
-                holding.marketValue,
-              )}
-              subtitle="Current market value"
+              value={marketValueLabel}
+              subtitle={
+                estimatedPrice && valuation.marketValue !== null
+                  ? "Estimated market value"
+                  : "Current market value"
+              }
             />
 
             <MetricCard
               label="Portfolio Weight"
-              value={`${holding.weightPercent.toFixed(
-                1,
-              )}%`}
+              value={weightLabel}
               subtitle="Share of total portfolio"
             />
 
             <MetricCard
               label="Total Return"
-              value={signedPercent(
-                holding.returnPercent,
-              )}
-              subtitle={`${holding.profitLoss >= 0 ? "+" : ""}${euro.format(
-                holding.profitLoss,
-              )}`}
-              valueClassName={getMetricPerformanceClass(
-                holding.returnPercent,
-              )}
+              value={returnPercentLabel}
+              subtitle={returnValueLabel}
+              valueClassName={
+                valuation.returnPercent === null
+                  ? "text-slate-900"
+                  : getMetricPerformanceClass(valuation.returnPercent)
+              }
             />
 
             <MetricCard
               label="Day Change"
-              value={signedPercent(
-                holding.dailyChangePercent,
-              )}
-              subtitle={`${holding.dayChangeValue >= 0 ? "+" : ""}${euro.format(
-                holding.dayChangeValue,
-              )}`}
-              valueClassName={getMetricPerformanceClass(
-                holding.dailyChangePercent,
-              )}
+              value={dayChangeLabel}
+              subtitle={dayChangeValueLabel}
+              valueClassName={
+                dailyChangePercent === null
+                  ? "text-slate-900"
+                  : getMetricPerformanceClass(dailyChangePercent)
+              }
             />
           </section>
 
@@ -307,37 +329,13 @@ export default async function HoldingPage({
               </h2>
 
               <p className="mt-4 text-lg leading-8 text-slate-600">
-                {holding.summary}
+                This holding is valued with the same centralized price pipeline
+                as your portfolio overview, dashboard and analysis pages.
               </p>
 
               <div className="relative mt-8 h-64 overflow-hidden rounded-2xl bg-gradient-to-b from-blue-50 to-white">
-                <div className="absolute inset-x-0 top-1/4 border-t border-dashed border-slate-200" />
-                <div className="absolute inset-x-0 top-1/2 border-t border-dashed border-slate-200" />
-                <div className="absolute inset-x-0 top-3/4 border-t border-dashed border-slate-200" />
-
-                <svg
-                  className="absolute inset-0 h-full w-full"
-                  viewBox="0 0 800 260"
-                  preserveAspectRatio="none"
-                  aria-label="Placeholder performance chart"
-                >
-                  <path
-                    d="M0,215 C90,200 125,150 190,165 C270,184 300,105 370,120 C450,138 495,78 555,100 C625,126 680,60 735,75 C770,84 790,54 800,58"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="5"
-                    className="text-blue-600"
-                  />
-
-                  <path
-                    d="M0,215 C90,200 125,150 190,165 C270,184 300,105 370,120 C450,138 495,78 555,100 C625,126 680,60 735,75 C770,84 790,54 800,58 L800,260 L0,260 Z"
-                    className="fill-blue-100/60"
-                  />
-                </svg>
-
                 <p className="absolute bottom-4 left-5 text-xs text-slate-400">
-                  Price history appears when sufficient
-                  market data is available
+                  Price history appears when sufficient market data is available
                 </p>
               </div>
             </article>
@@ -354,170 +352,65 @@ export default async function HoldingPage({
               <div className="mt-6 divide-y divide-slate-100">
                 <DataRow
                   label="Units"
-                  value={holding.units.toLocaleString(
-                    "en-GB",
-                  )}
+                  value={holding.quantity.toLocaleString("en-GB")}
                 />
 
                 <DataRow
                   label="Average price"
-                  value={euroTwo.format(
-                    holding.averagePrice,
-                  )}
+                  value={euroTwo.format(holding.purchasePrice)}
                 />
 
                 <DataRow
                   label="Current price"
-                  value={euroTwo.format(
-                    holding.currentPrice,
-                  )}
+                  value={
+                    resolvedPrice !== null
+                      ? `${euroTwo.format(resolvedPrice)}${estimatedPrice ? " (estimated)" : ""}`
+                      : "Unavailable"
+                  }
                 />
 
                 <DataRow
                   label="Previous close"
                   value={
-                    holding.previousClose !== null
-                      ? euroTwo.format(
-                          holding.previousClose,
-                        )
+                    holding.previousClose != null && holding.previousClose > 0
+                      ? euroTwo.format(holding.previousClose)
                       : "Not available"
                   }
                 />
 
                 <DataRow
                   label="Cost basis"
-                  value={euro.format(
-                    holding.costBasis,
-                  )}
+                  value={euro.format(getHoldingCostBasis(holding))}
                 />
 
-                <DataRow
-                  label="Market value"
-                  value={euro.format(
-                    holding.marketValue,
-                  )}
-                />
+                <DataRow label="Market value" value={marketValueLabel} />
 
-                <DataRow
-                  label="Portfolio weight"
-                  value={`${holding.weightPercent.toFixed(
-                    1,
-                  )}%`}
-                />
+                <DataRow label="Portfolio weight" value={weightLabel} />
 
-                <DataRow
-                  label="Risk level"
-                  value={holding.riskLevel}
-                />
-
-                {holding.volume !== null ? (
+                {holding.pricingExchange && holding.providerSymbol ? (
                   <DataRow
-                    label="Volume"
-                    value={numberFormat.format(
-                      holding.volume,
-                    )}
+                    label="Pricing source"
+                    value={`${holding.providerSymbol} · ${holding.pricingExchange}`}
                   />
                 ) : null}
               </div>
             </article>
           </section>
 
-          <section className="mt-6 grid gap-6 lg:grid-cols-3">
-            <InsightCard
-              title="Investment Thesis"
-              label="Why it belongs"
-              items={holding.thesis}
-            />
-
-            <InsightCard
-              title="Key Catalysts"
-              label="What could drive growth"
-              items={holding.catalysts}
-            />
-
-            <InsightCard
-              title="Primary Risks"
-              label="What to monitor"
-              items={holding.risks}
-              risk
-            />
-          </section>
-
-          <section className="mt-6 grid gap-6 lg:grid-cols-2">
-            <article className="rounded-3xl bg-white p-7 shadow-sm md:p-8">
-              <p className="text-sm font-semibold uppercase tracking-wider text-slate-400">
-                Portfolio Role
-              </p>
-
-              <h2 className="mt-2 text-2xl font-bold text-slate-900">
-                Allocation Assessment
-              </h2>
-
-              <div className="mt-6 rounded-2xl bg-slate-50 p-6">
-                <div className="flex items-center justify-between gap-4">
-                  <span className="font-semibold text-slate-700">
-                    Current Weight
-                  </span>
-
-                  <span className="text-2xl font-bold text-slate-900">
-                    {holding.weightPercent.toFixed(1)}%
-                  </span>
-                </div>
-
-                <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-200">
-                  <div
-                    className="h-full rounded-full bg-slate-900 transition-all duration-700"
-                    style={{
-                      width: `${Math.min(
-                        holding.weightPercent,
-                        100,
-                      )}%`,
-                    }}
-                  />
-                </div>
-
-                <p className="mt-5 leading-7 text-slate-600">
-                  Allocation guidance will be
-                  compared with the selected risk
-                  profile, financial target and total
-                  portfolio concentration.
-                </p>
-              </div>
-            </article>
-
-            <article className="rounded-3xl bg-slate-950 p-7 text-white shadow-sm md:p-8">
-              <p className="text-sm font-semibold uppercase tracking-wider text-slate-400">
-                Next Decision
-              </p>
-
-              <h2 className="mt-2 text-2xl font-bold">
-                Investment OS Recommendation
-              </h2>
-
-              <div className="mt-6 flex items-center justify-between rounded-2xl bg-white/10 p-6">
-                <div>
-                  <p className="text-sm text-slate-400">
-                    Current stance
-                  </p>
-
-                  <p className="mt-2 text-3xl font-bold">
-                    {holding.stance}
-                  </p>
-                </div>
-
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-2xl text-slate-950">
-                  →
-                </div>
-              </div>
-
-              <p className="mt-6 leading-7 text-slate-300">
-                The current stance combines the
-                position analysis, portfolio role and
-                Investment OS risk assessment. More
-                additional intelligence is shown as
-                verified data becomes available.
-              </p>
-            </article>
+          <section className="mt-6 flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 shadow-sm"
+            >
+              Back
+            </button>
+            <Link
+              href="/portfolio"
+              className="rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white shadow-sm"
+            >
+              Open portfolio
+            </Link>
           </section>
         </div>
       </main>
@@ -540,99 +433,22 @@ function MetricCard({
 }) {
   return (
     <article className="rounded-3xl bg-white p-6 shadow-sm">
-      <p className="text-sm font-medium text-slate-500">
-        {label}
-      </p>
+      <p className="text-sm font-medium text-slate-500">{label}</p>
 
-      <p
-        className={`mt-3 text-3xl font-bold ${valueClassName}`}
-      >
-        {value}
-      </p>
+      <p className={`mt-3 text-3xl font-bold ${valueClassName}`}>{value}</p>
 
-      <p className="mt-2 text-sm text-slate-500">
-        {subtitle}
-      </p>
+      <p className="mt-2 text-sm text-slate-500">{subtitle}</p>
     </article>
   );
 }
 
-function DataRow({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
+function DataRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-4 py-4">
-      <span className="text-slate-500">
-        {label}
-      </span>
-
-      <span className="text-right font-semibold text-slate-900">
+      <span className="text-sm font-medium text-slate-500">{label}</span>
+      <span className="text-right text-sm font-semibold text-slate-900">
         {value}
       </span>
     </div>
-  );
-}
-
-function InsightCard({
-  title,
-  label,
-  items,
-  risk = false,
-}: {
-  title: string;
-  label: string;
-  items: string[];
-  risk?: boolean;
-}) {
-  const visibleItems =
-    items.length > 0
-      ? items
-      : ["Analysis is not available yet."];
-
-  return (
-    <article className="rounded-3xl bg-white p-7 shadow-sm">
-      <div
-        className={`flex h-11 w-11 items-center justify-center rounded-2xl text-lg font-bold ${
-          risk
-            ? "bg-red-100 text-red-700"
-            : "bg-blue-100 text-blue-700"
-        }`}
-      >
-        {risk ? "!" : "↗"}
-      </div>
-
-      <p className="mt-5 text-sm font-semibold uppercase tracking-wider text-slate-400">
-        {label}
-      </p>
-
-      <h2 className="mt-2 text-xl font-bold text-slate-900">
-        {title}
-      </h2>
-
-      <div className="mt-5 space-y-4">
-        {visibleItems.map((item) => (
-          <div
-            key={item}
-            className="flex items-start gap-3"
-          >
-            <span
-              className={`mt-2 h-2 w-2 shrink-0 rounded-full ${
-                risk
-                  ? "bg-red-500"
-                  : "bg-blue-500"
-              }`}
-            />
-
-            <p className="leading-6 text-slate-600">
-              {item}
-            </p>
-          </div>
-        ))}
-      </div>
-    </article>
   );
 }

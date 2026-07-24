@@ -3,6 +3,7 @@
  */
 
 import { formatPortfolioPercent } from "@/lib/client/portfolioAnalysis";
+import { getHoldingMarketValue } from "@/lib/client/holdingValuation";
 import {
   averageUpsideForQuotes,
   coveredInvestedValue,
@@ -53,10 +54,7 @@ export function buildPortfolioAnalystSnapshot(
   const rankedHoldings: AnalystRankedHolding[] = enriched
     .map((item) => {
       const holding = investments.find((entry) => entry.symbol === item.symbol);
-      const value =
-        holding != null
-          ? (holding.currentPrice > 0 ? holding.quantity * holding.currentPrice : 0)
-          : 0;
+      const value = holding != null ? (getHoldingMarketValue(holding) ?? 0) : 0;
 
       return {
         symbol: item.symbol,
@@ -73,10 +71,7 @@ export function buildPortfolioAnalystSnapshot(
   const weightedConsensus = weightedConsensusRating(
     enriched.map((item) => {
       const holding = investments.find((entry) => entry.symbol === item.symbol);
-      const weight =
-        holding != null && holding.currentPrice > 0
-          ? holding.quantity * holding.currentPrice
-          : 0;
+      const weight = holding != null ? (getHoldingMarketValue(holding) ?? 0) : 0;
       return { rating: item.consensusRating, weight };
     }),
   );
@@ -85,10 +80,7 @@ export function buildPortfolioAnalystSnapshot(
     enriched
       .map((item) => {
         const holding = investments.find((entry) => entry.symbol === item.symbol);
-        const weight =
-          holding != null && holding.currentPrice > 0
-            ? holding.quantity * holding.currentPrice
-            : 0;
+        const weight = holding != null ? (getHoldingMarketValue(holding) ?? 0) : 0;
         if (item.impliedUpsidePercent == null || weight <= 0) return null;
         return {
           value: item.impliedUpsidePercent,
@@ -102,10 +94,7 @@ export function buildPortfolioAnalystSnapshot(
     enriched
       .map((item) => {
         const holding = investments.find((entry) => entry.symbol === item.symbol);
-        const weight =
-          holding != null && holding.currentPrice > 0
-            ? holding.quantity * holding.currentPrice
-            : 0;
+        const weight = holding != null ? (getHoldingMarketValue(holding) ?? 0) : 0;
         if (item.averagePriceTarget == null || weight <= 0) return null;
         return {
           value: item.averagePriceTarget,

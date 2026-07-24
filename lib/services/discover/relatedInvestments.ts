@@ -1,3 +1,4 @@
+import { getHoldingMarketValue } from "@/lib/client/holdingValuation";
 import { lookupVerifiedByProviderSymbol } from "@/lib/services/instruments/verifiedInstrumentRegistry";
 import { lookupInstrumentResearchProfile } from "@/lib/services/discover/instrumentResearchMetadata";
 import { listTrustedRelatedRelationships } from "@/lib/services/discover/relatedInstrumentMappings";
@@ -10,7 +11,7 @@ import type { HoldingSpotlight, RelatedInstrument, RelatedInvestmentGroups } fro
 const MAX_RELATED = 3;
 
 function holdingMarketValue(holding: StoredPortfolioHolding): number {
-  return Math.max(0, holding.quantity) * Math.max(0, holding.currentPrice);
+  return getHoldingMarketValue(holding) ?? 0;
 }
 
 function isEligibleSpotlightHolding(holding: StoredPortfolioHolding): boolean {
