@@ -1,6 +1,12 @@
 import Link from "next/link";
 import { TrendingUp } from "lucide-react";
 
+import {
+  appSectionLabelClass,
+  appSectionSubtitleClass,
+  appSectionTitleClass,
+  appValueClass,
+} from "@/components/layout/appSurface";
 import { formatPortfolioCurrency, formatPortfolioPercent } from "@/lib/client/portfolioAnalysis";
 import { hasPassiveIncomeTarget } from "@/lib/client/goalPassiveIncome";
 import {
@@ -30,10 +36,10 @@ export function PassiveIncomeGoalCard({
     <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">
+          <p className={`${appSectionLabelClass} text-emerald-700`}>
             Passive income
           </p>
-          <h2 className="mt-2 text-xl font-black tracking-[-0.03em] text-slate-950">
+          <h2 className={`mt-2 ${appSectionTitleClass}`}>
             Dividend income
           </h2>
         </div>
@@ -65,7 +71,7 @@ export function PassiveIncomeGoalCard({
         />
       </div>
 
-      <p className="mt-3 text-sm leading-relaxed text-slate-500">{dividendMessage}</p>
+      <p className={`mt-3 ${appSectionSubtitleClass}`}>{dividendMessage}</p>
 
       {hasTarget && showIncome ? (
         <div className="mt-5 h-2.5 overflow-hidden rounded-full bg-slate-100">
@@ -75,7 +81,7 @@ export function PassiveIncomeGoalCard({
           />
         </div>
       ) : (
-        <p className="mt-5 text-sm leading-6 text-slate-500">
+        <p className={`mt-5 ${appSectionSubtitleClass}`}>
           Set a passive income target to track dividend progress toward your
           long-term income goal.
         </p>
@@ -96,10 +102,10 @@ export function PassiveIncomeGoalCard({
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-3">
-      <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
+      <p className={appSectionLabelClass}>
         {label}
       </p>
-      <p className="mt-1 text-sm font-black text-slate-950">{value}</p>
+      <p className={`mt-1.5 ${appValueClass}`}>{value}</p>
     </div>
   );
 }

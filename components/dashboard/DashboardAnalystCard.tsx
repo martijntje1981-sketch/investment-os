@@ -5,8 +5,11 @@ import { LineChart, Sparkles, TrendingDown, TrendingUp } from "lucide-react";
 import { DashboardSectionHeader } from "@/components/dashboard/DashboardSectionHeader";
 import {
   appCardPaddingClass,
+  appCardValueClass,
+  appDashboardLightCardClass,
+  appSectionBodyClass,
   appSectionLabelClass,
-  appSectionTitleClass,
+  appTableValueClass,
 } from "@/components/layout/appSurface";
 import {
   formatAnalystConsensus,
@@ -40,7 +43,7 @@ export function DashboardAnalystCard({
 
   return (
     <section
-      className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm md:rounded-[28px]"
+      className={`overflow-hidden ${appDashboardLightCardClass}`}
       aria-busy={isLoading}
       aria-live="polite"
     >
@@ -52,7 +55,7 @@ export function DashboardAnalystCard({
       />
 
       <div className={appCardPaddingClass}>
-        <p className={`${appSectionTitleClass} text-xl md:text-2xl`}>
+        <p className={appCardValueClass}>
           {isLoading
             ? "Loading analyst insights…"
             : formatAnalystConsensus(snapshot.weightedConsensus)}
@@ -107,7 +110,7 @@ export function DashboardAnalystCard({
             <div className="mt-6 rounded-[20px] bg-slate-950 px-4 py-4 text-white sm:px-5 sm:py-5">
               <div className="flex items-start gap-3">
                 <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-violet-300" />
-                <p className="text-sm leading-relaxed text-slate-200">
+                <p className={`${appSectionBodyClass} text-slate-200`}>
                   {snapshot.insight}
                 </p>
               </div>
@@ -136,7 +139,7 @@ function AnalystStat({
   return (
     <div className="rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-3.5">
       <p className={appSectionLabelClass}>{label}</p>
-      <p className="mt-1.5 text-sm font-black text-slate-950">{value}</p>
+      <p className={`mt-1.5 ${appCardValueClass}`}>{value}</p>
     </div>
   );
 }
@@ -164,7 +167,7 @@ function ChangeChip({
         {icon}
         {label}
       </div>
-      <p className="mt-1.5 text-sm font-semibold text-slate-950">{value}</p>
+      <p className={`mt-1.5 ${appTableValueClass}`}>{value}</p>
     </div>
   );
 }

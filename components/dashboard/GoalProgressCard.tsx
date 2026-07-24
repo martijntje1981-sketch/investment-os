@@ -5,12 +5,12 @@ import {
   formatPortfolioPercent,
 } from "@/lib/client/portfolioAnalysis";
 import {
-  appCardClass,
   appCardPaddingClass,
+  appCardValueClass,
+  appDashboardLightCardClass,
   appSectionBodyClass,
   appSectionLabelClass,
   appSectionSubtitleClass,
-  appSectionTitleClass,
 } from "@/components/layout/appSurface";
 import type { DashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
 
@@ -27,9 +27,9 @@ export function GoalProgressCard({
 
   if (!snapshot.hasSavedGoal || snapshot.goalTarget === null) {
     return (
-      <article className={`${appCardClass} ${appCardPaddingClass}`}>
+      <article className={`${appDashboardLightCardClass} ${appCardPaddingClass}`}>
         <p className={appSectionLabelClass}>Goal progress</p>
-        <h2 className={`mt-2.5 ${appSectionTitleClass}`}>No goal saved yet</h2>
+        <h2 className={`mt-2.5 ${appCardValueClass}`}>No goal saved yet</h2>
         <p className={`mt-2 ${appSectionBodyClass} text-slate-600`}>
           Set a target to track progress from your current portfolio value.
         </p>
@@ -44,9 +44,9 @@ export function GoalProgressCard({
   }
 
   return (
-    <article className={`${appCardClass} ${appCardPaddingClass}`}>
+    <article className={`${appDashboardLightCardClass} ${appCardPaddingClass}`}>
       <p className={appSectionLabelClass}>Goal progress</p>
-      <p className={`mt-2.5 ${appSectionTitleClass}`}>
+      <p className={`mt-2.5 ${appCardValueClass}`}>
         {formatPortfolioCurrency(snapshot.portfolioValue)} of{" "}
         {formatPortfolioCurrency(snapshot.goalTarget)}
       </p>

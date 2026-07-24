@@ -3,6 +3,11 @@
 import { ChevronDown, PlayCircle } from "lucide-react";
 import { useState } from "react";
 
+import {
+  appSectionLabelClass,
+  appSectionMetaClass,
+  appSectionTitleClass,
+} from "@/components/layout/appSurface";
 import { MarketVideoCard } from "@/components/news/MarketVideoCard";
 import { NewsEmptyState } from "@/components/news/NewsEmptyState";
 import type { NewsContentItem } from "@/lib/types/newsContent";
@@ -27,13 +32,13 @@ export function CollapsibleMarketVideos({
             <PlayCircle className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">
+            <p className={appSectionLabelClass}>
               Secondary coverage
             </p>
-            <h2 className="mt-1 text-xl font-black tracking-[-0.04em] text-slate-950 sm:text-2xl">
+            <h2 className={`mt-1 ${appSectionTitleClass}`}>
               Market videos
             </h2>
-            <p className="mt-1 text-sm text-slate-500">
+            <p className={`mt-1 ${appSectionMetaClass}`}>
               Bloomberg Television, CNBC Television, and Coin Bureau
             </p>
           </div>

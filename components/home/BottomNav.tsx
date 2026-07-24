@@ -1,5 +1,9 @@
 "use client";
 
+import {
+  appBottomNavFeaturedLabelClass,
+  appBottomNavLabelClass,
+} from "@/components/layout/appSurface";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -63,15 +67,15 @@ export default function BottomNavigation() {
           const featured = item.featured;
 
           const className = featured
-            ? `relative -mt-1 flex min-h-[64px] min-w-0 touch-manipulation flex-col items-center justify-center rounded-2xl px-0.5 text-[10px] font-black transition sm:mt-0 sm:min-h-[62px] sm:px-2 sm:text-[11px] ${
+            ? `relative -mt-1 flex min-h-[64px] min-w-0 touch-manipulation flex-col items-center justify-center rounded-2xl px-0.5 ${appBottomNavFeaturedLabelClass} transition sm:mt-0 sm:min-h-[62px] sm:px-2 ${
                 active
                   ? "bg-slate-950 text-white shadow-xl ring-2 ring-violet-500/30"
                   : "border border-slate-300 bg-white text-slate-950 shadow-md hover:bg-slate-50"
               }`
-            : `flex min-h-[58px] min-w-0 touch-manipulation flex-col items-center justify-center rounded-xl px-0.5 text-[10px] font-semibold transition sm:rounded-2xl sm:px-2 sm:text-xs ${
+            : `flex min-h-[58px] min-w-0 touch-manipulation flex-col items-center justify-center rounded-xl px-0.5 ${appBottomNavLabelClass} transition sm:rounded-2xl sm:px-2 ${
                 active
                   ? "bg-slate-950 text-white shadow-lg"
-                  : "text-slate-500 hover:bg-slate-100 hover:text-slate-950"
+                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-950"
               }`;
 
           return (

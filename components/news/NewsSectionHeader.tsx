@@ -1,3 +1,9 @@
+import {
+  appNewsEyebrowClass,
+  appNewsSectionDescriptionClass,
+  appNewsSectionTitleClass,
+} from "@/components/layout/appSurface";
+
 export function NewsSectionHeader({
   eyebrow,
   title,
@@ -15,15 +21,9 @@ export function NewsSectionHeader({
         {icon}
       </div>
       <div>
-        <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-700">
-          {eyebrow}
-        </p>
-        <h2 className="mt-2 text-3xl font-black tracking-[-0.05em] text-slate-950 sm:text-4xl">
-          {title}
-        </h2>
-        <p className="mt-3 max-w-3xl text-base leading-7 text-slate-500">
-          {description}
-        </p>
+        <p className={appNewsEyebrowClass}>{eyebrow}</p>
+        <h2 className={appNewsSectionTitleClass}>{title}</h2>
+        <p className={appNewsSectionDescriptionClass}>{description}</p>
       </div>
     </div>
   );

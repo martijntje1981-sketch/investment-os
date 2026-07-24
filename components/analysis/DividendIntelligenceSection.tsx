@@ -1,6 +1,11 @@
 import { Coins, Sparkles } from "lucide-react";
 
 import {
+  appSectionLabelClass,
+  appCardValueClass,
+  appSectionBodyClass,
+} from "@/components/layout/appSurface";
+import {
   formatPortfolioCurrency,
   formatPortfolioPercent,
 } from "@/lib/client/portfolioAnalysis";
@@ -16,18 +21,18 @@ export function DividendIntelligenceSection({
   return (
     <section className="mt-7 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
       <div className="border-b border-slate-200 bg-gradient-to-br from-emerald-700 to-slate-950 px-5 py-6 text-white sm:px-8">
-        <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-emerald-100">
+        <div className={`inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 ${appSectionLabelClass} text-emerald-100`}>
           <Coins className="h-3.5 w-3.5" />
           Dividend intelligence
         </div>
-        <h2 className="mt-4 text-3xl font-black tracking-[-0.05em] sm:text-4xl">
+        <h2 className={`mt-4 ${appCardValueClass} text-white`}>
           {isLoading
             ? "Loading dividend insights…"
             : snapshot.hasDividendData
               ? formatPortfolioCurrency(snapshot.estimatedAnnualIncomeEur)
               : "No dividend income detected"}
         </h2>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">
+        <p className={`mt-3 max-w-2xl ${appSectionBodyClass} text-slate-300`}>
           {snapshot.hasDividendData
             ? "Estimated passive income based on available dividend data for your holdings."
             : "Your current holdings do not show meaningful dividend income in available market data."}
@@ -74,7 +79,7 @@ export function DividendIntelligenceSection({
 
           {snapshot.allocation.length > 0 ? (
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.12em] text-slate-400">
+              <p className={appSectionLabelClass}>
                 Dividend allocation
               </p>
               <div className="mt-4 space-y-3">
@@ -132,10 +137,10 @@ export function DividendIntelligenceSection({
 function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-4">
-      <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
+      <p className={appSectionLabelClass}>
         {label}
       </p>
-      <p className="mt-2 text-sm font-black text-slate-950">{value}</p>
+      <p className={`mt-2 ${appCardValueClass}`}>{value}</p>
     </div>
   );
 }
@@ -203,7 +208,7 @@ export function HoldingDividendMeta({
 function MiniStat({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-[10px] font-black uppercase tracking-[0.1em] text-emerald-800/70">
+      <p className={`${appSectionLabelClass} text-emerald-800/80`}>
         {label}
       </p>
       <p className="mt-0.5 text-sm font-bold text-emerald-950">{value}</p>

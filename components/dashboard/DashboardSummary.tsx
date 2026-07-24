@@ -20,7 +20,7 @@ export function DashboardSummary({
   }
 
   return (
-    <section aria-label="Portfolio summary" className="space-y-7 md:space-y-10">
+    <section aria-label="Portfolio summary" className="space-y-6 md:space-y-7">
       <div className={appHeroShellClass}>
         {welcome}
         <div className="grid min-w-0 grid-cols-1 border-t border-white/[0.08] md:grid-cols-2">

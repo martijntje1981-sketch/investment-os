@@ -4,12 +4,19 @@ import type {
   GoalScenarioComparison,
   NextGoalMilestone,
 } from "@/lib/services/goals/goalCoach";
+import {
+  appSectionBodyClass,
+  appSectionBodyMediumClass,
+  appSectionLabelClass,
+  appSectionMetaClass,
+  appTableNameClass,
+} from "@/components/layout/appSurface";
 
 export function GoalHeroMilestones({ milestone }: { milestone: NextGoalMilestone }) {
   return (
     <div className="space-y-1.5">
       {milestone.lines.map((line) => (
-        <p key={line} className="text-sm font-semibold leading-snug text-slate-200">
+        <p key={line} className={`${appTableNameClass} leading-snug text-slate-200`}>
           {line}
         </p>
       ))}
@@ -25,15 +32,15 @@ export function GoalCoachCard({ coach }: { coach: GoalCoachResult }) {
     >
       <p
         id="goal-coach-heading"
-        className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-400"
+        className={`${appSectionLabelClass} text-slate-300`}
       >
         Goal Coach
       </p>
-      <p className="mt-2 text-base font-semibold leading-snug text-white">
+      <p className={`mt-2 ${appSectionBodyMediumClass} text-white`}>
         {coach.headline}
       </p>
-      <p className="mt-2 text-sm leading-relaxed text-slate-200">{coach.body}</p>
-      <p className="mt-2 text-sm leading-relaxed text-slate-400">{coach.reason}</p>
+      <p className={`mt-2 ${appSectionBodyClass} text-slate-200`}>{coach.body}</p>
+      <p className={`mt-2 ${appSectionMetaClass} text-slate-300`}>{coach.reason}</p>
       {coach.actionLine ? (
         <p className="mt-2 text-sm font-semibold text-violet-200">{coach.actionLine}</p>
       ) : null}
@@ -52,7 +59,7 @@ export function GoalMilestonesRow({
     <section aria-labelledby="goal-milestones-heading" className="space-y-2">
       <p
         id="goal-milestones-heading"
-        className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-400"
+        className={`${appSectionLabelClass} text-slate-300`}
       >
         Milestones
       </p>
@@ -87,7 +94,7 @@ export function GoalWhatIfCard({
     >
       <p
         id="goal-what-if-heading"
-        className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-400"
+        className={`${appSectionLabelClass} text-slate-300`}
       >
         What if
       </p>

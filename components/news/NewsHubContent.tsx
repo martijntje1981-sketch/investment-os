@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 
+import { appSectionLabelClass } from "@/components/layout/appSurface";
 import {
   NewsBriefingDiscoverLink,
   NewsBriefingFooter,
@@ -111,7 +112,7 @@ export function NewsHubContent({
             verifiedItemCount={verifiedItemCount}
             sourceErrorCount={payload.dataStatus.unavailableSourceCount}
           />
-          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+          <p className={appSectionLabelClass}>
             Last refreshed: {formatNewsRefreshedAt(payload.fetchedAt)}
           </p>
         </>

@@ -1,3 +1,7 @@
+import {
+  appSectionLabelClass,
+  appValueSemiboldClass,
+} from "@/components/layout/appSurface";
 import Link from "next/link";
 import {
   BriefcaseBusiness,
@@ -32,7 +36,7 @@ const actions = [
 export function DashboardQuickActions() {
   return (
     <section>
-      <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">
+      <p className={appSectionLabelClass}>
         Quick actions
       </p>
       <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -45,7 +49,7 @@ export function DashboardQuickActions() {
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-950 text-white">
               <Icon className="h-4 w-4" />
             </div>
-            <span className="text-sm font-black text-slate-950">{label}</span>
+            <span className={appValueSemiboldClass}>{label}</span>
           </Link>
         ))}
       </div>

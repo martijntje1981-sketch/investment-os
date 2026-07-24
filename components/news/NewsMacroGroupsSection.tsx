@@ -1,5 +1,9 @@
 import type { MacroTopicGroup } from "@/lib/services/news/newsMacroGroups";
 import { NewsCompactArticleRow } from "@/components/news/NewsCompactArticleRow";
+import {
+  appSectionSubtitleClass,
+  appSectionTitleClass,
+} from "@/components/layout/appSurface";
 
 export function NewsMacroGroupsSection({
   groups,
@@ -9,10 +13,10 @@ export function NewsMacroGroupsSection({
   return (
     <section aria-labelledby="news-macro-heading" className="min-w-0 space-y-4">
       <div>
-        <h2 id="news-macro-heading" className="text-lg font-black tracking-[-0.02em] text-slate-950">
+        <h2 id="news-macro-heading" className={appSectionTitleClass}>
           Macro
         </h2>
-        <p className="mt-1 text-sm leading-relaxed text-slate-500">
+        <p className={`mt-1.5 ${appSectionSubtitleClass}`}>
           Rates, inflation, central banks, geopolitics, currencies, and commodities.
         </p>
       </div>

@@ -5,8 +5,10 @@ import Link from "next/link";
 import { DashboardSectionHeader } from "@/components/dashboard/DashboardSectionHeader";
 import {
   appCardPaddingCompactClass,
+  appCardValueClass,
+  appDashboardLightCardClass,
+  appSectionBodyClass,
   appSectionLabelClass,
-  appSectionTitleClass,
 } from "@/components/layout/appSurface";
 import { formatPortfolioCurrency, formatPortfolioPercent } from "@/lib/client/portfolioAnalysis";
 import type { GoalProgress } from "@/lib/services/goals/goalProgressEngine";
@@ -37,7 +39,7 @@ export function DashboardGoalProgressCard({
         : Minus;
 
   return (
-    <section className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm md:rounded-[28px]">
+    <section className={appDashboardLightCardClass}>
       <DashboardSectionHeader
         title="Goal progress"
         subtitle="Track where you are against your target"
@@ -84,12 +86,12 @@ export function DashboardGoalProgressCard({
           </span>
         </InfoBlock>
         <InfoBlock label="Estimated completion">
-          <p className={`${appSectionTitleClass} text-base md:text-lg`}>
+          <p className={appCardValueClass}>
             {progress.estimatedCompletionLabel}
           </p>
         </InfoBlock>
         <InfoBlock label="Remaining to goal">
-          <p className={`${appSectionTitleClass} text-base md:text-lg`}>
+          <p className={appCardValueClass}>
             {progress.hasGoal
               ? formatPortfolioCurrency(progress.remainingAmount)
               : "—"}
@@ -99,7 +101,7 @@ export function DashboardGoalProgressCard({
 
       <div className={appCardPaddingCompactClass}>
         <p className={appSectionLabelClass}>Summary</p>
-        <p className="mt-2.5 text-base leading-relaxed text-slate-700">
+        <p className={`mt-2.5 ${appSectionBodyClass} text-slate-700`}>
           {progress.summary}
         </p>
 
@@ -120,7 +122,7 @@ function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-[16px] border border-slate-200 bg-slate-50 px-3 py-3">
       <p className={appSectionLabelClass}>{label}</p>
-      <p className={`mt-1.5 truncate text-sm font-black text-slate-950`}>
+      <p className={`mt-1.5 truncate ${appCardValueClass}`}>
         {value}
       </p>
     </div>

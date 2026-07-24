@@ -5,7 +5,7 @@ import { HoldingsTodayRow } from "@/components/dashboard/HoldingsTodayRow";
 import { HoldingsTodaySkeleton } from "@/components/dashboard/HoldingsTodaySkeleton";
 import { DashboardSectionHeader } from "@/components/dashboard/DashboardSectionHeader";
 import {
-  appCardClass,
+  appDashboardLightCardClass,
   appCardPaddingClass,
   appSectionBodyClass,
   appSectionLabelClass,
@@ -25,12 +25,12 @@ export function HoldingsToday({
 
   if (snapshot.marketHoldings.length === 0) {
     return (
-      <section className={appCardClass}>
+      <section className={appDashboardLightCardClass}>
         <DashboardSectionHeader
+          variant="holdings"
           title="Your holdings today"
           subtitle="Live values and today's movement"
           icon={<Wallet className="h-5 w-5" />}
-          iconToneClassName="bg-slate-100 text-slate-700"
           bordered={false}
         />
         <div className={appCardPaddingClass}>
@@ -55,43 +55,55 @@ export function HoldingsToday({
   } monitored today`;
 
   return (
-    <section className={appCardClass}>
+    <section className={appDashboardLightCardClass}>
       <DashboardSectionHeader
+        variant="holdings"
         title="Your holdings today"
         subtitle={positionSubtitle}
         icon={<Wallet className="h-5 w-5" />}
-        iconToneClassName="bg-slate-100 text-slate-700"
       />
 
       <div className={`md:hidden ${appCardPaddingClass} pt-0`}>
-        {snapshot.marketHoldings.map((row) => (
-          <HoldingsTodayRow key={row.id} row={row} layout="mobile" />
+        {snapshot.marketHoldings.map((row, index) => (
+          <HoldingsTodayRow
+            key={row.id}
+            row={row}
+            layout="mobile"
+            index={index}
+          />
         ))}
       </div>
 
-      <div className={`hidden md:block ${appCardPaddingClass} pt-0`}>
-        <table className="w-full min-w-0 table-fixed border-collapse">
-          <thead>
-            <tr className="border-b border-slate-100 text-left">
-              <th className={`pb-3.5 pr-3 text-left ${appSectionLabelClass}`}>
-                Holding
-              </th>
-              <th
-                className={`w-[28%] pb-3.5 pr-3 text-right ${appSectionLabelClass}`}
-              >
-                Value
-              </th>
-              <th className={`w-[32%] pb-3.5 text-right ${appSectionLabelClass}`}>
-                Today
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {snapshot.marketHoldings.map((row) => (
-              <HoldingsTodayRow key={row.id} row={row} layout="desktop" />
-            ))}
-          </tbody>
-        </table>
+      <div className={`hidden md:block px-4 pb-4 pt-0 md:px-5 md:pb-5`}>
+        <div className="overflow-hidden rounded-[18px] border border-slate-200/80">
+          <table className="w-full min-w-0 table-fixed border-collapse">
+            <thead>
+              <tr className="border-b border-slate-200/80 bg-slate-50/90 text-left">
+                <th className={`px-4 py-3.5 text-left ${appSectionLabelClass}`}>
+                  Holding
+                </th>
+                <th
+                  className={`w-[28%] px-4 py-3.5 text-right ${appSectionLabelClass}`}
+                >
+                  Value
+                </th>
+                <th className={`w-[32%] px-4 py-3.5 text-right ${appSectionLabelClass}`}>
+                  Today
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {snapshot.marketHoldings.map((row, index) => (
+                <HoldingsTodayRow
+                  key={row.id}
+                  row={row}
+                  layout="desktop"
+                  index={index}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
   );

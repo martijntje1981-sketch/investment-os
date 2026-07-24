@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { Goal } from "lucide-react";
 
+import {
+  appCardValueClass,
+  appSectionLabelClass,
+  appValueClass,
+} from "@/components/layout/appSurface";
 import { formatPortfolioCurrency, formatPortfolioPercent } from "@/lib/client/portfolioAnalysis";
 import type { DashboardSummary } from "@/lib/client/dashboardSummary";
 
@@ -15,10 +20,10 @@ export function DashboardGoalCard({ summary }: { summary: DashboardSummary }) {
     <section className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm md:rounded-[28px] md:p-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-700">
+          <p className={`${appSectionLabelClass} text-violet-700`}>
             Goal progress
           </p>
-          <h2 className="mt-2 text-xl font-black tracking-[-0.03em] text-slate-950 sm:text-2xl">
+          <h2 className={`mt-2 ${appCardValueClass}`}>
             {summary.goalCompleted
               ? "Goal achieved"
               : summary.hasSavedGoal
@@ -78,10 +83,10 @@ export function DashboardGoalCard({ summary }: { summary: DashboardSummary }) {
 function GoalStat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-[18px] border border-slate-200 bg-slate-50 px-3.5 py-2.5 md:px-4 md:py-3">
-      <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
+      <p className={appSectionLabelClass}>
         {label}
       </p>
-      <p className="mt-1 text-sm font-black text-slate-950">{value}</p>
+      <p className={`mt-1.5 ${appValueClass}`}>{value}</p>
     </div>
   );
 }

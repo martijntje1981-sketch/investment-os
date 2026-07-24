@@ -1,5 +1,9 @@
 import { ArrowUpRight } from "lucide-react";
 
+import {
+  appSectionSubtitleClass,
+  appSectionTitleClass,
+} from "@/components/layout/appSurface";
 import { formatNewsPublishedAt } from "@/components/news/newsFormatting";
 import type { PortfolioNewsCard } from "@/lib/services/news/newsBriefingLayout";
 
@@ -17,13 +21,10 @@ export function NewsForPortfolioSection({
   return (
     <section aria-labelledby="news-for-portfolio-heading" className="min-w-0 space-y-3">
       <div>
-        <h2
-          id="news-for-portfolio-heading"
-          className="text-lg font-black tracking-[-0.02em] text-slate-950"
-        >
+        <h2 id="news-for-portfolio-heading" className={appSectionTitleClass}>
           For Your Portfolio
         </h2>
-        <p className="mt-1 text-sm leading-relaxed text-slate-500">
+        <p className={`mt-1.5 ${appSectionSubtitleClass}`}>
           Headlines matched to your holdings, ordered by relevance.
         </p>
       </div>

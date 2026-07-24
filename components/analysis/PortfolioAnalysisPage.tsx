@@ -19,6 +19,16 @@ import { AnalystIntelligenceSection } from "@/components/analysis/AnalystIntelli
 import BottomNavigation from "@/components/home/BottomNav";
 import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer";
 import { PageHero } from "@/components/layout/PageHero";
+import {
+  appCardValueClass,
+  appSectionBodyClass,
+  appSectionLabelClass,
+  appSectionMetaClass,
+  appSectionSubtitleClass,
+  appSectionTitleClass,
+  appTableNameClass,
+  appTableValueClass,
+} from "@/components/layout/appSurface";
 import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
 import {
   buildPortfolioAnalysis,
@@ -98,7 +108,7 @@ export default function PortfolioAnalysisPage() {
           title="Portfolio Analysis"
           subtitle="Understand performance, risk, allocation and portfolio trends."
           stats={
-            <p className="text-sm text-slate-400">
+            <p className={`${appSectionMetaClass} text-slate-300`}>
               Last portfolio update: {formatUpdatedAt(analysis.lastUpdatedAt)}
             </p>
           }
@@ -115,8 +125,8 @@ export default function PortfolioAnalysisPage() {
           {!hasHoldings ? (
             <section className="rounded-[28px] border border-slate-200 bg-white p-8 text-center shadow-sm sm:p-12">
               <BriefcaseBusiness className="mx-auto h-10 w-10 text-slate-300" />
-              <h2 className="mt-4 text-2xl font-black">No portfolio to analyse yet</h2>
-              <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-500">
+              <h2 className={`mt-4 ${appSectionTitleClass}`}>No portfolio to analyse yet</h2>
+              <p className={`mx-auto mt-3 max-w-xl ${appSectionSubtitleClass}`}>
                 Add holdings manually or import a portfolio to see allocation,
                 concentration, and diversification insights here.
               </p>
@@ -208,8 +218,8 @@ export default function PortfolioAnalysisPage() {
                     <Layers3 className="h-5 w-5" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-black">Allocation</h2>
-                    <p className="mt-1 text-sm text-slate-500">
+                    <h2 className={appSectionTitleClass}>Allocation</h2>
+                    <p className={`mt-1.5 ${appSectionMetaClass}`}>
                       Breakdown of valued holdings, including cash where recorded.
                     </p>
                   </div>
@@ -219,9 +229,9 @@ export default function PortfolioAnalysisPage() {
                   <div className="mt-6 space-y-4">
                     {analysis.valuedPositions.map((position, index) => (
                       <div key={position.holding.id}>
-                        <div className="mb-2 flex items-center justify-between gap-3 text-sm">
+                        <div className={`mb-2 flex items-center justify-between gap-3 ${appSectionBodyClass}`}>
                           <div className="min-w-0">
-                            <p className="truncate font-black">
+                            <p className={`truncate ${appTableNameClass}`}>
                               {position.holding.assetType === "cash" ? (
                                 position.holding.name
                               ) : (
@@ -232,11 +242,11 @@ export default function PortfolioAnalysisPage() {
                                 </>
                               )}
                             </p>
-                            <p className="text-slate-500">
+                            <p className={appSectionMetaClass}>
                               {formatPortfolioCurrency(position.value)}
                             </p>
                           </div>
-                          <p className="shrink-0 font-bold">
+                          <p className={`shrink-0 ${appTableValueClass}`}>
                             {formatPortfolioPercent(position.weightPercent)}
                           </p>
                         </div>
@@ -250,7 +260,7 @@ export default function PortfolioAnalysisPage() {
                     ))}
                   </div>
                 ) : (
-                  <p className="mt-6 text-sm text-slate-500">
+                  <p className={`mt-6 ${appSectionMetaClass}`}>
                     Add current prices to your investments to calculate allocation.
                   </p>
                 )}
@@ -273,8 +283,8 @@ export default function PortfolioAnalysisPage() {
                       <Scale className="h-5 w-5" />
                     </div>
                     <div>
-                      <h2 className="text-xl font-black">Concentration</h2>
-                      <p className="mt-1 text-sm text-slate-500">
+                      <h2 className={appSectionTitleClass}>Concentration</h2>
+                      <p className={`mt-1.5 ${appSectionMetaClass}`}>
                         Based on actual portfolio weights among valued positions.
                       </p>
                     </div>
@@ -301,16 +311,16 @@ export default function PortfolioAnalysisPage() {
                         value={analysis.hhi.toFixed(3)}
                       />
                       <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                        <p className="text-sm font-black">
+                        <p className={appCardValueClass}>
                           {concentrationLabel(analysis.concentrationLevel)}
                         </p>
-                        <p className="mt-2 text-sm leading-6 text-slate-600">
+                        <p className={`mt-2 ${appSectionBodyClass}`}>
                           {concentrationExplanation(analysis.concentrationLevel)}
                         </p>
                       </div>
                     </div>
                   ) : (
-                    <p className="mt-6 text-sm text-slate-500">
+                    <p className={`mt-6 ${appSectionMetaClass}`}>
                       Concentration metrics require at least one valued position.
                     </p>
                   )}
@@ -322,8 +332,8 @@ export default function PortfolioAnalysisPage() {
                       <Sparkles className="h-5 w-5" />
                     </div>
                     <div>
-                      <h2 className="text-xl font-black">Diversification overview</h2>
-                      <p className="mt-1 text-sm text-slate-500">
+                      <h2 className={appSectionTitleClass}>Diversification overview</h2>
+                      <p className={`mt-1.5 ${appSectionMetaClass}`}>
                         Only dimensions supported by stored portfolio data.
                       </p>
                     </div>
@@ -331,7 +341,7 @@ export default function PortfolioAnalysisPage() {
 
                   <div className="mt-6 space-y-5">
                     <div>
-                      <p className="text-xs font-black uppercase tracking-[0.12em] text-slate-400">
+                      <p className={appSectionLabelClass}>
                         Asset mix
                       </p>
                       <div className="mt-3 space-y-3">
@@ -353,7 +363,7 @@ export default function PortfolioAnalysisPage() {
 
                     {analysis.cashByCurrency.length > 0 && (
                       <div>
-                        <p className="text-xs font-black uppercase tracking-[0.12em] text-slate-400">
+                        <p className={appSectionLabelClass}>
                           Cash by currency
                         </p>
                         <div className="mt-3 space-y-3">
@@ -379,8 +389,8 @@ export default function PortfolioAnalysisPage() {
 
               {analysis.unvaluedHoldings.length > 0 && (
                 <section className="mt-7 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-                  <h2 className="text-xl font-black">Excluded from valued totals</h2>
-                  <p className="mt-1 text-sm text-slate-500">
+                  <h2 className={appSectionTitleClass}>Excluded from valued totals</h2>
+                  <p className={`mt-1.5 ${appSectionMetaClass}`}>
                     These positions remain visible but are not treated as zero-value
                     investments in allocation calculations.
                   </p>
@@ -388,11 +398,11 @@ export default function PortfolioAnalysisPage() {
                     {analysis.unvaluedHoldings.map((holding) => (
                       <div
                         key={holding.id}
-                        className="flex items-center justify-between gap-3 px-4 py-3 text-sm"
+                        className={`flex items-center justify-between gap-3 px-4 py-3.5 ${appSectionBodyClass}`}
                       >
                         <div>
-                          <p className="font-black">{holding.symbol}</p>
-                          <p className="text-slate-500">{holding.name}</p>
+                          <p className={appTableNameClass}>{holding.symbol}</p>
+                          <p className={appSectionMetaClass}>{holding.name}</p>
                         </div>
                         <p className="font-semibold text-amber-700">
                           Missing usable price
@@ -404,12 +414,12 @@ export default function PortfolioAnalysisPage() {
               )}
 
               <section className="mt-7 rounded-[28px] bg-slate-950 p-6 text-white sm:p-8">
-                <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">
+                <p className={appSectionLabelClass}>
                   Observations
                 </p>
-                <h2 className="mt-2 text-2xl font-black">Portfolio observations</h2>
+                <h2 className={`mt-2 ${appSectionTitleClass} text-white`}>Portfolio observations</h2>
                 {analysis.observations.length > 0 ? (
-                  <ul className="mt-5 space-y-3 text-sm leading-6 text-slate-200">
+                  <ul className={`mt-5 space-y-3 ${appSectionBodyClass} text-slate-200`}>
                     {analysis.observations.map((observation) => (
                       <li key={observation} className="flex gap-3">
                         <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-400" />
@@ -418,7 +428,7 @@ export default function PortfolioAnalysisPage() {
                     ))}
                   </ul>
                 ) : (
-                  <p className="mt-5 text-sm leading-6 text-slate-300">
+                  <p className={`mt-5 ${appSectionBodyClass} text-slate-300`}>
                     Add valued holdings to generate portfolio observations.
                   </p>
                 )}
@@ -451,11 +461,11 @@ function SummaryCard({
       <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
         {icon}
       </div>
-      <p className="mt-4 text-xs font-black uppercase tracking-[0.12em] text-slate-400">
+      <p className={`mt-4 ${appSectionLabelClass}`}>
         {label}
       </p>
-      <p className="mt-2 text-2xl font-black">{value}</p>
-      {detail && <p className="mt-1 text-sm text-slate-500">{detail}</p>}
+      <p className={`mt-2 ${appCardValueClass}`}>{value}</p>
+      {detail && <p className={`mt-1.5 ${appSectionMetaClass}`}>{detail}</p>}
     </article>
   );
 }
@@ -468,9 +478,9 @@ function MetricRow({
   value: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 text-sm">
-      <span className="text-slate-500">{label}</span>
-      <span className="font-black text-slate-950">{value}</span>
+    <div className={`flex items-center justify-between gap-3 ${appSectionBodyClass}`}>
+      <span className={appSectionMetaClass}>{label}</span>
+      <span className={appCardValueClass}>{value}</span>
     </div>
   );
 }

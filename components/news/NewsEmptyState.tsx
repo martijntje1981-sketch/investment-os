@@ -1,3 +1,7 @@
+import {
+  appSectionSubtitleClass,
+  appSectionTitleClass,
+} from "@/components/layout/appSurface";
 import Link from "next/link";
 import { Newspaper } from "lucide-react";
 
@@ -17,8 +21,8 @@ export function NewsEmptyState({
   return (
     <section className="rounded-[28px] border border-dashed border-slate-200 bg-white p-8 text-center shadow-sm sm:p-10">
       <Newspaper className="mx-auto h-10 w-10 text-slate-300" />
-      <h3 className="mt-4 text-xl font-black text-slate-950">{title}</h3>
-      <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-500">
+      <h3 className={`mt-4 ${appSectionTitleClass}`}>{title}</h3>
+      <p className={`mx-auto mt-3 max-w-xl ${appSectionSubtitleClass}`}>
         {description}
       </p>
       {actionLabel && onAction ? (

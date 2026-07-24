@@ -1,14 +1,14 @@
 import { formatPortfolioCurrency } from "@/lib/client/portfolioAnalysis";
 import { formatMarketUpdateTime } from "@/lib/client/marketStatus";
 import { formatSignedPortfolioPercent } from "@/lib/client/portfolioMovementFormat";
-import { appHeroMetricLabelClass } from "@/components/layout/appSurface";
+import { appDisplayClass, appHeroMetricLabelClass, appSectionBodyMediumClass, appSectionMetaClass } from "@/components/layout/appSurface";
 import type { DashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
 
 function sinceInceptionToneClass(
   snapshot: DashboardPortfolioSnapshot,
 ): string {
   if (!snapshot.canShowPerformance) {
-    return "text-slate-400";
+    return "text-slate-300";
   }
 
   if (snapshot.totalReturnPercent > 0) {
@@ -49,22 +49,22 @@ export function PortfolioValueCard({
       }
     >
       <p className={appHeroMetricLabelClass}>Portfolio value</p>
-      <p className="mt-3 text-[2.25rem] font-black leading-none tracking-[-0.045em] sm:text-[3rem] md:text-[3.375rem]">
+      <p className={`mt-3 ${appDisplayClass}`}>
         {formatPortfolioCurrency(snapshot.portfolioValue)}
       </p>
       <p
-        className={`mt-3 text-sm font-medium leading-relaxed ${sinceInceptionToneClass(snapshot)}`}
+        className={`mt-3 ${appSectionBodyMediumClass} ${sinceInceptionToneClass(snapshot)}`}
       >
         {sinceInceptionLabel(snapshot)}
       </p>
       {showBreakdown ? (
-        <p className="mt-4 text-sm leading-relaxed text-slate-400">
+        <p className={`mt-4 ${appSectionMetaClass} text-slate-300`}>
           Invested {formatPortfolioCurrency(snapshot.investedAssetsValue)}
           {" · "}
           Cash {formatPortfolioCurrency(snapshot.cashValue)}
         </p>
       ) : null}
-      <p className="mt-4 text-sm leading-relaxed text-slate-500">
+      <p className={`mt-4 ${appSectionMetaClass} text-slate-400`}>
         {snapshot.isStale ? "Stale prices · " : null}
         Updated {formatMarketUpdateTime(snapshot.lastUpdatedAt)}
       </p>

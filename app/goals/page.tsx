@@ -12,6 +12,13 @@ import {
   Target,
   TrendingUp,
 } from "lucide-react";
+import {
+  appCardValueClass,
+  appHeroMetricLabelClass,
+  appSectionLabelClass,
+  appSectionMetaClass,
+  appSectionTitleClass,
+} from "@/components/layout/appSurface";
 import BottomNavigation from "@/components/home/BottomNav";
 import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer";
 import { PageHero } from "@/components/layout/PageHero";
@@ -253,8 +260,8 @@ export default function GoalsPage() {
                   <Goal className="h-5 w-5" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-black">Set your goal</h2>
-                  <p className="text-sm text-slate-500">Four inputs, saved in one step.</p>
+                  <h2 className={appSectionTitleClass}>Set your goal</h2>
+                  <p className={`${appSectionMetaClass}`}>Four inputs, saved in one step.</p>
                 </div>
               </div>
 
@@ -329,13 +336,13 @@ export default function GoalsPage() {
             <section className="overflow-hidden rounded-[28px] bg-slate-950 p-6 text-white shadow-xl sm:p-8">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Goal dashboard</p>
-                  <p className="mt-3 text-4xl font-black tracking-[-0.05em] sm:text-5xl">
+                  <p className={`${appHeroMetricLabelClass} text-slate-400`}>Goal dashboard</p>
+                  <p className={`mt-3 ${appCardValueClass} text-white`}>
                     {goalCompleted
                       ? "Goal achieved"
                       : formatPercentage(progress)}
                   </p>
-                  <p className="mt-2 text-sm text-slate-400">
+                  <p className={`mt-2 ${appSectionMetaClass} text-slate-400`}>
                     {goalCompleted
                       ? `Your portfolio has reached ${formatCurrency(goal.targetValue)}.`
                       : `of ${formatCurrency(goal.targetValue)}`}
@@ -516,8 +523,8 @@ function OptionalGoalInput({
 function ResultCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-      <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">{label}</p>
-      <p className="mt-2 text-xl font-black">{value}</p>
+      <p className={appSectionLabelClass}>{label}</p>
+      <p className={`mt-2 ${appCardValueClass} text-white`}>{value}</p>
     </div>
   );
 }

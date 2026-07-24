@@ -16,7 +16,6 @@ import { HoldingsToday } from "@/components/dashboard/HoldingsToday";
 import { DashboardInsightCard } from "@/components/dashboard/DashboardInsightCard";
 import { DashboardMarketStatus } from "@/components/dashboard/DashboardMarketStatus";
 import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer";
-import { appPageSectionClass } from "@/components/layout/appSurface";
 import { PageHero } from "@/components/layout/PageHero";
 import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
 import PortfolioSyncBanner from "@/components/PortfolioSyncBanner";
@@ -136,7 +135,7 @@ export default function DashboardPage() {
   return (
     <PageContainer
       className="bg-[#F4F7FB] px-4 pb-32 pt-6 sm:px-6 sm:pt-8"
-      stackClassName="gap-7 md:gap-10"
+      stackClassName="gap-6 md:gap-8"
     >
       <PortfolioSyncBanner
         syncState={syncState}
@@ -171,7 +170,7 @@ export default function DashboardPage() {
             }
           />
 
-          <div className={appPageSectionClass}>
+          <div className="space-y-6 md:space-y-8">
             <DashboardTodaysDecision
               intelligence={intelligence}
               intelligenceFromCache={intelligenceFromCache}
@@ -179,8 +178,6 @@ export default function DashboardPage() {
               upcomingEvents={payload.upcomingEvents}
               marketsClosed={marketsClosed}
             />
-
-            <HoldingsToday snapshot={snapshot} />
 
             <DashboardIntelligencePreview
               intelligence={intelligence}
@@ -190,36 +187,42 @@ export default function DashboardPage() {
               missedItems={discoverSnapshot?.thingsYouMayHaveMissed ?? []}
             />
 
-            <section className={appPageSectionClass}>
+            <HoldingsToday snapshot={snapshot} />
+
+            <div className="grid min-w-0 gap-6 lg:grid-cols-2">
               <DashboardPortfolioHealthCard health={portfolioHealth} />
               <DashboardGoalProgressCard progress={goalProgress} />
-              <section className="space-y-6 md:space-y-8">
-                <DashboardDividendCard
-                  snapshot={dividendSnapshot}
-                  isLoading={dividendsLoading}
-                />
-                <DashboardAnalystCard
-                  snapshot={analystSnapshot}
-                  isLoading={analystLoading}
-                />
-              </section>
-              <DashboardInsightCard sections={insightSections} />
-              <section className="grid min-w-0 grid-cols-1 gap-6 sm:grid-cols-2">
-                <DashboardMoverCard
-                  label="Biggest winner"
-                  mover={snapshot.bestMover}
-                  tone="positive"
-                  performanceCoverageComplete={snapshot.performanceCoverageComplete}
-                />
-                <DashboardMoverCard
-                  label="Biggest loser"
-                  mover={snapshot.worstMover}
-                  tone="negative"
-                  performanceCoverageComplete={snapshot.performanceCoverageComplete}
-                />
-              </section>
-              <DashboardMarketStatus lastUpdatedAt={marketUpdatedAt} />
+            </div>
+
+            <section className="space-y-6 md:space-y-7">
+              <DashboardDividendCard
+                snapshot={dividendSnapshot}
+                isLoading={dividendsLoading}
+              />
+              <DashboardAnalystCard
+                snapshot={analystSnapshot}
+                isLoading={analystLoading}
+              />
             </section>
+
+            <DashboardInsightCard sections={insightSections} />
+
+            <section className="grid min-w-0 grid-cols-1 gap-6 sm:grid-cols-2">
+              <DashboardMoverCard
+                label="Biggest winner"
+                mover={snapshot.bestMover}
+                tone="positive"
+                performanceCoverageComplete={snapshot.performanceCoverageComplete}
+              />
+              <DashboardMoverCard
+                label="Biggest loser"
+                mover={snapshot.worstMover}
+                tone="negative"
+                performanceCoverageComplete={snapshot.performanceCoverageComplete}
+              />
+            </section>
+
+            <DashboardMarketStatus lastUpdatedAt={marketUpdatedAt} />
           </div>
         </>
       ) : null}

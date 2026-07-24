@@ -3,6 +3,13 @@
 import Link from "next/link";
 import { ArrowUpRight, Clock3, Sparkles } from "lucide-react";
 
+import {
+  appSectionBodyClass,
+  appSectionBodyMediumClass,
+  appSectionMetaClass,
+  appSectionTitleClass,
+  appTableNameClass,
+} from "@/components/layout/appSurface";
 import { TodaysDecisionBlock } from "@/components/investor/TodaysDecisionBlock";
 import { NewsCompactArticleRow } from "@/components/news/NewsCompactArticleRow";
 import { IntelligenceBulletRow } from "@/components/news/IntelligenceArticleLink";
@@ -97,7 +104,7 @@ export function NewsBriefingIntelligence({
               <Sparkles className="h-5 w-5" aria-hidden />
             </div>
             <div className="min-w-0">
-              <h2 className="text-lg font-black tracking-[-0.02em] text-slate-950 sm:text-xl">
+              <h2 className={appSectionTitleClass}>
                 Today&apos;s portfolio intelligence
               </h2>
               <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -106,7 +113,7 @@ export function NewsBriefingIntelligence({
                 >
                   {intelligence.portfolioStatus}
                 </span>
-                <span className="text-sm text-slate-500">
+                <span className={appSectionMetaClass}>
                   Updated {formatNewsRefreshedAt(intelligence.generatedAt)}
                 </span>
               </div>
@@ -131,10 +138,10 @@ export function NewsBriefingIntelligence({
 
       <div className="space-y-4 px-4 py-4 sm:space-y-5 sm:px-6 sm:py-5">
         <div className="rounded-[20px] border border-violet-100 bg-violet-50/70 px-4 py-4 sm:px-5 sm:py-5">
-          <p className="text-sm font-semibold text-slate-700">
+          <p className={`${appSectionBodyMediumClass} text-slate-700`}>
             Today&apos;s portfolio summary
           </p>
-          <p className="mt-3 text-base font-medium leading-relaxed text-slate-950 sm:text-lg">
+          <p className={`mt-3 ${appSectionBodyMediumClass} text-slate-950`}>
             {summaryMessage}
           </p>
         </div>
@@ -142,11 +149,11 @@ export function NewsBriefingIntelligence({
         <TodaysDecisionBlock decision={todaysDecision} variant="light" />
 
         <div className="rounded-[18px] border border-slate-200 bg-slate-50/80 px-4 py-4">
-          <p className="text-sm font-semibold text-slate-700">
+          <p className={`${appSectionBodyMediumClass} text-slate-700`}>
             What matters for your portfolio
           </p>
           {topMatters.length > 0 ? (
-            <ul className="mt-3 space-y-2.5 text-sm leading-6 text-slate-700">
+            <ul className={`mt-3 space-y-2.5 ${appSectionBodyClass} text-slate-700`}>
               {topMatters.map((bullet) => (
                 <li key={intelligenceBulletKey(bullet)} className="flex gap-2.5">
                   <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-violet-500" aria-hidden />
@@ -157,7 +164,7 @@ export function NewsBriefingIntelligence({
               ))}
             </ul>
           ) : (
-            <p className="mt-3 text-sm leading-relaxed text-slate-500">
+            <p className={`mt-3 ${appSectionBodyClass} text-slate-500`}>
               No material developments were detected.
             </p>
           )}
@@ -165,11 +172,11 @@ export function NewsBriefingIntelligence({
 
         {intelligence.mustWatch ? (
           <div className="rounded-[18px] border border-violet-200 bg-violet-50 px-4 py-4">
-            <p className="text-sm font-semibold text-violet-900">Top story</p>
-            <p className="mt-3 text-base font-semibold leading-snug text-slate-950">
+            <p className={`${appSectionBodyMediumClass} text-violet-900`}>Top story</p>
+            <p className={`mt-3 ${appTableNameClass}`}>
               {intelligence.mustWatch.title}
             </p>
-            <p className="mt-2 text-sm leading-relaxed text-slate-700">
+            <p className={`mt-2 ${appSectionBodyClass} text-slate-700`}>
               {intelligence.mustWatch.reason}
             </p>
             {showMustWatchDetail ? (

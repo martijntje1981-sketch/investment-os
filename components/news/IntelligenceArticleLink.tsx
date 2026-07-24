@@ -79,7 +79,15 @@ export function IntelligenceBulletRow({
   linkLabel?: string;
 }) {
   if (!isValidArticleUrl(bullet.canonicalUrl)) {
-    return <span className="text-sm leading-relaxed">{bullet.text}</span>;
+    return (
+      <span
+        className={`text-[15px] leading-relaxed ${
+          variant === "dark" ? "text-slate-200" : ""
+        }`}
+      >
+        {bullet.text}
+      </span>
+    );
   }
 
   return (

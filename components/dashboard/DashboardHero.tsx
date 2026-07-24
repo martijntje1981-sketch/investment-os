@@ -4,9 +4,16 @@ import Link from "next/link";
 import { Target, TrendingDown, TrendingUp } from "lucide-react";
 
 import {
+  appCardValueClass,
+  appDashboardLightCardClass,
+  appDisplayClass,
+  appHeroKpiClass,
+  appHeroMetricLabelClass,
   appSectionBodyClass,
   appSectionLabelClass,
-  appSectionTitleClass,
+  appSectionMetaClass,
+  appTableNameClass,
+  appTickerClass,
 } from "@/components/layout/appSurface";
 import {
   formatPortfolioCurrency,
@@ -54,13 +61,13 @@ export function DashboardPortfolioHero({ summary }: { summary: DashboardSummary 
   return (
     <section className="min-w-0 overflow-hidden rounded-[24px] border border-slate-800 bg-slate-950 text-white shadow-2xl md:rounded-[32px]">
       <div className="px-4 py-5 md:px-8 md:py-6">
-        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-400">
+        <p className={`${appHeroMetricLabelClass} text-slate-400`}>
           Portfolio value
         </p>
-        <p className="mt-2 text-4xl font-black tracking-[-0.05em] md:text-6xl">
+        <p className={`mt-2 ${appDisplayClass}`}>
           {formatPortfolioCurrency(summary.portfolioValue)}
         </p>
-        <p className="mt-3 text-sm text-slate-500">
+        <p className={`mt-3 ${appSectionMetaClass} text-slate-500`}>
           Last update: {formatMarketUpdateTime(summary.lastUpdatedAt)}
         </p>
 
@@ -137,12 +144,10 @@ function HeroMetric({
         {icon}
         {label}
       </div>
-      <p
-        className={`mt-1.5 text-xl font-black tracking-[-0.03em] md:text-2xl ${valueClassName}`}
-      >
+      <p className={`mt-1.5 ${appHeroKpiClass} ${valueClassName}`}>
         {value}
       </p>
-      <p className="mt-1.5 text-sm leading-relaxed text-slate-400">{detail}</p>
+      <p className={`mt-1.5 ${appSectionMetaClass} text-slate-400`}>{detail}</p>
     </div>
   );
 }
@@ -160,7 +165,7 @@ export function DashboardMoverCard({
 }) {
   if (!performanceCoverageComplete) {
     return (
-      <article className="min-w-0 rounded-[24px] border border-slate-200 bg-white px-5 py-5 shadow-sm">
+      <article className={`min-w-0 ${appDashboardLightCardClass} px-5 py-5`}>
         <p className={appSectionLabelClass}>{label}</p>
         <p className={`mt-2.5 ${appSectionBodyClass} text-slate-600`}>
           {RANKING_AFTER_CLOSE}
@@ -175,7 +180,7 @@ export function DashboardMoverCard({
       : "border-red-200 bg-red-50/60";
 
   return (
-    <article className={`min-w-0 rounded-[24px] border p-5 shadow-sm ${toneClasses}`}>
+    <article className={`min-w-0 ${appDashboardLightCardClass} p-5 ${toneClasses}`}>
       <p className={appSectionLabelClass}>{label}</p>
       {mover ? (
         <>
@@ -183,8 +188,8 @@ export function DashboardMoverCard({
             href={`/portfolio/${mover.symbol.toLowerCase()}`}
             className="mt-2.5 block min-w-0 rounded-xl transition hover:bg-white/60"
           >
-            <p className={`truncate ${appSectionTitleClass}`}>{mover.name}</p>
-            <p className="mt-1 text-sm font-semibold text-slate-500">
+            <p className={`truncate ${appTableNameClass}`}>{mover.name}</p>
+            <p className={`mt-1 ${appTickerClass}`}>
               {mover.symbol}
             </p>
           </Link>
@@ -194,7 +199,7 @@ export function DashboardMoverCard({
             ) : (
               <TrendingDown className="h-4 w-4 shrink-0 text-red-600" />
             )}
-            <p className={`${appSectionTitleClass} text-base`}>
+            <p className={appCardValueClass}>
               {signedPercent(mover.changePercent)}
               <span aria-hidden="true"> · </span>
               {signedCurrency(mover.changeAmount)}

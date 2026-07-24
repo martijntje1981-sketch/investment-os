@@ -4,6 +4,11 @@ import { useState } from "react";
 import { ChevronDown, LineChart, Sparkles } from "lucide-react";
 
 import {
+  appSectionLabelClass,
+  appCardValueClass,
+  appSectionBodyClass,
+} from "@/components/layout/appSurface";
+import {
   formatPortfolioCurrency,
   formatPortfolioPercent,
 } from "@/lib/client/portfolioAnalysis";
@@ -34,18 +39,18 @@ export function AnalystIntelligenceSection({
   return (
     <section className="mt-7 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
       <div className="border-b border-slate-200 bg-gradient-to-br from-violet-700 to-slate-950 px-5 py-6 text-white sm:px-8">
-        <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-violet-100">
+        <div className={`inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 ${appSectionLabelClass} text-violet-100`}>
           <LineChart className="h-3.5 w-3.5" />
           Analyst intelligence
         </div>
-        <h2 className="mt-4 text-3xl font-black tracking-[-0.05em] sm:text-4xl">
+        <h2 className={`mt-4 ${appCardValueClass} text-white`}>
           {isLoading
             ? "Loading analyst insights…"
             : snapshot.hasMeaningfulCoverage
               ? formatAnalystConsensus(snapshot.weightedConsensus)
               : emptyStateCopy.title}
         </h2>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">
+        <p className={`mt-3 max-w-2xl ${appSectionBodyClass} text-slate-300`}>
           {snapshot.hasMeaningfulCoverage
             ? "Sell-side consensus and price targets for covered holdings in your portfolio."
             : emptyStateCopy.description}
@@ -311,10 +316,10 @@ export function HoldingAnalystMeta({
 function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-4">
-      <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
+      <p className={appSectionLabelClass}>
         {label}
       </p>
-      <p className="mt-2 text-sm font-black text-slate-950">{value}</p>
+      <p className={`mt-2 ${appCardValueClass}`}>{value}</p>
     </div>
   );
 }
@@ -322,7 +327,7 @@ function Metric({ label, value }: { label: string; value: string }) {
 function MiniStat({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-[10px] font-black uppercase tracking-[0.1em] text-violet-800/70">
+      <p className={`${appSectionLabelClass} text-violet-800/80`}>
         {label}
       </p>
       <p className="mt-0.5 text-sm font-bold text-violet-950">{value}</p>
@@ -383,10 +388,10 @@ function getAnalystEmptyStateCopy(snapshot: PortfolioAnalystSnapshot): {
 function HeaderMetric({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2">
-      <dt className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">
+      <dt className={`${appSectionLabelClass} text-slate-300`}>
         {label}
       </dt>
-      <dd className="mt-1 text-sm font-bold text-white">{value}</dd>
+      <dd className={`mt-1 ${appCardValueClass} text-white`}>{value}</dd>
     </div>
   );
 }

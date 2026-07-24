@@ -3,6 +3,12 @@
 import { useState } from "react";
 import { ArrowUpRight } from "lucide-react";
 
+import {
+  appSectionMetaClass,
+  appSectionSubtitleClass,
+  appSectionTitleClass,
+  appValueSemiboldClass,
+} from "@/components/layout/appSurface";
 import type { HoldingNewsGroup } from "@/lib/services/news/newsBriefingLayout";
 
 function groupSummary(group: HoldingNewsGroup): string {
@@ -34,13 +40,10 @@ export function NewsHoldingGroups({ groups }: { groups: HoldingNewsGroup[] }) {
   return (
     <section aria-labelledby="news-holding-groups-heading" className="min-w-0 space-y-3">
       <div>
-        <h2
-          id="news-holding-groups-heading"
-          className="text-lg font-black tracking-[-0.02em] text-slate-950"
-        >
+        <h2 id="news-holding-groups-heading" className={appSectionTitleClass}>
           By holding
         </h2>
-        <p className="mt-1 text-sm leading-relaxed text-slate-500">
+        <p className={`mt-1.5 ${appSectionSubtitleClass}`}>
           Portfolio coverage grouped by affected holding.
         </p>
       </div>
@@ -62,9 +65,9 @@ export function NewsHoldingGroups({ groups }: { groups: HoldingNewsGroup[] }) {
             >
               <div className="flex min-w-0 items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-base font-semibold text-slate-950">{group.symbol}</p>
-                  <p className="text-sm text-slate-500">{group.name}</p>
-                  <p className="mt-1 text-sm text-slate-600">{groupSummary(group)}</p>
+                  <p className={appValueSemiboldClass}>{group.symbol}</p>
+                  <p className={appSectionMetaClass}>{group.name}</p>
+                  <p className={`mt-1 ${appSectionMetaClass}`}>{groupSummary(group)}</p>
                 </div>
                 <button
                   type="button"

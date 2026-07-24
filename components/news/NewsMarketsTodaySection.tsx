@@ -1,4 +1,8 @@
 import type { MarketsTodayRegion } from "@/lib/services/news/newsMarketsToday";
+import {
+  appSectionSubtitleClass,
+  appSectionTitleClass,
+} from "@/components/layout/appSurface";
 
 const SENTIMENT_STYLES = {
   Positive: "text-emerald-700",
@@ -14,13 +18,10 @@ export function NewsMarketsTodaySection({
   return (
     <section aria-labelledby="news-markets-today-heading" className="min-w-0 space-y-3">
       <div>
-        <h2
-          id="news-markets-today-heading"
-          className="text-lg font-black tracking-[-0.02em] text-slate-950"
-        >
+        <h2 id="news-markets-today-heading" className={appSectionTitleClass}>
           Markets Today
         </h2>
-        <p className="mt-1 text-sm leading-relaxed text-slate-500">
+        <p className={`mt-1.5 ${appSectionSubtitleClass}`}>
           Regional snapshot from verified headlines and calendar events.
         </p>
       </div>

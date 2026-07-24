@@ -3,9 +3,10 @@ import { Clock3 } from "lucide-react";
 import { DashboardSectionHeader } from "@/components/dashboard/DashboardSectionHeader";
 import {
   appCardPaddingClass,
+  appCardValueClass,
+  appDashboardLightCardClass,
   appSectionLabelClass,
   appSectionMetaClass,
-  appSectionTitleClass,
 } from "@/components/layout/appSurface";
 import {
   formatMarketUpdateTime,
@@ -20,7 +21,7 @@ export function DashboardMarketStatus({
   const statuses = getMarketStatuses();
 
   return (
-    <section className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm md:rounded-[28px]">
+    <section className={appDashboardLightCardClass}>
       <DashboardSectionHeader
         title="Trading hours"
         subtitle="Major market session status"
@@ -43,7 +44,7 @@ export function DashboardMarketStatus({
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className={appSectionLabelClass}>{market.label}</p>
-                    <p className={`mt-1.5 ${appSectionTitleClass} text-base`}>
+                    <p className={`mt-1.5 ${appCardValueClass}`}>
                       {market.statusLabel}
                     </p>
                   </div>

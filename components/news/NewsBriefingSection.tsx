@@ -1,6 +1,11 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import {
+  appSectionBodyClass,
+  appSectionSubtitleClass,
+  appSectionTitleClass,
+} from "@/components/layout/appSurface";
 
 export function NewsBriefingSection<T extends { id?: string }>({
   id,
@@ -28,14 +33,14 @@ export function NewsBriefingSection<T extends { id?: string }>({
   return (
     <section aria-labelledby={id} className="min-w-0 space-y-3">
       <div>
-        <h2 id={id} className="text-lg font-black tracking-[-0.02em] text-slate-950">
+        <h2 id={id} className={appSectionTitleClass}>
           {title}
         </h2>
-        <p className="mt-1 text-sm leading-relaxed text-slate-500">{description}</p>
+        <p className={`mt-1.5 ${appSectionSubtitleClass}`}>{description}</p>
       </div>
 
       {allItems.length === 0 ? (
-        <p className="rounded-[16px] border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm text-slate-600">
+        <p className={`rounded-[16px] border border-slate-200 bg-slate-50/80 px-4 py-3 ${appSectionBodyClass}`}>
           <span className="font-semibold text-slate-800">{emptyTitle}</span>
           {" — "}
           {emptyDescription}

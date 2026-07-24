@@ -22,6 +22,17 @@ import {
 import BottomNavigation from "@/components/home/BottomNav";
 import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer";
 import { PageHero } from "@/components/layout/PageHero";
+import {
+  appCardValueClass,
+  appSectionBodyClass,
+  appSectionLabelClass,
+  appSectionMetaClass,
+  appSectionSubtitleClass,
+  appSectionTitleClass,
+  appTableNameClass,
+  appTableValueClass,
+  appTickerClass,
+} from "@/components/layout/appSurface";
 import NumericInput from "@/components/NumericInput";
 import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
 import PortfolioSyncBanner from "@/components/PortfolioSyncBanner";
@@ -373,8 +384,8 @@ export default function PortfolioPage() {
           <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
             <div className="flex items-center justify-between border-b border-slate-200 px-5 py-5 sm:px-7">
               <div>
-                <h2 className="text-xl font-black">Holdings</h2>
-                <p className="mt-1 text-sm text-slate-500">{holdings.length} positions</p>
+                <h2 className={appSectionTitleClass}>Holdings</h2>
+                <p className={`mt-1.5 ${appSectionMetaClass}`}>{holdings.length} positions</p>
               </div>
               <Link href="/upload" className="inline-flex items-center gap-2 text-sm font-bold text-blue-700"><Upload className="h-4 w-4" /> Import</Link>
             </div>
@@ -382,8 +393,8 @@ export default function PortfolioPage() {
             {holdings.length === 0 ? (
               <div className="px-6 py-16 text-center">
                 <BriefcaseBusiness className="mx-auto h-10 w-10 text-slate-300" />
-                <h3 className="mt-4 text-xl font-black">No holdings yet</h3>
-                <p className="mt-2 text-sm text-slate-500">Add an investment, cash position or import your portfolio.</p>
+                <h3 className={`mt-4 ${appSectionTitleClass}`}>No holdings yet</h3>
+                <p className={`mt-2 ${appSectionSubtitleClass}`}>Add an investment, cash position or import your portfolio.</p>
                 <button onClick={() => openAdd("investment")} className="mt-6 rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white">Add first holding</button>
               </div>
             ) : (
@@ -419,16 +430,16 @@ export default function PortfolioPage() {
                   return (
                     <article key={holding.id} className="space-y-3 px-5 py-5 lg:px-7">
                     <div className="grid gap-4 lg:grid-cols-[0.65fr_1.5fr_1fr_0.8fr_1fr_auto] lg:items-center">
-                      <div><span className={`inline-flex rounded-xl px-3 py-2 text-sm font-black ${holding.assetType === "cash" ? "bg-emerald-100 text-emerald-800" : "bg-slate-950 text-white"}`}>{holding.symbol}</span></div>
+                      <div><span className={`inline-flex rounded-xl px-3 py-2 ${appTableValueClass} ${holding.assetType === "cash" ? "bg-emerald-100 text-emerald-800" : "bg-slate-950 text-white"}`}>{holding.symbol}</span></div>
                       <div>
-                        <p className="font-black">{holding.name}</p>
-                        <p className="mt-1 text-xs text-slate-500">
+                        <p className={appTableNameClass}>{holding.name}</p>
+                        <p className={`mt-1 ${appSectionMetaClass}`}>
                           {holding.assetType === "cash"
                             ? "Cash holding"
                             : `${holding.quantity.toLocaleString("en-GB")} units · ${holdingMatchStatusLabel(matchStatus)}`}
                         </p>
                         {holding.pricingExchange && holding.providerSymbol ? (
-                          <p className="mt-1 text-xs font-semibold text-slate-600">
+                          <p className={`mt-1 ${appTickerClass} normal-case`}>
                             {describePricingSource({
                               exchange: holding.exchange ?? null,
                               pricingExchange: holding.pricingExchange,
@@ -437,11 +448,11 @@ export default function PortfolioPage() {
                           </p>
                         ) : null}
                       </div>
-                      <div><p className="text-xs font-bold uppercase text-slate-400 lg:hidden">Value</p><p className="font-black">{holdingValue === null ? "Price pending" : money(holdingValue)}{estimatedPrice && holdingValue !== null ? <span className="ml-1 text-xs font-semibold text-amber-700">est.</span> : null}</p></div>
-                      <div><p className="text-xs font-bold uppercase text-slate-400 lg:hidden">Allocation</p><p className="font-bold">{holdingValue === null ? "—" : `${allocation.toFixed(1)}%`}</p></div>
+                      <div><p className={`${appSectionLabelClass} lg:hidden`}>Value</p><p className={appTableValueClass}>{holdingValue === null ? "Price pending" : money(holdingValue)}{estimatedPrice && holdingValue !== null ? <span className="ml-1 text-xs font-semibold text-amber-700">est.</span> : null}</p></div>
+                      <div><p className={`${appSectionLabelClass} lg:hidden`}>Allocation</p><p className={appTableValueClass}>{holdingValue === null ? "—" : `${allocation.toFixed(1)}%`}</p></div>
                       <div>
-                        <p className="text-xs font-bold uppercase text-slate-400 lg:hidden">Return</p>
-                        <p className={`font-bold ${holdingReturn === null ? "text-slate-500" : holdingReturn >= 0 ? "text-emerald-700" : "text-red-700"}`}>{holding.assetType === "cash" ? "Stable" : holdingReturn === null ? "Price pending" : `${holdingReturn >= 0 ? "+" : ""}${money(holdingReturn)}`}</p>
+                        <p className={`${appSectionLabelClass} lg:hidden`}>Return</p>
+                        <p className={`${appTableValueClass} ${holdingReturn === null ? "text-slate-600" : holdingReturn >= 0 ? "text-emerald-700" : "text-red-700"}`}>{holding.assetType === "cash" ? "Stable" : holdingReturn === null ? "Price pending" : `${holdingReturn >= 0 ? "+" : ""}${money(holdingReturn)}`}</p>
                       </div>
                       <div className="flex items-center justify-end gap-1">
                         {holding.assetType === "investment" && <Link href={`/holding/${holding.symbol}`} aria-label={`View ${holding.name}`} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"><ChevronRight className="h-5 w-5" /></Link>}
@@ -480,8 +491,8 @@ export default function PortfolioPage() {
             <div className="flex items-start gap-4">
               <div className="rounded-2xl bg-violet-500/20 p-3 text-violet-300"><Sparkles className="h-5 w-5" /></div>
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">Portfolio insight</p>
-                <p className="mt-3 max-w-3xl leading-7 text-slate-200">
+                <p className={appSectionLabelClass}>Portfolio insight</p>
+                <p className={`mt-3 max-w-3xl ${appSectionBodyClass} text-slate-200`}>
                   {largest && totalValue > 0 ? `${largest.symbol} is your largest position at ${largestWeightPercent.toFixed(1)}%. ` : performance.hasUnvaluedInvestments ? "Some holdings are excluded until market prices are available. " : ""}
                   {cashValue > 0 && totalValue > 0 ? `Cash represents ${(cashValue / totalValue * 100).toFixed(1)}% of total portfolio value.` : "No cash holding is currently recorded."}
                 </p>
@@ -496,7 +507,7 @@ export default function PortfolioPage() {
           <form onSubmit={submitHolding} className="flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-t-[28px] bg-white shadow-2xl sm:rounded-[28px]">
             <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 sm:p-8">
             <div className="flex items-center justify-between">
-              <div><p className="text-xs font-black uppercase tracking-[0.14em] text-blue-700">{draft.assetType === "cash" ? "Cash" : "Investment"}</p><h2 className="mt-2 text-2xl font-black">{holdings.some((item) => item.id === draft.id) ? "Edit holding" : "Add holding"}</h2></div>
+              <div><p className={appSectionLabelClass}>{draft.assetType === "cash" ? "Cash" : "Investment"}</p><h2 className={`mt-2 ${appSectionTitleClass}`}>{holdings.some((item) => item.id === draft.id) ? "Edit holding" : "Add holding"}</h2></div>
               <button type="button" onClick={() => setEditorOpen(false)} className="rounded-xl p-2 hover:bg-slate-100"><X className="h-5 w-5" /></button>
             </div>
 
@@ -633,14 +644,14 @@ export default function PortfolioPage() {
 }
 
 function Metric({ icon, label, value, detail, tone = "neutral" }: { icon: React.ReactNode; label: string; value: string; detail?: string; tone?: "neutral" | "positive" | "negative" }) {
-  return <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-700">{icon}</div><p className="mt-4 text-xs font-black uppercase tracking-[0.12em] text-slate-400">{label}</p><p className={`mt-2 text-2xl font-black ${tone === "positive" ? "text-emerald-700" : tone === "negative" ? "text-red-700" : "text-slate-950"}`}>{value}</p>{detail && <p className="mt-1 text-sm text-slate-500">{detail}</p>}</article>;
+  return <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-700">{icon}</div><p className={`mt-4 ${appSectionLabelClass}`}>{label}</p><p className={`mt-2 ${appCardValueClass} ${tone === "positive" ? "text-emerald-700" : tone === "negative" ? "text-red-700" : "text-slate-950"}`}>{value}</p>{detail && <p className={`mt-1.5 ${appSectionMetaClass}`}>{detail}</p>}</article>;
 }
 
 function Field({ label, value, onChange, type = "text", prefix, min, step, required = type === "number" }: { label: string; value: string | number; onChange: (value: string) => void; type?: string; prefix?: string; min?: string; step?: string; required?: boolean }) {
   if (type === "number") {
     return (
       <label className="block">
-        <span className="text-sm font-bold text-slate-700">{label}</span>
+        <span className="text-[15px] font-bold text-slate-800">{label}</span>
         <span className="mt-2 flex items-center rounded-xl border border-slate-200 bg-slate-50 px-4 focus-within:border-blue-400">
           {prefix && <span className="font-bold text-slate-400">{prefix}</span>}
           <NumericInput

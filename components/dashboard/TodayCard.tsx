@@ -6,7 +6,12 @@ import {
   formatTodayMoveDetail,
   formatTodayMoveValue,
 } from "@/lib/client/investorOverviewCopy";
-import { appHeroMetricLabelClass } from "@/components/layout/appSurface";
+import {
+  appHeroKpiClass,
+  appHeroMetricLabelClass,
+  appSectionLabelClass,
+  appSectionMetaClass,
+} from "@/components/layout/appSurface";
 import type { DashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
 
 function todayToneClass(
@@ -63,17 +68,17 @@ export function TodayCard({
           : "min-w-0 rounded-[24px] border border-slate-200/80 bg-white px-5 py-6 shadow-sm md:px-6 md:py-7"
       }
     >
-      <p className={embedded ? appHeroMetricLabelClass : "text-xs font-semibold uppercase tracking-[0.08em] text-slate-500"}>
+      <p className={embedded ? appHeroMetricLabelClass : appSectionLabelClass}>
         Today
       </p>
       <p
-        className={`mt-2.5 text-[1.625rem] font-black leading-none tracking-[-0.035em] sm:text-[2rem] ${todayToneClass(snapshot, embedded)}`}
+        className={`mt-2.5 ${appHeroKpiClass} ${todayToneClass(snapshot, embedded)}`}
       >
         {showTodayMove ? amountLabel : unavailableCopy}
       </p>
       <p
-        className={`mt-2.5 text-sm leading-relaxed ${
-          embedded ? "text-slate-400" : "text-slate-500"
+        className={`mt-2.5 ${appSectionMetaClass} ${
+          embedded ? "text-slate-300" : "text-slate-600"
         }`}
       >
         {showTodayMove

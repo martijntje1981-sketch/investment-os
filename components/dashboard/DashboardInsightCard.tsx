@@ -3,6 +3,7 @@ import { Sparkles } from "lucide-react";
 import { DashboardSectionHeader } from "@/components/dashboard/DashboardSectionHeader";
 import {
   appCardPaddingCompactClass,
+  appDashboardLightCardClass,
   appSectionBodyClass,
   appSectionLabelClass,
 } from "@/components/layout/appSurface";
@@ -20,7 +21,7 @@ export function DashboardInsightCard({
   ];
 
   return (
-    <section className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm md:rounded-[28px]">
+    <section className={appDashboardLightCardClass}>
       <DashboardSectionHeader
         title="AI portfolio insight"
         subtitle="Based on your saved holdings and today's data"

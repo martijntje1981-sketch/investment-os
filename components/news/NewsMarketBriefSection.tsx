@@ -1,5 +1,10 @@
 import { ArrowUpRight } from "lucide-react";
 
+import {
+  appSectionSubtitleClass,
+  appSectionTitleClass,
+  appValueSemiboldClass,
+} from "@/components/layout/appSurface";
 import { formatNewsPublishedAt } from "@/components/news/newsFormatting";
 import type { NewsBriefHeadline } from "@/lib/services/news/newsBriefingLayout";
 
@@ -11,10 +16,10 @@ export function NewsMarketBriefSection({
   if (headlines.length === 0) {
     return (
       <section className="min-w-0 rounded-[20px] border border-slate-200 bg-white p-4 sm:p-5">
-        <h2 className="text-lg font-black tracking-[-0.02em] text-slate-950">
+        <h2 className={appSectionTitleClass}>
           Today&apos;s Market Brief
         </h2>
-        <p className="mt-3 text-sm leading-relaxed text-slate-500">
+        <p className={`mt-3 ${appSectionSubtitleClass}`}>
           No verified headlines are available in the current brief. Refresh when
           sources reconnect.
         </p>
@@ -25,13 +30,10 @@ export function NewsMarketBriefSection({
   return (
     <section aria-labelledby="news-market-brief-heading" className="min-w-0 space-y-3">
       <div>
-        <h2
-          id="news-market-brief-heading"
-          className="text-lg font-black tracking-[-0.02em] text-slate-950"
-        >
+        <h2 id="news-market-brief-heading" className={appSectionTitleClass}>
           Today&apos;s Market Brief
         </h2>
-        <p className="mt-1 text-sm leading-relaxed text-slate-500">
+        <p className={`mt-1.5 ${appSectionSubtitleClass}`}>
           Concise headlines ranked by market impact, recency, and source quality.
         </p>
       </div>
@@ -41,7 +43,7 @@ export function NewsMarketBriefSection({
             <article className="min-w-0 rounded-[16px] border border-slate-200 bg-white px-4 py-3.5">
               <div className="flex min-w-0 items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
-                  <h3 className="text-base font-semibold leading-snug text-slate-950">
+                  <h3 className={`${appValueSemiboldClass} leading-snug`}>
                     {headline.headline}
                   </h3>
                   <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-slate-600">

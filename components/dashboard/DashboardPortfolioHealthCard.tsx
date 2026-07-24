@@ -2,8 +2,9 @@ import { Activity } from "lucide-react";
 
 import { DashboardSectionHeader } from "@/components/dashboard/DashboardSectionHeader";
 import {
-  appCardClass,
   appCardPaddingClass,
+  appCardValueClass,
+  appDashboardLightCardClass,
   appSectionBodyClass,
 } from "@/components/layout/appSurface";
 import type { PortfolioHealthScore } from "@/lib/services/portfolio/portfolioHealthScore";
@@ -41,7 +42,7 @@ export function DashboardPortfolioHealthCard({
   health: PortfolioHealthScore;
 }) {
   return (
-    <section aria-labelledby="portfolio-health-heading" className={appCardClass}>
+    <section aria-labelledby="portfolio-health-heading" className={appDashboardLightCardClass}>
       <DashboardSectionHeader
         titleId="portfolio-health-heading"
         title="Portfolio health"
@@ -54,22 +55,20 @@ export function DashboardPortfolioHealthCard({
       <div
         className={`flex min-w-0 flex-col gap-5 border-b border-slate-100 md:flex-row md:flex-wrap md:items-start md:justify-between md:gap-6 ${appCardPaddingClass}`}
       >
-        <p className="flex items-baseline gap-1 text-3xl font-black tracking-[-0.04em] text-slate-950 md:text-4xl">
+        <p className={`flex items-baseline gap-1 ${appCardValueClass}`}>
           <span className={scoreToneClass(health.score)}>{health.score}</span>
-          <span className="text-base font-semibold text-slate-400 md:text-lg">
-            / 100
-          </span>
+          <span className="text-[15px] font-medium text-slate-500">/ 100</span>
         </p>
 
         <ul className="grid min-w-0 w-full grid-cols-1 gap-y-2.5 md:flex-1 md:grid-cols-3 md:gap-x-4 md:gap-y-2.5 lg:max-w-xl">
           {health.indicators.map((indicator) => (
             <li
               key={indicator.id}
-              className={`flex min-w-0 items-center gap-2 py-0.5 text-sm font-medium leading-relaxed text-slate-700 md:gap-2 ${indicatorToneClass(indicator.level)}`}
+              className={`flex min-w-0 items-center gap-2 py-0.5 ${appSectionBodyClass} md:gap-2 ${indicatorToneClass(indicator.level)}`}
             >
               <span
                 aria-hidden="true"
-                className={`w-3.5 shrink-0 text-center text-[11px] leading-none md:text-sm ${indicatorToneClass(indicator.level)}`}
+                className={`w-3.5 shrink-0 text-center text-[13px] leading-none ${indicatorToneClass(indicator.level)}`}
               >
                 {indicatorIcon(indicator.level)}
               </span>
