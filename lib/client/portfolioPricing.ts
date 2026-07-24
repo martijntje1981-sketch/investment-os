@@ -80,12 +80,31 @@ export {
 
 export type { StoredPortfolioHolding, PortfolioInstrumentPayload };
 
+export type HoldingProviderSymbolChange = {
+  before: Pick<StoredPortfolioHolding, "symbol" | "isin" | "providerSymbol">;
+  after: Pick<StoredPortfolioHolding, "symbol" | "isin" | "providerSymbol">;
+};
+
 /** Central read path for all portfolio surfaces. */
 export function loadUserPortfolioHoldings(
   userSub: string,
 ): StoredPortfolioHolding[] {
   const raw = readPortfolioFromStorage(userSub);
   const enriched = enrichHoldingsWithVerifiedMappings(raw);
+
+  const providerSymbolChanges = raw
+    .map((before, index) => ({
+      before,
+      after: enriched[index]!,
+    }))
+    .filter(
+      ({ before, after }) =>
+        (before.providerSymbol ?? null) !== (after.providerSymbol ?? null),
+    );
+
+  if (providerSymbolChanges.length > 0) {
+    invalidateConflictingPriceCacheEntries(userSub, providerSymbolChanges);
+  }
 
   if (holdingsChangedByVerifiedEnrichment(raw, enriched)) {
     writePortfolioToStorage(userSub, enriched);
@@ -260,17 +279,47 @@ export function buildBriefingRequestPayload(
   return buildPriceRequestPayload(holdings);
 }
 
-function quoteLookupKeys(quote: PriceApiQuote): string[] {
-  return [
-    normalizePortfolioSymbol(quote.symbol),
-    quote.providerSymbol
-      ? normalizePortfolioSymbol(quote.providerSymbol)
-      : "",
-    quote.eodhdSymbol
-      ? normalizePortfolioSymbol(quote.eodhdSymbol)
-      : "",
-    quote.isin ? normalizePortfolioSymbol(quote.isin) : "",
-  ].filter(Boolean);
+export function resolveQuoteProviderSymbol(
+  quote: Pick<PriceApiQuote, "providerSymbol" | "eodhdSymbol">,
+): string | null {
+  const value = quote.providerSymbol ?? quote.eodhdSymbol;
+  return value?.trim() ? normalizePortfolioSymbol(value) : null;
+}
+
+/** Indexes listing-specific keys first; bare tickers only when no provider symbol exists. */
+export function quoteLookupKeys(quote: PriceApiQuote): string[] {
+  const provider = resolveQuoteProviderSymbol(quote);
+  const keys: string[] = [];
+
+  if (provider) {
+    keys.push(provider);
+  }
+
+  if (quote.isin) {
+    keys.push(normalizePortfolioSymbol(quote.isin));
+  }
+
+  if (!provider) {
+    keys.push(normalizePortfolioSymbol(quote.symbol));
+  }
+
+  return keys.filter(Boolean);
+}
+
+export function isQuoteCompatibleWithHolding(
+  holding: Pick<StoredPortfolioHolding, "symbol" | "providerSymbol" | "isin">,
+  quote: PriceApiQuote,
+): boolean {
+  const holdingProvider = holding.providerSymbol?.trim()
+    ? normalizePortfolioSymbol(holding.providerSymbol)
+    : null;
+  const quoteProvider = resolveQuoteProviderSymbol(quote);
+
+  if (holdingProvider && quoteProvider && holdingProvider !== quoteProvider) {
+    return false;
+  }
+
+  return true;
 }
 
 /** Indexes quotes by symbol, providerSymbol, eodhdSymbol, and ISIN. */
@@ -366,16 +415,25 @@ function clearHoldingDailyPerformance<T extends StoredPortfolioHolding>(
   };
 }
 
-function holdingLookupKeys(
+/** Resolves quotes in verified-listing order: providerSymbol, ISIN, then generic ticker. */
+export function holdingLookupKeys(
   holding: StoredPortfolioHolding,
 ): string[] {
-  return [
-    normalizePortfolioSymbol(holding.symbol),
-    holding.providerSymbol
-      ? normalizePortfolioSymbol(holding.providerSymbol)
-      : "",
-    holding.isin ? normalizePortfolioSymbol(holding.isin) : "",
-  ].filter(Boolean);
+  const keys: string[] = [];
+
+  if (holding.providerSymbol?.trim()) {
+    keys.push(normalizePortfolioSymbol(holding.providerSymbol));
+  }
+
+  if (holding.isin?.trim()) {
+    keys.push(normalizePortfolioSymbol(holding.isin));
+  }
+
+  if (!holding.providerSymbol?.trim()) {
+    keys.push(normalizePortfolioSymbol(holding.symbol));
+  }
+
+  return keys.filter(Boolean);
 }
 
 export function findQuoteForHolding(
@@ -384,7 +442,9 @@ export function findQuoteForHolding(
 ): PriceApiQuote | undefined {
   for (const key of holdingLookupKeys(holding)) {
     const quote = lookup.get(key);
-    if (quote) return quote;
+    if (quote && isQuoteCompatibleWithHolding(holding, quote)) {
+      return quote;
+    }
   }
   return undefined;
 }
@@ -459,6 +519,82 @@ export function writePriceCache(
     }));
 
   localStorage.setItem(priceCacheKey(userSub), JSON.stringify(cache));
+}
+
+export function readPriceCacheEntries(userSub: string): CachedPortfolioPrice[] {
+  assertUserSub(userSub);
+
+  try {
+    const cached = localStorage.getItem(priceCacheKey(userSub));
+    const parsed = cached ? (JSON.parse(cached) as CachedPortfolioPrice[]) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function isConflictingPriceCacheEntry(
+  entry: CachedPortfolioPrice,
+  change: HoldingProviderSymbolChange,
+): boolean {
+  const verifiedProvider = change.after.providerSymbol?.trim().toUpperCase();
+  if (!verifiedProvider) {
+    return false;
+  }
+
+  const ticker = normalizePortfolioSymbol(change.after.symbol);
+  const entryTicker = normalizePortfolioSymbol(entry.symbol);
+  const entryProvider = entry.providerSymbol?.trim().toUpperCase() ?? null;
+  const previousProvider = change.before.providerSymbol?.trim().toUpperCase() ?? null;
+  const holdingIsin = change.after.isin
+    ? normalizePortfolioSymbol(change.after.isin)
+    : null;
+  const entryIsin = entry.isin ? normalizePortfolioSymbol(entry.isin) : null;
+
+  const relatesByTicker = entryTicker === ticker;
+  const relatesByIsin = Boolean(holdingIsin && entryIsin === holdingIsin);
+  if (!relatesByTicker && !relatesByIsin) {
+    return false;
+  }
+
+  if (relatesByTicker && !entryProvider) {
+    return true;
+  }
+
+  if (entryProvider && entryProvider !== verifiedProvider) {
+    if (relatesByTicker || relatesByIsin) {
+      return true;
+    }
+  }
+
+  if (
+    previousProvider &&
+    previousProvider !== verifiedProvider &&
+    entryProvider === previousProvider &&
+    (relatesByTicker || relatesByIsin)
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+export function invalidateConflictingPriceCacheEntries(
+  userSub: string,
+  changes: HoldingProviderSymbolChange[],
+): CachedPortfolioPrice[] {
+  assertUserSub(userSub);
+
+  if (changes.length === 0) {
+    return readPriceCacheEntries(userSub);
+  }
+
+  const remaining = readPriceCacheEntries(userSub).filter(
+    (entry) => !changes.some((change) => isConflictingPriceCacheEntry(entry, change)),
+  );
+
+  localStorage.setItem(priceCacheKey(userSub), JSON.stringify(remaining));
+  return remaining;
 }
 
 /** Applies cached prices using the same multi-key join as live pricing. */

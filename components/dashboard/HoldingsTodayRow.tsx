@@ -18,6 +18,39 @@ function changeToneClass(row: DashboardHoldingRow): string {
   return "text-slate-600";
 }
 
+function HoldingPriceQualityBadge({ row }: { row: DashboardHoldingRow }) {
+  if (row.priceQuality === "estimated") {
+    return (
+      <span className="ml-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-amber-700">
+        est.
+      </span>
+    );
+  }
+
+  if (row.priceQuality === "stale") {
+    return (
+      <span className="ml-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500">
+        Stale
+      </span>
+    );
+  }
+
+  return null;
+}
+
+function HoldingValueLabel({ row }: { row: DashboardHoldingRow }) {
+  if (row.priceStatus !== "available" || row.currentValue === null) {
+    return <>Price unavailable</>;
+  }
+
+  return (
+    <>
+      {formatPortfolioCurrency(row.currentValue)}
+      <HoldingPriceQualityBadge row={row} />
+    </>
+  );
+}
+
 export function HoldingsTodayRow({
   row,
   layout,
@@ -25,11 +58,6 @@ export function HoldingsTodayRow({
   row: DashboardHoldingRow;
   layout: "mobile" | "desktop";
 }) {
-  const valueLabel =
-    row.priceStatus === "available" && row.currentValue !== null
-      ? formatPortfolioCurrency(row.currentValue)
-      : "Price unavailable";
-
   const changeLabel = formatHoldingTodayChange(
     row.changeStatus === "available" ? row.dailyChangeAmount : null,
     row.changeStatus === "available" ? row.dailyChangePercent : null,
@@ -49,7 +77,7 @@ export function HoldingsTodayRow({
           </div>
         </td>
         <td className="whitespace-nowrap py-3 pr-3 text-right align-middle text-sm font-semibold text-slate-950">
-          {valueLabel}
+          <HoldingValueLabel row={row} />
         </td>
         <td
           className={`whitespace-nowrap py-3 text-right align-middle text-sm font-semibold ${changeToneClass(row)}`}
@@ -69,7 +97,9 @@ export function HoldingsTodayRow({
         </p>
       </div>
       <div className="shrink-0 text-right">
-        <p className="text-sm font-semibold text-slate-950">{valueLabel}</p>
+        <p className="text-sm font-semibold text-slate-950">
+          <HoldingValueLabel row={row} />
+        </p>
         <p className={`mt-0.5 text-sm font-semibold ${changeToneClass(row)}`}>
           {changeLabel}
         </p>

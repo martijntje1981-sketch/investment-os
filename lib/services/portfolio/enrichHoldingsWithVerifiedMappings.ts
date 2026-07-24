@@ -17,17 +17,21 @@ export function enrichHoldingWithVerifiedMapping(
     return holding;
   }
 
-  if (holding.providerSymbol?.trim()) {
-    return holding;
-  }
-
   const resolution = resolveVerifiedInstrument({
     ticker: holding.symbol,
     isin: holding.isin,
     exchange: holding.exchange,
+    providerSymbol: holding.providerSymbol,
   });
 
   if (!resolution) {
+    return holding;
+  }
+
+  const verifiedProvider = resolution.entry.providerSymbol.trim().toUpperCase();
+  const existingProvider = holding.providerSymbol?.trim().toUpperCase() ?? null;
+
+  if (existingProvider === verifiedProvider) {
     return holding;
   }
 

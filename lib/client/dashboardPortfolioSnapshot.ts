@@ -7,12 +7,20 @@ import {
 import {
   getHoldingMarketValue,
 } from "@/lib/client/portfolioAnalysis";
+import {
+  resolveHoldingDisplayPrice,
+} from "@/lib/client/holdingDisplayPrice";
 import { buildPortfolioPerformance } from "@/lib/client/portfolioPerformance";
 import type { GoalSettings } from "@/lib/types/portfolioStorage";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
 export type DashboardHoldingPriceStatus = "available" | "unavailable";
 export type DashboardHoldingChangeStatus = "available" | "unavailable";
+export type DashboardHoldingPriceQuality =
+  | "live"
+  | "estimated"
+  | "stale"
+  | "unavailable";
 
 export type DashboardHoldingRow = {
   id: string;
@@ -24,6 +32,7 @@ export type DashboardHoldingRow = {
   dailyChangePercent: number | null;
   priceStatus: DashboardHoldingPriceStatus;
   changeStatus: DashboardHoldingChangeStatus;
+  priceQuality: DashboardHoldingPriceQuality;
   lastUpdatedAt: string | null;
   isStale: boolean;
 };
@@ -48,11 +57,20 @@ function buildDashboardHoldingRow(
   }
 
   const currentValue = getHoldingMarketValue(holding);
+  const displayPrice = resolveHoldingDisplayPrice(holding);
   const dailyChangePercent = resolveHoldingChangePercent(holding);
   const dailyChangeAmount =
     currentValue !== null && dailyChangePercent !== null
       ? computeHoldingDayMove(holding, currentValue)
       : null;
+  const priceQuality: DashboardHoldingPriceQuality =
+    displayPrice.source === "unavailable"
+      ? "unavailable"
+      : displayPrice.source === "estimated"
+        ? "estimated"
+        : holding.priceDataStatus === "stale"
+          ? "stale"
+          : "live";
 
   return {
     id: holding.id,
@@ -67,6 +85,7 @@ function buildDashboardHoldingRow(
       currentValue !== null && dailyChangePercent !== null
         ? "available"
         : "unavailable",
+    priceQuality,
     lastUpdatedAt: holding.marketPriceUpdatedAt ?? holding.updatedAt ?? null,
     isStale: holding.priceDataStatus === "stale",
   };
