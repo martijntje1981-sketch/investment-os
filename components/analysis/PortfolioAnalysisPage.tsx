@@ -17,6 +17,7 @@ import {
 import { DividendIntelligenceSection } from "@/components/analysis/DividendIntelligenceSection";
 import { AnalystIntelligenceSection } from "@/components/analysis/AnalystIntelligenceSection";
 import { PortfolioPerformanceSection } from "@/components/analysis/performance/PortfolioPerformanceSection";
+import { MarketConsensusSection } from "@/components/analysis/marketConsensus/MarketConsensusSection";
 import BottomNavigation from "@/components/home/BottomNav";
 import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer";
 import { PageHero } from "@/components/layout/PageHero";
@@ -216,6 +217,12 @@ export default function PortfolioAnalysisPage() {
               <div className="mt-7">
                 <PortfolioPerformanceSection holdings={holdings} />
               </div>
+
+              <MarketConsensusSection
+                analysis={analysis}
+                holdings={holdings}
+                userSub={userSub}
+              />
 
               <section className="mt-7 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
                 <div className="flex items-start gap-3">
