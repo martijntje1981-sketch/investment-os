@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useCallback, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Banknote,
@@ -59,6 +59,7 @@ import {
 import {
   buildLiveRefreshPreviewMessage,
   countUniqueQuotableProviderSymbols,
+  readLastLivePriceRefreshAt,
   refreshLivePortfolioPrices,
 } from "@/lib/client/livePortfolioPriceRefresh";
 import {
@@ -83,7 +84,7 @@ import { usePortfolioDividends } from "@/lib/client/usePortfolioDividends";
 import { usePortfolioAnalyst } from "@/lib/client/usePortfolioAnalyst";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 import {
-  formatMarketSnapshotRefreshLabel,
+  formatPortfolioHeroRefreshLabel,
 } from "@/lib/client/marketSnapshotSync";
 import { useMarketSnapshotMetadata } from "@/lib/client/useMarketSnapshotMetadata";
 
@@ -148,9 +149,20 @@ export default function PortfolioPage() {
   const { lastRefreshedAt: snapshotRefreshedAt } = useMarketSnapshotMetadata(
     portfolioReady && holdings.length > 0,
   );
-  const snapshotRefreshLabel = useMemo(
-    () => formatMarketSnapshotRefreshLabel(snapshotRefreshedAt),
-    [snapshotRefreshedAt],
+  const [liveRefreshAt, setLiveRefreshAt] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!userSub) {
+      setLiveRefreshAt(null);
+      return;
+    }
+
+    setLiveRefreshAt(readLastLivePriceRefreshAt(userSub));
+  }, [userSub, portfolioReady]);
+
+  const heroRefreshLabel = useMemo(
+    () => formatPortfolioHeroRefreshLabel(liveRefreshAt, snapshotRefreshedAt),
+    [liveRefreshAt, snapshotRefreshedAt],
   );
   const [draft, setDraft] = useState<Holding>(emptyDraft);
   const [editorOpen, setEditorOpen] = useState(false);
@@ -184,6 +196,7 @@ export default function PortfolioPage() {
       );
       if (result.updated || hasLivePrices) {
         saveHoldings(result.holdings);
+        setLiveRefreshAt(readLastLivePriceRefreshAt(userSub));
       }
       setMessage(result.message);
     } finally {
@@ -318,7 +331,7 @@ export default function PortfolioPage() {
       <PageContainer>
         <PageHero
           title="Portfolio"
-          subtitle={`View and manage all your holdings in one place. ${snapshotRefreshLabel}`}
+          subtitle={`View and manage all your holdings in one place. ${heroRefreshLabel}`}
           actions={
             <>
               <button
@@ -429,8 +442,10 @@ export default function PortfolioPage() {
                       : null;
                   return (
                     <article key={holding.id} className="space-y-3 px-5 py-5 lg:px-7">
-                    <div className="grid gap-4 lg:grid-cols-[0.65fr_1.5fr_1fr_0.8fr_1fr_auto] lg:items-center">
-                      <div><span className={`inline-flex rounded-xl px-3 py-2 ${appTableValueClass} ${holding.assetType === "cash" ? "bg-emerald-100 text-emerald-800" : "bg-slate-950 text-white"}`}>{holding.symbol}</span></div>
+                    <div className="grid gap-4 lg:grid-cols-[0.65fr_1.5fr_1fr_0.8fr_1fr_auto] lg:items-start">
+                      <div className="flex items-start">
+                        <span className={`inline-flex rounded-xl px-3 py-2 ${appTableValueClass} ${holding.assetType === "cash" ? "bg-emerald-100 text-emerald-800" : "bg-slate-950 text-white"}`}>{holding.symbol}</span>
+                      </div>
                       <div>
                         <p className={appTableNameClass}>{holding.name}</p>
                         <p className={`mt-1 ${appSectionMetaClass}`}>
@@ -455,7 +470,11 @@ export default function PortfolioPage() {
                         <p className={`${appTableValueClass} ${holdingReturn === null ? "text-slate-600" : holdingReturn >= 0 ? "text-emerald-700" : "text-red-700"}`}>{holding.assetType === "cash" ? "Stable" : holdingReturn === null ? "Price pending" : `${holdingReturn >= 0 ? "+" : ""}${money(holdingReturn)}`}</p>
                       </div>
                       <div className="flex items-center justify-end gap-1">
-                        {holding.assetType === "investment" && <Link href={`/holding/${holding.symbol}`} aria-label={`View ${holding.name}`} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"><ChevronRight className="h-5 w-5" /></Link>}
+                        {holding.assetType === "investment" ? (
+                          <Link href={`/holding/${holding.symbol}`} aria-label={`View ${holding.name}`} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"><ChevronRight className="h-5 w-5" /></Link>
+                        ) : (
+                          <span className="rounded-lg p-2 opacity-0 pointer-events-none" aria-hidden="true"><ChevronRight className="h-5 w-5" /></span>
+                        )}
                         <button onClick={() => openEdit(holding)} aria-label={`Edit ${holding.name}`} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100"><Pencil className="h-4 w-4" /></button>
                         <button onClick={() => removeHolding(holding)} aria-label={`Remove ${holding.name}`} className="rounded-lg p-2 text-red-600 hover:bg-red-50"><Trash2 className="h-4 w-4" /></button>
                       </div>

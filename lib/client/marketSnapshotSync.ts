@@ -174,6 +174,39 @@ export async function syncPortfolioPricesFromSnapshot<
   return run;
 }
 
+const AMSTERDAM_TIME_ZONE = "Europe/Amsterdam";
+
+function amsterdamDayKey(date: Date): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: AMSTERDAM_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
+/** Formats a refresh timestamp for hero copy, using "Today" when same Amsterdam day. */
+export function formatAmsterdamPriceRefreshTime(iso: string): string {
+  const target = new Date(iso);
+  const time = new Intl.DateTimeFormat("en-GB", {
+    timeZone: AMSTERDAM_TIME_ZONE,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(target);
+
+  if (amsterdamDayKey(new Date()) === amsterdamDayKey(target)) {
+    return `Today, ${time}`;
+  }
+
+  const date = new Intl.DateTimeFormat("en-GB", {
+    timeZone: AMSTERDAM_TIME_ZONE,
+    dateStyle: "medium",
+  }).format(target);
+
+  return `${date}, ${time}`;
+}
+
 export function formatMarketSnapshotRefreshLabel(
   lastRefreshedAt: string | null | undefined,
 ): string {
@@ -181,9 +214,17 @@ export function formatMarketSnapshotRefreshLabel(
     return "Awaiting next scheduled market refresh.";
   }
 
-  return `Latest scheduled refresh: ${new Intl.DateTimeFormat("en-GB", {
-    dateStyle: "medium",
-    timeStyle: "short",
-    timeZone: "Europe/Amsterdam",
-  }).format(new Date(lastRefreshedAt))} (Amsterdam)`;
+  return `Latest scheduled refresh: ${formatAmsterdamPriceRefreshTime(lastRefreshedAt)} (Amsterdam)`;
+}
+
+/** Prefers manual live refresh time; falls back to scheduled snapshot metadata. */
+export function formatPortfolioHeroRefreshLabel(
+  liveRefreshAt: string | null | undefined,
+  snapshotRefreshedAt: string | null | undefined,
+): string {
+  if (liveRefreshAt) {
+    return `Last updated: ${formatAmsterdamPriceRefreshTime(liveRefreshAt)} (Amsterdam)`;
+  }
+
+  return formatMarketSnapshotRefreshLabel(snapshotRefreshedAt);
 }

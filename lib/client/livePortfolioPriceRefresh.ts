@@ -14,6 +14,7 @@ import {
   writePriceCache,
 } from "@/lib/client/portfolioPricing";
 import { logLivePriceRefreshTrace } from "@/lib/client/marketDataRefreshTrace";
+import { lastLivePriceRefreshKey } from "@/lib/client/portfolioStorageKeys";
 import { NO_QUOTABLE_HOLDINGS_MESSAGE } from "@/lib/services/prices/types";
 import type {
   PriceApiQuote,
@@ -51,6 +52,29 @@ export function countUniqueQuotableProviderSymbols(
     }
   }
   return symbols.size;
+}
+
+export function readLastLivePriceRefreshAt(userSub: string): string | null {
+  try {
+    const raw = localStorage.getItem(lastLivePriceRefreshKey(userSub));
+    if (!raw) {
+      return null;
+    }
+
+    const parsed = Date.parse(raw);
+    return Number.isFinite(parsed) ? new Date(parsed).toISOString() : null;
+  } catch {
+    return null;
+  }
+}
+
+function recordLastLivePriceRefreshAt(userSub: string, iso: string): void {
+  const parsed = Date.parse(iso);
+  if (!Number.isFinite(parsed)) {
+    return;
+  }
+
+  localStorage.setItem(lastLivePriceRefreshKey(userSub), new Date(parsed).toISOString());
 }
 
 export function getLivePriceRefreshCooldownRemainingMs(
@@ -327,10 +351,14 @@ export async function refreshLivePortfolioPrices<
       };
     }
 
+    const lastSuccessfulUpdate =
+      data.lastSuccessfulUpdate ?? new Date().toISOString();
+
     writePriceCache(userSub, data.prices, {
-      lastSuccessfulUpdate: data.lastSuccessfulUpdate ?? new Date().toISOString(),
+      lastSuccessfulUpdate,
       quoteSource: data.quoteSource ?? "provider",
     });
+    recordLastLivePriceRefreshAt(userSub, lastSuccessfulUpdate);
 
     const refreshed = applyPricesToHoldings(holdings, data.prices, {
       clearMissingDailyFields: true,
@@ -404,4 +432,12 @@ export async function refreshLivePortfolioPrices<
 export function resetLivePriceRefreshStateForTests(): void {
   lastLiveRefreshCompletedAt = 0;
   liveRefreshInFlight = null;
+  if (typeof localStorage !== "undefined") {
+    for (let index = localStorage.length - 1; index >= 0; index -= 1) {
+      const key = localStorage.key(index);
+      if (key?.startsWith("investment-os-last-live-price-refresh:")) {
+        localStorage.removeItem(key);
+      }
+    }
+  }
 }
