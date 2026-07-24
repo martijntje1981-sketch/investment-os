@@ -27,6 +27,11 @@ import { writeImportMappingsToCache } from "@/lib/services/import/mappingMemory"
 import { logStrcRemoteSyncMergeDiagnostics } from "@/lib/client/investmentOsProductionDebug";
 import { mergeRemoteMarketPrice } from "@/lib/client/portfolioPerformance";
 import {
+  applyCachedPrices,
+  isVerifiedListingHolding,
+  resolveVerifiedListingPriceFromCache,
+} from "@/lib/client/portfolioPricing";
+import {
   portfolioContentFingerprint,
   portfoliosContentMatch,
 } from "@/lib/services/portfolio/idempotency";
@@ -197,14 +202,36 @@ export function applyRemoteSnapshotToLocalCache(
     ]),
   );
 
-  const holdings = snapshot.holdings.map((holding) => {
+  const mergedHoldings = snapshot.holdings.map((holding) => {
     const localHolding =
       priceById.get(holding.id) ??
       priceBySymbol.get(`${holding.symbol}:${holding.assetType ?? "investment"}`);
-    const mergedPrice = mergeRemoteMarketPrice(
+    const effectiveHolding: StoredPortfolioHolding = {
+      ...holding,
+      providerSymbol: holding.providerSymbol ?? localHolding?.providerSymbol ?? null,
+      exchange: holding.exchange ?? localHolding?.exchange ?? null,
+      instrumentName:
+        holding.instrumentName ?? localHolding?.instrumentName ?? null,
+      isin: holding.isin ?? localHolding?.isin ?? null,
+      confirmationSource:
+        holding.confirmationSource ?? localHolding?.confirmationSource,
+      matchMethod: holding.matchMethod ?? localHolding?.matchMethod,
+      matchConfidence: holding.matchConfidence ?? localHolding?.matchConfidence,
+      requiresConfirmation:
+        holding.requiresConfirmation ?? localHolding?.requiresConfirmation,
+      matchWarnings: holding.matchWarnings ?? localHolding?.matchWarnings,
+    };
+    const fallbackPrice = mergeRemoteMarketPrice(
       holding,
       localHolding?.currentPrice,
     );
+    const mergedPrice = isVerifiedListingHolding(effectiveHolding)
+      ? resolveVerifiedListingPriceFromCache(
+          userSub,
+          effectiveHolding,
+          fallbackPrice,
+        )
+      : fallbackPrice;
 
     if (
       holding.symbol.trim().toUpperCase() === "STRC" &&
@@ -236,19 +263,7 @@ export function applyRemoteSnapshotToLocalCache(
     }
 
     return {
-      ...holding,
-      providerSymbol: holding.providerSymbol ?? localHolding?.providerSymbol ?? null,
-      exchange: holding.exchange ?? localHolding?.exchange ?? null,
-      instrumentName:
-        holding.instrumentName ?? localHolding?.instrumentName ?? null,
-      isin: holding.isin ?? localHolding?.isin ?? null,
-      confirmationSource:
-        holding.confirmationSource ?? localHolding?.confirmationSource,
-      matchMethod: holding.matchMethod ?? localHolding?.matchMethod,
-      matchConfidence: holding.matchConfidence ?? localHolding?.matchConfidence,
-      requiresConfirmation:
-        holding.requiresConfirmation ?? localHolding?.requiresConfirmation,
-      matchWarnings: holding.matchWarnings ?? localHolding?.matchWarnings,
+      ...effectiveHolding,
       currentPrice: mergedPrice,
       changePercent: localHolding?.changePercent ?? holding.changePercent,
       previousClose: localHolding?.previousClose ?? holding.previousClose,
@@ -262,6 +277,8 @@ export function applyRemoteSnapshotToLocalCache(
           : undefined,
     };
   });
+
+  const holdings = applyCachedPrices(userSub, mergedHoldings);
 
   const validation = validatePortfolioBeforeSave(holdings);
   if (!validation.ok) {

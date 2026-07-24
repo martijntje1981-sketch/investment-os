@@ -126,6 +126,10 @@ export function loadUserPortfolioHoldings(
 
   const holdings = applyCachedPrices(userSub, enriched);
 
+  if (verifiedListingPricesChanged(enriched, holdings, userSub)) {
+    persistVerifiedListingQuoteCorrections(userSub, holdings);
+  }
+
   if (strcBeforeCache) {
     const strcAfterCache = holdings.find(
       (holding) => holding.id === strcBeforeCache.id,
@@ -706,6 +710,119 @@ export function purgeIncorrectPriceCacheEntries(
   );
 }
 
+function readPriceCacheQuotes(userSub: string): PriceApiQuote[] {
+  return readPriceCacheEntries(userSub)
+    .filter((item) => Number.isFinite(item.price) && item.price > 0)
+    .map((item) =>
+      normalizePriceApiQuote({
+        symbol: item.symbol,
+        providerSymbol: item.providerSymbol,
+        isin: item.isin ?? null,
+        priceEur: item.price,
+        currentPrice: item.price,
+        previousClose: item.previousClose ?? null,
+        change: item.change ?? null,
+        changePercent: item.changePercent ?? null,
+        currency: item.currency ?? null,
+        dataStatus: item.dataStatus,
+        updatedAt: item.updatedAt ?? null,
+      }),
+    );
+}
+
+function buildPriceCacheLookupForUser(
+  userSub: string,
+): Map<string, PriceApiQuote> {
+  return buildPriceLookup(readPriceCacheQuotes(userSub));
+}
+
+export function isVerifiedListingHolding(
+  holding: Pick<StoredPortfolioHolding, "assetType" | "providerSymbol">,
+): boolean {
+  return holding.assetType !== "cash" && Boolean(holding.providerSymbol?.trim());
+}
+
+export function findCompatibleCachedQuoteForHolding(
+  userSub: string,
+  holding: StoredPortfolioHolding,
+): PriceApiQuote | null {
+  assertUserSub(userSub);
+  const lookup = buildPriceCacheLookupForUser(userSub);
+  return describeQuoteSelectionForHolding(holding, lookup).quote;
+}
+
+export function resolveVerifiedListingPriceFromCache(
+  userSub: string,
+  holding: StoredPortfolioHolding,
+  fallbackPrice: number,
+): number {
+  const quote = findCompatibleCachedQuoteForHolding(userSub, holding);
+  if (quote && Number.isFinite(quote.priceEur) && quote.priceEur > 0) {
+    return quote.priceEur;
+  }
+  return fallbackPrice;
+}
+
+function holdingPriceCorrectedByCompatibleQuote(
+  userSub: string,
+  before: StoredPortfolioHolding,
+  after: StoredPortfolioHolding,
+): boolean {
+  if (!isVerifiedListingHolding(after)) {
+    return false;
+  }
+  if (before.currentPrice === after.currentPrice) {
+    return false;
+  }
+  const quote = findCompatibleCachedQuoteForHolding(userSub, after);
+  return quote !== null && quote.priceEur === after.currentPrice;
+}
+
+export function verifiedListingPricesChanged(
+  before: StoredPortfolioHolding[],
+  after: StoredPortfolioHolding[],
+  userSub: string,
+): boolean {
+  const beforeById = new Map(before.map((holding) => [holding.id, holding]));
+  return after.some((holding) => {
+    const prior = beforeById.get(holding.id);
+    if (!prior) {
+      return false;
+    }
+    return holdingPriceCorrectedByCompatibleQuote(userSub, prior, holding);
+  });
+}
+
+export function remoteVerifiedListingPricesStale(
+  remoteHoldings: StoredPortfolioHolding[],
+  correctedHoldings: StoredPortfolioHolding[],
+  userSub: string,
+): boolean {
+  const remoteById = new Map(remoteHoldings.map((holding) => [holding.id, holding]));
+  return correctedHoldings.some((holding) => {
+    const remote = remoteById.get(holding.id);
+    if (!remote) {
+      return false;
+    }
+    return holdingPriceCorrectedByCompatibleQuote(userSub, remote, holding);
+  });
+}
+
+export function persistVerifiedListingQuoteCorrections(
+  userSub: string,
+  holdings: StoredPortfolioHolding[],
+): void {
+  assertUserSub(userSub);
+  writePortfolioToStorage(userSub, holdings);
+  writePortfolioBackupIfComplete(userSub, holdings);
+  const meta = readPortfolioSyncMeta(userSub);
+  recordLocalPortfolioSave(
+    userSub,
+    holdings,
+    (meta.lastLocalRevision ?? 0) + 1,
+  );
+}
+
 /** Applies cached prices using the same multi-key join as live pricing. */
 export function applyCachedPrices<T extends StoredPortfolioHolding>(
   userSub: string,
@@ -714,29 +831,7 @@ export function applyCachedPrices<T extends StoredPortfolioHolding>(
   assertUserSub(userSub);
 
   try {
-    const cached = localStorage.getItem(priceCacheKey(userSub));
-    const parsed = cached ? (JSON.parse(cached) as CachedPortfolioPrice[]) : [];
-    if (!Array.isArray(parsed)) return holdings;
-
-    const quotes: PriceApiQuote[] = parsed
-      .filter((item) => Number.isFinite(item.price) && item.price > 0)
-      .map((item) =>
-        normalizePriceApiQuote({
-          symbol: item.symbol,
-          providerSymbol: item.providerSymbol,
-          isin: item.isin ?? null,
-          priceEur: item.price,
-          currentPrice: item.price,
-          previousClose: item.previousClose ?? null,
-          change: item.change ?? null,
-          changePercent: item.changePercent ?? null,
-          currency: item.currency ?? null,
-          dataStatus: item.dataStatus,
-          updatedAt: item.updatedAt ?? null,
-        }),
-      );
-
-    return applyPricesToHoldings(holdings, quotes);
+    return applyPricesToHoldings(holdings, readPriceCacheQuotes(userSub));
   } catch {
     return holdings;
   }

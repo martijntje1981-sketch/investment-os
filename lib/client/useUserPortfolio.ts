@@ -6,8 +6,11 @@ import {
   dispatchPortfolioUpdated,
   getLegacyRecoveryOffer,
   loadUserPortfolioHoldings,
+  persistVerifiedListingQuoteCorrections,
   recoverLegacyPortfolioToUser,
   dismissLegacyPortfolioRecovery,
+  remoteVerifiedListingPricesStale,
+  verifiedListingPricesChanged,
   writePortfolioToStorage,
   type LegacyRecoveryOffer,
   type StoredPortfolioHolding,
@@ -234,7 +237,31 @@ export function useUserPortfolio() {
           preserveLocalPrices: localHoldings,
           context: "hydrate",
         });
-        setHoldings(applyCachedPrices(userSub, merged));
+        setHoldings(merged);
+
+        if (
+          remoteVerifiedListingPricesStale(
+            remoteSnapshot.holdings,
+            merged,
+            userSub,
+          )
+        ) {
+          const meta = readPortfolioSyncMeta(userSub);
+          const revision = (meta.lastLocalRevision ?? 0) + 1;
+          const idempotencyKey = buildPortfolioSaveIdempotencyKey(
+            userSub,
+            merged,
+            goal,
+            revision,
+          );
+          void pushPortfolioToRemote({
+            idempotencyKey,
+            holdings: merged,
+            goal,
+            importMappings,
+          });
+        }
+
         dispatchPortfolioUpdated(userSub);
         logHydrateProductionDiagnostics({
           hydrateSource: "merged",
@@ -317,9 +344,37 @@ export function useUserPortfolio() {
 
     void syncPortfolioPricesFromSnapshot(userSub, currentHoldings).then(
       (result) => {
-        if (result.updated) {
-          setHoldings(result.holdings);
+        if (!result.updated) {
+          return;
         }
+
+        if (
+          verifiedListingPricesChanged(
+            currentHoldings,
+            result.holdings,
+            userSub,
+          )
+        ) {
+          persistVerifiedListingQuoteCorrections(userSub, result.holdings);
+          const goal = readSavedUserGoal(userSub);
+          const importMappings = readImportMappingsFromCache(userSub);
+          const meta = readPortfolioSyncMeta(userSub);
+          const revision = (meta.lastLocalRevision ?? 0) + 1;
+          const idempotencyKey = buildPortfolioSaveIdempotencyKey(
+            userSub,
+            result.holdings,
+            goal,
+            revision,
+          );
+          void pushPortfolioToRemote({
+            idempotencyKey,
+            holdings: result.holdings,
+            goal,
+            importMappings,
+          });
+        }
+
+        setHoldings(result.holdings);
       },
     );
   }, [portfolioReady, userSub]);
