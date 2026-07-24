@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
+import { usePathname } from "next/navigation";
 import { DashboardEmptyState } from "@/components/dashboard/DashboardEmptyState";
 import { DashboardDividendCard } from "@/components/dashboard/DashboardDividendCard";
 import { DashboardAnalystCard } from "@/components/dashboard/DashboardAnalystCard";
@@ -10,6 +11,7 @@ import { DashboardMoverCard } from "@/components/dashboard/DashboardHero";
 import { DashboardPortfolioHealthCard } from "@/components/dashboard/DashboardPortfolioHealthCard";
 import { DashboardSummary } from "@/components/dashboard/DashboardSummary";
 import { DashboardTodaysDecision } from "@/components/dashboard/DashboardTodaysDecision";
+import { DashboardProductionDebugMarker } from "@/components/dashboard/DashboardProductionDebugMarker";
 import { HoldingsToday } from "@/components/dashboard/HoldingsToday";
 import { DashboardInsightCard } from "@/components/dashboard/DashboardInsightCard";
 import { DashboardMarketStatus } from "@/components/dashboard/DashboardMarketStatus";
@@ -32,8 +34,11 @@ import { useUserGoal } from "@/lib/client/useUserGoal";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 import { useMarketSnapshotMetadata } from "@/lib/client/useMarketSnapshotMetadata";
 import { buildPortfolioHealthScore } from "@/lib/services/portfolio/portfolioHealthScore";
+import { logDashboardProductionDiagnostics } from "@/lib/client/investmentOsProductionDebug";
 
 export default function DashboardPage() {
+  const pathname = usePathname();
+  const dashboardDebugLoggedRef = useRef(false);
   const firstName = useAuthenticatedFirstName();
   const {
     userSub,
@@ -98,6 +103,27 @@ export default function DashboardPage() {
   }, [goalProgress, holdings, intelligence.portfolioStatus, intelligence.quietMarket, snapshot.isStale]);
 
   const marketsClosed = useMemo(() => areMajorMarketsClosed(), []);
+
+  const dashboardSummaryRendered = portfolioReady && holdings.length > 0;
+  const dashboardTodaysDecisionRendered = dashboardSummaryRendered;
+
+  useEffect(() => {
+    if (!portfolioReady || dashboardDebugLoggedRef.current) {
+      return;
+    }
+
+    dashboardDebugLoggedRef.current = true;
+    logDashboardProductionDiagnostics({
+      route: pathname,
+      dashboardSummaryRendered,
+      dashboardTodaysDecisionRendered,
+    });
+  }, [
+    dashboardSummaryRendered,
+    dashboardTodaysDecisionRendered,
+    pathname,
+    portfolioReady,
+  ]);
 
   const heroTitle = firstName
     ? `Welcome back, ${firstName}`
@@ -198,6 +224,8 @@ export default function DashboardPage() {
         Investment OS is a monitoring tool. It does not provide personal
         financial advice.
       </p>
+
+      <DashboardProductionDebugMarker />
     </PageContainer>
   );
 }

@@ -12,6 +12,10 @@ import {
   type LegacyRecoveryOffer,
   type StoredPortfolioHolding,
 } from "@/lib/client/portfolioPricing";
+import {
+  logRemoteHydrateProductionDiagnostics,
+  type RemoteHydrateSource,
+} from "@/lib/client/investmentOsProductionDebug";
 import { syncPortfolioPricesFromSnapshot } from "@/lib/client/marketSnapshotSync";
 import { PORTFOLIO_HOLDINGS_UPDATED_EVENT } from "@/lib/client/portfolioStorageKeys";
 import { createPortfolioUpdatedHandler } from "@/lib/client/portfolioUpdatedEvents";
@@ -52,6 +56,53 @@ import {
   portfolioFingerprint,
 } from "@/lib/services/portfolio/idempotency";
 import type { PortfolioSyncPreview } from "@/lib/services/portfolio/types";
+
+function readStrcPrice(holdings: StoredPortfolioHolding[]): number | null {
+  const strc = holdings.find(
+    (holding) => holding.symbol.trim().toUpperCase() === "STRC",
+  );
+  if (
+    !strc ||
+    !Number.isFinite(strc.currentPrice) ||
+    strc.currentPrice <= 0
+  ) {
+    return null;
+  }
+  return strc.currentPrice;
+}
+
+function logHydrateProductionDiagnostics(input: {
+  hydrateSource: RemoteHydrateSource;
+  remoteSnapshotApplied: boolean;
+  localHoldings: StoredPortfolioHolding[];
+  remoteHoldings?: StoredPortfolioHolding[];
+  mergedHoldings?: StoredPortfolioHolding[];
+}): void {
+  const strcLocalPrice = readStrcPrice(input.localHoldings);
+  const strcRemotePrice = input.remoteHoldings
+    ? readStrcPrice(input.remoteHoldings)
+    : null;
+  const strcMergedPrice = input.mergedHoldings
+    ? readStrcPrice(input.mergedHoldings)
+    : null;
+
+  const strcRemotePriceReplacedLocal =
+    input.remoteSnapshotApplied &&
+    strcRemotePrice !== null &&
+    strcMergedPrice !== null
+      ? strcMergedPrice === strcRemotePrice &&
+        strcLocalPrice !== strcRemotePrice
+      : null;
+
+  logRemoteHydrateProductionDiagnostics({
+    hydrateSource: input.hydrateSource,
+    remoteSnapshotApplied: input.remoteSnapshotApplied,
+    strcRemotePriceReplacedLocal,
+    strcLocalPrice,
+    strcRemotePrice,
+    strcMergedPrice,
+  });
+}
 
 export function useUserPortfolio() {
   const { userSub, authReady } = useAuthenticatedUserSub();
@@ -107,6 +158,11 @@ export function useUserPortfolio() {
         if ("unauthorized" in remoteResult && remoteResult.unauthorized) {
           setSyncState({ status: "ready", source: "local" });
           setPortfolioReady(true);
+          logHydrateProductionDiagnostics({
+            hydrateSource: "local",
+            remoteSnapshotApplied: false,
+            localHoldings,
+          });
           return;
         }
 
@@ -150,6 +206,11 @@ export function useUserPortfolio() {
         remoteHydratedRef.current = true;
         setPortfolioReady(true);
         setRecoveryOffer(getLegacyRecoveryOffer(userSub));
+        logHydrateProductionDiagnostics({
+          hydrateSource: "local",
+          remoteSnapshotApplied: false,
+          localHoldings,
+        });
         return;
       }
 
@@ -175,8 +236,28 @@ export function useUserPortfolio() {
         });
         setHoldings(applyCachedPrices(userSub, merged));
         dispatchPortfolioUpdated(userSub);
+        logHydrateProductionDiagnostics({
+          hydrateSource: "merged",
+          remoteSnapshotApplied: true,
+          localHoldings,
+          remoteHoldings: remoteSnapshot.holdings,
+          mergedHoldings: merged,
+        });
       } else if (localHoldings.length > 0) {
         setHoldings(applyCachedPrices(userSub, localHoldings));
+        logHydrateProductionDiagnostics({
+          hydrateSource: "local",
+          remoteSnapshotApplied: false,
+          localHoldings,
+          remoteHoldings: remoteSnapshot.holdings,
+        });
+      } else {
+        logHydrateProductionDiagnostics({
+          hydrateSource: "remote",
+          remoteSnapshotApplied: false,
+          localHoldings,
+          remoteHoldings: remoteSnapshot.holdings,
+        });
       }
 
       if (nextSyncState.status === "migration_offer") {
