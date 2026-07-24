@@ -1,9 +1,10 @@
 import type { ReactNode } from "react";
 
-import {
-  appPageTitleClass,
-  appSectionBodyClass,
-} from "@/components/layout/appSurface";
+import { appPageTitleClass } from "@/components/layout/appSurface";
+
+/** ~90% of appPageTitleClass (20px → 18px), white, medium — shared hero subtitle. */
+const pageHeroSubtitleClass =
+  "mt-2.5 max-w-2xl text-[18px] font-medium leading-relaxed tracking-[-0.015em] text-white";
 
 function cn(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
@@ -64,15 +65,7 @@ export function PageHero({
           {title}
         </h1>
         {subtitle ? (
-          <p
-            className={cn(
-              isDashboard ? "mt-3 max-w-xl sm:mt-3.5" : "mt-2 max-w-2xl",
-              appSectionBodyClass,
-              isDashboard ? "text-slate-200" : "text-slate-300",
-            )}
-          >
-            {subtitle}
-          </p>
+          <p className={pageHeroSubtitleClass}>{subtitle}</p>
         ) : null}
       </div>
 
