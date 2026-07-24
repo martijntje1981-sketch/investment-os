@@ -7,6 +7,10 @@ import {
 import {
   appCardClass,
   appCardPaddingClass,
+  appSectionBodyClass,
+  appSectionLabelClass,
+  appSectionSubtitleClass,
+  appSectionTitleClass,
 } from "@/components/layout/appSurface";
 import type { DashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
 
@@ -24,18 +28,14 @@ export function GoalProgressCard({
   if (!snapshot.hasSavedGoal || snapshot.goalTarget === null) {
     return (
       <article className={`${appCardClass} ${appCardPaddingClass}`}>
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-          Goal progress
-        </p>
-        <p className="mt-2 text-lg font-semibold tracking-[-0.02em] text-slate-950">
-          No goal saved yet
-        </p>
-        <p className="mt-2 text-sm leading-relaxed text-slate-500">
+        <p className={appSectionLabelClass}>Goal progress</p>
+        <h2 className={`mt-2.5 ${appSectionTitleClass}`}>No goal saved yet</h2>
+        <p className={`mt-2 ${appSectionBodyClass} text-slate-600`}>
           Set a target to track progress from your current portfolio value.
         </p>
         <Link
           href="/goals"
-          className="mt-5 inline-flex min-h-[44px] items-center rounded-xl bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
+          className="mt-6 inline-flex min-h-[44px] items-center rounded-xl bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
         >
           Set your goal
         </Link>
@@ -45,14 +45,12 @@ export function GoalProgressCard({
 
   return (
     <article className={`${appCardClass} ${appCardPaddingClass}`}>
-      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-        Goal progress
-      </p>
-      <p className="mt-2 text-base font-semibold leading-snug text-slate-950 sm:text-lg">
+      <p className={appSectionLabelClass}>Goal progress</p>
+      <p className={`mt-2.5 ${appSectionTitleClass}`}>
         {formatPortfolioCurrency(snapshot.portfolioValue)} of{" "}
         {formatPortfolioCurrency(snapshot.goalTarget)}
       </p>
-      <p className="mt-1.5 text-sm text-slate-500">
+      <p className={`mt-2 ${appSectionSubtitleClass}`}>
         {snapshot.goalCompleted
           ? "Goal achieved"
           : `${formatPortfolioPercent(snapshot.goalProgress)} complete`}
@@ -64,7 +62,7 @@ export function GoalProgressCard({
         ) : null}
       </p>
       <div
-        className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100"
+        className="mt-5 h-2 overflow-hidden rounded-full bg-slate-100"
         role="progressbar"
         aria-valuemin={0}
         aria-valuemax={100}

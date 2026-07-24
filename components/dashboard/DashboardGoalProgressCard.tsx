@@ -2,6 +2,12 @@ import type { ReactNode } from "react";
 import { Goal, TrendingDown, TrendingUp, Minus } from "lucide-react";
 import Link from "next/link";
 
+import { DashboardSectionHeader } from "@/components/dashboard/DashboardSectionHeader";
+import {
+  appCardPaddingCompactClass,
+  appSectionLabelClass,
+  appSectionTitleClass,
+} from "@/components/layout/appSurface";
 import { formatPortfolioCurrency, formatPortfolioPercent } from "@/lib/client/portfolioAnalysis";
 import type { GoalProgress } from "@/lib/services/goals/goalProgressEngine";
 
@@ -32,29 +38,22 @@ export function DashboardGoalProgressCard({
 
   return (
     <section className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm md:rounded-[28px]">
-      <div className="border-b border-slate-100 px-4 py-4 md:px-6 md:py-5">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-700">
-              Goal progress
-            </p>
-            <h2 className="mt-2 text-xl font-black tracking-[-0.03em] text-slate-950 sm:text-2xl">
-              Goal Progress
-            </h2>
-          </div>
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-50 text-violet-700">
-            <Goal className="h-5 w-5" />
-          </div>
-        </div>
+      <DashboardSectionHeader
+        title="Goal progress"
+        subtitle="Track where you are against your target"
+        icon={<Goal className="h-5 w-5" />}
+        bordered={false}
+      />
 
-        <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100">
+      <div className={`border-b border-slate-100 ${appCardPaddingCompactClass}`}>
+        <div className="mt-1 h-2 overflow-hidden rounded-full bg-slate-100">
           <div
             className="h-full rounded-full bg-gradient-to-r from-blue-600 via-violet-600 to-fuchsia-500"
             style={{ width: `${progressWidth}%` }}
           />
         </div>
 
-        <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-3">
+        <div className="mt-5 grid grid-cols-3 gap-3">
           <Metric label="Current value" value={formatPortfolioCurrency(progress.currentValue)} />
           <Metric
             label="Goal value"
@@ -78,19 +77,19 @@ export function DashboardGoalProgressCard({
       <div className="grid gap-px bg-slate-100 sm:grid-cols-3">
         <InfoBlock label="Current trajectory">
           <span
-            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${TRAJECTORY_STYLES[progress.currentTrajectory]}`}
+            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${TRAJECTORY_STYLES[progress.currentTrajectory]}`}
           >
             <TrajectoryIcon className="h-3.5 w-3.5" />
             {progress.currentTrajectory}
           </span>
         </InfoBlock>
         <InfoBlock label="Estimated completion">
-          <p className="text-sm font-bold text-slate-950">
+          <p className={`${appSectionTitleClass} text-base md:text-lg`}>
             {progress.estimatedCompletionLabel}
           </p>
         </InfoBlock>
         <InfoBlock label="Remaining to goal">
-          <p className="text-sm font-bold text-slate-950">
+          <p className={`${appSectionTitleClass} text-base md:text-lg`}>
             {progress.hasGoal
               ? formatPortfolioCurrency(progress.remainingAmount)
               : "—"}
@@ -98,16 +97,16 @@ export function DashboardGoalProgressCard({
         </InfoBlock>
       </div>
 
-      <div className="px-4 py-4 md:px-6 md:py-5">
-        <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">
-          Summary
+      <div className={appCardPaddingCompactClass}>
+        <p className={appSectionLabelClass}>Summary</p>
+        <p className="mt-2.5 text-base leading-relaxed text-slate-700">
+          {progress.summary}
         </p>
-        <p className="mt-2 text-sm leading-6 text-slate-700">{progress.summary}</p>
 
         {!progress.hasGoal ? (
           <Link
             href="/goals"
-            className="mt-4 inline-flex min-h-[44px] items-center justify-center rounded-xl bg-slate-950 px-4 py-3 text-sm font-bold text-white"
+            className="mt-5 inline-flex min-h-[44px] items-center justify-center rounded-xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white"
           >
             Set your goal
           </Link>
@@ -119,11 +118,11 @@ export function DashboardGoalProgressCard({
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[16px] border border-slate-200 bg-slate-50 px-3 py-2.5">
-      <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
-        {label}
+    <div className="rounded-[16px] border border-slate-200 bg-slate-50 px-3 py-3">
+      <p className={appSectionLabelClass}>{label}</p>
+      <p className={`mt-1.5 truncate text-sm font-black text-slate-950`}>
+        {value}
       </p>
-      <p className="mt-1 truncate text-sm font-black text-slate-950">{value}</p>
     </div>
   );
 }
@@ -136,11 +135,9 @@ function InfoBlock({
   children: ReactNode;
 }) {
   return (
-    <div className="bg-white px-4 py-4 md:px-5">
-      <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
-        {label}
-      </p>
-      <div className="mt-2">{children}</div>
+    <div className={`bg-white ${appCardPaddingCompactClass}`}>
+      <p className={appSectionLabelClass}>{label}</p>
+      <div className="mt-2.5">{children}</div>
     </div>
   );
 }

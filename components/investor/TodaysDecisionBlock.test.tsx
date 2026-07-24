@@ -40,7 +40,9 @@ describe("TodaysDecisionBlock", () => {
 
     expect(positive).toContain("bg-emerald-50");
     expect(attention).toContain("bg-amber-50");
-    expect(critical).toContain("bg-rose-50");
+    expect(critical).toContain("bg-violet-50");
+    expect(critical).toContain("border-violet-200");
+    expect(critical).not.toContain("rose");
   });
 
   it("links the headline when a canonical source URL is available", () => {

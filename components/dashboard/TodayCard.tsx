@@ -6,6 +6,7 @@ import {
   formatTodayMoveDetail,
   formatTodayMoveValue,
 } from "@/lib/client/investorOverviewCopy";
+import { appHeroMetricLabelClass } from "@/components/layout/appSurface";
 import type { DashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
 
 function todayToneClass(
@@ -58,24 +59,20 @@ export function TodayCard({
     <article
       className={
         embedded
-          ? "min-w-0 border-t border-white/10 px-4 py-5 text-white sm:px-6 sm:py-6 md:border-t-0 md:border-l"
-          : "min-w-0 rounded-[24px] border border-slate-200/80 bg-white px-4 py-5 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_12px_32px_rgba(15,23,42,0.06)] md:px-6 md:py-6"
+          ? "min-w-0 border-t border-white/[0.08] px-5 py-6 text-white sm:px-6 sm:py-7 md:border-t-0 md:border-l"
+          : "min-w-0 rounded-[24px] border border-slate-200/80 bg-white px-5 py-6 shadow-sm md:px-6 md:py-7"
       }
     >
-      <p
-        className={`text-[11px] font-semibold uppercase tracking-[0.14em] ${
-          embedded ? "text-slate-400" : "text-slate-500"
-        }`}
-      >
+      <p className={embedded ? appHeroMetricLabelClass : "text-xs font-semibold uppercase tracking-[0.08em] text-slate-500"}>
         Today
       </p>
       <p
-        className={`mt-2 text-[1.75rem] font-semibold tracking-[-0.03em] sm:text-[2.25rem] ${todayToneClass(snapshot, embedded)}`}
+        className={`mt-2.5 text-[1.625rem] font-black leading-none tracking-[-0.035em] sm:text-[2rem] ${todayToneClass(snapshot, embedded)}`}
       >
         {showTodayMove ? amountLabel : unavailableCopy}
       </p>
       <p
-        className={`mt-2 text-sm leading-relaxed ${
+        className={`mt-2.5 text-sm leading-relaxed ${
           embedded ? "text-slate-400" : "text-slate-500"
         }`}
       >

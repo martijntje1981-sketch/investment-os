@@ -7,9 +7,11 @@ function cn(...classes: Array<string | false | null | undefined>) {
 export function PageContainer({
   children,
   className,
+  stackClassName,
 }: {
   children: ReactNode;
   className?: string;
+  stackClassName?: string;
 }) {
   return (
     <main
@@ -18,7 +20,12 @@ export function PageContainer({
         className,
       )}
     >
-      <div className="mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-5 md:gap-6">
+      <div
+        className={cn(
+          "mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-5 md:gap-6",
+          stackClassName,
+        )}
+      >
         {children}
       </div>
     </main>

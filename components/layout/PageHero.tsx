@@ -10,6 +10,7 @@ export function PageHero({
   actions,
   stats,
   embedded = false,
+  variant = "default",
 }: {
   title: string;
   subtitle?: string;
@@ -17,8 +18,11 @@ export function PageHero({
   stats?: ReactNode;
   /** When true, omits outer shell — for use inside a shared hero container. */
   embedded?: boolean;
+  /** Dashboard uses a calmer, roomier hero treatment without changing copy or data. */
+  variant?: "default" | "dashboard";
 }) {
   const hasAside = Boolean(actions || stats);
+  const isDashboard = variant === "dashboard";
 
   return (
     <section
@@ -26,7 +30,9 @@ export function PageHero({
       className={cn(
         "min-w-0 text-white",
         embedded
-          ? "px-4 py-5 sm:px-6 sm:py-6"
+          ? isDashboard
+            ? "px-5 py-7 sm:px-7 sm:py-8 md:px-8 md:py-9"
+            : "px-4 py-5 sm:px-6 sm:py-6"
           : cn(
               "rounded-[24px] border border-slate-800/90 bg-slate-950 shadow-[0_16px_48px_rgba(15,23,42,0.28)]",
               "px-4 py-5 sm:rounded-[28px] sm:px-6 sm:py-6",
@@ -45,12 +51,22 @@ export function PageHero({
       >
         <h1
           id="app-page-hero-title"
-          className="text-2xl font-semibold tracking-[-0.03em] sm:text-3xl lg:text-[2rem]"
+          className={cn(
+            isDashboard
+              ? "text-[1.625rem] font-semibold leading-[1.12] tracking-[-0.035em] sm:text-[2rem] md:text-[2.25rem]"
+              : "text-2xl font-semibold tracking-[-0.03em] sm:text-3xl lg:text-[2rem]",
+          )}
         >
           {title}
         </h1>
         {subtitle ? (
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-400 sm:text-[15px]">
+          <p
+            className={cn(
+              isDashboard
+                ? "mt-3 max-w-xl text-[15px] leading-[1.7] text-slate-300/95 sm:mt-3.5 sm:text-base sm:leading-[1.65]"
+                : "mt-2 max-w-2xl text-sm leading-relaxed text-slate-400 sm:text-[15px]",
+            )}
+          >
             {subtitle}
           </p>
         ) : null}

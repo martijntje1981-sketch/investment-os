@@ -20,10 +20,10 @@ export function DashboardSummary({
   }
 
   return (
-    <section aria-label="Portfolio summary" className="space-y-5">
+    <section aria-label="Portfolio summary" className="space-y-7 md:space-y-10">
       <div className={appHeroShellClass}>
         {welcome}
-        <div className="grid min-w-0 grid-cols-1 border-t border-white/10 md:grid-cols-2">
+        <div className="grid min-w-0 grid-cols-1 border-t border-white/[0.08] md:grid-cols-2">
           <PortfolioValueCard snapshot={snapshot} embedded />
           <TodayCard snapshot={snapshot} embedded />
         </div>

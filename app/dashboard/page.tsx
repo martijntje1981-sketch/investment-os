@@ -134,7 +134,10 @@ export default function DashboardPage() {
   }
 
   return (
-    <PageContainer>
+    <PageContainer
+      className="bg-[#F4F7FB] px-4 pb-32 pt-6 sm:px-6 sm:pt-8"
+      stackClassName="gap-7 md:gap-10"
+    >
       <PortfolioSyncBanner
         syncState={syncState}
         migrationPreview={migrationPreview}
@@ -161,6 +164,7 @@ export default function DashboardPage() {
             welcome={
               <PageHero
                 embedded
+                variant="dashboard"
                 title={heroTitle}
                 subtitle="Your portfolio at a glance — value, today's move, and what needs attention."
               />
@@ -189,7 +193,7 @@ export default function DashboardPage() {
             <section className={appPageSectionClass}>
               <DashboardPortfolioHealthCard health={portfolioHealth} />
               <DashboardGoalProgressCard progress={goalProgress} />
-              <section className="space-y-5 md:space-y-6">
+              <section className="space-y-6 md:space-y-8">
                 <DashboardDividendCard
                   snapshot={dividendSnapshot}
                   isLoading={dividendsLoading}
@@ -200,7 +204,7 @@ export default function DashboardPage() {
                 />
               </section>
               <DashboardInsightCard sections={insightSections} />
-              <section className="grid min-w-0 grid-cols-1 gap-5 sm:grid-cols-2">
+              <section className="grid min-w-0 grid-cols-1 gap-6 sm:grid-cols-2">
                 <DashboardMoverCard
                   label="Biggest winner"
                   mover={snapshot.bestMover}
@@ -220,7 +224,7 @@ export default function DashboardPage() {
         </>
       ) : null}
 
-      <p className="rounded-[24px] border border-slate-200/80 bg-white/90 px-4 py-4 text-center text-sm leading-relaxed text-slate-500 shadow-sm">
+      <p className="rounded-[28px] border border-slate-200/70 bg-white/95 px-5 py-5 text-center text-[13px] leading-[1.7] text-slate-500 shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:px-6 sm:py-6 sm:text-sm">
         Investment OS is a monitoring tool. It does not provide personal
         financial advice.
       </p>

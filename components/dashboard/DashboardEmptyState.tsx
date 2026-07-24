@@ -5,23 +5,23 @@ import { DashboardMarketStatus } from "@/components/dashboard/DashboardMarketSta
 
 export function DashboardEmptyState() {
   return (
-    <div className="space-y-8">
-      <section className="overflow-hidden rounded-[28px] border border-slate-800 bg-slate-950 p-8 text-white shadow-2xl sm:rounded-[32px] sm:p-10">
-        <div className="inline-flex items-center gap-2 rounded-full bg-violet-500/15 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-violet-200">
+    <div className="space-y-8 md:space-y-10">
+      <section className="overflow-hidden rounded-[28px] border border-slate-800/75 bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900 p-8 text-white shadow-[0_24px_64px_-16px_rgba(15,23,42,0.38)] sm:rounded-[32px] sm:p-10 md:p-12">
+        <div className="inline-flex items-center gap-2 rounded-full bg-violet-500/15 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-violet-200">
           <Sparkles className="h-3.5 w-3.5" />
           Your dashboard
         </div>
-        <h1 className="mt-4 text-3xl font-black tracking-[-0.05em] sm:text-5xl">
+        <h1 className="mt-5 text-[1.75rem] font-semibold leading-[1.12] tracking-[-0.035em] sm:mt-6 sm:text-[2.25rem] md:text-[2.5rem]">
           Start with your portfolio
         </h1>
-        <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
+        <p className="mt-4 max-w-xl text-[15px] leading-[1.7] text-slate-300/95 sm:mt-5 sm:text-base sm:leading-[1.65]">
           Upload holdings to see performance, daily movers, goal progress, and a
           concise AI insight based on your actual data. Investment OS never shows
           placeholder portfolio values.
         </p>
         <Link
           href="/upload"
-          className="mt-6 inline-flex min-h-[48px] items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-bold text-slate-950"
+          className="mt-7 inline-flex min-h-[48px] items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-slate-950 sm:mt-8"
         >
           <Upload className="h-4 w-4" />
           Upload portfolio

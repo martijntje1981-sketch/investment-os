@@ -4,6 +4,11 @@ import Link from "next/link";
 import { Target, TrendingDown, TrendingUp } from "lucide-react";
 
 import {
+  appSectionBodyClass,
+  appSectionLabelClass,
+  appSectionTitleClass,
+} from "@/components/layout/appSurface";
+import {
   formatPortfolioCurrency,
   formatPortfolioPercent,
 } from "@/lib/client/portfolioAnalysis";
@@ -49,7 +54,7 @@ export function DashboardPortfolioHero({ summary }: { summary: DashboardSummary 
   return (
     <section className="min-w-0 overflow-hidden rounded-[24px] border border-slate-800 bg-slate-950 text-white shadow-2xl md:rounded-[32px]">
       <div className="px-4 py-5 md:px-8 md:py-6">
-        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">
+        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-400">
           Portfolio value
         </p>
         <p className="mt-2 text-4xl font-black tracking-[-0.05em] md:text-6xl">
@@ -128,16 +133,16 @@ function HeroMetric({
 }) {
   return (
     <div className="min-w-0 rounded-[18px] border border-white/10 bg-white/[0.04] px-4 py-3.5">
-      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-400">
+      <div className={`flex items-center gap-2 ${appSectionLabelClass} text-slate-400`}>
         {icon}
         {label}
       </div>
       <p
-        className={`mt-1 text-xl font-black tracking-[-0.03em] md:text-2xl ${valueClassName}`}
+        className={`mt-1.5 text-xl font-black tracking-[-0.03em] md:text-2xl ${valueClassName}`}
       >
         {value}
       </p>
-      <p className="mt-1 text-sm leading-relaxed text-slate-400">{detail}</p>
+      <p className="mt-1.5 text-sm leading-relaxed text-slate-400">{detail}</p>
     </div>
   );
 }
@@ -155,11 +160,11 @@ export function DashboardMoverCard({
 }) {
   if (!performanceCoverageComplete) {
     return (
-      <article className="min-w-0 rounded-[20px] border border-slate-200 bg-white px-4 py-4">
-        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-          {label}
+      <article className="min-w-0 rounded-[24px] border border-slate-200 bg-white px-5 py-5 shadow-sm">
+        <p className={appSectionLabelClass}>{label}</p>
+        <p className={`mt-2.5 ${appSectionBodyClass} text-slate-600`}>
+          {RANKING_AFTER_CLOSE}
         </p>
-        <p className="mt-2 text-base text-slate-500">{RANKING_AFTER_CLOSE}</p>
       </article>
     );
   }
@@ -170,18 +175,18 @@ export function DashboardMoverCard({
       : "border-red-200 bg-red-50/60";
 
   return (
-    <article className={`min-w-0 rounded-[20px] border p-4 ${toneClasses}`}>
-      <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-        {label}
-      </p>
+    <article className={`min-w-0 rounded-[24px] border p-5 shadow-sm ${toneClasses}`}>
+      <p className={appSectionLabelClass}>{label}</p>
       {mover ? (
         <>
           <Link
             href={`/portfolio/${mover.symbol.toLowerCase()}`}
-            className="mt-2 block min-w-0 rounded-xl transition hover:bg-white/60"
+            className="mt-2.5 block min-w-0 rounded-xl transition hover:bg-white/60"
           >
-            <p className="truncate text-lg font-black text-slate-950">{mover.name}</p>
-            <p className="mt-0.5 text-sm font-semibold text-slate-500">{mover.symbol}</p>
+            <p className={`truncate ${appSectionTitleClass}`}>{mover.name}</p>
+            <p className="mt-1 text-sm font-semibold text-slate-500">
+              {mover.symbol}
+            </p>
           </Link>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             {tone === "positive" ? (
@@ -189,7 +194,7 @@ export function DashboardMoverCard({
             ) : (
               <TrendingDown className="h-4 w-4 shrink-0 text-red-600" />
             )}
-            <p className="text-base font-black text-slate-950">
+            <p className={`${appSectionTitleClass} text-base`}>
               {signedPercent(mover.changePercent)}
               <span aria-hidden="true"> · </span>
               {signedCurrency(mover.changeAmount)}
@@ -197,7 +202,7 @@ export function DashboardMoverCard({
           </div>
         </>
       ) : (
-        <p className="mt-2 text-base text-slate-500">
+        <p className={`mt-2.5 ${appSectionBodyClass} text-slate-600`}>
           No {tone === "positive" ? "positive" : "negative"} mover today.
         </p>
       )}

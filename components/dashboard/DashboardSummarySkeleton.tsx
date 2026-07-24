@@ -1,7 +1,7 @@
 export function DashboardSummarySkeleton() {
   return (
     <div
-      className="space-y-5"
+      className="space-y-7 md:space-y-10"
       aria-busy="true"
       aria-label="Loading dashboard summary"
     >

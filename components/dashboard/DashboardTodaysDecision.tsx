@@ -1,11 +1,12 @@
 "use client";
 
+import { Compass } from "lucide-react";
+
 import { TodaysDecisionBlock } from "@/components/investor/TodaysDecisionBlock";
+import { DashboardSectionHeader } from "@/components/dashboard/DashboardSectionHeader";
 import {
   appCardClass,
   appCardPaddingClass,
-  appSectionEyebrowClass,
-  appSectionTitleClass,
 } from "@/components/layout/appSurface";
 import {
   buildTodaysDecision,
@@ -16,12 +17,16 @@ export function DashboardTodaysDecision(context: TodaysDecisionContext) {
   const decision = buildTodaysDecision(context);
 
   return (
-    <section className={`${appCardClass} ${appCardPaddingClass}`}>
-      <div className="mb-4">
-        <p className={appSectionEyebrowClass}>Action</p>
-        <h2 className={`mt-1 ${appSectionTitleClass}`}>Today&apos;s decision</h2>
+    <section className={appCardClass}>
+      <DashboardSectionHeader
+        title="Today's decision"
+        subtitle="What deserves your attention today"
+        icon={<Compass className="h-5 w-5" />}
+        iconToneClassName="bg-blue-50 text-blue-700"
+      />
+      <div className={appCardPaddingClass}>
+        <TodaysDecisionBlock decision={decision} variant="light" />
       </div>
-      <TodaysDecisionBlock decision={decision} variant="light" />
     </section>
   );
 }
