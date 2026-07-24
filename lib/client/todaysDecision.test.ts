@@ -10,6 +10,7 @@ import {
 import {
   buildIntelligenceDisplayMessage,
   buildTodaysDecision,
+  resolveTodaysDecisionDestination,
 } from "@/lib/client/todaysDecision";
 import { createEmptyInvestmentIntelligence } from "@/lib/services/news/investmentIntelligence";
 import type { InvestmentIntelligence } from "@/lib/services/news/investmentIntelligence";
@@ -132,6 +133,73 @@ describe("buildTodaysDecision", () => {
     expect(first.sourceUrl).toBe("https://example.com/btc");
     expect(first.sourceName).toBe("Bloomberg");
     expect(first.sourceLinkLabel).toBe("Read article");
+    expect(first.destinationHref).toBe("https://example.com/btc");
+    expect(first.destinationExternal).toBe(true);
+  });
+
+  it("prefers verified source URLs over internal briefing fallbacks", () => {
+    const destination = resolveTodaysDecisionDestination(
+      {
+        statusLabel: "Elevated",
+        decision: "Uranium sector pressure remains elevated.",
+        tone: "attention",
+        sourceUrl: "https://example.com/uranium",
+        sourceLinkLabel: "Read article",
+      },
+      {
+        intelligence: intelligence({
+          portfolioStatus: "Elevated",
+        }),
+        intelligenceFromCache: true,
+      },
+    );
+
+    expect(destination.destinationHref).toBe("https://example.com/uranium");
+    expect(destination.destinationExternal).toBe(true);
+  });
+
+  it("links holding review decisions to the portfolio holding page", () => {
+    const result = buildTodaysDecision({
+      intelligence: intelligence({
+        portfolioStatus: "High Attention",
+        holdingInsights: {
+          positive: [],
+          neutral: [],
+          negative: ["NUKL"],
+        },
+      }),
+      intelligenceFromCache: true,
+      marketsClosed: false,
+    });
+
+    expect(result.destinationHref).toBe("/portfolio/NUKL");
+    expect(result.destinationLabel).toBe("View holding");
+    expect(result.destinationExternal).toBe(false);
+  });
+
+  it("falls back to the news briefing when no source URL exists", () => {
+    const result = buildTodaysDecision({
+      intelligence: intelligence({
+        portfolioStatus: "Elevated",
+        keyRisks: [bulletTextOnly("Review one holding with elevated concentration risk.")],
+      }),
+      intelligenceFromCache: true,
+      marketsClosed: false,
+    });
+
+    expect(result.destinationHref).toBe("/news");
+    expect(result.destinationLabel).toBe("View briefing");
+    expect(result.destinationExternal).toBe(false);
+  });
+
+  it("keeps neutral decisions non-clickable", () => {
+    const result = buildTodaysDecision({
+      intelligence: null,
+      intelligenceFromCache: false,
+      marketsClosed: true,
+    });
+
+    expect(result.destinationHref).toBeNull();
   });
 });
 
@@ -227,10 +295,10 @@ describe("dashboard Today's Decision integration", () => {
       dashboard.indexOf("<DashboardTodaysDecision"),
     );
     expect(dashboard.indexOf("<DashboardTodaysDecision")).toBeLessThan(
-      dashboard.indexOf("<HoldingsToday"),
-    );
-    expect(dashboard.indexOf("<HoldingsToday")).toBeLessThan(
       dashboard.indexOf("<DashboardIntelligencePreview"),
+    );
+    expect(dashboard.indexOf("<DashboardIntelligencePreview")).toBeLessThan(
+      dashboard.indexOf("<HoldingsToday"),
     );
     expect(decisionSection).toContain("TodaysDecisionBlock");
     expect(decisionSection).toContain("buildTodaysDecision");

@@ -15,14 +15,16 @@ import {
   Upload,
 } from "lucide-react";
 import { DividendIntelligenceSection } from "@/components/analysis/DividendIntelligenceSection";
-import { AnalystIntelligenceSection } from "@/components/analysis/AnalystIntelligenceSection";
 import { PortfolioPerformanceSection } from "@/components/analysis/performance/PortfolioPerformanceSection";
 import { MarketConsensusSection } from "@/components/analysis/marketConsensus/MarketConsensusSection";
 import BottomNavigation from "@/components/home/BottomNav";
 import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer";
 import { PageHero } from "@/components/layout/PageHero";
 import {
+  appAnalysisDarkBodyClass,
+  appAnalysisDarkDisclaimerClass,
   appCardValueClass,
+  appDashboardDarkMetaClass,
   appSectionBodyClass,
   appSectionLabelClass,
   appSectionMetaClass,
@@ -40,7 +42,6 @@ import {
   formatPortfolioPercent,
 } from "@/lib/client/portfolioAnalysis";
 import { usePortfolioDividends } from "@/lib/client/usePortfolioDividends";
-import { usePortfolioAnalyst } from "@/lib/client/usePortfolioAnalyst";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 
 function formatUpdatedAt(value: string | null) {
@@ -88,8 +89,6 @@ export default function PortfolioAnalysisPage() {
 
   const { snapshot: dividendSnapshot, isLoading: dividendsLoading } =
     usePortfolioDividends(holdings, userSub, holdings.length > 0);
-  const { snapshot: analystSnapshot, isLoading: analystLoading } =
-    usePortfolioAnalyst(holdings, userSub, holdings.length > 0);
 
   const analysis = useMemo(
     () => buildPortfolioAnalysis(holdings),
@@ -110,7 +109,7 @@ export default function PortfolioAnalysisPage() {
           title="Portfolio Analysis"
           subtitle="Understand performance, risk, allocation and portfolio trends."
           stats={
-            <p className={`${appSectionMetaClass} text-slate-300`}>
+            <p className={`${appDashboardDarkMetaClass} mt-0`}>
               Last portfolio update: {formatUpdatedAt(analysis.lastUpdatedAt)}
             </p>
           }
@@ -283,11 +282,6 @@ export default function PortfolioAnalysisPage() {
                 isLoading={dividendsLoading}
               />
 
-              <AnalystIntelligenceSection
-                snapshot={analystSnapshot}
-                isLoading={analystLoading}
-              />
-
               <section className="mt-7 grid gap-4 lg:grid-cols-2">
                 <article className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
                   <div className="flex items-start gap-3">
@@ -426,12 +420,12 @@ export default function PortfolioAnalysisPage() {
               )}
 
               <section className="mt-7 rounded-[28px] bg-slate-950 p-6 text-white sm:p-8">
-                <p className={appSectionLabelClass}>
+                <p className={appDashboardDarkMetaClass}>
                   Observations
                 </p>
                 <h2 className={`mt-2 ${appSectionTitleClass} text-white`}>Portfolio observations</h2>
                 {analysis.observations.length > 0 ? (
-                  <ul className={`mt-5 space-y-3 ${appSectionBodyClass} text-slate-200`}>
+                  <ul className={`mt-5 space-y-3 ${appAnalysisDarkBodyClass}`}>
                     {analysis.observations.map((observation) => (
                       <li key={observation} className="flex gap-3">
                         <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-400" />
@@ -440,11 +434,11 @@ export default function PortfolioAnalysisPage() {
                     ))}
                   </ul>
                 ) : (
-                  <p className={`mt-5 ${appSectionBodyClass} text-slate-300`}>
+                  <p className={`mt-5 ${appAnalysisDarkBodyClass}`}>
                     Add valued holdings to generate portfolio observations.
                   </p>
                 )}
-                <p className="mt-6 text-xs leading-5 text-slate-400">
+                <p className={`mt-6 ${appAnalysisDarkDisclaimerClass}`}>
                   These observations describe portfolio structure only. They are
                   not financial advice and do not include buy or sell instructions.
                 </p>

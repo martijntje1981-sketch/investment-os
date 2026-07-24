@@ -1,4 +1,5 @@
 import { getMarketStatuses } from "@/lib/client/marketStatus";
+import { ANALYSIS_PATH, NEWS_HUB_PATH } from "@/lib/navigation/newsHubRoutes";
 import type { GoalProgress } from "@/lib/services/goals/goalProgressEngine";
 import type {
   IntelligenceBullet,
@@ -23,6 +24,9 @@ export type TodaysDecisionResult = {
   sourceUrl?: string | null;
   sourceName?: string | null;
   sourceLinkLabel?: "Read article" | "Open source" | "Watch video";
+  destinationHref?: string | null;
+  destinationLabel?: string | null;
+  destinationExternal?: boolean;
 };
 
 export type TodaysDecisionContext = {
@@ -131,6 +135,117 @@ function withSource(
   return { ...result, ...source };
 }
 
+const REVIEW_SYMBOL_PATTERN = /\bReview ([A-Z0-9]{1,12})\b/;
+
+function extractReviewSymbol(decision: string): string | null {
+  const match = decision.match(REVIEW_SYMBOL_PATTERN);
+  return match?.[1] ?? null;
+}
+
+function shouldLinkToBriefing(
+  result: TodaysDecisionResult,
+  intelligence: InvestmentIntelligence | null | undefined,
+): boolean {
+  if (!intelligence) {
+    return false;
+  }
+
+  if (
+    result.statusLabel === "High attention" ||
+    result.statusLabel === "Elevated" ||
+    result.statusLabel === "Must watch" ||
+    result.statusLabel === "Opportunity" ||
+    result.statusLabel === "Upcoming event"
+  ) {
+    return true;
+  }
+
+  if (
+    result.reason?.includes("today's portfolio briefing") ||
+    result.reason?.includes("latest briefing")
+  ) {
+    return true;
+  }
+
+  if (
+    intelligence.portfolioStatus === result.statusLabel &&
+    result.decision !== "No action required today." &&
+    result.decision !== "No urgent portfolio action is required."
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+export function resolveTodaysDecisionDestination(
+  result: TodaysDecisionResult,
+  context: Pick<TodaysDecisionContext, "intelligence"> = { intelligence: null },
+): Pick<
+  TodaysDecisionResult,
+  "destinationHref" | "destinationLabel" | "destinationExternal"
+> {
+  if (isValidArticleUrl(result.sourceUrl)) {
+    return {
+      destinationHref: result.sourceUrl!.trim(),
+      destinationLabel: result.sourceLinkLabel ?? "View insight",
+      destinationExternal: true,
+    };
+  }
+
+  const reviewSymbol = extractReviewSymbol(result.decision);
+  if (reviewSymbol) {
+    return {
+      destinationHref: `/portfolio/${encodeURIComponent(reviewSymbol)}`,
+      destinationLabel: "View holding",
+      destinationExternal: false,
+    };
+  }
+
+  if (result.statusLabel === "Goal watch") {
+    return {
+      destinationHref: "/goals",
+      destinationLabel: "View goal",
+      destinationExternal: false,
+    };
+  }
+
+  if (shouldLinkToBriefing(result, context.intelligence)) {
+    return {
+      destinationHref: NEWS_HUB_PATH,
+      destinationLabel: "View briefing",
+      destinationExternal: false,
+    };
+  }
+
+  if (
+    result.reason?.includes("Market consensus") ||
+    result.reason?.includes("analyst coverage")
+  ) {
+    return {
+      destinationHref: `${ANALYSIS_PATH}#market-consensus`,
+      destinationLabel: "View analysis",
+      destinationExternal: false,
+    };
+  }
+
+  return {
+    destinationHref: null,
+    destinationLabel: null,
+    destinationExternal: false,
+  };
+}
+
+function applyDecisionDestination(
+  result: TodaysDecisionResult,
+  context: TodaysDecisionContext,
+): TodaysDecisionResult {
+  return {
+    ...result,
+    ...resolveTodaysDecisionDestination(result, context),
+  };
+}
+
 function findHighImpactEvent(
   events: UpcomingMarketEvent[] | undefined,
 ): UpcomingMarketEvent | null {
@@ -163,11 +278,12 @@ export function buildTodaysDecision(
 ): TodaysDecisionResult {
   const intelligence = context.intelligence;
   const marketsClosed = context.marketsClosed ?? areMajorMarketsClosed();
+  let result: TodaysDecisionResult;
 
   if (intelligence?.portfolioStatus === "High Attention") {
     const risk = intelligence.keyRisks[0];
     if (risk) {
-      return withSource(
+      result = withSource(
         {
           statusLabel: "High attention",
           decision: sanitizeDecisionText(risk.text),
@@ -176,18 +292,20 @@ export function buildTodaysDecision(
         },
         sourceFromBullet(risk),
       );
+      return applyDecisionDestination(result, context);
     }
     if (intelligence.holdingInsights.negative.length > 0) {
       const symbol = intelligence.holdingInsights.negative[0];
-      return {
+      result = {
         statusLabel: "High attention",
         decision: `Review ${symbol} after negative signals in today's briefing.`,
         reason: "Why: One or more holdings show elevated negative signals.",
         tone: "critical",
       };
+      return applyDecisionDestination(result, context);
     }
     if (intelligence.todayMatters[0]) {
-      return withSource(
+      result = withSource(
         {
           statusLabel: "High attention",
           decision: sanitizeDecisionText(intelligence.todayMatters[0].text),
@@ -196,6 +314,7 @@ export function buildTodaysDecision(
         },
         sourceFromBullet(intelligence.todayMatters[0]),
       );
+      return applyDecisionDestination(result, context);
     }
   }
 
@@ -204,7 +323,7 @@ export function buildTodaysDecision(
     intelligence.portfolioStatus === "Elevated" &&
     intelligence.keyRisks[0]
   ) {
-    return withSource(
+    result = withSource(
       {
         statusLabel: "Elevated",
         decision: sanitizeDecisionText(intelligence.keyRisks[0].text),
@@ -213,21 +332,23 @@ export function buildTodaysDecision(
       },
       sourceFromBullet(intelligence.keyRisks[0]),
     );
+    return applyDecisionDestination(result, context);
   }
 
   const highImpactEvent = findHighImpactEvent(context.upcomingEvents);
   if (highImpactEvent) {
-    return {
+    result = {
       statusLabel: "Upcoming event",
       decision: "Review today's macro events before making changes.",
       reason: `Why: ${highImpactEvent.title} is on the calendar.`,
       tone: "attention",
     };
+    return applyDecisionDestination(result, context);
   }
 
   if (intelligence?.mustWatch) {
     const mustWatch = intelligence.mustWatch;
-    return withSource(
+    result = withSource(
       {
         statusLabel: "Must watch",
         decision: sanitizeDecisionText(`Keep an eye on ${mustWatch.title}`),
@@ -236,12 +357,13 @@ export function buildTodaysDecision(
       },
       sourceFromMustWatch(mustWatch),
     );
+    return applyDecisionDestination(result, context);
   }
 
   const opportunity =
     intelligence?.opportunities[0] ?? intelligence?.macroHighlights[0];
   if (opportunity) {
-    return withSource(
+    result = withSource(
       {
         statusLabel: "Opportunity",
         decision: sanitizeDecisionText(opportunity.text),
@@ -250,10 +372,11 @@ export function buildTodaysDecision(
       },
       sourceFromBullet(opportunity),
     );
+    return applyDecisionDestination(result, context);
   }
 
   if (context.goalProgress && isGoalConcern(context.goalProgress)) {
-    return {
+    result = {
       statusLabel: "Goal watch",
       decision: "Your saved goal trajectory needs monitoring.",
       reason:
@@ -262,6 +385,7 @@ export function buildTodaysDecision(
           : "Why: Current progress is behind the saved target date.",
       tone: "attention",
     };
+    return applyDecisionDestination(result, context);
   }
 
   if (
@@ -272,23 +396,25 @@ export function buildTodaysDecision(
     !intelligence.mustWatch
   ) {
     if (context.goalProgress?.hasGoal && isGoalHealthy(context.goalProgress)) {
-      return {
+      result = {
         statusLabel: intelligence.portfolioStatus,
         decision: "Your portfolio remains on track. Stay with the current plan.",
         reason: "Why: No material risks or events were identified in the latest briefing.",
         tone: "positive",
       };
+      return applyDecisionDestination(result, context);
     }
-    return {
+    result = {
       statusLabel: intelligence.portfolioStatus,
       decision: "No action required today.",
       reason: "Why: No material risks or events were identified in the latest briefing.",
       tone: "positive",
     };
+    return applyDecisionDestination(result, context);
   }
 
   if (context.goalProgress?.hasGoal && isGoalHealthy(context.goalProgress)) {
-    return {
+    result = {
       statusLabel: "On track",
       decision: "Your portfolio remains on track toward its current goal.",
       reason: marketsClosed
@@ -296,24 +422,27 @@ export function buildTodaysDecision(
         : "Why: Goal progress remains aligned with your saved target.",
       tone: "positive",
     };
+    return applyDecisionDestination(result, context);
   }
 
   if (!intelligence) {
-    return neutralFallback(
+    result = neutralFallback(
       context.intelligenceFromCache
         ? "The latest cached briefing did not surface an urgent signal."
         : "We're still building today's portfolio briefing. Your portfolio and goal data remain up to date.",
     );
+    return applyDecisionDestination(result, context);
   }
 
   if (intelligence.quietMarket) {
-    return neutralFallback(
+    result = neutralFallback(
       "No material risks or events were identified in the latest briefing.",
     );
+    return applyDecisionDestination(result, context);
   }
 
   if (intelligence.todayMatters[0]) {
-    return withSource(
+    result = withSource(
       {
         statusLabel: intelligence.portfolioStatus,
         decision: sanitizeDecisionText(intelligence.todayMatters[0].text),
@@ -322,11 +451,13 @@ export function buildTodaysDecision(
       },
       sourceFromBullet(intelligence.todayMatters[0]),
     );
+    return applyDecisionDestination(result, context);
   }
 
-  return neutralFallback(
+  result = neutralFallback(
     "No material risks or events were identified in the latest briefing.",
   );
+  return applyDecisionDestination(result, context);
 }
 
 export function buildIntelligenceDisplayMessage(

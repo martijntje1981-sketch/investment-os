@@ -45,7 +45,7 @@ describe("TodaysDecisionBlock", () => {
     expect(critical).not.toContain("rose");
   });
 
-  it("links the headline when a canonical source URL is available", () => {
+  it("makes the entire card clickable when a canonical source URL is available", () => {
     const html = renderToStaticMarkup(
       <TodaysDecisionBlock
         decision={decision({
@@ -53,6 +53,9 @@ describe("TodaysDecisionBlock", () => {
           sourceUrl: "https://example.com/uranium",
           sourceName: "Bloomberg",
           sourceLinkLabel: "Read article",
+          destinationHref: "https://example.com/uranium",
+          destinationLabel: "Read article",
+          destinationExternal: true,
         })}
       />,
     );
@@ -60,15 +63,36 @@ describe("TodaysDecisionBlock", () => {
     expect(html).toContain('href="https://example.com/uranium"');
     expect(html).toContain('target="_blank"');
     expect(html).toContain('rel="noopener noreferrer"');
-    expect(html).not.toContain('href="/news"');
+    expect(html).toContain("Read article");
+    expect(html).toContain('class="lucide lucide-arrow-right');
   });
 
-  it("keeps the card non-clickable when no valid source URL exists", () => {
+  it("links to internal briefing fallbacks without a misleading external cue", () => {
+    const html = renderToStaticMarkup(
+      <TodaysDecisionBlock
+        decision={decision({
+          tone: "attention",
+          statusLabel: "Elevated",
+          destinationHref: "/news",
+          destinationLabel: "View briefing",
+          destinationExternal: false,
+        })}
+      />,
+    );
+
+    expect(html).toContain('href="/news"');
+    expect(html).toContain("View briefing");
+    expect(html).not.toContain('target="_blank"');
+  });
+
+  it("keeps the card non-clickable when no valid destination exists", () => {
     const html = renderToStaticMarkup(
       <TodaysDecisionBlock decision={decision({ tone: "attention" })} />,
     );
 
     expect(html).not.toContain("<a ");
+    expect(html).not.toContain('href="/news"');
+    expect(html).not.toContain("View insight");
     expect(html).toContain("No urgent portfolio action is required.");
   });
 });

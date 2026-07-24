@@ -1,9 +1,11 @@
 import { Coins, Sparkles } from "lucide-react";
 
 import {
+  appAnalysisDarkBodyClass,
+  appAnalysisDarkHeaderCopyClass,
+  appDashboardDarkMetaClass,
   appSectionLabelClass,
   appCardValueClass,
-  appSectionBodyClass,
 } from "@/components/layout/appSurface";
 import {
   formatPortfolioCurrency,
@@ -32,7 +34,7 @@ export function DividendIntelligenceSection({
               ? formatPortfolioCurrency(snapshot.estimatedAnnualIncomeEur)
               : "No dividend income detected"}
         </h2>
-        <p className={`mt-3 max-w-2xl ${appSectionBodyClass} text-slate-300`}>
+        <p className={`mt-3 max-w-2xl ${appAnalysisDarkHeaderCopyClass}`}>
           {snapshot.hasDividendData
             ? "Estimated passive income based on available dividend data for your holdings."
             : "Your current holdings do not show meaningful dividend income in available market data."}
@@ -116,10 +118,10 @@ export function DividendIntelligenceSection({
               <div className="flex items-start gap-3">
                 <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" />
                 <div>
-                  <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">
+                  <p className={`text-xs font-black uppercase tracking-[0.14em] ${appDashboardDarkMetaClass}`}>
                     Observations
                   </p>
-                  <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-200">
+                  <ul className={`mt-3 space-y-2 ${appAnalysisDarkBodyClass}`}>
                     {snapshot.observations.map((observation) => (
                       <li key={observation}>{observation}</li>
                     ))}

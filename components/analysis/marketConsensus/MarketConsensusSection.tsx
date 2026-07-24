@@ -6,6 +6,7 @@ import { Users } from "lucide-react";
 import { MarketConsensusHoldingCard } from "@/components/analysis/marketConsensus/MarketConsensusHoldingCard";
 import { MarketConsensusPortfolioSummary } from "@/components/analysis/marketConsensus/MarketConsensusPortfolioSummary";
 import {
+  appAnalysisDarkHeaderCopyClass,
   appSectionBodyClass,
   appSectionLabelClass,
   appSectionTitleClass,
@@ -60,6 +61,7 @@ export function MarketConsensusSection({
     <section
       className="mt-7 min-w-0 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm"
       aria-labelledby="market-consensus-heading"
+      id="market-consensus"
     >
       <div className="border-b border-slate-200 bg-gradient-to-br from-sky-700 to-slate-950 px-5 py-6 text-white sm:px-8">
         <div
@@ -71,7 +73,7 @@ export function MarketConsensusSection({
         <h2 id="market-consensus-heading" className={`mt-4 ${appSectionTitleClass} text-white`}>
           Market consensus
         </h2>
-        <p className={`mt-3 max-w-3xl ${appSectionBodyClass} text-slate-300`}>
+        <p className={`mt-3 max-w-3xl ${appAnalysisDarkHeaderCopyClass}`}>
           See how third-party analysts and market research currently assess the
           holdings in your portfolio. Consensus data reflects external opinions
           and is not an Investment OS recommendation.

@@ -118,7 +118,7 @@ describe("investor overview copy", () => {
 });
 
 describe("home and dashboard hierarchy", () => {
-  it("leads the dashboard with summary, decision, holdings, then intelligence preview", async () => {
+  it("leads the dashboard with summary, decision, intelligence preview, then holdings", async () => {
     const { readFileSync } = await import("node:fs");
     const { resolve } = await import("node:path");
 
@@ -143,10 +143,10 @@ describe("home and dashboard hierarchy", () => {
       dashboard.indexOf("<DashboardTodaysDecision"),
     );
     expect(dashboard.indexOf("<DashboardTodaysDecision")).toBeLessThan(
-      dashboard.indexOf("<HoldingsToday"),
-    );
-    expect(dashboard.indexOf("<HoldingsToday")).toBeLessThan(
       dashboard.indexOf("<DashboardIntelligencePreview"),
+    );
+    expect(dashboard.indexOf("<DashboardIntelligencePreview")).toBeLessThan(
+      dashboard.indexOf("<HoldingsToday"),
     );
     expect(dashboard).not.toContain("DashboardQuickActions");
     expect(dashboard).not.toContain("PortfolioIntelligencePanel");

@@ -11,12 +11,14 @@ import {
   PortfolioPerformanceChart,
 } from "@/components/analysis/performance/PortfolioPerformanceChart";
 import {
+  appAnalysisDarkHeaderCopyClass,
   appCardValueClass,
+  appDashboardDarkBodyMediumClass,
+  appDashboardDarkMetaClass,
   appDashboardFeatureShellClass,
   appDisplayClass,
   appHeroMetricLabelClass,
   appSectionBodyClass,
-  appSectionMetaClass,
   appSectionTitleClass,
 } from "@/components/layout/appSurface";
 import {
@@ -113,7 +115,7 @@ export function PortfolioPerformanceSection({
               <h2 className={`${appSectionTitleClass} text-white`}>
                 Portfolio performance
               </h2>
-              <p className={`mt-1 ${appSectionBodyClass} text-slate-300`}>
+              <p className={`mt-1 ${appAnalysisDarkHeaderCopyClass}`}>
                 Track portfolio value and investment return for the selected
                 period.
               </p>
@@ -141,7 +143,7 @@ export function PortfolioPerformanceSection({
                   ? formatSignedPortfolioCurrency(performance.investmentReturn)
                   : "—"}
               </p>
-              <p className={`mt-1.5 ${appSectionMetaClass} text-slate-400`}>
+              <p className={`mt-1.5 ${appDashboardDarkMetaClass}`}>
                 {performance.investmentReturnPercent !== null
                   ? formatSignedPortfolioPercent(performance.investmentReturnPercent)
                   : resolveReturnUnavailableReason(period)}
@@ -150,13 +152,15 @@ export function PortfolioPerformanceSection({
           </div>
 
           <div className="mt-3.5 flex flex-wrap gap-x-4 gap-y-1 border-t border-white/10 pt-3">
-            <p className={appSectionMetaClass}>
-              <span className="text-slate-500">Period · </span>
-              <span className="text-slate-200">{performance.periodLabel}</span>
+            <p className={appDashboardDarkMetaClass}>
+              <span className="text-white/60">Period · </span>
+              <span className={appDashboardDarkBodyMediumClass}>
+                {performance.periodLabel}
+              </span>
             </p>
-            <p className={appSectionMetaClass}>
-              <span className="text-slate-500">Updated · </span>
-              <span className="text-slate-200">
+            <p className={appDashboardDarkMetaClass}>
+              <span className="text-white/60">Updated · </span>
+              <span className={appDashboardDarkBodyMediumClass}>
                 {formatPerformanceUpdatedAt(performance.lastUpdatedAt)}
               </span>
             </p>

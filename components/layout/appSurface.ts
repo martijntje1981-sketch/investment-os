@@ -94,6 +94,15 @@ export const appDashboardDarkMutedClass =
 export const appDashboardDarkMetaClass =
   "text-[13px] font-medium leading-snug text-white/75";
 
+/** Supporting copy on dark analysis section headers (gradient shells). */
+export const appAnalysisDarkHeaderCopyClass = appDashboardDarkMutedClass;
+
+/** Body copy on dark analysis cards and observation panels. */
+export const appAnalysisDarkBodyClass = appDashboardDarkBodyMediumClass;
+
+/** Disclaimer and tertiary copy on dark analysis panels. */
+export const appAnalysisDarkDisclaimerClass = appDashboardDarkMetaClass;
+
 /** @deprecated Use appCardValueClass */
 export const appValueClass = appCardValueClass;
 
