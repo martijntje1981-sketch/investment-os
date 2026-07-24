@@ -51,9 +51,11 @@ function mockRawQuote(
   price: number,
   previousClose: number | null = price - 1,
 ): ProviderRawQuote {
+  const currency = providerSymbol.endsWith(".US") ? "USD" : "EUR";
   return {
     providerSymbol,
-    originalCurrency: providerSymbol.endsWith(".US") ? "USD" : "EUR",
+    wireCurrency: currency,
+    originalCurrency: currency,
     originalPrice: price,
     previousCloseOriginal: previousClose,
     changeOriginal: null,

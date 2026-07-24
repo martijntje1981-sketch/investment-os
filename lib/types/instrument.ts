@@ -4,6 +4,7 @@
  */
 
 import type { ListingConfirmationSource } from "@/lib/services/instruments/listingConfirmationSource";
+import type { PriceCurrency } from "@/lib/services/prices/types";
 
 /** Raw identifiers supplied by OCR, CSV, manual entry, or broker feeds. */
 export type InstrumentMatchInput = {
@@ -40,6 +41,8 @@ export type ResolvedInstrument = {
   warnings: string[];
   /** EODHD exchange used for live quotes when the purchase venue differs. */
   pricingExchange?: string | null;
+  /** EODHD quote denomination for this listing (not portfolio base currency). */
+  quoteCurrency?: PriceCurrency | null;
   /** Alternative listings when multiple matches exist. */
   candidates?: ResolvedInstrument[];
 };
@@ -56,6 +59,8 @@ export type StoredInstrumentFields = {
   matchConfidence?: number;
   requiresConfirmation?: boolean;
   matchWarnings?: string[];
+  /** Provider quote denomination for this listing. */
+  quoteCurrency?: PriceCurrency | null;
 };
 
 export type InstrumentMatchResult = {

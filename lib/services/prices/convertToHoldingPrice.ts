@@ -19,10 +19,15 @@ export function convertQuoteToHoldingPrice(
     timestamp?: number | null;
   },
 ): HoldingPrice {
+  const listingCurrency = quote.currency ?? target.currency;
+  const exchangeRateToEur =
+    listingCurrency != null ? fxRates[listingCurrency] : null;
   const originalPrice =
     raw?.originalPrice ??
-    (quote.currentPrice !== null && fxRates[target.currency]
-      ? quote.currentPrice / (fxRates[target.currency] as number)
+    (quote.currentPrice !== null &&
+    listingCurrency != null &&
+    exchangeRateToEur != null
+      ? quote.currentPrice / exchangeRateToEur
       : 0);
 
   return {
@@ -31,10 +36,10 @@ export function convertQuoteToHoldingPrice(
     providerSymbol: target.providerSymbol,
     isin: target.isin,
     name: target.name,
-    originalCurrency: target.currency,
+    originalCurrency: listingCurrency ?? "EUR",
     originalPrice,
     baseCurrency: "EUR",
-    exchangeRateToEur: fxRates[target.currency],
+    exchangeRateToEur,
     priceEur: quote.currentPrice ?? 0,
     currentPrice: quote.currentPrice,
     previousCloseOriginal: raw?.previousCloseOriginal ?? null,

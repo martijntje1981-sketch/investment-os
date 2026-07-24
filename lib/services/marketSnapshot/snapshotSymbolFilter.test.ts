@@ -31,11 +31,13 @@ describe("snapshotSymbolFilter", () => {
     ]);
   });
 
-  it("requires no FX calls for EUR-only EU symbols", () => {
-    expect(estimateFxProviderCalls(["VWCE.XETRA", "STRC.AS"])).toBe(0);
+  it("requires USD FX when STRC.AS is included", () => {
+    expect(estimateFxProviderCalls(["VWCE.XETRA"])).toBe(0);
+    expect(estimateFxProviderCalls(["VWCE.XETRA", "STRC.AS"])).toBe(1);
   });
 
-  it("requires USD FX for US symbols", () => {
-    expect(estimateFxProviderCalls(["AAPL.US"])).toBe(1);
+  it("requires USD FX only when listing currency is verified", () => {
+    expect(estimateFxProviderCalls(["AAPL.US"])).toBe(0);
+    expect(estimateFxProviderCalls(["STRC.AS"])).toBe(1);
   });
 });

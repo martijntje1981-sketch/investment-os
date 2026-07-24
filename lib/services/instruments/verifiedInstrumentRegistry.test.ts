@@ -40,6 +40,12 @@ describe("verifiedInstrumentRegistry", () => {
     expect(lookupVerifiedByProviderSymbol("STRC.AS")?.exchange).toBe("AS");
   });
 
+  it("documents STRC.AS as USD-denominated when EODHD omits currency", () => {
+    const entry = lookupVerifiedByProviderSymbol("STRC.AS");
+    expect(entry?.quoteCurrency).toBe("USD");
+    expect(entry?.quoteCurrencyNote).toMatch(/USD/i);
+  });
+
   it("returns null for unknown instruments", () => {
     expect(lookupVerifiedByTickerExchange("UNKNOWN", "XETRA")).toBeNull();
     expect(lookupVerifiedByProviderSymbol("FAKE.XETRA")).toBeNull();

@@ -4,6 +4,7 @@
 
 import type { ListingConfirmationSource } from "@/lib/services/instruments/listingConfirmationSource";
 import type { ResolvedInstrument } from "@/lib/types/instrument";
+import type { PriceCurrency } from "@/lib/services/prices/types";
 import type { ExtractionFieldConfidence } from "@/lib/services/extraction/types";
 
 export type ImportSource = "screenshot" | "spreadsheet" | "broker";
@@ -35,6 +36,8 @@ export type ImportRow = {
   matchConfidence?: number;
   requiresConfirmation?: boolean;
   matchWarnings?: string[];
+  /** Provider quote denomination captured at match/confirm time. */
+  quoteCurrency?: PriceCurrency | null;
   candidates?: ResolvedInstrument[];
   /** Set when the user explicitly confirms or picks an alternative. */
   userConfirmed?: boolean;

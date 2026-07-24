@@ -21,6 +21,8 @@ export type PriceHoldingInput = {
   providerSymbol?: string | null;
   instrumentName?: string | null;
   currency?: PriceCurrency;
+  /** Persisted provider quote denomination for this listing. */
+  quoteCurrency?: PriceCurrency | null;
 };
 
 export type ResolvedPriceTarget = {
@@ -28,11 +30,13 @@ export type ResolvedPriceTarget = {
   providerSymbol: string;
   isin: string | null;
   name: string;
-  currency: PriceCurrency;
+  currency: PriceCurrency | null;
 };
 
 export type ProviderRawQuote = {
   providerSymbol: string;
+  /** Currency returned on the live provider payload, when present. */
+  wireCurrency: PriceCurrency | null;
   originalCurrency: PriceCurrency;
   originalPrice: number;
   previousCloseOriginal: number | null;

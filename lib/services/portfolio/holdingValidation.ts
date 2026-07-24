@@ -220,6 +220,7 @@ export function prepareManualHoldingForSave(
     currentPrice,
     providerSymbol: holding.providerSymbol ?? null,
     instrumentName: holding.instrumentName ?? name,
+    quoteCurrency: holding.quoteCurrency ?? null,
     confirmationSource,
     requiresConfirmation: hasProviderMatch ? holding.requiresConfirmation : false,
     matchMethod: hasProviderMatch

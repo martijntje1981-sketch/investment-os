@@ -37,6 +37,10 @@ import { CLIENT_PRICE_CACHE_FRESH_MS } from "@/lib/services/marketData/cachePoli
 import { findSavedMappingForHolding } from "@/lib/services/import/mappingMemory";
 import { NO_QUOTABLE_HOLDINGS_MESSAGE } from "@/lib/services/prices/types";
 import { syncPortfolioPricesFromSnapshot } from "@/lib/client/marketSnapshotSync";
+import {
+  backfillListingQuoteCurrencies,
+  listingQuoteCurrenciesChanged,
+} from "@/lib/services/instruments/quoteCurrency";
 import { prepareManualHoldingForSave } from "@/lib/services/portfolio/holdingValidation";
 import {
   enrichHoldingsWithVerifiedMappings,
@@ -92,11 +96,12 @@ export function loadUserPortfolioHoldings(
 ): StoredPortfolioHolding[] {
   const raw = readPortfolioFromStorage(userSub);
   const enriched = enrichHoldingsWithVerifiedMappings(raw);
+  const withQuoteCurrency = backfillListingQuoteCurrencies(enriched);
 
   const providerSymbolChanges = raw
     .map((before, index) => ({
       before,
-      after: enriched[index]!,
+      after: withQuoteCurrency[index]!,
     }))
     .filter(
       ({ before, after }) =>
@@ -107,26 +112,29 @@ export function loadUserPortfolioHoldings(
     invalidateConflictingPriceCacheEntries(userSub, providerSymbolChanges);
   }
 
-  if (holdingsChangedByVerifiedEnrichment(raw, enriched)) {
-    writePortfolioToStorage(userSub, enriched);
-    writePortfolioBackupIfComplete(userSub, enriched);
+  if (
+    holdingsChangedByVerifiedEnrichment(raw, enriched) ||
+    listingQuoteCurrenciesChanged(enriched, withQuoteCurrency)
+  ) {
+    writePortfolioToStorage(userSub, withQuoteCurrency);
+    writePortfolioBackupIfComplete(userSub, withQuoteCurrency);
     const meta = readPortfolioSyncMeta(userSub);
     recordLocalPortfolioSave(
       userSub,
-      enriched,
+      withQuoteCurrency,
       (meta.lastLocalRevision ?? 0) + 1,
     );
   }
 
-  purgeIncorrectPriceCacheEntries(userSub, enriched);
+  purgeIncorrectPriceCacheEntries(userSub, withQuoteCurrency);
 
-  const strcBeforeCache = enriched.find(
+  const strcBeforeCache = withQuoteCurrency.find(
     (holding) => holding.symbol.trim().toUpperCase() === "STRC",
   );
 
-  const holdings = applyCachedPrices(userSub, enriched);
+  const holdings = applyCachedPrices(userSub, withQuoteCurrency);
 
-  if (verifiedListingPricesChanged(enriched, holdings, userSub)) {
+  if (verifiedListingPricesChanged(withQuoteCurrency, holdings, userSub)) {
     persistVerifiedListingQuoteCorrections(userSub, holdings);
   }
 
@@ -321,6 +329,7 @@ export function buildPriceRequestPayload(
           holding.providerSymbol ?? savedMapping?.providerSymbol ?? null,
         instrumentName:
           holding.instrumentName ?? savedMapping?.instrumentName ?? null,
+        quoteCurrency: holding.quoteCurrency ?? savedMapping?.quoteCurrency ?? null,
       };
     });
 }

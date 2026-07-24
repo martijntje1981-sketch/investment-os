@@ -38,6 +38,10 @@ import {
   verifiedEntryToResolved,
 } from "./verifiedInstrumentRegistry";
 import { isValidIsin, normalizeIsin } from "./validation";
+import {
+  QUOTE_CURRENCY_REVIEW_WARNING,
+  resolveMatchQuoteCurrency,
+} from "./quoteCurrency";
 import type {
   InstrumentMatchInput,
   InstrumentMatchResult,
@@ -129,15 +133,26 @@ function rowToResolved(
     null;
   const providerSymbol =
     code && exchange ? buildProviderSymbol(code, exchange) : null;
+  const quoteCurrency = resolveMatchQuoteCurrency({
+    providerCurrency: row.Currency,
+    providerSymbol,
+  });
+  const nextWarnings = [...warnings];
+  if (providerSymbol && !quoteCurrency) {
+    nextWarnings.push(QUOTE_CURRENCY_REVIEW_WARNING);
+  }
 
   return finalize({
     providerSymbol,
     instrumentName: row.Name?.trim() ?? null,
     exchange,
     isin: normalizeIsin(row.ISIN) ?? inputIsin,
+    quoteCurrency,
     matchMethod,
-    confidence,
-    warnings,
+    confidence: providerSymbol && !quoteCurrency
+      ? Math.min(confidence, CONFIRMATION_THRESHOLD - 0.01)
+      : confidence,
+    warnings: nextWarnings,
   });
 }
 

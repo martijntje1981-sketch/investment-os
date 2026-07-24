@@ -1,5 +1,7 @@
 import type { GoalSettings, StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 import type { SavedImportMapping } from "@/lib/services/import/mappingMemory";
+import { normalizeProviderQuoteCurrency } from "@/lib/services/instruments/quoteCurrency";
+import type { PriceCurrency } from "@/lib/services/prices/types";
 
 import { portfolioFingerprint } from "@/lib/services/portfolio/idempotency";
 import { resolveHoldingIdForSync } from "@/lib/services/portfolio/holdingUniqueness";
@@ -28,6 +30,12 @@ function normalizeIsin(isin: string | null | undefined): string | null {
   if (!isin) return null;
   const normalized = String(isin).trim().toUpperCase();
   return VALID_ISIN.test(normalized) ? normalized : null;
+}
+
+function normalizeQuoteCurrency(
+  value: string | null | undefined,
+): PriceCurrency | null {
+  return normalizeProviderQuoteCurrency(value);
 }
 
 function readMapping(row: DbHoldingRow): DbMappingRow | null {
@@ -73,6 +81,7 @@ export function mapDbHoldingToStored(
     exchange: mapping?.exchange ?? null,
     providerSymbol: mapping?.provider_symbol ?? null,
     instrumentName: mapping?.instrument_name ?? null,
+    quoteCurrency: normalizeQuoteCurrency(mapping?.quote_currency),
     matchMethod: mapping?.match_method ?? undefined,
     matchConfidence:
       mapping?.match_confidence != null
@@ -111,6 +120,7 @@ export function mapDbImportMapping(row: DbImportMappingRow): SavedImportMapping 
     exchange: row.exchange,
     instrumentName: row.instrument_name,
     providerSymbol: row.provider_symbol,
+    quoteCurrency: normalizeQuoteCurrency(row.quote_currency),
     matchMethod: row.match_method as SavedImportMapping["matchMethod"],
     confirmedAt: row.confirmed_at,
   };
@@ -163,6 +173,7 @@ export function mapStoredMappingToDbInsert(
     provider: "eodhd",
     provider_symbol: holding.providerSymbol,
     instrument_name: holding.instrumentName ?? null,
+    quote_currency: holding.quoteCurrency ?? null,
     match_method: holding.matchMethod ?? "manual",
     match_confidence: holding.matchConfidence ?? 1,
     match_warnings: holding.matchWarnings ?? [],
@@ -183,6 +194,7 @@ export function mapSavedImportMappingToDbInsert(
     exchange: mapping.exchange,
     instrument_name: mapping.instrumentName,
     provider_symbol: mapping.providerSymbol,
+    quote_currency: mapping.quoteCurrency ?? null,
     match_method: mapping.matchMethod,
     confirmed_at: mapping.confirmedAt,
   };
@@ -288,6 +300,7 @@ export function sanitizeLocalHoldings(
       currency: "EUR",
       assetType,
       isin: normalizeIsin(holding.isin),
+      quoteCurrency: normalizeQuoteCurrency(holding.quoteCurrency),
     });
   }
 

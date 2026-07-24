@@ -57,6 +57,7 @@ describe("resolveQuotePriceTargets", () => {
         {
           symbol: "AAPL",
           providerSymbol: "AAPL.US",
+          quoteCurrency: "USD",
           name: "Apple",
         },
       ],

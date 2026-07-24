@@ -19,6 +19,7 @@ export function applyResolvedToHolding<
     name: string;
     providerSymbol?: string | null;
     instrumentName?: string | null;
+    quoteCurrency?: ResolvedInstrument["quoteCurrency"];
     matchMethod?: ResolvedInstrument["matchMethod"];
     matchConfidence?: number;
     requiresConfirmation?: boolean;
@@ -34,6 +35,7 @@ export function applyResolvedToHolding<
     exchange: resolved.exchange ?? holding.exchange ?? null,
     providerSymbol: resolved.providerSymbol,
     instrumentName: resolved.instrumentName ?? holding.instrumentName ?? null,
+    quoteCurrency: resolved.quoteCurrency ?? holding.quoteCurrency ?? null,
     pricingExchange: resolved.pricingExchange ?? holding.pricingExchange ?? null,
     matchMethod: resolved.matchMethod,
     matchConfidence: resolved.confidence,

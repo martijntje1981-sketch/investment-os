@@ -32,6 +32,7 @@ describe("enrichHoldingsWithVerifiedMappings", () => {
     const enriched = enrichHoldingWithVerifiedMapping(manualHolding());
     expect(enriched.providerSymbol).toBe("STRC.AS");
     expect(enriched.exchange).toBe("AS");
+    expect(enriched.quoteCurrency).toBe("USD");
     expect(enriched.confirmationSource).toBe("verified_mapping");
     expect(enriched.quantity).toBe(10);
     expect(enriched.purchasePrice).toBe(15);
@@ -45,14 +46,17 @@ describe("enrichHoldingsWithVerifiedMappings", () => {
     expect(holdingsChangedByVerifiedEnrichment(once, twice)).toBe(false);
   });
 
-  it("skips holdings that already have the verified providerSymbol", () => {
+  it("backfills quote currency when providerSymbol already matches verified listing", () => {
     const existing = manualHolding({
       providerSymbol: "VWCE.XETRA",
       exchange: "XETRA",
       symbol: "VWCE",
     });
     const enriched = enrichHoldingWithVerifiedMapping(existing);
-    expect(enriched).toEqual(existing);
+    expect(enriched).toEqual({
+      ...existing,
+      quoteCurrency: "EUR",
+    });
   });
 
   it("corrects a wrong verified listing to the canonical providerSymbol", () => {

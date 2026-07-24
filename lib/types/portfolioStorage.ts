@@ -37,6 +37,8 @@ export type StoredPortfolioHolding = {
   pricingExchange?: string | null;
   providerSymbol?: string | null;
   instrumentName?: string | null;
+  /** EODHD quote denomination for this listing (not portfolio base currency). */
+  quoteCurrency?: import("@/lib/services/prices/types").PriceCurrency | null;
   matchMethod?: string;
   confirmationSource?: string;
   matchConfidence?: number;
@@ -59,6 +61,7 @@ export type PortfolioInstrumentPayload = {
   exchange?: string | null;
   providerSymbol?: string | null;
   instrumentName?: string | null;
+  quoteCurrency?: import("@/lib/services/prices/types").PriceCurrency | null;
 };
 
 export type PriceApiQuote = {

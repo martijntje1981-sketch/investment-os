@@ -20,6 +20,7 @@ import {
   resetPriceServiceStateForTests,
 } from "@/lib/services/prices/priceService";
 import { resolveDefaultWatchlist } from "@/lib/services/prices/resolvePriceTargets";
+import { resolveQuoteCurrencyForProviderSymbol } from "@/lib/services/instruments/quoteCurrency";
 import type { PriceHoldingInput, ResolvedPriceTarget } from "@/lib/services/prices/types";
 import { getPriceServiceMetricsSnapshot } from "@/lib/services/prices/observability";
 
@@ -124,13 +125,20 @@ export async function collectSnapshotProviderSymbols(): Promise<string[]> {
 }
 
 function targetsFromProviderSymbols(symbols: string[]): ResolvedPriceTarget[] {
-  return symbols.map((providerSymbol) => ({
-    symbol: providerSymbol.split(".")[0] ?? providerSymbol,
-    providerSymbol,
-    isin: null,
-    name: providerSymbol,
-    currency: "EUR" as const,
-  }));
+  return symbols.flatMap((providerSymbol) => {
+    const currency = resolveQuoteCurrencyForProviderSymbol(providerSymbol);
+    if (!currency) {
+      return [];
+    }
+
+    return [{
+      symbol: providerSymbol.split(".")[0] ?? providerSymbol,
+      providerSymbol,
+      isin: null,
+      name: providerSymbol,
+      currency,
+    }];
+  });
 }
 
 export function holdingsFromProviderSymbols(

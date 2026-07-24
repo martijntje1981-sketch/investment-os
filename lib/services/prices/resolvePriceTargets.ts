@@ -1,4 +1,5 @@
 import { matchInstrument } from "@/lib/services/instruments";
+import { resolveListingQuoteCurrency, QUOTE_CURRENCY_REVIEW_WARNING } from "@/lib/services/instruments/quoteCurrency";
 import { getDefaultPortfolioPriceSeed } from "@/lib/services/portfolio/priceSeed";
 import type {
   PriceCurrency,
@@ -7,21 +8,14 @@ import type {
 } from "@/lib/services/prices/types";
 import type { InstrumentMatchInput } from "@/lib/types/instrument";
 
-function inferCurrencyFromProviderSymbol(
+function resolveTargetQuoteCurrency(
+  input: Pick<PriceHoldingInput, "currency" | "quoteCurrency">,
   providerSymbol: string,
-  fallback: PriceCurrency = "EUR",
-): PriceCurrency {
-  const exchange = providerSymbol.split(".").pop()?.trim().toUpperCase();
-  switch (exchange) {
-    case "US":
-      return "USD";
-    case "LSE":
-      return "GBP";
-    case "SW":
-      return "CHF";
-    default:
-      return fallback;
-  }
+): PriceCurrency | null {
+  return resolveListingQuoteCurrency({
+    persistedQuoteCurrency: input.quoteCurrency ?? input.currency ?? null,
+    providerSymbol,
+  }).currency;
 }
 
 export function resolveQuotePriceTarget(
@@ -38,9 +32,7 @@ export function resolveQuotePriceTarget(
     providerSymbol: input.providerSymbol,
     isin: input.isin ?? null,
     name: input.instrumentName ?? input.name ?? userSymbol,
-    currency:
-      input.currency ??
-      inferCurrencyFromProviderSymbol(input.providerSymbol),
+    currency: resolveTargetQuoteCurrency(input, input.providerSymbol),
   };
 }
 
@@ -74,7 +66,21 @@ export function resolveQuotePriceTargets(
       continue;
     }
 
-    const target = resolveQuotePriceTarget(holding);
+    const targetCurrency = resolveTargetQuoteCurrency(holding, holding.providerSymbol);
+    if (!targetCurrency) {
+      skipped += 1;
+      const label = holding.symbol || holding.isin || holding.name || "Unknown";
+      errors.push(
+        `${label}: ${QUOTE_CURRENCY_REVIEW_WARNING}`,
+      );
+      continue;
+    }
+
+    const target = resolveQuotePriceTarget({
+      ...holding,
+      quoteCurrency: targetCurrency,
+      currency: targetCurrency,
+    });
     if (!target) {
       continue;
     }
@@ -91,14 +97,13 @@ export async function resolvePriceTarget(
   const userSymbol = input.symbol.trim().toUpperCase();
 
   if (input.providerSymbol) {
+    const currency = resolveTargetQuoteCurrency(input, input.providerSymbol);
     return {
       symbol: userSymbol || input.providerSymbol.split(".")[0] || input.providerSymbol,
       providerSymbol: input.providerSymbol,
       isin: input.isin ?? null,
       name: input.instrumentName ?? input.name ?? userSymbol,
-      currency:
-        input.currency ??
-        inferCurrencyFromProviderSymbol(input.providerSymbol),
+      currency,
     };
   }
 
@@ -122,7 +127,10 @@ export async function resolvePriceTarget(
     providerSymbol: resolved.providerSymbol,
     isin: resolved.isin,
     name: resolved.instrumentName ?? input.name ?? userSymbol,
-    currency: inferCurrencyFromProviderSymbol(resolved.providerSymbol),
+    currency: resolveTargetQuoteCurrency(
+      { quoteCurrency: resolved.quoteCurrency ?? null },
+      resolved.providerSymbol,
+    ),
   };
 }
 
@@ -181,7 +189,10 @@ export async function resolveDefaultWatchlist(): Promise<ResolvedPriceTarget[]> 
       providerSymbol: resolved.providerSymbol,
       isin: resolved.isin ?? null,
       name: resolved.instrumentName ?? item.instrumentName ?? userSymbol,
-      currency: "EUR",
+      currency: resolveTargetQuoteCurrency(
+        { quoteCurrency: resolved.quoteCurrency ?? null },
+        resolved.providerSymbol,
+      ),
     });
   }
 

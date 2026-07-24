@@ -32,6 +32,12 @@ export function enrichHoldingWithVerifiedMapping(
   const existingProvider = holding.providerSymbol?.trim().toUpperCase() ?? null;
 
   if (existingProvider === verifiedProvider) {
+    if (!holding.quoteCurrency && resolution.entry.quoteCurrency) {
+      return {
+        ...holding,
+        quoteCurrency: resolution.entry.quoteCurrency,
+      };
+    }
     return holding;
   }
 

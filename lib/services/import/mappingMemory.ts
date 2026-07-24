@@ -6,6 +6,7 @@
 import type { ListingConfirmationSource } from "@/lib/services/instruments/listingConfirmationSource";
 import type { ImportRow } from "@/lib/services/import/types";
 import type { ResolvedInstrument } from "@/lib/types/instrument";
+import type { PriceCurrency } from "@/lib/services/prices/types";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 import { importMappingStorageKey } from "@/lib/client/importMappingStorageKeys";
 
@@ -18,6 +19,7 @@ export type SavedImportMapping = {
   instrumentName: string | null;
   providerSymbol: string;
   matchMethod: ResolvedInstrument["matchMethod"];
+  quoteCurrency?: PriceCurrency | null;
   confirmationSource?: ListingConfirmationSource;
   confirmedAt: string;
 };
@@ -151,6 +153,7 @@ export function applySavedMappingToRow(
     exchange: mapping.exchange ?? row.exchange ?? null,
     providerSymbol: mapping.providerSymbol,
     instrumentName: mapping.instrumentName ?? row.instrumentName ?? null,
+    quoteCurrency: mapping.quoteCurrency ?? row.quoteCurrency ?? null,
     matchMethod: mapping.matchMethod,
     confirmationSource: mapping.confirmationSource,
     matchConfidence: 1,
@@ -198,6 +201,7 @@ export function rememberConfirmedImportMappings(
       exchange: row.exchange ?? null,
       instrumentName: row.instrumentName ?? null,
       providerSymbol: row.providerSymbol,
+      quoteCurrency: row.quoteCurrency ?? null,
       matchMethod: row.matchMethod ?? "ticker_exchange",
       confirmationSource: row.confirmationSource,
       confirmedAt: new Date().toISOString(),
@@ -218,6 +222,7 @@ export function rememberConfirmedHolding(
     | "providerSymbol"
     | "instrumentName"
     | "matchMethod"
+    | "quoteCurrency"
   >,
 ): void {
   if (!holding.providerSymbol) return;
@@ -237,6 +242,7 @@ export function rememberConfirmedHolding(
       exchange: holding.exchange ?? null,
       providerSymbol: holding.providerSymbol,
       instrumentName: holding.instrumentName ?? null,
+      quoteCurrency: holding.quoteCurrency ?? null,
       matchMethod: holding.matchMethod as ResolvedInstrument["matchMethod"] | undefined,
       userConfirmed: true,
     },
@@ -249,6 +255,7 @@ export function mappingToResolved(mapping: SavedImportMapping): ResolvedInstrume
     instrumentName: mapping.instrumentName,
     exchange: mapping.exchange,
     isin: mapping.isin,
+    quoteCurrency: mapping.quoteCurrency ?? null,
     matchMethod: mapping.matchMethod,
     confidence: 1,
     requiresConfirmation: false,

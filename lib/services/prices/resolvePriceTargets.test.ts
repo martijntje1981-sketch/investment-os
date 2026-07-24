@@ -52,4 +52,16 @@ describe("resolvePriceTarget", () => {
     expect(matchInstrument).toHaveBeenCalledOnce();
     expect(target?.providerSymbol).toBe("VWCE.XETRA");
   });
+
+  it("resolves STRC.AS quote targets in USD from verified metadata", async () => {
+    const target = await resolvePriceTarget({
+      symbol: "STRC",
+      providerSymbol: "STRC.AS",
+      isin: "NL0015001K93",
+      name: "21Shares Strategy Yield ETP",
+    });
+
+    expect(matchInstrument).not.toHaveBeenCalled();
+    expect(target?.currency).toBe("USD");
+  });
 });

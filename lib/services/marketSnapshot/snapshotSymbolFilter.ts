@@ -3,6 +3,7 @@
  */
 
 import { isCryptoProviderSymbol } from "@/lib/services/marketData/cachePolicy";
+import { resolveQuoteCurrencyForProviderSymbol } from "@/lib/services/instruments/quoteCurrency";
 import type { MarketSnapshotSlot } from "@/lib/services/marketSnapshot/amsterdamSchedule";
 import type { PriceCurrency } from "@/lib/services/prices/types";
 
@@ -69,27 +70,19 @@ export function filterProviderSymbolsForSnapshotSlot(
 
 export function inferQuoteCurrencyFromProviderSymbol(
   providerSymbol: string,
-  fallback: PriceCurrency = "EUR",
-): PriceCurrency {
-  const exchange = providerSymbol.split(".").pop()?.trim().toUpperCase() ?? "";
-  switch (exchange) {
-    case "US":
-      return "USD";
-    case "LSE":
-      return "GBP";
-    case "SW":
-      return "CHF";
-    default:
-      return fallback;
-  }
+): PriceCurrency | null {
+  return resolveQuoteCurrencyForProviderSymbol(providerSymbol);
 }
 
 export function requiredFxCurrenciesForSymbols(
   symbols: string[],
 ): PriceCurrency[] {
-  const required = new Set<PriceCurrency>(["EUR"]);
+  const required = new Set<PriceCurrency>();
   for (const symbol of symbols) {
-    required.add(inferQuoteCurrencyFromProviderSymbol(symbol));
+    const currency = inferQuoteCurrencyFromProviderSymbol(symbol);
+    if (currency) {
+      required.add(currency);
+    }
   }
   return [...required];
 }

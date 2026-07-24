@@ -90,6 +90,7 @@ export type DbMappingRow = {
   match_method: string | null;
   match_confidence: number | string | null;
   match_warnings: string[] | unknown;
+  quote_currency: string | null;
   confirmed_at: string;
 };
 
@@ -113,6 +114,7 @@ export type DbImportMappingRow = {
   instrument_name: string | null;
   provider_symbol: string;
   match_method: string;
+  quote_currency: string | null;
   confirmed_at: string;
 };
 

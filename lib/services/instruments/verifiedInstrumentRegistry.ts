@@ -11,6 +11,7 @@ import {
 import { normalizeIsin } from "@/lib/services/instruments/validation";
 import type { ListingConfirmationSource } from "@/lib/services/instruments/listingConfirmationSource";
 import type { ResolvedInstrument } from "@/lib/types/instrument";
+import type { PriceCurrency } from "@/lib/services/prices/types";
 
 export type VerifiedInstrumentEntry = {
   ticker: string;
@@ -21,6 +22,13 @@ export type VerifiedInstrumentEntry = {
   isin?: string | null;
   /** Purchase venues that map to this instrument but quote on {@link exchange}. */
   purchaseExchangeAliases?: readonly string[];
+  /**
+   * EODHD quote denomination when the provider omits `currency` on the wire.
+   * Exchange suffix alone is not always reliable (e.g. STRC.AS is USD).
+   */
+  quoteCurrency?: PriceCurrency;
+  /** Documents why {@link quoteCurrency} overrides exchange inference. */
+  quoteCurrencyNote?: string;
 };
 
 const VERIFIED_INSTRUMENTS: VerifiedInstrumentEntry[] = [
@@ -30,12 +38,17 @@ const VERIFIED_INSTRUMENTS: VerifiedInstrumentEntry[] = [
     providerSymbol: "STRC.AS",
     instrumentName: "21Shares Strategy Yield ETP",
     isin: "NL0015001K93",
+    quoteCurrency: "USD",
+    quoteCurrencyNote:
+      "EODHD real-time STRC.AS quotes omit currency but are USD-denominated; convert to EUR via FX.",
   },
   {
     ticker: "AIFS",
     exchange: "XETRA",
     providerSymbol: "AIFS.XETRA",
     instrumentName: "iShares AI Infrastructure UCITS ETF",
+    quoteCurrency: "EUR",
+    quoteCurrencyNote: "EODHD listing Currency for this XETRA symbol.",
   },
   {
     ticker: "NUKL",
@@ -43,6 +56,8 @@ const VERIFIED_INSTRUMENTS: VerifiedInstrumentEntry[] = [
     providerSymbol: "NUKL.XETRA",
     instrumentName: "VanEck Uranium and Nuclear ETF",
     isin: "IE000M7V94E1",
+    quoteCurrency: "EUR",
+    quoteCurrencyNote: "EODHD listing Currency for this XETRA symbol.",
   },
   {
     ticker: "VWCE",
@@ -50,12 +65,16 @@ const VERIFIED_INSTRUMENTS: VerifiedInstrumentEntry[] = [
     providerSymbol: "VWCE.XETRA",
     instrumentName: "Vanguard FTSE All-World UCITS ETF",
     isin: "IE00BK5BQT80",
+    quoteCurrency: "EUR",
+    quoteCurrencyNote: "EODHD listing Currency for this XETRA symbol.",
   },
   {
     ticker: "IB1T",
     exchange: "XETRA",
     providerSymbol: "IB1T.XETRA",
     instrumentName: "iShares Bitcoin ETP",
+    quoteCurrency: "EUR",
+    quoteCurrencyNote: "EODHD listing Currency for this XETRA symbol.",
   },
   {
     ticker: "4COP",
@@ -64,6 +83,8 @@ const VERIFIED_INSTRUMENTS: VerifiedInstrumentEntry[] = [
     instrumentName: "Global X Copper Miners UCITS ETF",
     isin: "IE0003Z9E2Y3",
     purchaseExchangeAliases: ["TDG", "TRADEGATE", "TG"],
+    quoteCurrency: "EUR",
+    quoteCurrencyNote: "EODHD listing Currency for this XETRA symbol.",
   },
 ];
 
@@ -272,6 +293,7 @@ export function verifiedEntryToResolved(
     exchange: usesAlternatePricing ? purchaseExchange : entry.exchange,
     pricingExchange: usesAlternatePricing ? entry.exchange : null,
     isin: entry.isin ?? null,
+    quoteCurrency: entry.quoteCurrency ?? null,
     matchMethod,
     confirmationSource,
     confidence: 0.99,
@@ -295,3 +317,5 @@ export function buildVerifiedProviderSymbol(
   if (!entry) return null;
   return buildProviderSymbol(entry.ticker, entry.exchange);
 }
+
+export { resolveQuoteCurrencyForProviderSymbol } from "@/lib/services/instruments/quoteCurrency";

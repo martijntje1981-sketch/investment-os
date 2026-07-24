@@ -1,4 +1,10 @@
 import { getEodhdApiKey } from "@/lib/services/instruments/eodhdClient";
+import {
+  normalizeProviderQuoteCurrency,
+  resolveListingQuoteCurrency,
+  QUOTE_CURRENCY_REVIEW_WARNING,
+} from "@/lib/services/instruments/quoteCurrency";
+import { buildUnavailableQuote } from "@/lib/services/prices/convertToHoldingPrice";
 import { EODHD_QUOTE_PROVIDER_ID } from "@/lib/services/instruments/eodhdQuoteGuard";
 import { executeEodhdApiCall } from "@/lib/services/marketData/eodhdApiCall";
 import { markEodhdDailyQuotaExhausted } from "@/lib/services/marketData/eodhdDailyQuota";
@@ -50,30 +56,6 @@ function isFinitePositiveNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value) && value > 0;
 }
 
-function inferCurrency(value: string | null | undefined): PriceCurrency {
-  const normalized = value?.trim().toUpperCase();
-  if (normalized === "USD" || normalized === "GBP" || normalized === "CHF") {
-    return normalized;
-  }
-  return "EUR";
-}
-
-function inferCurrencyFromProviderSymbol(
-  providerSymbol: string,
-  fallback: PriceCurrency = "EUR",
-): PriceCurrency {
-  const exchange = providerSymbol.split(".").pop()?.trim().toUpperCase();
-  switch (exchange) {
-    case "US":
-      return "USD";
-    case "LSE":
-      return "GBP";
-    case "SW":
-      return "CHF";
-    default:
-      return fallback;
-  }
-}
 
 function classifyProviderFailure(status: number): ProviderFailureKind {
   if (status === 402) return "quota_exhausted";
@@ -179,13 +161,12 @@ function mapEodhdResponse(
   providerSymbol: string,
   data: EodhdRealtimeResponse,
 ): ProviderRawQuote {
-  const quoteCurrency = inferCurrency(
-    data.currency ?? inferCurrencyFromProviderSymbol(providerSymbol),
-  );
+  const wireCurrency = normalizeProviderQuoteCurrency(data.currency);
 
   return {
     providerSymbol,
-    originalCurrency: quoteCurrency,
+    wireCurrency,
+    originalCurrency: wireCurrency ?? "EUR",
     originalPrice: data.close as number,
     previousCloseOriginal: isFinitePositiveNumber(parseMarketNumber(data.previousClose))
       ? (parseMarketNumber(data.previousClose) as number)
@@ -215,7 +196,22 @@ export function createEodhdMarketDataProvider(
       return mapEodhdResponse(providerSymbol, data);
     },
     normalizeQuote(target, raw, fxRates) {
-      const rate = fxRates[raw.originalCurrency];
+      const resolution = resolveListingQuoteCurrency({
+        liveQuoteCurrency: raw.wireCurrency,
+        persistedQuoteCurrency: target.currency,
+        providerSymbol: target.providerSymbol,
+      });
+
+      if (!resolution.currency) {
+        return buildUnavailableQuote(
+          target,
+          EODHD_QUOTE_PROVIDER_ID,
+          QUOTE_CURRENCY_REVIEW_WARNING,
+        );
+      }
+
+      const quoteCurrency = resolution.currency;
+      const rate = fxRates[quoteCurrency];
       const convert = (amount: number | null) => {
         if (amount === null) return null;
         if (typeof rate !== "number" || !Number.isFinite(rate)) {
@@ -239,7 +235,7 @@ export function createEodhdMarketDataProvider(
         previousCloseEur,
         changeEur,
         changePercent: raw.changePercentOriginal,
-        originalCurrency: raw.originalCurrency,
+        originalCurrency: quoteCurrency,
         updatedAt: raw.updatedAt,
       });
 
@@ -250,7 +246,7 @@ export function createEodhdMarketDataProvider(
         previousClose: normalized.previousClose,
         change: normalized.change,
         changePercent: normalized.changePercent,
-        currency: raw.originalCurrency,
+        currency: quoteCurrency,
         marketStatus: raw.marketStatus ?? null,
         updatedAt: normalized.updatedAt,
         provider: "eodhd",

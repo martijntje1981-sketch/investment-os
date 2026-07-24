@@ -1,6 +1,7 @@
 import { applyResolvedToHolding } from "@/lib/services/instruments/applyResolved";
 import type { ImportRow } from "@/lib/services/import/types";
 import { annotateImportRow } from "@/lib/services/import/confidencePolicy";
+import { resolveListingQuoteCurrency } from "@/lib/services/instruments/quoteCurrency";
 import type { ParsedProviderSymbol } from "@/lib/services/instruments/providerSymbolInput";
 import type { InstrumentMatchInput, ResolvedInstrument } from "@/lib/types/instrument";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
@@ -9,6 +10,7 @@ export type ListingCandidateSource = {
   instrumentName?: string | null;
   exchange?: string | null;
   isin?: string | null;
+  quoteCurrency?: ResolvedInstrument["quoteCurrency"];
   matchMethod?: ResolvedInstrument["matchMethod"];
   matchConfidence?: number;
   candidates?: ResolvedInstrument[];
@@ -56,12 +58,14 @@ export function describePricingSource(
   return `Live prices use the ${pricingLabel} listing (${listing.providerSymbol ?? "—"}). Your ${purchaseLabel} purchase is preserved.`;
 }
 
-function inferListingCurrency(providerSymbol: string | null | undefined): string {
-  if (!providerSymbol) return "EUR";
-  if (providerSymbol.endsWith(".US")) return "USD";
-  if (providerSymbol.endsWith(".LSE")) return "GBP";
-  if (providerSymbol.endsWith(".SW")) return "CHF";
-  return "EUR";
+function formatListingCurrency(
+  candidate: Pick<ResolvedInstrument, "providerSymbol" | "quoteCurrency">,
+): string {
+  const resolution = resolveListingQuoteCurrency({
+    persistedQuoteCurrency: candidate.quoteCurrency ?? null,
+    providerSymbol: candidate.providerSymbol,
+  });
+  return resolution.currency ?? "—";
 }
 
 export function formatListingLine(candidate: ResolvedInstrument): string {
@@ -82,10 +86,10 @@ export function formatListingDetails(
     instrumentName: candidate.instrumentName ?? "—",
     ticker,
     exchange: candidate.exchange ?? "—",
-    currency: inferListingCurrency(candidate.providerSymbol),
+    currency: formatListingCurrency(candidate),
     isin: candidate.isin ?? "—",
     providerSymbol,
-    summaryLine: `${ticker} · ${candidate.exchange ?? "—"} · ${inferListingCurrency(candidate.providerSymbol)}`,
+    summaryLine: `${ticker} · ${candidate.exchange ?? "—"} · ${formatListingCurrency(candidate)}`,
     pricingSourceNote: describePricingSource(candidate),
   };
 }
@@ -103,6 +107,7 @@ export function buildListingCandidates(
       instrumentName: source.instrumentName ?? null,
       exchange: source.exchange ?? null,
       isin: source.isin ?? null,
+      quoteCurrency: source.quoteCurrency ?? null,
       matchMethod: source.matchMethod ?? "unresolved",
       confidence: source.matchConfidence ?? 0.8,
       requiresConfirmation: false,
@@ -185,6 +190,7 @@ export function draftToImportRow(
     matchConfidence: draft.matchConfidence,
     requiresConfirmation: draft.requiresConfirmation,
     matchWarnings: draft.matchWarnings,
+    quoteCurrency: draft.quoteCurrency ?? null,
     candidates,
     userConfirmed: Boolean(draft.providerSymbol),
   };
@@ -211,6 +217,7 @@ export function importRowToStoredHolding(
     matchConfidence: row.matchConfidence,
     requiresConfirmation: row.requiresConfirmation,
     matchWarnings: row.matchWarnings,
+    quoteCurrency: row.quoteCurrency ?? null,
     confirmationSource: row.confirmationSource,
   };
 }

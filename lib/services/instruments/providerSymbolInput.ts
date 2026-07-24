@@ -80,9 +80,10 @@ export function parseProviderSymbolInput(
         instrumentName: null,
         exchange,
         isin: null,
+        quoteCurrency: null,
         matchMethod: "ticker_exchange",
         confidence: 1,
-        requiresConfirmation: false,
+        requiresConfirmation: true,
         warnings: [],
       };
 
