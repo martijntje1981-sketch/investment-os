@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildCryptoNormalizedPair,
+  buildCryptoQuoteCacheKey,
   buildEodhdCryptoProviderSymbol,
   resolveCryptoQuoteFetchPlan,
   resolveCryptoQuoteFallbackPlan,
@@ -44,6 +45,29 @@ describe("cryptoQuoteResolution", () => {
     const plan = resolveCryptoQuoteFetchPlan("ETH", "USD");
     expect(plan?.normalizedPair).toBe("ETH/USD");
     expect(plan?.providerSymbol).toBe("ETH-USD.CC");
+  });
+
+  it("builds ETH/EUR direct plan without locking Ethereum to USD", () => {
+    const plan = resolveCryptoQuoteFetchPlan("ETH", "EUR");
+    expect(plan?.normalizedPair).toBe("ETH/EUR");
+    expect(plan?.providerSymbol).toBe("ETH-EUR.CC");
+    expect(plan?.sourcePair).toBe("ETH/EUR");
+    expect(plan?.conversionApplied).toBe(false);
+  });
+
+  it("creates ETH/USD fallback for EUR pairs with USD/EUR conversion path", () => {
+    const plan = resolveCryptoQuoteFetchPlan("ETH", "EUR")!;
+    const fallback = resolveCryptoQuoteFallbackPlan(plan);
+    expect(fallback?.providerSymbol).toBe("ETH-USD.CC");
+    expect(fallback?.normalizedPair).toBe("ETH/EUR");
+    expect(fallback?.sourcePair).toBe("ETH/USD");
+    expect(fallback?.conversionApplied).toBe(true);
+    expect(fallback?.conversionPath).toBe("USD/EUR");
+  });
+
+  it("does not create a fallback for direct USD pairs", () => {
+    const plan = resolveCryptoQuoteFetchPlan("ETH", "USD")!;
+    expect(resolveCryptoQuoteFallbackPlan(plan)).toBeNull();
   });
 
   it("builds SOL/USDC direct plan without treating USDC as USD", () => {
@@ -105,6 +129,32 @@ describe("cryptoFxRates", () => {
     expect(withRate).not.toBeNull();
     expect(naive).not.toBeNull();
     expect(withRate!).not.toBeCloseTo(naive!, 6);
+  });
+
+  it("converts USD wire price to EUR using real USD/EUR rate", () => {
+    const converted = convertPairPriceToQuoteCurrency({
+      wirePrice: 1_854.32,
+      wireQuoteCurrency: "USD",
+      requestedQuoteCurrency: "EUR",
+      fx,
+    });
+
+    expect(converted.conversionApplied).toBe(true);
+    expect(converted.conversionPath).toBe("USD/EUR");
+    expect(converted.pairPrice).toBeCloseTo(1_854.32 * 0.92, 2);
+  });
+
+  it("returns unavailable when USD/EUR rate is missing for conversion", () => {
+    const withoutUsdFx = buildCryptoFxRates({ EUR: 1, USD: null, GBP: null, CHF: null });
+    const converted = convertPairPriceToQuoteCurrency({
+      wirePrice: 1_854.32,
+      wireQuoteCurrency: "USD",
+      requestedQuoteCurrency: "EUR",
+      fx: withoutUsdFx,
+    });
+
+    expect(converted.pairPrice).toBeNull();
+    expect(converted.conversionPath).toBe("USD/EUR");
   });
 
   it("keeps direct EUR pair price", () => {
@@ -191,6 +241,83 @@ describe("normalizeCryptoProviderQuote", () => {
       fx,
     });
     expect(quote.crypto.change24hPercent).toBe(-1.7571);
+  });
+
+  it("normalizes direct ETH/EUR quote", () => {
+    const ethTarget: ResolvedPriceTarget = {
+      symbol: "ETH",
+      providerSymbol: "ETH-EUR.CC",
+      isin: null,
+      name: "Ethereum",
+      currency: null,
+      assetType: "crypto",
+      cryptoPlan: resolveCryptoQuoteFetchPlan("ETH", "EUR")!,
+    };
+
+    const quote = normalizeCryptoProviderQuote({
+      target: ethTarget,
+      plan: ethTarget.cryptoPlan!,
+      raw: {
+        ...raw,
+        providerSymbol: "ETH-EUR.CC",
+        originalPrice: 1_630,
+        changePercentOriginal: -0.48,
+      },
+      fx,
+    });
+
+    expect(quote.crypto.normalizedPair).toBe("ETH/EUR");
+    expect(quote.crypto.sourcePair).toBe("ETH/EUR");
+    expect(quote.crypto.conversionApplied).toBe(false);
+    expect(quote.crypto.pairPrice).toBe(1_630);
+  });
+
+  it("normalizes ETH/EUR from ETH/USD wire with conversion metadata", () => {
+    const directPlan = resolveCryptoQuoteFetchPlan("ETH", "EUR")!;
+    const fallbackPlan = resolveCryptoQuoteFallbackPlan(directPlan)!;
+
+    const quote = normalizeCryptoProviderQuote({
+      target: {
+        symbol: "ETH",
+        providerSymbol: "ETH-EUR.CC",
+        isin: null,
+        name: "Ethereum",
+        currency: null,
+        assetType: "crypto",
+        cryptoPlan: directPlan,
+      },
+      plan: fallbackPlan,
+      raw: {
+        ...raw,
+        providerSymbol: "ETH-USD.CC",
+        wireCurrency: "USD",
+        originalCurrency: "USD",
+        originalPrice: 1_854.32,
+        changePercentOriginal: -0.48,
+      },
+      fx,
+    });
+
+    expect(quote.crypto.normalizedPair).toBe("ETH/EUR");
+    expect(quote.crypto.sourcePair).toBe("ETH/USD");
+    expect(quote.crypto.conversionApplied).toBe(true);
+    expect(quote.crypto.conversionPath).toBe("USD/EUR");
+    expect(quote.crypto.pairPrice).toBeCloseTo(1_854.32 * 0.92, 2);
+    expect(quote.currentPrice).toBeCloseTo(1_854.32 * 0.92, 2);
+  });
+});
+
+describe("crypto cache keys", () => {
+  it("keeps ETH/EUR and ETH/USD cache entries separate", () => {
+    expect(buildCryptoQuoteCacheKey("eodhd-quotes", "ETH/EUR")).toBe(
+      "eodhd-quotes:crypto:ETH/EUR",
+    );
+    expect(buildCryptoQuoteCacheKey("eodhd-quotes", "ETH/USD")).toBe(
+      "eodhd-quotes:crypto:ETH/USD",
+    );
+    expect(buildCryptoQuoteCacheKey("eodhd-quotes", "ETH/EUR")).not.toBe(
+      buildCryptoQuoteCacheKey("eodhd-quotes", "ETH/USD"),
+    );
   });
 });
 
