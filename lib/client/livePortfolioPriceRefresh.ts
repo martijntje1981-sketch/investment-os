@@ -417,7 +417,7 @@ export async function refreshLivePortfolioPrices<
       };
     }
 
-    const refreshed = applyPricesToHoldings(preparedHoldings, data.prices, {
+    const refreshed = applyPricesToHoldings(preparedHoldings, normalizedQuotes, {
       clearMissingDailyFields: true,
     });
     const appliedCount = countAppliedPriceUpdates(preparedHoldings, refreshed);
@@ -459,7 +459,7 @@ export async function refreshLivePortfolioPrices<
     const lastSuccessfulUpdate =
       data.lastSuccessfulUpdate ?? new Date().toISOString();
 
-    writePriceCache(userSub, data.prices, {
+    writePriceCache(userSub, normalizedQuotes, {
       lastSuccessfulUpdate,
       quoteSource: data.quoteSource ?? "provider",
     });

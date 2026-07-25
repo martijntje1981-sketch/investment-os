@@ -749,7 +749,8 @@ export function applyPricesToHoldings<T extends StoredPortfolioHolding>(
   options?: { clearMissingDailyFields?: boolean },
 ): T[] {
   const preparedHoldings = prepareHoldingsForPricing(holdings) as T[];
-  const lookup = buildPriceLookup(quotes);
+  const enrichedQuotes = parsePriceApiResponseQuotes(quotes);
+  const lookup = buildPriceLookup(enrichedQuotes);
   const clearMissingDailyFields = options?.clearMissingDailyFields ?? false;
 
   return holdings.map((holding, index) => {
