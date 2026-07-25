@@ -144,7 +144,7 @@ export function NewsBriefingIntelligence({
         ) : null}
       </div>
 
-      <div className="space-y-4 px-4 py-4 sm:space-y-5 sm:px-6 sm:py-5">
+      <div className="space-y-3 px-4 py-4 sm:space-y-5 sm:px-6 sm:py-5">
         <div className="rounded-[20px] border border-violet-100 bg-violet-50/70 px-4 py-4 sm:px-5 sm:py-5">
           <p className={`${appSectionBodyMediumClass} text-slate-700`}>
             Today&apos;s portfolio summary
@@ -181,7 +181,7 @@ export function NewsBriefingIntelligence({
         {intelligence.mustWatch ? (
           <div className="overflow-hidden rounded-[18px] border border-violet-200 bg-violet-50 px-4 py-4">
             <p className={`${appSectionBodyMediumClass} text-violet-900`}>Top story</p>
-            <div className="mt-3 flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start">
+            <div className="mt-3 flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
               {mustWatchItem && mustWatchPresentation ? (
                 <NewsMediaThumbnail
                   thumbnailUrl={mustWatchItem.thumbnailUrl}
@@ -193,7 +193,7 @@ export function NewsBriefingIntelligence({
                 />
               ) : null}
               <div className="min-w-0 flex-1">
-                <p className={appTableNameClass}>{intelligence.mustWatch.title}</p>
+                <p className={`${appTableNameClass} break-words`}>{intelligence.mustWatch.title}</p>
                 <p className={`mt-2 ${appSectionBodyClass} text-slate-700`}>
                   {intelligence.mustWatch.reason}
                 </p>
@@ -221,7 +221,7 @@ export function NewsBriefingIntelligence({
                   href={intelligence.mustWatch.canonicalUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-4 inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-violet-200 bg-white px-4 py-2 text-sm font-bold text-violet-800 transition hover:bg-violet-100/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 motion-reduce:transition-none"
+                  className="mt-3 inline-flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-xl border border-violet-200 bg-white px-4 py-2 text-sm font-bold text-violet-800 transition hover:bg-violet-100/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 motion-reduce:transition-none sm:mt-4 sm:w-auto sm:justify-start"
                 >
                   {getNewsMediaCtaLabel(intelligence.mustWatch.type)}
                   <ArrowUpRight className="h-4 w-4" aria-hidden />

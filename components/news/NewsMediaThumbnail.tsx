@@ -12,9 +12,12 @@ import { selectTrustedNewsThumbnailFromUrl } from "@/lib/services/news/newsThumb
 import type { NewsSourceType } from "@/lib/types/newsContent";
 
 const SIZE_CLASSES = {
-  compact: "h-12 w-16 shrink-0 aspect-[4/3]",
-  small: "h-14 w-20 shrink-0 aspect-[10/7]",
-  editorial: "w-full shrink-0 aspect-video sm:w-36 lg:w-40",
+  compact:
+    "h-11 w-[3.75rem] shrink-0 aspect-[4/3] min-[480px]:h-12 min-[480px]:w-16",
+  small:
+    "h-12 w-[4.25rem] shrink-0 aspect-[10/7] min-[480px]:h-14 min-[480px]:w-20",
+  editorial:
+    "w-full max-w-[240px] shrink-0 aspect-video min-[480px]:max-w-none sm:w-36 lg:w-40",
 } as const;
 
 export function NewsMediaThumbnail({

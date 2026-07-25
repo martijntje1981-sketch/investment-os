@@ -9,10 +9,12 @@ import {
   type PortfolioNewsCard,
 } from "@/lib/services/news/newsBriefingLayout";
 import { NewsExpandableList } from "@/components/news/NewsBriefingSection";
+import { NewsCompactCardLayout } from "@/components/news/NewsCompactCardLayout";
 import { formatNewsPublishedAt } from "@/components/news/newsFormatting";
 import { NewsMediaThumbnail } from "@/components/news/NewsMediaThumbnail";
 import {
   newsCompactCardClass,
+  newsCompactHeadlineClass,
   newsExternalLinkClass,
 } from "@/components/news/newsCardStyles";
 import { buildNewsMediaPresentation } from "@/lib/services/news/newsMediaType";
@@ -52,24 +54,37 @@ export function NewsForPortfolioSection({
             const presentation = buildNewsMediaPresentation(card.item);
 
             return (
-            <article className={newsCompactCardClass}>
-              <div className="flex min-w-0 items-start gap-3">
-                <NewsMediaThumbnail
-                  thumbnailUrl={card.item.thumbnailUrl}
-                  sourceType={card.item.sourceType}
-                  fallbackCategory={presentation.thumbnailFallbackCategory}
-                  size="compact"
-                  showPlayIndicator={presentation.showPlayIndicator}
-                />
-                <div className="min-w-0 flex-1">
-                  <h3 className="text-base font-semibold leading-snug text-slate-950">
+              <article className={newsCompactCardClass}>
+                <NewsCompactCardLayout
+                  media={
+                    <NewsMediaThumbnail
+                      thumbnailUrl={card.item.thumbnailUrl}
+                      sourceType={card.item.sourceType}
+                      fallbackCategory={presentation.thumbnailFallbackCategory}
+                      size="compact"
+                      showPlayIndicator={presentation.showPlayIndicator}
+                    />
+                  }
+                  action={
+                    <a
+                      href={card.item.canonicalUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={newsExternalLinkClass}
+                    >
+                      {presentation.ctaLabel}
+                      <ArrowUpRight className="h-4 w-4" aria-hidden />
+                    </a>
+                  }
+                >
+                  <h3 className={`${newsCompactHeadlineClass} text-slate-950`}>
                     {card.item.title}
                   </h3>
-                  <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-slate-600">
+                  <p className="mt-1.5 line-clamp-2 break-words text-sm leading-relaxed text-slate-600">
                     {card.item.summary || card.item.description}
                   </p>
                   {card.affectedHoldings.length > 0 ? (
-                    <p className="mt-2 text-sm text-slate-700">
+                    <p className="mt-2 break-words text-sm text-slate-700">
                       <span className="font-semibold">Affected holdings:</span>{" "}
                       {card.affectedHoldings.slice(0, 5).join(" · ")}
                     </p>
@@ -87,18 +102,8 @@ export function NewsForPortfolioSection({
                       {formatNewsPublishedAt(card.item.publishedAt)}
                     </span>
                   </div>
-                </div>
-                <a
-                  href={card.item.canonicalUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={newsExternalLinkClass}
-                >
-                  {presentation.ctaLabel}
-                  <ArrowUpRight className="h-4 w-4" aria-hidden />
-                </a>
-              </div>
-            </article>
+                </NewsCompactCardLayout>
+              </article>
             );
           }}
         />

@@ -10,10 +10,12 @@ import {
   type NewsBriefHeadline,
 } from "@/lib/services/news/newsBriefingLayout";
 import { NewsExpandableList } from "@/components/news/NewsBriefingSection";
+import { NewsCompactCardLayout } from "@/components/news/NewsCompactCardLayout";
 import { formatNewsPublishedAt } from "@/components/news/newsFormatting";
 import { NewsMediaThumbnail } from "@/components/news/NewsMediaThumbnail";
 import {
   newsCompactCardClass,
+  newsCompactMetaClass,
   newsExternalLinkClass,
 } from "@/components/news/newsCardStyles";
 import { buildNewsBriefHeadlinePresentation } from "@/lib/services/news/newsMediaType";
@@ -57,49 +59,52 @@ export function NewsMarketBriefSection({
           });
 
           return (
-          <article className={newsCompactCardClass}>
-            <div className="flex min-w-0 items-start gap-3">
-              <NewsMediaThumbnail
-                thumbnailUrl={headline.thumbnailUrl}
-                sourceType={headline.sourceType}
-                fallbackCategory={presentation.thumbnailFallbackCategory}
-                size="compact"
-                showPlayIndicator={presentation.showPlayIndicator}
-              />
-              <div className="min-w-0 flex-1">
-                <h3 className={`${appValueSemiboldClass} leading-snug`}>
+            <article className={newsCompactCardClass}>
+              <NewsCompactCardLayout
+                media={
+                  <NewsMediaThumbnail
+                    thumbnailUrl={headline.thumbnailUrl}
+                    sourceType={headline.sourceType}
+                    fallbackCategory={presentation.thumbnailFallbackCategory}
+                    size="compact"
+                    showPlayIndicator={presentation.showPlayIndicator}
+                  />
+                }
+                action={
+                  headline.canonicalUrl !== "#" ? (
+                    <a
+                      href={headline.canonicalUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={newsExternalLinkClass}
+                    >
+                      {presentation.ctaLabel}
+                      <ArrowUpRight className="h-4 w-4" aria-hidden />
+                    </a>
+                  ) : undefined
+                }
+              >
+                <h3 className={`${appValueSemiboldClass} break-words leading-snug`}>
                   {headline.headline}
                 </h3>
-                <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-slate-600">
+                <p className="mt-1.5 line-clamp-2 break-words text-sm leading-relaxed text-slate-600">
                   {headline.summary}
                 </p>
-                <p className="mt-2 text-sm leading-relaxed text-slate-700">
+                <p className="mt-2 break-words text-sm leading-relaxed text-slate-700">
                   <span className="font-semibold text-slate-800">
                     Why it matters:
                   </span>{" "}
                   {headline.whyItMatters}
                 </p>
-                <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
+                <div className={`${newsCompactMetaClass} text-slate-500`}>
                   <span>{headline.affectedMarket}</span>
                   <span aria-hidden>·</span>
                   <span>{formatNewsPublishedAt(headline.publishedAt)}</span>
                   <span aria-hidden>·</span>
                   <span>{headline.sourceName}</span>
                 </div>
-              </div>
-              {headline.canonicalUrl !== "#" ? (
-                <a
-                  href={headline.canonicalUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={newsExternalLinkClass}
-                >
-                  {presentation.ctaLabel}
-                  <ArrowUpRight className="h-4 w-4" aria-hidden />
-                </a>
-              ) : null}
-            </div>
-          </article>
+              </NewsCompactCardLayout>
+            </article>
           );
         }}
       />

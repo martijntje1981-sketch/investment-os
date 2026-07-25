@@ -9,6 +9,11 @@ import {
 } from "@/components/layout/appSurface";
 import { NewsMediaThumbnail } from "@/components/news/NewsMediaThumbnail";
 import {
+  newsCompactCardLayoutClass,
+  newsCompactCardMediaClass,
+  newsCompactCardBodyClass,
+} from "@/components/news/newsCardStyles";
+import {
   MARKETS_TODAY_REGION_VISUALS,
   MARKETS_TODAY_SENTIMENT_STYLES,
   marketsTodayRegionGridClass,
@@ -97,24 +102,26 @@ export function NewsMarketsTodaySection({
 
                       return (
                       <li key={story.id} className="min-w-0">
-                        <div className="flex min-w-0 items-start gap-2.5">
-                          <NewsMediaThumbnail
-                            thumbnailUrl={story.thumbnailUrl}
-                            sourceType={story.sourceType}
-                            fallbackCategory={presentation.thumbnailFallbackCategory}
-                            size="compact"
-                            showPlayIndicator={presentation.showPlayIndicator}
-                          />
-                          <div className="min-w-0 flex-1">
+                        <div className={`${newsCompactCardLayoutClass} min-[480px]:gap-2.5`}>
+                          <div className={newsCompactCardMediaClass}>
+                            <NewsMediaThumbnail
+                              thumbnailUrl={story.thumbnailUrl}
+                              sourceType={story.sourceType}
+                              fallbackCategory={presentation.thumbnailFallbackCategory}
+                              size="compact"
+                              showPlayIndicator={presentation.showPlayIndicator}
+                            />
+                          </div>
+                          <div className={newsCompactCardBodyClass}>
                             <a
                               href={story.canonicalUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="line-clamp-2 text-sm font-semibold leading-snug text-slate-800 underline-offset-2 hover:text-blue-700 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
+                              className="line-clamp-3 break-words text-sm font-semibold leading-snug text-slate-800 underline-offset-2 hover:text-blue-700 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 min-[480px]:line-clamp-2"
                             >
                               {story.title}
                             </a>
-                            <p className="mt-0.5 text-xs text-slate-500">
+                            <p className="mt-0.5 break-words text-xs text-slate-500">
                               {story.sourceName} · {presentation.subjectLabel} ·{" "}
                               {formatPublishedAt(story.publishedAt)}
                             </p>

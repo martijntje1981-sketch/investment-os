@@ -1,9 +1,12 @@
 import { ArrowUpRight } from "lucide-react";
 
+import { NewsCompactCardLayout } from "@/components/news/NewsCompactCardLayout";
 import { formatNewsPublishedAt } from "@/components/news/newsFormatting";
 import { NewsMediaThumbnail } from "@/components/news/NewsMediaThumbnail";
 import {
   newsCompactCardClass,
+  newsCompactHeadlineClass,
+  newsCompactMetaClass,
   newsExternalLinkClass,
 } from "@/components/news/newsCardStyles";
 import { buildNewsMediaPresentation } from "@/lib/services/news/newsMediaType";
@@ -18,46 +21,49 @@ export function NewsCompactVideoRow({ item }: { item: NewsContentItem }) {
 
   return (
     <article className={`${newsCompactCardClass} px-3 py-3`}>
-      <div className="flex min-w-0 items-start gap-3">
-        <NewsMediaThumbnail
-          thumbnailUrl={item.thumbnailUrl}
-          sourceType={item.sourceType}
-          fallbackCategory={presentation.thumbnailFallbackCategory}
-          size="small"
-          showPlayIndicator={presentation.showPlayIndicator}
-        />
-
-        <div className="min-w-0 flex-1">
-          <h3 className="line-clamp-2 text-base font-semibold leading-snug text-slate-950">
-            {item.title}
-          </h3>
-          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
-            <span>{item.sourceName}</span>
-            <span aria-hidden>·</span>
-            <span>{formatNewsPublishedAt(item.publishedAt)}</span>
-            {presentation.subjectLabel ? (
-              <>
-                <span aria-hidden>·</span>
-                <span>{presentation.subjectLabel}</span>
-              </>
-            ) : null}            {holdings.length > 0 ? (
-              <>
-                <span aria-hidden>·</span>
-                <span>{holdings.slice(0, 2).join(", ")}</span>
-              </>
-            ) : null}
-          </div>
+      <NewsCompactCardLayout
+        media={
+          <NewsMediaThumbnail
+            thumbnailUrl={item.thumbnailUrl}
+            sourceType={item.sourceType}
+            fallbackCategory={presentation.thumbnailFallbackCategory}
+            size="small"
+            showPlayIndicator={presentation.showPlayIndicator}
+          />
+        }
+        action={
+          <a
+            href={item.canonicalUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={newsExternalLinkClass}
+          >
+            {presentation.ctaLabel}
+            <ArrowUpRight className="h-4 w-4" aria-hidden />
+          </a>
+        }
+      >
+        <h3 className={`${newsCompactHeadlineClass} line-clamp-3 text-slate-950 min-[480px]:line-clamp-2`}>
+          {item.title}
+        </h3>
+        <div className={`${newsCompactMetaClass} text-slate-500`}>
+          <span>{item.sourceName}</span>
+          <span aria-hidden>·</span>
+          <span>{formatNewsPublishedAt(item.publishedAt)}</span>
+          {presentation.subjectLabel ? (
+            <>
+              <span aria-hidden>·</span>
+              <span>{presentation.subjectLabel}</span>
+            </>
+          ) : null}
+          {holdings.length > 0 ? (
+            <>
+              <span aria-hidden>·</span>
+              <span>{holdings.slice(0, 2).join(", ")}</span>
+            </>
+          ) : null}
         </div>
-
-        <a
-          href={item.canonicalUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={newsExternalLinkClass}
-        >
-          {presentation.ctaLabel}          <ArrowUpRight className="h-4 w-4" aria-hidden />
-        </a>
-      </div>
+      </NewsCompactCardLayout>
     </article>
   );
 }

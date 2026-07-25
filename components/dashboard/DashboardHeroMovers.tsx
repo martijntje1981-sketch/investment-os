@@ -39,31 +39,39 @@ function MoverTile({
     : mover.changePercent < 0
       ? TrendingDown
       : Minus;
+  const displayName = mover.holding.name || mover.holding.symbol;
 
   return (
     <article
-      className={`min-w-0 rounded-2xl border bg-white/[0.03] px-3.5 py-3 ${borderClass}`}
+      className={`min-w-0 rounded-xl border bg-white/[0.03] px-3 py-2.5 ${borderClass}`}
     >
       <p className={appHeroMetricLabelClass}>{label}</p>
-      <Link
-        href={resolveHoldingHref(mover)}
-        className="mt-2 block min-w-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
-      >
-        <p className="truncate text-sm font-bold text-white">
-          {mover.holding.name || mover.holding.symbol}
-        </p>
-        <p className="mt-0.5 truncate text-xs font-semibold uppercase tracking-[0.08em] text-white/65">
-          {mover.holding.symbol}
-        </p>
-      </Link>
-      <div className={`mt-2.5 flex flex-wrap items-center gap-1.5 ${accentClass}`}>
-        <Icon className="h-4 w-4 shrink-0" aria-hidden />
-        <span className="text-sm font-bold tabular-nums">
-          {signedPercent(mover.changePercent)}
-        </span>
-        <span className={appDashboardDarkMetaClass}>
-          {mover.changePeriodLabel}
-        </span>
+      <div className="mt-1.5 flex min-w-0 items-start justify-between gap-2">
+        <Link
+          href={resolveHoldingHref(mover)}
+          className="min-w-0 flex-1 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+          title={displayName}
+        >
+          <p className="truncate text-sm font-bold text-white">
+            {mover.holding.symbol}
+          </p>
+          {displayName !== mover.holding.symbol ? (
+            <p className="mt-0.5 line-clamp-2 text-xs leading-snug text-white/65">
+              {displayName}
+            </p>
+          ) : null}
+        </Link>
+        <div className={`flex shrink-0 flex-col items-end gap-0.5 ${accentClass}`}>
+          <div className="flex items-center gap-1">
+            <Icon className="h-4 w-4 shrink-0" aria-hidden />
+            <span className="text-sm font-bold tabular-nums">
+              {signedPercent(mover.changePercent)}
+            </span>
+          </div>
+          <span className={`${appDashboardDarkMetaClass} text-[11px]`}>
+            {mover.changePeriodLabel}
+          </span>
+        </div>
       </div>
     </article>
   );
@@ -82,7 +90,7 @@ export function DashboardHeroMovers({
 }) {
   if (!performanceCoverageComplete) {
     return (
-      <div className="border-t border-white/[0.08] px-5 py-4 sm:px-7 md:px-8">
+      <div className="border-t border-white/[0.08] px-5 py-3 sm:px-7 sm:py-4 md:px-8">
         <p className={`${appDashboardDarkMetaClass} text-sm leading-relaxed`}>
           {RANKING_AFTER_CLOSE}
         </p>
@@ -94,12 +102,16 @@ export function DashboardHeroMovers({
     return null;
   }
 
+  const gridClass = lowestMover
+    ? "grid min-w-0 grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-3"
+    : "grid min-w-0 grid-cols-1 gap-2.5 sm:max-w-xs";
+
   return (
     <div
-      className="border-t border-white/[0.08] px-5 py-4 sm:px-7 md:px-8"
+      className="border-t border-white/[0.08] px-5 py-3 sm:px-7 sm:py-4 md:px-8"
       aria-label="Portfolio movers"
     >
-      <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
+      <div className={gridClass}>
         <MoverTile label="Top mover" mover={topMover} tone="positive" />
         {lowestMover ? (
           <MoverTile label="Lowest mover" mover={lowestMover} tone="negative" />

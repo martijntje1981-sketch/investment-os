@@ -6,6 +6,7 @@ import {
   appSectionSubtitleClass,
   appSectionTitleClass,
 } from "@/components/layout/appSurface";
+import { newsShowMoreButtonClass } from "@/components/news/newsCardStyles";
 
 export function NewsBriefingSection<T extends { id?: string }>({
   id,
@@ -62,7 +63,7 @@ export function NewsBriefingSection<T extends { id?: string }>({
               aria-expanded={expanded}
               aria-controls={regionId}
               onClick={() => setExpanded((current) => !current)}
-              className="inline-flex min-h-[44px] items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 motion-reduce:transition-none"
+              className={newsShowMoreButtonClass}
             >
               {expanded
                 ? "Show less"
@@ -109,7 +110,7 @@ export function NewsExpandableList<T extends { id?: string }>({
           aria-expanded={expanded}
           aria-controls={regionId}
           onClick={() => setExpanded((current) => !current)}
-          className="inline-flex min-h-[44px] items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 motion-reduce:transition-none"
+          className={newsShowMoreButtonClass}
         >
           {expanded
             ? "Show less"
