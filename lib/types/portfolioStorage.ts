@@ -64,6 +64,15 @@ export type StoredPortfolioHolding = {
   priceUpdatedAt?: string | null;
   currentManualPrice?: number | null;
   manualCurrentValue?: number | null;
+  /** Live quote in the holding's trading-pair currency (not portfolio base currency). */
+  currentPairPrice?: number | null;
+  change24hPercent?: number | null;
+  change24hAmount?: number | null;
+  quoteSourcePair?: string | null;
+  quoteConversionApplied?: boolean;
+  quoteConversionPath?: string | null;
+  providerDisplayName?: string | null;
+  fetchedAt?: string | null;
   createdAt?: string;
 };
 
@@ -76,6 +85,9 @@ export type PortfolioInstrumentPayload = {
   providerSymbol?: string | null;
   instrumentName?: string | null;
   quoteCurrency?: import("@/lib/services/prices/types").PriceCurrency | null;
+  assetType?: "investment" | "cash" | "crypto";
+  pairCurrency?: string | null;
+  id?: string;
 };
 
 export type PriceApiQuote = {
@@ -86,16 +98,25 @@ export type PriceApiQuote = {
   /** @deprecated Use currentPrice — kept for backward compatibility. */
   priceEur: number;
   currentPrice?: number | null;
+  pairPrice?: number | null;
   previousClose?: number | null;
   change?: number | null;
   changePercent?: number | null;
+  change24hPercent?: number | null;
   currency?: string | null;
   updatedAt?: string | null;
+  fetchedAt?: string | null;
   dataStatus?: "live" | "delayed" | "stale" | "unavailable";
   cacheStatus?: "fresh" | "stale" | "unavailable";
   provider?: string;
+  providerDisplayName?: string | null;
   isStale?: boolean;
   unavailableReason?: string | null;
+  assetType?: "crypto" | "investment";
+  normalizedPair?: string | null;
+  sourcePair?: string | null;
+  conversionApplied?: boolean;
+  conversionPath?: string | null;
 };
 
 export type PriceApiResponse = {

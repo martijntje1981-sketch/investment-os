@@ -64,7 +64,8 @@ describe("cryptoHolding validation and preparation", () => {
     expect(saved.portfolioCurrency).toBe("EUR");
     expect(saved.pricingStatus).toBe("price_unavailable");
     expect(saved.currentPrice).toBe(0);
-    expect(saved.providerSymbol).toBe(null);
+    expect(saved.providerSymbol).toBe("BTC-EUR.CC");
+    expect(saved.providerName).toBe("EODHD");
   });
 
   it("saves BTC/USDC", () => {

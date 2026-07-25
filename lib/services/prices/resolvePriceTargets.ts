@@ -1,6 +1,10 @@
 import { matchInstrument } from "@/lib/services/instruments";
 import { resolveListingQuoteCurrency, QUOTE_CURRENCY_REVIEW_WARNING } from "@/lib/services/instruments/quoteCurrency";
 import { getDefaultPortfolioPriceSeed } from "@/lib/services/portfolio/priceSeed";
+import {
+  dedupeCryptoTargets,
+  resolveCryptoPriceTargets,
+} from "@/lib/services/prices/resolveCryptoPriceTargets";
 import type {
   PriceCurrency,
   PriceHoldingInput,
@@ -44,11 +48,16 @@ export function resolveQuotePriceTargets(
     ? new Set(options.onlyProviderSymbols.map((symbol) => symbol.trim().toUpperCase()))
     : null;
 
-  const targets: ResolvedPriceTarget[] = [];
-  const errors: string[] = [];
-  let skipped = 0;
+  const cryptoResolved = resolveCryptoPriceTargets(holdings);
+  const targets: ResolvedPriceTarget[] = [...cryptoResolved.targets];
+  const errors: string[] = [...cryptoResolved.errors];
+  let skipped = cryptoResolved.skipped;
 
   for (const holding of holdings) {
+    if (holding.assetType === "crypto") {
+      continue;
+    }
+
     if (only && holding.providerSymbol) {
       const key = holding.providerSymbol.trim().toUpperCase();
       if (!only.has(key)) {
@@ -88,7 +97,18 @@ export function resolveQuotePriceTargets(
     targets.push(target);
   }
 
-  return { targets, errors, skipped };
+  const investmentTargets = dedupeResolvedTargets(
+    targets.filter((target) => target.assetType !== "crypto"),
+  );
+  const cryptoTargets = dedupeCryptoTargets(
+    targets.filter((target) => target.assetType === "crypto"),
+  );
+
+  return {
+    targets: [...investmentTargets, ...cryptoTargets],
+    errors,
+    skipped,
+  };
 }
 
 export async function resolvePriceTarget(

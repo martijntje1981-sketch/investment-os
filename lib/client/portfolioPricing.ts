@@ -32,6 +32,7 @@ import {
   type MarketDataStatus,
 } from "@/lib/services/prices/marketQuote";
 import { logHoldingDailyData } from "@/lib/client/holdingDailyDataDebug";
+import { enrichPriceApiQuotes } from "@/lib/client/enrichPriceApiQuotes";
 import { logStrcPortfolioLoadDiagnostics } from "@/lib/client/investmentOsProductionDebug";
 import { CLIENT_PRICE_CACHE_FRESH_MS } from "@/lib/services/marketData/cachePolicy";
 import { findSavedMappingForHolding } from "@/lib/services/import/mappingMemory";
@@ -260,15 +261,18 @@ export function countQuotablePriceHoldings(
   holdings: StoredPortfolioHolding[],
   userSub?: string,
 ): number {
-  return buildPriceRequestPayload(holdings, userSub).filter((item) =>
-    Boolean(item.providerSymbol?.trim()),
-  ).length;
+  return filterQuotablePricePayload(buildPriceRequestPayload(holdings, userSub)).length;
 }
 
 function filterQuotablePricePayload(
   payload: PortfolioInstrumentPayload[],
 ): PortfolioInstrumentPayload[] {
-  return payload.filter((item) => Boolean(item.providerSymbol?.trim()));
+  return payload.filter((item) => {
+    if (item.assetType === "crypto") {
+      return Boolean(item.symbol?.trim() && item.pairCurrency?.trim());
+    }
+    return Boolean(item.providerSymbol?.trim());
+  });
 }
 
 export function filterQuotablePricePayloadForRefresh(
@@ -321,8 +325,11 @@ export function buildPriceRequestPayload(
         userSub != null ? findSavedMappingForHolding(userSub, holding) : null;
 
       return {
+        id: holding.id,
         symbol: holding.symbol,
         name: holding.name,
+        assetType: holding.assetType,
+        pairCurrency: holding.pairCurrency ?? null,
         isin: holding.isin ?? savedMapping?.isin ?? null,
         exchange: holding.exchange ?? savedMapping?.exchange ?? null,
         providerSymbol:
@@ -369,9 +376,28 @@ export function quoteLookupKeys(quote: PriceApiQuote): string[] {
 }
 
 export function isQuoteCompatibleWithHolding(
-  holding: Pick<StoredPortfolioHolding, "symbol" | "providerSymbol" | "isin">,
+  holding: Pick<
+    StoredPortfolioHolding,
+    "symbol" | "providerSymbol" | "isin" | "assetType" | "pairCurrency" | "tradingPair"
+  >,
   quote: PriceApiQuote,
 ): boolean {
+  if (holding.assetType === "crypto" || quote.assetType === "crypto") {
+    const holdingPair =
+      holding.tradingPair ??
+      (holding.pairCurrency
+        ? `${holding.symbol.trim().toUpperCase()}/${holding.pairCurrency.trim().toUpperCase()}`
+        : null);
+    const quotePair = quote.normalizedPair ?? null;
+    if (holdingPair && quotePair) {
+      return holdingPair.trim().toUpperCase() === quotePair.trim().toUpperCase();
+    }
+    return (
+      normalizePortfolioSymbol(holding.symbol) ===
+      normalizePortfolioSymbol(quote.symbol)
+    );
+  }
+
   const holdingProvider = holding.providerSymbol?.trim()
     ? normalizePortfolioSymbol(holding.providerSymbol)
     : null;
@@ -396,17 +422,32 @@ export function isQuoteCompatibleWithHolding(
   return true;
 }
 
-/** Indexes quotes by symbol, providerSymbol, eodhdSymbol, and ISIN. */
+/** Indexes quotes by symbol, providerSymbol, eodhdSymbol, ISIN, and crypto pair. */
 export function buildPriceLookup(
   quotes: PriceApiQuote[] | undefined,
 ): Map<string, PriceApiQuote> {
   const lookup = new Map<string, PriceApiQuote>();
 
   for (const quote of normalizePriceApiQuotes(quotes)) {
-    if (!Number.isFinite(quote.priceEur) || quote.priceEur <= 0) continue;
+    const hasCryptoPair =
+      quote.assetType === "crypto" &&
+      typeof quote.pairPrice === "number" &&
+      quote.pairPrice > 0;
+    const hasInvestmentPrice =
+      quote.assetType !== "crypto" &&
+      Number.isFinite(quote.priceEur) &&
+      quote.priceEur > 0;
+
+    if (!hasCryptoPair && !hasInvestmentPrice) {
+      continue;
+    }
 
     for (const key of quoteLookupKeys(quote)) {
       if (!lookup.has(key)) lookup.set(key, quote);
+    }
+
+    if (quote.normalizedPair) {
+      lookup.set(quote.normalizedPair.trim().toUpperCase(), quote);
     }
   }
 
@@ -415,32 +456,56 @@ export function buildPriceLookup(
 
 /** Coerces API/cache quote payloads into the shared normalized quote shape. */
 export function normalizePriceApiQuote(raw: PriceApiQuote): PriceApiQuote {
+  const isCrypto = raw.assetType === "crypto" || raw.pairPrice != null;
   const priceEur =
-    typeof raw.currentPrice === "number" && raw.currentPrice > 0
-      ? raw.currentPrice
-      : raw.priceEur;
+    isCrypto
+      ? typeof raw.currentPrice === "number" && raw.currentPrice > 0
+        ? raw.currentPrice
+        : raw.priceEur
+      : typeof raw.currentPrice === "number" && raw.currentPrice > 0
+        ? raw.currentPrice
+        : raw.priceEur;
 
   const normalized = normalizeMarketQuote({
     symbol: raw.symbol,
     priceEur,
-    previousCloseEur: raw.previousClose ?? null,
-    changeEur: raw.change ?? null,
-    changePercent: raw.changePercent ?? null,
+    previousCloseEur: isCrypto ? null : raw.previousClose ?? null,
+    changeEur: isCrypto ? null : raw.change ?? null,
+    changePercent: isCrypto
+      ? raw.change24hPercent ?? raw.changePercent ?? null
+      : raw.changePercent ?? null,
     originalCurrency: raw.currency ?? null,
     updatedAt: raw.updatedAt ?? null,
   });
 
   return {
     ...raw,
+    assetType: isCrypto ? "crypto" : raw.assetType,
     priceEur: normalized.currentPrice ?? priceEur,
     currentPrice: normalized.currentPrice,
-    previousClose: normalized.previousClose,
-    change: normalized.change,
-    changePercent: normalized.changePercent,
-    currency: normalized.currency,
+    pairPrice: raw.pairPrice ?? null,
+    previousClose: isCrypto ? null : normalized.previousClose,
+    change: isCrypto ? null : normalized.change,
+    changePercent: isCrypto
+      ? raw.change24hPercent ?? raw.changePercent ?? null
+      : normalized.changePercent,
+    change24hPercent: raw.change24hPercent ?? raw.changePercent ?? null,
+    currency: raw.currency ?? normalized.currency,
     updatedAt: normalized.updatedAt,
     dataStatus: raw.dataStatus ?? normalized.dataStatus,
+    normalizedPair: raw.normalizedPair ?? null,
+    sourcePair: raw.sourcePair ?? null,
+    conversionApplied: raw.conversionApplied ?? false,
+    conversionPath: raw.conversionPath ?? null,
+    providerDisplayName: raw.providerDisplayName ?? raw.provider ?? null,
+    fetchedAt: raw.fetchedAt ?? null,
   };
+}
+
+export function parsePriceApiResponseQuotes(
+  quotes: PriceApiQuote[] | undefined,
+): PriceApiQuote[] {
+  return normalizePriceApiQuotes(enrichPriceApiQuotes(quotes));
 }
 
 export function normalizePriceApiQuotes(
@@ -454,6 +519,54 @@ function applyQuoteToHolding<T extends StoredPortfolioHolding>(
   quote: PriceApiQuote,
 ): T {
   const normalized = normalizePriceApiQuote(quote);
+
+  if (holding.assetType === "crypto" || quote.assetType === "crypto") {
+    const pairPrice =
+      typeof quote.pairPrice === "number" && quote.pairPrice > 0
+        ? quote.pairPrice
+        : null;
+    const priceEur =
+      typeof normalized.priceEur === "number" && normalized.priceEur > 0
+        ? normalized.priceEur
+        : null;
+
+    return {
+      ...holding,
+      currentPairPrice: pairPrice,
+      currentPrice: priceEur ?? 0,
+      providerSymbol:
+        quote.providerSymbol ?? quote.eodhdSymbol ?? holding.providerSymbol ?? null,
+      providerId: quote.provider ?? holding.providerId ?? "eodhd-quotes",
+      providerName: quote.providerDisplayName ?? holding.providerName ?? "EODHD",
+      providerDisplayName:
+        quote.providerDisplayName ?? holding.providerDisplayName ?? "EODHD",
+      change24hPercent:
+        quote.change24hPercent ?? quote.changePercent ?? holding.change24hPercent ?? null,
+      change24hAmount:
+        priceEur != null &&
+        (quote.change24hPercent ?? quote.changePercent) != null
+          ? priceEur *
+            holding.quantity *
+            ((quote.change24hPercent ?? quote.changePercent ?? 0) / 100)
+          : null,
+      changePercent: quote.change24hPercent ?? quote.changePercent ?? null,
+      changeAmount: null,
+      previousClose: null,
+      quoteSourcePair: quote.sourcePair ?? holding.quoteSourcePair ?? null,
+      quoteConversionApplied:
+        quote.conversionApplied ?? holding.quoteConversionApplied ?? false,
+      quoteConversionPath:
+        quote.conversionPath ?? holding.quoteConversionPath ?? null,
+      priceUpdatedAt: normalized.updatedAt ?? new Date().toISOString(),
+      fetchedAt: quote.fetchedAt ?? holding.fetchedAt ?? null,
+      priceDataStatus:
+        pairPrice != null && priceEur != null
+          ? ((normalized.dataStatus as MarketDataStatus | undefined) ?? "live")
+          : holding.priceDataStatus,
+      updatedAt: normalized.updatedAt ?? holding.updatedAt,
+      marketPriceUpdatedAt: normalized.updatedAt ?? new Date().toISOString(),
+    };
+  }
 
   return {
     ...holding,
@@ -494,6 +607,17 @@ export function holdingLookupKeys(
   holding: StoredPortfolioHolding,
 ): string[] {
   const keys: string[] = [];
+
+  if (holding.assetType === "crypto") {
+    if (holding.tradingPair?.trim()) {
+      keys.push(holding.tradingPair.trim().toUpperCase());
+    }
+    if (holding.pairCurrency?.trim()) {
+      keys.push(
+        `${normalizePortfolioSymbol(holding.symbol)}/${holding.pairCurrency.trim().toUpperCase()}`,
+      );
+    }
+  }
 
   if (holding.providerSymbol?.trim()) {
     keys.push(normalizePortfolioSymbol(holding.providerSymbol));
@@ -887,7 +1011,7 @@ export async function refreshPortfolioPrices<
     throw new Error(data.message ?? "Market data unavailable");
   }
 
-  const normalizedQuotes = normalizePriceApiQuotes(data.prices);
+  const normalizedQuotes = parsePriceApiResponseQuotes(data.prices);
 
   console.log("[price api coverage]", {
     requested: data.requested ?? quotablePayload.length,

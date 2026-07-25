@@ -70,6 +70,10 @@ export function hasValidDailyPerformance(
     return false;
   }
 
+  if (holding.assetType === "crypto") {
+    return resolveHoldingChangePercent(holding) !== null;
+  }
+
   return (
     deriveDailyChangePercentFromPrices(
       holding.currentPrice,
@@ -85,6 +89,22 @@ export function resolveHoldingChangePercent(
     return null;
   }
 
+  if (holding.assetType === "crypto") {
+    if (
+      typeof holding.change24hPercent === "number" &&
+      Number.isFinite(holding.change24hPercent)
+    ) {
+      return holding.change24hPercent;
+    }
+    if (
+      typeof holding.changePercent === "number" &&
+      Number.isFinite(holding.changePercent)
+    ) {
+      return holding.changePercent;
+    }
+    return null;
+  }
+
   return deriveDailyChangePercentFromPrices(
     holding.currentPrice,
     holding.previousClose,
@@ -94,25 +114,20 @@ export function resolveHoldingChangePercent(
 
 
 export function computeHoldingDayMove(
-
   holding: StoredPortfolioHolding,
-
   marketValue = getHoldingMarketValue(holding) ?? 0,
-
 ): number {
-
   const changePercent = resolveHoldingChangePercent(holding);
 
   if (changePercent === null || marketValue <= 0) {
-
     return 0;
-
   }
 
-
+  if (holding.assetType === "crypto") {
+    return marketValue * (changePercent / 100);
+  }
 
   return marketValue - marketValue / (1 + changePercent / 100);
-
 }
 
 

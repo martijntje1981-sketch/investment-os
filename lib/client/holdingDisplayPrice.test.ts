@@ -62,6 +62,7 @@ describe("holdingDisplayPrice crypto safety", () => {
     expect(resolveHoldingDisplayPrice(crypto)).toEqual({
       price: null,
       source: "unavailable",
+      quoteCurrency: "EUR",
     });
     expect(getHoldingMarketValue(crypto)).toBeNull();
     expect(isEstimatedHoldingPrice(crypto)).toBe(false);

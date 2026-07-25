@@ -55,7 +55,14 @@ import {
 import {
   holdingValueUnavailableLabel,
   isEstimatedHoldingPrice,
+  resolveHoldingDisplayPrice,
 } from "@/lib/client/holdingDisplayPrice";
+import {
+  buildCryptoPriceMetadataLine,
+  CRYPTO_PRICING_DISCLOSURE,
+  formatCrypto24hChange,
+  formatCryptoPairPrice,
+} from "@/lib/client/cryptoPriceDisplay";
 import { buildPortfolioPerformance } from "@/lib/client/portfolioPerformance";
 import {
   applyManualListingSelection,
@@ -468,6 +475,11 @@ export default function PortfolioPage() {
               </div>
             ) : (
               <div className="overflow-x-auto">
+              {holdings.some((holding) => isCryptoHolding(holding)) ? (
+                <p className={`border-b border-slate-100 px-5 py-3 text-sm text-slate-600 sm:px-7`}>
+                  {CRYPTO_PRICING_DISCLOSURE}
+                </p>
+              ) : null}
               <div className="min-w-[720px] divide-y divide-slate-200">
                 {holdings.map((holding) => {
                   const holdingValue = getHoldingMarketValue(holding);
@@ -490,6 +502,12 @@ export default function PortfolioPage() {
                       ? findAnalystQuoteForHolding(holding, analystQuotes)
                       : null;
                   const isCrypto = isCryptoHolding(holding);
+                  const cryptoDisplayPrice = isCrypto
+                    ? resolveHoldingDisplayPrice(holding)
+                    : null;
+                  const cryptoMetadataLine = isCrypto
+                    ? buildCryptoPriceMetadataLine(holding)
+                    : null;
                   const impliedUpsidePercent =
                     analystQuote && holding.currentPrice > 0
                       ? calculateImpliedUpsidePercent(
@@ -509,13 +527,33 @@ export default function PortfolioPage() {
                           {holding.assetType === "cash"
                             ? "Cash holding"
                             : isCrypto
-                              ? `${holding.quantity.toLocaleString("en-GB")} · ${holding.tradingPair ?? `${holding.symbol}/${holding.pairCurrency ?? "EUR"}`} · ${holdingMatchStatusLabel(matchStatus, holding.assetType)}`
+                              ? `${holding.quantity.toLocaleString("en-GB")} · ${holding.tradingPair ?? `${holding.symbol}/${holding.pairCurrency ?? "EUR"}`}`
                               : `${holding.quantity.toLocaleString("en-GB")} units · ${holdingMatchStatusLabel(matchStatus, holding.assetType)}`}
                         </p>
-                        {isCrypto && holding.pricingStatus !== "manual" ? (
-                          <p className={`mt-1 text-sm font-semibold text-amber-800`}>
-                            Live price unavailable
-                          </p>
+                        {isCrypto ? (
+                          <div className="mt-2 space-y-1">
+                            <p className={`${appTableValueClass}`}>
+                              {formatCryptoPairPrice(
+                                cryptoDisplayPrice?.price ?? null,
+                                holding.pairCurrency ?? null,
+                              )}
+                            </p>
+                            <p className={`${appSectionMetaClass}`}>
+                              {formatCrypto24hChange(
+                                holding.change24hPercent ?? holding.changePercent,
+                                holding.change24hAmount,
+                              )}
+                            </p>
+                            {cryptoMetadataLine ? (
+                              <p className={`${appTickerClass} normal-case`}>
+                                {cryptoMetadataLine}
+                              </p>
+                            ) : holding.pricingStatus !== "manual" ? (
+                              <p className="text-sm font-semibold text-amber-800">
+                                Live price unavailable
+                              </p>
+                            ) : null}
+                          </div>
                         ) : null}
                         {holding.pricingExchange && holding.providerSymbol ? (
                           <p className={`mt-1 ${appTickerClass} normal-case`}>

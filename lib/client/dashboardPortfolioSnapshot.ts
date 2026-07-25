@@ -27,6 +27,7 @@ export type DashboardHoldingRow = {
   name: string;
   symbol: string;
   assetType: StoredPortfolioHolding["assetType"];
+  tradingPair?: string | null;
   currentValue: number | null;
   portfolioWeightPercent: number | null;
   dailyChangeAmount: number | null;
@@ -36,6 +37,7 @@ export type DashboardHoldingRow = {
   priceQuality: DashboardHoldingPriceQuality;
   lastUpdatedAt: string | null;
   isStale: boolean;
+  isCrypto: boolean;
 };
 
 export type DashboardPortfolioSnapshot = DashboardSummary & {
@@ -62,6 +64,7 @@ function buildDashboardHoldingRow(
       name: holding.name || `${holding.symbol} Cash`,
       symbol: holding.symbol,
       assetType: "cash",
+      tradingPair: null,
       currentValue,
       portfolioWeightPercent:
         totalValue > 0 && currentValue !== null
@@ -74,6 +77,7 @@ function buildDashboardHoldingRow(
       priceQuality: "live",
       lastUpdatedAt: null,
       isStale: false,
+      isCrypto: false,
     };
   }
 
@@ -98,6 +102,11 @@ function buildDashboardHoldingRow(
     name: holding.name || holding.symbol,
     symbol: holding.symbol,
     assetType: holding.assetType,
+    tradingPair:
+      holding.tradingPair ??
+      (holding.pairCurrency
+        ? `${holding.symbol}/${holding.pairCurrency}`
+        : null),
     currentValue,
     portfolioWeightPercent:
       totalValue > 0 && currentValue !== null
@@ -113,6 +122,7 @@ function buildDashboardHoldingRow(
     priceQuality,
     lastUpdatedAt: holding.marketPriceUpdatedAt ?? holding.updatedAt ?? null,
     isStale: holding.priceDataStatus === "stale",
+    isCrypto: holding.assetType === "crypto",
   };
 }
 

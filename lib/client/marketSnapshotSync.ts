@@ -9,7 +9,7 @@ import {
   countQuotablePriceHoldings,
   filterQuotablePricePayloadForRefresh,
   isRateLimitedPriceError,
-  normalizePriceApiQuotes,
+  parsePriceApiResponseQuotes,
   readPriceCacheUpdatedAt,
   writePriceCache,
   type PriceRefreshResult,
@@ -148,7 +148,7 @@ export async function syncPortfolioPricesFromSnapshot<
         quoteSource: data.quoteSource ?? "cache",
       });
 
-      const refreshed = applyPricesToHoldings(holdings, normalizePriceApiQuotes(data.prices));
+      const refreshed = applyPricesToHoldings(holdings, parsePriceApiResponseQuotes(data.prices));
       return {
         holdings: refreshed,
         updated: true,

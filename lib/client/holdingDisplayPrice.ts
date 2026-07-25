@@ -9,12 +9,15 @@ export type HoldingDisplayPriceSource =
 export type HoldingDisplayPrice = {
   price: number | null;
   source: HoldingDisplayPriceSource;
+  quoteCurrency?: string | null;
 };
 
 function resolveCryptoDisplayPrice(
   holding: Pick<
     StoredPortfolioHolding,
     | "currentPrice"
+    | "currentPairPrice"
+    | "pairCurrency"
     | "priceDataStatus"
     | "pricingStatus"
     | "currentManualPrice"
@@ -22,12 +25,23 @@ function resolveCryptoDisplayPrice(
     | "quantity"
   >,
 ): HoldingDisplayPrice {
-  if (Number.isFinite(holding.currentPrice) && holding.currentPrice > 0) {
+  const pairPrice =
+    typeof holding.currentPairPrice === "number" && holding.currentPairPrice > 0
+      ? holding.currentPairPrice
+      : null;
+
+  if (pairPrice != null) {
     const source =
       holding.priceDataStatus === "live" || holding.priceDataStatus === "delayed"
         ? "live"
-        : "estimated";
-    return { price: holding.currentPrice, source };
+        : holding.priceDataStatus === "stale"
+          ? "estimated"
+          : "live";
+    return {
+      price: pairPrice,
+      source,
+      quoteCurrency: holding.pairCurrency ?? null,
+    };
   }
 
   if (holding.pricingStatus === "manual") {
@@ -55,7 +69,7 @@ function resolveCryptoDisplayPrice(
     }
   }
 
-  return { price: null, source: "unavailable" };
+  return { price: null, source: "unavailable", quoteCurrency: holding.pairCurrency ?? null };
 }
 
 export function resolveHoldingDisplayPrice(
@@ -63,6 +77,8 @@ export function resolveHoldingDisplayPrice(
     StoredPortfolioHolding,
     | "assetType"
     | "currentPrice"
+    | "currentPairPrice"
+    | "pairCurrency"
     | "purchasePrice"
     | "priceDataStatus"
     | "pricingStatus"

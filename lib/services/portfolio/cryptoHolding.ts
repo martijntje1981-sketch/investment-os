@@ -6,6 +6,7 @@ import {
   type CryptoPairCurrency,
   type CryptoPricingStatus,
 } from "@/lib/types/cryptoHolding";
+import { resolveCryptoQuoteFetchPlan } from "@/lib/services/prices/cryptoQuoteResolution";
 
 export type CryptoFormField =
   | "name"
@@ -145,6 +146,14 @@ function resolvePricingStatus(symbol: string): CryptoPricingStatus {
   return isKnownCryptoSymbol(symbol) ? "price_unavailable" : "needs_review";
 }
 
+function resolveCryptoProviderSymbol(
+  symbol: string,
+  pairCurrency: CryptoPairCurrency,
+): string | null {
+  const plan = resolveCryptoQuoteFetchPlan(symbol, pairCurrency);
+  return plan?.providerSymbol ?? null;
+}
+
 export function mergeHoldingOnSave(
   holdings: StoredPortfolioHolding[],
   cleaned: StoredPortfolioHolding,
@@ -172,6 +181,9 @@ export function prepareCryptoHoldingForSave(
     Number.isFinite(holding.purchasePrice) && holding.purchasePrice > 0
       ? holding.purchasePrice
       : 0;
+  const providerSymbol = isKnownCryptoSymbol(symbol)
+    ? resolveCryptoProviderSymbol(symbol, pairCurrency)
+    : null;
 
   return {
     ...holding,
@@ -181,6 +193,7 @@ export function prepareCryptoHoldingForSave(
     quantity: holding.quantity,
     purchasePrice,
     currentPrice: 0,
+    currentPairPrice: null,
     currency: "EUR",
     portfolioCurrency: "EUR",
     pairCurrency,
@@ -188,13 +201,20 @@ export function prepareCryptoHoldingForSave(
     tradingPair: buildCryptoTradingPair(symbol, pairCurrency),
     platform: holding.platform?.trim() || null,
     providerAssetId: null,
-    providerId: null,
-    providerName: null,
+    providerId: providerSymbol ? "eodhd-quotes" : null,
+    providerName: providerSymbol ? "EODHD" : null,
+    providerDisplayName: providerSymbol ? "EODHD" : null,
     priceUpdatedAt: null,
     currentManualPrice: null,
     manualCurrentValue: null,
+    change24hPercent: null,
+    change24hAmount: null,
+    quoteSourcePair: null,
+    quoteConversionApplied: false,
+    quoteConversionPath: null,
+    fetchedAt: null,
     priceDataStatus: "unavailable",
-    providerSymbol: null,
+    providerSymbol,
     isin: null,
     exchange: null,
     createdAt: holding.createdAt ?? now,

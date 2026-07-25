@@ -10,7 +10,7 @@ import {
   filterQuotablePricePayloadForRefresh,
   isLivePriceRefreshInFlight,
   isRateLimitedPriceError,
-  normalizePriceApiQuotes,
+  parsePriceApiResponseQuotes,
   writePriceCache,
 } from "@/lib/client/portfolioPricing";
 import { logLivePriceRefreshTrace } from "@/lib/client/marketDataRefreshTrace";
@@ -298,7 +298,7 @@ export async function refreshLivePortfolioPrices<
       throw new Error(data.error ?? data.message ?? "Market data unavailable");
     }
 
-    const normalizedQuotes = normalizePriceApiQuotes(data.prices);
+    const normalizedQuotes = parsePriceApiResponseQuotes(data.prices);
     const cachedHoldings = applyCachedPrices(userSub, holdings);
 
     if (

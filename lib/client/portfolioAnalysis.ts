@@ -47,6 +47,19 @@ export function getHoldingMarketValue(holding: AnalysisHolding): number | null {
     return null;
   }
 
+  if (holding.assetType === "crypto") {
+    if (Number.isFinite(holding.currentPrice) && holding.currentPrice > 0) {
+      return holding.quantity * holding.currentPrice;
+    }
+
+    const { price } = resolveHoldingDisplayPrice(holding);
+    if (price === null || price <= 0) {
+      return null;
+    }
+
+    return holding.quantity * price;
+  }
+
   const { price } = resolveHoldingDisplayPrice(holding);
   if (price === null || price <= 0) {
     return null;

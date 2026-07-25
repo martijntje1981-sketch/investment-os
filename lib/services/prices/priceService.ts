@@ -33,6 +33,10 @@ import {
   ProviderQuoteError,
 } from "@/lib/services/prices/providers/eodhdMarketDataProvider";
 import {
+  buildCryptoNormalizedCacheKey,
+  fetchCryptoNormalizedQuote,
+} from "@/lib/services/prices/fetchCryptoQuote";
+import {
   DEFAULT_MARKET_DATA_CACHE_POLICY,
 } from "@/lib/services/marketData/cachePolicy";
 import {
@@ -237,7 +241,9 @@ async function fetchAndCacheQuote(
   provider: MarketDataProvider,
   forceRefresh = false,
 ): Promise<NormalizedProviderQuote> {
-  const cacheKey = buildQuoteCacheKey(provider.id, target.providerSymbol);
+  const cacheKey =
+    buildCryptoNormalizedCacheKey(target) ??
+    buildQuoteCacheKey(provider.id, target.providerSymbol);
 
   try {
     if (!forceRefresh) {
@@ -245,27 +251,37 @@ async function fetchAndCacheQuote(
     }
     const fxRates = await getFxRates({ forceRefresh });
     recordProviderCall();
-    const raw = await provider.getQuote(target.providerSymbol);
-    const quote = provider.normalizeQuote(target, raw, fxRates);
-    writeCachedQuote(cacheKey, quote, target.providerSymbol);
+
+    let quote: NormalizedProviderQuote;
+    let cacheProviderSymbol = target.providerSymbol;
+
+    if (target.cryptoPlan) {
+      quote = await fetchCryptoNormalizedQuote(target, provider, fxRates);
+      cacheProviderSymbol = target.cryptoPlan.normalizedPair;
+    } else {
+      const raw = await provider.getQuote(target.providerSymbol);
+      quote = provider.normalizeQuote(target, raw, fxRates);
+    }
+
+    writeCachedQuote(cacheKey, quote, cacheProviderSymbol);
     clearNegativeCache(cacheKey);
     recordProviderCircuitSuccess(provider.id);
     await writePersistedQuote({
       cacheKey,
       providerId: provider.id,
-      providerSymbol: target.providerSymbol,
+      providerSymbol: cacheProviderSymbol,
       quote,
     });
     logMarketDataRefreshTrace("cache_write", {
       cacheKey,
-      providerSymbol: target.providerSymbol,
+      providerSymbol: cacheProviderSymbol,
       forceRefresh,
       dataStatus: quote.dataStatus,
       updatedAt: quote.updatedAt,
     });
     recordPriceServiceEvent("fresh_fetch", {
       providerId: provider.id,
-      providerSymbol: target.providerSymbol,
+      providerSymbol: cacheProviderSymbol,
     });
     return quote;
   } catch (error) {
@@ -356,7 +372,9 @@ export async function getNormalizedQuote(
     options?.forceRefresh ?? false,
   );
   const snapshotOnly = options?.snapshotOnly ?? false;
-  const cacheKey = buildQuoteCacheKey(provider.id, target.providerSymbol);
+  const cacheKey =
+    buildCryptoNormalizedCacheKey(target) ??
+    buildQuoteCacheKey(provider.id, target.providerSymbol);
 
   if (isProviderCircuitOpen(provider.id) && !forceRefresh) {
     recordProviderCooldown(provider.id);

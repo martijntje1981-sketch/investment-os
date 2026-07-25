@@ -1,6 +1,7 @@
 import { formatPortfolioCurrency } from "@/lib/client/portfolioAnalysis";
 import { holdingValueUnavailableLabel } from "@/lib/client/holdingDisplayPrice";
 import { formatHoldingTodayChange } from "@/lib/client/portfolioMovementFormat";
+import { formatCrypto24hChange } from "@/lib/client/cryptoPriceDisplay";
 import {
   appTableChangeClass,
   appTableNameClass,
@@ -81,12 +82,20 @@ function holdingSecondaryLabel(row: DashboardHoldingRow): string {
       : row.symbol;
   }
 
+  if (row.isCrypto && row.tradingPair) {
+    return row.tradingPair;
+  }
+
   return row.symbol;
 }
 
 function holdingTodayLabel(row: DashboardHoldingRow): string {
   if (row.assetType === "cash") {
     return "Stable";
+  }
+
+  if (row.isCrypto) {
+    return formatCrypto24hChange(row.dailyChangePercent, row.dailyChangeAmount);
   }
 
   return formatHoldingTodayChange(

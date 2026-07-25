@@ -1,4 +1,5 @@
 import type { MarketDataStatus } from "@/lib/services/prices/marketQuote";
+import type { CryptoQuoteFetchPlan, CryptoQuoteMetadata } from "@/lib/services/prices/cryptoQuoteTypes";
 
 export type PriceCurrency = "EUR" | "USD" | "GBP" | "CHF";
 
@@ -23,6 +24,9 @@ export type PriceHoldingInput = {
   currency?: PriceCurrency;
   /** Persisted provider quote denomination for this listing. */
   quoteCurrency?: PriceCurrency | null;
+  assetType?: "investment" | "cash" | "crypto";
+  /** Crypto pair quote currency (USDC, USDT, etc.). Authoritative for crypto pricing. */
+  pairCurrency?: string | null;
 };
 
 export type ResolvedPriceTarget = {
@@ -31,6 +35,9 @@ export type ResolvedPriceTarget = {
   isin: string | null;
   name: string;
   currency: PriceCurrency | null;
+  assetType?: "investment" | "crypto";
+  holdingId?: string | null;
+  cryptoPlan?: CryptoQuoteFetchPlan;
 };
 
 export type ProviderRawQuote = {
@@ -58,7 +65,7 @@ export type NormalizedProviderQuote = {
   previousClose: number | null;
   change: number | null;
   changePercent: number | null;
-  currency: PriceCurrency | null;
+  currency: PriceCurrency | string | null;
   marketStatus: string | null;
   updatedAt: string | null;
   provider: string;
@@ -66,6 +73,7 @@ export type NormalizedProviderQuote = {
   unavailableReason: string | null;
   dataStatus: MarketDataStatus;
   cacheStatus: CacheStatus;
+  crypto?: CryptoQuoteMetadata;
 };
 
 export type HoldingPrice = {
@@ -74,7 +82,7 @@ export type HoldingPrice = {
   providerSymbol: string;
   isin: string | null;
   name: string;
-  originalCurrency: PriceCurrency;
+  originalCurrency: PriceCurrency | string;
   originalPrice: number;
   baseCurrency: "EUR";
   exchangeRateToEur: number | null;
@@ -85,7 +93,7 @@ export type HoldingPrice = {
   previousClose: number | null;
   change: number | null;
   changePercent: number | null;
-  currency: PriceCurrency | null;
+  currency: PriceCurrency | string | null;
   dataStatus: MarketDataStatus;
   cacheStatus: CacheStatus;
   provider: string;
@@ -97,6 +105,12 @@ export type HoldingPrice = {
   volume: number | null;
   timestamp: number | null;
   updatedAt: string;
+  assetType?: "crypto" | "investment";
+  crypto?: CryptoQuoteMetadata;
+  pairPrice?: number | null;
+  change24hPercent?: number | null;
+  fetchedAt?: string | null;
+  providerDisplayName?: string | null;
 };
 
 export const NO_QUOTABLE_HOLDINGS_MESSAGE =

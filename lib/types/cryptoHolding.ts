@@ -5,10 +5,13 @@
 export const CRYPTO_PAIR_CURRENCIES = [
   "EUR",
   "USD",
+  "GBP",
+  "CHF",
+  "JPY",
+  "AUD",
+  "CAD",
   "USDC",
   "USDT",
-  "GBP",
-  "JPY",
 ] as const;
 
 export type CryptoPairCurrency = (typeof CRYPTO_PAIR_CURRENCIES)[number];
