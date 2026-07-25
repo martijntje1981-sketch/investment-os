@@ -69,6 +69,7 @@ import {
   estimateFxProviderCalls,
   requiredFxCurrenciesForSymbols,
 } from "@/lib/services/marketSnapshot/snapshotSymbolFilter";
+import { buildSanitizedServerCryptoDiagnostics } from "@/lib/services/prices/cryptoRefreshDiagnostics";
 import {
   NO_QUOTABLE_HOLDINGS_MESSAGE,
   type HoldingPrice,
@@ -658,6 +659,26 @@ export async function loadPricesForTargets(
   return buildPricePayload(prices, errors, uniqueTargets.length, fxRates);
 }
 
+function attachCryptoRefreshDiagnostics(
+  holdings: PriceHoldingInput[],
+  payload: PricePayload,
+  options?: LoadPricesOptions,
+): PricePayload {
+  if (options?.estimateOnly) {
+    return payload;
+  }
+
+  return {
+    ...payload,
+    cryptoRefreshDiagnostics: buildSanitizedServerCryptoDiagnostics(holdings, {
+      prices: payload.prices,
+      errors: payload.errors,
+      canAffordRefresh: payload.canAffordRefresh,
+      refreshSummary: payload.refreshSummary,
+    }),
+  };
+}
+
 export async function loadPricesForHoldings(
   holdings: PriceHoldingInput[],
   options?: LoadPricesOptions,
@@ -676,7 +697,7 @@ export async function loadPricesForHoldings(
       resolutionErrors,
     );
     logRefreshOutcome(holdingsRequested, skipped, 0, metricsBefore);
-    return payload;
+    return attachCryptoRefreshDiagnostics(holdings, payload, options);
   }
 
   const estimate = await estimatePriceRefreshForTargets(targets);
@@ -699,18 +720,23 @@ export async function loadPricesForHoldings(
         providerCallsMade: 0,
         circuitOpen: getProviderCircuitSnapshot(EODHD_QUOTE_PROVIDER_ID).open,
       });
-      return buildPricePayload([], [...resolutionErrors, message], holdingsRequested, DEFAULT_FX_RATES, {
-        message,
-        forceSuccess: false,
-        metricsBefore,
-        refreshSummary: {
-          ...estimate,
-          providerCallsMade: 0,
-          fxCallsRequired,
-          totalCallsRequired,
-          circuitOpen: getProviderCircuitSnapshot(EODHD_QUOTE_PROVIDER_ID).open,
-        },
-      });
+      return attachCryptoRefreshDiagnostics(
+        holdings,
+        buildPricePayload([], [...resolutionErrors, message], holdingsRequested, DEFAULT_FX_RATES, {
+          message,
+          forceSuccess: false,
+          metricsBefore,
+          refreshSummary: {
+            ...estimate,
+            providerCallsMade: 0,
+            fxCallsRequired,
+            totalCallsRequired,
+            circuitOpen: getProviderCircuitSnapshot(EODHD_QUOTE_PROVIDER_ID).open,
+          },
+          canAffordRefresh: false,
+        }),
+        options,
+      );
     }
   }
 
@@ -753,16 +779,20 @@ export async function loadPricesForHoldings(
     lastSuccessfulUpdate: payload.lastSuccessfulUpdate,
   });
   const marketSnapshot = await getMarketSnapshotMetadata();
-  return {
-    ...payload,
-    errors: [...resolutionErrors, ...payload.errors],
-    requested: holdingsRequested,
-    refreshSummary,
-    quoteSource: payload.quoteSource,
-    lastSuccessfulUpdate:
-      payload.lastSuccessfulUpdate ?? marketSnapshot.lastRefreshedAt,
-    marketSnapshot,
-  };
+  return attachCryptoRefreshDiagnostics(
+    holdings,
+    {
+      ...payload,
+      errors: [...resolutionErrors, ...payload.errors],
+      requested: holdingsRequested,
+      refreshSummary,
+      quoteSource: payload.quoteSource,
+      lastSuccessfulUpdate:
+        payload.lastSuccessfulUpdate ?? marketSnapshot.lastRefreshedAt,
+      marketSnapshot,
+    },
+    options,
+  );
 }
 
 export async function loadSnapshotPricesForHoldings(

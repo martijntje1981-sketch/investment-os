@@ -150,6 +150,7 @@ export type PriceApiResponse = {
     spendableRemaining: number;
   };
   canAffordRefresh?: boolean;
+  cryptoRefreshDiagnostics?: import("@/lib/services/prices/cryptoRefreshDiagnostics").SanitizedCryptoServerDiagnostic[];
 };
 
 export type CachedPortfolioPrice = {

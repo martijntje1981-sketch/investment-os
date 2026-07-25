@@ -37,6 +37,7 @@ import {
 import NumericInput from "@/components/NumericInput";
 import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
 import PortfolioSyncBanner from "@/components/PortfolioSyncBanner";
+import CryptoRefreshTechnicalDetails from "@/components/portfolio/CryptoRefreshTechnicalDetails";
 import {
   ListingCandidatePicker,
   SelectedListingSummary,
@@ -74,6 +75,7 @@ import {
   readLastLivePriceRefreshAt,
   refreshLivePortfolioPrices,
 } from "@/lib/client/livePortfolioPriceRefresh";
+import type { CryptoRefreshDiagnosticRecord } from "@/lib/client/cryptoRefreshDiagnostics";
 import {
   normalizeHoldingForSave,
   type StoredPortfolioHolding,
@@ -188,6 +190,10 @@ export default function PortfolioPage() {
   const [isSavingCrypto, setIsSavingCrypto] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [message, setMessage] = useState("Portfolio prices use the latest available market data.");
+  const [refreshDiagnostics, setRefreshDiagnostics] = useState<
+    CryptoRefreshDiagnosticRecord[] | null
+  >(null);
+  const [showRefreshDiagnostics, setShowRefreshDiagnostics] = useState(false);
   const [listingCandidates, setListingCandidates] = useState<ResolvedInstrument[]>([]);
   const [listingWarnings, setListingWarnings] = useState<string[]>([]);
   const [listingLookupPending, setListingLookupPending] = useState(false);
@@ -205,6 +211,8 @@ export default function PortfolioPage() {
     }
 
     setMessage(buildLiveRefreshPreviewMessage(uniqueCount));
+    setShowRefreshDiagnostics(false);
+    setRefreshDiagnostics(null);
     setIsRefreshing(true);
     try {
       const result = await refreshLivePortfolioPrices(userSub, holdings);
@@ -213,6 +221,13 @@ export default function PortfolioPage() {
         setLiveRefreshAt(readLastLivePriceRefreshAt(userSub));
       }
       setMessage(result.message);
+      if (result.showCryptoRefreshDiagnostics && result.cryptoRefreshDiagnostics) {
+        setRefreshDiagnostics(result.cryptoRefreshDiagnostics);
+        setShowRefreshDiagnostics(true);
+      } else {
+        setRefreshDiagnostics(null);
+        setShowRefreshDiagnostics(false);
+      }
     } finally {
       setIsRefreshing(false);
     }
@@ -440,7 +455,12 @@ export default function PortfolioPage() {
             onDismiss={dismissRecovery}
           />
 
-          <div className="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-800">{message}</div>
+          <div className="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+            <p>{message}</p>
+            {showRefreshDiagnostics && refreshDiagnostics ? (
+              <CryptoRefreshTechnicalDetails diagnostics={refreshDiagnostics} />
+            ) : null}
+          </div>
 
           <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <Metric icon={<CircleDollarSign className="h-5 w-5" />} label="Total value" value={performance.totalValueAvailable ? money(totalValue) : "Unavailable"} detail={performance.totalValueCoverageMessage ?? undefined} />

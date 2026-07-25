@@ -15,10 +15,16 @@ import {
   prepareHoldingsForPricing,
   writePriceCache,
 } from "@/lib/client/portfolioPricing";
+import {
+  buildCryptoRefreshDiagnostics,
+  shouldShowCryptoRefreshDiagnostics,
+  type CryptoRefreshDiagnosticRecord,
+} from "@/lib/client/cryptoRefreshDiagnostics";
 import { logLivePriceRefreshTrace } from "@/lib/client/marketDataRefreshTrace";
 import { lastLivePriceRefreshKey } from "@/lib/client/portfolioStorageKeys";
 import { NO_QUOTABLE_HOLDINGS_MESSAGE } from "@/lib/services/prices/types";
 import type {
+  PortfolioInstrumentPayload,
   PriceApiQuote,
   PriceApiResponse,
   StoredPortfolioHolding,
@@ -36,6 +42,8 @@ export type LivePriceRefreshResult<T extends StoredPortfolioHolding> = {
   quotaExhausted: boolean;
   inProgress: boolean;
   cooldownRemainingMs: number;
+  cryptoRefreshDiagnostics?: CryptoRefreshDiagnosticRecord[];
+  showCryptoRefreshDiagnostics?: boolean;
 };
 
 let lastLiveRefreshCompletedAt = 0;
@@ -177,6 +185,47 @@ function isStaleOnlyRefreshResponse(
   return data.quoteSource === "cache" || providerCallsMade === 0;
 }
 
+function attachCryptoRefreshDiagnostics<T extends StoredPortfolioHolding>(
+  result: LivePriceRefreshResult<T>,
+  input: {
+    preparedHoldings: T[];
+    quotablePayload: PortfolioInstrumentPayload[];
+    apiResponse: PriceApiResponse;
+    beforeHoldings: T[];
+    afterHoldings: T[];
+    budgetBlocked?: boolean;
+  },
+): LivePriceRefreshResult<T> {
+  if (result.updatedCount > 0) {
+    return {
+      ...result,
+      cryptoRefreshDiagnostics: undefined,
+      showCryptoRefreshDiagnostics: false,
+    };
+  }
+
+  const diagnostics = buildCryptoRefreshDiagnostics({
+    preparedHoldings: input.preparedHoldings,
+    requestPayload: input.quotablePayload,
+    apiResponse: input.apiResponse,
+    beforeHoldings: input.beforeHoldings,
+    afterHoldings: input.afterHoldings,
+    budgetBlocked: input.budgetBlocked,
+  });
+
+  const showCryptoRefreshDiagnostics = shouldShowCryptoRefreshDiagnostics({
+    updatedCount: result.updatedCount,
+    diagnostics,
+    message: result.message,
+  });
+
+  return {
+    ...result,
+    cryptoRefreshDiagnostics: diagnostics,
+    showCryptoRefreshDiagnostics,
+  };
+}
+
 export async function refreshLivePortfolioPrices<
   T extends StoredPortfolioHolding,
 >(userSub: string, holdings: T[]): Promise<LivePriceRefreshResult<T>> {
@@ -263,18 +312,35 @@ export async function refreshLivePortfolioPrices<
         totalRequired,
         spendableRemaining: estimateData.eodhdBudget?.spendableRemaining ?? null,
       });
-      return {
-        holdings: applyCachedPrices(userSub, preparedHoldings),
-        updated: false,
-        uniqueRequested,
-        updatedCount: 0,
-        totalQuotable,
-        message:
-          "The market-data limit has been reached. Your last available prices remain visible.",
-        quotaExhausted: true,
-        inProgress: false,
-        cooldownRemainingMs: 0,
-      };
+      return attachCryptoRefreshDiagnostics(
+        {
+          holdings: applyCachedPrices(userSub, preparedHoldings),
+          updated: false,
+          uniqueRequested,
+          updatedCount: 0,
+          totalQuotable,
+          message:
+            "The market-data limit has been reached. Your last available prices remain visible.",
+          quotaExhausted: true,
+          inProgress: false,
+          cooldownRemainingMs: 0,
+        },
+        {
+          preparedHoldings,
+          quotablePayload,
+          apiResponse: {
+            ...estimateData,
+            prices: [],
+            errors: [],
+            requested: quotablePayload.length,
+            received: 0,
+            canAffordRefresh: false,
+          },
+          beforeHoldings: preparedHoldings,
+          afterHoldings: preparedHoldings,
+          budgetBlocked: true,
+        },
+      );
     }
 
     const response = await fetch("/api/prices", {
@@ -363,22 +429,31 @@ export async function refreshLivePortfolioPrices<
         isRateLimitedPriceError(data.message ?? data.error ?? "") ||
         Boolean(data.errors?.some((error) => isRateLimitedPriceError(error)));
 
-      return {
-        holdings: cachedHoldings,
-        updated: false,
-        uniqueRequested,
-        updatedCount: 0,
-        totalQuotable,
-        message:
-          received > 0 || normalizedQuotes.length > 0
-            ? buildNoPricesUpdatedMessage()
-            : providerFailure
-              ? buildQuotaExhaustedMessage()
-              : buildNoPricesUpdatedMessage(),
-        quotaExhausted: providerFailure && received === 0,
-        inProgress: false,
-        cooldownRemainingMs: getLivePriceRefreshCooldownRemainingMs(),
-      };
+      return attachCryptoRefreshDiagnostics(
+        {
+          holdings: cachedHoldings,
+          updated: false,
+          uniqueRequested,
+          updatedCount: 0,
+          totalQuotable,
+          message:
+            received > 0 || normalizedQuotes.length > 0
+              ? buildNoPricesUpdatedMessage()
+              : providerFailure
+                ? buildQuotaExhaustedMessage()
+                : buildNoPricesUpdatedMessage(),
+          quotaExhausted: providerFailure && received === 0,
+          inProgress: false,
+          cooldownRemainingMs: getLivePriceRefreshCooldownRemainingMs(),
+        },
+        {
+          preparedHoldings,
+          quotablePayload,
+          apiResponse: data,
+          beforeHoldings: preparedHoldings,
+          afterHoldings: refreshed,
+        },
+      );
     }
 
     const lastSuccessfulUpdate =
@@ -411,6 +486,7 @@ export async function refreshLivePortfolioPrices<
         quotaExhausted: false,
         inProgress: false,
         cooldownRemainingMs: getLivePriceRefreshCooldownRemainingMs(),
+        showCryptoRefreshDiagnostics: false,
       };
     }
 
@@ -424,6 +500,7 @@ export async function refreshLivePortfolioPrices<
       quotaExhausted: false,
       inProgress: false,
       cooldownRemainingMs: getLivePriceRefreshCooldownRemainingMs(),
+      showCryptoRefreshDiagnostics: false,
     };
   })();
 
