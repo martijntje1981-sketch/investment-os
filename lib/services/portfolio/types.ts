@@ -25,6 +25,7 @@ export type RemotePortfolioSnapshot = {
 export type PortfolioSyncPreview = {
   holdingCount: number;
   investmentCount: number;
+  cryptoCount?: number;
   cashCount: number;
   cashCurrencies: string[];
   hasGoal: boolean;
@@ -66,7 +67,7 @@ export type DbHoldingRow = {
   id: string;
   portfolio_id: string;
   user_id: string;
-  asset_type: "investment" | "cash";
+  asset_type: "investment" | "cash" | "crypto";
   symbol: string;
   name: string;
   quantity: number | string;
@@ -76,6 +77,7 @@ export type DbHoldingRow = {
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
+  metadata?: Record<string, unknown> | null;
   last_market_price?: number | string | null;
   last_market_price_at?: string | null;
   previous_close?: number | string | null;
@@ -129,4 +131,5 @@ export const SYNC_ERROR_CODES = {
   PROVIDER_FAILURE: "provider_failure",
   IDEMPOTENT_REPLAY: "idempotent_replay",
   PARTIAL_SAVE: "partial_save",
+  SYNC_VERIFICATION_FAILED: "sync_verification_failed",
 } as const;

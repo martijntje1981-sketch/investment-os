@@ -5,6 +5,13 @@ import type { PriceCurrency } from "@/lib/services/prices/types";
 
 import { portfolioFingerprint } from "@/lib/services/portfolio/idempotency";
 import { resolveHoldingIdForSync } from "@/lib/services/portfolio/holdingUniqueness";
+import { isCryptoHolding } from "@/lib/services/portfolio/cryptoHolding";
+import {
+  applyCryptoMetadataToStoredHolding,
+  buildCryptoHoldingMetadata,
+  parseCryptoHoldingMetadata,
+} from "@/lib/services/portfolio/cryptoDbMetadata";
+import { normalizeCryptoPairCurrency } from "@/lib/types/cryptoHolding";
 import { isValidMarketPrice } from "@/lib/client/portfolioPerformance";
 import {
   normalizePassiveIncomeTarget,
@@ -70,7 +77,7 @@ export function resolveStoredPreviousClose(
 export function buildHoldingMarketPriceUpdate(
   holding: StoredPortfolioHolding,
 ): Record<string, string | number> | null {
-  if (holding.assetType === "cash") {
+  if (holding.assetType === "cash" || isCryptoHolding(holding)) {
     return null;
   }
 
@@ -99,6 +106,34 @@ export function mapDbHoldingToStored(
   row: DbHoldingRow,
   localId?: string,
 ): StoredPortfolioHolding {
+  if (row.asset_type === "crypto") {
+    const quantity = toNumber(row.quantity);
+    const purchasePrice = toNumber(row.average_cost);
+    const metadata =
+      parseCryptoHoldingMetadata(row.metadata) ??
+      parseCryptoHoldingMetadata({
+        pairCurrency: "EUR",
+        portfolioCurrency: "EUR",
+        pricingStatus: "needs_review",
+        tradingPair: `${String(row.symbol).trim().toUpperCase()}/EUR`,
+      })!;
+
+    const base: StoredPortfolioHolding = {
+      id: localId ?? row.id,
+      symbol: String(row.symbol).trim().toUpperCase(),
+      name: row.name,
+      quantity,
+      purchasePrice,
+      currentPrice: 0,
+      currency: "EUR",
+      assetType: "crypto",
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    };
+
+    return applyCryptoMetadataToStoredHolding(base, metadata);
+  }
+
   const mapping = readMapping(row);
   const assetType = row.asset_type === "cash" ? "cash" : "investment";
   const quantity = toNumber(row.quantity);
@@ -174,13 +209,30 @@ export function mapStoredHoldingToDbInsert(
   sortOrder: number,
   holdingId = resolveHoldingIdForSync(userId, holding),
 ) {
+  if (isCryptoHolding(holding)) {
+    return {
+      id: holdingId,
+      portfolio_id: portfolioId,
+      user_id: userId,
+      asset_type: "crypto" as const,
+      symbol: String(holding.symbol).trim().toUpperCase(),
+      name: holding.name.trim() || holding.symbol,
+      quantity: 0,
+      average_cost: 0,
+      currency: String(holding.portfolioCurrency ?? holding.currency ?? "EUR").toUpperCase(),
+      sort_order: sortOrder,
+      deleted_at: null,
+      metadata: buildCryptoHoldingMetadata(holding),
+    };
+  }
+
   const assetType = holding.assetType === "cash" ? "cash" : "investment";
 
   return {
     id: holdingId,
     portfolio_id: portfolioId,
     user_id: userId,
-    asset_type: assetType,
+    asset_type: assetType as "investment" | "cash",
     symbol:
       assetType === "cash"
         ? String(holding.currency).toUpperCase()
@@ -200,7 +252,7 @@ export function mapStoredMappingToDbInsert(
   portfolioId: string,
   holdingId = resolveHoldingIdForSync(userId, holding),
 ) {
-  if (holding.assetType === "cash") return null;
+  if (holding.assetType === "cash" || isCryptoHolding(holding)) return null;
   if (!holding.providerSymbol) return null;
 
   const isin = normalizeIsin(holding.isin);
@@ -261,12 +313,14 @@ export function buildSyncPreview(
   importMappings: SavedImportMapping[],
   userId?: string,
 ): PortfolioSyncPreview {
-  const investments = holdings.filter((item) => item.assetType !== "cash");
+  const investments = holdings.filter((item) => item.assetType === "investment");
+  const crypto = holdings.filter((item) => item.assetType === "crypto");
   const cash = holdings.filter((item) => item.assetType === "cash");
 
   return {
     holdingCount: holdings.length,
     investmentCount: investments.length,
+    cryptoCount: crypto.length,
     cashCount: cash.length,
     cashCurrencies: cash.map((item) => item.symbol),
     hasGoal: goal != null,
@@ -312,8 +366,12 @@ export function sanitizeLocalHoldings(
     if (!item || typeof item !== "object") continue;
 
     const holding = item as StoredPortfolioHolding;
-    const assetType: "investment" | "cash" =
-      holding.assetType === "cash" ? "cash" : "investment";
+    const assetType =
+      holding.assetType === "cash"
+        ? "cash"
+        : holding.assetType === "crypto"
+          ? "crypto"
+          : "investment";
     const quantity = Number(holding.quantity);
     const purchasePrice = Number(holding.purchasePrice);
 
@@ -324,6 +382,74 @@ export function sanitizeLocalHoldings(
       .trim()
       .toUpperCase();
     if (!symbol) continue;
+
+    if (assetType === "crypto") {
+      const pairCurrency = holding.pairCurrency
+        ? normalizeCryptoPairCurrency(String(holding.pairCurrency))
+        : "EUR";
+      const platform =
+        typeof holding.platform === "string" && holding.platform.trim().length > 0
+          ? holding.platform.trim()
+          : null;
+      const tradingPair =
+        typeof holding.tradingPair === "string" &&
+        holding.tradingPair.trim().length > 0
+          ? holding.tradingPair.trim()
+          : `${symbol}/${pairCurrency}`;
+
+      normalized.push({
+        ...holding,
+        id: String(holding.id ?? crypto.randomUUID()),
+        symbol,
+        name: String(holding.name ?? symbol).trim() || symbol,
+        quantity,
+        purchasePrice,
+        currentPrice: 0,
+        currency: "EUR",
+        assetType: "crypto",
+        portfolioCurrency: "EUR",
+        pairCurrency,
+        pricingStatus: holding.pricingStatus ?? "needs_review",
+        tradingPair,
+        platform,
+        providerAssetId:
+          typeof holding.providerAssetId === "string" &&
+          holding.providerAssetId.trim().length > 0
+            ? holding.providerAssetId.trim()
+            : null,
+        providerId:
+          typeof holding.providerId === "string" &&
+          holding.providerId.trim().length > 0
+            ? holding.providerId.trim()
+            : null,
+        providerName:
+          typeof holding.providerName === "string" &&
+          holding.providerName.trim().length > 0
+            ? holding.providerName.trim()
+            : null,
+        priceUpdatedAt:
+          typeof holding.priceUpdatedAt === "string" &&
+          holding.priceUpdatedAt.trim().length > 0
+            ? holding.priceUpdatedAt.trim()
+            : null,
+        currentManualPrice:
+          holding.currentManualPrice != null &&
+          Number.isFinite(Number(holding.currentManualPrice)) &&
+          Number(holding.currentManualPrice) > 0
+            ? Number(holding.currentManualPrice)
+            : null,
+        manualCurrentValue:
+          holding.manualCurrentValue != null &&
+          Number.isFinite(Number(holding.manualCurrentValue)) &&
+          Number(holding.manualCurrentValue) > 0
+            ? Number(holding.manualCurrentValue)
+            : null,
+        createdAt: holding.createdAt ?? new Date().toISOString(),
+        updatedAt: holding.updatedAt ?? new Date().toISOString(),
+        priceDataStatus: "unavailable",
+      });
+      continue;
+    }
 
     normalized.push({
       ...holding,

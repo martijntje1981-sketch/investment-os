@@ -1,4 +1,9 @@
 import { resolveExchangeForMatching } from "@/lib/services/instruments/exchangeNormalizer";
+import {
+  isCryptoHolding,
+  prepareCryptoHoldingForSave,
+  validateCryptoHoldingForSave,
+} from "@/lib/services/portfolio/cryptoHolding";
 import type { ImportRow } from "@/lib/services/import/types";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
@@ -68,8 +73,15 @@ export function resolveHoldingMatchStatus(
     | "currentPrice"
     | "purchasePrice"
     | "priceDataStatus"
+    | "pricingStatus"
   >,
 ): HoldingMatchStatus {
+  if (holding.assetType === "crypto") {
+    return holding.pricingStatus === "needs_review"
+      ? "pending_match"
+      : "price_unavailable";
+  }
+
   if (holding.assetType === "cash") {
     return "matched";
   }
@@ -117,6 +129,11 @@ function resolvePriceStatus(
 export function validateManualHoldingForSave(
   holding: StoredPortfolioHolding,
 ): ManualHoldingValidationResult {
+  if (isCryptoHolding(holding)) {
+    const result = validateCryptoHoldingForSave(holding);
+    return result.ok ? { ok: true } : { ok: false, message: result.message };
+  }
+
   if (holding.assetType === "cash") {
     if (!Number.isFinite(holding.quantity) || holding.quantity <= 0) {
       return { ok: false, message: "Enter a cash amount greater than zero." };
@@ -171,6 +188,10 @@ export function canConfirmImportRow(row: ImportRow): boolean {
 export function prepareManualHoldingForSave(
   holding: StoredPortfolioHolding,
 ): StoredPortfolioHolding {
+  if (isCryptoHolding(holding)) {
+    return prepareCryptoHoldingForSave(holding);
+  }
+
   if (holding.assetType === "cash") {
     return {
       ...holding,
@@ -234,7 +255,21 @@ export function prepareManualHoldingForSave(
   };
 }
 
-export function holdingMatchStatusLabel(status: HoldingMatchStatus): string {
+export function holdingMatchStatusLabel(
+  status: HoldingMatchStatus,
+  assetType?: StoredPortfolioHolding["assetType"],
+): string {
+  if (assetType === "crypto") {
+    switch (status) {
+      case "pending_match":
+        return "Needs review";
+      case "price_unavailable":
+        return "Live price unavailable";
+      default:
+        return "Saved";
+    }
+  }
+
   switch (status) {
     case "matched":
       return "Matched listing";

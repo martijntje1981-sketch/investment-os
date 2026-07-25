@@ -4,8 +4,9 @@ import {
   buildMigrationIdempotencyKey,
   hashPayload,
   portfolioFingerprint,
-  portfoliosPersistedMatch,
 } from "@/lib/services/portfolio/idempotency";
+import { describePersistedVerificationMismatch } from "@/lib/services/portfolio/persistedVerification";
+import { portfoliosPersistedMatch } from "@/lib/services/portfolio/persistedVerification";
 import { buildSyncPreview, sanitizeLocalHoldings } from "@/lib/services/portfolio/mappers";
 import { isSuspiciousCashOnlyShrink } from "@/lib/services/portfolio/portfolioPersistenceGuard";
 import type { PortfolioRepository } from "@/lib/services/portfolio/repository";
@@ -60,7 +61,7 @@ export async function migrateLocalPortfolio(
   );
   if (existingEvent?.status === "completed") {
     const snapshot = await repo.fetchSnapshot(userId);
-    if (portfoliosPersistedMatch(holdings, snapshot.holdings)) {
+    if (portfoliosPersistedMatch(holdings, snapshot.holdings, userId)) {
       return snapshot;
     }
   }
@@ -113,6 +114,11 @@ export async function migrateLocalPortfolio(
       snapshot,
     ))
   ) {
+    const mismatch = describePersistedVerificationMismatch(
+      holdings,
+      snapshot.holdings,
+      userId,
+    );
     await repo.recordSyncEvent(
       userId,
       "migrate",
@@ -121,8 +127,10 @@ export async function migrateLocalPortfolio(
       "failed",
     );
     throw new PortfolioSyncError(
-      SYNC_ERROR_CODES.PROVIDER_FAILURE,
-      SYNC_VERIFICATION_FAILED_MESSAGE,
+      SYNC_ERROR_CODES.SYNC_VERIFICATION_FAILED,
+      mismatch
+        ? `${SYNC_VERIFICATION_FAILED_MESSAGE} (${mismatch})`
+        : SYNC_VERIFICATION_FAILED_MESSAGE,
     );
   }
 
@@ -146,7 +154,7 @@ export async function syncPortfolioSnapshot(
   );
   if (existingEvent?.status === "completed") {
     const snapshot = await repo.fetchSnapshot(userId);
-    if (portfoliosPersistedMatch(holdings, snapshot.holdings)) {
+    if (portfoliosPersistedMatch(holdings, snapshot.holdings, userId)) {
       return snapshot;
     }
   }
@@ -197,6 +205,11 @@ export async function syncPortfolioSnapshot(
       snapshot,
     ))
   ) {
+    const mismatch = describePersistedVerificationMismatch(
+      holdings,
+      snapshot.holdings,
+      userId,
+    );
     await repo.recordSyncEvent(
       userId,
       "sync",
@@ -205,8 +218,10 @@ export async function syncPortfolioSnapshot(
       "failed",
     );
     throw new PortfolioSyncError(
-      SYNC_ERROR_CODES.PROVIDER_FAILURE,
-      SYNC_VERIFICATION_FAILED_MESSAGE,
+      SYNC_ERROR_CODES.SYNC_VERIFICATION_FAILED,
+      mismatch
+        ? `${SYNC_VERIFICATION_FAILED_MESSAGE} (${mismatch})`
+        : SYNC_VERIFICATION_FAILED_MESSAGE,
     );
   }
 

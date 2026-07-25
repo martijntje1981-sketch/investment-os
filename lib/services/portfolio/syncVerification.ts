@@ -1,5 +1,5 @@
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
-import { portfoliosPersistedMatch } from "@/lib/services/portfolio/idempotency";
+import { portfoliosPersistedMatch } from "@/lib/services/portfolio/persistedVerification";
 import type { PortfolioRepository } from "@/lib/services/portfolio/repository";
 import type { RemotePortfolioSnapshot } from "@/lib/services/portfolio/types";
 
@@ -34,7 +34,7 @@ export async function verifyPersistedPortfolioSnapshot(
     const snapshot =
       attempt === 0 ? initialSnapshot : await repo.fetchSnapshot(userId);
 
-    if (portfoliosPersistedMatch(writtenHoldings, snapshot.holdings)) {
+    if (portfoliosPersistedMatch(writtenHoldings, snapshot.holdings, userId)) {
       return true;
     }
   }

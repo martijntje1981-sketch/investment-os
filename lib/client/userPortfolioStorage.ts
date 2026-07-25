@@ -13,6 +13,16 @@ import {
   legacyMigrationFlagKey,
   portfolioStorageKey,
 } from "@/lib/client/portfolioStorageKeys";
+import { isCryptoHolding } from "@/lib/services/portfolio/cryptoHolding";
+import { normalizeCryptoPairCurrency } from "@/lib/types/cryptoHolding";
+
+function normalizeAssetType(
+  assetType: StoredPortfolioHolding["assetType"],
+): StoredPortfolioHolding["assetType"] {
+  if (assetType === "cash") return "cash";
+  if (assetType === "crypto") return "crypto";
+  return "investment";
+}
 
 function normalizeStoredHoldings(
   parsed: unknown,
@@ -23,14 +33,27 @@ function normalizeStoredHoldings(
     .filter((item) => item && typeof item === "object")
     .map((item) => {
       const holding = item as StoredPortfolioHolding;
-      return {
+      const assetType = normalizeAssetType(holding.assetType);
+      const normalized: StoredPortfolioHolding = {
         ...holding,
         symbol: String(holding.symbol ?? "")
           .trim()
           .toUpperCase(),
-        assetType:
-          holding.assetType === "cash" ? "cash" : "investment",
+        assetType,
       };
+
+      if (isCryptoHolding(normalized)) {
+        return {
+          ...normalized,
+          pairCurrency: holding.pairCurrency
+            ? normalizeCryptoPairCurrency(String(holding.pairCurrency))
+            : "EUR",
+          portfolioCurrency: "EUR",
+          currency: "EUR",
+        };
+      }
+
+      return normalized;
     });
 }
 

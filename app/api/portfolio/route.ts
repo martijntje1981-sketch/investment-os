@@ -111,7 +111,9 @@ export async function PUT(request: Request) {
             error.code === SYNC_ERROR_CODES.CONFLICT ||
             error.code === SYNC_ERROR_CODES.PARTIAL_SAVE
               ? 409
-              : 400,
+              : error.code === SYNC_ERROR_CODES.SYNC_VERIFICATION_FAILED
+                ? 400
+                : 400,
         },
       );
     }

@@ -180,7 +180,12 @@ export function draftToImportRow(
     purchasePrice: draft.purchasePrice,
     currentPrice: draft.currentPrice,
     purchaseDate: null,
-    assetType: draft.assetType ?? "investment",
+    assetType:
+      draft.assetType === "cash"
+        ? "cash"
+        : draft.assetType === "crypto"
+          ? "investment"
+          : "investment",
     currency: draft.currency ?? "EUR",
     isin: draft.isin ?? null,
     exchange: draft.exchange ?? null,

@@ -23,7 +23,7 @@ type ResolveAnalystInput = {
   symbol: string;
   providerSymbol: string;
   name: string;
-  assetType?: "investment" | "cash";
+  assetType?: "investment" | "cash" | "crypto";
   fxRateToEur?: number | null;
 };
 
@@ -86,7 +86,7 @@ export async function resolveAnalystQuote(
     null,
   );
 
-  if (input.assetType === "cash") {
+  if (input.assetType === "cash" || input.assetType === "crypto") {
     return buildEmptyQuote(input, "no_coverage", "unsupported");
   }
 

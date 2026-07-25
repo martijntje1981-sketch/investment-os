@@ -18,6 +18,8 @@ import {
   mapStoredHoldingToDbInsert,
   mapStoredMappingToDbInsert,
 } from "@/lib/services/portfolio/mappers";
+import { buildCryptoHoldingMetadata } from "@/lib/services/portfolio/cryptoDbMetadata";
+import { isCryptoHolding } from "@/lib/services/portfolio/cryptoHolding";
 import type {
   DbGoalRow,
   DbHoldingRow,
@@ -98,6 +100,7 @@ export function createPortfolioRepository(supabase: SupabaseClient) {
         last_market_price,
         last_market_price_at,
         previous_close,
+        metadata,
         holding_instrument_mappings (
           holding_id,
           isin,
@@ -284,6 +287,20 @@ export function createPortfolioRepository(supabase: SupabaseClient) {
     holding: StoredPortfolioHolding,
     options?: { includeSoftDeleted?: boolean },
   ): Promise<{ id: string } | null> {
+    if (holding.assetType === "crypto") {
+      const holdingId = resolveHoldingIdForSync(userId, holding);
+      const { data, error } = await supabase
+        .from("holdings")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("portfolio_id", portfolioId)
+        .eq("id", holdingId)
+        .is("deleted_at", null)
+        .maybeSingle();
+      if (error) throw error;
+      return data ?? null;
+    }
+
     const key = holdingUniqueKey(holding);
 
     let query = supabase
@@ -318,17 +335,23 @@ export function createPortfolioRepository(supabase: SupabaseClient) {
     holding: StoredPortfolioHolding,
     sortOrder: number,
   ) {
+    const payload: Record<string, unknown> = {
+      name: holding.name.trim() || holding.symbol,
+      symbol:
+        holding.assetType === "cash"
+          ? String(holding.currency).toUpperCase()
+          : String(holding.symbol).trim().toUpperCase(),
+      sort_order: sortOrder,
+      deleted_at: null,
+    };
+
+    if (isCryptoHolding(holding)) {
+      payload.metadata = buildCryptoHoldingMetadata(holding);
+    }
+
     const { error: updateError } = await supabase
       .from("holdings")
-      .update({
-        name: holding.name.trim() || holding.symbol,
-        symbol:
-          holding.assetType === "cash"
-            ? String(holding.currency).toUpperCase()
-            : String(holding.symbol).trim().toUpperCase(),
-        sort_order: sortOrder,
-        deleted_at: null,
-      })
+      .update(payload)
       .eq("id", holdingId)
       .eq("user_id", userId);
 
@@ -341,6 +364,47 @@ export function createPortfolioRepository(supabase: SupabaseClient) {
     holding: StoredPortfolioHolding,
     sortOrder: number,
   ) {
+    if (isCryptoHolding(holding)) {
+      const holdingId = resolveHoldingIdForSync(userId, holding);
+      const { data: existing, error: readError } = await supabase
+        .from("holdings")
+        .select("id, deleted_at")
+        .eq("id", holdingId)
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (readError) throw readError;
+
+      if (existing) {
+        await updateHoldingRow(userId, holdingId, holding, sortOrder);
+        return holdingId;
+      }
+
+      const insertRow = mapStoredHoldingToDbInsert(
+        holding,
+        userId,
+        portfolioId,
+        sortOrder,
+        holdingId,
+      );
+
+      const { error: insertError } = await supabase
+        .from("holdings")
+        .insert(insertRow as Record<string, unknown>);
+
+      if (insertError) {
+        if (!isUniqueViolation(insertError)) throw insertError;
+
+        const raced = await findHoldingByUniqueKey(userId, portfolioId, holding);
+        if (!raced) throw insertError;
+
+        await updateHoldingRow(userId, raced.id, holding, sortOrder);
+        return raced.id;
+      }
+
+      return holdingId;
+    }
+
     const active = await findHoldingByUniqueKey(userId, portfolioId, holding);
     if (active) {
       await updateHoldingRow(userId, active.id, holding, sortOrder);
@@ -371,11 +435,17 @@ export function createPortfolioRepository(supabase: SupabaseClient) {
       return holdingId;
     }
 
+    const insertRow = mapStoredHoldingToDbInsert(
+      holding,
+      userId,
+      portfolioId,
+      sortOrder,
+      holdingId,
+    );
+
     const { error: insertError } = await supabase
       .from("holdings")
-      .insert(
-        mapStoredHoldingToDbInsert(holding, userId, portfolioId, sortOrder, holdingId),
-      );
+      .insert(insertRow as Record<string, unknown>);
 
     if (insertError) {
       if (!isUniqueViolation(insertError)) throw insertError;
@@ -418,7 +488,12 @@ export function createPortfolioRepository(supabase: SupabaseClient) {
     prefix: "migrate" | "sync",
     holdingId: string,
   ) {
-    const assetType = holding.assetType === "cash" ? "cash" : "investment";
+    const assetType =
+      holding.assetType === "cash"
+        ? "cash"
+        : isCryptoHolding(holding)
+          ? "crypto"
+          : "investment";
     const txnType = assetType === "cash" ? "deposit" : "buy";
     const unitPrice = assetType === "cash" ? 1 : holding.purchasePrice;
     const idempotencyKey = buildHoldingLedgerIdempotencyKey(
@@ -487,7 +562,11 @@ export function createPortfolioRepository(supabase: SupabaseClient) {
 
     const desiredQty = holding.quantity;
     const desiredPrice =
-      holding.assetType === "cash" ? 1 : holding.purchasePrice;
+      holding.assetType === "cash"
+        ? 1
+        : isCryptoHolding(holding)
+          ? holding.purchasePrice
+          : holding.purchasePrice;
     const remoteQty = remoteRow ? toNumber(remoteRow.quantity) : 0;
     const remotePrice = remoteRow
       ? toNumber(remoteRow.average_cost)

@@ -8,6 +8,7 @@ import {
   BriefcaseBusiness,
   ChevronRight,
   CircleDollarSign,
+  Coins,
   Loader2,
   Pencil,
   PieChart,
@@ -45,12 +46,16 @@ import {
 } from "@/components/analysis/DividendIntelligenceSection";
 import { HoldingAnalystMeta } from "@/components/analysis/AnalystIntelligenceSection";
 import { ExchangeFieldEditor } from "@/components/import/ExchangeFieldEditor";
+import { AddCryptoHoldingForm } from "@/components/portfolio/AddCryptoHoldingForm";
 import { buildPortfolioAnalysis } from "@/lib/client/portfolioAnalysis";
 import {
   getHoldingCostBasis,
   getHoldingMarketValue,
 } from "@/lib/client/holdingValuation";
-import { isEstimatedHoldingPrice } from "@/lib/client/holdingDisplayPrice";
+import {
+  holdingValueUnavailableLabel,
+  isEstimatedHoldingPrice,
+} from "@/lib/client/holdingDisplayPrice";
 import { buildPortfolioPerformance } from "@/lib/client/portfolioPerformance";
 import {
   applyManualListingSelection,
@@ -79,6 +84,11 @@ import {
   resolveHoldingMatchStatus,
   validateManualHoldingForSave,
 } from "@/lib/services/portfolio/holdingValidation";
+import {
+  createEmptyCryptoDraft,
+  isCryptoHolding,
+  mergeHoldingOnSave,
+} from "@/lib/services/portfolio/cryptoHolding";
 import type { ResolvedInstrument } from "@/lib/types/instrument";
 import { usePortfolioDividends } from "@/lib/client/usePortfolioDividends";
 import { usePortfolioAnalyst } from "@/lib/client/usePortfolioAnalyst";
@@ -165,7 +175,10 @@ export default function PortfolioPage() {
     [liveRefreshAt, snapshotRefreshedAt],
   );
   const [draft, setDraft] = useState<Holding>(emptyDraft);
+  const [cryptoDraft, setCryptoDraft] = useState<Holding>(createEmptyCryptoDraft());
   const [editorOpen, setEditorOpen] = useState(false);
+  const [cryptoEditorOpen, setCryptoEditorOpen] = useState(false);
+  const [isSavingCrypto, setIsSavingCrypto] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [message, setMessage] = useState("Portfolio prices use the latest available market data.");
   const [listingCandidates, setListingCandidates] = useState<ResolvedInstrument[]>([]);
@@ -246,7 +259,18 @@ export default function PortfolioPage() {
     setEditorOpen(true);
   }
 
+  function openAddCrypto() {
+    setCryptoDraft(createEmptyCryptoDraft());
+    setCryptoEditorOpen(true);
+  }
+
   function openEdit(holding: Holding) {
+    if (isCryptoHolding(holding)) {
+      setCryptoDraft({ ...holding });
+      setCryptoEditorOpen(true);
+      return;
+    }
+
     setDraft({ ...holding });
     resetListingState();
     setEditorOpen(true);
@@ -321,6 +345,29 @@ export default function PortfolioPage() {
     setEditorOpen(false);
   }
 
+  async function submitCryptoHolding(nextDraft: Holding) {
+    if (isSavingCrypto) return;
+
+    const validation = validateManualHoldingForSave(nextDraft);
+    if (!validation.ok) {
+      throw new Error(validation.message);
+    }
+
+    setIsSavingCrypto(true);
+    try {
+      const cleaned = normalizeHoldingForSave(nextDraft);
+      saveHoldings(mergeHoldingOnSave(holdings, cleaned));
+      setMessage(
+        cleaned.pricingStatus === "needs_review"
+          ? "Crypto holding saved. Live pricing is not available for this asset yet."
+          : "Crypto holding saved. Live pricing will be added in a future update.",
+      );
+      setCryptoEditorOpen(false);
+    } finally {
+      setIsSavingCrypto(false);
+    }
+  }
+
   function removeHolding(holding: Holding) {
     if (!window.confirm(`Remove ${holding.name} from your portfolio?`)) return;
     saveHoldings(holdings.filter((item) => item.id !== holding.id));
@@ -347,6 +394,12 @@ export default function PortfolioPage() {
                 className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-bold text-white hover:bg-white/15"
               >
                 <Banknote className="h-4 w-4" /> Add cash
+              </button>
+              <button
+                onClick={openAddCrypto}
+                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-bold text-white hover:bg-white/15"
+              >
+                <Coins className="h-4 w-4" /> Add crypto
               </button>
               <button
                 onClick={() => openAdd("investment")}
@@ -407,8 +460,11 @@ export default function PortfolioPage() {
               <div className="px-6 py-16 text-center">
                 <BriefcaseBusiness className="mx-auto h-10 w-10 text-slate-300" />
                 <h3 className={`mt-4 ${appSectionTitleClass}`}>No holdings yet</h3>
-                <p className={`mt-2 ${appSectionSubtitleClass}`}>Add an investment, cash position or import your portfolio.</p>
-                <button onClick={() => openAdd("investment")} className="mt-6 rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white">Add first holding</button>
+                <p className={`mt-2 ${appSectionSubtitleClass}`}>Add an investment, crypto, cash position or import your portfolio.</p>
+                <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
+                  <button onClick={() => openAdd("investment")} className="min-h-[44px] rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white">Add investment</button>
+                  <button onClick={openAddCrypto} className="min-h-[44px] rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-900">Add crypto</button>
+                </div>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -433,6 +489,7 @@ export default function PortfolioPage() {
                     holding.assetType === "investment"
                       ? findAnalystQuoteForHolding(holding, analystQuotes)
                       : null;
+                  const isCrypto = isCryptoHolding(holding);
                   const impliedUpsidePercent =
                     analystQuote && holding.currentPrice > 0
                       ? calculateImpliedUpsidePercent(
@@ -444,15 +501,22 @@ export default function PortfolioPage() {
                     <article key={holding.id} className="space-y-3 px-5 py-5 lg:px-7">
                     <div className="grid gap-4 lg:grid-cols-[0.65fr_1.5fr_1fr_0.8fr_1fr_auto] lg:items-start">
                       <div className="flex items-start">
-                        <span className={`inline-flex rounded-xl px-3 py-2 ${appTableValueClass} ${holding.assetType === "cash" ? "bg-emerald-100 text-emerald-800" : "bg-slate-950 text-white"}`}>{holding.symbol}</span>
+                        <span className={`inline-flex rounded-xl px-3 py-2 ${appTableValueClass} ${holding.assetType === "cash" ? "bg-emerald-100 text-emerald-800" : isCrypto ? "bg-violet-100 text-violet-900" : "bg-slate-950 text-white"}`}>{holding.symbol}</span>
                       </div>
                       <div>
                         <p className={appTableNameClass}>{holding.name}</p>
                         <p className={`mt-1 ${appSectionMetaClass}`}>
                           {holding.assetType === "cash"
                             ? "Cash holding"
-                            : `${holding.quantity.toLocaleString("en-GB")} units · ${holdingMatchStatusLabel(matchStatus)}`}
+                            : isCrypto
+                              ? `${holding.quantity.toLocaleString("en-GB")} · ${holding.tradingPair ?? `${holding.symbol}/${holding.pairCurrency ?? "EUR"}`} · ${holdingMatchStatusLabel(matchStatus, holding.assetType)}`
+                              : `${holding.quantity.toLocaleString("en-GB")} units · ${holdingMatchStatusLabel(matchStatus, holding.assetType)}`}
                         </p>
+                        {isCrypto && holding.pricingStatus !== "manual" ? (
+                          <p className={`mt-1 text-sm font-semibold text-amber-800`}>
+                            Live price unavailable
+                          </p>
+                        ) : null}
                         {holding.pricingExchange && holding.providerSymbol ? (
                           <p className={`mt-1 ${appTickerClass} normal-case`}>
                             {describePricingSource({
@@ -463,11 +527,11 @@ export default function PortfolioPage() {
                           </p>
                         ) : null}
                       </div>
-                      <div><p className={`${appSectionLabelClass} lg:hidden`}>Value</p><p className={appTableValueClass}>{holdingValue === null ? "Price pending" : money(holdingValue)}{estimatedPrice && holdingValue !== null ? <span className="ml-1 text-xs font-semibold text-amber-700">est.</span> : null}</p></div>
+                      <div><p className={`${appSectionLabelClass} lg:hidden`}>Value</p><p className={appTableValueClass}>{holdingValue === null ? holdingValueUnavailableLabel(holding) : money(holdingValue)}{estimatedPrice && holdingValue !== null ? <span className="ml-1 text-xs font-semibold text-amber-700">est.</span> : null}</p></div>
                       <div><p className={`${appSectionLabelClass} lg:hidden`}>Allocation</p><p className={appTableValueClass}>{holdingValue === null ? "—" : `${allocation.toFixed(1)}%`}</p></div>
                       <div>
                         <p className={`${appSectionLabelClass} lg:hidden`}>Return</p>
-                        <p className={`${appTableValueClass} ${holdingReturn === null ? "text-slate-600" : holdingReturn >= 0 ? "text-emerald-700" : "text-red-700"}`}>{holding.assetType === "cash" ? "Stable" : holdingReturn === null ? "Price pending" : `${holdingReturn >= 0 ? "+" : ""}${money(holdingReturn)}`}</p>
+                        <p className={`${appTableValueClass} ${holdingReturn === null ? "text-slate-600" : holdingReturn >= 0 ? "text-emerald-700" : "text-red-700"}`}>{holding.assetType === "cash" ? "Stable" : holdingReturn === null ? holdingValueUnavailableLabel(holding) : `${holdingReturn >= 0 ? "+" : ""}${money(holdingReturn)}`}</p>
                       </div>
                       <div className="flex items-center justify-end gap-1">
                         {holding.assetType === "investment" ? (
@@ -520,6 +584,17 @@ export default function PortfolioPage() {
           </section>
       </PageContainer>
       <BottomNavigation />
+
+      {cryptoEditorOpen ? (
+        <AddCryptoHoldingForm
+          draft={cryptoDraft}
+          isEditing={holdings.some((item) => item.id === cryptoDraft.id)}
+          isSaving={isSavingCrypto}
+          onDraftChange={setCryptoDraft}
+          onClose={() => setCryptoEditorOpen(false)}
+          onSubmit={submitCryptoHolding}
+        />
+      ) : null}
 
       {editorOpen && (
         <div className="fixed inset-0 z-[80] flex items-end justify-center bg-slate-950/60 p-0 backdrop-blur-sm sm:items-center sm:p-5">

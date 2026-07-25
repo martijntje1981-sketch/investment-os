@@ -221,6 +221,15 @@ export function applyRemoteSnapshotToLocalCache(
         holding.requiresConfirmation ?? localHolding?.requiresConfirmation,
       matchWarnings: holding.matchWarnings ?? localHolding?.matchWarnings,
     };
+
+    if (holding.assetType === "crypto") {
+      return {
+        ...effectiveHolding,
+        currentPrice: 0,
+        priceDataStatus: "unavailable" as const,
+      };
+    }
+
     const fallbackPrice = mergeRemoteMarketPrice(
       holding,
       localHolding?.currentPrice,
@@ -278,7 +287,16 @@ export function applyRemoteSnapshotToLocalCache(
     };
   });
 
-  const holdings = applyCachedPrices(userSub, mergedHoldings);
+  const remoteIds = new Set(mergedHoldings.map((holding) => holding.id));
+  // Keep local crypto rows that have not yet appeared in a confirmed remote snapshot.
+  const preservedLocalCrypto = localHoldings.filter(
+    (holding) => holding.assetType === "crypto" && !remoteIds.has(holding.id),
+  );
+
+  const holdings = applyCachedPrices(userSub, [
+    ...mergedHoldings,
+    ...preservedLocalCrypto,
+  ]);
 
   const validation = validatePortfolioBeforeSave(holdings);
   if (!validation.ok) {

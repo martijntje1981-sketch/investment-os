@@ -7,6 +7,7 @@ import {
 export type PortfolioHoldingsSummary = {
   total: number;
   investments: number;
+  crypto: number;
   cash: number;
 };
 
@@ -18,22 +19,29 @@ export function summarizePortfolioHoldings(
   holdings: StoredPortfolioHolding[],
 ): PortfolioHoldingsSummary {
   const cash = holdings.filter((holding) => holding.assetType === "cash").length;
+  const crypto = holdings.filter((holding) => holding.assetType === "crypto").length;
+  const investments = holdings.filter(
+    (holding) => holding.assetType === "investment",
+  ).length;
   return {
     total: holdings.length,
-    investments: holdings.length - cash,
+    investments,
+    crypto,
     cash,
   };
 }
 
-/** True when a save would drop all investments while retaining cash. */
+/** True when a save would drop all non-cash holdings while retaining cash. */
 export function isSuspiciousCashOnlyShrink(
   previous: StoredPortfolioHolding[],
   next: StoredPortfolioHolding[],
 ): boolean {
   const before = summarizePortfolioHoldings(previous);
   const after = summarizePortfolioHoldings(next);
+  const beforeNonCash = before.investments + before.crypto;
+  const afterNonCash = after.investments + after.crypto;
 
-  return before.investments > 0 && after.investments === 0 && after.cash > 0;
+  return beforeNonCash > 0 && afterNonCash === 0 && after.cash > 0;
 }
 
 export function buildPortfolioSaveIdempotencyKey(
@@ -57,11 +65,17 @@ export function validatePortfolioBeforeSave(
     if (!holding?.id?.trim()) {
       return { ok: false, message: "Each holding must have a stable id." };
     }
-    if (!holding.symbol?.trim() && holding.assetType !== "cash") {
-      return { ok: false, message: "Investment holdings must include a symbol." };
+    if (
+      !holding.symbol?.trim() &&
+      holding.assetType !== "cash"
+    ) {
+      return { ok: false, message: "Holdings must include a symbol." };
     }
     if (!Number.isFinite(holding.quantity)) {
       return { ok: false, message: "Each holding must include a valid quantity." };
+    }
+    if (holding.assetType === "crypto" && holding.quantity <= 0) {
+      return { ok: false, message: "Crypto holdings must include a positive amount." };
     }
   }
 

@@ -30,7 +30,7 @@ export type StoredPortfolioHolding = {
   purchasePrice: number;
   currentPrice: number;
   currency: "EUR";
-  assetType?: "investment" | "cash";
+  assetType?: "investment" | "cash" | "crypto";
   isin?: string | null;
   exchange?: string | null;
   /** EODHD exchange used for live quotes when purchase venue differs (e.g. Tradegate). */
@@ -51,6 +51,20 @@ export type StoredPortfolioHolding = {
   updatedAt?: string;
   /** ISO timestamp when currentPrice was last known to be valid. */
   marketPriceUpdatedAt?: string;
+  /** Crypto pair quote currency (e.g. USDC). Distinct from USD. */
+  pairCurrency?: import("@/lib/types/cryptoHolding").CryptoPairCurrency;
+  /** Portfolio base currency for crypto holdings. */
+  portfolioCurrency?: "EUR";
+  pricingStatus?: import("@/lib/types/cryptoHolding").CryptoPricingStatus;
+  tradingPair?: string;
+  platform?: string | null;
+  providerAssetId?: string | null;
+  providerId?: string | null;
+  providerName?: string | null;
+  priceUpdatedAt?: string | null;
+  currentManualPrice?: number | null;
+  manualCurrentValue?: number | null;
+  createdAt?: string;
 };
 
 /** Payload sent to POST /api/prices and POST /api/briefing. */

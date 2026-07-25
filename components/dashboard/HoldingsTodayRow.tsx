@@ -1,4 +1,5 @@
 import { formatPortfolioCurrency } from "@/lib/client/portfolioAnalysis";
+import { holdingValueUnavailableLabel } from "@/lib/client/holdingDisplayPrice";
 import { formatHoldingTodayChange } from "@/lib/client/portfolioMovementFormat";
 import {
   appTableChangeClass,
@@ -62,7 +63,7 @@ function HoldingPriceQualityBadge({ row }: { row: DashboardHoldingRow }) {
 
 function HoldingValueLabel({ row }: { row: DashboardHoldingRow }) {
   if (row.priceStatus !== "available" || row.currentValue === null) {
-    return <>Price unavailable</>;
+    return <>{holdingValueUnavailableLabel(row)}</>;
   }
 
   return (

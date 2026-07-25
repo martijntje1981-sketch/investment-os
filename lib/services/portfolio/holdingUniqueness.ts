@@ -1,27 +1,35 @@
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
-import { resolveRemoteHoldingId } from "@/lib/services/portfolio/idempotency";
+import { isUuid, resolveRemoteHoldingId } from "@/lib/services/portfolio/idempotency";
+import { isCryptoHolding } from "@/lib/services/portfolio/cryptoHolding";
 
 export type HoldingUniqueKey = {
-  assetType: "cash" | "investment";
+  assetType: "cash" | "investment" | "crypto";
   symbol: string;
   currency: string;
 };
 
 /** Stable string identity for one instrument slot in a portfolio. */
 export function holdingIdentityKey(holding: StoredPortfolioHolding): string {
+  if (isCryptoHolding(holding)) {
+    return `crypto:id:${holding.id}`;
+  }
+
   const key = holdingUniqueKey(holding);
   return `${key.assetType}:${key.symbol}:${key.currency}`;
 }
 
 /**
  * Deterministic holding primary key for cloud sync.
- * Same user + same instrument slot always resolves to the same UUID,
- * regardless of import row id or retry count.
+ * Crypto uses its stable client UUID as the primary identity.
  */
 export function resolveHoldingIdForSync(
   userId: string,
   holding: StoredPortfolioHolding,
 ): string {
+  if (isCryptoHolding(holding) && isUuid(holding.id)) {
+    return holding.id.toLowerCase();
+  }
+
   return resolveRemoteHoldingId(userId, holdingIdentityKey(holding));
 }
 
@@ -29,15 +37,31 @@ export function resolveHoldingIdForSync(
 export function holdingUniqueKey(
   holding: StoredPortfolioHolding,
 ): HoldingUniqueKey {
-  const assetType = holding.assetType === "cash" ? "cash" : "investment";
+  if (holding.assetType === "cash") {
+    const currency = String(holding.currency ?? "EUR").toUpperCase();
+    return {
+      assetType: "cash",
+      currency,
+      symbol: currency,
+    };
+  }
+
+  if (isCryptoHolding(holding)) {
+    const currency = String(
+      holding.portfolioCurrency ?? holding.currency ?? "EUR",
+    ).toUpperCase();
+    return {
+      assetType: "crypto",
+      currency,
+      symbol: String(holding.symbol).trim().toUpperCase(),
+    };
+  }
+
   const currency = String(holding.currency ?? "EUR").toUpperCase();
 
   return {
-    assetType,
+    assetType: "investment",
     currency,
-    symbol:
-      assetType === "cash"
-        ? currency
-        : String(holding.symbol).trim().toUpperCase(),
+    symbol: String(holding.symbol).trim().toUpperCase(),
   };
 }

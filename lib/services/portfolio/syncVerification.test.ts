@@ -38,7 +38,7 @@ describe("portfoliosPersistedMatch", () => {
     ];
     const second = [first[1]!, first[0]!];
 
-    expect(portfoliosPersistedMatch(first, second)).toBe(true);
+    expect(portfoliosPersistedMatch(first, second, USER_ID)).toBe(true);
   });
 
   it("ignores generated ids, timestamps, and market metadata", () => {
@@ -53,7 +53,7 @@ describe("portfoliosPersistedMatch", () => {
       }),
     ];
 
-    expect(portfoliosPersistedMatch(written, readBack)).toBe(true);
+    expect(portfoliosPersistedMatch(written, readBack, USER_ID)).toBe(true);
   });
 
   it("normalizes null, undefined, and invalid isin representations", () => {
@@ -72,14 +72,14 @@ describe("portfoliosPersistedMatch", () => {
       }),
     ];
 
-    expect(portfoliosPersistedMatch(written, readBack)).toBe(true);
+    expect(portfoliosPersistedMatch(written, readBack, USER_ID)).toBe(true);
   });
 
   it("normalizes providerSymbol casing before comparison", () => {
     const written = [holding({ providerSymbol: "vwce.xetra" })];
     const readBack = [holding({ providerSymbol: "VWCE.XETRA" })];
 
-    expect(portfoliosPersistedMatch(written, readBack)).toBe(true);
+    expect(portfoliosPersistedMatch(written, readBack, USER_ID)).toBe(true);
   });
 
   it("allows harmless read-back enrichment when written holding had no providerSymbol", () => {
@@ -96,35 +96,35 @@ describe("portfoliosPersistedMatch", () => {
       }),
     ];
 
-    expect(portfoliosPersistedMatch(written, readBack)).toBe(true);
+    expect(portfoliosPersistedMatch(written, readBack, USER_ID)).toBe(true);
   });
 
   it("fails when a matched holding is missing after read-back", () => {
     const written = [holding(), holding({ symbol: "STRC", providerSymbol: "STRC.AS", isin: "NL0015001K93" })];
     const readBack = [holding()];
 
-    expect(portfoliosPersistedMatch(written, readBack)).toBe(false);
+    expect(portfoliosPersistedMatch(written, readBack, USER_ID)).toBe(false);
   });
 
   it("fails when quantity changes after read-back", () => {
     const written = [holding({ quantity: 10 })];
     const readBack = [holding({ quantity: 11 })];
 
-    expect(portfoliosPersistedMatch(written, readBack)).toBe(false);
+    expect(portfoliosPersistedMatch(written, readBack, USER_ID)).toBe(false);
   });
 
   it("fails when purchase price changes after read-back", () => {
     const written = [holding({ purchasePrice: 100 })];
     const readBack = [holding({ purchasePrice: 101 })];
 
-    expect(portfoliosPersistedMatch(written, readBack)).toBe(false);
+    expect(portfoliosPersistedMatch(written, readBack, USER_ID)).toBe(false);
   });
 
   it("fails when matched instrument identity changes after read-back", () => {
     const written = [holding({ providerSymbol: "VWCE.XETRA", isin: "IE00BK5BQT80" })];
     const readBack = [holding({ providerSymbol: "VWCE.AS", isin: "IE00BK5BQT80" })];
 
-    expect(portfoliosPersistedMatch(written, readBack)).toBe(false);
+    expect(portfoliosPersistedMatch(written, readBack, USER_ID)).toBe(false);
   });
 
   it("fails when currency changes after read-back", () => {
@@ -135,7 +135,7 @@ describe("portfoliosPersistedMatch", () => {
       }),
     ];
 
-    expect(portfoliosPersistedMatch(written, readBack)).toBe(false);
+    expect(portfoliosPersistedMatch(written, readBack, USER_ID)).toBe(false);
   });
 
   it("documents the prior false positive from legacy portfolioFingerprint", () => {
@@ -158,7 +158,7 @@ describe("portfoliosPersistedMatch", () => {
       portfolioFingerprint(written, USER_ID) ===
         portfolioFingerprint(readBack, USER_ID),
     ).toBe(false);
-    expect(portfoliosPersistedMatch(written, readBack)).toBe(true);
+    expect(portfoliosPersistedMatch(written, readBack, USER_ID)).toBe(true);
   });
 });
 

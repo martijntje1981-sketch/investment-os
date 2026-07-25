@@ -3,6 +3,15 @@ import { createHash } from "node:crypto";
 import type { GoalSettings, StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 import type { SavedImportMapping } from "@/lib/services/import/mappingMemory";
 import { resolveHoldingIdForSync } from "@/lib/services/portfolio/holdingUniqueness";
+import { hashPayload } from "@/lib/services/portfolio/idempotencyCore";
+export { approxEqual, hashPayload } from "@/lib/services/portfolio/idempotencyCore";
+export {
+  describePersistedVerificationMismatch,
+  findPersistedVerificationMismatches,
+  normalizeHoldingForPersistedVerification,
+  normalizeHoldingsForPersistedVerification,
+  portfoliosPersistedMatch,
+} from "@/lib/services/portfolio/persistedVerification";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -29,13 +38,6 @@ export function resolveRemoteHoldingId(
     `a${hash.slice(17, 20)}`,
     hash.slice(20, 32),
   ].join("-");
-}
-
-export function hashPayload(value: unknown): string {
-  return createHash("sha256")
-    .update(JSON.stringify(value))
-    .digest("hex")
-    .slice(0, 32);
 }
 
 export function buildMigrationIdempotencyKey(
@@ -91,10 +93,12 @@ function roundFingerprintNumber(value: number): number {
 export function holdingContentIdentity(
   holding: StoredPortfolioHolding,
 ): string {
-  const assetType = holding.assetType === "cash" ? "cash" : "investment";
-
-  if (assetType === "cash") {
+  if (holding.assetType === "cash") {
     return `cash:${normalizeSymbol(holding.symbol || holding.currency || "EUR")}`;
+  }
+
+  if (holding.assetType === "crypto") {
+    return `crypto:id:${String(holding.id).toLowerCase()}`;
   }
 
   return `investment:symbol:${normalizeSymbol(holding.symbol)}`;
@@ -104,8 +108,14 @@ type ContentFingerprintHolding = {
   identity: string;
   quantity: number;
   purchasePrice: number;
-  assetType: "cash" | "investment";
+  assetType: "cash" | "investment" | "crypto";
   currency: string;
+  pairCurrency?: string;
+  pricingStatus?: string;
+  tradingPair?: string;
+  platform?: string | null;
+  currentManualPrice?: number | null;
+  manualCurrentValue?: number | null;
 };
 
 /** Normalizes holdings for stable portfolio-content comparison. */
@@ -114,15 +124,47 @@ export function normalizeHoldingsForContentFingerprint(
 ): ContentFingerprintHolding[] {
   return holdings
     .map((holding) => {
-      const assetType: "cash" | "investment" =
-        holding.assetType === "cash" ? "cash" : "investment";
+      if (holding.assetType === "cash") {
+        return {
+          identity: holdingContentIdentity(holding),
+          quantity: roundFingerprintNumber(Number(holding.quantity) || 0),
+          purchasePrice: 1,
+          assetType: "cash" as const,
+          currency: normalizeSymbol(holding.currency ?? "EUR"),
+        };
+      }
+
+      if (holding.assetType === "crypto") {
+        return {
+          identity: holdingContentIdentity(holding),
+          quantity: roundFingerprintNumber(Number(holding.quantity) || 0),
+          purchasePrice: roundFingerprintNumber(Number(holding.purchasePrice) || 0),
+          assetType: "crypto" as const,
+          currency: normalizeSymbol(holding.portfolioCurrency ?? holding.currency ?? "EUR"),
+          pairCurrency: normalizeSymbol(holding.pairCurrency ?? "EUR"),
+          pricingStatus: holding.pricingStatus ?? "needs_review",
+          tradingPair: String(holding.tradingPair ?? ""),
+          platform: holding.platform ?? null,
+          currentManualPrice:
+            holding.currentManualPrice != null &&
+            Number.isFinite(holding.currentManualPrice) &&
+            holding.currentManualPrice > 0
+              ? roundFingerprintNumber(holding.currentManualPrice)
+              : null,
+          manualCurrentValue:
+            holding.manualCurrentValue != null &&
+            Number.isFinite(holding.manualCurrentValue) &&
+            holding.manualCurrentValue > 0
+              ? roundFingerprintNumber(holding.manualCurrentValue)
+              : null,
+        };
+      }
+
       return {
         identity: holdingContentIdentity(holding),
         quantity: roundFingerprintNumber(Number(holding.quantity) || 0),
-        purchasePrice: roundFingerprintNumber(
-          assetType === "cash" ? 1 : Number(holding.purchasePrice) || 0,
-        ),
-        assetType,
+        purchasePrice: roundFingerprintNumber(Number(holding.purchasePrice) || 0),
+        assetType: "investment" as const,
         currency: normalizeSymbol(holding.currency ?? "EUR"),
       };
     })
@@ -152,6 +194,60 @@ export function portfoliosContentMatch(
   );
 }
 
+function holdingsPersistedContentEqual(
+  expected: StoredPortfolioHolding,
+  actual: StoredPortfolioHolding,
+): boolean {
+  const includeInstrumentFields =
+    expected.assetType === "investment" &&
+    Boolean(expected.providerSymbol?.trim());
+  return (
+    hashPayload(normalizeSingleForSyncVerification(expected, includeInstrumentFields)) ===
+    hashPayload(normalizeSingleForSyncVerification(actual, includeInstrumentFields))
+  );
+}
+
+/** True when every remote holding matches a local holding with the same business identity. */
+export function portfolioRemoteHoldingsAreSubsetOfLocal(
+  localHoldings: StoredPortfolioHolding[],
+  remoteHoldings: StoredPortfolioHolding[],
+): boolean {
+  const localByIdentity = new Map(
+    localHoldings.map((holding) => [holdingContentIdentity(holding), holding]),
+  );
+
+  for (const remoteHolding of remoteHoldings) {
+    const localHolding = localByIdentity.get(holdingContentIdentity(remoteHolding));
+    if (!localHolding) {
+      return false;
+    }
+    if (!holdingsPersistedContentEqual(localHolding, remoteHolding)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/** Local portfolio has only extra crypto rows compared with remote. */
+export function localHasPendingCryptoUpload(
+  localHoldings: StoredPortfolioHolding[],
+  remoteHoldings: StoredPortfolioHolding[],
+): boolean {
+  const remoteIdentities = new Set(
+    remoteHoldings.map((holding) => holdingContentIdentity(holding)),
+  );
+  const extras = localHoldings.filter(
+    (holding) => !remoteIdentities.has(holdingContentIdentity(holding)),
+  );
+
+  return (
+    extras.length > 0 &&
+    extras.every((holding) => holding.assetType === "crypto") &&
+    portfolioRemoteHoldingsAreSubsetOfLocal(localHoldings, remoteHoldings)
+  );
+}
+
 type SyncVerificationHolding = ContentFingerprintHolding & {
   providerSymbol?: string | null;
   isin?: string | null;
@@ -167,19 +263,51 @@ function normalizeSingleForSyncVerification(
   holding: StoredPortfolioHolding,
   includeInstrumentFields: boolean,
 ): SyncVerificationHolding {
-  const assetType: "cash" | "investment" =
-    holding.assetType === "cash" ? "cash" : "investment";
+  if (holding.assetType === "cash") {
+    return {
+      identity: holdingContentIdentity(holding),
+      quantity: roundFingerprintNumber(Number(holding.quantity) || 0),
+      purchasePrice: 1,
+      assetType: "cash",
+      currency: normalizeSymbol(holding.currency ?? "EUR"),
+    };
+  }
+
+  if (holding.assetType === "crypto") {
+    return {
+      identity: holdingContentIdentity(holding),
+      quantity: roundFingerprintNumber(Number(holding.quantity) || 0),
+      purchasePrice: roundFingerprintNumber(Number(holding.purchasePrice) || 0),
+      assetType: "crypto",
+      currency: normalizeSymbol(holding.portfolioCurrency ?? holding.currency ?? "EUR"),
+      pairCurrency: normalizeSymbol(holding.pairCurrency ?? "EUR"),
+      pricingStatus: holding.pricingStatus ?? "needs_review",
+      tradingPair: String(holding.tradingPair ?? ""),
+      platform: holding.platform ?? null,
+      currentManualPrice:
+        holding.currentManualPrice != null &&
+        Number.isFinite(holding.currentManualPrice) &&
+        holding.currentManualPrice > 0
+          ? roundFingerprintNumber(holding.currentManualPrice)
+          : null,
+      manualCurrentValue:
+        holding.manualCurrentValue != null &&
+        Number.isFinite(holding.manualCurrentValue) &&
+        holding.manualCurrentValue > 0
+          ? roundFingerprintNumber(holding.manualCurrentValue)
+          : null,
+    };
+  }
+
   const base: SyncVerificationHolding = {
     identity: holdingContentIdentity(holding),
     quantity: roundFingerprintNumber(Number(holding.quantity) || 0),
-    purchasePrice: roundFingerprintNumber(
-      assetType === "cash" ? 1 : Number(holding.purchasePrice) || 0,
-    ),
-    assetType,
+    purchasePrice: roundFingerprintNumber(Number(holding.purchasePrice) || 0),
+    assetType: "investment",
     currency: normalizeSymbol(holding.currency ?? "EUR"),
   };
 
-  if (includeInstrumentFields && assetType === "investment") {
+  if (includeInstrumentFields) {
     return {
       ...base,
       providerSymbol: normalizeOptionalSymbol(holding.providerSymbol),
@@ -210,47 +338,12 @@ export function portfolioSyncVerificationFingerprint(
   return hashPayload(normalizeHoldingsForSyncVerification(holdings));
 }
 
-/** Compares written vs read-back holdings using canonical business fields only. */
-export function portfoliosPersistedMatch(
-  written: StoredPortfolioHolding[],
-  readBack: StoredPortfolioHolding[],
-): boolean {
-  const readByIdentity = new Map(
-    readBack.map((holding) => [holdingContentIdentity(holding), holding]),
-  );
-
-  const writtenIdentities = written
-    .map((holding) => holdingContentIdentity(holding))
-    .sort();
-  const readBackIdentities = readBack
-    .map((holding) => holdingContentIdentity(holding))
-    .sort();
-
-  if (writtenIdentities.join("|") !== readBackIdentities.join("|")) {
-    return false;
-  }
-
-  for (const item of written) {
-    const identity = holdingContentIdentity(item);
-    const remote = readByIdentity.get(identity);
-    if (!remote) return false;
-
-    const includeInstrumentFields = Boolean(item.providerSymbol?.trim());
-    const expected = normalizeSingleForSyncVerification(
-      item,
-      includeInstrumentFields,
-    );
-    const actual = normalizeSingleForSyncVerification(
-      remote,
-      includeInstrumentFields,
-    );
-
-    if (hashPayload(expected) !== hashPayload(actual)) {
-      return false;
-    }
-  }
-
-  return true;
+/** @internal Exported for sync verification tests. */
+export function normalizeHoldingForSyncVerification(
+  holding: StoredPortfolioHolding,
+  includeInstrumentFields = false,
+): SyncVerificationHolding {
+  return normalizeSingleForSyncVerification(holding, includeInstrumentFields);
 }
 
 function normalizeForFingerprint(
@@ -267,7 +360,7 @@ function normalizeForFingerprint(
         .toUpperCase(),
       quantity: Number(holding.quantity) || 0,
       purchasePrice: Number(holding.purchasePrice) || 0,
-      assetType: holding.assetType === "cash" ? "cash" : "investment",
+      assetType: holding.assetType === "cash" ? "cash" : holding.assetType === "crypto" ? "crypto" : "investment",
       currency: String(holding.currency ?? "EUR").toUpperCase(),
       isin: holding.isin
         ? String(holding.isin).trim().toUpperCase()
@@ -310,14 +403,6 @@ export function importMappingsFingerprint(
     }))
     .sort((a, b) => a.lookupKey.localeCompare(b.lookupKey));
   return hashPayload(normalized);
-}
-
-export function approxEqual(
-  left: number,
-  right: number,
-  epsilon = 0.0000001,
-): boolean {
-  return Math.abs(left - right) <= epsilon;
 }
 
 export function isUniqueViolation(error: { code?: string; message?: string }): boolean {

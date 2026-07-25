@@ -1,6 +1,7 @@
 import type { GoalSettings, StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 import { buildSyncPreview } from "@/lib/services/portfolio/mappers";
 import {
+  localHasPendingCryptoUpload,
   portfolioContentFingerprint,
 } from "@/lib/services/portfolio/idempotency";
 import { summarizePortfolioHoldings } from "@/lib/services/portfolio/portfolioPersistenceGuard";
@@ -58,6 +59,10 @@ export function resolvePortfolioSyncState(
   }
 
   if (localFingerprint === remoteFingerprint) {
+    return { kind: "aligned", snapshot: remoteSnapshot };
+  }
+
+  if (localHasPendingCryptoUpload(localHoldings, remoteSnapshot.holdings)) {
     return { kind: "aligned", snapshot: remoteSnapshot };
   }
 

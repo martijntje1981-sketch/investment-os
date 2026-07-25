@@ -21,6 +21,7 @@ export function inferAnalystCoverageKind(
   instrumentType?: string | null,
 ): AnalystCoverageKind {
   if (holding.assetType === "cash") return "unsupported";
+  if (holding.assetType === "crypto") return "unsupported";
 
   const type = String(instrumentType ?? "").toLowerCase();
   if (type.includes("etf") || type.includes("fund") || type.includes("etp")) {

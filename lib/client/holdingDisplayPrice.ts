@@ -1,4 +1,5 @@
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
+import { isCryptoHolding } from "@/lib/services/portfolio/cryptoHolding";
 
 export type HoldingDisplayPriceSource =
   | "live"
@@ -10,10 +11,64 @@ export type HoldingDisplayPrice = {
   source: HoldingDisplayPriceSource;
 };
 
+function resolveCryptoDisplayPrice(
+  holding: Pick<
+    StoredPortfolioHolding,
+    | "currentPrice"
+    | "priceDataStatus"
+    | "pricingStatus"
+    | "currentManualPrice"
+    | "manualCurrentValue"
+    | "quantity"
+  >,
+): HoldingDisplayPrice {
+  if (Number.isFinite(holding.currentPrice) && holding.currentPrice > 0) {
+    const source =
+      holding.priceDataStatus === "live" || holding.priceDataStatus === "delayed"
+        ? "live"
+        : "estimated";
+    return { price: holding.currentPrice, source };
+  }
+
+  if (holding.pricingStatus === "manual") {
+    const currentManualPrice = holding.currentManualPrice;
+    if (
+      typeof currentManualPrice === "number" &&
+      Number.isFinite(currentManualPrice) &&
+      currentManualPrice > 0
+    ) {
+      return { price: currentManualPrice, source: "estimated" };
+    }
+
+    const manualCurrentValue = holding.manualCurrentValue;
+    if (
+      typeof manualCurrentValue === "number" &&
+      Number.isFinite(manualCurrentValue) &&
+      manualCurrentValue > 0 &&
+      Number.isFinite(holding.quantity) &&
+      holding.quantity > 0
+    ) {
+      return {
+        price: manualCurrentValue / holding.quantity,
+        source: "estimated",
+      };
+    }
+  }
+
+  return { price: null, source: "unavailable" };
+}
+
 export function resolveHoldingDisplayPrice(
   holding: Pick<
     StoredPortfolioHolding,
-    "assetType" | "currentPrice" | "purchasePrice" | "priceDataStatus"
+    | "assetType"
+    | "currentPrice"
+    | "purchasePrice"
+    | "priceDataStatus"
+    | "pricingStatus"
+    | "currentManualPrice"
+    | "manualCurrentValue"
+    | "quantity"
   >,
 ): HoldingDisplayPrice {
   if (holding.assetType === "cash") {
@@ -22,6 +77,10 @@ export function resolveHoldingDisplayPrice(
         ? holding.currentPrice
         : 1;
     return { price, source: "live" };
+  }
+
+  if (isCryptoHolding(holding)) {
+    return resolveCryptoDisplayPrice(holding);
   }
 
   if (Number.isFinite(holding.currentPrice) && holding.currentPrice > 0) {
@@ -40,8 +99,21 @@ export function resolveHoldingDisplayPrice(
 export function isEstimatedHoldingPrice(
   holding: Pick<
     StoredPortfolioHolding,
-    "assetType" | "currentPrice" | "purchasePrice" | "priceDataStatus"
+    | "assetType"
+    | "currentPrice"
+    | "purchasePrice"
+    | "priceDataStatus"
+    | "pricingStatus"
+    | "currentManualPrice"
+    | "manualCurrentValue"
+    | "quantity"
   >,
 ): boolean {
   return resolveHoldingDisplayPrice(holding).source === "estimated";
+}
+
+export function holdingValueUnavailableLabel(
+  holding: Pick<StoredPortfolioHolding, "assetType">,
+): string {
+  return isCryptoHolding(holding) ? "Value unavailable" : "Price unavailable";
 }
