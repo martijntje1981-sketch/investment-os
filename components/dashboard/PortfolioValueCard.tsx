@@ -56,8 +56,15 @@ export function PortfolioValueCard({
     >
       <p className={appHeroMetricLabelClass}>Portfolio value</p>
       <p className={`mt-3 ${appDisplayClass}`}>
-        {formatPortfolioCurrency(snapshot.portfolioValue)}
+        {snapshot.portfolioValueAvailable
+          ? formatPortfolioCurrency(snapshot.portfolioValue)
+          : "Unavailable"}
       </p>
+      {snapshot.portfolioValueCoverageMessage ? (
+        <p className={`mt-2 ${appDashboardDarkMetaClass}`}>
+          {snapshot.portfolioValueCoverageMessage}
+        </p>
+      ) : null}
       <p
         className={`mt-3 ${appDashboardDarkBodyMediumClass} ${sinceInceptionToneClass(snapshot)}`}
       >

@@ -15,6 +15,8 @@ import type { GoalProgress } from "@/lib/services/goals/goalProgressEngine";
 
 type HomeSummary = {
   totalValue: number;
+  totalValueAvailable?: boolean;
+  totalValueCoverageMessage?: string | null;
   todayChange: number;
   todayPercent: number;
   hasDailyData: boolean;
@@ -86,7 +88,12 @@ export function HomePageHeroStats({
     <div className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
       <HeroStat
         label="Portfolio value"
-        value={formatPortfolioCurrency(summary.totalValue)}
+        value={
+          summary.totalValueAvailable === false
+            ? "Unavailable"
+            : formatPortfolioCurrency(summary.totalValue)
+        }
+        detail={summary.totalValueCoverageMessage ?? undefined}
       />
       <HeroStat
         label={summary.dailyMoveHeroLabel}

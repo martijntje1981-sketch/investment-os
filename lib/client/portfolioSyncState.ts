@@ -31,6 +31,7 @@ import {
   isVerifiedListingHolding,
   resolveVerifiedListingPriceFromCache,
 } from "@/lib/client/portfolioPricing";
+import { migrateLegacyCryptoHoldings } from "@/lib/services/portfolio/legacyCryptoHoldingMigration";
 import {
   portfolioContentFingerprint,
   portfoliosContentMatch,
@@ -323,9 +324,12 @@ export function applyRemoteSnapshotToLocalCache(
     (holding) => holding.assetType === "crypto" && !remoteIds.has(holding.id),
   );
 
+  const migratedMerged = migrateLegacyCryptoHoldings(mergedHoldings);
+  const migratedPreserved = migrateLegacyCryptoHoldings(preservedLocalCrypto);
+
   const holdings = applyCachedPrices(userSub, [
-    ...mergedHoldings,
-    ...preservedLocalCrypto,
+    ...migratedMerged.holdings,
+    ...migratedPreserved.holdings,
   ]);
 
   const validation = validatePortfolioBeforeSave(holdings);

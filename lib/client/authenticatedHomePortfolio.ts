@@ -11,7 +11,7 @@ import {
   type DailyPerformer,
 } from "@/lib/client/dailyPerformance";
 import { loadUserPortfolioHoldings } from "@/lib/client/portfolioPricing";
-import { getHoldingMarketValue } from "@/lib/client/portfolioAnalysis";
+import { resolvePortfolioTotalValueAvailability } from "@/lib/client/portfolioValuationAvailability";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
 export function readAuthenticatedHomePortfolio(
@@ -37,13 +37,13 @@ export function summarizeAuthenticatedHomePortfolio(
 ) {
   const daily = summarizeDailyPerformance(holdings);
   const movePeriods = summarizeDailyMovePeriods(daily.performers);
-  const totalValue = holdings.reduce(
-    (sum, holding) => sum + (getHoldingMarketValue(holding) ?? 0),
-    0,
-  );
+  const totalAvailability = resolvePortfolioTotalValueAvailability(holdings);
 
   return {
-    totalValue,
+    totalValue: totalAvailability.totalValue,
+    totalValueAvailable: totalAvailability.isAvailable,
+    totalValuePartial: totalAvailability.isPartial,
+    totalValueCoverageMessage: totalAvailability.coverageMessage,
     todayChange: daily.todayChange,
     todayPercent: daily.todayPercent,
     hasDailyData: daily.hasDailyData,

@@ -29,6 +29,9 @@ export type DashboardMover = {
 
 export type DashboardSummary = {
   portfolioValue: number;
+  portfolioValueAvailable: boolean;
+  portfolioValuePartial: boolean;
+  portfolioValueCoverageMessage: string | null;
   investedCapital: number;
   totalReturn: number;
   totalReturnPercent: number;
@@ -101,7 +104,10 @@ export function buildDashboardSummary(
     goal && hasSavedGoal ? isGoalAchieved(snapshot.totalValue, goal) : false;
 
   return {
-    portfolioValue: snapshot.totalValue,
+    portfolioValue: performance.totalValueAvailable ? performance.totalValue : 0,
+    portfolioValueAvailable: performance.totalValueAvailable,
+    portfolioValuePartial: performance.totalValuePartial,
+    portfolioValueCoverageMessage: performance.totalValueCoverageMessage,
     investedCapital,
     totalReturn,
     totalReturnPercent,

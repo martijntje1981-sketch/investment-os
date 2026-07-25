@@ -2,6 +2,7 @@ import {
   buildPortfolioAnalysis,
   getHoldingMarketValue,
 } from "@/lib/client/portfolioAnalysis";
+import { resolvePortfolioTotalValueAvailability } from "@/lib/client/portfolioValuationAvailability";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
 export function isValidMarketPrice(price: unknown): price is number {
@@ -39,6 +40,9 @@ export function mergeRemoteMarketPrice(
 
 export type PortfolioPerformanceSnapshot = {
   totalValue: number;
+  totalValueAvailable: boolean;
+  totalValuePartial: boolean;
+  totalValueCoverageMessage: string | null;
   investedCapital: number;
   totalReturn: number;
   totalReturnPercent: number;
@@ -91,8 +95,13 @@ export function buildPortfolioPerformance(
     investmentHoldings.length === 0 ||
     (investedCapital > 0 && !hasUnvaluedInvestments);
 
+  const totalAvailability = resolvePortfolioTotalValueAvailability(holdings);
+
   return {
-    totalValue: analysis.totalValue,
+    totalValue: totalAvailability.totalValue,
+    totalValueAvailable: totalAvailability.isAvailable,
+    totalValuePartial: totalAvailability.isPartial,
+    totalValueCoverageMessage: totalAvailability.coverageMessage,
     investedCapital,
     totalReturn,
     totalReturnPercent,

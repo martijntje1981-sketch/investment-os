@@ -14,6 +14,7 @@ import {
   portfolioStorageKey,
 } from "@/lib/client/portfolioStorageKeys";
 import { isCryptoHolding } from "@/lib/services/portfolio/cryptoHolding";
+import { migrateLegacyCryptoHolding } from "@/lib/services/portfolio/legacyCryptoHoldingMigration";
 import { normalizeCryptoPairCurrency } from "@/lib/types/cryptoHolding";
 
 function normalizeAssetType(
@@ -42,18 +43,25 @@ function normalizeStoredHoldings(
         assetType,
       };
 
-      if (isCryptoHolding(normalized)) {
+      const migrated = migrateLegacyCryptoHolding({
+        ...normalized,
+        pairCurrency: holding.pairCurrency
+          ? normalizeCryptoPairCurrency(String(holding.pairCurrency))
+          : normalized.pairCurrency,
+      });
+
+      if (isCryptoHolding(migrated.holding)) {
         return {
-          ...normalized,
-          pairCurrency: holding.pairCurrency
-            ? normalizeCryptoPairCurrency(String(holding.pairCurrency))
+          ...migrated.holding,
+          pairCurrency: migrated.holding.pairCurrency
+            ? normalizeCryptoPairCurrency(String(migrated.holding.pairCurrency))
             : "EUR",
           portfolioCurrency: "EUR",
           currency: "EUR",
         };
       }
 
-      return normalized;
+      return migrated.holding;
     });
 }
 

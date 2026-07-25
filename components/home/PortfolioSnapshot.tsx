@@ -20,6 +20,8 @@ type Holding = {
 
 type PortfolioSnapshotProps = {
   totalValue: number;
+  totalValueAvailable?: boolean;
+  totalValueCoverageMessage?: string | null;
   todayChange: number;
   todayPercent: number;
   hasDailyData?: boolean;
@@ -145,6 +147,8 @@ function MoverRow({
 
 export function PortfolioSnapshot({
   totalValue,
+  totalValueAvailable = true,
+  totalValueCoverageMessage = null,
   todayChange,
   todayPercent,
   hasDailyData = true,
@@ -189,8 +193,11 @@ export function PortfolioSnapshot({
             Total portfolio value
           </p>
           <p className="mt-2 text-4xl font-black tracking-[-0.04em] text-slate-950 sm:text-5xl">
-            {formatEuro(totalValue)}
+            {totalValueAvailable ? formatEuro(totalValue) : "Unavailable"}
           </p>
+          {totalValueCoverageMessage ? (
+            <p className="mt-2 text-sm text-slate-500">{totalValueCoverageMessage}</p>
+          ) : null}
         </div>
 
         <div className="grid gap-px bg-slate-100 sm:grid-cols-2">

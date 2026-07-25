@@ -70,8 +70,15 @@ export function DashboardPortfolioHero({ summary }: { summary: DashboardSummary 
           Portfolio value
         </p>
         <p className={`mt-2 ${appDisplayClass}`}>
-          {formatPortfolioCurrency(summary.portfolioValue)}
+          {summary.portfolioValueAvailable
+            ? formatPortfolioCurrency(summary.portfolioValue)
+            : "Unavailable"}
         </p>
+        {summary.portfolioValueCoverageMessage ? (
+          <p className={`mt-2 ${appSectionMetaClass} text-slate-500`}>
+            {summary.portfolioValueCoverageMessage}
+          </p>
+        ) : null}
         <p className={`mt-3 ${appSectionMetaClass} text-slate-500`}>
           Last update: {formatMarketUpdateTime(summary.lastUpdatedAt)}
         </p>

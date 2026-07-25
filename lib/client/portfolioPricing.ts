@@ -44,6 +44,15 @@ import {
 } from "@/lib/services/instruments/quoteCurrency";
 import { prepareManualHoldingForSave } from "@/lib/services/portfolio/holdingValidation";
 import {
+  diagnoseQuoteCompatibility,
+  isValidApplicableQuote,
+  resolveHoldingTradingPair,
+} from "@/lib/client/cryptoQuoteCompatibility";
+import {
+  migrateLegacyCryptoHoldings,
+} from "@/lib/services/portfolio/legacyCryptoHoldingMigration";
+import { normalizeTradingPairKey } from "@/lib/services/portfolio/cryptoPairIdentity";
+import {
   enrichHoldingsWithVerifiedMappings,
   holdingsChangedByVerifiedEnrichment,
 } from "@/lib/services/portfolio/enrichHoldingsWithVerifiedMappings";
@@ -97,7 +106,8 @@ export function loadUserPortfolioHoldings(
 ): StoredPortfolioHolding[] {
   const raw = readPortfolioFromStorage(userSub);
   const enriched = enrichHoldingsWithVerifiedMappings(raw);
-  const withQuoteCurrency = backfillListingQuoteCurrencies(enriched);
+  const migrated = migrateLegacyCryptoHoldings(enriched);
+  const withQuoteCurrency = backfillListingQuoteCurrencies(migrated.holdings);
 
   const providerSymbolChanges = raw
     .map((before, index) => ({
@@ -115,6 +125,7 @@ export function loadUserPortfolioHoldings(
 
   if (
     holdingsChangedByVerifiedEnrichment(raw, enriched) ||
+    migrated.migratedCount > 0 ||
     listingQuoteCurrenciesChanged(enriched, withQuoteCurrency)
   ) {
     writePortfolioToStorage(userSub, withQuoteCurrency);
@@ -382,47 +393,7 @@ export function isQuoteCompatibleWithHolding(
   >,
   quote: PriceApiQuote,
 ): boolean {
-  if (holding.assetType === "crypto" || quote.assetType === "crypto") {
-    const holdingPair =
-      holding.tradingPair ??
-      (holding.pairCurrency
-        ? `${holding.symbol.trim().toUpperCase()}/${holding.pairCurrency.trim().toUpperCase()}`
-        : null);
-    const quotePair = quote.normalizedPair ?? null;
-    if (holdingPair && quotePair) {
-      return holdingPair.trim().toUpperCase() === quotePair.trim().toUpperCase();
-    }
-    if (holding.pairCurrency?.trim() || quotePair) {
-      return false;
-    }
-    return (
-      normalizePortfolioSymbol(holding.symbol) ===
-      normalizePortfolioSymbol(quote.symbol)
-    );
-  }
-
-  const holdingProvider = holding.providerSymbol?.trim()
-    ? normalizePortfolioSymbol(holding.providerSymbol)
-    : null;
-  const quoteProvider = resolveQuoteProviderSymbol(quote);
-
-  if (holdingProvider) {
-    if (!quoteProvider) {
-      return false;
-    }
-
-    return holdingProvider === quoteProvider;
-  }
-
-  if (quoteProvider) {
-    const holdingTicker = normalizePortfolioSymbol(holding.symbol);
-    const quoteTicker = normalizePortfolioSymbol(quote.symbol);
-    if (quoteTicker !== holdingTicker) {
-      return false;
-    }
-  }
-
-  return true;
+  return diagnoseQuoteCompatibility(holding, quote).compatible;
 }
 
 /** Indexes quotes by symbol, providerSymbol, eodhdSymbol, ISIN, and crypto pair. */
@@ -450,6 +421,10 @@ export function buildPriceLookup(
     }
 
     if (quote.normalizedPair) {
+      const normalizedPair = normalizeTradingPairKey(quote.normalizedPair);
+      if (normalizedPair) {
+        lookup.set(normalizedPair, quote);
+      }
       lookup.set(quote.normalizedPair.trim().toUpperCase(), quote);
     }
   }
@@ -521,6 +496,10 @@ function applyQuoteToHolding<T extends StoredPortfolioHolding>(
   holding: T,
   quote: PriceApiQuote,
 ): T {
+  if (!isValidApplicableQuote(holding, quote)) {
+    return holding;
+  }
+
   const normalized = normalizePriceApiQuote(quote);
 
   if (holding.assetType === "crypto" || quote.assetType === "crypto") {
@@ -612,6 +591,10 @@ export function holdingLookupKeys(
   const keys: string[] = [];
 
   if (holding.assetType === "crypto") {
+    const normalizedPair = resolveHoldingTradingPair(holding);
+    if (normalizedPair) {
+      keys.push(normalizedPair);
+    }
     if (holding.tradingPair?.trim()) {
       keys.push(holding.tradingPair.trim().toUpperCase());
     }
@@ -686,10 +669,17 @@ export function applyPricesToHoldings<T extends StoredPortfolioHolding>(
         providerSymbol: holding.providerSymbol,
         isin: holding.isin,
       });
+      const hasCryptoPairPrice =
+        holding.assetType === "crypto" &&
+        typeof holding.currentPairPrice === "number" &&
+        holding.currentPairPrice > 0 &&
+        typeof holding.currentPrice === "number" &&
+        holding.currentPrice > 0;
       if (
-        holding.providerSymbol &&
-        Number.isFinite(holding.currentPrice) &&
-        holding.currentPrice > 0
+        hasCryptoPairPrice ||
+        (holding.providerSymbol &&
+          Number.isFinite(holding.currentPrice) &&
+          holding.currentPrice > 0)
       ) {
         return {
           ...holding,
@@ -699,6 +689,27 @@ export function applyPricesToHoldings<T extends StoredPortfolioHolding>(
       return clearMissingDailyFields
         ? clearHoldingDailyPerformance(holding)
         : holding;
+    }
+
+    if (!isValidApplicableQuote(holding, quote)) {
+      const hasCryptoPairPrice =
+        holding.assetType === "crypto" &&
+        typeof holding.currentPairPrice === "number" &&
+        holding.currentPairPrice > 0 &&
+        typeof holding.currentPrice === "number" &&
+        holding.currentPrice > 0;
+      if (
+        hasCryptoPairPrice ||
+        (holding.providerSymbol &&
+          Number.isFinite(holding.currentPrice) &&
+          holding.currentPrice > 0)
+      ) {
+        return {
+          ...holding,
+          priceDataStatus: "stale",
+        };
+      }
+      return holding;
     }
 
     return applyQuoteToHolding(holding, quote);

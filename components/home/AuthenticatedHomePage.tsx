@@ -139,6 +139,8 @@ export default function AuthenticatedHomePage() {
         ) : (
           <PortfolioSnapshot
             totalValue={summary.totalValue}
+            totalValueAvailable={summary.totalValueAvailable}
+            totalValueCoverageMessage={summary.totalValueCoverageMessage}
             todayChange={summary.todayChange}
             todayPercent={summary.todayPercent}
             hasDailyData={summary.hasDailyData}

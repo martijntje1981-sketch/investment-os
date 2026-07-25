@@ -11,6 +11,7 @@ import {
   buildCryptoHoldingMetadata,
   parseCryptoHoldingMetadata,
 } from "@/lib/services/portfolio/cryptoDbMetadata";
+import { migrateLegacyCryptoHolding } from "@/lib/services/portfolio/legacyCryptoHoldingMigration";
 import {
   applyInvestmentMetadataToStoredHolding,
   buildInvestmentHoldingMetadata,
@@ -136,7 +137,9 @@ export function mapDbHoldingToStored(
       updatedAt: row.updated_at,
     };
 
-    return applyCryptoMetadataToStoredHolding(base, metadata);
+    return migrateLegacyCryptoHolding(
+      applyCryptoMetadataToStoredHolding(base, metadata),
+    ).holding;
   }
 
   const mapping = readMapping(row);
@@ -411,57 +414,59 @@ export function sanitizeLocalHoldings(
           ? holding.tradingPair.trim()
           : `${symbol}/${pairCurrency}`;
 
-      normalized.push({
-        ...holding,
-        id: String(holding.id ?? crypto.randomUUID()),
-        symbol,
-        name: String(holding.name ?? symbol).trim() || symbol,
-        quantity,
-        purchasePrice,
-        currentPrice: 0,
-        currency: "EUR",
-        assetType: "crypto",
-        portfolioCurrency: "EUR",
-        pairCurrency,
-        pricingStatus: holding.pricingStatus ?? "needs_review",
-        tradingPair,
-        platform,
-        providerAssetId:
-          typeof holding.providerAssetId === "string" &&
-          holding.providerAssetId.trim().length > 0
-            ? holding.providerAssetId.trim()
-            : null,
-        providerId:
-          typeof holding.providerId === "string" &&
-          holding.providerId.trim().length > 0
-            ? holding.providerId.trim()
-            : null,
-        providerName:
-          typeof holding.providerName === "string" &&
-          holding.providerName.trim().length > 0
-            ? holding.providerName.trim()
-            : null,
-        priceUpdatedAt:
-          typeof holding.priceUpdatedAt === "string" &&
-          holding.priceUpdatedAt.trim().length > 0
-            ? holding.priceUpdatedAt.trim()
-            : null,
-        currentManualPrice:
-          holding.currentManualPrice != null &&
-          Number.isFinite(Number(holding.currentManualPrice)) &&
-          Number(holding.currentManualPrice) > 0
-            ? Number(holding.currentManualPrice)
-            : null,
-        manualCurrentValue:
-          holding.manualCurrentValue != null &&
-          Number.isFinite(Number(holding.manualCurrentValue)) &&
-          Number(holding.manualCurrentValue) > 0
-            ? Number(holding.manualCurrentValue)
-            : null,
-        createdAt: holding.createdAt ?? new Date().toISOString(),
-        updatedAt: holding.updatedAt ?? new Date().toISOString(),
-        priceDataStatus: "unavailable",
-      });
+      normalized.push(
+        migrateLegacyCryptoHolding({
+          ...holding,
+          id: String(holding.id ?? crypto.randomUUID()),
+          symbol,
+          name: String(holding.name ?? symbol).trim() || symbol,
+          quantity,
+          purchasePrice,
+          currentPrice: 0,
+          currency: "EUR",
+          assetType: "crypto",
+          portfolioCurrency: "EUR",
+          pairCurrency,
+          pricingStatus: holding.pricingStatus ?? "needs_review",
+          tradingPair,
+          platform,
+          providerAssetId:
+            typeof holding.providerAssetId === "string" &&
+            holding.providerAssetId.trim().length > 0
+              ? holding.providerAssetId.trim()
+              : null,
+          providerId:
+            typeof holding.providerId === "string" &&
+            holding.providerId.trim().length > 0
+              ? holding.providerId.trim()
+              : null,
+          providerName:
+            typeof holding.providerName === "string" &&
+            holding.providerName.trim().length > 0
+              ? holding.providerName.trim()
+              : null,
+          priceUpdatedAt:
+            typeof holding.priceUpdatedAt === "string" &&
+            holding.priceUpdatedAt.trim().length > 0
+              ? holding.priceUpdatedAt.trim()
+              : null,
+          currentManualPrice:
+            holding.currentManualPrice != null &&
+            Number.isFinite(Number(holding.currentManualPrice)) &&
+            Number(holding.currentManualPrice) > 0
+              ? Number(holding.currentManualPrice)
+              : null,
+          manualCurrentValue:
+            holding.manualCurrentValue != null &&
+            Number.isFinite(Number(holding.manualCurrentValue)) &&
+            Number(holding.manualCurrentValue) > 0
+              ? Number(holding.manualCurrentValue)
+              : null,
+          createdAt: holding.createdAt ?? new Date().toISOString(),
+          updatedAt: holding.updatedAt ?? new Date().toISOString(),
+          priceDataStatus: "unavailable",
+        }).holding,
+      );
       continue;
     }
 

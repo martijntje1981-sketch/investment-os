@@ -34,6 +34,9 @@ function readProjectFile(relativePath: string): string {
 function emptyDashboardSummary(): DashboardSummary {
   return {
     portfolioValue: 0,
+    portfolioValueAvailable: false,
+    portfolioValuePartial: false,
+    portfolioValueCoverageMessage: null,
     investedCapital: 0,
     totalReturn: 0,
     totalReturnPercent: 0,
@@ -46,6 +49,8 @@ function emptyDashboardSummary(): DashboardSummary {
     eligibleMarketHoldingCount: 0,
     performanceCoverageComplete: false,
     dailyPerformanceCoverageMessage: null,
+    dailyMoveHeroLabel: "Today's change",
+    dailyMovePeriodDetail: null,
     bestMover: null,
     worstMover: null,
     heroTopMover: null,
