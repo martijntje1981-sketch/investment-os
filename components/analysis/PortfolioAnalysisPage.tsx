@@ -85,9 +85,10 @@ export default function PortfolioAnalysisPage() {
     recoveryOffer,
     recoverPortfolio,
     dismissRecovery,
+    saveHoldings,
   } = useUserPortfolio();
 
-  const { snapshot: dividendSnapshot, isLoading: dividendsLoading } =
+  const { quotes, isLoading: dividendsLoading } =
     usePortfolioDividends(holdings, userSub, holdings.length > 0);
 
   const analysis = useMemo(
@@ -279,8 +280,18 @@ export default function PortfolioAnalysisPage() {
               </section>
 
               <DividendIntelligenceSection
-                snapshot={dividendSnapshot}
+                holdings={holdings}
+                quotes={quotes}
                 isLoading={dividendsLoading}
+                onPolicyOverrideChange={(holdingId, value) => {
+                  saveHoldings(
+                    holdings.map((holding) =>
+                      holding.id === holdingId
+                        ? { ...holding, distributionPolicyUserOverride: value }
+                        : holding,
+                    ),
+                  );
+                }}
               />
 
               <section className="mt-7 grid gap-4 lg:grid-cols-2">

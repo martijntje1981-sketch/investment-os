@@ -32,6 +32,31 @@ function pickUpcomingRow(
   return upcoming[0] ?? null;
 }
 
+function extractVerifiedCashDistributionEvent(
+  rows: EodhdCalendarDividendRow[],
+  currency: string | null,
+): { date: string; amount: number; currency: string } | null {
+  const valid = rows.filter((row) => {
+    const amount = Number(row.value);
+    return row.date && Number.isFinite(amount) && amount > 0;
+  });
+
+  if (valid.length === 0) return null;
+
+  const best = [...valid].sort((a, b) =>
+    String(a.date).localeCompare(String(b.date)),
+  )[0]!;
+
+  return {
+    date: String(best.date),
+    amount: Number(best.value),
+    currency:
+      best.currency?.trim().toUpperCase() ||
+      currency?.trim().toUpperCase() ||
+      "EUR",
+  };
+}
+
 function estimatePaymentAmount(
   forwardRate: number | null,
   calendarValue: number | null | undefined,
@@ -79,6 +104,8 @@ export async function resolveDividendQuote(
     frequency: "unknown",
     currency: null,
     updatedAt: now,
+    verifiedCashDistributionEvent: null,
+    providerUnavailable: false,
   };
 
   try {
@@ -96,6 +123,10 @@ export async function resolveDividendQuote(
         : inferFrequencyFromCalendarRows(calendarRows);
 
     const upcoming = pickUpcomingRow(calendarRows);
+    const verifiedCashDistributionEvent = extractVerifiedCashDistributionEvent(
+      calendarRows,
+      currency,
+    );
     const perSharePayment = estimatePaymentAmount(
       forwardRate,
       upcoming?.value,
@@ -123,7 +154,12 @@ export async function resolveDividendQuote(
         (perSharePayment && perSharePayment > 0),
     );
 
-    if (!paysDividends) return empty;
+    if (!paysDividends) {
+      return {
+        ...empty,
+        verifiedCashDistributionEvent,
+      };
+    }
 
     const fx = input.fxRateToEur ?? 1;
     const estimatedAnnualDividendEur = toEur(
@@ -148,8 +184,13 @@ export async function resolveDividendQuote(
       frequency,
       currency,
       updatedAt: now,
+      verifiedCashDistributionEvent,
+      providerUnavailable: false,
     };
   } catch {
-    return empty;
+    return {
+      ...empty,
+      providerUnavailable: true,
+    };
   }
 }

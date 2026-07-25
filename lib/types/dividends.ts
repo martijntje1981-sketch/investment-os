@@ -22,6 +22,13 @@ export type DividendApiQuote = {
   frequency: DividendFrequency;
   currency: string | null;
   updatedAt: string;
+  /** Verified calendar event with positive cash amount — used for policy classification only. */
+  verifiedCashDistributionEvent?: {
+    date: string;
+    amount: number;
+    currency: string;
+  } | null;
+  providerUnavailable?: boolean;
 };
 
 export type DividendAllocationItem = {

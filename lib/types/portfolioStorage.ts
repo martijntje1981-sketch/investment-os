@@ -74,6 +74,8 @@ export type StoredPortfolioHolding = {
   providerDisplayName?: string | null;
   fetchedAt?: string | null;
   createdAt?: string;
+  /** User-confirmed distribution policy override for this exact holding. */
+  distributionPolicyUserOverride?: import("@/lib/types/distributionPolicy").DistributionPolicyUserOverride;
 };
 
 /** Payload sent to POST /api/prices and POST /api/briefing. */

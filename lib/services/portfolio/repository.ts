@@ -19,6 +19,7 @@ import {
   mapStoredMappingToDbInsert,
 } from "@/lib/services/portfolio/mappers";
 import { buildCryptoHoldingMetadata } from "@/lib/services/portfolio/cryptoDbMetadata";
+import { buildInvestmentHoldingMetadata } from "@/lib/services/portfolio/investmentHoldingMetadata";
 import { isCryptoHolding } from "@/lib/services/portfolio/cryptoHolding";
 import type {
   DbGoalRow,
@@ -347,6 +348,11 @@ export function createPortfolioRepository(supabase: SupabaseClient) {
 
     if (isCryptoHolding(holding)) {
       payload.metadata = buildCryptoHoldingMetadata(holding);
+    } else if (holding.assetType !== "cash") {
+      const investmentMetadata = buildInvestmentHoldingMetadata(holding);
+      if (investmentMetadata) {
+        payload.metadata = investmentMetadata;
+      }
     }
 
     const { error: updateError } = await supabase

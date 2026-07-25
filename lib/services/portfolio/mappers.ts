@@ -11,6 +11,11 @@ import {
   buildCryptoHoldingMetadata,
   parseCryptoHoldingMetadata,
 } from "@/lib/services/portfolio/cryptoDbMetadata";
+import {
+  applyInvestmentMetadataToStoredHolding,
+  buildInvestmentHoldingMetadata,
+  parseInvestmentHoldingMetadata,
+} from "@/lib/services/portfolio/investmentHoldingMetadata";
 import { normalizeCryptoPairCurrency } from "@/lib/types/cryptoHolding";
 import { isValidMarketPrice } from "@/lib/client/portfolioPerformance";
 import {
@@ -138,8 +143,9 @@ export function mapDbHoldingToStored(
   const assetType = row.asset_type === "cash" ? "cash" : "investment";
   const quantity = toNumber(row.quantity);
   const purchasePrice = toNumber(row.average_cost);
+  const investmentMetadata = parseInvestmentHoldingMetadata(row.metadata);
 
-  return {
+  const base: StoredPortfolioHolding = {
     id: localId ?? row.id,
     symbol:
       assetType === "cash"
@@ -169,6 +175,12 @@ export function mapDbHoldingToStored(
       : [],
     updatedAt: row.updated_at,
   };
+
+  if (investmentMetadata) {
+    return applyInvestmentMetadataToStoredHolding(base, investmentMetadata);
+  }
+
+  return base;
 }
 
 export function mapDbGoalToStored(row: DbGoalRow | null): GoalSettings | null {
@@ -227,6 +239,7 @@ export function mapStoredHoldingToDbInsert(
   }
 
   const assetType = holding.assetType === "cash" ? "cash" : "investment";
+  const investmentMetadata = buildInvestmentHoldingMetadata(holding);
 
   return {
     id: holdingId,
@@ -243,6 +256,7 @@ export function mapStoredHoldingToDbInsert(
     currency: String(holding.currency ?? "EUR").toUpperCase(),
     sort_order: sortOrder,
     deleted_at: null,
+    ...(investmentMetadata ? { metadata: investmentMetadata } : {}),
   };
 }
 

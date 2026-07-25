@@ -1,165 +1,148 @@
-import { Coins, Sparkles } from "lucide-react";
+"use client";
 
+import { useMemo, useState } from "react";
+import { Coins } from "lucide-react";
+
+import { DistributionPolicyHoldingRow } from "@/components/analysis/dividendPolicy/DistributionPolicyHoldingRow";
 import {
-  appAnalysisDarkBodyClass,
-  appAnalysisDarkHeaderCopyClass,
-  appDashboardDarkMetaClass,
+  appSectionBodyClass,
   appSectionLabelClass,
+  appSectionMetaClass,
   appCardValueClass,
 } from "@/components/layout/appSurface";
 import {
   formatPortfolioCurrency,
   formatPortfolioPercent,
 } from "@/lib/client/portfolioAnalysis";
-import type { PortfolioDividendSnapshot } from "@/lib/types/dividends";
+import { buildDistributionPolicyViewModel } from "@/lib/client/dividendPolicy/buildDividendPolicyViewModel";
+import type { DividendApiQuote } from "@/lib/types/dividends";
+import type {
+  DistributionPolicyUserOverride,
+  PortfolioDistributionPolicySnapshot,
+} from "@/lib/types/distributionPolicy";
+import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
 export function DividendIntelligenceSection({
-  snapshot,
+  holdings,
+  quotes,
   isLoading = false,
+  onPolicyOverrideChange,
 }: {
-  snapshot: PortfolioDividendSnapshot;
+  holdings: StoredPortfolioHolding[];
+  quotes: DividendApiQuote[];
   isLoading?: boolean;
+  onPolicyOverrideChange?: (
+    holdingId: string,
+    value: DistributionPolicyUserOverride,
+  ) => void;
 }) {
+  const viewModel = useMemo(
+    () => buildDistributionPolicyViewModel({ holdings, quotes }),
+    [holdings, quotes],
+  );
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
   return (
     <section className="mt-7 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
       <div className="border-b border-slate-200 bg-gradient-to-br from-emerald-700 to-slate-950 px-5 py-6 text-white sm:px-8">
-        <div className={`inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 ${appSectionLabelClass} text-emerald-100`}>
-          <Coins className="h-3.5 w-3.5" />
+        <div
+          className={`inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 ${appSectionLabelClass} text-emerald-100`}
+        >
+          <Coins className="h-3.5 w-3.5" aria-hidden="true" />
           Dividend intelligence
         </div>
         <h2 className={`mt-4 ${appCardValueClass} text-white`}>
           {isLoading
-            ? "Loading dividend insights…"
-            : snapshot.hasDividendData
-              ? formatPortfolioCurrency(snapshot.estimatedAnnualIncomeEur)
-              : "No dividend income detected"}
+            ? "Loading distribution policy…"
+            : "Distribution policy classification"}
         </h2>
-        <p className={`mt-3 max-w-2xl ${appAnalysisDarkHeaderCopyClass}`}>
-          {snapshot.hasDividendData
-            ? "Estimated passive income based on available dividend data for your holdings."
-            : "Your current holdings do not show meaningful dividend income in available market data."}
+        <p className={`mt-3 max-w-2xl text-sm leading-6 text-emerald-50/95`}>
+          Confirmed first, unknown by default. This section classifies whether holdings
+          pay cash distributions or reinvest internally. It does not estimate income.
         </p>
       </div>
 
-      {snapshot.hasDividendData && !isLoading ? (
-        <div className="space-y-6 p-5 sm:p-8">
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            <Metric label="Portfolio average yield" value={formatPortfolioPercent(snapshot.averageYieldPercent)} />
-            <Metric
-              label="Highest yielding holding"
-              value={
-                snapshot.highestYield
-                  ? `${snapshot.highestYield.symbol} · ${formatPortfolioPercent(snapshot.highestYield.yieldPercent)}`
-                  : "—"
-              }
-            />
-            <Metric
-              label="Largest contributor"
-              value={
-                snapshot.largestContributor
-                  ? `${snapshot.largestContributor.symbol} · ${formatPortfolioCurrency(snapshot.largestContributor.incomeEur)}`
-                  : "—"
-              }
-            />
-            <Metric
-              label="Income concentration"
-              value={formatPortfolioPercent(snapshot.concentrationSharePercent)}
-            />
-            <Metric
-              label="Income diversification"
-              value={diversificationLabel(snapshot.incomeDiversificationLabel)}
-            />
-            <Metric
-              label="Next payment"
-              value={
-                snapshot.nextPayment
-                  ? `${formatPortfolioCurrency(snapshot.nextPayment.amountEur)} · ${snapshot.nextPayment.symbol}`
-                  : "—"
-              }
-            />
+      <div className="space-y-6 p-5 sm:p-8">
+        <PolicySummary summary={viewModel.summary} isLoading={isLoading} />
+
+        {viewModel.holdings.length === 0 ? (
+          <p className={appSectionMetaClass}>
+            Add investment holdings to review distribution policy classification.
+          </p>
+        ) : (
+          <div className="space-y-4">
+            {viewModel.holdings.map((item) => (
+              <DistributionPolicyHoldingRow
+                key={item.holding.id}
+                item={item}
+                expanded={expandedId === item.holding.id}
+                onToggle={() =>
+                  setExpandedId((current) =>
+                    current === item.holding.id ? null : item.holding.id,
+                  )
+                }
+                canEdit={Boolean(onPolicyOverrideChange)}
+                onPolicyOverrideChange={
+                  onPolicyOverrideChange
+                    ? (value) => onPolicyOverrideChange(item.holding.id, value)
+                    : undefined
+                }
+              />
+            ))}
           </div>
+        )}
 
-          {snapshot.allocation.length > 0 ? (
-            <div>
-              <p className={appSectionLabelClass}>
-                Dividend allocation
-              </p>
-              <div className="mt-4 space-y-3">
-                {snapshot.allocation.slice(0, 6).map((item) => (
-                  <div key={item.symbol}>
-                    <div className="mb-2 flex items-center justify-between gap-3 text-sm">
-                      <div className="min-w-0">
-                        <p className="truncate font-black">{item.symbol}</p>
-                        <p className="truncate text-slate-500">{item.name}</p>
-                      </div>
-                      <div className="shrink-0 text-right">
-                        <p className="font-bold">
-                          {formatPortfolioCurrency(item.incomeEur)}
-                        </p>
-                        <p className="text-slate-500">
-                          {formatPortfolioPercent(item.sharePercent)}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="h-2 overflow-hidden rounded-full bg-slate-100">
-                      <div
-                        className="h-full rounded-full bg-emerald-600"
-                        style={{ width: `${Math.min(item.sharePercent, 100)}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : null}
-
-          {snapshot.observations.length > 0 ? (
-            <div className="rounded-[24px] bg-slate-950 px-5 py-5 text-white sm:px-6">
-              <div className="flex items-start gap-3">
-                <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" />
-                <div>
-                  <p className={`text-xs font-black uppercase tracking-[0.14em] ${appDashboardDarkMetaClass}`}>
-                    Observations
-                  </p>
-                  <ul className={`mt-3 space-y-2 ${appAnalysisDarkBodyClass}`}>
-                    {snapshot.observations.map((observation) => (
-                      <li key={observation}>{observation}</li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            </div>
-          ) : null}
-        </div>
-      ) : null}
+        <p className={`rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 ${appSectionBodyClass}`}>
+          Distribution classifications are based on verified provider data, reviewed
+          instrument metadata or your explicit confirmation. Unknown means insufficient
+          evidence — not a guarantee that no distributions occur.
+        </p>
+      </div>
     </section>
   );
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
+function PolicySummary({
+  summary,
+  isLoading,
+}: {
+  summary: PortfolioDistributionPolicySnapshot["summary"];
+  isLoading: boolean;
+}) {
+  const tiles = [
+    { label: "Cash distributing", value: summary.distributing },
+    { label: "Accumulating / reinvesting", value: summary.accumulating },
+    { label: "Unknown", value: summary.unknown },
+    { label: "Not applicable", value: summary.notApplicable },
+  ];
+
   return (
-    <div className="rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-4">
-      <p className={appSectionLabelClass}>
-        {label}
-      </p>
-      <p className={`mt-2 ${appCardValueClass}`}>{value}</p>
+    <div>
+      <p className={appSectionLabelClass}>Portfolio summary</p>
+      <div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {tiles.map((tile) => (
+          <div
+            key={tile.label}
+            className="min-w-0 rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-3"
+          >
+            <p className={`${appSectionLabelClass} break-words`}>{tile.label}</p>
+            <p className={`mt-1 ${appCardValueClass}`}>
+              {isLoading ? "…" : tile.value}
+            </p>
+          </div>
+        ))}
+      </div>
+      {!isLoading && summary.conflicted > 0 ? (
+        <p className={`mt-3 ${appSectionMetaClass} text-amber-800`}>
+          {summary.conflicted} holding
+          {summary.conflicted === 1 ? "" : "s"} with conflicting distribution information.
+        </p>
+      ) : null}
     </div>
   );
 }
 
-function diversificationLabel(
-  value: PortfolioDividendSnapshot["incomeDiversificationLabel"],
-): string {
-  switch (value) {
-    case "well_diversified":
-      return "Well diversified";
-    case "moderate":
-      return "Moderately concentrated";
-    case "concentrated":
-      return "Concentrated";
-  }
-}
-
+/** Legacy per-holding dividend stats for portfolio list pages. */
 export function HoldingDividendMeta({
   yieldPercent,
   annualIncomeEur,
@@ -210,9 +193,7 @@ export function HoldingDividendMeta({
 function MiniStat({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className={`${appSectionLabelClass} text-emerald-800/80`}>
-        {label}
-      </p>
+      <p className={`${appSectionLabelClass} text-emerald-800/80`}>{label}</p>
       <p className="mt-0.5 text-sm font-bold text-emerald-950">{value}</p>
     </div>
   );
