@@ -67,7 +67,7 @@ describe("dashboardInsight", () => {
     const emptyInsight = buildDashboardInsight(
       buildDashboardSummary([], null, false),
     );
-    expect(emptyInsight.toLowerCase()).toContain("upload");
+    expect(emptyInsight.toLowerCase()).toMatch(/manual|import|spreadsheet/);
     expect(emptyInsight.split(/\s+/).length).toBeLessThanOrEqual(80);
 
     const liveInsight = buildDashboardInsight(

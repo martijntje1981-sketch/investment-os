@@ -95,8 +95,8 @@ export function buildDashboardInsightSections(
   if (summary.holdingCount === 0) {
     return {
       mainRisk: "No holdings saved yet.",
-      mainOpportunity: "Upload your portfolio to unlock daily insights.",
-      recommendation: "Start with a screenshot import, then review holdings before saving.",
+      mainOpportunity: "Add holdings manually or import a spreadsheet to unlock daily insights.",
+      recommendation: "Start with manual entry or a CSV/Excel import, then review holdings before saving.",
     };
   }
 
@@ -110,7 +110,7 @@ export function buildDashboardInsightSections(
 export function buildDashboardInsight(summary: DashboardSummary): string {
   if (summary.holdingCount === 0) {
     return limitWords(
-      "Upload your portfolio to receive a daily insight based on your holdings, goal progress, and verified market moves. Investment OS only reports what your saved data supports.",
+      "Add holdings manually or import a spreadsheet to receive a daily insight based on your holdings, goal progress, and verified market moves. Investment OS only reports what your saved data supports.",
       MAX_WORDS,
     );
   }

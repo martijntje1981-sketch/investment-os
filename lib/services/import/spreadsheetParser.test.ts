@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import * as XLSX from "xlsx";
 
-import { parseSpreadsheetBuffer } from "@/lib/services/import/spreadsheetParser";
+import { parseSpreadsheetBuffer, validateSpreadsheetImportFile } from "@/lib/services/import/spreadsheetParser";
 
 function sheetToBuffer(rows: Record<string, string>[]) {
   const worksheet = XLSX.utils.json_to_sheet(rows);
@@ -46,5 +46,20 @@ describe("spreadsheetParser", () => {
     expect(rows[0]?.assetType).toBe("cash");
     expect(rows[0]?.quantity).toBe(1500);
     expect(rows[0]?.purchasePrice).toBe(1);
+  });
+
+  it("rejects image files with a clear message", () => {
+    const result = validateSpreadsheetImportFile(
+      new File(["x"], "portfolio.png", { type: "image/png" }),
+    );
+    expect(result.ok).toBe(false);
+    expect(result.message).toMatch(/Image files are not supported/i);
+  });
+
+  it("accepts spreadsheet file names and sizes", () => {
+    const result = validateSpreadsheetImportFile(
+      new File(["x"], "portfolio.csv", { type: "text/csv" }),
+    );
+    expect(result.ok).toBe(true);
   });
 });

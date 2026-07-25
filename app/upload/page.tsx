@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Portfolio import — screenshot, spreadsheet, and confidence-based review.
+ * Portfolio import — spreadsheet and confidence-based review.
  *
  * Architecture:
  * - lib/services/import/* — parsing, confidence policy, finalize, mapping memory
@@ -49,11 +49,10 @@ import {
   canImportRows,
   confirmImportRow,
   finalizeImportRowsForSave,
-  isSupportedScreenshotFile,
-  isSupportedSpreadsheetFileName,
   parseSpreadsheetBuffer,
   rememberConfirmedImportMappings,
   selectImportCandidate,
+  validateSpreadsheetImportFile,
   type ImportRow,
   type ImportSource,
 } from "@/lib/services/import";
@@ -72,7 +71,6 @@ export default function UploadPage() {
     dismissRecovery,
   } = useUserPortfolio();
 
-  const imageInput = useRef<HTMLInputElement>(null);
   const sheetInput = useRef<HTMLInputElement>(null);
   const importIdempotencyKeyRef = useRef<string | null>(null);
   const importModeRef = useRef<"replace" | "merge">("replace");
@@ -136,45 +134,29 @@ export default function UploadPage() {
   const plan = useMemo(() => buildImportReviewPlan(rows), [rows]);
 
   const sourceLabel =
-    source === "screenshot"
-      ? "AI screenshot recognition"
-      : source === "spreadsheet"
-        ? "Spreadsheet import"
-        : "Import";
+    source === "spreadsheet" ? "Spreadsheet import" : "Import";
 
   function applyMemory(rowsToEnhance: ImportRow[]) {
     return applySavedMappingsToRows(userSub, rowsToEnhance).map(annotateImportRow);
   }
 
-  async function processFile(file: File, importSource: ImportSource) {
+  async function processFile(file: File) {
     setError("");
     setImportNotice("");
     setSuccessMessage("");
     setPhase("processing");
-    setProcessingStep(
-      importSource === "screenshot" ? "Reading screenshot" : "Reading file",
-    );
-    setProcessingMessage(
-      importSource === "screenshot"
-        ? "AI is reading your portfolio screenshot…"
-        : "Reading your spreadsheet…",
-    );
+    setProcessingStep("Reading file");
+    setProcessingMessage("Reading your spreadsheet…");
 
     try {
-      if (importSource === "screenshot") {
-        const validation = isSupportedScreenshotFile(file);
-        if (!validation.ok) throw new Error(validation.message);
-      } else {
-        if (!isSupportedSpreadsheetFileName(file.name)) {
-          throw new Error("Choose an Excel (.xlsx or .xls) or CSV file.");
-        }
-      }
+      const validation = validateSpreadsheetImportFile(file);
+      if (!validation.ok) throw new Error(validation.message);
 
       setProcessingStep("Matching instruments");
       setProcessingMessage("Matching every holding to the correct instrument…");
 
       const result = await runImportPipeline({
-        source: importSource,
+        source: "spreadsheet",
         file,
         userSub,
         parseSpreadsheet: parseSpreadsheetBuffer,
@@ -183,7 +165,7 @@ export default function UploadPage() {
 
       setRows(result.rows);
       setBroker(result.broker);
-      setSource(importSource);
+      setSource("spreadsheet");
       importIdempotencyKeyRef.current = userSub
         ? createImportIdempotencyKey(userSub)
         : null;
@@ -194,7 +176,7 @@ export default function UploadPage() {
           version: 1,
           rows: result.rows,
           broker: result.broker,
-          source: importSource,
+          source: "spreadsheet",
           mode: "replace",
           idempotencyKey: importIdempotencyKeyRef.current!,
           syncError: null,
@@ -221,22 +203,12 @@ export default function UploadPage() {
   }
 
   function processDroppedOrSelected(file: File) {
-    if (file.type.startsWith("image/")) {
-      void processFile(file, "screenshot");
-      return;
-    }
-    void processFile(file, "spreadsheet");
-  }
-
-  function onImageChange(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (file) void processFile(file, "screenshot");
-    event.target.value = "";
+    void processFile(file);
   }
 
   function onSheetChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
-    if (file) void processFile(file, "spreadsheet");
+    if (file) void processFile(file);
     event.target.value = "";
   }
 
@@ -509,7 +481,7 @@ export default function UploadPage() {
       <PageContainer>
         <PageHero
           title="Import Portfolio"
-          subtitle="Add holdings from a screenshot, spreadsheet or manual entry."
+          subtitle="Add holdings manually, import a CSV or Excel file, or record cash on the portfolio page."
           backToDashboard
         />
 
@@ -521,10 +493,7 @@ export default function UploadPage() {
 
           {phase === "choose" ? (
             <>
-              <ImportMethodPicker
-                  onScreenshotClick={() => imageInput.current?.click()}
-                  onSpreadsheetClick={() => sheetInput.current?.click()}
-                />
+              <ImportMethodPicker onSpreadsheetClick={() => sheetInput.current?.click()} />
 
               <ImportDropzone
                 isDragging={isDragging}
@@ -541,16 +510,9 @@ export default function UploadPage() {
           ) : null}
 
           <input
-            ref={imageInput}
-            type="file"
-            accept="image/png,image/jpeg,image/webp"
-            onChange={onImageChange}
-            className="hidden"
-          />
-          <input
             ref={sheetInput}
             type="file"
-            accept=".xlsx,.xls,.csv,text/csv"
+            accept=".xlsx,.xls,.csv,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             onChange={onSheetChange}
             className="hidden"
           />

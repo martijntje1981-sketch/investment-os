@@ -155,98 +155,44 @@ describe("instrument matching under EODHD quota failure", () => {
   });
 });
 
-describe("screenshot import pipeline decoupled from pricing", () => {
+describe("screenshot import disabled in MVP", () => {
   beforeEach(() => {
     localStorage.clear();
     vi.restoreAllMocks();
   });
 
-  it("reaches review with extracted rows when match API reports provider quota", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockImplementation(async (input: RequestInfo | URL) => {
-        const url = String(input);
-        if (url.includes("/api/analyze-portfolio")) {
-          return {
-            ok: true,
-            json: async () => ({
-              success: true,
-              broker: "DEGIRO",
-              holdings: [
-                {
-                  name: "Vanguard FTSE All-World",
-                  ticker: "VWCE",
-                  isin: "IE00BK5BQT80",
-                  exchange: "XETRA",
-                  assetType: "investment",
-                  quantity: 10,
-                  purchasePrice: 100,
-                  currentPrice: null,
-                  marketValue: null,
-                  purchaseDate: null,
-                  currency: "EUR",
-                  fieldConfidence: {},
-                  extractionConfidence: 0.95,
-                  warnings: [],
-                  normalizationNotes: [],
-                },
-              ],
-            }),
-          };
-        }
+  it("rejects screenshot import before any network call", async () => {
+    const fetchSpy = vi.fn();
+    vi.stubGlobal("fetch", fetchSpy);
 
-        if (url.includes("/api/instruments/match")) {
-          return {
-            ok: false,
-            json: async () => ({
-              success: false,
-              message: "EODHD id-mapping returned 402: payment required",
-            }),
-          };
-        }
-
-        throw new Error(`Unexpected fetch: ${url}`);
+    await expect(
+      runImportPipeline({
+        source: "screenshot",
+        file: new File(["x"], "portfolio.png", { type: "image/png" }),
+        userSub: USER,
+        parseSpreadsheet: () => [],
+        applySavedMappings: (rows) => rows,
       }),
-    );
+    ).rejects.toThrow(/not available/i);
 
-    const result = await runImportPipeline({
-      source: "screenshot",
-      file: new File(["x"], "portfolio.png", { type: "image/png" }),
-      userSub: USER,
-      parseSpreadsheet: () => [],
-      applySavedMappings: (rows) => rows,
-    });
-
-    expect(result.rows).toHaveLength(1);
-    expect(result.rows[0]?.symbol).toBe("VWCE");
-    expect(result.matchQuotaWarning).toMatch(/temporarily unavailable/i);
-
-    const priceCalls = vi
-      .mocked(fetch)
-      .mock.calls.filter(([url]) => String(url).includes("/api/prices"));
-    expect(priceCalls).toHaveLength(0);
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 
-  it("fails import processing when AI extraction fails", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({
-        ok: false,
-        status: 422,
-        json: async () => ({
-          success: false,
-          message: "No clear positions were found.",
-        }),
-      }),
-    );
+  it("rejects analyzePortfolioScreenshot without calling analyze-portfolio", async () => {
+    const fetchSpy = vi.fn();
+    vi.stubGlobal("fetch", fetchSpy);
 
     await expect(
       analyzePortfolioScreenshot(
         new File(["x"], "portfolio.png", { type: "image/png" }),
       ),
-    ).rejects.toThrow(/No clear positions were found/);
-  });
+    ).rejects.toThrow(/not available/i);
 
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe("import matching review flow", () => {
   it("keeps unmatched rows for review without calling prices", async () => {
     vi.stubGlobal(
       "fetch",

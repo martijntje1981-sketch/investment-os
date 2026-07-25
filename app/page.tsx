@@ -64,16 +64,16 @@ const features = [
     icon: FileUp,
     title: "Update your portfolio quickly",
     description:
-      "Upload a broker screenshot and review the recognised holdings before updating your Investment OS.",
+      "Add holdings manually or import a supported CSV or Excel file, then review everything before saving.",
   },
 ];
 
 const workflowSteps = [
   {
     number: "01",
-    title: "Upload your portfolio",
+    title: "Add your portfolio",
     description:
-      "Start with a portfolio screenshot and review the detected positions before saving them.",
+      "Enter holdings yourself or import a supported CSV or Excel file, then review before saving.",
     icon: Upload,
   },
   {
@@ -97,7 +97,7 @@ const benefits = [
   "Holding-level performance and risk analysis",
   "AI-powered portfolio analysis and market intelligence",
   "Goal tracking and scenario calculations",
-  "Portfolio upload and review workflow",
+  "Manual and spreadsheet import workflow",
   "Clear decision-support insights",
 ];
 
@@ -112,7 +112,7 @@ const faqItems = [
     question:
       "How does Investment OS receive my portfolio?",
     answer:
-      "Investment OS supports portfolio screenshot uploads followed by a review step. You remain in control of which recognised holdings are accepted.",
+      "Investment OS supports manual entry and CSV or Excel import, followed by a review step. You remain in control of which holdings are saved.",
   },
   {
     question:
@@ -124,7 +124,7 @@ const faqItems = [
     question:
       "Can I use Investment OS with any broker?",
     answer:
-      "Yes. Investment OS is independent and supports portfolio information from multiple brokers through screenshots, CSV or Excel imports and manual entry.",
+      "Yes. Investment OS is independent and supports portfolio information through manual entry and supported CSV or Excel imports — no broker login required.",
   },
   {
     question:
@@ -384,7 +384,7 @@ export default async function MarketingHomePage() {
                 </p>
 
                 <h2 className="mt-4 text-4xl font-black tracking-[-0.045em] sm:text-5xl">
-                  From portfolio screenshot to daily
+                  From portfolio setup to daily
                   decision support
                 </h2>
 

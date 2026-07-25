@@ -13,7 +13,7 @@ import {
 const actions = [
   {
     href: "/upload",
-    label: "Upload Portfolio",
+    label: "Import portfolio",
     icon: Upload,
   },
   {

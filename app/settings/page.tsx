@@ -86,7 +86,7 @@ export default function SettingsPage() {
               href="/upload"
               icon={<ArrowRight className="h-4 w-4" />}
               label="Import portfolio"
-              detail="Add holdings from a screenshot or spreadsheet"
+              detail="Import a CSV or Excel file or add holdings manually"
             />
           </nav>
         </section>

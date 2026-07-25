@@ -28,11 +28,9 @@ export function ImportDropzone({
         <UploadCloud className="h-6 w-6" />
       </div>
       <p className="mt-4 text-sm font-bold text-slate-800">
-        Drop a screenshot, Excel or CSV file here
+        Drop an Excel or CSV file here
       </p>
-      <p className="mt-1 text-xs text-slate-500">
-        JPG, PNG, WEBP, XLSX, XLS or CSV
-      </p>
+      <p className="mt-1 text-xs text-slate-500">XLSX, XLS or CSV</p>
     </div>
   );
 }

@@ -164,11 +164,53 @@ export function parseSpreadsheetBuffer(buffer: ArrayBuffer): ImportRow[] {
     });
 }
 
+const SPREADSHEET_EXTENSIONS = ["xlsx", "xls", "csv"] as const;
+
+const IMAGE_EXTENSIONS = ["png", "jpg", "jpeg", "webp", "gif", "bmp"] as const;
+
+const MAX_IMPORT_FILE_BYTES = 10 * 1024 * 1024;
+
 export function isSupportedSpreadsheetFileName(fileName: string): boolean {
   const extension = fileName.split(".").pop()?.toLowerCase();
-  return Boolean(extension && ["xlsx", "xls", "csv"].includes(extension));
+  return Boolean(
+    extension && SPREADSHEET_EXTENSIONS.includes(extension as (typeof SPREADSHEET_EXTENSIONS)[number]),
+  );
 }
 
+export function validateSpreadsheetImportFile(
+  file: Pick<File, "name" | "type" | "size">,
+): {
+  ok: boolean;
+  message?: string;
+} {
+  const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
+
+  if (file.type.startsWith("image/") || IMAGE_EXTENSIONS.includes(extension as (typeof IMAGE_EXTENSIONS)[number])) {
+    return {
+      ok: false,
+      message:
+        "Image files are not supported. Choose an Excel (.xlsx or .xls) or CSV file.",
+    };
+  }
+
+  if (!isSupportedSpreadsheetFileName(file.name)) {
+    return {
+      ok: false,
+      message: "Choose an Excel (.xlsx or .xls) or CSV file.",
+    };
+  }
+
+  if (file.size === 0 || file.size > MAX_IMPORT_FILE_BYTES) {
+    return {
+      ok: false,
+      message: "The file must be between 1 byte and 10 MB.",
+    };
+  }
+
+  return { ok: true };
+}
+
+/** Dormant — retained for internal screenshot extraction tests only. */
 export function isSupportedScreenshotFile(file: Pick<File, "type" | "size">): {
   ok: boolean;
   message?: string;
@@ -177,7 +219,7 @@ export function isSupportedScreenshotFile(file: Pick<File, "type" | "size">): {
   if (!allowedTypes.includes(file.type)) {
     return { ok: false, message: "Choose a JPG, PNG or WEBP image." };
   }
-  if (file.size === 0 || file.size > 10 * 1024 * 1024) {
+  if (file.size === 0 || file.size > MAX_IMPORT_FILE_BYTES) {
     return { ok: false, message: "The image must be between 1 byte and 10 MB." };
   }
   return { ok: true };

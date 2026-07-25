@@ -7,8 +7,7 @@ import {
   importRowToMatchInput,
 } from "@/lib/services/import/finalizeImport";
 import { annotateImportRow } from "@/lib/services/import/confidencePolicy";
-import { mapScreenshotHoldingsToImportRows } from "@/lib/services/import/screenshotMapper";
-import type { AnalyzePortfolioResponse, ImportRow } from "@/lib/services/import/types";
+import type { ImportRow } from "@/lib/services/import/types";
 import type { ResolvedInstrument } from "@/lib/types/instrument";
 
 type MatchApiResult = {
@@ -132,32 +131,15 @@ export async function matchSingleImportRow(row: ImportRow): Promise<ImportRow> {
   );
 }
 
+const SCREENSHOT_IMPORT_DISABLED_MESSAGE =
+  "Portfolio screenshot upload is not available. Add holdings manually or import a CSV or Excel file.";
+
 export async function analyzePortfolioScreenshot(file: File): Promise<{
   broker: string;
   rows: ImportRow[];
 }> {
-  const formData = new FormData();
-  formData.append("file", file);
-
-  const response = await fetch("/api/analyze-portfolio", {
-    method: "POST",
-    body: formData,
-  });
-
-  const data = (await response.json()) as AnalyzePortfolioResponse;
-  if (!response.ok || !data.success) {
-    throw new Error(data.message ?? "The screenshot could not be analysed.");
-  }
-
-  const rows = mapScreenshotHoldingsToImportRows(data.holdings ?? []);
-  if (!rows.length) {
-    throw new Error("No holdings were recognised. Try a clearer screenshot.");
-  }
-
-  return {
-    broker: data.broker ?? "Unknown broker",
-    rows,
-  };
+  void file;
+  throw new Error(SCREENSHOT_IMPORT_DISABLED_MESSAGE);
 }
 
 export async function runImportPipeline(input: {
@@ -172,14 +154,7 @@ export async function runImportPipeline(input: {
   }
 
   if (input.source === "screenshot") {
-    const result = await analyzePortfolioScreenshot(input.file);
-    const withMemory = input.applySavedMappings(result.rows);
-    const matched = await matchImportRowsViaApi(withMemory);
-    return {
-      broker: result.broker,
-      rows: matched.rows,
-      matchQuotaWarning: matched.quotaWarning,
-    };
+    throw new Error(SCREENSHOT_IMPORT_DISABLED_MESSAGE);
   }
 
   const parsed = input.parseSpreadsheet(await input.file.arrayBuffer());

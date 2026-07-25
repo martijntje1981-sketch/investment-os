@@ -22,7 +22,7 @@ const sections = [
         <ul className="list-disc space-y-2 pl-6">
           <li>account and contact information;</li>
           <li>portfolio holdings, quantities, purchase prices and currencies;</li>
-          <li>uploaded screenshots, CSV files and Excel files;</li>
+          <li>uploaded CSV files and Excel files;</li>
           <li>financial goals and contribution assumptions;</li>
           <li>technical, security and limited usage information;</li>
           <li>support messages and attachments you send us.</li>
@@ -60,11 +60,11 @@ const sections = [
     title: "5. AI-assisted processing",
     content: (
       <p>
-        Investment OS may use AI services to extract holdings from uploads and
-        produce summaries. AI output can be inaccurate. Recognised information
-        must be reviewed before it is saved or relied upon. Uploaded information
-        is shared with service providers only as needed to perform the requested
-        function.
+        Investment OS may use AI services to produce portfolio summaries and
+        analysis. AI output can be inaccurate. Imported and manually entered
+        information must be reviewed before it is saved or relied upon. Uploaded
+        information is shared with service providers only as needed to perform the
+        requested function.
       </p>
     ),
   },

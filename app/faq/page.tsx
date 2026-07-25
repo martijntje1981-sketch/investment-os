@@ -63,12 +63,12 @@ const faqSections: Array<{
       {
         question: "How do I add my portfolio?",
         answer:
-          "You can add your portfolio through a screenshot, CSV or Excel import, or manual entry. Investment OS helps recognise holdings, quantities and purchase information, and you review the details before they are saved.",
+          "You can add your portfolio through manual entry, CSV or Excel import, or by recording cash on the portfolio page. Investment OS helps match holdings to the correct instruments, and you review the details before they are saved.",
       },
       {
         question: "Which brokers are supported?",
         answer:
-          "Investment OS is broker-independent. Recognition depends on the quality and layout of the uploaded information, and every detected position is reviewed before it is saved.",
+          "Investment OS is broker-independent. Add portfolio information through manual entry or supported CSV or Excel imports — no broker login required. Every imported position is reviewed before it is saved.",
       },
       {
         question: "Can I edit recognised holdings?",

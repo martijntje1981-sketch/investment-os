@@ -20,16 +20,16 @@ export function DashboardEmptyState() {
           Start with your portfolio
         </h1>
         <p className={`mt-4 max-w-xl sm:mt-5 ${appSectionBodyClass} text-slate-300/95`}>
-          Upload holdings to see performance, daily movers, goal progress, and a
-          concise AI insight based on your actual data. Investment OS never shows
-          placeholder portfolio values.
+          Add holdings manually or import a spreadsheet to see performance, daily
+          movers, goal progress, and a concise AI insight based on your actual
+          data. Investment OS never shows placeholder portfolio values.
         </p>
         <Link
           href="/upload"
           className="mt-7 inline-flex min-h-[48px] items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-slate-950 sm:mt-8"
         >
           <Upload className="h-4 w-4" />
-          Upload portfolio
+          Add portfolio
         </Link>
       </section>
 
