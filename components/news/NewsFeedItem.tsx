@@ -5,6 +5,7 @@ import { NewsArticleCard } from "@/components/news/NewsArticleCard";
 import { NewsCompactArticleRow } from "@/components/news/NewsCompactArticleRow";
 import { NewsCompactVideoRow } from "@/components/news/NewsCompactVideoRow";
 import { isStrongPortfolioItem } from "@/lib/services/news/newsFeedRanking";
+import { resolveNewsMediaTypeFromItem } from "@/lib/services/news/newsMediaType";
 import type { NewsContentItem } from "@/lib/types/newsContent";
 
 export function NewsFeedItem({
@@ -14,15 +15,17 @@ export function NewsFeedItem({
   item: NewsContentItem;
   compact?: boolean;
 }) {
+  const mediaType = resolveNewsMediaTypeFromItem(item);
+
   if (compact) {
-    return item.sourceType === "youtube" ? (
+    return mediaType === "video" ? (
       <NewsCompactVideoRow item={item} />
     ) : (
       <NewsCompactArticleRow item={item} />
     );
   }
 
-  if (item.sourceType === "youtube") {
+  if (mediaType === "video") {
     return <MarketVideoCard item={item} />;
   }
 

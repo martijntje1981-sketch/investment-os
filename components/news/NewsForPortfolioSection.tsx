@@ -10,6 +10,12 @@ import {
 } from "@/lib/services/news/newsBriefingLayout";
 import { NewsExpandableList } from "@/components/news/NewsBriefingSection";
 import { formatNewsPublishedAt } from "@/components/news/newsFormatting";
+import { NewsMediaThumbnail } from "@/components/news/NewsMediaThumbnail";
+import {
+  newsCompactCardClass,
+  newsExternalLinkClass,
+} from "@/components/news/newsCardStyles";
+import { buildNewsMediaPresentation } from "@/lib/services/news/newsMediaType";
 
 const IMPACT_STYLES = {
   Positive: "bg-emerald-50 text-emerald-800 border-emerald-200",
@@ -42,9 +48,19 @@ export function NewsForPortfolioSection({
           id="news-for-portfolio"
           allItems={cards.map((card) => ({ ...card, id: card.item.id }))}
           previewLimit={BRIEFING_SECTION_LIMIT}
-          renderItem={(card) => (
-            <article className="min-w-0 rounded-[16px] border border-slate-200 bg-white px-4 py-3.5">
-              <div className="flex min-w-0 items-start justify-between gap-3">
+          renderItem={(card) => {
+            const presentation = buildNewsMediaPresentation(card.item);
+
+            return (
+            <article className={newsCompactCardClass}>
+              <div className="flex min-w-0 items-start gap-3">
+                <NewsMediaThumbnail
+                  thumbnailUrl={card.item.thumbnailUrl}
+                  sourceType={card.item.sourceType}
+                  fallbackCategory={presentation.thumbnailFallbackCategory}
+                  size="compact"
+                  showPlayIndicator={presentation.showPlayIndicator}
+                />
                 <div className="min-w-0 flex-1">
                   <h3 className="text-base font-semibold leading-snug text-slate-950">
                     {card.item.title}
@@ -76,14 +92,15 @@ export function NewsForPortfolioSection({
                   href={card.item.canonicalUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex min-h-[44px] shrink-0 items-center gap-1 rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+                  className={newsExternalLinkClass}
                 >
-                  Open
+                  {presentation.ctaLabel}
                   <ArrowUpRight className="h-4 w-4" aria-hidden />
                 </a>
               </div>
             </article>
-          )}
+            );
+          }}
         />
       )}
     </section>

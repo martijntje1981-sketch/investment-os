@@ -1,9 +1,12 @@
 import type { NewsContentItem } from "@/lib/types/newsContent";
+import { resolveNewsMediaTypeFromItem } from "@/lib/services/news/newsMediaType";
+import type { NewsMediaType } from "@/lib/services/news/newsMediaType";
 
 export type IntelligenceBullet = {
   text: string;
   canonicalUrl?: string | null;
   sourceName?: string | null;
+  mediaType?: NewsMediaType;
 };
 
 export function isValidArticleUrl(url: string | null | undefined): boolean {
@@ -36,6 +39,7 @@ export function bulletFromNewsItem(
     text: (text ?? item.title).trim(),
     canonicalUrl: item.canonicalUrl,
     sourceName: item.sourceName,
+    mediaType: resolveNewsMediaTypeFromItem(item),
   };
 }
 

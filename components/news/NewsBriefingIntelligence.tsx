@@ -12,6 +12,7 @@ import {
 } from "@/components/layout/appSurface";
 import { TodaysDecisionBlock } from "@/components/investor/TodaysDecisionBlock";
 import { NewsCompactArticleRow } from "@/components/news/NewsCompactArticleRow";
+import { NewsMediaThumbnail } from "@/components/news/NewsMediaThumbnail";
 import { IntelligenceBulletRow } from "@/components/news/IntelligenceArticleLink";
 import { intelligenceBulletKey } from "@/lib/services/news/intelligenceBullets";
 import { formatNewsRefreshedAt } from "@/components/news/newsFormatting";
@@ -21,6 +22,10 @@ import {
   buildTodaysDecision,
 } from "@/lib/client/todaysDecision";
 import { findSupportingBriefingItems } from "@/lib/services/news/newsBriefingLayout";
+import {
+  buildNewsMediaPresentation,
+  getNewsMediaCtaLabel,
+} from "@/lib/services/news/newsMediaType";
 import type { InvestmentIntelligence } from "@/lib/services/news/investmentIntelligence";
 import type { NewsContentItem, UpcomingMarketEvent } from "@/lib/types/newsContent";
 
@@ -90,6 +95,9 @@ export function NewsBriefingIntelligence({
     ? portfolioItems.find((item) => item.id === intelligence.mustWatch?.itemId) ?? null
     : null;
   const mustWatchDetail = mustWatchItem ? itemSupportingText(mustWatchItem) : null;
+  const mustWatchPresentation = mustWatchItem
+    ? buildNewsMediaPresentation(mustWatchItem)
+    : null;
   const showMustWatchDetail =
     Boolean(mustWatchDetail) &&
     mustWatchDetail !== intelligence.mustWatch?.reason &&
@@ -171,37 +179,55 @@ export function NewsBriefingIntelligence({
         </div>
 
         {intelligence.mustWatch ? (
-          <div className="rounded-[18px] border border-violet-200 bg-violet-50 px-4 py-4">
+          <div className="overflow-hidden rounded-[18px] border border-violet-200 bg-violet-50 px-4 py-4">
             <p className={`${appSectionBodyMediumClass} text-violet-900`}>Top story</p>
-            <p className={`mt-3 ${appTableNameClass}`}>
-              {intelligence.mustWatch.title}
-            </p>
-            <p className={`mt-2 ${appSectionBodyClass} text-slate-700`}>
-              {intelligence.mustWatch.reason}
-            </p>
-            {showMustWatchDetail ? (
-              <p className="mt-2 text-sm leading-relaxed text-slate-600">
-                {mustWatchDetail}
-              </p>
-            ) : null}
-            <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
-              <span>{intelligence.mustWatch.sourceName}</span>
-              {mustWatchItem?.relevanceLabel ? (
-                <>
-                  <span aria-hidden>·</span>
-                  <span>{mustWatchItem.relevanceLabel}</span>
-                </>
+            <div className="mt-3 flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start">
+              {mustWatchItem && mustWatchPresentation ? (
+                <NewsMediaThumbnail
+                  thumbnailUrl={mustWatchItem.thumbnailUrl}
+                  sourceType={mustWatchItem.sourceType}
+                  fallbackCategory={mustWatchPresentation.thumbnailFallbackCategory}
+                  size="editorial"
+                  showPlayIndicator={mustWatchPresentation.showPlayIndicator}
+                  priority
+                />
               ) : null}
+              <div className="min-w-0 flex-1">
+                <p className={appTableNameClass}>{intelligence.mustWatch.title}</p>
+                <p className={`mt-2 ${appSectionBodyClass} text-slate-700`}>
+                  {intelligence.mustWatch.reason}
+                </p>
+                {showMustWatchDetail ? (
+                  <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                    {mustWatchDetail}
+                  </p>
+                ) : null}
+                <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
+                  <span>{intelligence.mustWatch.sourceName}</span>
+                  {mustWatchItem && mustWatchPresentation ? (
+                    <>
+                      <span aria-hidden>·</span>
+                      <span>{mustWatchPresentation.subjectLabel}</span>
+                    </>
+                  ) : null}
+                  {mustWatchItem?.relevanceLabel ? (
+                    <>
+                      <span aria-hidden>·</span>
+                      <span>{mustWatchItem.relevanceLabel}</span>
+                    </>
+                  ) : null}
+                </div>
+                <a
+                  href={intelligence.mustWatch.canonicalUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-4 inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-violet-200 bg-white px-4 py-2 text-sm font-bold text-violet-800 transition hover:bg-violet-100/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 motion-reduce:transition-none"
+                >
+                  {getNewsMediaCtaLabel(intelligence.mustWatch.type)}
+                  <ArrowUpRight className="h-4 w-4" aria-hidden />
+                </a>
+              </div>
             </div>
-            <a
-              href={intelligence.mustWatch.canonicalUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-4 inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-violet-200 bg-white px-4 py-2 text-sm font-bold text-violet-800 transition hover:bg-violet-100/60"
-            >
-              {intelligence.mustWatch.type === "video" ? "Watch" : "Open"}
-              <ArrowUpRight className="h-4 w-4" aria-hidden />
-            </a>
           </div>
         ) : null}
 

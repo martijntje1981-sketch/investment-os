@@ -24,13 +24,18 @@ import {
   type PortfolioMarketImpact,
 } from "@/lib/services/news/newsPortfolioSentiment";
 import { isTrustedVideoSource } from "@/lib/services/news/newsSourceQuality";
+import { selectTrustedNewsThumbnail } from "@/lib/services/news/newsThumbnail";
+import { resolveNewsMediaTypeFromItem } from "@/lib/services/news/newsMediaType";
 import { mergePortfolioSectionItems } from "@/lib/services/news/newsHubModel";
 import type {
   NewsApiResponse,
   NewsContentItem,
+  NewsMarketCategory,
+  NewsSourceType,
   TodaysMarketBrief,
   UpcomingMarketEvent,
 } from "@/lib/types/newsContent";
+import type { NewsMediaType } from "@/lib/services/news/newsMediaType";
 
 export const BRIEFING_SECTION_LIMIT = 5;
 export const MARKET_BRIEF_HEADLINE_LIMIT = 10;
@@ -59,9 +64,13 @@ export type NewsBriefHeadline = {
   summary: string;
   whyItMatters: string;
   affectedMarket: string;
+  marketCategory: NewsMarketCategory;
   publishedAt: string;
   sourceName: string;
   canonicalUrl: string;
+  thumbnailUrl: string | null;
+  mediaType: NewsMediaType;
+  sourceType: NewsSourceType;
 };
 
 export type PortfolioNewsCard = {
@@ -123,9 +132,13 @@ function toBriefHeadline(item: NewsContentItem): NewsBriefHeadline {
       item.interpretation?.trim() ||
       "This development may influence risk sentiment across your monitored markets.",
     affectedMarket: formatAffectedMarket(item.marketCategory),
+    marketCategory: item.marketCategory,
     publishedAt: item.publishedAt,
     sourceName: item.sourceName,
     canonicalUrl: item.canonicalUrl,
+    thumbnailUrl: selectTrustedNewsThumbnail(item),
+    mediaType: resolveNewsMediaTypeFromItem(item),
+    sourceType: item.sourceType,
   };
 }
 
@@ -147,9 +160,18 @@ function insightToHeadline(
         : insight.kind === "portfolio"
           ? "Portfolio"
           : "Markets",
+    marketCategory:
+      insight.kind === "macro"
+        ? "macro"
+        : insight.kind === "portfolio"
+          ? "equities"
+          : "general",
     publishedAt: new Date().toISOString(),
     sourceName: insight.sourceName ?? "Verified feed",
     canonicalUrl: "#",
+    thumbnailUrl: null,
+    mediaType: "article",
+    sourceType: "news",
   };
 }
 

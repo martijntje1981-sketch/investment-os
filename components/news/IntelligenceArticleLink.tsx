@@ -2,6 +2,10 @@ import type { ReactNode } from "react";
 import { ExternalLink } from "lucide-react";
 
 import { isValidArticleUrl } from "@/lib/services/news/intelligenceBullets";
+import {
+  getNewsMediaCtaLabel,
+  type NewsMediaType,
+} from "@/lib/services/news/newsMediaType";
 
 const VARIANT_STYLES = {
   light: {
@@ -72,12 +76,21 @@ export function IntelligenceArticleLink({
 export function IntelligenceBulletRow({
   bullet,
   variant = "light",
-  linkLabel = "Read article",
+  linkLabel,
 }: {
-  bullet: { text: string; canonicalUrl?: string | null; sourceName?: string | null };
+  bullet: {
+    text: string;
+    canonicalUrl?: string | null;
+    sourceName?: string | null;
+    mediaType?: NewsMediaType;
+  };
   variant?: "light" | "dark";
   linkLabel?: string;
 }) {
+  const resolvedLinkLabel =
+    linkLabel ??
+    (bullet.mediaType ? getNewsMediaCtaLabel(bullet.mediaType) : "Read article");
+
   if (!isValidArticleUrl(bullet.canonicalUrl)) {
     return (
       <span
@@ -94,7 +107,7 @@ export function IntelligenceBulletRow({
     <IntelligenceArticleLink
       href={bullet.canonicalUrl}
       sourceName={bullet.sourceName}
-      linkLabel={linkLabel}
+      linkLabel={resolvedLinkLabel}
       variant={variant}
       compact
     >

@@ -1,4 +1,6 @@
 import { detectPortfolioMarketImpact } from "@/lib/services/news/newsPortfolioSentiment";
+import { resolveNewsMediaTypeFromItem } from "@/lib/services/news/newsMediaType";
+import { selectTrustedNewsThumbnail } from "@/lib/services/news/newsThumbnail";
 import {
   assignStoriesToMarketsTodayRegions,
   dedupeMarketsTodayItems,
@@ -9,7 +11,8 @@ import {
   MARKETS_TODAY_REGION_ORDER,
   type MarketsTodayRegionId,
 } from "@/lib/services/news/marketsTodayRegionalClassification";
-import type { NewsContentItem } from "@/lib/types/newsContent";
+import type { NewsContentItem, NewsMarketCategory, NewsSourceType } from "@/lib/types/newsContent";
+import type { NewsMediaType } from "@/lib/services/news/newsMediaType";
 
 export type MarketsTodaySentiment =
   | "Positive"
@@ -23,6 +26,10 @@ export type MarketsTodayStory = {
   sourceName: string;
   publishedAt: string;
   canonicalUrl: string;
+  thumbnailUrl: string | null;
+  mediaType: NewsMediaType;
+  sourceType: NewsSourceType;
+  marketCategory: NewsMarketCategory;
 };
 
 export type MarketsTodayRegion = {
@@ -82,6 +89,10 @@ function toStory(item: NewsContentItem): MarketsTodayStory {
     sourceName: item.sourceName,
     publishedAt: item.publishedAt,
     canonicalUrl: item.canonicalUrl,
+    thumbnailUrl: selectTrustedNewsThumbnail(item),
+    mediaType: resolveNewsMediaTypeFromItem(item),
+    sourceType: item.sourceType,
+    marketCategory: item.marketCategory,
   };
 }
 

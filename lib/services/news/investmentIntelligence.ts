@@ -9,6 +9,7 @@ import {
   isStrongPortfolioItem,
 } from "@/lib/services/news/newsFeedRanking";
 import { collectSearchableNewsItems } from "@/lib/services/news/newsSearchFilter";
+import { resolveNewsMediaTypeFromItem } from "@/lib/services/news/newsMediaType";
 import { STRONG_PORTFOLIO_MATCH_SCORE } from "@/lib/services/news/relevanceMatching";
 import type {
   NewsApiResponse,
@@ -276,8 +277,12 @@ function buildMustWatch(
     (a, b) => computeNewsRankScore(b) - computeNewsRankScore(a),
   );
 
-  const topArticle = sorted.find((item) => item.sourceType !== "youtube");
-  const topVideo = sorted.find((item) => item.sourceType === "youtube");
+  const topArticle = sorted.find(
+    (item) => resolveNewsMediaTypeFromItem(item) === "article",
+  );
+  const topVideo = sorted.find(
+    (item) => resolveNewsMediaTypeFromItem(item) === "video",
+  );
 
   const articleScore = topArticle ? computeNewsRankScore(topArticle) : -1;
   const videoScore = topVideo ? computeNewsRankScore(topVideo) : -1;
@@ -292,7 +297,7 @@ function buildMustWatch(
   }
 
   return {
-    type: chosen.sourceType === "youtube" ? "video" : "article",
+    type: resolveNewsMediaTypeFromItem(chosen),
     itemId: chosen.id,
     title: stripTitleSuffix(chosen.title),
     sourceName: chosen.sourceName,

@@ -11,6 +11,12 @@ import {
 } from "@/lib/services/news/newsBriefingLayout";
 import { NewsExpandableList } from "@/components/news/NewsBriefingSection";
 import { formatNewsPublishedAt } from "@/components/news/newsFormatting";
+import { NewsMediaThumbnail } from "@/components/news/NewsMediaThumbnail";
+import {
+  newsCompactCardClass,
+  newsExternalLinkClass,
+} from "@/components/news/newsCardStyles";
+import { buildNewsBriefHeadlinePresentation } from "@/lib/services/news/newsMediaType";
 
 export function NewsMarketBriefSection({
   headlines,
@@ -43,9 +49,23 @@ export function NewsMarketBriefSection({
         id="news-market-brief"
         allItems={headlines}
         previewLimit={BRIEFING_SECTION_LIMIT}
-        renderItem={(headline) => (
-          <article className="min-w-0 rounded-[16px] border border-slate-200 bg-white px-4 py-3.5">
-            <div className="flex min-w-0 items-start justify-between gap-3">
+        renderItem={(headline) => {
+          const presentation = buildNewsBriefHeadlinePresentation({
+            affectedMarket: headline.affectedMarket,
+            marketCategory: headline.marketCategory,
+            mediaType: headline.mediaType,
+          });
+
+          return (
+          <article className={newsCompactCardClass}>
+            <div className="flex min-w-0 items-start gap-3">
+              <NewsMediaThumbnail
+                thumbnailUrl={headline.thumbnailUrl}
+                sourceType={headline.sourceType}
+                fallbackCategory={presentation.thumbnailFallbackCategory}
+                size="compact"
+                showPlayIndicator={presentation.showPlayIndicator}
+              />
               <div className="min-w-0 flex-1">
                 <h3 className={`${appValueSemiboldClass} leading-snug`}>
                   {headline.headline}
@@ -72,15 +92,16 @@ export function NewsMarketBriefSection({
                   href={headline.canonicalUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex min-h-[44px] shrink-0 items-center gap-1 rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+                  className={newsExternalLinkClass}
                 >
-                  Open
+                  {presentation.ctaLabel}
                   <ArrowUpRight className="h-4 w-4" aria-hidden />
                 </a>
               ) : null}
             </div>
           </article>
-        )}
+          );
+        }}
       />
     </section>
   );

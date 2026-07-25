@@ -76,7 +76,8 @@ describe("news hub UI structure", () => {
       "utf8",
     );
 
-    expect(videoRow).toContain("h-14 w-20");
+    expect(videoRow).toContain("NewsMediaThumbnail");
+    expect(videoRow).toContain('size="small"');
     expect(videoRow).not.toContain("aspect-video");
   });
 

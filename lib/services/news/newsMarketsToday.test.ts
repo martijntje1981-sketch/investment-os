@@ -249,7 +249,7 @@ describe("Markets Today regional foundation", () => {
     expect(MARKETS_TODAY_STORIES_LABEL).toBe("Key developments");
     expect(sectionSource).toContain("MARKETS_TODAY_STORIES_LABEL");
     expect(sectionSource).not.toContain("Largest movers");
-    expect(sectionSource).toContain("Sentiment unavailable");
+    expect(sectionSource).toContain("MARKETS_TODAY_SENTIMENT_STYLES");
 
     expect(
       aggregateMarketsTodaySentiment([

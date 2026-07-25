@@ -7,13 +7,14 @@ import {
   appSectionSubtitleClass,
   appSectionTitleClass,
 } from "@/components/layout/appSurface";
-
-const SENTIMENT_STYLES = {
-  Positive: "text-emerald-700",
-  Neutral: "text-slate-600",
-  Negative: "text-red-700",
-  unavailable: "text-slate-500",
-} as const;
+import { NewsMediaThumbnail } from "@/components/news/NewsMediaThumbnail";
+import {
+  MARKETS_TODAY_REGION_VISUALS,
+  MARKETS_TODAY_SENTIMENT_STYLES,
+  marketsTodayRegionGridClass,
+} from "@/components/news/marketsTodayVisuals";
+import { buildMarketsTodayStoryPresentation } from "@/lib/services/news/newsMediaType";
+import { resolveMarketsTodayFallbackCategory } from "@/components/news/newsMediaFallback";
 
 function formatPublishedAt(value: string): string {
   const parsed = Date.parse(value);
@@ -45,53 +46,93 @@ export function NewsMarketsTodaySection({
         </p>
       </div>
 
-      <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        {regions.map((region) => (
-          <article
-            key={region.id}
-            className="min-w-0 rounded-[16px] border border-slate-200 bg-white px-4 py-3.5"
-          >
-            <h3 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-700">
-              {region.label}
-            </h3>
-            <p
-              className={`mt-2 text-sm font-semibold ${SENTIMENT_STYLES[region.sentiment]}`}
-            >
-              {region.sentiment === "unavailable"
-                ? "Sentiment unavailable"
-                : `Sentiment: ${region.sentiment}`}
-            </p>
+      <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-6">
+        {regions.map((region, index) => {
+          const visual = MARKETS_TODAY_REGION_VISUALS[region.id];
+          const sentiment = MARKETS_TODAY_SENTIMENT_STYLES[region.sentiment];
+          const RegionIcon = visual.icon;
 
-            {region.stories.length > 0 ? (
-              <div className="mt-2">
-                <p className="text-xs font-semibold uppercase tracking-[0.06em] text-slate-500">
-                  {MARKETS_TODAY_STORIES_LABEL}
-                </p>
-                <ul className="mt-1 space-y-2 text-sm leading-snug text-slate-700">
-                  {region.stories.map((story) => (
-                    <li key={story.id} className="min-w-0">
-                      <a
-                        href={story.canonicalUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="line-clamp-2 font-semibold text-slate-800 underline-offset-2 hover:text-blue-700 hover:underline"
-                      >
-                        {story.title}
-                      </a>
-                      <p className="mt-0.5 text-xs text-slate-500">
-                        {story.sourceName} · {formatPublishedAt(story.publishedAt)}
-                      </p>
-                    </li>
-                  ))}
-                </ul>
+          return (
+            <article
+              key={region.id}
+              className={`min-w-0 rounded-[16px] border border-slate-200 border-t-[3px] bg-gradient-to-b px-4 py-3.5 ${visual.accentBorderClass} ${visual.gradientClass} ${marketsTodayRegionGridClass(index)}`}
+            >
+              <div className="flex items-start gap-3">
+                <div
+                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${visual.iconSurfaceClass}`}
+                  aria-hidden
+                >
+                  <RegionIcon className={`h-4 w-4 ${visual.iconClass}`} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-800">
+                    {region.label}
+                  </h3>
+                  <div className="mt-2 flex items-center gap-2">
+                    <span
+                      className={`h-2 w-2 shrink-0 rounded-full ${sentiment.dotClass}`}
+                      aria-hidden
+                    />
+                    <p className={`text-sm font-semibold ${sentiment.textClass}`}>
+                      {sentiment.label}
+                    </p>
+                  </div>
+                </div>
               </div>
-            ) : (
-              <p className="mt-2 text-sm leading-relaxed text-slate-600">
-                {MARKETS_TODAY_EMPTY_STATE_COPY}
-              </p>
-            )}
-          </article>
-        ))}
+
+              {region.stories.length > 0 ? (
+                <div className="mt-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.06em] text-slate-500">
+                    {MARKETS_TODAY_STORIES_LABEL}
+                  </p>
+                  <ul className="mt-2 space-y-2.5">
+                    {region.stories.map((story) => {
+                      const presentation = buildMarketsTodayStoryPresentation({
+                        mediaType: story.mediaType,
+                        marketCategory: story.marketCategory,
+                        regionFallbackCategory: resolveMarketsTodayFallbackCategory(
+                          region.id,
+                        ),
+                      });
+
+                      return (
+                      <li key={story.id} className="min-w-0">
+                        <div className="flex min-w-0 items-start gap-2.5">
+                          <NewsMediaThumbnail
+                            thumbnailUrl={story.thumbnailUrl}
+                            sourceType={story.sourceType}
+                            fallbackCategory={presentation.thumbnailFallbackCategory}
+                            size="compact"
+                            showPlayIndicator={presentation.showPlayIndicator}
+                          />
+                          <div className="min-w-0 flex-1">
+                            <a
+                              href={story.canonicalUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="line-clamp-2 text-sm font-semibold leading-snug text-slate-800 underline-offset-2 hover:text-blue-700 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
+                            >
+                              {story.title}
+                            </a>
+                            <p className="mt-0.5 text-xs text-slate-500">
+                              {story.sourceName} · {presentation.subjectLabel} ·{" "}
+                              {formatPublishedAt(story.publishedAt)}
+                            </p>
+                          </div>
+                        </div>
+                      </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              ) : (
+                <p className="mt-3 text-sm leading-relaxed text-slate-600">
+                  {MARKETS_TODAY_EMPTY_STATE_COPY}
+                </p>
+              )}
+            </article>
+          );
+        })}
       </div>
     </section>
   );

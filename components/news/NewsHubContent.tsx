@@ -14,6 +14,7 @@ import { NewsCompactArticleRow } from "@/components/news/NewsCompactArticleRow";
 import { NewsCompactEventRow } from "@/components/news/NewsCompactEventsList";
 import { NewsCompactVideoRow } from "@/components/news/NewsCompactVideoRow";
 import { NewsDataStatusBanner, countNewsHubVerifiedItems } from "@/components/news/NewsDataStatusBanner";
+import { resolveNewsMediaTypeFromItem } from "@/lib/services/news/newsMediaType";
 import { NewsEmptyState } from "@/components/news/NewsEmptyState";
 import { NewsForPortfolioSection } from "@/components/news/NewsForPortfolioSection";
 import { NewsMacroGroupsSection } from "@/components/news/NewsMacroGroupsSection";
@@ -197,7 +198,7 @@ export function NewsHubContent({
           emptyTitle="No matches"
           emptyDescription="Try another query."
           renderItem={(item) =>
-            item.sourceType === "youtube" ? (
+            resolveNewsMediaTypeFromItem(item) === "video" ? (
               <NewsCompactVideoRow item={item} />
             ) : (
               <NewsCompactArticleRow item={item} />

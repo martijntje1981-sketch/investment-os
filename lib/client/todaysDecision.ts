@@ -7,6 +7,7 @@ import type {
   MustWatchRecommendation,
 } from "@/lib/services/news/investmentIntelligence";
 import { isValidArticleUrl } from "@/lib/services/news/intelligenceBullets";
+import { getNewsMediaCtaLabel } from "@/lib/services/news/newsMediaType";
 import type { UpcomingMarketEvent } from "@/lib/types/newsContent";
 
 const NO_MATERIAL_DEVELOPMENTS = "No material developments were detected.";
@@ -103,7 +104,9 @@ function sourceFromBullet(
   return {
     sourceUrl: bullet.canonicalUrl,
     sourceName: bullet.sourceName ?? null,
-    sourceLinkLabel: "Read article",
+    sourceLinkLabel: bullet.mediaType
+      ? getNewsMediaCtaLabel(bullet.mediaType)
+      : "Read article",
   };
 }
 
@@ -117,8 +120,7 @@ function sourceFromMustWatch(
   return {
     sourceUrl: mustWatch.canonicalUrl,
     sourceName: mustWatch.sourceName,
-    sourceLinkLabel:
-      mustWatch.type === "video" ? "Watch video" : "Read article",
+    sourceLinkLabel: getNewsMediaCtaLabel(mustWatch.type),
   };
 }
 
