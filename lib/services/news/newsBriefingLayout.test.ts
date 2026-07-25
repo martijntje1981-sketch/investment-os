@@ -67,14 +67,14 @@ describe("buildNewsBriefingLayout", () => {
         relevanceScore: STRONG_PORTFOLIO_MATCH_SCORE + index,
       }),
     );
-    const macroNews = [
+    const macroNews = Array.from({ length: 6 }, (_, index) =>
       item({
-        id: "macro-1",
-        title: "Fed signals slower rate cuts",
+        id: `macro-${index}`,
+        title: `Central bank policy note ${index}`,
         category: "macro",
         marketCategory: "macro",
       }),
-    ];
+    );
 
     const layout = buildNewsBriefingLayout(payload({ portfolioNews, macroNews }));
 
@@ -82,7 +82,11 @@ describe("buildNewsBriefingLayout", () => {
     expect(layout.portfolioNews.hasMore).toBe(true);
     expect(layout.allPortfolioItems.length).toBeGreaterThan(0);
     expect(layout.portfolioCards.length).toBeGreaterThan(0);
-    expect(layout.marketBriefHeadlines.length).toBeGreaterThan(0);
+    const macroItemCount = layout.macroGroups.reduce(
+      (total, group) => total + group.items.length,
+      0,
+    );
+    expect(macroItemCount).toBeGreaterThan(0);
   });
 
   it("groups portfolio coverage by holding", () => {

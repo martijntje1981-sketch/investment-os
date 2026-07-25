@@ -25,6 +25,9 @@ describe("news hub UI structure", () => {
     expect(hubSource).toContain("NewsMarketsTodaySection");
     expect(hubSource).toContain("NewsCompactVideoRow");
     expect(sectionSource).toContain("Show more");
+    expect(sectionSource).toContain("Show less");
+    expect(sectionSource).toContain("aria-expanded");
+    expect(sectionSource).toContain("aria-controls");
     expect(hubSource).not.toContain("PortfolioIntelligencePanel");
     expect(hubSource).not.toContain("NewsHubTabs");
     expect(hubSource).not.toContain("matchMedia");

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 import {
   appSectionBodyClass,
   appSectionSubtitleClass,
@@ -27,6 +27,8 @@ export function NewsBriefingSection<T extends { id?: string }>({
   renderItem: (item: T) => ReactNode;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const listId = useId().replace(/:/g, "");
+  const regionId = `${id}-list-${listId}`;
   const visibleItems = expanded ? allItems : allItems.slice(0, previewLimit);
   const hasMore = allItems.length > previewLimit;
 
@@ -40,29 +42,80 @@ export function NewsBriefingSection<T extends { id?: string }>({
       </div>
 
       {allItems.length === 0 ? (
-        <p className={`rounded-[16px] border border-slate-200 bg-slate-50/80 px-4 py-3 ${appSectionBodyClass}`}>
+        <p
+          className={`rounded-[16px] border border-slate-200 bg-slate-50/80 px-4 py-3 ${appSectionBodyClass}`}
+        >
           <span className="font-semibold text-slate-800">{emptyTitle}</span>
           {" — "}
           {emptyDescription}
         </p>
       ) : (
         <>
-          <ul className="space-y-2">
+          <ul id={regionId} className="space-y-2">
             {visibleItems.map((item, index) => (
               <li key={item.id ?? `${id}-${index}`}>{renderItem(item)}</li>
             ))}
           </ul>
-          {hasMore && !expanded ? (
+          {hasMore ? (
             <button
               type="button"
-              onClick={() => setExpanded(true)}
-              className="inline-flex min-h-[44px] items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+              aria-expanded={expanded}
+              aria-controls={regionId}
+              onClick={() => setExpanded((current) => !current)}
+              className="inline-flex min-h-[44px] items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 motion-reduce:transition-none"
             >
-              Show more ({allItems.length - previewLimit})
+              {expanded
+                ? "Show less"
+                : `Show more (${allItems.length - previewLimit})`}
             </button>
           ) : null}
         </>
       )}
     </section>
+  );
+}
+
+export function NewsExpandableList<T extends { id?: string }>({
+  id,
+  allItems,
+  previewLimit = 5,
+  renderItem,
+}: {
+  id: string;
+  allItems: T[];
+  previewLimit?: number;
+  renderItem: (item: T) => ReactNode;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const listId = useId().replace(/:/g, "");
+  const regionId = `${id}-list-${listId}`;
+  const visibleItems = expanded ? allItems : allItems.slice(0, previewLimit);
+  const hasMore = allItems.length > previewLimit;
+
+  if (allItems.length === 0) {
+    return null;
+  }
+
+  return (
+    <>
+      <ul id={regionId} className="space-y-2">
+        {visibleItems.map((item, index) => (
+          <li key={item.id ?? `${id}-${index}`}>{renderItem(item)}</li>
+        ))}
+      </ul>
+      {hasMore ? (
+        <button
+          type="button"
+          aria-expanded={expanded}
+          aria-controls={regionId}
+          onClick={() => setExpanded((current) => !current)}
+          className="inline-flex min-h-[44px] items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 motion-reduce:transition-none"
+        >
+          {expanded
+            ? "Show less"
+            : `Show more (${allItems.length - previewLimit})`}
+        </button>
+      ) : null}
+    </>
   );
 }

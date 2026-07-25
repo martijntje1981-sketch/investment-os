@@ -1,5 +1,7 @@
 import type { MacroTopicGroup } from "@/lib/services/news/newsMacroGroups";
+import { BRIEFING_SECTION_LIMIT } from "@/lib/services/news/newsBriefingLayout";
 import { NewsCompactArticleRow } from "@/components/news/NewsCompactArticleRow";
+import { NewsExpandableList } from "@/components/news/NewsBriefingSection";
 import {
   appSectionSubtitleClass,
   appSectionTitleClass,
@@ -31,13 +33,12 @@ export function NewsMacroGroupsSection({
             <h3 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-700">
               {group.label}
             </h3>
-            <ul className="space-y-2">
-              {group.items.slice(0, 3).map((item) => (
-                <li key={item.id}>
-                  <NewsCompactArticleRow item={item} compact />
-                </li>
-              ))}
-            </ul>
+            <NewsExpandableList
+              id={`news-macro-${group.id}`}
+              allItems={group.items}
+              previewLimit={BRIEFING_SECTION_LIMIT}
+              renderItem={(item) => <NewsCompactArticleRow item={item} compact />}
+            />
           </div>
         ))
       )}

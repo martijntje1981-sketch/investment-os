@@ -1,112 +1,122 @@
 import { detectPortfolioMarketImpact } from "@/lib/services/news/newsPortfolioSentiment";
-import type { NewsContentItem, UpcomingMarketEvent } from "@/lib/types/newsContent";
+import {
+  assignStoriesToMarketsTodayRegions,
+  dedupeMarketsTodayItems,
+} from "@/lib/services/news/marketsTodayDedup";
+import {
+  classifyMarketsTodayRegionId,
+  MARKETS_TODAY_REGION_LABELS,
+  MARKETS_TODAY_REGION_ORDER,
+  type MarketsTodayRegionId,
+} from "@/lib/services/news/marketsTodayRegionalClassification";
+import type { NewsContentItem } from "@/lib/types/newsContent";
 
-export type MarketsTodayRegionId = "us" | "europe" | "crypto";
+export type MarketsTodaySentiment =
+  | "Positive"
+  | "Neutral"
+  | "Negative"
+  | "unavailable";
+
+export type MarketsTodayStory = {
+  id: string;
+  title: string;
+  sourceName: string;
+  publishedAt: string;
+  canonicalUrl: string;
+};
 
 export type MarketsTodayRegion = {
   id: MarketsTodayRegionId;
   label: string;
-  sentiment: "Positive" | "Neutral" | "Negative";
-  largestMovers: string[];
-  majorEvents: string[];
+  sentiment: MarketsTodaySentiment;
+  stories: MarketsTodayStory[];
 };
 
-const US_PATTERN =
-  /\b(us|u\.s\.|usa|nasdaq|s&p|dow|wall street|fed|fomc|treasury)\b/i;
-const EUROPE_PATTERN =
-  /\b(europe|eurozone|ecb|ftse|dax|cac|stoxx|uk|germany|france)\b/i;
-const CRYPTO_PATTERN =
-  /\b(bitcoin|btc|ethereum|eth|crypto|blockchain|digital asset)\b/i;
+export const MARKETS_TODAY_EMPTY_STATE_COPY =
+  "No major verified developments available.";
 
-function regionForItem(item: NewsContentItem): MarketsTodayRegionId | null {
-  const text = `${item.title} ${item.description ?? ""}`;
-  if (item.marketCategory === "crypto" || CRYPTO_PATTERN.test(text)) {
-    return "crypto";
-  }
-  if (EUROPE_PATTERN.test(text)) {
-    return "europe";
-  }
-  if (US_PATTERN.test(text)) {
-    return "us";
-  }
-  return null;
+export const MARKETS_TODAY_STORIES_LABEL = "Key developments";
+
+function hasClearDirectionalSignal(item: NewsContentItem): boolean {
+  const impact = detectPortfolioMarketImpact(item);
+  return impact === "Positive" || impact === "Negative";
 }
 
-function aggregateSentiment(
+/** Conservative sentiment — only shown when multiple items agree with clear signals. */
+export function aggregateMarketsTodaySentiment(
   items: NewsContentItem[],
-): "Positive" | "Neutral" | "Negative" {
-  let positive = 0;
-  let negative = 0;
-
-  for (const item of items) {
-    const impact = detectPortfolioMarketImpact(item);
-    if (impact === "Positive") positive += 1;
-    if (impact === "Negative") negative += 1;
+): MarketsTodaySentiment {
+  if (items.length < 2) {
+    return "unavailable";
   }
 
-  if (positive > negative) return "Positive";
-  if (negative > positive) return "Negative";
-  return "Neutral";
+  const directional = items.filter(
+    (item) =>
+      hasClearDirectionalSignal(item) && item.impactLevel !== "Low Impact",
+  );
+
+  if (directional.length < 2) {
+    return "unavailable";
+  }
+
+  const impacts = directional.map((item) => detectPortfolioMarketImpact(item));
+  const uniqueImpacts = new Set(
+    impacts.filter((impact) => impact !== "Neutral"),
+  );
+
+  if (uniqueImpacts.size !== 1) {
+    return "unavailable";
+  }
+
+  return [...uniqueImpacts][0] as Exclude<MarketsTodaySentiment, "unavailable">;
 }
 
-function largestMovers(items: NewsContentItem[]): string[] {
-  return items
-    .slice(0, 3)
-    .map((item) => item.title.replace(/\s*[|–—-]\s*.+$/, "").trim());
+function displayTitle(title: string): string {
+  return title.replace(/\s*[|–—-]\s*.+$/, "").trim();
 }
 
-function eventsForRegion(
-  region: MarketsTodayRegionId,
-  events: UpcomingMarketEvent[],
-): string[] {
-  return events
-    .filter((event) => {
-      const text = `${event.title} ${event.description}`.toLowerCase();
-      if (region === "crypto") {
-        return /\b(bitcoin|crypto|btc)\b/i.test(text);
-      }
-      if (region === "europe") {
-        return /\b(ecb|europe|euro)\b/i.test(text);
-      }
-      return /\b(fed|cpi|jobs|us|treasury)\b/i.test(text);
-    })
-    .slice(0, 2)
-    .map((event) => event.title);
+function toStory(item: NewsContentItem): MarketsTodayStory {
+  return {
+    id: item.id,
+    title: displayTitle(item.title),
+    sourceName: item.sourceName,
+    publishedAt: item.publishedAt,
+    canonicalUrl: item.canonicalUrl,
+  };
+}
+
+function topStories(items: NewsContentItem[]): MarketsTodayStory[] {
+  return items.slice(0, 3).map(toStory);
 }
 
 export function buildMarketsTodayRegions(input: {
   items: NewsContentItem[];
-  events: UpcomingMarketEvent[];
 }): MarketsTodayRegion[] {
-  const byRegion: Record<MarketsTodayRegionId, NewsContentItem[]> = {
-    us: [],
-    europe: [],
-    crypto: [],
-  };
+  const assigned = assignStoriesToMarketsTodayRegions(
+    input.items,
+    classifyMarketsTodayRegionId,
+  );
 
-  for (const item of input.items) {
-    const region = regionForItem(item);
-    if (region) {
-      byRegion[region].push(item);
-    }
-  }
-
-  const labels: Record<MarketsTodayRegionId, string> = {
-    us: "US",
-    europe: "Europe",
-    crypto: "Crypto",
-  };
-
-  return (["us", "europe", "crypto"] as MarketsTodayRegionId[])
-    .map((id) => ({
+  return MARKETS_TODAY_REGION_ORDER.map((id) => {
+    const regionItems = assigned.get(id) ?? [];
+    return {
       id,
-      label: labels[id],
-      sentiment: aggregateSentiment(byRegion[id]),
-      largestMovers: largestMovers(byRegion[id]),
-      majorEvents: eventsForRegion(id, input.events),
-    }))
-    .filter(
-      (region) =>
-        region.largestMovers.length > 0 || region.majorEvents.length > 0,
-    );
+      label: MARKETS_TODAY_REGION_LABELS[id],
+      sentiment: aggregateMarketsTodaySentiment(regionItems),
+      stories: topStories(regionItems),
+    };
+  });
 }
+
+export {
+  classifyMarketsTodayRegion,
+  classifyMarketsTodayRegionId,
+  MARKETS_TODAY_REGION_ORDER,
+  MARKETS_TODAY_REGION_LABELS,
+} from "@/lib/services/news/marketsTodayRegionalClassification";
+
+export {
+  dedupeMarketsTodayItems,
+  normalizeMarketsTodayTitle,
+  normalizeMarketsTodayUrl,
+} from "@/lib/services/news/marketsTodayDedup";

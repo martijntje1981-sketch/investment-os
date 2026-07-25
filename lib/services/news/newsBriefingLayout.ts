@@ -1,19 +1,22 @@
 import {
-  computeNewsRankScore,
   isLowQualityVideo,
   isStrongMacroItem,
   isStrongPortfolioItem,
 } from "@/lib/services/news/newsFeedRanking";
-import {
-  createBriefingDedupState,
-  prepareBriefingCandidatePool,
-  takeUniqueBriefingItems,
-} from "@/lib/services/news/newsBriefingDedup";
+import { prepareBriefingCandidatePool } from "@/lib/services/news/newsBriefingDedup";
 import { buildMacroTopicGroups, type MacroTopicGroup } from "@/lib/services/news/newsMacroGroups";
 import {
   buildMarketsTodayRegions,
   type MarketsTodayRegion,
 } from "@/lib/services/news/newsMarketsToday";
+import {
+  createPageDedupState,
+  filterPageDuplicates,
+  markPageItemUsed,
+  seedPageDedupState,
+  takeUniquePageItems,
+} from "@/lib/services/news/newsPageDedup";
+import { rankNewsItemsForBriefing } from "@/lib/services/news/newsPortfolioRanking";
 import {
   affectedHoldingsForItem,
   detectPortfolioMarketImpact,
@@ -66,6 +69,12 @@ export type PortfolioNewsCard = {
   affectedHoldings: string[];
   marketImpact: PortfolioMarketImpact;
   confidence: string | null;
+};
+
+export type NewsBriefingLayoutOptions = {
+  now?: number;
+  /** Items already shown in Today's Portfolio Intelligence (Top Story + Supporting). */
+  pageDedupSeed?: NewsContentItem[];
 };
 
 export type NewsBriefingLayout = {
@@ -147,26 +156,27 @@ function insightToHeadline(
 function buildMarketBriefHeadlines(
   marketBrief: TodaysMarketBrief,
   candidates: NewsContentItem[],
-  state: ReturnType<typeof createBriefingDedupState>,
+  state: ReturnType<typeof createPageDedupState>,
+  now: number,
 ): NewsBriefHeadline[] {
   const headlines: NewsBriefHeadline[] = [];
 
   for (const [index, insight] of marketBrief.keyInsights.entries()) {
-    if (headlines.length >= MARKET_BRIEF_HEADLINE_LIMIT) break;
     headlines.push(insightToHeadline(insight, index));
   }
 
-  const rankedItems = takeUniqueBriefingItems(
+  const rankedItems = takeUniquePageItems(
     candidates,
     state,
-    MARKET_BRIEF_HEADLINE_LIMIT - headlines.length,
+    Number.POSITIVE_INFINITY,
+    now,
   );
 
   for (const item of rankedItems) {
     headlines.push(toBriefHeadline(item));
   }
 
-  return headlines.slice(0, MARKET_BRIEF_HEADLINE_LIMIT);
+  return headlines;
 }
 
 function toPortfolioCard(item: NewsContentItem): PortfolioNewsCard {
@@ -185,6 +195,7 @@ function isTrustedVideo(item: NewsContentItem): boolean {
     !isLowQualityVideo(item)
   );
 }
+
 function dedupeById<T extends { id: string }>(items: T[]): T[] {
   const seen = new Set<string>();
   const result: T[] = [];
@@ -194,12 +205,6 @@ function dedupeById<T extends { id: string }>(items: T[]): T[] {
     result.push(item);
   }
   return result;
-}
-
-function rankItems(items: NewsContentItem[], now = Date.now()): NewsContentItem[] {
-  return [...items].sort(
-    (left, right) => computeNewsRankScore(right, now) - computeNewsRankScore(left, now),
-  );
 }
 
 function eligibleItems(items: NewsContentItem[]): NewsContentItem[] {
@@ -291,10 +296,29 @@ function groupItemsByHolding(input: {
     .sort((left, right) => right.totalCount - left.totalCount);
 }
 
+function markMarketsTodayStoriesUsed(
+  regions: MarketsTodayRegion[],
+  itemsById: Map<string, NewsContentItem>,
+  state: ReturnType<typeof createPageDedupState>,
+): void {
+  for (const region of regions) {
+    for (const story of region.stories) {
+      const item = itemsById.get(story.id);
+      if (item) {
+        markPageItemUsed(item, state);
+      }
+    }
+  }
+}
+
 export function buildNewsBriefingLayout(
   payload: NewsApiResponse,
-  now = Date.now(),
+  options: NewsBriefingLayoutOptions | number = {},
 ): NewsBriefingLayout {
+  const resolvedOptions: NewsBriefingLayoutOptions =
+    typeof options === "number" ? { now: options } : options;
+  const now = resolvedOptions.now ?? Date.now();
+
   const portfolioMerged = mergePortfolioSectionItems({
     portfolioNews: payload.portfolioNews,
     dividendNews: payload.dividendNews,
@@ -309,53 +333,62 @@ export function buildNewsBriefingLayout(
     ]),
   );
 
-  const dedupState = createBriefingDedupState();
-  const rankedAll = rankItems(pool, now);
+  const pageDedupState = createPageDedupState();
+  seedPageDedupState(pageDedupState, resolvedOptions.pageDedupSeed ?? []);
+
+  const rankedAll = rankNewsItemsForBriefing(pool, now);
+  const itemsById = new Map(rankedAll.map((item) => [item.id, item]));
 
   const portfolioPool = rankedAll.filter(
     (item) => isStrongPortfolioItem(item) && item.sourceType !== "youtube",
   );
-  const portfolioSelected = takeUniqueBriefingItems(
+  const portfolioSelected = takeUniquePageItems(
     portfolioPool,
-    dedupState,
-    PORTFOLIO_NEWS_LIMIT,
+    pageDedupState,
+    Number.POSITIVE_INFINITY,
+    now,
   );
   const portfolioCards = portfolioSelected.map(toPortfolioCard);
+
+  const marketsTodayCandidates = filterPageDuplicates(rankedAll, pageDedupState);
+  const marketsToday = buildMarketsTodayRegions({
+    items: marketsTodayCandidates,
+  });
+  markMarketsTodayStoriesUsed(marketsToday, itemsById, pageDedupState);
+
+  const macroPool = rankedAll.filter((item) => isStrongMacroItem(item));
+  const macroSelected = takeUniquePageItems(
+    macroPool,
+    pageDedupState,
+    Number.POSITIVE_INFINITY,
+    now,
+  );
+  const macroGroups = buildMacroTopicGroups(macroSelected);
 
   const marketBriefHeadlines = buildMarketBriefHeadlines(
     payload.marketBrief,
     rankedAll.filter((item) => !isStrongPortfolioItem(item)),
-    dedupState,
+    pageDedupState,
+    now,
   );
-
-  const macroPool = rankedAll.filter((item) => isStrongMacroItem(item));
-  const macroSelected = takeUniqueBriefingItems(
-    macroPool,
-    dedupState,
-    rankedAll.length,
-  );
-  const macroGroups = buildMacroTopicGroups(macroSelected);
-
-  const marketsToday = buildMarketsTodayRegions({
-    items: rankedAll,
-    events: payload.upcomingEvents,
-  });
 
   const videoPool = rankedAll.filter((item) => isTrustedVideo(item));
-  const videoSelected = takeUniqueBriefingItems(
+  const videoSelected = takeUniquePageItems(
     videoPool,
-    dedupState,
-    TRUSTED_VIDEO_LIMIT,
+    pageDedupState,
+    Number.POSITIVE_INFINITY,
+    now,
   );
 
   const portfolioItems = portfolioSelected;
   const macroItems = macroSelected;
-  const marketItems = takeUniqueBriefingItems(
+  const marketItems = takeUniquePageItems(
     rankedAll.filter(
       (item) => isMarketNewsItem(item) && item.sourceType !== "youtube",
     ),
-    dedupState,
-    rankedAll.length,
+    pageDedupState,
+    Number.POSITIVE_INFINITY,
+    now,
   );
   const videoItems = videoSelected;
 
@@ -397,16 +430,24 @@ export function findSupportingBriefingItems(input: {
   decisionText: string;
   mustWatchId?: string | null;
   relatedSymbols?: string[];
+  now?: number;
 }): NewsContentItem[] {
   const normalizedDecision = input.decisionText.toLowerCase();
-  const symbols = new Set((input.relatedSymbols ?? []).map((symbol) => symbol.toUpperCase()));
+  const symbols = new Set(
+    (input.relatedSymbols ?? []).map((symbol) => symbol.toUpperCase()),
+  );
+  const now = input.now ?? Date.now();
 
-  return rankItems(input.items, Date.now())
+  return rankNewsItemsForBriefing(input.items, now)
     .filter((item) => {
-      if (input.mustWatchId && item.id === input.mustWatchId) return true;
+      if (input.mustWatchId && item.id === input.mustWatchId) {
+        return false;
+      }
       if (
         item.matchedSymbols.some((symbol) => symbols.has(symbol.toUpperCase())) ||
-        item.matchedHoldings.some((holding) => symbols.has(holding.symbol.toUpperCase()))
+        item.matchedHoldings.some((holding) =>
+          symbols.has(holding.symbol.toUpperCase()),
+        )
       ) {
         return true;
       }

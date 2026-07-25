@@ -1,7 +1,7 @@
 import { deduplicateCrossSourceNews } from "@/lib/services/news/deduplicateNews";
+import { normalizeMarketsTodayUrl } from "@/lib/services/news/marketsTodayDedup";
 import { titlesAreNearDuplicate } from "@/lib/services/news/newsFeedRanking";
-import { computeNewsScore } from "@/lib/services/news/newsScore";
-import { getSourceQualityScore } from "@/lib/services/news/newsSourceQuality";
+import { rankNewsItemsForBriefing } from "@/lib/services/news/newsPortfolioRanking";
 import type { NewsContentItem } from "@/lib/types/newsContent";
 
 export type BriefingDedupState = {
@@ -33,7 +33,7 @@ export function isBriefingDuplicate(
     return true;
   }
 
-  const url = item.canonicalUrl.toLowerCase();
+  const url = normalizeMarketsTodayUrl(item.canonicalUrl);
   if (url && state.usedUrls.has(url)) {
     return true;
   }
@@ -58,7 +58,7 @@ export function markBriefingStoryUsed(
 ): void {
   state.usedIds.add(item.id);
   if (item.canonicalUrl) {
-    state.usedUrls.add(item.canonicalUrl.toLowerCase());
+    state.usedUrls.add(normalizeMarketsTodayUrl(item.canonicalUrl));
   }
   const titleKey = normalizeTitleKey(item.title);
   if (titleKey) {
@@ -71,12 +71,7 @@ export function takeUniqueBriefingItems(
   state: BriefingDedupState,
   limit: number,
 ): NewsContentItem[] {
-  const ranked = [...candidates].sort(
-    (left, right) =>
-      computeNewsScore(right) - computeNewsScore(left) ||
-      getSourceQualityScore(right.sourceName) -
-        getSourceQualityScore(left.sourceName),
-  );
+  const ranked = rankNewsItemsForBriefing(candidates);
 
   const selected: NewsContentItem[] = [];
 

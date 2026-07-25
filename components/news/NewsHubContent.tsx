@@ -21,8 +21,15 @@ import { NewsMarketBriefSection } from "@/components/news/NewsMarketBriefSection
 import { NewsMarketsTodaySection } from "@/components/news/NewsMarketsTodaySection";
 import { NewsSearchBar } from "@/components/news/NewsSearchBar";
 import { formatNewsRefreshedAt } from "@/components/news/newsFormatting";
+import {
+  areMajorMarketsClosed,
+  buildTodaysDecision,
+} from "@/lib/client/todaysDecision";
 import type { InvestmentIntelligence } from "@/lib/services/news/investmentIntelligence";
-import { buildNewsBriefingLayout } from "@/lib/services/news/newsBriefingLayout";
+import {
+  buildNewsBriefingLayout,
+  findSupportingBriefingItems,
+} from "@/lib/services/news/newsBriefingLayout";
 import { buildRankedSearchResults } from "@/lib/services/news/newsFeedRanking";
 import {
   NEWS_SEARCH_EMPTY_MESSAGE,
@@ -31,7 +38,7 @@ import {
   isNewsSearchActive,
   type NewsSearchScopeFilter,
 } from "@/lib/services/news/newsSearchFilter";
-import type { NewsApiResponse } from "@/lib/types/newsContent";
+import type { NewsApiResponse, NewsContentItem } from "@/lib/types/newsContent";
 
 export function NewsHubContent({
   payload,
@@ -60,7 +67,58 @@ export function NewsHubContent({
     [filteredItems],
   );
 
-  const briefing = useMemo(() => buildNewsBriefingLayout(payload), [payload]);
+  const preliminaryBriefing = useMemo(
+    () => buildNewsBriefingLayout(payload),
+    [payload],
+  );
+
+  const pageDedupSeed = useMemo(() => {
+    const seed: NewsContentItem[] = [];
+    const searchable = collectSearchableNewsItems(payload);
+
+    if (intelligence.mustWatch?.itemId) {
+      const mustWatchItem =
+        searchable.find((item) => item.id === intelligence.mustWatch?.itemId) ??
+        preliminaryBriefing.allPortfolioItems.find(
+          (item) => item.id === intelligence.mustWatch?.itemId,
+        );
+      if (mustWatchItem) {
+        seed.push(mustWatchItem);
+      }
+    }
+
+    const todaysDecision = buildTodaysDecision({
+      intelligence,
+      intelligenceFromCache: true,
+      upcomingEvents: payload.upcomingEvents,
+      marketsClosed: areMajorMarketsClosed(),
+    });
+
+    const supporting = findSupportingBriefingItems({
+      items: preliminaryBriefing.allPortfolioItems,
+      decisionText: todaysDecision.decision,
+      mustWatchId: intelligence.mustWatch?.itemId ?? null,
+      relatedSymbols: [
+        ...intelligence.holdingInsights.positive,
+        ...intelligence.holdingInsights.negative,
+        ...intelligence.holdingInsights.neutral,
+      ],
+    });
+
+    seed.push(...supporting);
+
+    const seen = new Set<string>();
+    return seed.filter((item) => {
+      if (seen.has(item.id)) return false;
+      seen.add(item.id);
+      return true;
+    });
+  }, [payload, intelligence, preliminaryBriefing.allPortfolioItems]);
+
+  const briefing = useMemo(
+    () => buildNewsBriefingLayout(payload, { pageDedupSeed }),
+    [payload, pageDedupSeed],
+  );
 
   const verifiedItemCount = useMemo(
     () => countNewsHubVerifiedItems(payload),
@@ -84,7 +142,7 @@ export function NewsHubContent({
     <div className="min-w-0 space-y-5 sm:space-y-6">
       <NewsBriefingIntelligence
         intelligence={intelligence}
-        portfolioItems={briefing.allPortfolioItems}
+        portfolioItems={preliminaryBriefing.allPortfolioItems}
         upcomingEvents={payload.upcomingEvents}
         onRefresh={onRefresh}
         isRefreshing={isRefreshing}
