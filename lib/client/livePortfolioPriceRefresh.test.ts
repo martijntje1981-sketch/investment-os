@@ -95,6 +95,26 @@ describe("livePortfolioPriceRefresh", () => {
     configureMarketDataProvidersForTests(null);
   });
 
+  it("counts crypto holdings by normalized pair even without providerSymbol", () => {
+    const holdings: StoredPortfolioHolding[] = [
+      {
+        id: "xrp",
+        symbol: "XRP",
+        name: "XRP",
+        quantity: 12_000,
+        purchasePrice: 0,
+        currentPrice: 0,
+        currency: "EUR",
+        assetType: "crypto",
+        pairCurrency: "EUR",
+        tradingPair: "XRP/EUR",
+        providerSymbol: null,
+      },
+    ];
+
+    expect(countUniqueQuotableProviderSymbols(holdings, USER)).toBe(1);
+  });
+
   it("counts unique provider symbols and skips unmatched holdings", () => {
     const holdings = [
       ...SYMBOLS.map((symbol) => holding(symbol.split(".")[0]!, symbol)),

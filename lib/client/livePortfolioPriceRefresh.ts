@@ -44,14 +44,27 @@ export function countUniqueQuotableProviderSymbols(
   holdings: StoredPortfolioHolding[],
   userSub?: string,
 ): number {
-  const symbols = new Set<string>();
-  for (const item of buildPriceRequestPayload(holdings, userSub)) {
+  const keys = new Set<string>();
+
+  for (const item of filterQuotablePricePayloadForRefresh(
+    buildPriceRequestPayload(holdings, userSub),
+  )) {
+    if (item.assetType === "crypto") {
+      const symbol = item.symbol?.trim().toUpperCase();
+      const pairCurrency = item.pairCurrency?.trim().toUpperCase();
+      if (symbol && pairCurrency) {
+        keys.add(`${symbol}/${pairCurrency}`);
+      }
+      continue;
+    }
+
     const providerSymbol = item.providerSymbol?.trim().toUpperCase();
     if (providerSymbol) {
-      symbols.add(providerSymbol);
+      keys.add(providerSymbol);
     }
   }
-  return symbols.size;
+
+  return keys.size;
 }
 
 export function readLastLivePriceRefreshAt(userSub: string): string | null {

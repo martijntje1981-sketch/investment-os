@@ -68,18 +68,21 @@ describe("cryptoHolding validation and preparation", () => {
     expect(saved.providerName).toBe("EODHD");
   });
 
-  it("saves BTC/USDC", () => {
+  it("saves XRP/EUR with provider symbol for live pricing", () => {
     const saved = prepareCryptoHoldingForSave(
       cryptoDraft({
-        name: "Bitcoin",
-        symbol: "BTC",
-        quantity: 1,
-        pairCurrency: "USDC",
+        name: "XRP",
+        symbol: "XRP",
+        quantity: 12_000,
+        pairCurrency: "EUR",
       }),
     );
 
-    expect(saved.tradingPair).toBe("BTC/USDC");
-    expect(saved.pairCurrency).toBe("USDC");
+    expect(saved.symbol).toBe("XRP");
+    expect(saved.tradingPair).toBe("XRP/EUR");
+    expect(saved.pairCurrency).toBe("EUR");
+    expect(saved.providerSymbol).toBe("XRP-EUR.CC");
+    expect(saved.pricingStatus).toBe("price_unavailable");
   });
 
   it("keeps USDC distinct from USD", () => {

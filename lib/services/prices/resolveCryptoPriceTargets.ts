@@ -6,7 +6,7 @@ import type {
   PriceHoldingInput,
   ResolvedPriceTarget,
 } from "@/lib/services/prices/types";
-import { isKnownCryptoSymbol } from "@/lib/services/portfolio/cryptoHolding";
+import { isLivePricedCryptoBaseAsset } from "@/lib/services/portfolio/cryptoBaseAssetRegistry";
 
 export function resolveCryptoPriceTarget(
   input: PriceHoldingInput,
@@ -58,7 +58,7 @@ export function resolveCryptoPriceTargets(
       skipped += 1;
       if (!holding.pairCurrency?.trim()) {
         errors.push(`${label}: missing trading-pair currency.`);
-      } else if (!isKnownCryptoSymbol(holding.symbol)) {
+      } else if (!isLivePricedCryptoBaseAsset(holding.symbol)) {
         errors.push(`${label}: unsupported crypto symbol for live pricing.`);
       } else {
         errors.push(`${label}: unsupported pair ${holding.symbol}/${holding.pairCurrency}.`);

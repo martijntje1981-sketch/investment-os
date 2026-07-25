@@ -87,6 +87,23 @@ describe("cryptoQuoteResolution", () => {
   it("rejects unsupported pair currency", () => {
     expect(resolveCryptoQuoteFetchPlan("BTC", "XYZ")).toBeNull();
   });
+
+  it("builds XRP/EUR direct plan", () => {
+    const plan = resolveCryptoQuoteFetchPlan("XRP", "EUR");
+    expect(plan?.normalizedPair).toBe("XRP/EUR");
+    expect(plan?.providerSymbol).toBe("XRP-EUR.CC");
+    expect(plan?.sourcePair).toBe("XRP/EUR");
+    expect(plan?.conversionApplied).toBe(false);
+  });
+
+  it("creates XRP/USD fallback for XRP/EUR with USD/EUR conversion path", () => {
+    const plan = resolveCryptoQuoteFetchPlan("XRP", "EUR")!;
+    const fallback = resolveCryptoQuoteFallbackPlan(plan);
+    expect(fallback?.providerSymbol).toBe("XRP-USD.CC");
+    expect(fallback?.normalizedPair).toBe("XRP/EUR");
+    expect(fallback?.sourcePair).toBe("XRP/USD");
+    expect(fallback?.conversionPath).toBe("USD/EUR");
+  });
 });
 
 describe("cryptoFxRates", () => {
@@ -305,6 +322,39 @@ describe("normalizeCryptoProviderQuote", () => {
     expect(quote.crypto.pairPrice).toBeCloseTo(1_854.32 * 0.92, 2);
     expect(quote.currentPrice).toBeCloseTo(1_854.32 * 0.92, 2);
   });
+
+  it("normalizes XRP/EUR from XRP/USD wire with conversion metadata", () => {
+    const directPlan = resolveCryptoQuoteFetchPlan("XRP", "EUR")!;
+    const fallbackPlan = resolveCryptoQuoteFallbackPlan(directPlan)!;
+
+    const quote = normalizeCryptoProviderQuote({
+      target: {
+        symbol: "XRP",
+        providerSymbol: "XRP-EUR.CC",
+        isin: null,
+        name: "XRP",
+        currency: null,
+        assetType: "crypto",
+        cryptoPlan: directPlan,
+      },
+      plan: fallbackPlan,
+      raw: {
+        ...raw,
+        providerSymbol: "XRP-USD.CC",
+        wireCurrency: "USD",
+        originalCurrency: "USD",
+        originalPrice: 1.0876,
+        changePercentOriginal: 0.12,
+      },
+      fx,
+    });
+
+    expect(quote.crypto.normalizedPair).toBe("XRP/EUR");
+    expect(quote.crypto.sourcePair).toBe("XRP/USD");
+    expect(quote.crypto.conversionApplied).toBe(true);
+    expect(quote.crypto.conversionPath).toBe("USD/EUR");
+    expect(quote.crypto.pairPrice).toBeCloseTo(1.0876 * 0.92, 4);
+  });
 });
 
 describe("crypto cache keys", () => {
@@ -317,6 +367,12 @@ describe("crypto cache keys", () => {
     );
     expect(buildCryptoQuoteCacheKey("eodhd-quotes", "ETH/EUR")).not.toBe(
       buildCryptoQuoteCacheKey("eodhd-quotes", "ETH/USD"),
+    );
+  });
+
+  it("keeps XRP/EUR and XRP/USD cache entries separate", () => {
+    expect(buildCryptoQuoteCacheKey("eodhd-quotes", "XRP/EUR")).not.toBe(
+      buildCryptoQuoteCacheKey("eodhd-quotes", "XRP/USD"),
     );
   });
 });

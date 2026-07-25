@@ -223,4 +223,114 @@ describe("crypto client pricing integration", () => {
       "Price via EODHD · ETH/USD converted to ETH/EUR",
     );
   });
+
+  it("applies converted XRP/EUR quote to the XRP holding with pair-first matching", () => {
+    const xrpEur: StoredPortfolioHolding = {
+      id: "xrp-eur",
+      assetType: "crypto",
+      symbol: "XRP",
+      name: "XRP",
+      quantity: 12_000,
+      purchasePrice: 0,
+      currentPrice: 0,
+      currentPairPrice: null,
+      pairCurrency: "EUR",
+      tradingPair: "XRP/EUR",
+      currency: "EUR",
+      portfolioCurrency: "EUR",
+      pricingStatus: "price_unavailable",
+      priceDataStatus: "unavailable",
+      providerSymbol: "XRP-EUR.CC",
+    };
+
+    const quotes = parsePriceApiResponseQuotes([
+      {
+        symbol: "XRP",
+        assetType: "crypto",
+        normalizedPair: "XRP/EUR",
+        pairPrice: 0.9561,
+        priceEur: 0.9561,
+        currentPrice: 0.9561,
+        change24hPercent: 0.12,
+        currency: "EUR",
+        provider: "eodhd",
+        providerDisplayName: "EODHD",
+        sourcePair: "XRP/USD",
+        conversionApplied: true,
+        conversionPath: "USD/EUR",
+        updatedAt: "2026-07-25T09:05:00.000Z",
+      },
+    ]);
+
+    const [updated] = applyPricesToHoldings([xrpEur], quotes);
+    expect(updated?.tradingPair).toBe("XRP/EUR");
+    expect(updated?.currentPairPrice).toBe(0.9561);
+    expect(updated?.quoteSourcePair).toBe("XRP/USD");
+    expect(getHoldingMarketValue(updated!)).toBeCloseTo(12_000 * 0.9561, 2);
+    expect(buildCryptoPriceMetadataLine(updated!)).toContain(
+      "Price via EODHD · XRP/USD converted to XRP/EUR",
+    );
+  });
+
+  it("keeps BTC/EUR, ETH/EUR and SOL/USDC quotes working alongside XRP/EUR", () => {
+    const quotes = parsePriceApiResponseQuotes([
+      {
+        symbol: "BTC",
+        assetType: "crypto",
+        normalizedPair: "BTC/EUR",
+        pairPrice: 56_000,
+        priceEur: 56_000,
+        currentPrice: 56_000,
+        currency: "EUR",
+        provider: "eodhd",
+        updatedAt: new Date().toISOString(),
+      },
+      {
+        symbol: "ETH",
+        assetType: "crypto",
+        normalizedPair: "ETH/EUR",
+        pairPrice: 1_630,
+        priceEur: 1_630,
+        currentPrice: 1_630,
+        currency: "EUR",
+        provider: "eodhd",
+        sourcePair: "ETH/USD",
+        conversionApplied: true,
+        conversionPath: "USD/EUR",
+        updatedAt: new Date().toISOString(),
+      },
+      {
+        symbol: "SOL",
+        assetType: "crypto",
+        normalizedPair: "SOL/USDC",
+        pairPrice: 73.9,
+        priceEur: 65.0,
+        currentPrice: 65.0,
+        currency: "USDC",
+        provider: "eodhd",
+        sourcePair: "SOL/USD",
+        conversionApplied: true,
+        conversionPath: "USD/USDC",
+        updatedAt: new Date().toISOString(),
+      },
+      {
+        symbol: "XRP",
+        assetType: "crypto",
+        normalizedPair: "XRP/EUR",
+        pairPrice: 0.9561,
+        priceEur: 0.9561,
+        currentPrice: 0.9561,
+        currency: "EUR",
+        provider: "eodhd",
+        sourcePair: "XRP/USD",
+        conversionApplied: true,
+        conversionPath: "USD/EUR",
+        updatedAt: new Date().toISOString(),
+      },
+    ]);
+
+    expect(quotes).toHaveLength(4);
+    expect(buildPriceLookup(quotes).get("XRP/EUR")?.pairPrice).toBe(0.9561);
+    expect(buildPriceLookup(quotes).get("SOL/USDC")?.pairPrice).toBe(73.9);
+  });
 });

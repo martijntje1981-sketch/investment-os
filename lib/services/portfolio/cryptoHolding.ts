@@ -7,6 +7,18 @@ import {
   type CryptoPricingStatus,
 } from "@/lib/types/cryptoHolding";
 import { resolveCryptoQuoteFetchPlan } from "@/lib/services/prices/cryptoQuoteResolution";
+import {
+  isLivePricedCryptoBaseAsset,
+  isValidCryptoBaseAssetSymbol,
+  normalizeCryptoBaseAssetSymbol,
+  recognizeKnownCrypto,
+} from "@/lib/services/portfolio/cryptoBaseAssetRegistry";
+
+export {
+  isKnownCryptoSymbol,
+  isLivePricedCryptoBaseAsset,
+  recognizeKnownCrypto,
+} from "@/lib/services/portfolio/cryptoBaseAssetRegistry";
 
 export type CryptoFormField =
   | "name"
@@ -22,42 +34,6 @@ export type CryptoValidationResult =
       message: string;
       fieldErrors: Partial<Record<CryptoFormField, string>>;
     };
-
-const KNOWN_CRYPTO = [
-  { symbols: ["BTC", "XBT"], name: "Bitcoin" },
-  { symbols: ["ETH"], name: "Ethereum" },
-  { symbols: ["SOL"], name: "Solana" },
-] as const;
-
-export function isKnownCryptoSymbol(symbol: string): boolean {
-  const normalized = symbol.trim().toUpperCase();
-  return KNOWN_CRYPTO.some((entry) =>
-    entry.symbols.some((candidate) => candidate === normalized),
-  );
-}
-
-export function recognizeKnownCrypto(input: {
-  name?: string;
-  symbol?: string;
-}): { name: string; symbol: string } | null {
-  const symbol = input.symbol?.trim().toUpperCase() ?? "";
-  const name = input.name?.trim() ?? "";
-
-  for (const entry of KNOWN_CRYPTO) {
-    if ((entry.symbols as readonly string[]).includes(symbol)) {
-      return { name: entry.name, symbol: entry.symbols[0]! };
-    }
-  }
-
-  const normalizedName = name.toLowerCase();
-  for (const entry of KNOWN_CRYPTO) {
-    if (normalizedName === entry.name.toLowerCase()) {
-      return { name: entry.name, symbol: entry.symbols[0]! };
-    }
-  }
-
-  return null;
-}
 
 export function isCryptoHolding(
   holding: Pick<StoredPortfolioHolding, "assetType">,
@@ -110,6 +86,8 @@ export function validateCryptoHoldingForSave(
 
   if (!symbol) {
     fieldErrors.symbol = "Enter a symbol.";
+  } else if (!isValidCryptoBaseAssetSymbol(symbol)) {
+    fieldErrors.symbol = "Enter a valid crypto symbol (letters and numbers only).";
   }
 
   if (!Number.isFinite(amount) || amount <= 0) {
@@ -143,7 +121,7 @@ export function validateCryptoHoldingForSave(
 }
 
 function resolvePricingStatus(symbol: string): CryptoPricingStatus {
-  return isKnownCryptoSymbol(symbol) ? "price_unavailable" : "needs_review";
+  return isLivePricedCryptoBaseAsset(symbol) ? "price_unavailable" : "needs_review";
 }
 
 function resolveCryptoProviderSymbol(
@@ -172,7 +150,9 @@ export function prepareCryptoHoldingForSave(
     name: holding.name,
     symbol: holding.symbol,
   });
-  const symbol = (recognized?.symbol ?? holding.symbol).trim().toUpperCase();
+  const symbol =
+    (recognized?.symbol ?? normalizeCryptoBaseAssetSymbol(holding.symbol))?.trim().toUpperCase() ??
+    "";
   const name = (recognized?.name ?? holding.name.trim()) || symbol;
   const pairCurrency = normalizeCryptoPairCurrency(
     holding.pairCurrency ?? resolveDefaultCryptoPairCurrency("EUR"),
@@ -181,7 +161,7 @@ export function prepareCryptoHoldingForSave(
     Number.isFinite(holding.purchasePrice) && holding.purchasePrice > 0
       ? holding.purchasePrice
       : 0;
-  const providerSymbol = isKnownCryptoSymbol(symbol)
+  const providerSymbol = isLivePricedCryptoBaseAsset(symbol)
     ? resolveCryptoProviderSymbol(symbol, pairCurrency)
     : null;
 
