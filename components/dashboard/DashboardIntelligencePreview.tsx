@@ -5,7 +5,6 @@ import { ArrowUpRight, ExternalLink, Radio } from "lucide-react";
 
 import { DiscoverMissedTeaser } from "@/components/discover/DiscoverSections";
 import { formatNewsRefreshedAt } from "@/components/news/newsFormatting";
-import { IntelligenceBulletRow } from "@/components/news/IntelligenceArticleLink";
 import { DashboardSectionHeader } from "@/components/dashboard/DashboardSectionHeader";
 import {
   appDashboardFeatureShellClass,
@@ -20,7 +19,6 @@ import { isValidArticleUrl } from "@/lib/services/news/intelligenceBullets";
 import type { GoalProgress } from "@/lib/services/goals/goalProgressEngine";
 import type { InvestmentIntelligence } from "@/lib/services/news/investmentIntelligence";
 import type { MissedItem } from "@/lib/services/discover/types";
-import { intelligenceBulletKey } from "@/lib/services/news/intelligenceBullets";
 
 const STATUS_STYLES: Record<
   InvestmentIntelligence["portfolioStatus"],
@@ -55,14 +53,6 @@ export function DashboardIntelligencePreview({
     marketsClosed,
   });
   const mustWatch = intelligence.mustWatch;
-  const secondaryBullets = intelligence.todayMatters
-    .filter((bullet) => {
-      if (!mustWatch?.canonicalUrl) {
-        return true;
-      }
-      return bullet.canonicalUrl !== mustWatch.canonicalUrl;
-    })
-    .slice(0, 2);
 
   return (
     <section className={appDashboardFeatureShellClass}>
@@ -128,29 +118,6 @@ export function DashboardIntelligencePreview({
 
         {mustWatch && isValidArticleUrl(mustWatch.canonicalUrl) ? (
           <p className={appDashboardDarkMutedClass}>{summaryMessage}</p>
-        ) : null}
-
-        {secondaryBullets.length > 0 ? (
-          <div className="border-t border-white/10 pt-4">
-            <p className={appHeroMetricLabelClass}>Also worth noting</p>
-            <ul className="mt-3 space-y-2.5">
-              {secondaryBullets.map((bullet) => (
-                <li
-                  key={intelligenceBulletKey(bullet)}
-                  className="flex gap-3 rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5"
-                >
-                  <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-violet-400/80" />
-                  <span className="min-w-0 flex-1">
-                    <IntelligenceBulletRow
-                      bullet={bullet}
-                      variant="dark"
-                      linkLabel="Read more"
-                    />
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
         ) : null}
 
         {missedItems.length > 0 ? (

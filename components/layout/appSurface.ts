@@ -23,6 +23,14 @@ export const appHeroKpiClass =
 export const appPageTitleClass =
   "text-xl font-bold tracking-[-0.02em]";
 
+/** Large dark hero titles — one step above appPageTitleClass. */
+export const appPageHeroTitleClass =
+  "break-words text-2xl font-bold tracking-[-0.03em] sm:text-[1.75rem] md:text-3xl";
+
+/** Large dark hero subtitles — one step above the previous 18px hero body. */
+export const appPageHeroSubtitleClass =
+  "mt-2.5 max-w-2xl break-words text-lg font-medium leading-relaxed tracking-[-0.015em] text-white sm:text-xl";
+
 /** Section titles — consistent 20px, bold. */
 export const appSectionTitleClass =
   "text-xl font-bold tracking-[-0.02em] text-slate-950";

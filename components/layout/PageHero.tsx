@@ -1,10 +1,10 @@
 import type { ReactNode } from "react";
 
-import { appPageTitleClass } from "@/components/layout/appSurface";
-
-/** ~90% of appPageTitleClass (20px → 18px), white, medium — shared hero subtitle. */
-const pageHeroSubtitleClass =
-  "mt-2.5 max-w-2xl text-[18px] font-medium leading-relaxed tracking-[-0.015em] text-white";
+import { BackToDashboardLink } from "@/components/layout/BackToDashboardLink";
+import {
+  appPageHeroSubtitleClass,
+  appPageHeroTitleClass,
+} from "@/components/layout/appSurface";
 
 function cn(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
@@ -15,6 +15,8 @@ export function PageHero({
   subtitle,
   actions,
   stats,
+  visual,
+  backToDashboard = false,
   embedded = false,
   variant = "default",
 }: {
@@ -22,12 +24,23 @@ export function PageHero({
   subtitle?: string;
   actions?: ReactNode;
   stats?: ReactNode;
+  /** Optional full-width visual below the title block (e.g. goal trajectory). */
+  visual?: ReactNode;
+  /** Shows a secondary link back to the dashboard — omit on the dashboard itself. */
+  backToDashboard?: boolean;
   /** When true, omits outer shell — for use inside a shared hero container. */
   embedded?: boolean;
   /** Dashboard uses a calmer, roomier hero treatment without changing copy or data. */
   variant?: "default" | "dashboard";
 }) {
-  const hasAside = Boolean(actions || stats);
+  const actionContent =
+    backToDashboard || actions ? (
+      <>
+        {backToDashboard ? <BackToDashboardLink /> : null}
+        {actions}
+      </>
+    ) : null;
+  const hasAside = Boolean(actionContent || stats);
   const isDashboard = variant === "dashboard";
 
   return (
@@ -57,26 +70,24 @@ export function PageHero({
       >
         <h1
           id="app-page-hero-title"
-          className={cn(
-            appPageTitleClass,
-            "text-white",
-          )}
+          className={cn(appPageHeroTitleClass, "text-white")}
         >
           {title}
         </h1>
         {subtitle ? (
-          <p className={pageHeroSubtitleClass}>{subtitle}</p>
+          <p className={appPageHeroSubtitleClass}>{subtitle}</p>
         ) : null}
+        {visual ? <div className="mt-5 min-w-0">{visual}</div> : null}
       </div>
 
-      {actions ? (
+      {actionContent ? (
         <div
           className={cn(
             "mt-4 flex min-w-0 flex-wrap gap-2",
             "lg:col-start-2 lg:row-start-1 lg:mt-0 lg:max-w-md lg:justify-end lg:self-start",
           )}
         >
-          {actions}
+          {actionContent}
         </div>
       ) : null}
 
@@ -86,7 +97,7 @@ export function PageHero({
             "mt-4 min-w-0 border-t border-white/10 pt-4",
             "lg:col-start-2 lg:row-start-1 lg:mt-0 lg:w-full lg:max-w-md lg:border-t-0 lg:pt-0 lg:justify-self-end lg:self-start",
             "[&>div]:lg:grid-cols-2",
-            Boolean(actions) &&
+            Boolean(actionContent) &&
               "lg:col-span-2 lg:row-start-2 lg:max-w-none lg:border-t lg:border-white/10 lg:pt-4 lg:justify-self-stretch",
           )}
         >

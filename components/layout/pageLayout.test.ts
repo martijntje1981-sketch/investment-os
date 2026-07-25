@@ -2,8 +2,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
-const authenticatedPages = [
-  "app/dashboard/page.tsx",
+const authenticatedPagesWithBackLink = [
   "app/portfolio/page.tsx",
   "app/news/page.tsx",
   "components/analysis/PortfolioAnalysisPage.tsx",
@@ -11,6 +10,11 @@ const authenticatedPages = [
   "app/discover/page.tsx",
   "app/settings/page.tsx",
   "app/upload/page.tsx",
+];
+
+const authenticatedPages = [
+  "app/dashboard/page.tsx",
+  ...authenticatedPagesWithBackLink,
 ];
 
 describe("authenticated page layout", () => {
@@ -47,14 +51,51 @@ describe("authenticated page layout", () => {
     }
   });
 
-  it("uses a shared desktop hero min-height and aside layout in PageHero", () => {
+  it("uses shared hero typography tokens in PageHero", () => {
     const heroSource = readFileSync(
       path.resolve(process.cwd(), "components/layout/PageHero.tsx"),
       "utf8",
     );
+    const surfaceSource = readFileSync(
+      path.resolve(process.cwd(), "components/layout/appSurface.ts"),
+      "utf8",
+    );
 
-    expect(heroSource).toContain("lg:min-h-[168px]");
-    expect(heroSource).toContain("lg:grid-cols-[minmax(0,1fr)_auto]");
-    expect(heroSource).toContain("lg:col-start-1 lg:row-start-1");
+    expect(heroSource).toContain("appPageHeroTitleClass");
+    expect(heroSource).toContain("appPageHeroSubtitleClass");
+    expect(surfaceSource).toContain("appPageHeroTitleClass");
+    expect(surfaceSource).toContain("break-words");
+  });
+
+  it("adds Back to dashboard on authenticated pages except dashboard", () => {
+    const dashboardSource = readFileSync(
+      path.resolve(process.cwd(), "app/dashboard/page.tsx"),
+      "utf8",
+    );
+
+    expect(dashboardSource).not.toContain("backToDashboard");
+
+    for (const relativePath of authenticatedPagesWithBackLink) {
+      const source = readFileSync(
+        path.resolve(process.cwd(), relativePath),
+        "utf8",
+      );
+
+      expect(source, relativePath).toContain("backToDashboard");
+    }
+  });
+
+  it("does not add Back to dashboard on public marketing pages", () => {
+    const homeSource = readFileSync(
+      path.resolve(process.cwd(), "app/page.tsx"),
+      "utf8",
+    );
+    const faqSource = readFileSync(
+      path.resolve(process.cwd(), "app/faq/page.tsx"),
+      "utf8",
+    );
+
+    expect(homeSource).not.toContain("backToDashboard");
+    expect(faqSource).not.toContain("backToDashboard");
   });
 });

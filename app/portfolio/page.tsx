@@ -386,6 +386,7 @@ export default function PortfolioPage() {
         <PageHero
           title="Portfolio"
           subtitle={`View and manage all your holdings in one place. ${heroRefreshLabel}`}
+          backToDashboard
           actions={
             <>
               <button

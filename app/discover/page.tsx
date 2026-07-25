@@ -34,6 +34,7 @@ export default function DiscoverPage() {
         <PageHero
           title="Discover"
           subtitle="Explore investment ideas, themes and opportunities."
+          backToDashboard
         />
         <section className="rounded-[24px] border border-slate-200 bg-white px-5 py-6">
           <p className="text-base leading-relaxed text-slate-600">
@@ -57,6 +58,7 @@ export default function DiscoverPage() {
       <PageHero
         title="Discover"
         subtitle="Explore investment ideas, themes and opportunities."
+        backToDashboard
         stats={
           snapshot?.sourceStatus.briefingGeneratedAt ? (
             <p className="text-sm text-slate-400">

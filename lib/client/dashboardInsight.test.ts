@@ -159,7 +159,7 @@ describe("home and dashboard hierarchy", () => {
     expect(holdingsToday).toContain("Your holdings today");
     expect(holdingsToday).toContain("md:hidden");
     expect(holdingsToday).toContain("hidden md:block");
-    expect(preview).toContain("slice(0, 2)");
+    expect(preview).not.toContain("Also worth noting");
     expect(preview).not.toContain("TodaysDecisionBlock");
   });
 

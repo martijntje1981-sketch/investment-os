@@ -342,4 +342,61 @@ export function pickBestAndWorstMovers(snapshot: DailyPerformanceSnapshot) {
 
 }
 
+export type HeroMover = {
+  holding: StoredPortfolioHolding;
+  changePercent: number;
+  changeAmount: number;
+  changePeriodLabel: "Today" | "24h";
+};
+
+export function resolveMoverChangePeriodLabel(
+  holding: StoredPortfolioHolding,
+): HeroMover["changePeriodLabel"] {
+  return holding.assetType === "crypto" ? "24h" : "Today";
+}
+
+/** Selects top and lowest movers for compact hero display using existing daily performers. */
+export function pickTopAndLowestMovers(snapshot: DailyPerformanceSnapshot): {
+  topMover: HeroMover | null;
+  lowestMover: HeroMover | null;
+  hasReliableMoverData: boolean;
+} {
+  if (!snapshot.performanceCoverageComplete || snapshot.performers.length === 0) {
+    return { topMover: null, lowestMover: null, hasReliableMoverData: false };
+  }
+
+  const reliable = snapshot.performers.filter((performer) => {
+    const marketValue = getHoldingMarketValue(performer.holding) ?? 0;
+    return (
+      Number.isFinite(performer.changePercent) &&
+      performer.changePercent !== 0 &&
+      marketValue > 0
+    );
+  });
+
+  if (reliable.length === 0) {
+    return { topMover: null, lowestMover: null, hasReliableMoverData: false };
+  }
+
+  const sorted = [...reliable].sort(
+    (left, right) => right.changePercent - left.changePercent,
+  );
+  const topPerformer = sorted[0]!;
+  const lowestPerformer =
+    sorted.length > 1 ? sorted[sorted.length - 1]! : null;
+
+  const toHeroMover = (performer: DailyPerformer): HeroMover => ({
+    holding: performer.holding,
+    changePercent: performer.changePercent,
+    changeAmount: performer.move,
+    changePeriodLabel: resolveMoverChangePeriodLabel(performer.holding),
+  });
+
+  return {
+    topMover: toHeroMover(topPerformer),
+    lowestMover: lowestPerformer ? toHeroMover(lowestPerformer) : null,
+    hasReliableMoverData: true,
+  };
+}
+
 

@@ -5,7 +5,9 @@ import {
 import {
   formatDailyPerformanceCoverageMessage,
   pickBestAndWorstMovers,
+  pickTopAndLowestMovers,
   summarizeDailyPerformance,
+  type HeroMover,
 } from "@/lib/client/dailyPerformance";
 import { buildPortfolioPerformance } from "@/lib/client/portfolioPerformance";
 import {
@@ -38,6 +40,9 @@ export type DashboardSummary = {
   dailyPerformanceCoverageMessage: string | null;
   bestMover: DashboardMover | null;
   worstMover: DashboardMover | null;
+  heroTopMover: HeroMover | null;
+  heroLowestMover: HeroMover | null;
+  hasReliableHeroMoverData: boolean;
   lastUpdatedAt: string | null;
   holdingCount: number;
   goalProgress: number;
@@ -78,6 +83,7 @@ export function buildDashboardSummary(
 
   const { bestMover: bestPerformer, worstMover: worstPerformer } =
     pickBestAndWorstMovers(daily);
+  const heroMovers = pickTopAndLowestMovers(daily);
 
   const topDailyDriver = [...daily.performers].sort(
     (a, b) => Math.abs(b.move) - Math.abs(a.move),
@@ -116,6 +122,9 @@ export function buildDashboardSummary(
           worstPerformer.changePercent,
         )
       : null,
+    heroTopMover: heroMovers.topMover,
+    heroLowestMover: heroMovers.lowestMover,
+    hasReliableHeroMoverData: heroMovers.hasReliableMoverData,
     lastUpdatedAt: analysis.lastUpdatedAt ?? snapshot.latestUpdatedAt,
     holdingCount: snapshot.holdingCount,
     goalProgress,

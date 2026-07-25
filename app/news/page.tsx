@@ -32,6 +32,7 @@ export default function NewsPage() {
       <PageHero
         title="Market Intelligence"
         subtitle="Personalized news, market developments and events relevant to your portfolio."
+        backToDashboard
       />
 
       <PortfolioRecoveryBanner

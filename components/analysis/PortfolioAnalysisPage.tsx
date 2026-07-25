@@ -108,6 +108,7 @@ export default function PortfolioAnalysisPage() {
         <PageHero
           title="Portfolio Analysis"
           subtitle="Understand performance, risk, allocation and portfolio trends."
+          backToDashboard
           stats={
             <p className={`${appDashboardDarkMetaClass} mt-0`}>
               Last portfolio update: {formatUpdatedAt(analysis.lastUpdatedAt)}

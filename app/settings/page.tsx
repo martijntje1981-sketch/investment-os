@@ -45,6 +45,7 @@ export default function SettingsPage() {
         <PageHero
           title="Settings"
           subtitle="Manage your account, preferences and portfolio configuration."
+          backToDashboard
         />
 
         <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">

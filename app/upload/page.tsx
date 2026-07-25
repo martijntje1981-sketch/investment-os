@@ -510,6 +510,7 @@ export default function UploadPage() {
         <PageHero
           title="Import Portfolio"
           subtitle="Add holdings from a screenshot, spreadsheet or manual entry."
+          backToDashboard
         />
 
           <PortfolioRecoveryBanner

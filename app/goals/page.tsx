@@ -1,9 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import {
-  ArrowLeft,
   CalendarDays,
   Check,
   Goal,
@@ -22,6 +20,7 @@ import {
 import BottomNavigation from "@/components/home/BottomNav";
 import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer";
 import { PageHero } from "@/components/layout/PageHero";
+import { GoalHeroProgressVisual } from "@/components/goals/GoalHeroProgressVisual";
 import { PassiveIncomeGoalCard } from "@/components/goals/PassiveIncomeGoalCard";
 import {
   GoalCoachCard,
@@ -31,7 +30,6 @@ import {
   GoalWhatIfCard,
 } from "@/components/goals/GoalIntelligenceBlocks";
 import NumericInput from "@/components/NumericInput";
-import { getHoldingMarketValue } from "@/lib/client/portfolioAnalysis";
 import {
   buildGoalCoach,
   buildGoalCurrencyMilestones,
@@ -42,7 +40,6 @@ import {
   estimateMonthsToReachTarget,
 } from "@/lib/services/goals/goalCoach";
 import { buildGoalProgressEngine } from "@/lib/services/goals/goalProgressEngine";
-import { loadUserPortfolioHoldings } from "@/lib/client/portfolioPricing";
 import {
   computeGoalProgress,
   GOAL_FORM_DEFAULT,
@@ -52,6 +49,7 @@ import {
 import { projectPortfolioValue } from "@/lib/services/goals/goalProgressEngine";
 import { formatOptionalPassiveIncomeDisplay } from "@/lib/client/goalPassiveIncome";
 import { parseOptionalNumericInput, sanitizeNumericInput } from "@/lib/client/numericInput";
+import { useGoalProgress } from "@/lib/client/useGoalProgress";
 import { useUserGoal } from "@/lib/client/useUserGoal";
 import { usePortfolioDividends } from "@/lib/client/usePortfolioDividends";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
@@ -73,13 +71,6 @@ function formatPercentage(value: number) {
   }).format(value / 100);
 }
 
-function calculatePortfolioValue(holdings: ReturnType<typeof loadUserPortfolioHoldings>) {
-  return holdings.reduce(
-    (total, holding) => total + (getHoldingMarketValue(holding) ?? 0),
-    0,
-  );
-}
-
 function projectValue(
   startingValue: number,
   monthlyContribution: number,
@@ -97,6 +88,7 @@ function projectValue(
 export default function GoalsPage() {
   const { userSub, holdings, portfolioReady } = useUserPortfolio();
   const { goal: savedGoal, hasSavedGoal, persistGoal } = useUserGoal();
+  const goalProgress = useGoalProgress({ holdings, goal: savedGoal, hasSavedGoal });
   const { snapshot: dividendSnapshot } = usePortfolioDividends(
     holdings,
     userSub,
@@ -111,10 +103,7 @@ export default function GoalsPage() {
     }
   }, [savedGoal]);
 
-  const portfolioValue = useMemo(
-    () => calculatePortfolioValue(holdings),
-    [holdings],
-  );
+  const portfolioValue = goalProgress.currentValue;
 
   const currentYear = new Date().getFullYear();
   const monthsRemaining = Math.max((goal.targetYear - currentYear) * 12, 0);
@@ -234,19 +223,17 @@ export default function GoalsPage() {
         <PageHero
           title="Goals"
           subtitle={goalHeroSubtitle}
+          backToDashboard
+          visual={
+            <GoalHeroProgressVisual
+              progress={engineProgress}
+              hasSavedGoal={hasSavedGoal}
+            />
+          }
           stats={
             nextGoalMilestone ? (
               <GoalHeroMilestones milestone={nextGoalMilestone} />
             ) : null
-          }
-          actions={
-            <Link
-              href="/dashboard"
-              className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-bold text-white hover:bg-white/15"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Dashboard
-            </Link>
           }
         />
 
