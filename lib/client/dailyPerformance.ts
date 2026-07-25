@@ -187,12 +187,11 @@ export function formatDailyPerformanceCoverageMessage(
 
 
   const investmentLabel =
-
-    eligibleMarketHoldingCount === 1 ? "investment" : "investments";
-
+    eligibleMarketHoldingCount === 1 ? "holding" : "holdings";
 
 
-  return `Daily performance currently available for ${validPerformanceCount} of ${eligibleMarketHoldingCount} ${investmentLabel}.`;
+
+  return `Based on ${validPerformanceCount} of ${eligibleMarketHoldingCount} ${investmentLabel}.`;
 
 }
 
@@ -312,12 +311,55 @@ export function summarizeDailyPerformance(
 
 
 
+export function summarizeDailyMovePeriods(
+  performers: DailyPerformer[],
+): {
+  hasEquity: boolean;
+  hasCrypto: boolean;
+  isMixed: boolean;
+} {
+  let hasEquity = false;
+  let hasCrypto = false;
+
+  for (const performer of performers) {
+    if (performer.holding.assetType === "crypto") {
+      hasCrypto = true;
+    } else if (performer.holding.assetType !== "cash") {
+      hasEquity = true;
+    }
+  }
+
+  return {
+    hasEquity,
+    hasCrypto,
+    isMixed: hasEquity && hasCrypto,
+  };
+}
+
+export function resolveDailyMoveHeroLabel(
+  periods: ReturnType<typeof summarizeDailyMovePeriods>,
+): string {
+  if (periods.isMixed) {
+    return "Market move";
+  }
+  if (periods.hasCrypto && !periods.hasEquity) {
+    return "24h change";
+  }
+  return "Today's change";
+}
+
+export function resolveDailyMovePeriodDetail(
+  periods: ReturnType<typeof summarizeDailyMovePeriods>,
+): string | null {
+  if (periods.isMixed) {
+    return "Equities today · Crypto 24h";
+  }
+  return null;
+}
+
 export function pickBestAndWorstMovers(snapshot: DailyPerformanceSnapshot) {
-
-  if (!snapshot.performanceCoverageComplete) {
-
+  if (snapshot.performers.length === 0) {
     return { bestMover: null, worstMover: null };
-
   }
 
 
@@ -361,7 +403,7 @@ export function pickTopAndLowestMovers(snapshot: DailyPerformanceSnapshot): {
   lowestMover: HeroMover | null;
   hasReliableMoverData: boolean;
 } {
-  if (!snapshot.performanceCoverageComplete || snapshot.performers.length === 0) {
+  if (snapshot.performers.length === 0) {
     return { topMover: null, lowestMover: null, hasReliableMoverData: false };
   }
 

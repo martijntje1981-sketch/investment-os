@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  formatDailyPerformanceCoverageMessage,
   hasValidDailyPerformance,
   pickBestAndWorstMovers,
   summarizeDailyPerformance,
@@ -122,7 +121,7 @@ describe("summarizeDailyPerformance", () => {
 });
 
 describe("pickBestAndWorstMovers", () => {
-  it("returns null movers when coverage is incomplete", () => {
+  it("returns movers from covered holdings when coverage is incomplete", () => {
     const snapshot = summarizeDailyPerformance([
       holding({
         symbol: "STRC",
@@ -133,9 +132,8 @@ describe("pickBestAndWorstMovers", () => {
       holding({ symbol: "VWCE", currentPrice: 128 }),
     ]);
 
-    expect(pickBestAndWorstMovers(snapshot)).toEqual({
-      bestMover: null,
-      worstMover: null,
-    });
+    expect(pickBestAndWorstMovers(snapshot).bestMover?.holding.symbol).toBe(
+      "STRC",
+    );
   });
 });

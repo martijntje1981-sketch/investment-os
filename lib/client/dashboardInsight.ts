@@ -26,6 +26,11 @@ function buildDriverSentence(summary: DashboardSummary): string {
     return "Today's move cannot be measured yet because previous-close prices are not available for all holdings.";
   }
 
+  if (!summary.performanceCoverageComplete && summary.dailyPerformanceCoverageMessage) {
+    const { symbol, move } = summary.topDailyDriver;
+    return `Largest covered move: ${symbol} (${formatSignedCurrency(move)}). ${summary.dailyPerformanceCoverageMessage}`;
+  }
+
   if (!summary.performanceCoverageComplete) {
     return summary.dailyPerformanceCoverageMessage ??
       "Today's move is incomplete because previous-close prices are missing for some holdings.";
@@ -73,7 +78,7 @@ function buildConclusionSentence(summary: DashboardSummary): string {
   }
 
   if (!summary.performanceCoverageComplete) {
-    return "Conclusion: daily performance is still partial — refresh prices until every investment reports a previous close.";
+    return "Conclusion: partial market move is shown for covered holdings — refresh prices for the rest when available.";
   }
 
   if (summary.todayChange >= 0) {

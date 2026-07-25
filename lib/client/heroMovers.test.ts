@@ -99,7 +99,7 @@ describe("pickTopAndLowestMovers", () => {
     expect(movers.lowestMover?.holding.symbol).toBe("BBB");
   });
 
-  it("excludes unavailable and zero-change performers", () => {
+  it("excludes zero-change performers but keeps non-zero movers", () => {
     const snapshot = summarizeDailyPerformance([
       holding({
         symbol: "AAA",
@@ -113,8 +113,8 @@ describe("pickTopAndLowestMovers", () => {
 
     const movers = pickTopAndLowestMovers(snapshot);
 
-    expect(movers.hasReliableMoverData).toBe(false);
-    expect(movers.topMover).toBeNull();
+    expect(movers.hasReliableMoverData).toBe(true);
+    expect(movers.topMover?.holding.symbol).toBe("AAA");
     expect(movers.lowestMover).toBeNull();
   });
 
@@ -129,7 +129,7 @@ describe("pickTopAndLowestMovers", () => {
     );
   });
 
-  it("returns no movers when coverage is incomplete", () => {
+  it("returns movers from covered holdings when coverage is incomplete", () => {
     const snapshot = summarizeDailyPerformance([
       holding({
         symbol: "AAA",
@@ -140,10 +140,9 @@ describe("pickTopAndLowestMovers", () => {
       holding({ symbol: "BBB", currentPrice: 100 }),
     ]);
 
-    expect(pickTopAndLowestMovers(snapshot)).toEqual({
-      topMover: null,
-      lowestMover: null,
-      hasReliableMoverData: false,
-    });
+    const movers = pickTopAndLowestMovers(snapshot);
+
+    expect(movers.hasReliableMoverData).toBe(true);
+    expect(movers.topMover?.holding.symbol).toBe("AAA");
   });
 });

@@ -5,6 +5,9 @@
 import {
   summarizeDailyPerformance,
   formatDailyPerformanceCoverageMessage,
+  resolveDailyMoveHeroLabel,
+  resolveDailyMovePeriodDetail,
+  summarizeDailyMovePeriods,
   type DailyPerformer,
 } from "@/lib/client/dailyPerformance";
 import { loadUserPortfolioHoldings } from "@/lib/client/portfolioPricing";
@@ -33,6 +36,7 @@ export function summarizeAuthenticatedHomePortfolio(
   holdings: StoredPortfolioHolding[],
 ) {
   const daily = summarizeDailyPerformance(holdings);
+  const movePeriods = summarizeDailyMovePeriods(daily.performers);
   const totalValue = holdings.reduce(
     (sum, holding) => sum + (getHoldingMarketValue(holding) ?? 0),
     0,
@@ -47,6 +51,8 @@ export function summarizeAuthenticatedHomePortfolio(
     eligibleMarketHoldingCount: daily.eligibleMarketHoldingCount,
     performanceCoverageComplete: daily.performanceCoverageComplete,
     dailyPerformanceCoverageMessage: formatDailyPerformanceCoverageMessage(daily),
+    dailyMoveHeroLabel: resolveDailyMoveHeroLabel(movePeriods),
+    dailyMovePeriodDetail: resolveDailyMovePeriodDetail(movePeriods),
     bestHolding: toHomeHolding(daily.bestPerformer),
     worstHolding: toHomeHolding(daily.worstPerformer),
     latestUpdatedAt: daily.latestMarketUpdateAt,

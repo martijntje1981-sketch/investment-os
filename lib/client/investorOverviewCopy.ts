@@ -10,12 +10,8 @@ export function formatTodayMoveValue(input: {
   performanceCoverageComplete: boolean;
   formatValue: () => string;
 }): string {
-  if (input.hasDailyData && input.performanceCoverageComplete) {
-    return input.formatValue();
-  }
-
   if (input.hasDailyData) {
-    return "Partial update";
+    return input.formatValue();
   }
 
   return "—";
@@ -26,22 +22,42 @@ export function formatTodayMoveDetail(input: {
   performanceCoverageComplete: boolean;
   formatPercent: () => string;
   coverageMessage?: string | null;
+  mixedPeriodDetail?: string | null;
 }): string {
-  if (input.hasDailyData && input.performanceCoverageComplete) {
-    return input.formatPercent();
+  if (!input.hasDailyData) {
+    if (input.coverageMessage) {
+      return input.coverageMessage;
+    }
+    return DAILY_PERFORMANCE_AFTER_CLOSE;
   }
 
-  if (input.coverageMessage) {
+  const parts: string[] = [input.formatPercent()];
+
+  if (input.mixedPeriodDetail) {
+    parts.push(input.mixedPeriodDetail);
+  }
+
+  if (!input.performanceCoverageComplete && input.coverageMessage) {
+    parts.push(input.coverageMessage);
+  }
+
+  return parts.join(" · ");
+}
+
+export function formatMoverUnavailableMessage(input: {
+  hasDailyData: boolean;
+  hasReliableMoverData: boolean;
+  coverageMessage?: string | null;
+}): string | null {
+  if (input.hasReliableMoverData) {
+    return null;
+  }
+
+  if (input.hasDailyData && input.coverageMessage) {
     return input.coverageMessage;
   }
 
-  return DAILY_PERFORMANCE_AFTER_CLOSE;
-}
-
-export function formatMoverUnavailableMessage(
-  performanceCoverageComplete: boolean,
-): string | null {
-  if (performanceCoverageComplete) {
+  if (input.hasDailyData) {
     return null;
   }
 

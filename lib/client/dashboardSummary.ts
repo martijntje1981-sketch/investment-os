@@ -6,6 +6,9 @@ import {
   formatDailyPerformanceCoverageMessage,
   pickBestAndWorstMovers,
   pickTopAndLowestMovers,
+  resolveDailyMoveHeroLabel,
+  resolveDailyMovePeriodDetail,
+  summarizeDailyMovePeriods,
   summarizeDailyPerformance,
   type HeroMover,
 } from "@/lib/client/dailyPerformance";
@@ -38,6 +41,8 @@ export type DashboardSummary = {
   eligibleMarketHoldingCount: number;
   performanceCoverageComplete: boolean;
   dailyPerformanceCoverageMessage: string | null;
+  dailyMoveHeroLabel: string;
+  dailyMovePeriodDetail: string | null;
   bestMover: DashboardMover | null;
   worstMover: DashboardMover | null;
   heroTopMover: HeroMover | null;
@@ -84,6 +89,7 @@ export function buildDashboardSummary(
   const { bestMover: bestPerformer, worstMover: worstPerformer } =
     pickBestAndWorstMovers(daily);
   const heroMovers = pickTopAndLowestMovers(daily);
+  const movePeriods = summarizeDailyMovePeriods(daily.performers);
 
   const topDailyDriver = [...daily.performers].sort(
     (a, b) => Math.abs(b.move) - Math.abs(a.move),
@@ -108,6 +114,8 @@ export function buildDashboardSummary(
     eligibleMarketHoldingCount: daily.eligibleMarketHoldingCount,
     performanceCoverageComplete: daily.performanceCoverageComplete,
     dailyPerformanceCoverageMessage: formatDailyPerformanceCoverageMessage(daily),
+    dailyMoveHeroLabel: resolveDailyMoveHeroLabel(movePeriods),
+    dailyMovePeriodDetail: resolveDailyMovePeriodDetail(movePeriods),
     bestMover: bestPerformer
       ? buildMover(
           bestPerformer.holding,

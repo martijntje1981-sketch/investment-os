@@ -212,13 +212,17 @@ export default function DashboardPage() {
                 label="Biggest winner"
                 mover={snapshot.bestMover}
                 tone="positive"
-                performanceCoverageComplete={snapshot.performanceCoverageComplete}
+                hasDailyData={snapshot.hasDailyData}
+                hasReliableMoverData={snapshot.bestMover !== null}
+                coverageMessage={snapshot.dailyPerformanceCoverageMessage}
               />
               <DashboardMoverCard
                 label="Biggest loser"
                 mover={snapshot.worstMover}
                 tone="negative"
-                performanceCoverageComplete={snapshot.performanceCoverageComplete}
+                hasDailyData={snapshot.hasDailyData}
+                hasReliableMoverData={snapshot.worstMover !== null}
+                coverageMessage={snapshot.dailyPerformanceCoverageMessage}
               />
             </section>
 

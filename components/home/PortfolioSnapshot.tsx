@@ -25,6 +25,8 @@ type PortfolioSnapshotProps = {
   hasDailyData?: boolean;
   performanceCoverageComplete?: boolean;
   dailyPerformanceCoverageMessage?: string | null;
+  dailyMoveHeroLabel?: string;
+  dailyMovePeriodDetail?: string | null;
   bestHolding: Holding;
   worstHolding: Holding;
   lastUpdatedAt?: string | null;
@@ -148,6 +150,8 @@ export function PortfolioSnapshot({
   hasDailyData = true,
   performanceCoverageComplete = true,
   dailyPerformanceCoverageMessage = null,
+  dailyMoveHeroLabel = "Today's change",
+  dailyMovePeriodDetail = null,
   bestHolding,
   worstHolding,
   lastUpdatedAt,
@@ -156,8 +160,8 @@ export function PortfolioSnapshot({
   intelligenceSummary,
   discoverTeaser,
 }: PortfolioSnapshotProps) {
-  const showTodayMove = hasDailyData && performanceCoverageComplete;
-  const showMovers = performanceCoverageComplete;
+  const showTodayMove = hasDailyData;
+  const showMovers = hasDailyData;
 
   const todayValue = formatTodayMoveValue({
     hasDailyData,
@@ -165,17 +169,16 @@ export function PortfolioSnapshot({
     formatValue: () => formatEuro(todayChange, { signed: true }),
   });
 
-  const todayPercentValue = formatTodayMoveValue({
-    hasDailyData,
-    performanceCoverageComplete,
-    formatValue: () => formatPercent(todayPercent, true),
-  });
+  const todayPercentValue = hasDailyData
+    ? formatPercent(todayPercent, true)
+    : "—";
 
   const todayDetail = formatTodayMoveDetail({
     hasDailyData,
     performanceCoverageComplete,
     formatPercent: () => formatPercent(todayPercent, true),
     coverageMessage: dailyPerformanceCoverageMessage,
+    mixedPeriodDetail: dailyMovePeriodDetail,
   });
 
   return (
@@ -193,7 +196,7 @@ export function PortfolioSnapshot({
         <div className="grid gap-px bg-slate-100 sm:grid-cols-2">
           <div className="min-w-0 bg-white px-5 py-4 sm:px-6">
             <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-              Today&apos;s change
+              {dailyMoveHeroLabel}
             </p>
             <p
               className={`mt-1 text-2xl font-black tracking-[-0.03em] ${
@@ -218,7 +221,9 @@ export function PortfolioSnapshot({
               {todayPercentValue}
             </p>
             <p className="mt-1 text-base text-slate-500">
-              {showTodayMove ? "Compared with previous close" : todayDetail}
+              {showTodayMove
+                ? dailyMovePeriodDetail ?? "Compared with previous close"
+                : todayDetail}
             </p>
           </div>
         </div>

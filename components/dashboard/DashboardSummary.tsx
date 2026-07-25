@@ -28,7 +28,8 @@ export function DashboardSummary({
           topMover={snapshot.heroTopMover}
           lowestMover={snapshot.heroLowestMover}
           hasReliableHeroMoverData={snapshot.hasReliableHeroMoverData}
-          performanceCoverageComplete={snapshot.performanceCoverageComplete}
+          hasDailyData={snapshot.hasDailyData}
+          coverageMessage={snapshot.dailyPerformanceCoverageMessage}
         />
         <div className="grid min-w-0 grid-cols-1 border-t border-white/[0.08] md:grid-cols-2">
           <PortfolioValueCard snapshot={snapshot} embedded />

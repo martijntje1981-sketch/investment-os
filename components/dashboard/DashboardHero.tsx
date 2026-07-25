@@ -38,12 +38,13 @@ function signedPercent(value: number) {
 }
 
 export function DashboardPortfolioHero({ summary }: { summary: DashboardSummary }) {
-  const showTodayMove =
-    summary.hasDailyData && summary.performanceCoverageComplete;
+  const showTodayMove = summary.hasDailyData;
   const todayTone =
-    summary.todayChange >= 0 ? "text-emerald-300" : "text-red-300";
-  const totalTone =
-    summary.totalReturn >= 0 ? "text-emerald-300" : "text-red-300";
+    summary.hasDailyData && summary.todayChange !== 0
+      ? summary.todayChange > 0
+        ? "text-emerald-300"
+        : "text-red-300"
+      : "text-slate-300";
 
   const todayValue = formatTodayMoveValue({
     hasDailyData: summary.hasDailyData,
@@ -56,7 +57,11 @@ export function DashboardPortfolioHero({ summary }: { summary: DashboardSummary 
     performanceCoverageComplete: summary.performanceCoverageComplete,
     formatPercent: () => signedPercent(summary.todayPercent),
     coverageMessage: summary.dailyPerformanceCoverageMessage,
+    mixedPeriodDetail: summary.dailyMovePeriodDetail,
   });
+
+  const totalTone =
+    summary.totalReturn >= 0 ? "text-emerald-300" : "text-red-300";
 
   return (
     <section className="min-w-0 overflow-hidden rounded-[24px] border border-slate-800 bg-slate-950 text-white shadow-2xl md:rounded-[32px]">
@@ -73,7 +78,7 @@ export function DashboardPortfolioHero({ summary }: { summary: DashboardSummary 
 
         <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <HeroMetric
-            label="Today's change"
+            label={summary.dailyMoveHeroLabel}
             value={todayValue}
             detail={todayDetail}
             valueClassName={showTodayMove ? todayTone : "text-slate-300"}
@@ -156,19 +161,28 @@ export function DashboardMoverCard({
   label,
   mover,
   tone,
-  performanceCoverageComplete,
+  hasDailyData,
+  hasReliableMoverData,
+  coverageMessage,
 }: {
   label: string;
   mover: DashboardSummary["bestMover"];
   tone: "positive" | "negative";
-  performanceCoverageComplete: boolean;
+  hasDailyData: boolean;
+  hasReliableMoverData: boolean;
+  coverageMessage?: string | null;
 }) {
-  if (!performanceCoverageComplete) {
+  if (!hasReliableMoverData) {
+    const unavailableCopy =
+      hasDailyData && coverageMessage
+        ? coverageMessage
+        : RANKING_AFTER_CLOSE;
+
     return (
       <article className={`min-w-0 ${appDashboardLightCardClass} px-5 py-5`}>
         <p className={appSectionLabelClass}>{label}</p>
         <p className={`mt-2.5 ${appSectionBodyClass} text-slate-600`}>
-          {RANKING_AFTER_CLOSE}
+          {unavailableCopy}
         </p>
       </article>
     );

@@ -265,7 +265,10 @@ describe("investor overview copy", () => {
       }),
     ).toBe(DAILY_PERFORMANCE_AFTER_CLOSE);
 
-    expect(formatMoverUnavailableMessage(false)).toBe(RANKING_AFTER_CLOSE);
+    expect(formatMoverUnavailableMessage({
+      hasDailyData: false,
+      hasReliableMoverData: false,
+    })).toBe(RANKING_AFTER_CLOSE);
     expect(DAILY_PERFORMANCE_AFTER_CLOSE).not.toBe(RANKING_AFTER_CLOSE);
   });
 });

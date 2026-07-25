@@ -223,9 +223,39 @@ export function applyRemoteSnapshotToLocalCache(
     };
 
     if (holding.assetType === "crypto") {
+      if (
+        localHolding &&
+        typeof localHolding.currentPairPrice === "number" &&
+        localHolding.currentPairPrice > 0
+      ) {
+        return {
+          ...effectiveHolding,
+          currentPrice: localHolding.currentPrice,
+          currentPairPrice: localHolding.currentPairPrice,
+          pairCurrency: effectiveHolding.pairCurrency ?? localHolding.pairCurrency,
+          tradingPair: effectiveHolding.tradingPair ?? localHolding.tradingPair,
+          change24hPercent: localHolding.change24hPercent,
+          change24hAmount: localHolding.change24hAmount,
+          changePercent: localHolding.changePercent,
+          providerSymbol:
+            effectiveHolding.providerSymbol ?? localHolding.providerSymbol ?? null,
+          providerId: localHolding.providerId,
+          providerName: localHolding.providerName,
+          providerDisplayName: localHolding.providerDisplayName,
+          quoteSourcePair: localHolding.quoteSourcePair,
+          quoteConversionApplied: localHolding.quoteConversionApplied,
+          quoteConversionPath: localHolding.quoteConversionPath,
+          priceDataStatus: localHolding.priceDataStatus,
+          priceUpdatedAt: localHolding.priceUpdatedAt,
+          fetchedAt: localHolding.fetchedAt,
+          marketPriceUpdatedAt: localHolding.marketPriceUpdatedAt,
+        };
+      }
+
       return {
         ...effectiveHolding,
         currentPrice: 0,
+        currentPairPrice: null,
         priceDataStatus: "unavailable" as const,
       };
     }

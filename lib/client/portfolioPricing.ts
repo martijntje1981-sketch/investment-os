@@ -392,6 +392,9 @@ export function isQuoteCompatibleWithHolding(
     if (holdingPair && quotePair) {
       return holdingPair.trim().toUpperCase() === quotePair.trim().toUpperCase();
     }
+    if (holding.pairCurrency?.trim() || quotePair) {
+      return false;
+    }
     return (
       normalizePortfolioSymbol(holding.symbol) ===
       normalizePortfolioSymbol(quote.symbol)
@@ -713,7 +716,17 @@ export function writePriceCache(
   assertUserSub(userSub);
 
   const cache: CachedPortfolioPrice[] = normalizePriceApiQuotes(quotes)
-    .filter((quote) => Number.isFinite(quote.priceEur) && quote.priceEur > 0)
+    .filter((quote) => {
+      const hasCryptoPair =
+        quote.assetType === "crypto" &&
+        typeof quote.pairPrice === "number" &&
+        quote.pairPrice > 0;
+      const hasInvestmentPrice =
+        quote.assetType !== "crypto" &&
+        Number.isFinite(quote.priceEur) &&
+        quote.priceEur > 0;
+      return hasCryptoPair || hasInvestmentPrice;
+    })
     .map((quote) => ({
       symbol: normalizePortfolioSymbol(quote.symbol),
       providerSymbol: quote.providerSymbol ?? quote.eodhdSymbol,
@@ -724,6 +737,12 @@ export function writePriceCache(
       change: typeof quote.change === "number" ? quote.change : undefined,
       changePercent:
         typeof quote.changePercent === "number" ? quote.changePercent : undefined,
+      change24hPercent:
+        typeof quote.change24hPercent === "number"
+          ? quote.change24hPercent
+          : quote.assetType === "crypto" && typeof quote.changePercent === "number"
+            ? quote.changePercent
+            : undefined,
       currency: quote.currency ?? null,
       dataStatus: quote.dataStatus,
       updatedAt: quote.updatedAt ?? metadata?.lastSuccessfulUpdate ?? undefined,
@@ -731,6 +750,13 @@ export function writePriceCache(
       quoteSource: metadata?.quoteSource ?? "provider",
       lastSuccessfulUpdate:
         metadata?.lastSuccessfulUpdate ?? quote.updatedAt ?? null,
+      assetType: quote.assetType,
+      pairPrice: quote.pairPrice ?? undefined,
+      normalizedPair: quote.normalizedPair ?? undefined,
+      sourcePair: quote.sourcePair ?? undefined,
+      conversionApplied: quote.conversionApplied,
+      conversionPath: quote.conversionPath ?? undefined,
+      providerDisplayName: quote.providerDisplayName ?? undefined,
     }));
 
   localStorage.setItem(priceCacheKey(userSub), JSON.stringify(cache));
@@ -845,7 +871,17 @@ export function purgeIncorrectPriceCacheEntries(
 
 function readPriceCacheQuotes(userSub: string): PriceApiQuote[] {
   return readPriceCacheEntries(userSub)
-    .filter((item) => Number.isFinite(item.price) && item.price > 0)
+    .filter((item) => {
+      if (item.assetType === "crypto") {
+        return (
+          typeof item.pairPrice === "number" &&
+          item.pairPrice > 0 &&
+          Number.isFinite(item.price) &&
+          item.price > 0
+        );
+      }
+      return Number.isFinite(item.price) && item.price > 0;
+    })
     .map((item) =>
       normalizePriceApiQuote({
         symbol: item.symbol,
@@ -853,12 +889,21 @@ function readPriceCacheQuotes(userSub: string): PriceApiQuote[] {
         isin: item.isin ?? null,
         priceEur: item.price,
         currentPrice: item.price,
+        assetType: item.assetType,
+        pairPrice: item.pairPrice ?? null,
+        normalizedPair: item.normalizedPair ?? null,
         previousClose: item.previousClose ?? null,
         change: item.change ?? null,
         changePercent: item.changePercent ?? null,
+        change24hPercent: item.change24hPercent ?? item.changePercent ?? null,
         currency: item.currency ?? null,
         dataStatus: item.dataStatus,
         updatedAt: item.updatedAt ?? null,
+        sourcePair: item.sourcePair ?? null,
+        conversionApplied: item.conversionApplied,
+        conversionPath: item.conversionPath ?? null,
+        providerDisplayName: item.providerDisplayName ?? null,
+        provider: item.provider ?? undefined,
       }),
     );
 }

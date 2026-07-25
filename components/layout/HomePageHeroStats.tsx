@@ -20,6 +20,8 @@ type HomeSummary = {
   hasDailyData: boolean;
   performanceCoverageComplete: boolean;
   dailyPerformanceCoverageMessage: string | null;
+  dailyMoveHeroLabel: string;
+  dailyMovePeriodDetail: string | null;
   latestUpdatedAt: string | null;
 };
 
@@ -69,16 +71,16 @@ export function HomePageHeroStats({
     performanceCoverageComplete: summary.performanceCoverageComplete,
     formatPercent: () => formatSignedPortfolioPercent(summary.todayPercent),
     coverageMessage: summary.dailyPerformanceCoverageMessage,
+    mixedPeriodDetail: summary.dailyMovePeriodDetail,
   });
 
-  const todayTone =
-    summary.hasDailyData && summary.performanceCoverageComplete
-      ? summary.todayChange > 0
-        ? "text-emerald-300"
-        : summary.todayChange < 0
-          ? "text-red-300"
-          : "text-slate-300"
-      : "text-slate-300";
+  const todayTone = summary.hasDailyData
+    ? summary.todayChange > 0
+      ? "text-emerald-300"
+      : summary.todayChange < 0
+        ? "text-red-300"
+        : "text-slate-300"
+    : "text-slate-300";
 
   return (
     <div className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
@@ -87,12 +89,8 @@ export function HomePageHeroStats({
         value={formatPortfolioCurrency(summary.totalValue)}
       />
       <HeroStat
-        label="Today"
-        value={
-          summary.hasDailyData && summary.performanceCoverageComplete
-            ? todayValue
-            : "—"
-        }
+        label={summary.dailyMoveHeroLabel}
+        value={summary.hasDailyData ? todayValue : "—"}
         detail={todayDetail}
         valueClassName={todayTone}
       />

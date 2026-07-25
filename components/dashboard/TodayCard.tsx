@@ -18,7 +18,7 @@ function todayToneClass(
   snapshot: DashboardPortfolioSnapshot,
   embedded: boolean,
 ): string {
-  if (!snapshot.hasDailyData || !snapshot.performanceCoverageComplete) {
+  if (!snapshot.hasDailyData) {
     return embedded ? "text-white/85" : "text-slate-700";
   }
 
@@ -40,8 +40,7 @@ export function TodayCard({
   snapshot: DashboardPortfolioSnapshot;
   embedded?: boolean;
 }) {
-  const showTodayMove =
-    snapshot.hasDailyData && snapshot.performanceCoverageComplete;
+  const showTodayMove = snapshot.hasDailyData;
 
   const amountLabel = formatTodayMoveValue({
     hasDailyData: snapshot.hasDailyData,
@@ -55,6 +54,7 @@ export function TodayCard({
     formatPercent: () =>
       `${formatSignedPortfolioPercent(snapshot.todayPercent)} today`,
     coverageMessage: snapshot.dailyPerformanceCoverageMessage,
+    mixedPeriodDetail: snapshot.dailyMovePeriodDetail,
   });
 
   const unavailableCopy =
@@ -69,7 +69,7 @@ export function TodayCard({
       }
     >
       <p className={embedded ? appHeroMetricLabelClass : appSectionLabelClass}>
-        Today
+        {snapshot.dailyMoveHeroLabel}
       </p>
       <p
         className={`mt-2.5 ${appHeroKpiClass} ${todayToneClass(snapshot, embedded)}`}

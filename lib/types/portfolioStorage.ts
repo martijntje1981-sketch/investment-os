@@ -158,12 +158,20 @@ export type CachedPortfolioPrice = {
   previousClose?: number | null;
   change?: number | null;
   changePercent?: number | null;
+  change24hPercent?: number | null;
   currency?: string | null;
   dataStatus?: "live" | "delayed" | "stale" | "unavailable";
   updatedAt?: string;
   provider?: string | null;
   quoteSource?: "cache" | "provider" | "mixed" | null;
   lastSuccessfulUpdate?: string | null;
+  assetType?: "investment" | "crypto";
+  pairPrice?: number | null;
+  normalizedPair?: string | null;
+  sourcePair?: string | null;
+  conversionApplied?: boolean;
+  conversionPath?: string | null;
+  providerDisplayName?: string | null;
 };
 
 export type GoalSettings = {

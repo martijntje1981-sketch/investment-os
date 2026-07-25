@@ -81,18 +81,25 @@ export function DashboardHeroMovers({
   topMover,
   lowestMover,
   hasReliableHeroMoverData,
-  performanceCoverageComplete,
+  hasDailyData,
+  coverageMessage,
 }: {
   topMover: HeroMover | null;
   lowestMover: HeroMover | null;
   hasReliableHeroMoverData: boolean;
-  performanceCoverageComplete: boolean;
+  hasDailyData: boolean;
+  coverageMessage?: string | null;
 }) {
-  if (!performanceCoverageComplete) {
+  if (!hasReliableHeroMoverData) {
+    const unavailableCopy =
+      hasDailyData && coverageMessage
+        ? coverageMessage
+        : RANKING_AFTER_CLOSE;
+
     return (
       <div className="border-t border-white/[0.08] px-5 py-3 sm:px-7 sm:py-4 md:px-8">
         <p className={`${appDashboardDarkMetaClass} text-sm leading-relaxed`}>
-          {RANKING_AFTER_CLOSE}
+          {unavailableCopy}
         </p>
       </div>
     );

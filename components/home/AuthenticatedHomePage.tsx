@@ -144,6 +144,8 @@ export default function AuthenticatedHomePage() {
             hasDailyData={summary.hasDailyData}
             performanceCoverageComplete={summary.performanceCoverageComplete}
             dailyPerformanceCoverageMessage={summary.dailyPerformanceCoverageMessage}
+            dailyMoveHeroLabel={summary.dailyMoveHeroLabel}
+            dailyMovePeriodDetail={summary.dailyMovePeriodDetail}
             bestHolding={summary.bestHolding}
             worstHolding={summary.worstHolding}
             lastUpdatedAt={summary.latestUpdatedAt}
