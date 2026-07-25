@@ -11,6 +11,7 @@ export type CryptoHoldingMetadata = {
   portfolioCurrency: "EUR";
   pricingStatus: CryptoPricingStatus;
   tradingPair: string;
+  providerSymbol?: string | null;
   platform?: string | null;
   providerAssetId?: string | null;
   providerId?: string | null;
@@ -49,6 +50,7 @@ export function buildCryptoHoldingMetadata(
     tradingPair:
       holding.tradingPair?.trim() ||
       buildCryptoTradingPair(symbol, pairCurrency),
+    providerSymbol: readOptionalString(holding.providerSymbol),
     platform: readOptionalString(holding.platform),
     providerAssetId: readOptionalString(holding.providerAssetId),
     providerId: readOptionalString(holding.providerId),
@@ -83,6 +85,7 @@ export function parseCryptoHoldingMetadata(
     tradingPair:
       readOptionalString(record.tradingPair) ??
       buildCryptoTradingPair("?", pairCurrency),
+    providerSymbol: readOptionalString(record.providerSymbol),
     platform: readOptionalString(record.platform),
     providerAssetId: readOptionalString(record.providerAssetId),
     providerId: readOptionalString(record.providerId),
@@ -103,6 +106,7 @@ export function applyCryptoMetadataToStoredHolding(
     portfolioCurrency: metadata.portfolioCurrency,
     pricingStatus: metadata.pricingStatus,
     tradingPair: metadata.tradingPair,
+    providerSymbol: metadata.providerSymbol ?? holding.providerSymbol ?? null,
     platform: metadata.platform ?? null,
     providerAssetId: metadata.providerAssetId ?? null,
     providerId: metadata.providerId ?? null,

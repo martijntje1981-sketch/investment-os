@@ -7,10 +7,12 @@ import {
   applyCachedPrices,
   applyPricesToHoldings,
   buildPriceRequestPayload,
+  countAppliedPriceUpdates,
   filterQuotablePricePayloadForRefresh,
   isLivePriceRefreshInFlight,
   isRateLimitedPriceError,
   parsePriceApiResponseQuotes,
+  prepareHoldingsForPricing,
   writePriceCache,
 } from "@/lib/client/portfolioPricing";
 import { logLivePriceRefreshTrace } from "@/lib/client/marketDataRefreshTrace";
@@ -126,21 +128,12 @@ function buildPartialRefreshMessage(
   return `Updated ${updatedCount} of ${totalQuotable} holdings. Last known prices are shown for the remainder.`;
 }
 
-function buildQuotaExhaustedMessage(): string {
-  return "The market-data limit has been reached. Your last available prices remain visible.";
+function buildNoPricesUpdatedMessage(): string {
+  return "No live prices were updated.";
 }
 
-function countUpdatedHoldings<T extends StoredPortfolioHolding>(
-  before: T[],
-  after: T[],
-): number {
-  return after.filter((holding, index) => {
-    const previous = before[index];
-    if (!previous || holding.assetType === "cash") {
-      return false;
-    }
-    return holding.currentPrice !== previous.currentPrice;
-  }).length;
+function buildQuotaExhaustedMessage(): string {
+  return "The market-data limit has been reached. Your last available prices remain visible.";
 }
 
 function isQuotaExhaustedResponse(
@@ -187,12 +180,13 @@ function isStaleOnlyRefreshResponse(
 export async function refreshLivePortfolioPrices<
   T extends StoredPortfolioHolding,
 >(userSub: string, holdings: T[]): Promise<LivePriceRefreshResult<T>> {
-  const totalQuotable = countUniqueQuotableProviderSymbols(holdings, userSub);
+  const preparedHoldings = prepareHoldingsForPricing(holdings) as T[];
+  const totalQuotable = countUniqueQuotableProviderSymbols(preparedHoldings, userSub);
   const uniqueRequested = totalQuotable;
 
   if (holdings.length === 0 || totalQuotable === 0) {
     return {
-      holdings: applyCachedPrices(userSub, holdings),
+      holdings: applyCachedPrices(userSub, preparedHoldings),
       updated: false,
       uniqueRequested: 0,
       updatedCount: 0,
@@ -207,7 +201,7 @@ export async function refreshLivePortfolioPrices<
   const cooldownRemainingMs = getLivePriceRefreshCooldownRemainingMs();
   if (cooldownRemainingMs > 0) {
     return {
-      holdings: applyCachedPrices(userSub, holdings),
+      holdings: applyCachedPrices(userSub, preparedHoldings),
       updated: false,
       uniqueRequested,
       updatedCount: 0,
@@ -221,7 +215,7 @@ export async function refreshLivePortfolioPrices<
 
   if (liveRefreshInFlight || isLivePriceRefreshInFlight()) {
     return {
-      holdings: applyCachedPrices(userSub, holdings),
+      holdings: applyCachedPrices(userSub, preparedHoldings),
       updated: false,
       uniqueRequested,
       updatedCount: 0,
@@ -234,7 +228,7 @@ export async function refreshLivePortfolioPrices<
   }
 
   const quotablePayload = filterQuotablePricePayloadForRefresh(
-    buildPriceRequestPayload(holdings, userSub),
+    buildPriceRequestPayload(preparedHoldings, userSub),
   );
 
   const run = (async (): Promise<LivePriceRefreshResult<T>> => {
@@ -270,7 +264,7 @@ export async function refreshLivePortfolioPrices<
         spendableRemaining: estimateData.eodhdBudget?.spendableRemaining ?? null,
       });
       return {
-        holdings: applyCachedPrices(userSub, holdings),
+        holdings: applyCachedPrices(userSub, preparedHoldings),
         updated: false,
         uniqueRequested,
         updatedCount: 0,
@@ -312,7 +306,7 @@ export async function refreshLivePortfolioPrices<
     }
 
     const normalizedQuotes = parsePriceApiResponseQuotes(data.prices);
-    const cachedHoldings = applyCachedPrices(userSub, holdings);
+    const cachedHoldings = applyCachedPrices(userSub, preparedHoldings);
 
     if (
       isQuotaExhaustedResponse(
@@ -357,9 +351,18 @@ export async function refreshLivePortfolioPrices<
       };
     }
 
-    if (normalizedQuotes.length === 0) {
+    const refreshed = applyPricesToHoldings(preparedHoldings, data.prices, {
+      clearMissingDailyFields: true,
+    });
+    const appliedCount = countAppliedPriceUpdates(preparedHoldings, refreshed);
+
+    if (normalizedQuotes.length === 0 || appliedCount === 0) {
       lastLiveRefreshCompletedAt = Date.now();
-      const received = data.received ?? 0;
+      const received = data.received ?? normalizedQuotes.length;
+      const providerFailure =
+        isRateLimitedPriceError(data.message ?? data.error ?? "") ||
+        Boolean(data.errors?.some((error) => isRateLimitedPriceError(error)));
+
       return {
         holdings: cachedHoldings,
         updated: false,
@@ -367,10 +370,12 @@ export async function refreshLivePortfolioPrices<
         updatedCount: 0,
         totalQuotable,
         message:
-          received > 0
-            ? buildPartialRefreshMessage(received, totalQuotable)
-            : buildQuotaExhaustedMessage(),
-        quotaExhausted: received === 0,
+          received > 0 || normalizedQuotes.length > 0
+            ? buildNoPricesUpdatedMessage()
+            : providerFailure
+              ? buildQuotaExhaustedMessage()
+              : buildNoPricesUpdatedMessage(),
+        quotaExhausted: providerFailure && received === 0,
         inProgress: false,
         cooldownRemainingMs: getLivePriceRefreshCooldownRemainingMs(),
       };
@@ -385,31 +390,24 @@ export async function refreshLivePortfolioPrices<
     });
     recordLastLivePriceRefreshAt(userSub);
 
-    const refreshed = applyPricesToHoldings(holdings, data.prices, {
-      clearMissingDailyFields: true,
-    });
-    const updatedCount = Math.max(
-      countUpdatedHoldings(holdings, refreshed),
-      normalizedQuotes.length,
-    );
     lastLiveRefreshCompletedAt = Date.now();
 
     logLivePriceRefreshTrace("holdings_applied", {
       quoteCount: normalizedQuotes.length,
-      updatedCount,
+      appliedCount,
       lastUpdatedAt:
         refreshed.find((holding) => holding.marketPriceUpdatedAt)?.marketPriceUpdatedAt ??
         null,
     });
 
-    if (normalizedQuotes.length >= totalQuotable) {
+    if (appliedCount >= totalQuotable) {
       return {
         holdings: refreshed,
         updated: true,
         uniqueRequested,
-        updatedCount: normalizedQuotes.length,
+        updatedCount: appliedCount,
         totalQuotable,
-        message: buildLiveRefreshSuccessMessage(normalizedQuotes.length),
+        message: buildLiveRefreshSuccessMessage(appliedCount),
         quotaExhausted: false,
         inProgress: false,
         cooldownRemainingMs: getLivePriceRefreshCooldownRemainingMs(),
@@ -418,11 +416,11 @@ export async function refreshLivePortfolioPrices<
 
     return {
       holdings: refreshed,
-      updated: updatedCount > 0,
+      updated: true,
       uniqueRequested,
-      updatedCount,
+      updatedCount: appliedCount,
       totalQuotable,
-      message: buildPartialRefreshMessage(updatedCount, totalQuotable),
+      message: buildPartialRefreshMessage(appliedCount, totalQuotable),
       quotaExhausted: false,
       inProgress: false,
       cooldownRemainingMs: getLivePriceRefreshCooldownRemainingMs(),
@@ -437,7 +435,7 @@ export async function refreshLivePortfolioPrices<
     const message =
       error instanceof Error ? error.message : "Market data unavailable";
     return {
-      holdings: applyCachedPrices(userSub, holdings),
+      holdings: applyCachedPrices(userSub, preparedHoldings),
       updated: false,
       uniqueRequested,
       updatedCount: 0,

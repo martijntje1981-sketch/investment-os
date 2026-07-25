@@ -45,13 +45,20 @@ import {
 import { prepareManualHoldingForSave } from "@/lib/services/portfolio/holdingValidation";
 import {
   diagnoseQuoteCompatibility,
+  hasReliableHoldingMarketPrice,
   isValidApplicableQuote,
   resolveHoldingTradingPair,
 } from "@/lib/client/cryptoQuoteCompatibility";
+import { buildCryptoQuoteApplicationDiagnostic } from "@/lib/client/cryptoQuoteDiagnostics";
 import {
   migrateLegacyCryptoHoldings,
 } from "@/lib/services/portfolio/legacyCryptoHoldingMigration";
-import { normalizeTradingPairKey } from "@/lib/services/portfolio/cryptoPairIdentity";
+import {
+  normalizeTradingPairKey,
+  resolveCanonicalCryptoPair,
+} from "@/lib/services/portfolio/cryptoPairIdentity";
+import { isLivePricedCryptoBaseAsset } from "@/lib/services/portfolio/cryptoBaseAssetRegistry";
+import { resolveCryptoQuoteFetchPlan } from "@/lib/services/prices/cryptoQuoteResolution";
 import {
   enrichHoldingsWithVerifiedMappings,
   holdingsChangedByVerifiedEnrichment,
@@ -324,23 +331,109 @@ export function normalizePortfolioSymbol(value: unknown): string {
   return String(value ?? "").trim().toUpperCase();
 }
 
+function synchronizeCryptoHoldingPairIdentity(
+  holding: StoredPortfolioHolding,
+): StoredPortfolioHolding {
+  if (holding.assetType !== "crypto") {
+    return holding;
+  }
+
+  const canonical = resolveCanonicalCryptoPair(holding);
+  if (!canonical) {
+    return holding;
+  }
+
+  const providerSymbol = isLivePricedCryptoBaseAsset(canonical.base)
+    ? resolveCryptoQuoteFetchPlan(canonical.base, canonical.quote)
+        ?.providerSymbol ??
+      holding.providerSymbol ??
+      null
+    : holding.providerSymbol ?? null;
+
+  return {
+    ...holding,
+    symbol: canonical.base,
+    pairCurrency: canonical.quote,
+    tradingPair: canonical.tradingPair,
+    providerSymbol,
+  };
+}
+
+/** Ensures legacy and modern crypto holdings share one canonical pricing identity. */
+export function prepareHoldingsForPricing(
+  holdings: StoredPortfolioHolding[],
+): StoredPortfolioHolding[] {
+  return migrateLegacyCryptoHoldings(holdings).holdings.map((holding) =>
+    synchronizeCryptoHoldingPairIdentity(holding),
+  );
+}
+
+function mergePricingIdentity<T extends StoredPortfolioHolding>(
+  holding: T,
+  pricingHolding: StoredPortfolioHolding,
+): T {
+  if (pricingHolding.assetType !== "crypto") {
+    return holding;
+  }
+
+  return {
+    ...holding,
+    assetType: "crypto",
+    symbol: pricingHolding.symbol,
+    pairCurrency: pricingHolding.pairCurrency,
+    tradingPair: pricingHolding.tradingPair,
+    providerSymbol: pricingHolding.providerSymbol ?? holding.providerSymbol ?? null,
+  };
+}
+
+export function countAppliedPriceUpdates<T extends StoredPortfolioHolding>(
+  before: T[],
+  after: T[],
+): number {
+  return after.filter((holding, index) => {
+    const previous = before[index];
+    if (!previous || holding.assetType === "cash") {
+      return false;
+    }
+
+    if (!hasReliableHoldingMarketPrice(holding)) {
+      return false;
+    }
+
+    if (!hasReliableHoldingMarketPrice(previous)) {
+      return true;
+    }
+
+    return (
+      holding.currentPrice !== previous.currentPrice ||
+      holding.currentPairPrice !== previous.currentPairPrice ||
+      (holding.marketPriceUpdatedAt ?? null) !==
+        (previous.marketPriceUpdatedAt ?? null)
+    );
+  }).length;
+}
+
 /** Builds the POST /api/prices request body from stored holdings. */
 export function buildPriceRequestPayload(
   holdings: StoredPortfolioHolding[],
   userSub?: string,
 ): PortfolioInstrumentPayload[] {
-  return holdings
+  return prepareHoldingsForPricing(holdings)
     .filter((holding) => holding.assetType !== "cash")
     .map((holding) => {
       const savedMapping =
         userSub != null ? findSavedMappingForHolding(userSub, holding) : null;
+      const canonical =
+        holding.assetType === "crypto"
+          ? resolveCanonicalCryptoPair(holding)
+          : null;
 
       return {
         id: holding.id,
         symbol: holding.symbol,
         name: holding.name,
         assetType: holding.assetType,
-        pairCurrency: holding.pairCurrency ?? null,
+        pairCurrency: canonical?.quote ?? holding.pairCurrency ?? null,
         isin: holding.isin ?? savedMapping?.isin ?? null,
         exchange: holding.exchange ?? savedMapping?.exchange ?? null,
         providerSymbol:
@@ -655,18 +748,20 @@ export function applyPricesToHoldings<T extends StoredPortfolioHolding>(
   quotes: PriceApiQuote[] | undefined,
   options?: { clearMissingDailyFields?: boolean },
 ): T[] {
+  const preparedHoldings = prepareHoldingsForPricing(holdings) as T[];
   const lookup = buildPriceLookup(quotes);
   const clearMissingDailyFields = options?.clearMissingDailyFields ?? false;
 
-  return holdings.map((holding) => {
+  return holdings.map((holding, index) => {
     if (holding.assetType === "cash") return holding;
 
-    const quote = findQuoteForHolding(holding, lookup);
+    const pricingHolding = preparedHoldings[index] ?? holding;
+    const quote = findQuoteForHolding(pricingHolding, lookup);
     if (!quote) {
       console.warn("[holding daily data missing quote]", {
         name: holding.name,
         symbol: holding.symbol,
-        providerSymbol: holding.providerSymbol,
+        providerSymbol: pricingHolding.providerSymbol,
         isin: holding.isin,
       });
       const hasCryptoPairPrice =
@@ -681,17 +776,30 @@ export function applyPricesToHoldings<T extends StoredPortfolioHolding>(
           Number.isFinite(holding.currentPrice) &&
           holding.currentPrice > 0)
       ) {
-        return {
-          ...holding,
-          priceDataStatus: "stale",
-        };
+        return mergePricingIdentity(
+          {
+            ...holding,
+            priceDataStatus: "stale",
+          },
+          pricingHolding,
+        );
       }
-      return clearMissingDailyFields
-        ? clearHoldingDailyPerformance(holding)
-        : holding;
+      return mergePricingIdentity(
+        clearMissingDailyFields
+          ? clearHoldingDailyPerformance(holding)
+          : holding,
+        pricingHolding,
+      );
     }
 
-    if (!isValidApplicableQuote(holding, quote)) {
+    if (process.env.NEXT_PUBLIC_MARKET_DATA_DEBUG === "1") {
+      console.info(
+        "[crypto quote diagnostic]",
+        buildCryptoQuoteApplicationDiagnostic(pricingHolding, quote),
+      );
+    }
+
+    if (!isValidApplicableQuote(pricingHolding, quote)) {
       const hasCryptoPairPrice =
         holding.assetType === "crypto" &&
         typeof holding.currentPairPrice === "number" &&
@@ -704,15 +812,21 @@ export function applyPricesToHoldings<T extends StoredPortfolioHolding>(
           Number.isFinite(holding.currentPrice) &&
           holding.currentPrice > 0)
       ) {
-        return {
-          ...holding,
-          priceDataStatus: "stale",
-        };
+        return mergePricingIdentity(
+          {
+            ...holding,
+            priceDataStatus: "stale",
+          },
+          pricingHolding,
+        );
       }
-      return holding;
+      return mergePricingIdentity(holding, pricingHolding);
     }
 
-    return applyQuoteToHolding(holding, quote);
+    return mergePricingIdentity(
+      applyQuoteToHolding(mergePricingIdentity(holding, pricingHolding), quote),
+      pricingHolding,
+    );
   });
 }
 
