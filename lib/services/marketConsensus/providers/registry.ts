@@ -1,11 +1,15 @@
 import { resolveHoldingDisplayPrice } from "@/lib/client/holdingDisplayPrice";
-import { calculateImpliedUpsidePercent } from "@/lib/services/analyst/analystCalculations";
+import {
+  calculateImpliedUpsidePercent,
+  canCompareAnalystTargetToListing,
+} from "@/lib/services/analyst/analystCalculations";
 import { inferAnalystCoverageKind } from "@/lib/services/analyst/assetCoverageKind";
 import { resolveAnalystQuote } from "@/lib/services/analyst/resolveAnalystQuote";
 import {
   classifyMarketConsensusHolding,
   isCryptoLinkedHolding,
 } from "@/lib/client/marketConsensus/holdingClassification";
+import { resolveConsensusProviderSymbolSync } from "@/lib/services/marketConsensus/consensusProviderSymbol";
 import type {
   AnalystConsensusResult,
   MarketConsensusProvider,
@@ -28,6 +32,20 @@ function buildBaseResult(
     classification: "unavailable",
     ...overrides,
   };
+}
+
+function buildTargetCurrencyNote(
+  targetCurrency: string | null,
+  listingCurrency: string,
+): string | undefined {
+  if (
+    !targetCurrency ||
+    canCompareAnalystTargetToListing(targetCurrency, listingCurrency)
+  ) {
+    return undefined;
+  }
+
+  return `Price target is reported in ${targetCurrency}. Your holding is priced in ${listingCurrency}, so upside/downside is not calculated.`;
 }
 
 export const nullMarketConsensusProvider: MarketConsensusProvider = {
@@ -58,9 +76,7 @@ export const eodhdMarketConsensusProvider: MarketConsensusProvider = {
     return inferAnalystCoverageKind(holding) === "company";
   },
   async getConsensus(holding, context: MarketConsensusProviderContext) {
-    const providerSymbol =
-      holding.providerSymbol?.trim().toUpperCase() ??
-      holding.symbol.trim().toUpperCase();
+    const providerSymbol = resolveConsensusProviderSymbolSync(holding);
 
     const quote = await resolveAnalystQuote({
       symbol: holding.symbol.trim().toUpperCase(),
@@ -73,24 +89,24 @@ export const eodhdMarketConsensusProvider: MarketConsensusProvider = {
     if (quote.coverageState === "provider_unavailable") {
       return buildBaseResult(holding, {
         coverageType: "equity-analyst",
-        availability: "unavailable",
+        availability: "error",
         classification: "unavailable",
         errorCode: "provider_unavailable",
         sourceName: quote.source,
         updatedAt: quote.updatedAt,
+        summary:
+          "Analyst data is temporarily unavailable for this holding. Your performance and allocation data remain available.",
       });
     }
 
-    if (
-      quote.coverageState === "no_coverage" ||
-      quote.analystCount <= 0
-    ) {
+    if (quote.coverageState === "no_coverage") {
       return buildBaseResult(holding, {
         coverageType: "equity-analyst",
         availability: "unavailable",
         classification: "unavailable",
         sourceName: quote.source,
         updatedAt: quote.updatedAt,
+        summary: "No verified analyst coverage was returned for this holding.",
       });
     }
 
@@ -98,10 +114,14 @@ export const eodhdMarketConsensusProvider: MarketConsensusProvider = {
     const holdCount = quote.ratingCounts.hold;
     const sellCount = quote.ratingCounts.sell + quote.ratingCounts.strongSell;
     const { price: currentPrice } = resolveHoldingDisplayPrice(holding);
-    const impliedUpsidePercent = calculateImpliedUpsidePercent(
-      currentPrice,
-      quote.averagePriceTarget,
+    const listingCurrency = holding.currency?.trim().toUpperCase() || "EUR";
+    const targetComparable = canCompareAnalystTargetToListing(
+      quote.targetCurrency,
+      listingCurrency,
     );
+    const impliedUpsidePercent = targetComparable
+      ? calculateImpliedUpsidePercent(currentPrice, quote.averagePriceTarget)
+      : null;
 
     const availability =
       quote.dataConfidence === "complete" ? "available" : "limited";
@@ -117,6 +137,12 @@ export const eodhdMarketConsensusProvider: MarketConsensusProvider = {
         sellCount,
         currentPrice: currentPrice ?? undefined,
         averageTarget: quote.averagePriceTarget ?? undefined,
+        targetCurrency: quote.targetCurrency ?? undefined,
+        listingCurrency,
+        targetCurrencyNote: buildTargetCurrencyNote(
+          quote.targetCurrency,
+          listingCurrency,
+        ),
         impliedUpsidePercent: impliedUpsidePercent ?? undefined,
         sourceName: quote.source,
         updatedAt: quote.updatedAt,

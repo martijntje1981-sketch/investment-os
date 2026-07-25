@@ -27,7 +27,12 @@ export function buildPortfolioConsensusSummary(
       continue;
     }
 
-    if (result.availability === "available") {
+    if (
+      result.availability === "available" ||
+      (result.availability === "limited" &&
+        result.coverageType === "equity-analyst" &&
+        (result.analystCount ?? 0) > 0)
+    ) {
       holdingsWithCoverage += 1;
     }
 

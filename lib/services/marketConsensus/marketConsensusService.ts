@@ -1,6 +1,10 @@
-import { getEodhdApiKey, matchInstrument } from "@/lib/services/instruments";
+import { getEodhdApiKey } from "@/lib/services/instruments";
 import { classifyMarketConsensusHolding } from "@/lib/client/marketConsensus/holdingClassification";
 import { inferAnalystCoverageKind } from "@/lib/services/analyst/assetCoverageKind";
+import {
+  resolveConsensusProviderSymbol,
+  resolveConsensusProviderSymbolSync,
+} from "@/lib/services/marketConsensus/consensusProviderSymbol";
 import { getCachedMarketConsensus } from "@/lib/services/marketConsensus/cache/consensusCache";
 import { buildPortfolioConsensusSummary } from "@/lib/services/marketConsensus/buildPortfolioConsensusSummary";
 import { normalizeConsensusResultForHolding } from "@/lib/services/marketConsensus/normalizeConsensusAvailability";
@@ -70,6 +74,16 @@ async function fetchEquityConsensus(
   try {
     const result = await provider.getConsensus(holding, {
       fxRateToEur: context.fxRateToEur,
+    });
+    console.info("[market-consensus]", {
+      symbol: holding.symbol,
+      providerSymbol:
+        holding.providerSymbol?.trim().toUpperCase() ??
+        resolveConsensusProviderSymbolSync(holding),
+      assetType: holding.assetType,
+      availability: result.availability,
+      coverageType: result.coverageType,
+      analystCount: result.analystCount ?? 0,
     });
     return validateAndSanitizeConsensusResult(result);
   } catch {
@@ -149,17 +163,5 @@ export async function resolveProviderSymbolForConsensus(
     "symbol" | "name" | "isin" | "exchange" | "providerSymbol"
   >,
 ): Promise<string | null> {
-  if (holding.providerSymbol?.trim()) {
-    return holding.providerSymbol.trim().toUpperCase();
-  }
-
-  const resolved = await matchInstrument({
-    ticker: holding.symbol || null,
-    isin: holding.isin ?? null,
-    exchange: holding.exchange ?? null,
-    instrumentName: holding.name ?? null,
-    assetType: "investment",
-  });
-
-  return resolved.providerSymbol;
+  return resolveConsensusProviderSymbol(holding);
 }

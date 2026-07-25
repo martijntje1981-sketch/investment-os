@@ -118,7 +118,7 @@ describe("market consensus architecture", () => {
     expect(sanitized.impliedUpsidePercent).toBe(8.6);
   });
 
-  it("downgrades incomplete analyst distribution", () => {
+  it("downgrades incomplete analyst distribution while preserving partial counts", () => {
     const sanitized = validateAndSanitizeConsensusResult(
       completeEquityResult({
         analystCount: 10,
@@ -129,8 +129,9 @@ describe("market consensus architecture", () => {
     );
 
     expect(sanitized.availability).toBe("limited");
-    expect(sanitized.buyCount).toBeUndefined();
-    expect(sanitized.impliedUpsidePercent).toBeUndefined();
+    expect(sanitized.buyCount).toBe(4);
+    expect(sanitized.holdCount).toBe(2);
+    expect(sanitized.sellCount).toBe(1);
   });
 
   it("prevents ETF holdings from receiving equity price-target UI", () => {

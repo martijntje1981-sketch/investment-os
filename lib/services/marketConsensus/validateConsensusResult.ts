@@ -105,12 +105,24 @@ export function hasConsistentDistribution(result: AnalystConsensusResult): boole
 }
 
 export function hasValidPriceTargetFields(result: AnalystConsensusResult): boolean {
-  return (
-    isFinitePositive(result.currentPrice) &&
-    isFinitePositive(result.averageTarget) &&
-    result.impliedUpsidePercent != null &&
-    Number.isFinite(result.impliedUpsidePercent)
-  );
+  return isFinitePositive(result.averageTarget);
+}
+
+export function canCompareTargetToCurrentPrice(
+  result: AnalystConsensusResult,
+): boolean {
+  if (!hasValidPriceTargetFields(result) || !isFinitePositive(result.currentPrice)) {
+    return false;
+  }
+
+  if (result.targetCurrency && result.listingCurrency) {
+    return (
+      result.targetCurrency.trim().toUpperCase() ===
+      result.listingCurrency.trim().toUpperCase()
+    );
+  }
+
+  return result.impliedUpsidePercent != null;
 }
 
 /** Downgrades incomplete or inconsistent provider payloads before UI exposure. */
@@ -155,6 +167,29 @@ export function validateAndSanitizeConsensusResult(
   }
 
   if (!hasConsistentDistribution(result)) {
+    const buy = result.buyCount ?? 0;
+    const hold = result.holdCount ?? 0;
+    const sell = result.sellCount ?? 0;
+    const hasPartialCounts = buy + hold + sell > 0;
+
+    if (hasPartialCounts) {
+      const sanitized: AnalystConsensusResult = {
+        ...result,
+        availability:
+          result.availability === "available" ? "limited" : result.availability,
+        agreementLevel: "limited",
+        summary:
+          result.summary ??
+          "Analyst rating distribution may be incomplete, but available counts are shown.",
+      };
+
+      if (!canCompareTargetToCurrentPrice(sanitized)) {
+        sanitized.impliedUpsidePercent = undefined;
+      }
+
+      return sanitized;
+    }
+
     return {
       ...result,
       availability: "limited",
@@ -195,9 +230,10 @@ export function validateAndSanitizeConsensusResult(
     lowTarget: undefined,
   };
 
-  if (!hasValidPriceTargetFields(sanitized)) {
-    sanitized.averageTarget = undefined;
+  if (!canCompareTargetToCurrentPrice(sanitized)) {
     sanitized.impliedUpsidePercent = undefined;
+  } else if (!hasValidPriceTargetFields(sanitized)) {
+    sanitized.averageTarget = undefined;
   }
 
   if (

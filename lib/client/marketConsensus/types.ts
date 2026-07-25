@@ -2,6 +2,7 @@ import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
 export type MarketConsensusCardState =
   | "equity_coverage"
+  | "partial_equity_coverage"
   | "etf_outlook"
   | "crypto_outlook"
   | "no_coverage"
@@ -15,7 +16,9 @@ export type MarketConsensusStatusLabel =
   | "Negative consensus"
   | "Underlying market outlook"
   | "Market outlook"
-  | "Limited coverage";
+  | "Limited coverage"
+  | "Partial analyst coverage"
+  | "Analyst data temporarily unavailable";
 
 export type MarketConsensusCoverageType =
   | "Analyst coverage"
@@ -43,6 +46,8 @@ export type MarketConsensusHoldingCardModel = {
   ratingDistribution: MarketConsensusRatingDistribution | null;
   priceTargetLabel: string | null;
   impliedUpsideLabel: string | null;
+  targetCurrencyNote?: string | null;
+  analystCountLabel?: string | null;
   summary: string;
   supportingFactors: string[];
   keyRisks: string[];

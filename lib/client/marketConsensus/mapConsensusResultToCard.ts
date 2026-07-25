@@ -32,10 +32,21 @@ import type {
 } from "@/lib/services/marketConsensus/types";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
+function hasEquityAnalystData(result: AnalystConsensusResult): boolean {
+  return (
+    result.coverageType === "equity-analyst" &&
+    ((result.analystCount ?? 0) > 0 ||
+      result.buyCount != null ||
+      result.averageTarget != null)
+  );
+}
+
 function mapCoverageType(result: AnalystConsensusResult): MarketConsensusCoverageType {
   switch (result.coverageType) {
     case "equity-analyst":
-      return "Analyst coverage";
+      return result.availability === "limited"
+        ? "Limited coverage"
+        : "Analyst coverage";
     case "underlying-market":
       return "Underlying market outlook";
     case "crypto-market-outlook":
@@ -79,6 +90,14 @@ function mapCardState(
     return "equity_coverage";
   }
 
+  if (
+    normalizedResult?.availability === "limited" &&
+    normalizedResult.coverageType === "equity-analyst" &&
+    hasEquityAnalystData(normalizedResult)
+  ) {
+    return "partial_equity_coverage";
+  }
+
   return "no_coverage";
 }
 
@@ -94,8 +113,18 @@ function mapStatusLabel(
     return "Market outlook";
   }
 
-  if (state === "no_coverage" || state === "loading" || state === "error") {
-    return result?.availability === "limited" ? "Limited coverage" : "Limited coverage";
+  if (state === "error") {
+    return result?.errorCode === "provider_unavailable"
+      ? "Analyst data temporarily unavailable"
+      : "Limited coverage";
+  }
+
+  if (state === "partial_equity_coverage") {
+    return "Partial analyst coverage";
+  }
+
+  if (state === "no_coverage" || state === "loading") {
+    return "Limited coverage";
   }
 
   return classificationStatusLabel(result?.classification ?? "unavailable");
@@ -110,7 +139,12 @@ function buildPriceTargetLabel(result: AnalystConsensusResult | null): string | 
     return null;
   }
 
-  return `Third-party price targets: ${formatPortfolioCurrency(result.averageTarget)}`;
+  const currency = result.targetCurrency ?? result.listingCurrency ?? "EUR";
+  return `Third-party price target: ${formatPortfolioCurrency(
+    result.averageTarget,
+    currency,
+    currency === "USD" ? 2 : 0,
+  )}`;
 }
 
 function buildImpliedUpsideLabel(result: AnalystConsensusResult | null): string | null {
@@ -123,6 +157,14 @@ function buildImpliedUpsideLabel(result: AnalystConsensusResult | null): string 
 
   const prefix = result.impliedUpsidePercent >= 0 ? "+" : "";
   return `Consensus-implied upside: ${prefix}${result.impliedUpsidePercent.toFixed(1)}%`;
+}
+
+function buildAnalystCountLabel(result: AnalystConsensusResult | null): string | null {
+  if (result?.analystCount == null || result.analystCount <= 0) {
+    return null;
+  }
+
+  return `${result.analystCount} analysts`;
 }
 
 function buildSummaryCopy(
@@ -145,10 +187,16 @@ function buildSummaryCopy(
   }
 
   if (state === "error") {
-    return MARKET_CONSENSUS_UNAVAILABLE_COPY;
+    return (
+      result?.summary ??
+      "Analyst data is temporarily unavailable for this holding. Your performance and allocation data remain available."
+    );
   }
 
-  if (state === "equity_coverage" && result?.summary) {
+  if (
+    (state === "equity_coverage" || state === "partial_equity_coverage") &&
+    result?.summary
+  ) {
     return result.summary;
   }
 
@@ -172,7 +220,30 @@ function buildErrorMessage(
     return undefined;
   }
 
+  if (result.errorCode === "provider_unavailable") {
+    return "Analyst data is temporarily unavailable for this holding. Your performance and allocation data remain available.";
+  }
+
   return "Consensus data could not be loaded for this holding. Your performance and allocation data remain available.";
+}
+
+function showsEquityAnalystDetails(state: MarketConsensusCardState): boolean {
+  return state === "equity_coverage" || state === "partial_equity_coverage";
+}
+
+function showsSourceMetadata(
+  result: AnalystConsensusResult | null,
+  state: MarketConsensusCardState,
+): boolean {
+  if (!result?.sourceName) {
+    return false;
+  }
+
+  return (
+    state === "equity_coverage" ||
+    state === "partial_equity_coverage" ||
+    result.isStale === true
+  );
 }
 
 export function mapConsensusResultToCard(input: {
@@ -194,20 +265,20 @@ export function mapConsensusResultToCard(input: {
     position != null ? formatPortfolioCurrency(position.value) : null;
 
   const showEquityDistribution =
-    state === "equity_coverage" &&
+    showsEquityAnalystDetails(state) &&
     result?.buyCount != null &&
     result.holdCount != null &&
     result.sellCount != null;
 
-  const sourceLabel =
-    result?.sourceName && result.availability === "available"
-      ? result.isStale
-        ? `${result.sourceName} (cached)`
-        : result.sourceName
-      : null;
+  const sourceLabel = showsSourceMetadata(result, state)
+    ? result?.isStale
+      ? `${result.sourceName} (cached)`
+      : (result?.sourceName ?? null)
+    : null;
 
   const updatedAtLabel =
-    result?.updatedAt && (result.availability === "available" || result.isStale)
+    result?.updatedAt &&
+    (showsEquityAnalystDetails(state) || result.isStale)
       ? formatConsensusUpdatedAt(result.updatedAt)
       : null;
 
@@ -231,7 +302,7 @@ export function mapConsensusResultToCard(input: {
     }),
     statusLabel: mapStatusLabel(result, state),
     analystAgreementLabel:
-      state === "equity_coverage"
+      showsEquityAnalystDetails(state)
         ? agreementLevelLabel(result?.agreementLevel)
         : null,
     ratingDistribution:
@@ -242,10 +313,17 @@ export function mapConsensusResultToCard(input: {
             sell: result.sellCount ?? 0,
           }
         : null,
-    priceTargetLabel:
-      state === "equity_coverage" ? buildPriceTargetLabel(result) : null,
-    impliedUpsideLabel:
-      state === "equity_coverage" ? buildImpliedUpsideLabel(result) : null,
+    priceTargetLabel: showsEquityAnalystDetails(state)
+      ? buildPriceTargetLabel(result)
+      : null,
+    impliedUpsideLabel: showsEquityAnalystDetails(state)
+      ? buildImpliedUpsideLabel(result)
+      : null,
+    targetCurrencyNote:
+      showsEquityAnalystDetails(state) ? result?.targetCurrencyNote ?? null : null,
+    analystCountLabel: showsEquityAnalystDetails(state)
+      ? buildAnalystCountLabel(result)
+      : null,
     summary: buildSummaryCopy(holding, result, state),
     supportingFactors: result?.positiveFactors ?? [],
     keyRisks: result?.riskFactors ?? [],

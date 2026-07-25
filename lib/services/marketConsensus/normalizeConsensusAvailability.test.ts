@@ -116,6 +116,23 @@ describe("normalizeConsensusAvailability", () => {
     expect(normalized.errorCode).toBeUndefined();
   });
 
+  it("preserves equity provider-unavailable as a temporary error", () => {
+    const normalized = normalizeConsensusResultForHolding(
+      holding({
+        symbol: "NVDA",
+        name: "NVIDIA Corporation",
+        providerSymbol: "NVDA.US",
+      }),
+      errorResult({
+        symbol: "NVDA",
+        errorCode: "provider_unavailable",
+      }),
+    );
+
+    expect(normalized.availability).toBe("error");
+    expect(normalized.errorCode).toBe("provider_unavailable");
+  });
+
   it("keeps genuine technical failures as errors for equities", () => {
     const normalized = normalizeConsensusResultForHolding(
       holding({

@@ -87,7 +87,7 @@ export function normalizeConsensusResultForHolding(
     });
   }
 
-  if (isSoftConsensusFailure(result)) {
+  if (isSoftConsensusFailure(result) && shouldUseEtfNeutralFallback(holding, result)) {
     return validateAndSanitizeConsensusResult({
       ...buildStaticConsensusResult(holding),
       summary: result.summary ?? buildStaticConsensusResult(holding).summary,
@@ -96,6 +96,19 @@ export function normalizeConsensusResultForHolding(
       narrativeSource: result.narrativeSource,
       sourceName: result.sourceName,
       updatedAt: result.updatedAt,
+    });
+  }
+
+  if (
+    isSoftConsensusFailure(result) &&
+    classifyMarketConsensusHolding(holding) === "equity"
+  ) {
+    return validateAndSanitizeConsensusResult({
+      ...result,
+      availability: "error",
+      summary:
+        result.summary ??
+        "Analyst data is temporarily unavailable for this holding. Your performance and allocation data remain available.",
     });
   }
 

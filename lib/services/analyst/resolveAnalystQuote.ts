@@ -3,7 +3,9 @@
  */
 
 import { inferAnalystCoverageKind } from "@/lib/services/analyst/assetCoverageKind";
-import { convertAnalystTargetToEur } from "@/lib/services/analyst/analystCalculations";
+import {
+  resolveAnalystTargetDisplay,
+} from "@/lib/services/analyst/analystCalculations";
 import {
   consensusFromProviderRating,
   normalizeRatingCounts,
@@ -108,14 +110,14 @@ export async function resolveAnalystQuote(
       ratingCounts,
     );
 
-    const normalizedTarget = convertAnalystTargetToEur(
+    const normalizedTarget = resolveAnalystTargetDisplay(
       fundamentals.ratings?.TargetPrice ??
         fundamentals.wallStreetTargetPrice ??
         null,
       fundamentals.currency,
       input.fxRateToEur ?? null,
     );
-    const averagePriceTarget = normalizedTarget;
+    const averagePriceTarget = normalizedTarget.averagePriceTarget;
 
     const hasCoverage =
       analystCount > 0 ||
@@ -148,12 +150,7 @@ export async function resolveAnalystQuote(
       medianPriceTarget: null,
       highPriceTarget: null,
       lowPriceTarget: null,
-      targetCurrency:
-        normalizedTarget != null &&
-        fundamentals.currency &&
-        fundamentals.currency.toUpperCase() !== "EUR"
-          ? "EUR"
-          : fundamentals.currency,
+      targetCurrency: normalizedTarget.targetCurrency,
       source: EODHD_ANALYST_SOURCE,
       updatedAt: new Date().toISOString(),
     };

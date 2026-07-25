@@ -45,6 +45,9 @@ export interface AnalystConsensusResult {
   sourceUrl?: string;
   updatedAt?: string;
   isStale?: boolean;
+  targetCurrency?: string;
+  listingCurrency?: string;
+  targetCurrencyNote?: string;
   errorCode?: string;
   narrativeSource?: "ai" | "fallback";
 }

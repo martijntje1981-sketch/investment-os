@@ -272,6 +272,7 @@ export function MarketConsensusHoldingCard({
     Boolean(card.summary);
   const hasExpandableDetails =
     card.state === "equity_coverage" ||
+    card.state === "partial_equity_coverage" ||
     card.state === "etf_outlook" ||
     card.state === "crypto_outlook";
 
@@ -294,7 +295,16 @@ export function MarketConsensusHoldingCard({
           {card.analystAgreementLabel ? (
             <MetricTile label="Analyst agreement" value={card.analystAgreementLabel} />
           ) : null}
+          {card.analystCountLabel ? (
+            <MetricTile label="Analyst count" value={card.analystCountLabel} />
+          ) : null}
         </div>
+
+        {card.targetCurrencyNote ? (
+          <p className={`rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 ${appSectionBodyClass} text-amber-950`}>
+            {card.targetCurrencyNote}
+          </p>
+        ) : null}
 
         {card.errorMessage ? (
           <MarketConsensusErrorBadge message={card.errorMessage} />

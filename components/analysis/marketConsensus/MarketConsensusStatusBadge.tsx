@@ -40,6 +40,14 @@ const STATUS_STYLES: Record<
     className: "border-slate-200 bg-slate-50 text-slate-800",
     Icon: CircleHelp,
   },
+  "Partial analyst coverage": {
+    className: "border-amber-200 bg-amber-50 text-amber-950",
+    Icon: BarChart3,
+  },
+  "Analyst data temporarily unavailable": {
+    className: "border-rose-200 bg-rose-50 text-rose-950",
+    Icon: AlertTriangle,
+  },
 };
 
 export function MarketConsensusStatusBadge({

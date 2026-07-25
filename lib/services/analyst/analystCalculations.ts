@@ -31,6 +31,65 @@ export function convertAnalystTargetToEur(
   return amount * fxRateToEur;
 }
 
+export function resolveAnalystTargetDisplay(
+  amount: number | null,
+  currency: string | null,
+  fxRateToEur: number | null,
+): {
+  averagePriceTarget: number | null;
+  targetCurrency: string | null;
+  convertedToEur: boolean;
+} {
+  if (amount == null || !Number.isFinite(amount) || amount <= 0) {
+    return {
+      averagePriceTarget: null,
+      targetCurrency: null,
+      convertedToEur: false,
+    };
+  }
+
+  const normalizedCurrency = currency?.trim().toUpperCase() || "USD";
+  if (normalizedCurrency === "EUR") {
+    return {
+      averagePriceTarget: amount,
+      targetCurrency: "EUR",
+      convertedToEur: true,
+    };
+  }
+
+  const eurAmount = convertAnalystTargetToEur(
+    amount,
+    normalizedCurrency,
+    fxRateToEur,
+  );
+  if (eurAmount != null) {
+    return {
+      averagePriceTarget: eurAmount,
+      targetCurrency: "EUR",
+      convertedToEur: true,
+    };
+  }
+
+  return {
+    averagePriceTarget: amount,
+    targetCurrency: normalizedCurrency,
+    convertedToEur: false,
+  };
+}
+
+export function canCompareAnalystTargetToListing(
+  targetCurrency: string | null,
+  listingCurrency: string,
+): boolean {
+  if (targetCurrency == null || !targetCurrency.trim()) {
+    return false;
+  }
+
+  return (
+    targetCurrency.trim().toUpperCase() === listingCurrency.trim().toUpperCase()
+  );
+}
+
 export function calculateImpliedUpsidePercent(
   currentPrice: number | null | undefined,
   targetPrice: number | null | undefined,
