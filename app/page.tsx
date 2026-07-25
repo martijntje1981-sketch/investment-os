@@ -23,6 +23,10 @@ import {
 } from "lucide-react";
 
 import MarketingHeader from "@/components/marketing/MarketingHeader";
+import {
+  pricingAvailabilityNote,
+  SUPPORTED_INSTRUMENTS_PATH,
+} from "@/lib/content/supportedInstrumentsContent";
 import { createClient } from "@/lib/supabase/server";
 
 const features = [
@@ -541,6 +545,16 @@ export default async function MarketingHomePage() {
                   ))}
                 </div>
 
+                <p className="mt-6 text-sm leading-6 text-slate-600">
+                  {pricingAvailabilityNote.text}{" "}
+                  <Link
+                    href={SUPPORTED_INSTRUMENTS_PATH}
+                    className="font-bold text-blue-700 hover:text-blue-800"
+                  >
+                    {pricingAvailabilityNote.linkLabel}
+                  </Link>
+                </p>
+
                 <Link
                   href="/upload"
                   className="mt-9 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-6 py-4 text-sm font-bold text-white transition hover:bg-slate-800"
@@ -688,6 +702,7 @@ export default async function MarketingHomePage() {
             <Link href="#features">Features</Link>
             <Link href="#pricing">Pricing</Link>
             <Link href="#faq">FAQ</Link>
+            <Link href={SUPPORTED_INSTRUMENTS_PATH}>Supported instruments</Link>
             <Link href="#contact">Contact</Link>
             <Link href="/privacy">Privacy</Link>
             <Link href="/terms">Terms</Link>

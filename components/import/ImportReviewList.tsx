@@ -4,6 +4,7 @@ import { AlertCircle, Check } from "lucide-react";
 import { useState } from "react";
 
 import NumericInput from "@/components/NumericInput";
+import { SupportStatusBadge } from "@/components/marketing/SupportStatusBadge";
 import { ExchangeFieldEditor } from "@/components/import/ExchangeFieldEditor";
 import {
   ListingCandidatePicker,
@@ -30,6 +31,9 @@ import {
   type ImportRow,
 } from "@/lib/services/import";
 import type { ResolvedInstrument } from "@/lib/types/instrument";
+import {
+  resolveImportRowInstrumentSupportStatus,
+} from "@/lib/services/instruments/instrumentSupportStatus";
 
 type ImportReviewListProps = {
   rows: ImportRow[];
@@ -136,6 +140,7 @@ function ImportReviewCard({
     row.assetType !== "cash" && !uncertainFields.includes("purchaseDate");
   const showExactListingFallback =
     needsMatchReview && shouldShowExactListingFallback(row, alternatives.length);
+  const supportStatus = resolveImportRowInstrumentSupportStatus(row);
 
   return (
     <article className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm">
@@ -152,6 +157,7 @@ function ImportReviewCard({
               >
                 {importTierLabel(tier)}
               </span>
+              <SupportStatusBadge status={supportStatus} />
               {confidence > 0 ? (
                 <span className="text-[11px] font-bold text-slate-500">
                   {confidence}% confidence

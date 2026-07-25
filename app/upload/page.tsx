@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation";
 import { AlertCircle, Check, Info, RefreshCw, Sparkles } from "lucide-react";
 
 import BottomNavigation from "@/components/home/BottomNav";
+import { SupportedInstrumentsCallout } from "@/components/marketing/SupportedInstrumentsCallout";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHero } from "@/components/layout/PageHero";
 import { ImportAutoHoldingsList, ImportSummaryCard } from "@/components/import/ImportSummaryCard";
@@ -533,6 +534,8 @@ export default function UploadPage() {
                 onDragLeave={() => setIsDragging(false)}
                 onDrop={onDrop}
               />
+
+              <SupportedInstrumentsCallout />
             </>
           ) : null}
 

@@ -1,3 +1,7 @@
+export type CryptoPricingRouteKind =
+  | "direct_or_converted"
+  | "direct_when_available";
+
 export type CryptoBaseAssetEntry = {
   /** Canonical ticker used for EODHD symbol construction and cache keys. */
   symbol: string;
@@ -7,6 +11,10 @@ export type CryptoBaseAssetEntry = {
   name: string;
   /** Whether EODHD real-time .CC pricing is enabled for this base asset. */
   livePricing: boolean;
+  /** How live pricing is typically resolved — used on public support pages. */
+  pricingRoute: CryptoPricingRouteKind;
+  /** Optional public note shown on the supported instruments page. */
+  publicNote?: string;
 };
 
 /**
@@ -14,18 +22,40 @@ export type CryptoBaseAssetEntry = {
  * Add entries here instead of coin-specific branching elsewhere.
  */
 export const CRYPTO_BASE_ASSET_REGISTRY: readonly CryptoBaseAssetEntry[] = [
-  { symbol: "BTC", aliases: ["XBT"], name: "Bitcoin", livePricing: true },
-  { symbol: "ETH", name: "Ethereum", livePricing: true },
-  { symbol: "SOL", name: "Solana", livePricing: true },
-  { symbol: "XRP", name: "XRP", livePricing: true },
-  { symbol: "ADA", name: "Cardano", livePricing: true },
-  { symbol: "DOGE", name: "Dogecoin", livePricing: true },
-  { symbol: "DOT", name: "Polkadot", livePricing: true },
-  { symbol: "AVAX", name: "Avalanche", livePricing: true },
-  { symbol: "LINK", name: "Chainlink", livePricing: true },
-  { symbol: "LTC", name: "Litecoin", livePricing: true },
-  { symbol: "BNB", name: "BNB", livePricing: true },
-  { symbol: "MATIC", name: "Polygon", livePricing: true },
+  {
+    symbol: "BTC",
+    aliases: ["XBT"],
+    name: "Bitcoin",
+    livePricing: true,
+    pricingRoute: "direct_or_converted",
+  },
+  {
+    symbol: "ETH",
+    name: "Ethereum",
+    livePricing: true,
+    pricingRoute: "direct_or_converted",
+  },
+  {
+    symbol: "SOL",
+    name: "Solana",
+    livePricing: true,
+    pricingRoute: "direct_or_converted",
+    publicNote: "Some stablecoin pairs use USD wire pricing plus a live conversion rate.",
+  },
+  { symbol: "XRP", name: "XRP", livePricing: true, pricingRoute: "direct_or_converted" },
+  { symbol: "ADA", name: "Cardano", livePricing: true, pricingRoute: "direct_or_converted" },
+  { symbol: "DOGE", name: "Dogecoin", livePricing: true, pricingRoute: "direct_or_converted" },
+  { symbol: "DOT", name: "Polkadot", livePricing: true, pricingRoute: "direct_or_converted" },
+  { symbol: "AVAX", name: "Avalanche", livePricing: true, pricingRoute: "direct_or_converted" },
+  { symbol: "LINK", name: "Chainlink", livePricing: true, pricingRoute: "direct_or_converted" },
+  { symbol: "LTC", name: "Litecoin", livePricing: true, pricingRoute: "direct_or_converted" },
+  { symbol: "BNB", name: "BNB", livePricing: true, pricingRoute: "direct_or_converted" },
+  {
+    symbol: "MATIC",
+    name: "Polygon",
+    livePricing: true,
+    pricingRoute: "direct_or_converted",
+  },
 ] as const;
 
 const REGISTRY_BY_SYMBOL = new Map<string, CryptoBaseAssetEntry>(

@@ -13,7 +13,28 @@ import {
   Sparkles,
 } from "lucide-react";
 
-const faqSections = [
+import {
+  SUPPORTED_INSTRUMENTS_PATH,
+} from "@/lib/content/supportedInstrumentsContent";
+import {
+  unsupportedInvestmentFaq,
+  whichInvestmentsSupportedFaq,
+} from "@/lib/content/supportedInstrumentsFaq";
+
+type FaqQuestion = {
+  question: string;
+  answer: string;
+  link?: {
+    href: string;
+    label: string;
+  };
+};
+
+const faqSections: Array<{
+  title: string;
+  icon: typeof Sparkles;
+  questions: FaqQuestion[];
+}> = [
   {
     title: "About Investment OS",
     icon: Sparkles,
@@ -59,6 +80,8 @@ const faqSections = [
         answer:
           "The current product focuses on listed shares, ETFs, ETCs, ETPs and selected digital-asset products. Broader asset support may be added later.",
       },
+      whichInvestmentsSupportedFaq,
+      unsupportedInvestmentFaq,
     ],
   },
   {
@@ -242,9 +265,18 @@ export default function FAQPage() {
                         </span>
                       </summary>
 
-                      <p className="mt-5 max-w-4xl border-t border-slate-100 pt-5 text-sm leading-7 text-slate-600">
-                        {item.answer}
-                      </p>
+                      <div className="mt-5 max-w-4xl border-t border-slate-100 pt-5 text-sm leading-7 text-slate-600">
+                        <p>{item.answer}</p>
+                        {item.link ? (
+                          <Link
+                            href={item.link.href}
+                            className="mt-4 inline-flex items-center gap-2 font-bold text-blue-700 hover:text-blue-800"
+                          >
+                            {item.link.label}
+                            <ArrowRight className="h-4 w-4" />
+                          </Link>
+                        ) : null}
+                      </div>
                     </details>
                   ))}
                 </div>
@@ -304,6 +336,7 @@ export default function FAQPage() {
           </p>
 
           <nav className="flex flex-wrap gap-5 text-xs font-bold text-slate-600">
+            <Link href={SUPPORTED_INSTRUMENTS_PATH}>Supported instruments</Link>
             <Link href="/privacy">Privacy</Link>
             <Link href="/terms">Terms</Link>
             <Link href="/contact">Contact</Link>

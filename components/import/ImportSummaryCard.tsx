@@ -1,9 +1,14 @@
 import { CheckCircle2, Sparkles } from "lucide-react";
 
+import { SupportStatusBadge } from "@/components/marketing/SupportStatusBadge";
 import {
   roundConfidencePercent,
   type ImportReviewPlan,
+  type ImportRow,
 } from "@/lib/services/import";
+import {
+  resolveImportRowInstrumentSupportStatus,
+} from "@/lib/services/instruments/instrumentSupportStatus";
 
 type ImportSummaryCardProps = {
   plan: ImportReviewPlan;
@@ -94,13 +99,7 @@ function SummaryPill({
 export function ImportAutoHoldingsList({
   holdings,
 }: {
-  holdings: Array<{
-    id: string;
-    name: string;
-    symbol: string;
-    quantity: number;
-    matchConfidence?: number;
-  }>;
+  holdings: ImportRow[];
 }) {
   if (holdings.length === 0) return null;
 
@@ -111,26 +110,33 @@ export function ImportAutoHoldingsList({
         {holdings.length === 1 ? "" : "s"}
       </summary>
       <ul className="mt-4 space-y-3">
-        {holdings.map((holding) => (
+        {holdings.map((holding) => {
+          const supportStatus = resolveImportRowInstrumentSupportStatus(holding);
+
+          return (
           <li
             key={holding.id}
             className="flex items-start justify-between gap-3 rounded-2xl bg-slate-50 px-4 py-3"
           >
             <div className="min-w-0">
               <p className="truncate text-sm font-bold text-slate-900">
-                {holding.name}
+                {holding.instrumentName ?? holding.name}
               </p>
               <p className="text-xs text-slate-500">
                 {holding.symbol || "ISIN only"} · {holding.quantity} units
               </p>
             </div>
-            {holding.matchConfidence != null ? (
-              <span className="shrink-0 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-black text-emerald-700">
-                {roundConfidencePercent(holding.matchConfidence)}%
-              </span>
-            ) : null}
+            <div className="flex shrink-0 flex-col items-end gap-2">
+              <SupportStatusBadge status={supportStatus} />
+              {holding.matchConfidence != null ? (
+                <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-black text-emerald-700">
+                  {roundConfidencePercent(holding.matchConfidence)}%
+                </span>
+              ) : null}
+            </div>
           </li>
-        ))}
+          );
+        })}
       </ul>
     </details>
   );

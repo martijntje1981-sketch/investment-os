@@ -265,6 +265,7 @@ export default function ContactPage() {
 
           <nav className="flex flex-wrap gap-5 text-xs font-bold text-slate-600">
             <Link href="/faq">FAQ</Link>
+            <Link href="/supported-instruments">Supported instruments</Link>
             <Link href="/privacy">Privacy</Link>
             <Link href="/terms">Terms</Link>
           </nav>
