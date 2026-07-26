@@ -5,16 +5,28 @@ import { DashboardHeroMovers } from "@/components/dashboard/DashboardHeroMovers"
 import { DashboardSummarySkeleton } from "@/components/dashboard/DashboardSummarySkeleton";
 import { appHeroShellClass } from "@/components/layout/appSurface";
 import type { DashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
+import type { RefreshPricesUiStatus } from "@/lib/client/livePortfolioPriceRefreshAction";
 import type { ReactNode } from "react";
+
+export type DashboardRefreshControl = {
+  onRefresh: () => void;
+  isRefreshing: boolean;
+  disabled?: boolean;
+  status?: RefreshPricesUiStatus;
+  message?: string | null;
+  liveRefreshAt?: string | null;
+};
 
 export function DashboardSummary({
   snapshot,
   welcome,
   isLoading = false,
+  refresh,
 }: {
   snapshot: DashboardPortfolioSnapshot;
   welcome?: ReactNode;
   isLoading?: boolean;
+  refresh?: DashboardRefreshControl;
 }) {
   if (isLoading) {
     return <DashboardSummarySkeleton />;
@@ -32,7 +44,7 @@ export function DashboardSummary({
           coverageMessage={snapshot.dailyPerformanceCoverageMessage}
         />
         <div className="grid min-w-0 grid-cols-1 border-t border-white/[0.08] md:grid-cols-2">
-          <PortfolioValueCard snapshot={snapshot} embedded />
+          <PortfolioValueCard snapshot={snapshot} embedded refresh={refresh} />
           <TodayCard snapshot={snapshot} embedded />
         </div>
       </div>

@@ -31,8 +31,10 @@ export function buildGoalHeroProgressState(input: {
     "currentValue" | "targetValue" | "hasGoal" | "goalReached"
   >;
   hasSavedGoal: boolean;
+  formatCurrency?: (value: number) => string;
 }): GoalHeroProgressState {
   const { progress, hasSavedGoal } = input;
+  const formatMoney = input.formatCurrency ?? formatCurrency;
 
   if (!hasSavedGoal || !progress.hasGoal) {
     return {
@@ -96,7 +98,7 @@ export function buildGoalHeroProgressState(input: {
     displayPercent,
     currentValue,
     targetValue,
-    ariaLabel: `Goal progress: ${achievedText}. Current portfolio ${formatCurrency(currentValue)} of ${formatCurrency(targetValue)} target.`,
+    ariaLabel: `Goal progress: ${achievedText}. Current portfolio ${formatMoney(currentValue)} of ${formatMoney(targetValue)} target.`,
   };
 }
 

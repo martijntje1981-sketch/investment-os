@@ -51,9 +51,21 @@ vi.mock("@/lib/services/prices/priceService", () => ({
     cache: { enabled: true, durationSeconds: 720 },
   })),
   loadDefaultWatchlistPrices: vi.fn(),
+  loadBaseCurrencyFxSnapshot: vi.fn(async () => ({
+    baseCurrency: "USD",
+    eurToBaseRate: 1 / 0.92,
+    source: "EODHD",
+    updatedAt: "2026-07-26T08:00:00.000Z",
+    status: "current",
+    conversionPath: "EUR → USD via invert(USD_TO_EUR from EURUSD.FOREX)",
+    foreignToEurRate: 0.92,
+  })),
 }));
 
-import { loadPricesForHoldings } from "@/lib/services/prices/priceService";
+import {
+  loadBaseCurrencyFxSnapshot,
+  loadPricesForHoldings,
+} from "@/lib/services/prices/priceService";
 
 describe("POST /api/prices", () => {
   beforeEach(() => {
@@ -135,5 +147,30 @@ describe("POST /api/prices", () => {
     expect(payload.success).toBe(true);
     expect(payload.message).toBe("No holdings available for live pricing.");
     expect(payload.prices).toEqual([]);
+  });
+
+  it("loads presentation FX without hard snapshotOnly so cold cache can soft-fetch", async () => {
+    const response = await POST(
+      new Request("http://localhost/api/prices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fxSnapshotOnly: true,
+          baseCurrency: "USD",
+        }),
+      }),
+    );
+
+    expect(loadBaseCurrencyFxSnapshot).toHaveBeenCalledWith("USD", {
+      forceRefresh: false,
+      snapshotOnly: false,
+    });
+    expect(loadPricesForHoldings).not.toHaveBeenCalled();
+
+    const payload = await response.json();
+    expect(response.status).toBe(200);
+    expect(payload.success).toBe(true);
+    expect(payload.fxSnapshot.baseCurrency).toBe("USD");
+    expect(payload.fxSnapshot.status).toBe("current");
   });
 });

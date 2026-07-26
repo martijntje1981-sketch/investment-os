@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Target, TrendingDown, TrendingUp } from "lucide-react";
 
+import { ConversionDetailsDisclosure } from "@/components/currency/ConversionDetailsDisclosure";
 import {
   appCardValueClass,
   appDashboardLightCardClass,
@@ -15,10 +16,8 @@ import {
   appTableNameClass,
   appTickerClass,
 } from "@/components/layout/appSurface";
-import {
-  formatPortfolioCurrency,
-  formatPortfolioPercent,
-} from "@/lib/client/portfolioAnalysis";
+import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
+import { formatPortfolioPercent } from "@/lib/client/portfolioAnalysis";
 import { formatMarketUpdateTime } from "@/lib/client/marketStatus";
 import type { DashboardSummary } from "@/lib/client/dashboardSummary";
 import {
@@ -27,8 +26,8 @@ import {
   RANKING_AFTER_CLOSE,
 } from "@/lib/client/investorOverviewCopy";
 
-function signedCurrency(value: number) {
-  const formatted = formatPortfolioCurrency(Math.abs(value));
+function signedCurrency(value: number, formatEur: (n: number) => string) {
+  const formatted = formatEur(Math.abs(value));
   return value >= 0 ? `+${formatted}` : `−${formatted}`;
 }
 
@@ -38,6 +37,7 @@ function signedPercent(value: number) {
 }
 
 export function DashboardPortfolioHero({ summary }: { summary: DashboardSummary }) {
+  const { formatEur } = useBaseCurrencyDisplay();
   const showTodayMove = summary.hasDailyData;
   const todayTone =
     summary.hasDailyData && summary.todayChange !== 0
@@ -49,7 +49,7 @@ export function DashboardPortfolioHero({ summary }: { summary: DashboardSummary 
   const todayValue = formatTodayMoveValue({
     hasDailyData: summary.hasDailyData,
     performanceCoverageComplete: summary.performanceCoverageComplete,
-    formatValue: () => signedCurrency(summary.todayChange),
+    formatValue: () => signedCurrency(summary.todayChange, formatEur),
   });
 
   const todayDetail = formatTodayMoveDetail({
@@ -71,9 +71,12 @@ export function DashboardPortfolioHero({ summary }: { summary: DashboardSummary 
         </p>
         <p className={`mt-2 ${appDisplayClass}`}>
           {summary.portfolioValueAvailable
-            ? formatPortfolioCurrency(summary.portfolioValue)
+            ? formatEur(summary.portfolioValue)
             : "Unavailable"}
         </p>
+        <div className="mt-2">
+          <ConversionDetailsDisclosure compactTrigger tone="dark" />
+        </div>
         {summary.portfolioValueCoverageMessage ? (
           <p className={`mt-2 ${appSectionMetaClass} text-slate-500`}>
             {summary.portfolioValueCoverageMessage}
@@ -94,7 +97,7 @@ export function DashboardPortfolioHero({ summary }: { summary: DashboardSummary 
             label="Total gain / loss"
             value={
               summary.canShowPerformance
-                ? signedCurrency(summary.totalReturn)
+                ? signedCurrency(summary.totalReturn, formatEur)
                 : "Unavailable"
             }
             detail={
@@ -119,7 +122,7 @@ export function DashboardPortfolioHero({ summary }: { summary: DashboardSummary 
             }
             detail={
               summary.hasSavedGoal && summary.goalTarget
-                ? `Target ${formatPortfolioCurrency(summary.goalTarget)}`
+                ? `Target ${formatEur(summary.goalTarget)}`
                 : "Set a goal to track progress"
             }
             valueClassName="text-violet-200"
@@ -179,6 +182,8 @@ export function DashboardMoverCard({
   hasReliableMoverData: boolean;
   coverageMessage?: string | null;
 }) {
+  const { formatEur } = useBaseCurrencyDisplay();
+
   if (!hasReliableMoverData) {
     const unavailableCopy =
       hasDailyData && coverageMessage
@@ -223,7 +228,7 @@ export function DashboardMoverCard({
             <p className={appCardValueClass}>
               {signedPercent(mover.changePercent)}
               <span aria-hidden="true"> · </span>
-              {signedCurrency(mover.changeAmount)}
+              {signedCurrency(mover.changeAmount, formatEur)}
             </p>
           </div>
         </>

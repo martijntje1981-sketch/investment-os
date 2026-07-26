@@ -4,19 +4,12 @@ import {
   appDashboardDarkMetaClass,
   appHeroMetricLabelClass,
 } from "@/components/layout/appSurface";
+import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 import {
   buildGoalHeroProgressState,
   formatGoalHeroProgressPercent,
 } from "@/lib/client/goalHeroProgress";
 import type { GoalProgress } from "@/lib/services/goals/goalProgressEngine";
-
-function formatCurrency(value: number) {
-  return new Intl.NumberFormat("en-GB", {
-    style: "currency",
-    currency: "EUR",
-    maximumFractionDigits: 0,
-  }).format(value);
-}
 
 export function GoalHeroProgressVisual({
   progress,
@@ -28,7 +21,12 @@ export function GoalHeroProgressVisual({
   >;
   hasSavedGoal: boolean;
 }) {
-  const state = buildGoalHeroProgressState({ progress, hasSavedGoal });
+  const { formatEur } = useBaseCurrencyDisplay();
+  const state = buildGoalHeroProgressState({
+    progress,
+    hasSavedGoal,
+    formatCurrency: formatEur,
+  });
 
   if (state.status === "unconfigured") {
     return (
@@ -67,13 +65,13 @@ export function GoalHeroProgressVisual({
           <p className={appHeroMetricLabelClass}>Current</p>
           <p className="mt-1 text-sm font-bold tabular-nums text-white">
             {state.currentValue !== null
-              ? formatCurrency(state.currentValue)
+              ? formatEur(state.currentValue)
               : "Unavailable"}
           </p>
           <p className={`mt-2 ${appHeroMetricLabelClass}`}>Target</p>
           <p className="mt-1 text-sm font-bold tabular-nums text-white/85">
             {state.targetValue !== null
-              ? formatCurrency(state.targetValue)
+              ? formatEur(state.targetValue)
               : "Unavailable"}
           </p>
         </div>

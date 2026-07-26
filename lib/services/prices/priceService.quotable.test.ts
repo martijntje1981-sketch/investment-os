@@ -14,10 +14,13 @@ vi.mock("@/lib/services/prices/providers/eodhdMarketDataProvider", async (import
   return {
     ...actual,
     fetchEodhdFxRates: vi.fn(async () => ({
-      EUR: 1,
-      USD: 0.92,
-      GBP: 1.17,
-      CHF: 1.05,
+      rates: {
+        EUR: 1,
+        USD: 0.92,
+        GBP: 1.17,
+        CHF: 1.05,
+      },
+      updatedAtByCurrency: {},
     })),
   };
 });

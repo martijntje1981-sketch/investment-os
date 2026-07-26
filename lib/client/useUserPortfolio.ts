@@ -121,6 +121,7 @@ export function useUserPortfolio() {
 
   const remoteHydratedRef = useRef(false);
   const snapshotSyncedRef = useRef(false);
+  const holdingsGenerationRef = useRef(0);
   const syncRequestRef = useRef<string | null>(null);
   const saveSequenceRef = useRef(0);
   const saveRequestRef = useRef<{
@@ -341,10 +342,18 @@ export function useUserPortfolio() {
     }
 
     snapshotSyncedRef.current = true;
+    const generationAtStart = holdingsGenerationRef.current;
 
     void syncPortfolioPricesFromSnapshot(userSub, currentHoldings).then(
       (result) => {
         if (!result.updated) {
+          return;
+        }
+
+        // A newer local save / live refresh landed while this snapshot sync was
+        // in flight — do not clobber React state with the stale closure result.
+        if (generationAtStart !== holdingsGenerationRef.current) {
+          setHoldings(loadUserPortfolioHoldings(userSub));
           return;
         }
 
@@ -507,6 +516,7 @@ export function useUserPortfolio() {
       writePortfolioToStorage(userSub, next);
       writePortfolioBackupIfComplete(userSub, next);
       recordLocalPortfolioSave(userSub, next, revision);
+      holdingsGenerationRef.current += 1;
       dispatchPortfolioUpdated(userSub);
       setHoldings(applyCachedPrices(userSub, next));
       setRecoveryOffer(

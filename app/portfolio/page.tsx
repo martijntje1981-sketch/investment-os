@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Banknote,
@@ -13,16 +13,27 @@ import {
   Pencil,
   PieChart,
   Plus,
-  RefreshCw,
   Search,
   Sparkles,
   Trash2,
   Upload,
   X,
 } from "lucide-react";
+import { ConversionDetailsDisclosure } from "@/components/currency/ConversionDetailsDisclosure";
 import BottomNavigation from "@/components/home/BottomNav";
 import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer";
 import { PageHero } from "@/components/layout/PageHero";
+import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
+import {
+  convertHoldingBaseDraftToEur,
+  convertHoldingEurToBaseDraft,
+  FX_UNAVAILABLE_EDIT_MESSAGE,
+  FX_UNAVAILABLE_SAVE_MESSAGE,
+  canPersistBaseCurrencyAmounts,
+} from "@/lib/client/baseCurrencyInput";
+import type { BaseCurrencyFxSnapshot } from "@/lib/services/prices/baseCurrencyFxSnapshot";
+import { IDENTITY_EUR_FX_SNAPSHOT } from "@/lib/services/prices/baseCurrencyFxSnapshot";
+import { portfolioBaseCurrencySymbol } from "@/lib/types/portfolioBaseCurrency";
 import {
   appCardValueClass,
   appSectionBodyClass,
@@ -38,6 +49,7 @@ import NumericInput from "@/components/NumericInput";
 import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
 import PortfolioSyncBanner from "@/components/PortfolioSyncBanner";
 import CryptoRefreshTechnicalDetails from "@/components/portfolio/CryptoRefreshTechnicalDetails";
+import { RefreshPricesButton } from "@/components/portfolio/RefreshPricesButton";
 import {
   ListingCandidatePicker,
   SelectedListingSummary,
@@ -69,13 +81,7 @@ import {
   applyManualListingSelection,
   lookupManualHoldingListing,
 } from "@/lib/client/manualHoldingMatch";
-import {
-  buildLiveRefreshPreviewMessage,
-  countUniqueQuotableProviderSymbols,
-  readLastLivePriceRefreshAt,
-  refreshLivePortfolioPrices,
-} from "@/lib/client/livePortfolioPriceRefresh";
-import type { CryptoRefreshDiagnosticRecord } from "@/lib/client/cryptoRefreshDiagnostics";
+import { useLivePortfolioPriceRefresh } from "@/lib/client/useLivePortfolioPriceRefresh";
 import {
   normalizeHoldingForSave,
   type StoredPortfolioHolding,
@@ -121,15 +127,6 @@ const emptyDraft: Holding = {
   assetType: "investment",
 };
 
-function money(value: number, decimals = 0) {
-  return new Intl.NumberFormat("en-GB", {
-    style: "currency",
-    currency: "EUR",
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  }).format(value);
-}
-
 function percent(value: number) {
   return `${value >= 0 ? "+" : ""}${value.toFixed(1)}%`;
 }
@@ -139,6 +136,15 @@ function costOf(holding: Holding) {
 }
 
 export default function PortfolioPage() {
+  const {
+    formatEur,
+    snapshot,
+    baseCurrency,
+    canPersistMonetary,
+    refreshFx,
+  } = useBaseCurrencyDisplay();
+  const editorSessionRef = useRef<BaseCurrencyFxSnapshot | null>(null);
+  const [editorCurrencyLocked, setEditorCurrencyLocked] = useState(baseCurrency);
   const {
     userSub,
     holdings,
@@ -168,16 +174,22 @@ export default function PortfolioPage() {
   const { lastRefreshedAt: snapshotRefreshedAt } = useMarketSnapshotMetadata(
     portfolioReady && holdings.length > 0,
   );
-  const [liveRefreshAt, setLiveRefreshAt] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!userSub) {
-      setLiveRefreshAt(null);
-      return;
-    }
-
-    setLiveRefreshAt(readLastLivePriceRefreshAt(userSub));
-  }, [userSub, portfolioReady]);
+  const {
+    refreshPrices,
+    isRefreshing,
+    status: refreshStatus,
+    message,
+    setMessage,
+    liveRefreshAt,
+    refreshDiagnostics,
+    showRefreshDiagnostics,
+    disabled: refreshDisabled,
+  } = useLivePortfolioPriceRefresh({
+    userSub,
+    holdings,
+    saveHoldings,
+    ready: portfolioReady,
+  });
 
   const heroRefreshLabel = useMemo(
     () => formatPortfolioHeroRefreshLabel(liveRefreshAt, snapshotRefreshedAt),
@@ -188,50 +200,11 @@ export default function PortfolioPage() {
   const [editorOpen, setEditorOpen] = useState(false);
   const [cryptoEditorOpen, setCryptoEditorOpen] = useState(false);
   const [isSavingCrypto, setIsSavingCrypto] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [message, setMessage] = useState("Portfolio prices use the latest available market data.");
-  const [refreshDiagnostics, setRefreshDiagnostics] = useState<
-    CryptoRefreshDiagnosticRecord[] | null
-  >(null);
-  const [showRefreshDiagnostics, setShowRefreshDiagnostics] = useState(false);
   const [listingCandidates, setListingCandidates] = useState<ResolvedInstrument[]>([]);
   const [listingWarnings, setListingWarnings] = useState<string[]>([]);
   const [listingLookupPending, setListingLookupPending] = useState(false);
   const [lookupUnavailable, setLookupUnavailable] = useState(false);
   const [editorError, setEditorError] = useState<string | null>(null);
-
-  const refreshPrices = useCallback(async () => {
-    if (!userSub) return;
-    const uniqueCount = countUniqueQuotableProviderSymbols(holdings, userSub);
-    if (uniqueCount === 0) {
-      setMessage(
-        "No holdings are eligible for live pricing yet. Add a matched listing or provider symbol, then refresh again.",
-      );
-      return;
-    }
-
-    setMessage(buildLiveRefreshPreviewMessage(uniqueCount));
-    setShowRefreshDiagnostics(false);
-    setRefreshDiagnostics(null);
-    setIsRefreshing(true);
-    try {
-      const result = await refreshLivePortfolioPrices(userSub, holdings);
-      if (result.updated) {
-        saveHoldings(result.holdings);
-        setLiveRefreshAt(readLastLivePriceRefreshAt(userSub));
-      }
-      setMessage(result.message);
-      if (result.showCryptoRefreshDiagnostics && result.cryptoRefreshDiagnostics) {
-        setRefreshDiagnostics(result.cryptoRefreshDiagnostics);
-        setShowRefreshDiagnostics(true);
-      } else {
-        setRefreshDiagnostics(null);
-        setShowRefreshDiagnostics(false);
-      }
-    } finally {
-      setIsRefreshing(false);
-    }
-  }, [holdings, saveHoldings, userSub]);
 
   const portfolioAnalysis = useMemo(
     () => buildPortfolioAnalysis(holdings),
@@ -261,7 +234,16 @@ export default function PortfolioPage() {
     setEditorError(null);
   }
 
+  function beginEditorSession(sessionSnapshot: BaseCurrencyFxSnapshot = snapshot) {
+    editorSessionRef.current = sessionSnapshot;
+    setEditorCurrencyLocked(sessionSnapshot.baseCurrency);
+  }
+
   function openAdd(assetType: AssetType) {
+    const sessionSnapshot = canPersistBaseCurrencyAmounts(snapshot)
+      ? snapshot
+      : IDENTITY_EUR_FX_SNAPSHOT;
+    beginEditorSession(sessionSnapshot);
     setDraft({
       ...emptyDraft,
       id: crypto.randomUUID(),
@@ -272,6 +254,11 @@ export default function PortfolioPage() {
       currentPrice: assetType === "cash" ? 1 : 0,
     });
     resetListingState();
+    if (!canPersistBaseCurrencyAmounts(snapshot) && baseCurrency !== "EUR") {
+      setEditorError(FX_UNAVAILABLE_EDIT_MESSAGE);
+    } else {
+      setEditorError(null);
+    }
     setEditorOpen(true);
   }
 
@@ -287,8 +274,21 @@ export default function PortfolioPage() {
       return;
     }
 
-    setDraft({ ...holding });
+    const converted = convertHoldingEurToBaseDraft(holding, snapshot);
+    if (!converted.ok) {
+      // Never place $ / £ beside unconverted EUR amounts.
+      beginEditorSession(IDENTITY_EUR_FX_SNAPSHOT);
+      setDraft({ ...holding });
+      resetListingState();
+      setEditorError(FX_UNAVAILABLE_EDIT_MESSAGE);
+      setEditorOpen(true);
+      return;
+    }
+
+    beginEditorSession(snapshot);
+    setDraft(converted.value);
     resetListingState();
+    setEditorError(null);
     setEditorOpen(true);
   }
 
@@ -331,13 +331,35 @@ export default function PortfolioPage() {
   function submitHolding(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const validation = validateManualHoldingForSave(draft);
+    const sessionSnapshot = editorSessionRef.current ?? snapshot;
+    if (!canPersistBaseCurrencyAmounts(sessionSnapshot)) {
+      setEditorError(FX_UNAVAILABLE_SAVE_MESSAGE);
+      return;
+    }
+
+    if (
+      editorCurrencyLocked !== "EUR" &&
+      baseCurrency !== editorCurrencyLocked
+    ) {
+      setEditorError(
+        "Your portfolio base currency changed while this form was open. Close and reopen the holding to continue.",
+      );
+      return;
+    }
+
+    const converted = convertHoldingBaseDraftToEur(draft, sessionSnapshot);
+    if (!converted.ok) {
+      setEditorError(converted.message);
+      return;
+    }
+
+    const validation = validateManualHoldingForSave(converted.value);
     if (!validation.ok) {
       setEditorError(validation.message);
       return;
     }
 
-    const cleaned = normalizeHoldingForSave(draft);
+    const cleaned = normalizeHoldingForSave(converted.value);
     const exists = holdings.some((holding) => holding.id === cleaned.id);
     const next = exists
       ? holdings.map((holding) => (holding.id === cleaned.id ? cleaned : holding))
@@ -398,14 +420,12 @@ export default function PortfolioPage() {
           backToDashboard
           actions={
             <>
-              <button
+              <RefreshPricesButton
                 onClick={() => void refreshPrices()}
-                disabled={isRefreshing}
-                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-bold text-white hover:bg-white/15 disabled:opacity-50"
-              >
-                <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
-                Refresh live prices
-              </button>
+                isRefreshing={isRefreshing}
+                disabled={refreshDisabled}
+                status={refreshStatus}
+              />
               <button
                 onClick={() => openAdd("cash")}
                 className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-bold text-white hover:bg-white/15"
@@ -463,11 +483,12 @@ export default function PortfolioPage() {
           </div>
 
           <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <Metric icon={<CircleDollarSign className="h-5 w-5" />} label="Total value" value={performance.totalValueAvailable ? money(totalValue) : "Unavailable"} detail={performance.totalValueCoverageMessage ?? undefined} />
-            <Metric icon={<BarChart3 className="h-5 w-5" />} label="Since purchase" value={performance.canShowPerformance ? `${totalReturn >= 0 ? "+" : ""}${money(totalReturn)}` : "Unavailable"} detail={performance.canShowPerformance ? percent(totalReturnPercent) : "Price data required"} tone={performance.canShowPerformance ? (totalReturn >= 0 ? "positive" : "negative") : "neutral"} />
-            <Metric icon={<Banknote className="h-5 w-5" />} label="Cash" value={money(cashValue)} detail={totalValue > 0 ? `${(cashValue / totalValue * 100).toFixed(1)}% of portfolio` : "0.0% of portfolio"} />
+            <Metric icon={<CircleDollarSign className="h-5 w-5" />} label="Total value" value={performance.totalValueAvailable ? formatEur(totalValue) : "Unavailable"} detail={performance.totalValueCoverageMessage ?? undefined} />
+            <Metric icon={<BarChart3 className="h-5 w-5" />} label="Since purchase" value={performance.canShowPerformance ? `${totalReturn >= 0 ? "+" : ""}${formatEur(totalReturn)}` : "Unavailable"} detail={performance.canShowPerformance ? percent(totalReturnPercent) : "Price data required"} tone={performance.canShowPerformance ? (totalReturn >= 0 ? "positive" : "negative") : "neutral"} />
+            <Metric icon={<Banknote className="h-5 w-5" />} label="Cash" value={formatEur(cashValue)} detail={totalValue > 0 ? `${(cashValue / totalValue * 100).toFixed(1)}% of portfolio` : "0.0% of portfolio"} />
             <Metric icon={<PieChart className="h-5 w-5" />} label="Largest position" value={largest?.symbol ?? "—"} detail={largest && totalValue > 0 ? `${largestWeightPercent.toFixed(1)}% of portfolio` : holdings.length > 0 ? "Awaiting price data" : "No holdings"} />
           </section>
+          <ConversionDetailsDisclosure compactTrigger />
 
           <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
             <div className="flex items-center justify-between border-b border-slate-200 px-5 py-5 sm:px-7">
@@ -580,11 +601,11 @@ export default function PortfolioPage() {
                           </p>
                         ) : null}
                       </div>
-                      <div><p className={`${appSectionLabelClass} lg:hidden`}>Value</p><p className={appTableValueClass}>{holdingValue === null ? holdingValueUnavailableLabel(holding) : money(holdingValue)}{estimatedPrice && holdingValue !== null ? <span className="ml-1 text-xs font-semibold text-amber-700">est.</span> : null}</p></div>
+                      <div><p className={`${appSectionLabelClass} lg:hidden`}>Value</p><p className={appTableValueClass}>{holdingValue === null ? holdingValueUnavailableLabel(holding) : formatEur(holdingValue)}{estimatedPrice && holdingValue !== null ? <span className="ml-1 text-xs font-semibold text-amber-700">est.</span> : null}</p></div>
                       <div><p className={`${appSectionLabelClass} lg:hidden`}>Allocation</p><p className={appTableValueClass}>{holdingValue === null ? "—" : `${allocation.toFixed(1)}%`}</p></div>
                       <div>
                         <p className={`${appSectionLabelClass} lg:hidden`}>Return</p>
-                        <p className={`${appTableValueClass} ${holdingReturn === null ? "text-slate-600" : holdingReturn >= 0 ? "text-emerald-700" : "text-red-700"}`}>{holding.assetType === "cash" ? "Stable" : holdingReturn === null ? holdingValueUnavailableLabel(holding) : `${holdingReturn >= 0 ? "+" : ""}${money(holdingReturn)}`}</p>
+                        <p className={`${appTableValueClass} ${holdingReturn === null ? "text-slate-600" : holdingReturn >= 0 ? "text-emerald-700" : "text-red-700"}`}>{holding.assetType === "cash" ? "Stable" : holdingReturn === null ? holdingValueUnavailableLabel(holding) : `${holdingReturn >= 0 ? "+" : ""}${formatEur(holdingReturn)}`}</p>
                       </div>
                       <div className="flex items-center justify-end gap-1">
                         {holding.assetType === "investment" ? (
@@ -661,7 +682,15 @@ export default function PortfolioPage() {
             {draft.assetType === "cash" ? (
               <div className="mt-7 space-y-5">
                 <Field label="Cash name" value={draft.name} onChange={(value) => setDraft({ ...draft, name: value })} />
-                <Field label="Amount" type="number" prefix="€" min="0" step="0.01" value={draft.quantity} onChange={(value) => setDraft({ ...draft, quantity: Number(value) })} />
+                <Field
+                  label={`Amount (${editorCurrencyLocked})`}
+                  type="number"
+                  prefix={portfolioBaseCurrencySymbol(editorCurrencyLocked)}
+                  min="0"
+                  step="0.01"
+                  value={draft.quantity}
+                  onChange={(value) => setDraft({ ...draft, quantity: Number(value) })}
+                />
               </div>
             ) : (
               <div className="mt-7 space-y-5">
@@ -764,21 +793,77 @@ export default function PortfolioPage() {
 
                 <Field label="Quantity" type="number" min="0" step="any" value={draft.quantity} onChange={(value) => setDraft({ ...draft, quantity: Number(value) })} />
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="Average purchase price" type="number" prefix="€" min="0" step="any" required={false} value={draft.purchasePrice} onChange={(value) => setDraft({ ...draft, purchasePrice: Number(value) })} />
-                  <Field label="Current price" type="number" prefix="€" min="0" step="any" required={false} value={draft.currentPrice} onChange={(value) => setDraft({ ...draft, currentPrice: Number(value) })} />
+                  <Field
+                    label={`Average purchase price (${editorCurrencyLocked})`}
+                    type="number"
+                    prefix={portfolioBaseCurrencySymbol(editorCurrencyLocked)}
+                    min="0"
+                    step="any"
+                    required={false}
+                    value={draft.purchasePrice}
+                    onChange={(value) => setDraft({ ...draft, purchasePrice: Number(value) })}
+                  />
+                  <Field
+                    label={`Current price (${editorCurrencyLocked})`}
+                    type="number"
+                    prefix={portfolioBaseCurrencySymbol(editorCurrencyLocked)}
+                    min="0"
+                    step="any"
+                    required={false}
+                    value={draft.currentPrice}
+                    onChange={(value) => setDraft({ ...draft, currentPrice: Number(value) })}
+                  />
                 </div>
 
                 {editorError ? (
-                  <p className="text-sm font-semibold text-red-700">{editorError}</p>
+                  <p className="text-sm font-semibold text-red-700" role="alert">{editorError}</p>
+                ) : null}
+                {!canPersistMonetary && baseCurrency !== "EUR" ? (
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+                    <p>{FX_UNAVAILABLE_SAVE_MESSAGE}</p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        refreshFx();
+                        editorSessionRef.current = snapshot;
+                      }}
+                      className="mt-2 inline-flex min-h-[44px] items-center font-semibold underline"
+                    >
+                      Retry conversion
+                    </button>
+                  </div>
                 ) : null}
               </div>
             )}
+
+            {draft.assetType === "cash" && editorError ? (
+              <p className="mt-5 text-sm font-semibold text-red-700" role="alert">
+                {editorError}
+              </p>
+            ) : null}
+            {draft.assetType === "cash" && !canPersistMonetary && baseCurrency !== "EUR" ? (
+              <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+                <p>{FX_UNAVAILABLE_SAVE_MESSAGE}</p>
+                <button
+                  type="button"
+                  onClick={() => refreshFx()}
+                  className="mt-2 inline-flex min-h-[44px] items-center font-semibold underline"
+                >
+                  Retry conversion
+                </button>
+              </div>
+            ) : null}
             </div>
 
             <div className="shrink-0 border-t border-slate-100 bg-white p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-6">
             <button
               type="submit"
-              className="w-full rounded-xl bg-slate-950 px-5 py-3.5 text-sm font-bold text-white"
+              disabled={
+                !canPersistBaseCurrencyAmounts(editorSessionRef.current ?? snapshot) ||
+                (editorCurrencyLocked !== "EUR" &&
+                  baseCurrency !== editorCurrencyLocked)
+              }
+              className="w-full rounded-xl bg-slate-950 px-5 py-3.5 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-60"
             >
               Save holding
             </button>
@@ -799,7 +884,7 @@ function Field({ label, value, onChange, type = "text", prefix, min, step, requi
     return (
       <label className="block">
         <span className="text-[15px] font-bold text-slate-800">{label}</span>
-        <span className="mt-2 flex items-center rounded-xl border border-slate-200 bg-slate-50 px-4 focus-within:border-blue-400">
+        <span className="mt-2 flex min-h-[44px] items-center rounded-xl border border-slate-200 bg-slate-50 px-4 focus-within:border-blue-400">
           {prefix && <span className="font-bold text-slate-400">{prefix}</span>}
           <NumericInput
             required={required}

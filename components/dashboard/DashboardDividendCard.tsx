@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { Coins, Sparkles } from "lucide-react";
 
@@ -10,7 +12,8 @@ import {
   appSectionLabelClass,
   appSectionMetaClass,
 } from "@/components/layout/appSurface";
-import { formatPortfolioCurrency, formatPortfolioPercent } from "@/lib/client/portfolioAnalysis";
+import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
+import { formatPortfolioPercent } from "@/lib/client/portfolioAnalysis";
 import type { PortfolioDividendSnapshot } from "@/lib/types/dividends";
 
 type DashboardDividendCardProps = {
@@ -22,6 +25,8 @@ export function DashboardDividendCard({
   snapshot,
   isLoading = false,
 }: DashboardDividendCardProps) {
+  const { formatEur } = useBaseCurrencyDisplay();
+
   if (!snapshot.passiveIncome.hasUsableEstimate && !snapshot.hasDividendData && !isLoading) {
     return null;
   }
@@ -45,7 +50,7 @@ export function DashboardDividendCard({
           {isLoading
             ? "Loading dividend insights…"
             : snapshot.passiveIncome.hasUsableEstimate
-              ? formatPortfolioCurrency(snapshot.estimatedAnnualIncomeEur)
+              ? formatEur(snapshot.estimatedAnnualIncomeEur)
               : "Unavailable"}
         </p>
 
@@ -83,7 +88,7 @@ export function DashboardDividendCard({
                 label="Next payment"
                 value={
                   snapshot.nextPayment
-                    ? formatPortfolioCurrency(snapshot.nextPayment.amountEur)
+                    ? formatEur(snapshot.nextPayment.amountEur)
                     : "—"
                 }
                 detail={

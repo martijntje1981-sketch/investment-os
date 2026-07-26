@@ -1,4 +1,6 @@
-import { formatPortfolioCurrency } from "@/lib/client/portfolioAnalysis";
+"use client";
+
+import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 import { holdingValueUnavailableLabel } from "@/lib/client/holdingDisplayPrice";
 import { formatHoldingTodayChange } from "@/lib/client/portfolioMovementFormat";
 import { formatCrypto24hChange } from "@/lib/client/cryptoPriceDisplay";
@@ -62,14 +64,20 @@ function HoldingPriceQualityBadge({ row }: { row: DashboardHoldingRow }) {
   return null;
 }
 
-function HoldingValueLabel({ row }: { row: DashboardHoldingRow }) {
+function HoldingValueLabel({
+  row,
+  formatEur,
+}: {
+  row: DashboardHoldingRow;
+  formatEur: (value: number) => string;
+}) {
   if (row.priceStatus !== "available" || row.currentValue === null) {
     return <>{holdingValueUnavailableLabel(row)}</>;
   }
 
   return (
     <>
-      {formatPortfolioCurrency(row.currentValue)}
+      {formatEur(row.currentValue)}
       <HoldingPriceQualityBadge row={row} />
     </>
   );
@@ -89,18 +97,26 @@ function holdingSecondaryLabel(row: DashboardHoldingRow): string {
   return row.symbol;
 }
 
-function holdingTodayLabel(row: DashboardHoldingRow): string {
+function holdingTodayLabel(
+  row: DashboardHoldingRow,
+  formatEur: (value: number) => string,
+): string {
   if (row.assetType === "cash") {
     return "Stable";
   }
 
   if (row.isCrypto) {
-    return formatCrypto24hChange(row.dailyChangePercent, row.dailyChangeAmount);
+    return formatCrypto24hChange(
+      row.dailyChangePercent,
+      row.dailyChangeAmount,
+      formatEur,
+    );
   }
 
   return formatHoldingTodayChange(
     row.changeStatus === "available" ? row.dailyChangeAmount : null,
     row.changeStatus === "available" ? row.dailyChangePercent : null,
+    formatEur,
   );
 }
 
@@ -113,7 +129,8 @@ export function HoldingsTodayRow({
   layout: "mobile" | "desktop";
   index?: number;
 }) {
-  const changeLabel = holdingTodayLabel(row);
+  const { formatEur } = useBaseCurrencyDisplay();
+  const changeLabel = holdingTodayLabel(row, formatEur);
   const surfaceClass = rowSurfaceClass(index, layout);
 
   if (layout === "desktop") {
@@ -128,7 +145,7 @@ export function HoldingsTodayRow({
         <td
           className={`whitespace-nowrap px-4 py-4 text-right align-middle ${appTableValueClass}`}
         >
-          <HoldingValueLabel row={row} />
+          <HoldingValueLabel row={row} formatEur={formatEur} />
         </td>
         <td
           className={`whitespace-nowrap px-4 py-4 text-right align-middle ${appTableChangeClass} ${changeToneClass(row)}`}
@@ -149,7 +166,7 @@ export function HoldingsTodayRow({
       </div>
       <div className="shrink-0 text-right">
         <p className={appTableValueClass}>
-          <HoldingValueLabel row={row} />
+          <HoldingValueLabel row={row} formatEur={formatEur} />
         </p>
         <p className={`mt-1 ${appTableChangeClass} ${changeToneClass(row)}`}>
           {changeLabel}

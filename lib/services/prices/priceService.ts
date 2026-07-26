@@ -69,6 +69,13 @@ import {
   estimateFxProviderCalls,
   requiredFxCurrenciesForSymbols,
 } from "@/lib/services/marketSnapshot/snapshotSymbolFilter";
+import {
+  buildBaseCurrencyFxSnapshot,
+  type BaseCurrencyFxSnapshot,
+} from "@/lib/services/prices/baseCurrencyFxSnapshot";
+import {
+  normalizePortfolioBaseCurrency,
+} from "@/lib/types/portfolioBaseCurrency";
 import { buildSanitizedServerCryptoDiagnostics } from "@/lib/services/prices/cryptoRefreshDiagnostics";
 import {
   NO_QUOTABLE_HOLDINGS_MESSAGE,
@@ -102,8 +109,14 @@ function getActiveRouter() {
 
 type FxRates = Record<PriceCurrency, number | null>;
 
-let fxCache: { rates: FxRates; expiresAt: number } | null = null;
-let fxInFlight: Promise<FxRates> | null = null;
+type FxCacheEntry = {
+  rates: FxRates;
+  expiresAt: number;
+  updatedAtByCurrency: Partial<Record<PriceCurrency, string>>;
+};
+
+let fxCache: FxCacheEntry | null = null;
+let fxInFlight: Promise<FxCacheEntry> | null = null;
 
 const FX_CACHE_TTL_MS = DEFAULT_MARKET_DATA_CACHE_POLICY.fxFreshMs;
 
@@ -116,6 +129,14 @@ export type LoadPricesOptions = {
 };
 
 const DEFAULT_FX_RATES: FxRates = { EUR: 1, USD: null, GBP: null, CHF: null };
+
+function toFxCacheEntry(
+  rates: FxRates,
+  updatedAtByCurrency: Partial<Record<PriceCurrency, string>> = {},
+  expiresAt = Date.now() + FX_CACHE_TTL_MS,
+): FxCacheEntry {
+  return { rates, updatedAtByCurrency, expiresAt };
+}
 
 function effectiveForceRefresh(requested: boolean): boolean {
   return requested;
@@ -168,7 +189,7 @@ async function getFxRates(options?: {
   forceRefresh?: boolean;
   snapshotOnly?: boolean;
   requiredCurrencies?: PriceCurrency[];
-}): Promise<FxRates> {
+}): Promise<FxCacheEntry> {
   const now = Date.now();
   const refreshLive = effectiveForceRefresh(options?.forceRefresh ?? false);
   const snapshotOnly = options?.snapshotOnly ?? false;
@@ -177,21 +198,25 @@ async function getFxRates(options?: {
 
   if (snapshotOnly && !refreshLive) {
     if (fxCache) {
-      return fxCache.rates;
+      return fxCache;
     }
-    return DEFAULT_FX_RATES;
+    return toFxCacheEntry(DEFAULT_FX_RATES, {}, 0);
   }
 
   if (!refreshLive && fxCache && now <= fxCache.expiresAt) {
-    return fxCache.rates;
+    return fxCache;
   }
 
   if (isProviderCircuitOpen(EODHD_QUOTE_PROVIDER_ID) && !refreshLive) {
     recordProviderCooldown(EODHD_QUOTE_PROVIDER_ID);
     if (fxCache) {
-      return fxCache.rates;
+      return fxCache;
     }
-    return { EUR: 1, USD: null, GBP: null, CHF: null };
+    return toFxCacheEntry(
+      { EUR: 1, USD: null, GBP: null, CHF: null },
+      {},
+      0,
+    );
   }
 
   if (fxInFlight) {
@@ -205,11 +230,16 @@ async function getFxRates(options?: {
     }
     recordProviderCall();
     try {
-      const rates = await fetchEodhdFxRates(undefined, {
+      const result = await fetchEodhdFxRates(undefined, {
         requiredCurrencies,
       });
-      fxCache = { rates, expiresAt: Date.now() + FX_CACHE_TTL_MS };
-      return rates;
+      const entry = toFxCacheEntry(
+        result.rates,
+        result.updatedAtByCurrency,
+        Date.now() + FX_CACHE_TTL_MS,
+      );
+      fxCache = entry;
+      return entry;
     } catch (error) {
       const kind =
         error instanceof ProviderQuoteError
@@ -223,10 +253,10 @@ async function getFxRates(options?: {
       }
 
       if (fxCache) {
-        return fxCache.rates;
+        return fxCache;
       }
 
-      return DEFAULT_FX_RATES;
+      return toFxCacheEntry(DEFAULT_FX_RATES, {}, 0);
     }
   })();
 
@@ -250,7 +280,8 @@ async function fetchAndCacheQuote(
     if (!forceRefresh) {
       assertProviderAvailable(provider.id);
     }
-    const fxRates = await getFxRates({ forceRefresh });
+    const fxEntry = await getFxRates({ forceRefresh });
+    const fxRates = fxEntry.rates;
     recordProviderCall();
 
     let quote: NormalizedProviderQuote;
@@ -503,8 +534,8 @@ async function quoteToHoldingPrice(
     );
   }
 
-  const fxRates = await getFxRates(options);
-  return convertQuoteToHoldingPrice(target, quote, fxRates);
+  const fxEntry = await getFxRates(options);
+  return convertQuoteToHoldingPrice(target, quote, fxEntry.rates);
 }
 
 function resolveQuoteSource(
@@ -623,11 +654,12 @@ export async function loadPricesForTargets(
   const requiredFxCurrencies = requiredFxCurrenciesForSymbols(
     uniqueTargets.map((target) => target.providerSymbol),
   );
-  const fxRates = await getFxRates({
+  const fxEntry = await getFxRates({
     forceRefresh,
     snapshotOnly,
     requiredCurrencies: requiredFxCurrencies,
   });
+  const fxRates = fxEntry.rates;
 
   const results = await Promise.allSettled(
     uniqueTargets.map((target) =>
@@ -809,6 +841,101 @@ export async function loadSnapshotPricesForHoldings(
 export async function loadDefaultWatchlistPrices(): Promise<PricePayload> {
   const targets = await resolveDefaultWatchlist();
   return loadPricesForTargets(targets, { snapshotOnly: true });
+}
+
+function foreignFxRateForBase(
+  baseCurrency: "USD" | "GBP",
+  rates: FxRates,
+): number | null {
+  const rate = baseCurrency === "USD" ? rates.USD : rates.GBP;
+  return typeof rate === "number" && Number.isFinite(rate) && rate > 0
+    ? rate
+    : null;
+}
+
+/**
+ * Presentation FX snapshot for portfolio base currency.
+ * Reuses PriceService FX cache + deduplication. EUR is identity (zero provider calls).
+ *
+ * Important: a cold FX cache must not yield `unavailable` solely because the caller
+ * asked for snapshotOnly. Presentation FX may soft-fetch on cache miss (still
+ * deduped via fxInFlight) so converted totals are not stuck until a full remount.
+ */
+export async function loadBaseCurrencyFxSnapshot(
+  baseCurrencyInput: unknown,
+  options?: { forceRefresh?: boolean; snapshotOnly?: boolean },
+): Promise<BaseCurrencyFxSnapshot> {
+  const baseCurrency = normalizePortfolioBaseCurrency(baseCurrencyInput);
+
+  if (baseCurrency === "EUR") {
+    return buildBaseCurrencyFxSnapshot({
+      baseCurrency: "EUR",
+      rates: { EUR: 1, USD_TO_EUR: null, GBP_TO_EUR: null },
+    });
+  }
+
+  const requiredCurrencies: PriceCurrency[] =
+    baseCurrency === "USD" ? ["EUR", "USD"] : ["EUR", "GBP"];
+
+  const beforeCache = fxCache;
+  const beforeExpiresAt = beforeCache?.expiresAt ?? 0;
+  const now = Date.now();
+  const hadFreshCache =
+    beforeCache != null &&
+    now <= beforeExpiresAt &&
+    !options?.forceRefresh &&
+    foreignFxRateForBase(baseCurrency, beforeCache.rates) != null;
+
+  let entry = await getFxRates({
+    forceRefresh: options?.forceRefresh,
+    snapshotOnly: options?.snapshotOnly,
+    requiredCurrencies,
+  });
+
+  // Cold snapshotOnly returns null USD/GBP rates. Presentation FX must soft-fetch
+  // once so the UI is not stuck on Unavailable until F5 / remount.
+  if (
+    foreignFxRateForBase(baseCurrency, entry.rates) == null &&
+    !options?.forceRefresh
+  ) {
+    entry = await getFxRates({
+      forceRefresh: false,
+      snapshotOnly: false,
+      requiredCurrencies,
+    });
+  }
+
+  const ratesBag = {
+    EUR: entry.rates.EUR ?? 1,
+    USD_TO_EUR: entry.rates.USD,
+    GBP_TO_EUR: entry.rates.GBP,
+    CHF_TO_EUR: entry.rates.CHF,
+  };
+
+  const updatedAt =
+    (baseCurrency === "USD"
+      ? entry.updatedAtByCurrency.USD
+      : entry.updatedAtByCurrency.GBP) ?? null;
+
+  const foreignRate = foreignFxRateForBase(baseCurrency, entry.rates);
+
+  let status: "current" | "cached" | "stale" | "unavailable" = "unavailable";
+  if (foreignRate != null) {
+    if (entry.expiresAt > 0 && now > entry.expiresAt) {
+      status = "stale";
+    } else if (hadFreshCache) {
+      status = "cached";
+    } else {
+      status = "current";
+    }
+  }
+
+  return buildBaseCurrencyFxSnapshot({
+    baseCurrency,
+    rates: ratesBag,
+    updatedAt,
+    status: status === "unavailable" ? undefined : status,
+  });
 }
 
 export function configureMarketDataProvidersForTests(

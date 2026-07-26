@@ -5,6 +5,7 @@ import { resetPriceServiceMetricsForTests } from "@/lib/services/prices/observab
 import {
   configureMarketDataProvidersForTests,
   getNormalizedQuote,
+  loadBaseCurrencyFxSnapshot,
   loadPricesForTargets,
   resetPriceServiceStateForTests,
 } from "@/lib/services/prices/priceService";
@@ -14,6 +15,7 @@ import type {
   ResolvedPriceTarget,
 } from "@/lib/services/prices/types";
 import { ProviderQuoteError } from "@/lib/services/prices/providers/eodhdMarketDataProvider";
+import { fetchEodhdFxRates } from "@/lib/services/prices/providers/eodhdMarketDataProvider";
 
 vi.mock("@/lib/services/prices/providers/eodhdMarketDataProvider", async (importOriginal) => {
   const actual = await importOriginal<
@@ -22,10 +24,16 @@ vi.mock("@/lib/services/prices/providers/eodhdMarketDataProvider", async (import
   return {
     ...actual,
     fetchEodhdFxRates: vi.fn(async () => ({
-      EUR: 1,
-      USD: 0.92,
-      GBP: 1.17,
-      CHF: 1.05,
+      rates: {
+        EUR: 1,
+        USD: 0.92,
+        GBP: 1.17,
+        CHF: 1.05,
+      },
+      updatedAtByCurrency: {
+        USD: "2026-07-26T08:00:00.000Z",
+        GBP: "2026-07-26T08:00:00.000Z",
+      },
     })),
   };
 });
@@ -341,5 +349,94 @@ describe("PriceService", () => {
     const snapshotQuote = await getNormalizedQuote(VWCE, { snapshotOnly: true });
     expect(provider.calls).toEqual(["VWCE.XETRA"]);
     expect(snapshotQuote.currentPrice).toBe(110);
+  });
+});
+
+describe("loadBaseCurrencyFxSnapshot", () => {
+  beforeEach(() => {
+    resetMarketPriceCacheForTests();
+    resetPriceServiceMetricsForTests();
+    resetPriceServiceStateForTests();
+    configureMarketDataProvidersForTests(null);
+    vi.mocked(fetchEodhdFxRates).mockReset();
+    vi.mocked(fetchEodhdFxRates).mockResolvedValue({
+      rates: {
+        EUR: 1,
+        USD: 0.92,
+        GBP: 1.17,
+        CHF: 1.05,
+      },
+      updatedAtByCurrency: {
+        USD: "2026-07-26T08:00:00.000Z",
+        GBP: "2026-07-26T08:00:00.000Z",
+      },
+    });
+  });
+
+  afterEach(() => {
+    configureMarketDataProvidersForTests(null);
+    resetPriceServiceStateForTests();
+  });
+
+  it("returns EUR identity with zero FX provider calls", async () => {
+    const snapshot = await loadBaseCurrencyFxSnapshot("EUR");
+    expect(snapshot.status).toBe("identity");
+    expect(snapshot.eurToBaseRate).toBe(1);
+    expect(fetchEodhdFxRates).not.toHaveBeenCalled();
+  });
+
+  it("inverts USD_TO_EUR and preserves provider timestamp", async () => {
+    const snapshot = await loadBaseCurrencyFxSnapshot("USD");
+    expect(snapshot.eurToBaseRate).toBeCloseTo(1 / 0.92, 8);
+    expect(snapshot.source).toBe("EODHD");
+    expect(snapshot.updatedAt).toBe("2026-07-26T08:00:00.000Z");
+    expect(snapshot.status).toBe("current");
+    expect(fetchEodhdFxRates).toHaveBeenCalledTimes(1);
+  });
+
+  it("reuses cache for concurrent and follow-up USD requests", async () => {
+    const [a, b] = await Promise.all([
+      loadBaseCurrencyFxSnapshot("USD"),
+      loadBaseCurrencyFxSnapshot("USD"),
+    ]);
+    expect(a.eurToBaseRate).toBe(b.eurToBaseRate);
+    expect(a.updatedAt).toBe(b.updatedAt);
+    expect(fetchEodhdFxRates).toHaveBeenCalledTimes(1);
+
+    const cached = await loadBaseCurrencyFxSnapshot("USD");
+    expect(cached.status).toBe("cached");
+    expect(cached.eurToBaseRate).toBe(a.eurToBaseRate);
+    expect(fetchEodhdFxRates).toHaveBeenCalledTimes(1);
+  });
+
+  it("marks missing FX as unavailable without inventing a rate", async () => {
+    vi.mocked(fetchEodhdFxRates).mockResolvedValue({
+      rates: { EUR: 1, USD: null, GBP: null, CHF: null },
+      updatedAtByCurrency: {},
+    });
+    const snapshot = await loadBaseCurrencyFxSnapshot("GBP");
+    expect(snapshot.status).toBe("unavailable");
+    expect(snapshot.eurToBaseRate).toBeNull();
+  });
+
+  it("soft-fetches on cold snapshotOnly so presentation FX is not stuck unavailable", async () => {
+    const snapshot = await loadBaseCurrencyFxSnapshot("USD", {
+      snapshotOnly: true,
+    });
+    expect(snapshot.status).not.toBe("unavailable");
+    expect(snapshot.eurToBaseRate).toBeCloseTo(1 / 0.92, 8);
+    expect(fetchEodhdFxRates).toHaveBeenCalledTimes(1);
+  });
+
+  it("reuses a warm FX cache for snapshotOnly presentation reads without a second provider call", async () => {
+    await loadBaseCurrencyFxSnapshot("USD");
+    expect(fetchEodhdFxRates).toHaveBeenCalledTimes(1);
+
+    const cached = await loadBaseCurrencyFxSnapshot("USD", {
+      snapshotOnly: true,
+    });
+    expect(cached.status).toBe("cached");
+    expect(cached.eurToBaseRate).toBeCloseTo(1 / 0.92, 8);
+    expect(fetchEodhdFxRates).toHaveBeenCalledTimes(1);
   });
 });

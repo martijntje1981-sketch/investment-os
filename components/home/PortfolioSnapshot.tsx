@@ -2,7 +2,9 @@
 
 import type { ReactNode } from "react";
 import { Card } from "@/components/ui/Card";
-import { formatEuro, formatPercent } from "@/lib/home-data";
+import { ConversionDetailsDisclosure } from "@/components/currency/ConversionDetailsDisclosure";
+import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
+import { formatPercent } from "@/lib/home-data";
 import {
   formatMarketUpdateTime,
   getMarketStatuses,
@@ -49,6 +51,18 @@ function getPerformanceColor(value: number) {
 
   return "text-[#64748B]";
 }
+
+function signedCurrency(
+  value: number,
+  formatEur: (n: number) => string,
+  options?: { signed?: boolean },
+) {
+  const formatted = formatEur(Math.abs(value));
+  if (options?.signed && value > 0) return `+${formatted}`;
+  if (options?.signed && value < 0) return `-${formatted}`;
+  return formatted;
+}
+
 
 function MarketStatusCard({
   lastUpdatedAt,
@@ -164,13 +178,14 @@ export function PortfolioSnapshot({
   intelligenceSummary,
   discoverTeaser,
 }: PortfolioSnapshotProps) {
+  const { formatEur } = useBaseCurrencyDisplay();
   const showTodayMove = hasDailyData;
   const showMovers = hasDailyData;
 
   const todayValue = formatTodayMoveValue({
     hasDailyData,
     performanceCoverageComplete,
-    formatValue: () => formatEuro(todayChange, { signed: true }),
+    formatValue: () => signedCurrency(todayChange, formatEur, { signed: true }),
   });
 
   const todayPercentValue = hasDailyData
@@ -193,8 +208,11 @@ export function PortfolioSnapshot({
             Total portfolio value
           </p>
           <p className="mt-2 text-4xl font-black tracking-[-0.04em] text-slate-950 sm:text-5xl">
-            {totalValueAvailable ? formatEuro(totalValue) : "Unavailable"}
+            {totalValueAvailable ? formatEur(totalValue) : "Unavailable"}
           </p>
+          <div className="mt-2">
+            <ConversionDetailsDisclosure compactTrigger />
+          </div>
           {totalValueCoverageMessage ? (
             <p className="mt-2 text-sm text-slate-500">{totalValueCoverageMessage}</p>
           ) : null}

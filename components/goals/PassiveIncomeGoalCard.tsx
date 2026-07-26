@@ -4,14 +4,16 @@ import { useId, useState } from "react";
 import { ChevronDown, TrendingUp } from "lucide-react";
 
 import { PassiveIncomeUserEstimateControl } from "@/components/goals/PassiveIncomeUserEstimateControl";
+import { ConversionDetailsDisclosure } from "@/components/currency/ConversionDetailsDisclosure";
 import {
   appSectionLabelClass,
   appSectionSubtitleClass,
   appSectionTitleClass,
   appValueClass,
 } from "@/components/layout/appSurface";
-import { formatPortfolioCurrency, formatPortfolioPercent } from "@/lib/client/portfolioAnalysis";
+import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 import { hasPassiveIncomeTarget } from "@/lib/client/goalPassiveIncome";
+import { formatPortfolioPercent } from "@/lib/client/portfolioAnalysis";
 import {
   buildPassiveIncomeGoalProgressState,
 } from "@/lib/services/dividends/passiveIncomeProjection";
@@ -69,12 +71,14 @@ function formatEstimateSource(source: PassiveIncomeHoldingRecord["estimateSource
 function PassiveIncomeGoalDetails({
   records,
   onEstimateChange,
+  formatEur,
 }: {
   records: PassiveIncomeHoldingRecord[];
   onEstimateChange?: (
     holdingId: string,
     estimate: PassiveIncomeUserEstimate | null,
   ) => void;
+  formatEur: (value: number) => string;
 }) {
   const [open, setOpen] = useState(false);
   const panelId = useId();
@@ -159,7 +163,7 @@ function PassiveIncomeGoalDetails({
                     </dt>
                     <dd className="mt-0.5 font-semibold text-slate-900">
                       {record.estimatedAnnualCashDistributionEur != null
-                        ? formatPortfolioCurrency(
+                        ? formatEur(
                             record.estimatedAnnualCashDistributionEur,
                           )
                         : "Unavailable"}
@@ -233,6 +237,7 @@ export function PassiveIncomeGoalCard({
     estimate: PassiveIncomeUserEstimate | null,
   ) => void;
 }) {
+  const { formatEur } = useBaseCurrencyDisplay();
   const projection = snapshot.passiveIncome;
   const progressState = buildPassiveIncomeGoalProgressState({
     projection,
@@ -268,11 +273,11 @@ export function PassiveIncomeGoalCard({
           label="Estimated annual cash distributions"
           value={
             showEstimate
-              ? formatPortfolioCurrency(progressState.eligibleEstimatedAnnualEur)
+              ? formatEur(progressState.eligibleEstimatedAnnualEur)
               : showUnavailableEstimate
                 ? "Unavailable"
                 : projection.hasUsableEstimate
-                  ? formatPortfolioCurrency(projection.eligibleEstimatedAnnualCashDistributionEur)
+                  ? formatEur(projection.eligibleEstimatedAnnualCashDistributionEur)
                   : "Unavailable"
           }
         />
@@ -280,7 +285,7 @@ export function PassiveIncomeGoalCard({
           label="Annual target"
           value={
             hasTarget
-              ? formatPortfolioCurrency(passiveIncomeTarget!)
+              ? formatEur(passiveIncomeTarget!)
               : "Not set"
           }
         />
@@ -288,7 +293,7 @@ export function PassiveIncomeGoalCard({
           label="Remaining"
           value={
             showEstimate && progressState.remainingAnnualEur != null
-              ? formatPortfolioCurrency(progressState.remainingAnnualEur)
+              ? formatEur(progressState.remainingAnnualEur)
               : "—"
           }
         />
@@ -315,7 +320,7 @@ export function PassiveIncomeGoalCard({
         <p className={`mt-4 ${appSectionSubtitleClass}`}>
           Estimated monthly equivalent:{" "}
           <span className="font-semibold text-slate-800">
-            {formatPortfolioCurrency(progressState.estimatedMonthlyEquivalentEur)}
+            {formatEur(progressState.estimatedMonthlyEquivalentEur)}
           </span>
           {" "}(estimate)
         </p>
@@ -365,9 +370,14 @@ export function PassiveIncomeGoalCard({
         </p>
       ) : null}
 
+      <div className="mt-4">
+        <ConversionDetailsDisclosure compactTrigger />
+      </div>
+
       <PassiveIncomeGoalDetails
         records={projection.holdingRecords}
         onEstimateChange={onEstimateChange}
+        formatEur={formatEur}
       />
     </section>
   );

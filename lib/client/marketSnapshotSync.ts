@@ -6,6 +6,7 @@ import {
   applyCachedPrices,
   applyPricesToHoldings,
   buildPriceRequestPayload,
+  countAppliedPriceUpdates,
   countQuotablePriceHoldings,
   filterQuotablePricePayloadForRefresh,
   isRateLimitedPriceError,
@@ -142,13 +143,26 @@ export async function syncPortfolioPricesFromSnapshot<
         };
       }
 
+      const quotes = parsePriceApiResponseQuotes(data.prices);
+      const refreshed = applyPricesToHoldings(holdings, quotes);
+      const appliedCount = countAppliedPriceUpdates(holdings, refreshed);
+
+      // Do not report updated/clobber React state when quotes did not apply.
+      // A late in-flight snapshot sync must not wipe a newer live refresh.
+      if (appliedCount === 0) {
+        return {
+          holdings: applyCachedPrices(userSub, holdings) as T[],
+          updated: false,
+          message: data.message ?? "Market snapshot had no applicable quotes.",
+        };
+      }
+
       writePriceCache(userSub, data.prices, {
         lastSuccessfulUpdate:
           data.lastSuccessfulUpdate ?? metadata?.lastRefreshedAt ?? null,
         quoteSource: data.quoteSource ?? "cache",
       });
 
-      const refreshed = applyPricesToHoldings(holdings, parsePriceApiResponseQuotes(data.prices));
       return {
         holdings: refreshed,
         updated: true,

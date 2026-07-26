@@ -18,6 +18,7 @@ import {
   appSectionTitleClass,
 } from "@/components/layout/appSurface";
 import BottomNavigation from "@/components/home/BottomNav";
+import { ConversionDetailsDisclosure } from "@/components/currency/ConversionDetailsDisclosure";
 import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer";
 import { PageHero } from "@/components/layout/PageHero";
 import { GoalHeroProgressVisual } from "@/components/goals/GoalHeroProgressVisual";
@@ -30,6 +31,15 @@ import {
   GoalWhatIfCard,
 } from "@/components/goals/GoalIntelligenceBlocks";
 import NumericInput from "@/components/NumericInput";
+import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
+import {
+  canPersistBaseCurrencyAmounts,
+  convertCanonicalEurAmount,
+  convertGoalBaseDraftToEur,
+  convertGoalEurToBaseDraft,
+  FX_UNAVAILABLE_EDIT_MESSAGE,
+  FX_UNAVAILABLE_SAVE_MESSAGE,
+} from "@/lib/client/baseCurrencyInput";
 import {
   buildGoalCoach,
   buildGoalCurrencyMilestones,
@@ -37,7 +47,6 @@ import {
   buildGoalInsight,
   buildGoalScenarioComparison,
   buildNextGoalMilestone,
-  estimateMonthsToReachTarget,
 } from "@/lib/services/goals/goalCoach";
 import { buildGoalProgressEngine } from "@/lib/services/goals/goalProgressEngine";
 import {
@@ -53,15 +62,15 @@ import { useGoalProgress } from "@/lib/client/useGoalProgress";
 import { useUserGoal } from "@/lib/client/useUserGoal";
 import { usePortfolioDividends } from "@/lib/client/usePortfolioDividends";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
+import {
+  IDENTITY_EUR_FX_SNAPSHOT,
+  type BaseCurrencyFxSnapshot,
+} from "@/lib/services/prices/baseCurrencyFxSnapshot";
+import {
+  portfolioBaseCurrencySymbol,
+  type PortfolioBaseCurrency,
+} from "@/lib/types/portfolioBaseCurrency";
 import type { GoalSettings } from "@/lib/types/portfolioStorage";
-
-function formatCurrency(value: number) {
-  return new Intl.NumberFormat("en-GB", {
-    style: "currency",
-    currency: "EUR",
-    maximumFractionDigits: 0,
-  }).format(value);
-}
 
 function formatPercentage(value: number) {
   return new Intl.NumberFormat("en-GB", {
@@ -86,6 +95,13 @@ function projectValue(
 }
 
 export default function GoalsPage() {
+  const {
+    formatEur,
+    snapshot,
+    baseCurrency,
+    canPersistMonetary,
+    refreshFx,
+  } = useBaseCurrencyDisplay();
   const { userSub, holdings, portfolioReady, saveHoldings } = useUserPortfolio();
   const { goal: savedGoal, hasSavedGoal, persistGoal } = useUserGoal();
   const goalProgress = useGoalProgress({ holdings, goal: savedGoal, hasSavedGoal });
@@ -95,45 +111,94 @@ export default function GoalsPage() {
     holdings.length > 0,
   );
   const [goal, setGoal] = useState<GoalSettings>(GOAL_FORM_DEFAULT);
+  const [formSession, setFormSession] = useState<BaseCurrencyFxSnapshot>(
+    IDENTITY_EUR_FX_SNAPSHOT,
+  );
+  const [formCurrency, setFormCurrency] = useState<PortfolioBaseCurrency>("EUR");
+  const [formDirty, setFormDirty] = useState(false);
+  const [fxFormError, setFxFormError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    if (savedGoal) {
-      setGoal(savedGoal);
+    if (formDirty) {
+      if (baseCurrency !== formCurrency && formCurrency !== "EUR") {
+        setFxFormError(
+          "Your portfolio base currency changed while editing. Reset or reload the form before saving.",
+        );
+      }
+      return;
     }
-  }, [savedGoal]);
 
+    const canonical = savedGoal ?? GOAL_FORM_DEFAULT;
+    const sessionSnap = canPersistBaseCurrencyAmounts(snapshot)
+      ? snapshot
+      : IDENTITY_EUR_FX_SNAPSHOT;
+    const converted = convertGoalEurToBaseDraft(canonical, sessionSnap);
+    if (!converted.ok) {
+      setFormSession(IDENTITY_EUR_FX_SNAPSHOT);
+      setFormCurrency("EUR");
+      setGoal(canonical);
+      setFxFormError(FX_UNAVAILABLE_EDIT_MESSAGE);
+      return;
+    }
+
+    setFormSession(sessionSnap);
+    setFormCurrency(sessionSnap.baseCurrency);
+    setGoal(converted.value);
+    setFxFormError(
+      !canPersistBaseCurrencyAmounts(snapshot) && baseCurrency !== "EUR"
+        ? FX_UNAVAILABLE_EDIT_MESSAGE
+        : null,
+    );
+  }, [savedGoal, snapshot, formDirty, baseCurrency, formCurrency]);
+
+  const goalEur = useMemo(() => {
+    const converted = convertGoalBaseDraftToEur(goal, formSession);
+    return converted.ok ? converted.value : null;
+  }, [formSession, goal]);
+
+  const calcGoal = useMemo(
+    () =>
+      goalEur ?? {
+        ...goal,
+        targetValue: 0,
+        monthlyContribution: 0,
+      },
+    [goal, goalEur],
+  );
+
+  const currencyPrefix = portfolioBaseCurrencySymbol(formCurrency);
   const portfolioValue = goalProgress.currentValue;
 
   const currentYear = new Date().getFullYear();
-  const monthsRemaining = Math.max((goal.targetYear - currentYear) * 12, 0);
-  const progress = goal.targetValue > 0
-    ? computeGoalProgress(portfolioValue, goal)
+  const monthsRemaining = Math.max((calcGoal.targetYear - currentYear) * 12, 0);
+  const progress = calcGoal.targetValue > 0
+    ? computeGoalProgress(portfolioValue, calcGoal)
     : 0;
-  const goalCompleted = isGoalAchieved(portfolioValue, goal);
+  const goalCompleted = isGoalAchieved(portfolioValue, calcGoal);
 
   const projectedValue = useMemo(
     () => projectValue(
       portfolioValue,
-      goal.monthlyContribution,
-      goal.expectedAnnualReturn,
+      calcGoal.monthlyContribution,
+      calcGoal.expectedAnnualReturn,
       monthsRemaining,
     ),
-    [goal, monthsRemaining, portfolioValue],
+    [calcGoal, monthsRemaining, portfolioValue],
   );
 
-  const difference = projectedValue - goal.targetValue;
+  const difference = projectedValue - calcGoal.targetValue;
 
   const engineProgress = useMemo(() => {
-    const normalized = sanitizeGoalForSave(goal);
+    const normalized = goalEur ? sanitizeGoalForSave(goalEur) : null;
     return buildGoalProgressEngine({
       currentPortfolioValue: portfolioValue,
       goal: hasSavedGoal && savedGoal ? savedGoal : normalized,
       hasSavedGoal: hasSavedGoal || Boolean(normalized),
     });
-  }, [goal, hasSavedGoal, portfolioValue, savedGoal]);
+  }, [goalEur, hasSavedGoal, portfolioValue, savedGoal]);
 
-  const coachGoal = hasSavedGoal && savedGoal ? savedGoal : goal;
+  const coachGoal = hasSavedGoal && savedGoal ? savedGoal : (goalEur ?? calcGoal);
 
   const goalIntelligence = useMemo(() => {
     if (!engineProgress.hasGoal) {
@@ -184,9 +249,9 @@ export default function GoalsPage() {
     portfolioValue,
   ]);
 
-  const health = projectedValue >= goal.targetValue
+  const health = projectedValue >= calcGoal.targetValue
     ? "On track"
-    : projectedValue >= goal.targetValue * 0.85
+    : projectedValue >= calcGoal.targetValue * 0.85
       ? "Attention needed"
       : "Off track";
 
@@ -196,8 +261,12 @@ export default function GoalsPage() {
       ? "bg-amber-100 text-amber-700"
       : "bg-red-100 text-red-700";
 
+  const targetMinBase =
+    convertCanonicalEurAmount(1_000, formSession) ?? 1_000;
+
   function updateGoal(field: keyof GoalSettings, value: string) {
     setSaved(false);
+    setFormDirty(true);
     setGoal((current) => ({ ...current, [field]: Number(value) }));
   }
 
@@ -205,11 +274,32 @@ export default function GoalsPage() {
     event.preventDefault();
     if (!userSub) return;
 
-    const normalized = sanitizeGoalForSave(goal);
+    if (
+      formCurrency !== "EUR" &&
+      baseCurrency !== formCurrency
+    ) {
+      setFxFormError(
+        "Your portfolio base currency changed while editing. Reset or reload the form before saving.",
+      );
+      return;
+    }
+
+    if (!canPersistBaseCurrencyAmounts(formSession)) {
+      setFxFormError(FX_UNAVAILABLE_SAVE_MESSAGE);
+      return;
+    }
+
+    const converted = convertGoalBaseDraftToEur(goal, formSession);
+    if (!converted.ok) {
+      setFxFormError(converted.message);
+      return;
+    }
+
+    const normalized = sanitizeGoalForSave(converted.value);
     if (!normalized) return;
 
     persistGoal(normalized);
-    setGoal(normalized);
+    setFormDirty(false);
     setSaved(true);
   }
 
@@ -254,11 +344,11 @@ export default function GoalsPage() {
 
               <div className="mt-7 space-y-5">
                 <GoalInput
-                  label="Target amount"
+                  label={`Target amount (${formCurrency})`}
                   icon={<Target className="h-4 w-4" />}
-                  prefix="€"
+                  prefix={currencyPrefix}
                   value={goal.targetValue}
-                  min={1_000}
+                  min={targetMinBase}
                   step={1_000}
                   onChange={(value) => updateGoal("targetValue", value)}
                 />
@@ -272,9 +362,9 @@ export default function GoalsPage() {
                   onChange={(value) => updateGoal("targetYear", value)}
                 />
                 <GoalInput
-                  label="Monthly contribution"
+                  label={`Monthly contribution (${formCurrency})`}
                   icon={<PiggyBank className="h-4 w-4" />}
-                  prefix="€"
+                  prefix={currencyPrefix}
                   value={goal.monthlyContribution}
                   min={0}
                   step={50}
@@ -291,13 +381,14 @@ export default function GoalsPage() {
                   onChange={(value) => updateGoal("expectedAnnualReturn", value)}
                 />
                 <OptionalGoalInput
-                  label="Passive income target (optional)"
+                  label={`Passive income target (optional, ${formCurrency})`}
                   icon={<PiggyBank className="h-4 w-4" />}
-                  prefix="€"
+                  prefix={currencyPrefix}
                   value={goal.passiveIncomeTarget}
                   step={500}
                   onChange={(value) => {
                     setSaved(false);
+                    setFormDirty(true);
                     setGoal((current) => {
                       if (value === undefined) {
                         const next = { ...current };
@@ -311,9 +402,42 @@ export default function GoalsPage() {
                 />
               </div>
 
+              {fxFormError ? (
+                <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+                  <p role="alert">{fxFormError}</p>
+                  <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                    {!canPersistMonetary && baseCurrency !== "EUR" ? (
+                      <button
+                        type="button"
+                        onClick={() => refreshFx()}
+                        className="inline-flex min-h-[44px] items-center font-semibold underline"
+                      >
+                        Retry conversion
+                      </button>
+                    ) : null}
+                    {formDirty ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormDirty(false);
+                          setSaved(false);
+                        }}
+                        className="inline-flex min-h-[44px] items-center font-semibold underline"
+                      >
+                        Reset form
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
+
               <button
                 type="submit"
-                className="mt-7 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-3.5 text-sm font-bold text-white transition hover:bg-slate-800"
+                disabled={
+                  !canPersistBaseCurrencyAmounts(formSession) ||
+                  (formCurrency !== "EUR" && baseCurrency !== formCurrency)
+                }
+                className="mt-7 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-3.5 text-sm font-bold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {saved ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}
                 {saved ? "Goal saved" : "Save goal"}
@@ -331,8 +455,8 @@ export default function GoalsPage() {
                   </p>
                   <p className={`mt-2 ${appSectionMetaClass} text-slate-400`}>
                     {goalCompleted
-                      ? `Your portfolio has reached ${formatCurrency(goal.targetValue)}.`
-                      : `of ${formatCurrency(goal.targetValue)}`}
+                      ? `Your portfolio has reached ${formatEur(calcGoal.targetValue)}.`
+                      : `of ${formatEur(calcGoal.targetValue)}`}
                   </p>
                 </div>
                 <span className={`rounded-full px-3 py-1.5 text-xs font-black ${healthClasses}`}>
@@ -348,10 +472,14 @@ export default function GoalsPage() {
               </div>
 
               <div className="mt-8 grid gap-3 sm:grid-cols-2">
-                <ResultCard label="Current portfolio" value={formatCurrency(portfolioValue)} />
-                <ResultCard label={`Projected in ${goal.targetYear}`} value={formatCurrency(projectedValue)} />
-                <ResultCard label="Monthly contribution" value={formatCurrency(goal.monthlyContribution)} />
-                <ResultCard label="Expected return" value={formatPercentage(goal.expectedAnnualReturn)} />
+                <ResultCard label="Current portfolio" value={formatEur(portfolioValue)} />
+                <ResultCard label={`Projected in ${calcGoal.targetYear}`} value={formatEur(projectedValue)} />
+                <ResultCard label="Monthly contribution" value={formatEur(calcGoal.monthlyContribution)} />
+                <ResultCard label="Expected return" value={formatPercentage(calcGoal.expectedAnnualReturn)} />
+              </div>
+
+              <div className="mt-4">
+                <ConversionDetailsDisclosure compactTrigger tone="dark" />
               </div>
 
               <div className={`mt-6 rounded-2xl border p-5 ${
@@ -361,8 +489,8 @@ export default function GoalsPage() {
               }`}>
                 <p className="text-sm font-bold">
                   {difference >= 0
-                    ? `Projected buffer: ${formatCurrency(difference)}`
-                    : `Projected shortfall: ${formatCurrency(Math.abs(difference))}`}
+                    ? `Projected buffer: ${formatEur(difference)}`
+                    : `Projected shortfall: ${formatEur(Math.abs(difference))}`}
                 </p>
                 <p className="mt-2 text-sm leading-6 text-slate-300">
                   This projection is an estimate based on your inputs. Returns are not guaranteed and this is not financial advice.
@@ -383,7 +511,10 @@ export default function GoalsPage() {
           <div>
             <PassiveIncomeGoalCard
               snapshot={dividendSnapshot}
-              passiveIncomeTarget={savedGoal?.passiveIncomeTarget ?? goal.passiveIncomeTarget}
+              passiveIncomeTarget={
+                savedGoal?.passiveIncomeTarget ??
+                goalEur?.passiveIncomeTarget
+              }
               onEstimateChange={(holdingId, estimate) => {
                 saveHoldings(
                   holdings.map((holding) =>
@@ -429,7 +560,7 @@ function GoalInput({
         {icon}
         {label}
       </span>
-      <span className="mt-2 flex items-center rounded-xl border border-slate-200 bg-slate-50 px-4 focus-within:border-violet-400 focus-within:ring-4 focus-within:ring-violet-100">
+      <span className="mt-2 flex min-h-[44px] items-center rounded-xl border border-slate-200 bg-slate-50 px-4 focus-within:border-violet-400 focus-within:ring-4 focus-within:ring-violet-100">
         {prefix && <span className="font-bold text-slate-400">{prefix}</span>}
         <NumericInput
           required
@@ -474,7 +605,7 @@ function OptionalGoalInput({
         {icon}
         {label}
       </span>
-      <span className="mt-2 flex items-center rounded-xl border border-slate-200 bg-slate-50 px-4 focus-within:border-violet-400 focus-within:ring-4 focus-within:ring-violet-100">
+      <span className="mt-2 flex min-h-[44px] items-center rounded-xl border border-slate-200 bg-slate-50 px-4 focus-within:border-violet-400 focus-within:ring-4 focus-within:ring-violet-100">
         {prefix && <span className="font-bold text-slate-400">{prefix}</span>}
         <input
           type="text"

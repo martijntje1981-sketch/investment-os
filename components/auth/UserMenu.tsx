@@ -6,6 +6,7 @@ import { LogOut, Newspaper, UserRound } from "lucide-react";
 import Link from "next/link";
 import type { User } from "@supabase/supabase-js";
 
+import { clearCachedBaseCurrency } from "@/lib/client/portfolioBaseCurrencyStorage";
 import { createClient } from "@/lib/supabase/client";
 
 const protectedRoutes = [
@@ -69,6 +70,7 @@ export default function UserMenu() {
 
   async function handleSignOut() {
     setIsSigningOut(true);
+    clearCachedBaseCurrency(user?.id);
     await supabase.auth.signOut();
     router.replace("/");
     router.refresh();

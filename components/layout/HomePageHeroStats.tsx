@@ -1,7 +1,8 @@
-import {
-  formatPortfolioCurrency,
-  formatPortfolioPercent,
-} from "@/lib/client/portfolioAnalysis";
+"use client";
+
+import { ConversionDetailsDisclosure } from "@/components/currency/ConversionDetailsDisclosure";
+import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
+import { formatPortfolioPercent } from "@/lib/client/portfolioAnalysis";
 import { formatMarketUpdateTime } from "@/lib/client/marketStatus";
 import {
   formatSignedPortfolioCurrency,
@@ -62,10 +63,13 @@ export function HomePageHeroStats({
   goalProgress: GoalProgress;
   hasSavedGoal: boolean;
 }) {
+  const { formatEur } = useBaseCurrencyDisplay();
+
   const todayValue = formatTodayMoveValue({
     hasDailyData: summary.hasDailyData,
     performanceCoverageComplete: summary.performanceCoverageComplete,
-    formatValue: () => formatSignedPortfolioCurrency(summary.todayChange),
+    formatValue: () =>
+      formatSignedPortfolioCurrency(summary.todayChange, formatEur),
   });
 
   const todayDetail = formatTodayMoveDetail({
@@ -85,39 +89,44 @@ export function HomePageHeroStats({
     : "text-slate-300";
 
   return (
-    <div className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
-      <HeroStat
-        label="Portfolio value"
-        value={
-          summary.totalValueAvailable === false
-            ? "Unavailable"
-            : formatPortfolioCurrency(summary.totalValue)
-        }
-        detail={summary.totalValueCoverageMessage ?? undefined}
-      />
-      <HeroStat
-        label={summary.dailyMoveHeroLabel}
-        value={summary.hasDailyData ? todayValue : "—"}
-        detail={todayDetail}
-        valueClassName={todayTone}
-      />
-      <HeroStat
-        label="Goal progress"
-        value={
-          hasSavedGoal && goalProgress.hasGoal
-            ? formatPortfolioPercent(goalProgress.currentProgressPercent)
-            : "Not set"
-        }
-        detail={
-          hasSavedGoal && goalProgress.hasGoal
-            ? formatPortfolioCurrency(goalProgress.currentValue)
-            : undefined
-        }
-      />
-      <HeroStat
-        label="Last updated"
-        value={formatMarketUpdateTime(summary.latestUpdatedAt)}
-      />
+    <div className="space-y-2">
+      <div className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
+        <HeroStat
+          label="Portfolio value"
+          value={
+            summary.totalValueAvailable === false
+              ? "Unavailable"
+              : formatEur(summary.totalValue)
+          }
+          detail={summary.totalValueCoverageMessage ?? undefined}
+        />
+        <HeroStat
+          label={summary.dailyMoveHeroLabel}
+          value={summary.hasDailyData ? todayValue : "—"}
+          detail={todayDetail}
+          valueClassName={todayTone}
+        />
+        <HeroStat
+          label="Goal progress"
+          value={
+            hasSavedGoal && goalProgress.hasGoal
+              ? formatPortfolioPercent(goalProgress.currentProgressPercent)
+              : "Not set"
+          }
+          detail={
+            hasSavedGoal && goalProgress.hasGoal
+              ? formatEur(goalProgress.currentValue)
+              : undefined
+          }
+        />
+        <HeroStat
+          label="Last updated"
+          value={formatMarketUpdateTime(summary.latestUpdatedAt)}
+        />
+      </div>
+      <div>
+        <ConversionDetailsDisclosure compactTrigger tone="dark" />
+      </div>
     </div>
   );
 }

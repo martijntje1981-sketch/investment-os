@@ -10,8 +10,8 @@ import {
   appSectionMetaClass,
   appCardValueClass,
 } from "@/components/layout/appSurface";
+import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 import {
-  formatPortfolioCurrency,
   formatPortfolioPercent,
 } from "@/lib/client/portfolioAnalysis";
 import { buildDistributionPolicyViewModel } from "@/lib/client/dividendPolicy/buildDividendPolicyViewModel";
@@ -183,6 +183,7 @@ export function HoldingDividendMeta({
   nextPaymentDate: string | null;
   frequency: string;
 }) {
+  const { formatEur } = useBaseCurrencyDisplay();
   if (!annualIncomeEur && !yieldPercent) return null;
 
   return (
@@ -193,13 +194,13 @@ export function HoldingDividendMeta({
       {annualIncomeEur ? (
         <MiniStat
           label="Est. annual dividend"
-          value={formatPortfolioCurrency(annualIncomeEur)}
+          value={formatEur(annualIncomeEur)}
         />
       ) : null}
       {nextPaymentEur ? (
         <MiniStat
           label="Est. next dividend"
-          value={formatPortfolioCurrency(nextPaymentEur)}
+          value={formatEur(nextPaymentEur)}
         />
       ) : null}
       {frequency !== "Unknown" ? (

@@ -130,6 +130,48 @@ describe("marketSnapshotSync", () => {
     expect(String(fetchMock.mock.calls[0]?.[0])).toContain("/api/market-snapshot");
   });
 
+  it("does not mark updated when returned quotes do not apply to holdings", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          lastRefreshedAt: "2026-07-23T07:30:00.000Z",
+          lastSlot: "eu_open",
+          status: "completed",
+          symbolsReceived: 1,
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          prices: [
+            {
+              symbol: "OTHER",
+              providerSymbol: "OTHER.US",
+              priceEur: 50,
+              currentPrice: 50,
+              updatedAt: "2026-07-23T07:30:00.000Z",
+              dataStatus: "live",
+            },
+          ],
+          requested: 1,
+          received: 1,
+          quoteSource: "cache",
+        }),
+      });
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    const before = [holding()];
+    const result = await syncPortfolioPricesFromSnapshot(USER, before);
+
+    expect(result.updated).toBe(false);
+    expect(result.holdings[0]?.currentPrice).toBe(100);
+  });
+
   it("formats live refresh timestamps once in Amsterdam time", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-07-24T19:18:00.000Z"));

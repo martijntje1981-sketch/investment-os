@@ -16,7 +16,7 @@ import {
   appSectionLabelClass,
   appSectionMetaClass,
 } from "@/components/layout/appSurface";
-import { formatPortfolioCurrency } from "@/lib/client/portfolioAnalysis";
+import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 import {
   formatPerformanceAxisDate,
   formatPerformanceTooltipDate,
@@ -159,18 +159,6 @@ function buildChartLayout(
   };
 }
 
-function formatCompactCurrency(value: number): string {
-  if (value >= 1_000_000) {
-    return `€${(value / 1_000_000).toFixed(1)}m`;
-  }
-
-  if (value >= 1_000) {
-    return `€${(value / 1_000).toFixed(value >= 10_000 ? 0 : 1)}k`;
-  }
-
-  return formatPortfolioCurrency(value);
-}
-
 function resolveTooltipStyle(
   point: MappedPoint,
   containerWidth: number,
@@ -191,13 +179,15 @@ function resolveTooltipStyle(
 function ChartTooltip({
   point,
   style,
+  formatEur,
 }: {
   point: MappedPoint;
   style: CSSProperties;
+  formatEur: (value: number) => string;
 }) {
   const returnLabel =
     point.investmentReturn !== null
-      ? formatSignedPortfolioCurrency(point.investmentReturn)
+      ? formatSignedPortfolioCurrency(point.investmentReturn, formatEur)
       : "Not available";
 
   return (
@@ -211,7 +201,7 @@ function ChartTooltip({
         {formatPerformanceTooltipDate(point.date)}
       </p>
       <p className={`mt-1 ${appCardValueClass} text-slate-950`}>
-        {formatPortfolioCurrency(point.portfolioValue)}
+        {formatEur(point.portfolioValue)}
       </p>
       <p className={`mt-1.5 ${appSectionMetaClass} text-slate-600`}>
         Return {returnLabel}
@@ -229,6 +219,7 @@ export function PortfolioPerformanceChart({
   hasSeries: boolean;
   emptyMessage?: string;
 }) {
+  const { formatEur, formatEurCompact } = useBaseCurrencyDisplay();
   const compact = useCompactChartLayout();
   const prefersReducedMotion = usePrefersReducedMotion();
   const shellRef = useRef<HTMLDivElement>(null);
@@ -324,7 +315,11 @@ export function PortfolioPerformanceChart({
         className={`relative min-w-0 overflow-hidden rounded-[18px] bg-gradient-to-b from-slate-50/95 to-white px-1 py-1.5 ring-1 ring-slate-200/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70 sm:px-2 sm:py-2 ${PERFORMANCE_CHART_SHELL_HEIGHT_CLASS}`}
       >
         {activePoint && tooltipStyle ? (
-          <ChartTooltip point={activePoint} style={tooltipStyle} />
+          <ChartTooltip
+            point={activePoint}
+            style={tooltipStyle}
+            formatEur={formatEur}
+          />
         ) : null}
 
         <svg
@@ -381,7 +376,7 @@ export function PortfolioPerformanceChart({
                     textAnchor="end"
                     className="fill-slate-400 text-[10px] sm:text-[11px]"
                   >
-                    {formatCompactCurrency(tick)}
+                    {formatEurCompact(tick)}
                   </text>
                 ) : null}
               </g>

@@ -11,9 +11,9 @@ import {
   appTickerClass,
 } from "@/components/layout/appSurface";
 import {
-  formatPortfolioCurrency,
   formatPortfolioPercent,
 } from "@/lib/client/portfolioAnalysis";
+import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 import type { PerformanceHoldingLeader } from "@/lib/client/performance";
 
 export function PerformanceHoldingLeaders({
@@ -27,6 +27,7 @@ export function PerformanceHoldingLeaders({
   available: boolean;
   periodLabel: string;
 }) {
+  const { formatEur } = useBaseCurrencyDisplay();
   if (!available || (!bestHolding && !worstHolding)) {
     return (
       <div className="rounded-[18px] border border-dashed border-slate-200 bg-slate-50/60 px-4 py-4">
@@ -46,12 +47,14 @@ export function PerformanceHoldingLeaders({
         icon={<TrendingUp className="h-4 w-4 text-emerald-600" />}
         leader={bestHolding}
         tone="positive"
+        formatEur={formatEur}
       />
       <LeaderCard
         title="Weakest performer"
         icon={<TrendingDown className="h-4 w-4 text-red-600" />}
         leader={worstHolding}
         tone="negative"
+        formatEur={formatEur}
       />
     </div>
   );
@@ -62,11 +65,13 @@ function LeaderCard({
   icon,
   leader,
   tone,
+  formatEur,
 }: {
   title: string;
   icon: React.ReactNode;
   leader: PerformanceHoldingLeader | null;
   tone: "positive" | "negative";
+  formatEur: (value: number) => string;
 }) {
   if (!leader) {
     return null;
@@ -98,7 +103,7 @@ function LeaderCard({
       </p>
       {leader.periodContributionEur !== null ? (
         <p className={`mt-1 ${appSectionMetaClass}`}>
-          {formatPortfolioCurrency(leader.periodContributionEur)} portfolio impact
+          {formatEur(leader.periodContributionEur)} portfolio impact
         </p>
       ) : null}
     </article>

@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
+import { buildSignupUserMetadata } from "@/lib/types/portfolioBaseCurrency";
 
 function redirectWithError(path: string, message: string): never {
   redirect(`${path}?error=${encodeURIComponent(message)}`);
@@ -33,6 +34,7 @@ export async function signup(formData: FormData) {
   const password = String(formData.get("password") ?? "");
   const confirmPassword = String(formData.get("confirmPassword") ?? "");
   const acceptedTerms = formData.get("terms") === "on";
+  const baseCurrencyRaw = formData.get("baseCurrency");
 
   if (!name || !email || !password) {
     redirectWithError("/signup", "Complete all required fields.");
@@ -53,11 +55,15 @@ export async function signup(formData: FormData) {
   const requestHeaders = await headers();
   const origin = requestHeaders.get("origin") ?? "http://localhost:3000";
   const supabase = await createClient();
+  const userMetadata = buildSignupUserMetadata({
+    fullName: name,
+    baseCurrency: baseCurrencyRaw,
+  });
   const { error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      data: { full_name: name },
+      data: userMetadata,
       emailRedirectTo: `${origin}/auth/callback`,
     },
   });

@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { Goal } from "lucide-react";
 
@@ -6,10 +8,12 @@ import {
   appSectionLabelClass,
   appValueClass,
 } from "@/components/layout/appSurface";
-import { formatPortfolioCurrency, formatPortfolioPercent } from "@/lib/client/portfolioAnalysis";
+import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
+import { formatPortfolioPercent } from "@/lib/client/portfolioAnalysis";
 import type { DashboardSummary } from "@/lib/client/dashboardSummary";
 
 export function DashboardGoalCard({ summary }: { summary: DashboardSummary }) {
+  const { formatEur } = useBaseCurrencyDisplay();
   const progressWidth = summary.goalCompleted
     ? 100
     : summary.hasSavedGoal
@@ -46,13 +50,13 @@ export function DashboardGoalCard({ summary }: { summary: DashboardSummary }) {
       <div className="mt-4 grid gap-2.5 md:mt-5 md:gap-3 sm:grid-cols-3">
         <GoalStat
           label="Current value"
-          value={formatPortfolioCurrency(summary.portfolioValue)}
+          value={formatEur(summary.portfolioValue)}
         />
         <GoalStat
           label="Goal"
           value={
             summary.goalTarget
-              ? formatPortfolioCurrency(summary.goalTarget)
+              ? formatEur(summary.goalTarget)
               : "Not set"
           }
         />

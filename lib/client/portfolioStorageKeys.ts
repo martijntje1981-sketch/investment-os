@@ -93,6 +93,11 @@ export function portfolioSyncMetaKey(userSub: string): string {
   return `investment-os-portfolio-sync-meta:${userSub}`;
 }
 
+export function baseCurrencyStorageKey(userSub: string): string {
+  assertUserSub(userSub);
+  return `investment-os-base-currency:${userSub}`;
+}
+
 export function lastLivePriceRefreshKey(userSub: string): string {
   assertUserSub(userSub);
   return `investment-os-last-live-price-refresh:${userSub}`;

@@ -1,6 +1,12 @@
-import { formatPortfolioCurrency } from "@/lib/client/portfolioAnalysis";
+"use client";
+
+import { ConversionDetailsDisclosure } from "@/components/currency/ConversionDetailsDisclosure";
+import { RefreshPricesButton } from "@/components/portfolio/RefreshPricesButton";
+import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 import { formatMarketUpdateTime } from "@/lib/client/marketStatus";
+import { formatAmsterdamPriceRefreshTime } from "@/lib/client/marketSnapshotSync";
 import { formatSignedPortfolioPercent } from "@/lib/client/portfolioMovementFormat";
+import type { RefreshPricesUiStatus } from "@/lib/client/livePortfolioPriceRefreshAction";
 import {
   appDashboardDarkBodyMediumClass,
   appDashboardDarkMetaClass,
@@ -39,12 +45,26 @@ function sinceInceptionLabel(snapshot: DashboardPortfolioSnapshot): string {
 export function PortfolioValueCard({
   snapshot,
   embedded = false,
+  refresh,
 }: {
   snapshot: DashboardPortfolioSnapshot;
   embedded?: boolean;
+  refresh?: {
+    onRefresh: () => void;
+    isRefreshing: boolean;
+    disabled?: boolean;
+    status?: RefreshPricesUiStatus;
+    message?: string | null;
+    liveRefreshAt?: string | null;
+  };
 }) {
+  const { formatEur } = useBaseCurrencyDisplay();
   const showBreakdown =
     snapshot.cashValue > 0 && snapshot.investedAssetsValue > 0;
+
+  const updatedLabel = refresh?.liveRefreshAt
+    ? `Updated ${formatAmsterdamPriceRefreshTime(refresh.liveRefreshAt)}`
+    : `Updated ${formatMarketUpdateTime(snapshot.lastUpdatedAt)}`;
 
   return (
     <article
@@ -57,9 +77,12 @@ export function PortfolioValueCard({
       <p className={appHeroMetricLabelClass}>Portfolio value</p>
       <p className={`mt-3 ${appDisplayClass}`}>
         {snapshot.portfolioValueAvailable
-          ? formatPortfolioCurrency(snapshot.portfolioValue)
+          ? formatEur(snapshot.portfolioValue)
           : "Unavailable"}
       </p>
+      <div className="mt-2">
+        <ConversionDetailsDisclosure compactTrigger tone="dark" />
+      </div>
       {snapshot.portfolioValueCoverageMessage ? (
         <p className={`mt-2 ${appDashboardDarkMetaClass}`}>
           {snapshot.portfolioValueCoverageMessage}
@@ -72,15 +95,39 @@ export function PortfolioValueCard({
       </p>
       {showBreakdown ? (
         <p className={`mt-4 ${appDashboardDarkMutedClass}`}>
-          Invested {formatPortfolioCurrency(snapshot.investedAssetsValue)}
+          Invested {formatEur(snapshot.investedAssetsValue)}
           {" · "}
-          Cash {formatPortfolioCurrency(snapshot.cashValue)}
+          Cash {formatEur(snapshot.cashValue)}
         </p>
       ) : null}
-      <p className={`mt-4 ${appDashboardDarkMetaClass}`}>
-        {snapshot.isStale ? "Stale prices · " : null}
-        Updated {formatMarketUpdateTime(snapshot.lastUpdatedAt)}
-      </p>
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <p className={appDashboardDarkMetaClass}>
+          {snapshot.isStale && !refresh?.liveRefreshAt ? "Stale prices · " : null}
+          {updatedLabel}
+        </p>
+        {refresh ? (
+          <RefreshPricesButton
+            variant="compact"
+            onClick={refresh.onRefresh}
+            isRefreshing={refresh.isRefreshing}
+            disabled={refresh.disabled}
+            status={refresh.status}
+          />
+        ) : null}
+      </div>
+      {refresh?.message &&
+      (refresh.status === "success" ||
+        refresh.status === "error" ||
+        refresh.status === "loading") ? (
+        <p
+          className={`mt-2 ${appDashboardDarkMetaClass}`}
+          role="status"
+          aria-live="polite"
+          data-refresh-feedback={refresh.status}
+        >
+          {refresh.message}
+        </p>
+      ) : null}
     </article>
   );
 }

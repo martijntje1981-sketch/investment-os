@@ -259,10 +259,22 @@ export function createEodhdMarketDataProvider(
   };
 }
 
+export type EodhdFxFetchResult = {
+  rates: Record<PriceCurrency, number | null>;
+  updatedAtByCurrency: Partial<Record<PriceCurrency, string>>;
+};
+
+function timestampToIso(timestamp: unknown): string | null {
+  if (typeof timestamp !== "number" || !Number.isFinite(timestamp) || timestamp <= 0) {
+    return null;
+  }
+  return new Date(timestamp * 1000).toISOString();
+}
+
 export async function fetchEodhdFxRates(
   apiKey: string = getEodhdApiKey(),
   options?: { requiredCurrencies?: PriceCurrency[] },
-): Promise<Record<PriceCurrency, number | null>> {
+): Promise<EodhdFxFetchResult> {
   const required = new Set(options?.requiredCurrencies ?? ["EUR", "USD", "GBP", "CHF"]);
   const rates: Record<PriceCurrency, number | null> = {
     EUR: 1,
@@ -270,6 +282,7 @@ export async function fetchEodhdFxRates(
     GBP: null,
     CHF: null,
   };
+  const updatedAtByCurrency: Partial<Record<PriceCurrency, string>> = {};
 
   if (required.has("USD")) {
     const eurUsd = await fetchEodhdRealtimeData("EURUSD.FOREX", apiKey);
@@ -277,6 +290,8 @@ export async function fetchEodhdFxRates(
       throw new Error("No valid EUR/USD exchange rate was received.");
     }
     rates.USD = 1 / eurUsd.close;
+    const updatedAt = timestampToIso(eurUsd.timestamp);
+    if (updatedAt) updatedAtByCurrency.USD = updatedAt;
   }
 
   if (required.has("GBP")) {
@@ -284,6 +299,8 @@ export async function fetchEodhdFxRates(
       const eurGbp = await fetchEodhdRealtimeData("EURGBP.FOREX", apiKey);
       if (isFinitePositiveNumber(eurGbp.close)) {
         rates.GBP = 1 / eurGbp.close;
+        const updatedAt = timestampToIso(eurGbp.timestamp);
+        if (updatedAt) updatedAtByCurrency.GBP = updatedAt;
       }
     } catch {
       // Optional cross-rate.
@@ -295,13 +312,15 @@ export async function fetchEodhdFxRates(
       const eurChf = await fetchEodhdRealtimeData("EURCHF.FOREX", apiKey);
       if (isFinitePositiveNumber(eurChf.close)) {
         rates.CHF = 1 / eurChf.close;
+        const updatedAt = timestampToIso(eurChf.timestamp);
+        if (updatedAt) updatedAtByCurrency.CHF = updatedAt;
       }
     } catch {
       // Optional cross-rate.
     }
   }
 
-  return rates;
+  return { rates, updatedAtByCurrency };
 }
 
 export { ProviderQuoteError as EodhdProviderQuoteError };

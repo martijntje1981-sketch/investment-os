@@ -8,6 +8,7 @@ import type { User } from "@supabase/supabase-js";
 import BottomNavigation from "@/components/home/BottomNav";
 import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer";
 import { PageHero } from "@/components/layout/PageHero";
+import { PortfolioBaseCurrencySetting } from "@/components/settings/PortfolioBaseCurrencySetting";
 import { createClient } from "@/lib/supabase/client";
 
 export default function SettingsPage() {
@@ -69,6 +70,9 @@ export default function SettingsPage() {
           <h2 className="border-b border-slate-100 px-5 py-4 text-sm font-black uppercase tracking-[0.08em] text-slate-500">
             Portfolio configuration
           </h2>
+          <div className="border-b border-slate-100">
+            <PortfolioBaseCurrencySetting />
+          </div>
           <nav className="divide-y divide-slate-100">
             <SettingsLink
               href="/portfolio"

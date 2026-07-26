@@ -1,9 +1,7 @@
+"use client";
+
 import Link from "next/link";
 
-import {
-  formatPortfolioCurrency,
-  formatPortfolioPercent,
-} from "@/lib/client/portfolioAnalysis";
 import {
   appCardPaddingClass,
   appCardValueClass,
@@ -12,13 +10,16 @@ import {
   appSectionLabelClass,
   appSectionSubtitleClass,
 } from "@/components/layout/appSurface";
+import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 import type { DashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
+import { formatPortfolioPercent } from "@/lib/client/portfolioAnalysis";
 
 export function GoalProgressCard({
   snapshot,
 }: {
   snapshot: DashboardPortfolioSnapshot;
 }) {
+  const { formatEur } = useBaseCurrencyDisplay();
   const progressWidth = snapshot.goalCompleted
     ? 100
     : snapshot.hasSavedGoal
@@ -47,8 +48,8 @@ export function GoalProgressCard({
     <article className={`${appDashboardLightCardClass} ${appCardPaddingClass}`}>
       <p className={appSectionLabelClass}>Goal progress</p>
       <p className={`mt-2.5 ${appCardValueClass}`}>
-        {formatPortfolioCurrency(snapshot.portfolioValue)} of{" "}
-        {formatPortfolioCurrency(snapshot.goalTarget)}
+        {formatEur(snapshot.portfolioValue)} of{" "}
+        {formatEur(snapshot.goalTarget)}
       </p>
       <p className={`mt-2 ${appSectionSubtitleClass}`}>
         {snapshot.goalCompleted

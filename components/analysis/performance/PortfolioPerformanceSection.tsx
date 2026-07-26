@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { LineChart } from "lucide-react";
 
+import { ConversionDetailsDisclosure } from "@/components/currency/ConversionDetailsDisclosure";
 import { PerformanceHoldingLeaders } from "@/components/analysis/performance/PerformanceHoldingLeaders";
 import { PerformanceKpiGrid } from "@/components/analysis/performance/PerformanceKpiGrid";
 import { PerformancePeriodSelector } from "@/components/analysis/performance/PerformancePeriodSelector";
@@ -21,9 +22,7 @@ import {
   appSectionBodyClass,
   appSectionTitleClass,
 } from "@/components/layout/appSurface";
-import {
-  formatPortfolioCurrency,
-} from "@/lib/client/portfolioAnalysis";
+import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 import {
   formatSignedPortfolioCurrency,
   formatSignedPortfolioPercent,
@@ -87,6 +86,7 @@ export function PortfolioPerformanceSection({
 }: {
   holdings: StoredPortfolioHolding[];
 }) {
+  const { formatEur } = useBaseCurrencyDisplay();
   const [period, setPeriod] = useState<PerformancePeriodId>("1D");
 
   const performance = useMemo(
@@ -133,14 +133,20 @@ export function PortfolioPerformanceSection({
             <div className="min-w-0">
               <p className={appHeroMetricLabelClass}>Current portfolio value</p>
               <p className={`mt-2 ${appDisplayClass} text-white`}>
-                {formatPortfolioCurrency(performance.currentPortfolioValue)}
+                {formatEur(performance.currentPortfolioValue)}
               </p>
+              <div className="mt-2">
+                <ConversionDetailsDisclosure compactTrigger tone="dark" />
+              </div>
             </div>
             <div className="min-w-0 text-left sm:text-right">
               <p className={appHeroMetricLabelClass}>Investment return</p>
               <p className={`mt-2 ${appCardValueClass} ${returnToneClass}`}>
                 {performance.investmentReturn !== null
-                  ? formatSignedPortfolioCurrency(performance.investmentReturn)
+                  ? formatSignedPortfolioCurrency(
+                      performance.investmentReturn,
+                      formatEur,
+                    )
                   : "—"}
               </p>
               <p className={`mt-1.5 ${appDashboardDarkMetaClass}`}>

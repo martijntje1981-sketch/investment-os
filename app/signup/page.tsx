@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 
 import { signup } from "@/app/auth/actions";
+import { PORTFOLIO_BASE_CURRENCY_OPTIONS } from "@/lib/types/portfolioBaseCurrency";
 
 const benefits = [
   "Create your personal investment dashboard",
@@ -180,6 +181,35 @@ export default async function SignupPage({
                     className="h-14 w-full rounded-2xl border border-slate-300 bg-white pl-12 pr-4 text-sm font-medium outline-none transition placeholder:text-slate-400 focus:border-slate-950 focus:ring-4 focus:ring-slate-950/5"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="baseCurrency"
+                  className="text-sm font-bold text-slate-800"
+                >
+                  Portfolio base currency
+                </label>
+                <p
+                  id="baseCurrency-help"
+                  className="mt-1 text-sm leading-6 text-slate-500"
+                >
+                  Sets your preferred portfolio display currency. Holdings and
+                  original trading currencies are not rewritten.
+                </p>
+                <select
+                  id="baseCurrency"
+                  name="baseCurrency"
+                  defaultValue="EUR"
+                  aria-describedby="baseCurrency-help"
+                  className="mt-2 min-h-[44px] h-14 w-full rounded-2xl border border-slate-300 bg-white px-4 text-sm font-medium outline-none transition focus:border-slate-950 focus:ring-4 focus:ring-slate-950/5"
+                >
+                  {PORTFOLIO_BASE_CURRENCY_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <label className="flex cursor-pointer items-start gap-3 pt-1 text-sm leading-6 text-slate-600">

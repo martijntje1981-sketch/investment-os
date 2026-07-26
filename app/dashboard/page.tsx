@@ -32,6 +32,7 @@ import { useGoalProgress } from "@/lib/client/useGoalProgress";
 import { useUserGoal } from "@/lib/client/useUserGoal";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 import { useMarketSnapshotMetadata } from "@/lib/client/useMarketSnapshotMetadata";
+import { useLivePortfolioPriceRefresh } from "@/lib/client/useLivePortfolioPriceRefresh";
 import { buildPortfolioHealthScore } from "@/lib/services/portfolio/portfolioHealthScore";
 import { logDashboardProductionDiagnostics } from "@/lib/client/investmentOsProductionDebug";
 
@@ -46,6 +47,7 @@ export default function DashboardPage() {
     recoveryOffer,
     syncState,
     migrationPreview,
+    saveHoldings,
     migratePortfolio,
     retrySync,
     useRemotePortfolio,
@@ -53,6 +55,20 @@ export default function DashboardPage() {
     recoverPortfolio,
     dismissRecovery,
   } = useUserPortfolio();
+  const {
+    refreshPrices,
+    isRefreshing,
+    status: refreshStatus,
+    message: refreshMessage,
+    liveRefreshAt,
+    disabled: refreshDisabled,
+  } = useLivePortfolioPriceRefresh({
+    userSub,
+    holdings,
+    saveHoldings,
+    ready: portfolioReady,
+    idleMessage: "Dashboard prices use the latest available market data.",
+  });
   const { goal, hasSavedGoal } = useUserGoal();
   const goalProgress = useGoalProgress({ holdings, goal, hasSavedGoal });
   const { snapshot: dividendSnapshot, isLoading: dividendsLoading } =
@@ -160,6 +176,14 @@ export default function DashboardPage() {
         <>
           <DashboardSummary
             snapshot={snapshot}
+            refresh={{
+              onRefresh: () => void refreshPrices(),
+              isRefreshing,
+              disabled: refreshDisabled,
+              status: refreshStatus,
+              message: refreshMessage,
+              liveRefreshAt,
+            }}
             welcome={
               <PageHero
                 embedded

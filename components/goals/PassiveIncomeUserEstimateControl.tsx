@@ -7,6 +7,13 @@ import {
   appSectionLabelClass,
   appSectionMetaClass,
 } from "@/components/layout/appSurface";
+import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
+import {
+  canPersistBaseCurrencyAmounts,
+  convertPassiveCashBaseToEur,
+  convertPassiveCashEurToBase,
+  FX_UNAVAILABLE_SAVE_MESSAGE,
+} from "@/lib/client/baseCurrencyInput";
 import {
   sanitizeNumericInput,
   parseOptionalNumericInput,
@@ -18,14 +25,14 @@ import {
   MAX_PASSIVE_INCOME_USER_YIELD_PERCENT,
   type PassiveIncomeUserEstimate,
 } from "@/lib/types/passiveIncomeUserEstimate";
+import { portfolioBaseCurrencySymbol } from "@/lib/types/portfolioBaseCurrency";
+import { formatBaseCurrencyAmount } from "@/lib/services/prices/baseCurrencyFxSnapshot";
 
 type EstimateMode = PassiveIncomeUserEstimate["mode"];
 
-function formatEstimateDraft(estimate: PassiveIncomeUserEstimate | null): string {
-  if (!estimate) return "";
-  return estimate.mode === "annual_yield"
-    ? String(estimate.annualYieldPercent)
-    : String(estimate.annualCashAmountEur);
+function formatYieldDraft(estimate: PassiveIncomeUserEstimate | null): string {
+  if (!estimate || estimate.mode !== "annual_yield") return "";
+  return String(estimate.annualYieldPercent);
 }
 
 export function PassiveIncomeUserEstimateControl({
@@ -46,28 +53,71 @@ export function PassiveIncomeUserEstimateControl({
   disabled?: boolean;
 }) {
   const groupId = useId();
+  const {
+    snapshot,
+    baseCurrency,
+    formatEur,
+    canPersistMonetary,
+    refreshFx,
+  } = useBaseCurrencyDisplay();
   const [editing, setEditing] = useState(false);
   const [mode, setMode] = useState<EstimateMode>(
     currentEstimate?.mode ?? "annual_yield",
   );
-  const [rawValue, setRawValue] = useState(() =>
-    formatEstimateDraft(currentEstimate),
-  );
+  const [rawValue, setRawValue] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [sessionSnapshot, setSessionSnapshot] = useState(snapshot);
+
+  function loadCashDraft(
+    estimate: PassiveIncomeUserEstimate | null,
+    snap = snapshot,
+  ): string {
+    if (!estimate || estimate.mode !== "annual_cash_amount") return "";
+    const converted = convertPassiveCashEurToBase(
+      estimate.annualCashAmountEur,
+      snap,
+    );
+    if (!converted.ok) return "";
+    return String(converted.value);
+  }
 
   useEffect(() => {
     if (!editing) {
       setMode(currentEstimate?.mode ?? "annual_yield");
-      setRawValue(formatEstimateDraft(currentEstimate));
+      setSessionSnapshot(snapshot);
+      setRawValue(
+        currentEstimate?.mode === "annual_yield"
+          ? formatYieldDraft(currentEstimate)
+          : loadCashDraft(currentEstimate, snapshot),
+      );
       setError(null);
     }
-  }, [currentEstimate, editing]);
+    // Intentionally omit loadCashDraft; snapshot/currentEstimate drive refresh when not editing.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentEstimate, editing, snapshot]);
 
   function resetDraft() {
     setMode(currentEstimate?.mode ?? "annual_yield");
-    setRawValue(formatEstimateDraft(currentEstimate));
+    setSessionSnapshot(snapshot);
+    setRawValue(
+      currentEstimate?.mode === "annual_yield"
+        ? formatYieldDraft(currentEstimate)
+        : loadCashDraft(currentEstimate, snapshot),
+    );
     setError(null);
     setEditing(false);
+  }
+
+  function startEditing() {
+    setSessionSnapshot(snapshot);
+    setMode(currentEstimate?.mode ?? "annual_yield");
+    setRawValue(
+      currentEstimate?.mode === "annual_yield"
+        ? formatYieldDraft(currentEstimate)
+        : loadCashDraft(currentEstimate, snapshot),
+    );
+    setError(null);
+    setEditing(true);
   }
 
   function handleSave() {
@@ -77,16 +127,39 @@ export function PassiveIncomeUserEstimateControl({
       return;
     }
 
-    const estimate =
-      mode === "annual_yield"
-        ? buildAnnualYieldUserEstimate(parsed)
-        : buildAnnualCashAmountUserEstimate(parsed);
+    if (mode === "annual_yield") {
+      const estimate = buildAnnualYieldUserEstimate(parsed);
+      if (!estimate) {
+        setError(
+          `Yield must be greater than 0 and at most ${MAX_PASSIVE_INCOME_USER_YIELD_PERCENT}%.`,
+        );
+        return;
+      }
+      onSave(estimate);
+      setError(null);
+      setEditing(false);
+      return;
+    }
 
+    if (!canPersistBaseCurrencyAmounts(sessionSnapshot)) {
+      setError(FX_UNAVAILABLE_SAVE_MESSAGE);
+      return;
+    }
+
+    const amountEur = convertPassiveCashBaseToEur(parsed, sessionSnapshot);
+    if (!amountEur.ok) {
+      setError(amountEur.message);
+      return;
+    }
+
+    const estimate = buildAnnualCashAmountUserEstimate(amountEur.value);
     if (!estimate) {
+      const maxDisplay = formatBaseCurrencyAmount(
+        MAX_PASSIVE_INCOME_USER_CASH_EUR,
+        sessionSnapshot,
+      );
       setError(
-        mode === "annual_yield"
-          ? `Yield must be greater than 0 and at most ${MAX_PASSIVE_INCOME_USER_YIELD_PERCENT}%.`
-          : `Amount must be greater than 0 and at most €${MAX_PASSIVE_INCOME_USER_CASH_EUR.toLocaleString("en-GB")}.`,
+        `Amount must be greater than 0 and at most ${maxDisplay}.`,
       );
       return;
     }
@@ -94,6 +167,13 @@ export function PassiveIncomeUserEstimateControl({
     onSave(estimate);
     setError(null);
     setEditing(false);
+  }
+
+  const cashPrefix = portfolioBaseCurrencySymbol(sessionSnapshot.baseCurrency);
+  const cashLabelCurrency = sessionSnapshot.baseCurrency;
+
+  function formatSavedCash(amountEur: number): string {
+    return formatEur(amountEur);
   }
 
   if (retainedButExcluded) {
@@ -111,7 +191,7 @@ export function PassiveIncomeUserEstimateControl({
             Saved{" "}
             {currentEstimate.mode === "annual_yield"
               ? `annual yield ${currentEstimate.annualYieldPercent}%`
-              : `annual cash amount €${currentEstimate.annualCashAmountEur.toLocaleString("en-GB")}`}
+              : `annual cash amount ${formatSavedCash(currentEstimate.annualCashAmountEur)}`}
             .
           </p>
         ) : null}
@@ -146,7 +226,7 @@ export function PassiveIncomeUserEstimateControl({
         <p className={appSectionBodyClass}>
           {currentEstimate.mode === "annual_yield"
             ? `Annual yield ${currentEstimate.annualYieldPercent}%`
-            : `Annual cash amount €${currentEstimate.annualCashAmountEur.toLocaleString("en-GB")}`}
+            : `Annual cash amount ${formatSavedCash(currentEstimate.annualCashAmountEur)}`}
         </p>
         <p className={appSectionMetaClass}>
           Provider data will take priority when available. Estimates are not
@@ -161,7 +241,7 @@ export function PassiveIncomeUserEstimateControl({
           <button
             type="button"
             disabled={disabled}
-            onClick={() => setEditing(true)}
+            onClick={startEditing}
             className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-slate-300 bg-slate-50 px-4 text-sm font-semibold text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700"
           >
             Edit estimate
@@ -189,7 +269,7 @@ export function PassiveIncomeUserEstimateControl({
         <button
           type="button"
           disabled={disabled}
-          onClick={() => setEditing(true)}
+          onClick={startEditing}
           className="mt-3 inline-flex min-h-[44px] items-center justify-center rounded-xl bg-slate-950 px-4 text-sm font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700"
         >
           Add estimate
@@ -215,7 +295,7 @@ export function PassiveIncomeUserEstimateControl({
             { value: "annual_yield" as const, label: "Annual yield (%)" },
             {
               value: "annual_cash_amount" as const,
-              label: "Annual cash amount (€)",
+              label: `Annual cash amount (${cashLabelCurrency})`,
             },
           ] as const
         ).map((option) => {
@@ -249,10 +329,11 @@ export function PassiveIncomeUserEstimateControl({
       {mode === "annual_cash_amount" ? (
         <p className={appSectionMetaClass}>
           Annual cash amount does not automatically adjust when quantity changes.
+          Enter the amount in {cashLabelCurrency}.
         </p>
       ) : (
         <p className={appSectionMetaClass}>
-          Yield uses the holding’s current market value in EUR. Enter 4.5 for 4.5%.
+          Yield uses the holding’s current market value. Enter 4.5 for 4.5%.
         </p>
       )}
 
@@ -263,7 +344,7 @@ export function PassiveIncomeUserEstimateControl({
         <span className="mt-2 flex min-h-[44px] items-center rounded-xl border border-slate-200 bg-slate-50 px-3 focus-within:border-emerald-400 focus-within:ring-4 focus-within:ring-emerald-100">
           {mode === "annual_cash_amount" ? (
             <span className="font-bold text-slate-400" aria-hidden="true">
-              €
+              {cashPrefix}
             </span>
           ) : null}
           <input
@@ -298,11 +379,33 @@ export function PassiveIncomeUserEstimateControl({
         </p>
       ) : null}
 
+      {mode === "annual_cash_amount" &&
+      !canPersistMonetary &&
+      baseCurrency !== "EUR" ? (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
+          <p>{FX_UNAVAILABLE_SAVE_MESSAGE}</p>
+          <button
+            type="button"
+            onClick={() => {
+              refreshFx();
+              setSessionSnapshot(snapshot);
+            }}
+            className="mt-1 inline-flex min-h-[44px] items-center font-semibold underline"
+          >
+            Retry conversion
+          </button>
+        </div>
+      ) : null}
+
       <div className="flex flex-col gap-2 sm:flex-row">
         <button
           type="button"
           onClick={handleSave}
-          className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-emerald-700 px-4 text-sm font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700"
+          disabled={
+            mode === "annual_cash_amount" &&
+            !canPersistBaseCurrencyAmounts(sessionSnapshot)
+          }
+          className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-emerald-700 px-4 text-sm font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
           Save estimate
         </button>

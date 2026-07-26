@@ -1,3 +1,5 @@
+"use client";
+
 import type { ReactNode } from "react";
 import { Goal, TrendingDown, TrendingUp, Minus } from "lucide-react";
 import Link from "next/link";
@@ -10,7 +12,8 @@ import {
   appSectionBodyClass,
   appSectionLabelClass,
 } from "@/components/layout/appSurface";
-import { formatPortfolioCurrency, formatPortfolioPercent } from "@/lib/client/portfolioAnalysis";
+import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
+import { formatPortfolioPercent } from "@/lib/client/portfolioAnalysis";
 import type { GoalProgress } from "@/lib/services/goals/goalProgressEngine";
 
 const TRAJECTORY_STYLES = {
@@ -25,6 +28,7 @@ export function DashboardGoalProgressCard({
 }: {
   progress: GoalProgress;
 }) {
+  const { formatEur } = useBaseCurrencyDisplay();
   const progressWidth = progress.goalReached
     ? 100
     : progress.hasGoal
@@ -56,12 +60,12 @@ export function DashboardGoalProgressCard({
         </div>
 
         <div className="mt-5 grid grid-cols-3 gap-3">
-          <Metric label="Current value" value={formatPortfolioCurrency(progress.currentValue)} />
+          <Metric label="Current value" value={formatEur(progress.currentValue)} />
           <Metric
             label="Goal value"
             value={
               progress.hasGoal
-                ? formatPortfolioCurrency(progress.targetValue)
+                ? formatEur(progress.targetValue)
                 : "Not set"
             }
           />
@@ -93,7 +97,7 @@ export function DashboardGoalProgressCard({
         <InfoBlock label="Remaining to goal">
           <p className={appCardValueClass}>
             {progress.hasGoal
-              ? formatPortfolioCurrency(progress.remainingAmount)
+              ? formatEur(progress.remainingAmount)
               : "—"}
           </p>
         </InfoBlock>

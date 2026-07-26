@@ -14,6 +14,7 @@ import {
   Sparkles,
   Upload,
 } from "lucide-react";
+import { ConversionDetailsDisclosure } from "@/components/currency/ConversionDetailsDisclosure";
 import { DividendIntelligenceSection } from "@/components/analysis/DividendIntelligenceSection";
 import { PortfolioPerformanceSection } from "@/components/analysis/performance/PortfolioPerformanceSection";
 import { MarketConsensusSection } from "@/components/analysis/marketConsensus/MarketConsensusSection";
@@ -34,6 +35,7 @@ import {
   appTableValueClass,
 } from "@/components/layout/appSurface";
 import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
+import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 import {
   buildPortfolioAnalysis,
   concentrationExplanation,
@@ -78,6 +80,7 @@ function allocationBarColor(index: number) {
 }
 
 export default function PortfolioAnalysisPage() {
+  const { formatEur } = useBaseCurrencyDisplay();
   const {
     holdings,
     portfolioReady,
@@ -172,7 +175,7 @@ export default function PortfolioAnalysisPage() {
                   label="Total portfolio value"
                   value={
                     hasValuedPositions
-                      ? formatPortfolioCurrency(analysis.totalValue)
+                      ? formatEur(analysis.totalValue)
                       : "—"
                   }
                   detail={
@@ -181,6 +184,9 @@ export default function PortfolioAnalysisPage() {
                       : "No valued positions"
                   }
                 />
+                <div className="sm:col-span-2 xl:col-span-4">
+                  <ConversionDetailsDisclosure compactTrigger />
+                </div>
                 <SummaryCard
                   icon={<BriefcaseBusiness className="h-5 w-5" />}
                   label="Investment holdings"
@@ -256,7 +262,7 @@ export default function PortfolioAnalysisPage() {
                               )}
                             </p>
                             <p className={appSectionMetaClass}>
-                              {formatPortfolioCurrency(position.value)}
+                              {formatEur(position.value)}
                             </p>
                           </div>
                           <p className={`shrink-0 ${appTableValueClass}`}>
@@ -381,7 +387,7 @@ export default function PortfolioAnalysisPage() {
                             label={item.label}
                             value={
                               <>
-                                {formatPortfolioCurrency(item.value)}
+                                {formatEur(item.value)}
                                 <span aria-hidden="true"> · </span>
                                 {formatPortfolioPercent(item.weightPercent)}
                               </>

@@ -9,8 +9,12 @@ export function formatCryptoPairPrice(
     return "Live price unavailable";
   }
 
-  const formatted = formatPortfolioCurrency(price);
-  return quoteCurrency ? `${formatted} ${quoteCurrency}` : formatted;
+  // Pair prices stay in the trading-pair quote currency — never portfolio base FX.
+  const currency =
+    typeof quoteCurrency === "string" && quoteCurrency.trim()
+      ? quoteCurrency.trim().toUpperCase()
+      : "USD";
+  return formatPortfolioCurrency(price, currency, 2);
 }
 
 export function formatCryptoQuoteTimestamp(
@@ -82,6 +86,7 @@ export function buildCryptoPriceMetadataLine(
 export function formatCrypto24hChange(
   changePercent: number | null | undefined,
   changeAmount: number | null | undefined,
+  formatCurrency: (value: number) => string = formatPortfolioCurrency,
 ): string {
   if (
     changePercent == null ||
@@ -93,7 +98,7 @@ export function formatCrypto24hChange(
   }
 
   const sign = changeAmount >= 0 ? "+" : "−";
-  return `${sign}${formatPortfolioCurrency(Math.abs(changeAmount))} · ${formatPortfolioPercent(changePercent)} 24h`;
+  return `${sign}${formatCurrency(Math.abs(changeAmount))} · ${formatPortfolioPercent(changePercent)} 24h`;
 }
 
 export const CRYPTO_PRICING_DISCLOSURE =

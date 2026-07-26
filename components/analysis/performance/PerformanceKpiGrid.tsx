@@ -1,9 +1,11 @@
+"use client";
+
 import {
   appCardValueClass,
   appSectionLabelClass,
   appSectionMetaClass,
 } from "@/components/layout/appSurface";
-import { formatPortfolioCurrency } from "@/lib/client/portfolioAnalysis";
+import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 import {
   formatSignedPortfolioCurrency,
   formatSignedPortfolioPercent,
@@ -24,13 +26,15 @@ export function PerformanceKpiGrid({
   startingUnavailableReason?: string | null;
   returnUnavailableReason?: string | null;
 }) {
+  const { formatEur } = useBaseCurrencyDisplay();
+
   return (
     <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
       <KpiCard
         label="Starting value"
         value={
           startingValue !== null
-            ? formatPortfolioCurrency(startingValue)
+            ? formatEur(startingValue)
             : "—"
         }
         hint={startingValue === null ? startingUnavailableReason : null}
@@ -38,14 +42,14 @@ export function PerformanceKpiGrid({
       <KpiCard
         label="Ending value"
         value={
-          endingValue !== null ? formatPortfolioCurrency(endingValue) : "—"
+          endingValue !== null ? formatEur(endingValue) : "—"
         }
       />
       <KpiCard
         label="Investment return"
         value={
           investmentReturn !== null
-            ? formatSignedPortfolioCurrency(investmentReturn)
+            ? formatSignedPortfolioCurrency(investmentReturn, formatEur)
             : "—"
         }
         secondaryValue={

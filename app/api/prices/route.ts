@@ -62,6 +62,9 @@ type PostBody = {
   forceRefresh?: boolean;
   onlyProviderSymbols?: string[];
   estimateOnly?: boolean;
+  /** Phase B: reuse PriceService FX cache for base-currency display (no holdings). */
+  fxSnapshotOnly?: boolean;
+  baseCurrency?: string;
 };
 
 /**
@@ -71,8 +74,33 @@ type PostBody = {
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as PostBody;
-    const holdings = Array.isArray(body.holdings) ? body.holdings : [];
     const forceRefresh = body.forceRefresh ?? false;
+
+    if (body.fxSnapshotOnly) {
+      const { loadBaseCurrencyFxSnapshot } = await import(
+        "@/lib/services/prices/priceService"
+      );
+      // Presentation FX must reuse the PriceService FX cache, but must not use
+      // hard snapshotOnly on a cold cache (that returns null rates → Unavailable
+      // until remount). Cache hits still avoid provider calls via getFxRates.
+      const snapshot = await loadBaseCurrencyFxSnapshot(body.baseCurrency, {
+        forceRefresh,
+        snapshotOnly: false,
+      });
+      return NextResponse.json(
+        { success: true, fxSnapshot: snapshot },
+        {
+          status: 200,
+          headers: {
+            "Cache-Control": forceRefresh
+              ? "private, no-store"
+              : `private, max-age=60, stale-while-revalidate=300`,
+          },
+        },
+      );
+    }
+
+    const holdings = Array.isArray(body.holdings) ? body.holdings : [];
     const snapshotOnly = !forceRefresh && !(body.estimateOnly ?? false);
 
     if (holdings.length === 0) {
