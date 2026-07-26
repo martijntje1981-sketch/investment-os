@@ -132,7 +132,7 @@ function classifyAutomatic(
         classificationConfidence: "verified",
         evidenceType: "instrument_type_rule",
         evidenceSummary:
-          "Spot crypto does not use a traditional dividend or distribution policy.",
+          "Spot crypto does not pay cash distributions. Staking rewards are not included.",
         verifiedAt: null,
         dataUpdatedAt,
         isUserConfirmed: false,
@@ -356,7 +356,11 @@ export function classifyDistributionPolicy(
   const automatic = classifyAutomatic(input);
   const override = input.holding.distributionPolicyUserOverride ?? null;
 
-  if (override === "distributing" || override === "accumulating") {
+  if (
+    override === "distributing" ||
+    override === "accumulating" ||
+    override === "non_distributing"
+  ) {
     return applyUserOverride(input.holding, automatic, override);
   }
 
@@ -400,6 +404,7 @@ export function buildPortfolioDistributionPolicySnapshot(
   const summary = {
     distributing: 0,
     accumulating: 0,
+    nonDistributing: 0,
     unknown: 0,
     notApplicable: 0,
     conflicted: 0,
@@ -417,6 +422,9 @@ export function buildPortfolioDistributionPolicySnapshot(
         break;
       case "accumulating":
         summary.accumulating += 1;
+        break;
+      case "non_distributing":
+        summary.nonDistributing += 1;
         break;
       case "not_applicable":
         summary.notApplicable += 1;

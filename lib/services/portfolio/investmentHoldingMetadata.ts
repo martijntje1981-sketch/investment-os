@@ -5,8 +5,14 @@ export type InvestmentHoldingMetadata = {
   distributionPolicyUserOverride?: DistributionPolicyUserOverride;
 };
 
-function isValidOverride(value: unknown): value is Exclude<DistributionPolicyUserOverride, null> {
-  return value === "distributing" || value === "accumulating";
+function isValidOverride(
+  value: unknown,
+): value is Exclude<DistributionPolicyUserOverride, null> {
+  return (
+    value === "distributing" ||
+    value === "accumulating" ||
+    value === "non_distributing"
+  );
 }
 
 export function parseInvestmentHoldingMetadata(
@@ -32,30 +38,35 @@ export function parseInvestmentHoldingMetadata(
 
 export function buildInvestmentHoldingMetadata(
   holding: StoredPortfolioHolding,
-): Record<string, unknown> | null {
+): Record<string, unknown> {
   const override = holding.distributionPolicyUserOverride ?? null;
-  if (override !== "distributing" && override !== "accumulating") {
-    return null;
+  if (isValidOverride(override)) {
+    return {
+      distributionPolicyUserOverride: override,
+    };
   }
 
-  return {
-    distributionPolicyUserOverride: override,
-  };
+  // Empty object clears a previous override on sync without inventing parallel fields.
+  return {};
 }
 
 export function applyInvestmentMetadataToStoredHolding(
   holding: StoredPortfolioHolding,
   metadata: InvestmentHoldingMetadata,
 ): StoredPortfolioHolding {
-  if (
-    metadata.distributionPolicyUserOverride !== "distributing" &&
-    metadata.distributionPolicyUserOverride !== "accumulating"
-  ) {
+  if (isValidOverride(metadata.distributionPolicyUserOverride)) {
+    return {
+      ...holding,
+      distributionPolicyUserOverride: metadata.distributionPolicyUserOverride,
+    };
+  }
+
+  if (holding.distributionPolicyUserOverride == null) {
     return holding;
   }
 
   return {
     ...holding,
-    distributionPolicyUserOverride: metadata.distributionPolicyUserOverride,
+    distributionPolicyUserOverride: undefined,
   };
 }

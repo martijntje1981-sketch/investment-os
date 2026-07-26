@@ -1,6 +1,7 @@
 import {
   AlertTriangle,
   ArrowDownToLine,
+  Ban,
   CircleHelp,
   Minus,
   RefreshCw,
@@ -21,6 +22,11 @@ const POLICY_STYLES: Record<
     className: "border-indigo-200 bg-indigo-50 text-indigo-950",
     Icon: RefreshCw,
     label: "Accumulating",
+  },
+  non_distributing: {
+    className: "border-slate-300 bg-slate-50 text-slate-900",
+    Icon: Ban,
+    label: "No current distributions",
   },
   unknown: {
     className: "border-amber-200 bg-amber-50 text-amber-950",
@@ -47,7 +53,7 @@ export function DistributionPolicyStatusBadge({
       className={`inline-flex min-h-[32px] max-w-full items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold ${style.className}`}
     >
       <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-      <span className="truncate">{style.label}</span>
+      <span className="break-words">{style.label}</span>
     </span>
   );
 }

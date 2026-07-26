@@ -20,6 +20,7 @@ import {
 } from "@/lib/services/dividends/reviewedDistributionPolicyRegistry";
 import {
   applyInvestmentMetadataToStoredHolding,
+  buildInvestmentHoldingMetadata,
   parseInvestmentHoldingMetadata,
 } from "@/lib/services/portfolio/investmentHoldingMetadata";
 import type { DividendApiQuote } from "@/lib/types/dividends";
@@ -282,8 +283,8 @@ describe("distribution policy classification", () => {
     expect(result.policy).not.toBe("accumulating");
   });
 
-  it("classifies spot crypto as not applicable", () => {
-    const result = classifyDistributionPolicy({
+  it("classifies spot crypto as not applicable without staking inference", () => {
+    const btc = classifyDistributionPolicy({
       holding: holding({
         symbol: "BTC",
         name: "Bitcoin",
@@ -291,8 +292,30 @@ describe("distribution policy classification", () => {
         providerSymbol: "BTC-USD.CC",
       }),
     });
+    const eth = classifyDistributionPolicy({
+      holding: holding({
+        symbol: "ETH",
+        name: "Ethereum",
+        assetType: "crypto",
+        providerSymbol: "ETH-USD.CC",
+      }),
+    });
+    const sol = classifyDistributionPolicy({
+      holding: holding({
+        symbol: "SOL",
+        name: "Solana",
+        assetType: "crypto",
+        providerSymbol: "SOL-USD.CC",
+      }),
+    });
 
-    expect(result.policy).toBe("not_applicable");
+    expect(btc.policy).toBe("not_applicable");
+    expect(eth.policy).toBe("not_applicable");
+    expect(sol.policy).toBe("not_applicable");
+    expect(btc.evidenceSummary).toMatch(/Spot crypto does not pay cash distributions/i);
+    expect(btc.evidenceSummary).toMatch(/Staking rewards are not included/i);
+    expect(eth.evidenceSummary).not.toMatch(/staking reward estimated/i);
+    expect(sol.evidenceSummary).not.toMatch(/staking reward estimated/i);
   });
 
   it("classifies cash as not applicable", () => {
@@ -308,15 +331,27 @@ describe("distribution policy classification", () => {
   });
 
   it("does not classify crypto ETP from underlying crypto", () => {
-    const result = classifyDistributionPolicy({
+    const ib1t = classifyDistributionPolicy({
       holding: holding({
         symbol: "IB1T",
         name: "iShares Bitcoin ETP",
         providerSymbol: "IB1T.XETRA",
+        assetType: "investment",
+      }),
+    });
+    const strc = classifyDistributionPolicy({
+      holding: holding({
+        symbol: "STRC",
+        name: "21Shares Strategy Yield ETP",
+        providerSymbol: "STRC.AS",
+        assetType: "investment",
       }),
     });
 
-    expect(result.policy).toBe("not_applicable");
+    expect(ib1t.policy).not.toBe("unknown");
+    expect(ib1t.evidenceSummary).not.toMatch(/Spot crypto/i);
+    expect(strc.policy).toBe("unknown");
+    expect(strc.evidenceSummary).not.toMatch(/Spot crypto/i);
   });
 
   it("classifies unknown asset as unknown", () => {
@@ -571,6 +606,56 @@ describe("distribution policy persistence", () => {
     expect(merged.distributionPolicyUserOverride).toBe("accumulating");
   });
 
+  it("round-trips non_distributing override through investment metadata", () => {
+    const parsed = parseInvestmentHoldingMetadata({
+      distributionPolicyUserOverride: "non_distributing",
+    });
+    const built = buildInvestmentHoldingMetadata(
+      holding({
+        symbol: "SYN-ND",
+        name: "Synthetic Non Dist",
+        distributionPolicyUserOverride: "non_distributing",
+      }),
+    );
+
+    expect(parsed?.distributionPolicyUserOverride).toBe("non_distributing");
+    expect(built).toEqual({ distributionPolicyUserOverride: "non_distributing" });
+  });
+
+  it("preserves existing distributing and accumulating overrides unchanged", () => {
+    expect(
+      parseInvestmentHoldingMetadata({
+        distributionPolicyUserOverride: "distributing",
+      })?.distributionPolicyUserOverride,
+    ).toBe("distributing");
+    expect(
+      parseInvestmentHoldingMetadata({
+        distributionPolicyUserOverride: "accumulating",
+      })?.distributionPolicyUserOverride,
+    ).toBe("accumulating");
+  });
+
+  it("clears override metadata when reset to Not sure", () => {
+    const cleared = buildInvestmentHoldingMetadata(
+      holding({
+        symbol: "SYN-ND",
+        name: "Synthetic Non Dist",
+        distributionPolicyUserOverride: null,
+      }),
+    );
+    const merged = applyInvestmentMetadataToStoredHolding(
+      holding({
+        symbol: "SYN-ND",
+        name: "Synthetic Non Dist",
+        distributionPolicyUserOverride: "non_distributing",
+      }),
+      parseInvestmentHoldingMetadata(cleared) ?? {},
+    );
+
+    expect(cleared).toEqual({});
+    expect(merged.distributionPolicyUserOverride).toBeUndefined();
+  });
+
   it("keeps portfolios without override fields compatible", () => {
     const merged = applyInvestmentMetadataToStoredHolding(
       holding({ symbol: "VWCE", name: "VWCE" }),
@@ -581,10 +666,101 @@ describe("distribution policy persistence", () => {
   });
 });
 
+describe("non_distributing classification", () => {
+  it("applies user-confirmed no current cash distributions without treating it as accumulating", () => {
+    const result = classifyDistributionPolicy({
+      holding: holding({
+        symbol: "SYN-ND",
+        name: "Synthetic Growth Share",
+        providerSymbol: "SYNND.XETRA",
+        distributionPolicyUserOverride: "non_distributing",
+      }),
+    });
+
+    expect(result.policy).toBe("non_distributing");
+    expect(result.policy).not.toBe("accumulating");
+    expect(result.policy).not.toBe("unknown");
+    expect(result.isUserConfirmed).toBe(true);
+    expect(isEligibleForPassiveIncomeEstimation(result)).toBe(false);
+    expect(passiveIncomeIneligibilityReason(result)).toMatch(/No current cash distributions/i);
+  });
+
+  it("marks conflict when user confirms non_distributing against reviewed accumulating evidence", () => {
+    const result = classifyDistributionPolicy({
+      holding: holding({
+        symbol: "VWCE",
+        name: "Vanguard All-World",
+        isin: "IE00BK5BQT80",
+        providerSymbol: "VWCE.XETRA",
+        distributionPolicyUserOverride: "non_distributing",
+      }),
+    });
+
+    expect(result.policy).toBe("non_distributing");
+    expect(result.conflictDetected).toBe(true);
+    expect(isEligibleForPassiveIncomeEstimation(result)).toBe(false);
+  });
+
+  it("marks conflict when user confirms non_distributing against a verified cash event", () => {
+    const result = classifyDistributionPolicy({
+      holding: holding({
+        symbol: "ASML",
+        name: "ASML Holding",
+        providerSymbol: "ASML.AS",
+        distributionPolicyUserOverride: "non_distributing",
+      }),
+      dividendQuote: quote({
+        symbol: "ASML",
+        providerSymbol: "ASML.AS",
+        verifiedCashDistributionEvent: {
+          date: "2026-05-01",
+          amount: 1.52,
+          currency: "EUR",
+        },
+      }),
+    });
+
+    expect(result.policy).toBe("non_distributing");
+    expect(result.conflictDetected).toBe(true);
+    expect(isEligibleForPassiveIncomeEstimation(result)).toBe(false);
+  });
+
+  it("counts non_distributing separately in portfolio summary", () => {
+    const snapshot = buildPortfolioDistributionPolicySnapshot(
+      [
+        holding({
+          symbol: "SYN-ND",
+          name: "Synthetic Non Dist",
+          providerSymbol: "SYNND.XETRA",
+          distributionPolicyUserOverride: "non_distributing",
+        }),
+        holding({
+          symbol: "VWCE",
+          name: "VWCE",
+          isin: "IE00BK5BQT80",
+          providerSymbol: "VWCE.XETRA",
+        }),
+        holding({
+          symbol: "BTC",
+          name: "Bitcoin",
+          assetType: "crypto",
+          providerSymbol: "BTC-USD.CC",
+        }),
+      ],
+      [],
+    );
+
+    expect(snapshot.summary.nonDistributing).toBe(1);
+    expect(snapshot.summary.accumulating).toBe(1);
+    expect(snapshot.summary.notApplicable).toBe(1);
+  });
+});
+
 describe("distribution policy view model", () => {
-  it("renders all four primary statuses with text labels", () => {
+  it("renders all five primary statuses with text labels", () => {
     expect(policyStatusLabel("distributing")).toBe("Distributing");
     expect(policyStatusLabel("accumulating")).toBe("Accumulating");
+    expect(policyStatusLabel("non_distributing")).toBe("No current distributions");
     expect(policyStatusLabel("unknown")).toBe("Unknown");
     expect(policyStatusLabel("not_applicable")).toBe("Not applicable");
   });

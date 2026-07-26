@@ -22,6 +22,12 @@ import { DistributionPolicyOfficialSourceLink } from "@/components/analysis/divi
 import type { DistributionPolicyHoldingViewModel } from "@/lib/client/dividendPolicy/buildDividendPolicyViewModel";
 import type { DistributionPolicyUserOverride } from "@/lib/types/distributionPolicy";
 
+function canReviewDistributionPolicy(
+  holding: DistributionPolicyHoldingViewModel["holding"],
+): boolean {
+  return holding.assetType !== "cash" && holding.assetType !== "crypto";
+}
+
 export function DistributionPolicyUserConfirmControl({
   currentOverride,
   onChange,
@@ -36,9 +42,15 @@ export function DistributionPolicyUserConfirmControl({
   const options: Array<{
     value: DistributionPolicyUserOverride;
     label: string;
+    helper?: string;
   }> = [
     { value: "distributing", label: "Pays cash distributions" },
     { value: "accumulating", label: "Reinvests internally" },
+    {
+      value: "non_distributing",
+      label: "No current cash distributions",
+      helper: "Distribution policies can change over time.",
+    },
     { value: null, label: "Not sure — use automatic classification" },
   ];
 
@@ -59,7 +71,7 @@ export function DistributionPolicyUserConfirmControl({
             <label
               key={inputId}
               htmlFor={inputId}
-              className="flex min-h-[44px] cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"
+              className="flex min-h-[44px] cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-emerald-700"
             >
               <input
                 id={inputId}
@@ -69,8 +81,15 @@ export function DistributionPolicyUserConfirmControl({
                 checked={checked}
                 onChange={() => onChange(option.value)}
               />
-              <span className={`${appSectionBodyClass} text-slate-900`}>
-                {option.label}
+              <span className="min-w-0">
+                <span className={`${appSectionBodyClass} break-words text-slate-900`}>
+                  {option.label}
+                </span>
+                {option.helper ? (
+                  <span className={`mt-1 block break-words ${appSectionMetaClass}`}>
+                    {option.helper}
+                  </span>
+                ) : null}
               </span>
             </label>
           );
@@ -96,6 +115,7 @@ export function DistributionPolicyHoldingRow({
   const { holding, classification } = item;
   const updatedLabel = formatPolicyUpdatedAt(classification.dataUpdatedAt);
   const detailsId = `distribution-policy-${holding.id}`;
+  const showReviewControl = canReviewDistributionPolicy(holding);
 
   return (
     <article className="rounded-[20px] border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
@@ -115,6 +135,13 @@ export function DistributionPolicyHoldingRow({
 
         <p className={`${appSectionBodyClass}`}>{classification.evidenceSummary}</p>
 
+        {classification.policy === "non_distributing" ? (
+          <p className={appSectionMetaClass}>
+            This investment is not currently expected to make cash distributions.
+            Distribution policies can change over time.
+          </p>
+        ) : null}
+
         {classification.conflictDetected && classification.conflictSummary ? (
           <DistributionPolicyConflictBadge message={classification.conflictSummary} />
         ) : null}
@@ -131,17 +158,19 @@ export function DistributionPolicyHoldingRow({
           ) : null}
         </div>
 
-        <button
-          type="button"
-          onClick={onToggle}
-          className="inline-flex min-h-[44px] w-full items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 sm:w-auto sm:justify-start"
-          aria-expanded={expanded}
-          aria-controls={detailsId}
-        >
-          {expanded ? "Hide review" : "Review"}
-        </button>
+        {showReviewControl ? (
+          <button
+            type="button"
+            onClick={onToggle}
+            className="inline-flex min-h-[44px] w-full items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 sm:w-auto sm:justify-start"
+            aria-expanded={expanded}
+            aria-controls={detailsId}
+          >
+            {expanded ? "Hide review" : "Review"}
+          </button>
+        ) : null}
 
-        {expanded ? (
+        {showReviewControl && expanded ? (
           <div id={detailsId} className="space-y-4 border-t border-slate-200 pt-4">
             <DistributionPolicyOfficialSourceLink classification={classification} />
             {canEdit && onPolicyOverrideChange ? (
@@ -151,6 +180,10 @@ export function DistributionPolicyHoldingRow({
               />
             ) : null}
           </div>
+        ) : null}
+
+        {!showReviewControl && classification.policy === "not_applicable" ? (
+          <DistributionPolicyOfficialSourceLink classification={classification} />
         ) : null}
       </div>
     </article>

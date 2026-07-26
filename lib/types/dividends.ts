@@ -49,6 +49,7 @@ export type PassiveIncomeEstimateStatus =
   | "estimated"
   | "insufficient_data"
   | "ineligible_accumulating"
+  | "ineligible_non_distributing"
   | "ineligible_unknown_policy"
   | "ineligible_conflict"
   | "not_applicable"

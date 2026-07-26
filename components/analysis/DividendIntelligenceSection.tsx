@@ -112,6 +112,7 @@ function PolicySummary({
   const tiles = [
     { label: "Cash distributing", value: summary.distributing },
     { label: "Accumulating / reinvesting", value: summary.accumulating },
+    { label: "No current distributions", value: summary.nonDistributing },
     { label: "Unknown", value: summary.unknown },
     { label: "Not applicable", value: summary.notApplicable },
   ];
@@ -119,7 +120,7 @@ function PolicySummary({
   return (
     <div>
       <p className={appSectionLabelClass}>Portfolio summary</p>
-      <div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
         {tiles.map((tile) => (
           <div
             key={tile.label}

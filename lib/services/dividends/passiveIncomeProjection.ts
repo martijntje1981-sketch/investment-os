@@ -84,8 +84,9 @@ function confidenceLabelFor(classification: DistributionPolicyClassification): s
 function explanationForRecord(input: {
   estimateStatus: PassiveIncomeEstimateStatus;
   classification: DistributionPolicyClassification;
+  holding?: StoredPortfolioHolding;
 }): string {
-  const { estimateStatus, classification } = input;
+  const { estimateStatus, classification, holding } = input;
 
   switch (estimateStatus) {
     case "estimated":
@@ -99,13 +100,17 @@ function explanationForRecord(input: {
     case "insufficient_data":
       return "Income estimate unavailable — verified policy, but no reliable annual distribution data.";
     case "ineligible_accumulating":
-      return "Excluded — accumulating share class reinvests internally.";
+      return "Excluded — income is reinvested internally.";
+    case "ineligible_non_distributing":
+      return "Excluded — no current cash distributions.";
     case "ineligible_unknown_policy":
       return "Excluded — distribution policy is not verified.";
     case "ineligible_conflict":
       return "Excluded — policy evidence conflicts with your confirmation.";
     case "not_applicable":
-      return "Excluded — traditional dividend policy does not apply.";
+      return holding?.assetType === "crypto"
+        ? "Not applicable — staking rewards are not included."
+        : "Excluded — traditional dividend policy does not apply.";
     case "conversion_unavailable":
       return "Conversion unavailable.";
     default:
@@ -123,6 +128,8 @@ function estimateStatusForIneligible(
   switch (classification.policy) {
     case "accumulating":
       return "ineligible_accumulating";
+    case "non_distributing":
+      return "ineligible_non_distributing";
     case "unknown":
       return "ineligible_unknown_policy";
     case "not_applicable":
@@ -246,7 +253,11 @@ function buildIneligibleRecord(input: {
     estimateStatus,
     estimatedAnnualCashDistributionEur: null,
     confidenceLabel: confidenceLabelFor(classification),
-    explanation: explanationForRecord({ estimateStatus, classification }),
+    explanation: explanationForRecord({
+      estimateStatus,
+      classification,
+      holding,
+    }),
     warnings: [],
     sourceFieldsUsed: [],
     dataUpdatedAt: classification.dataUpdatedAt,

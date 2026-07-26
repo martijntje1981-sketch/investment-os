@@ -156,7 +156,67 @@ describe("passive income projection", () => {
     expect(projection.eligibleEstimatedAnnualCashDistributionEur).toBe(0);
   });
 
-  it("excludes STRC when user confirms accumulating", () => {
+  it("excludes user-confirmed non_distributing holdings with a distinct reason", () => {
+    const nonDist = holding({
+      symbol: "SYN-ND",
+      name: "Synthetic Non Dist",
+      providerSymbol: "SYNND.XETRA",
+      distributionPolicyUserOverride: "non_distributing",
+    });
+    const dividendQuote = quote({
+      symbol: "SYN-ND",
+      providerSymbol: "SYNND.XETRA",
+      estimatedAnnualDividendEur: 50,
+    });
+
+    const projection = buildPassiveIncomeProjection([nonDist], [dividendQuote]);
+    expect(projection.holdingRecords[0]?.estimateStatus).toBe(
+      "ineligible_non_distributing",
+    );
+    expect(projection.holdingRecords[0]?.distributionPolicy).toBe("non_distributing");
+    expect(projection.holdingRecords[0]?.distributionPolicy).not.toBe("accumulating");
+    expect(projection.holdingRecords[0]?.explanation).toBe(
+      "Excluded — no current cash distributions.",
+    );
+    expect(projection.eligibleEstimatedAnnualCashDistributionEur).toBe(0);
+  });
+
+  it("excludes spot crypto without creating staking income", () => {
+    const projection = buildPassiveIncomeProjection(
+      [
+        holding({
+          symbol: "ETH",
+          name: "Ethereum",
+          assetType: "crypto",
+          pairCurrency: "USD",
+          providerSymbol: "ETH-USD.CC",
+        }),
+        holding({
+          symbol: "SOL",
+          name: "Solana",
+          assetType: "crypto",
+          pairCurrency: "USD",
+          providerSymbol: "SOL-USD.CC",
+        }),
+      ],
+      [],
+    );
+
+    expect(projection.holdingRecords).toHaveLength(2);
+    expect(
+      projection.holdingRecords.every(
+        (record) => record.estimateStatus === "not_applicable",
+      ),
+    ).toBe(true);
+    expect(
+      projection.holdingRecords.every((record) =>
+        record.explanation.includes("staking rewards are not included"),
+      ),
+    ).toBe(true);
+    expect(projection.eligibleEstimatedAnnualCashDistributionEur).toBe(0);
+  });
+
+  it("keeps STRC user-confirmed accumulating excluded as accumulating", () => {
     const strc = holding({
       symbol: "STRC",
       name: "21Shares Strategy Yield ETP",

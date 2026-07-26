@@ -55,6 +55,8 @@ export function policyStatusLabel(
       return "Distributing";
     case "accumulating":
       return "Accumulating";
+    case "non_distributing":
+      return "No current distributions";
     case "not_applicable":
       return "Not applicable";
     default:

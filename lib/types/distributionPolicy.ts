@@ -6,6 +6,7 @@
 export type DistributionPolicy =
   | "distributing"
   | "accumulating"
+  | "non_distributing"
   | "unknown"
   | "not_applicable";
 
@@ -24,8 +25,15 @@ export type DistributionEvidenceType =
   | "instrument_type_rule"
   | "none";
 
-/** User override stored on the exact holding. null = use automatic classification. */
-export type DistributionPolicyUserOverride = "distributing" | "accumulating" | null;
+/**
+ * User override stored on the exact holding.
+ * null = use automatic classification ("Not sure").
+ */
+export type DistributionPolicyUserOverride =
+  | "distributing"
+  | "accumulating"
+  | "non_distributing"
+  | null;
 
 export type VerifiedCashDistributionEvent = {
   date: string;
@@ -56,6 +64,7 @@ export type DistributionPolicyClassification = {
 export type DistributionPolicySummaryCounts = {
   distributing: number;
   accumulating: number;
+  nonDistributing: number;
   unknown: number;
   notApplicable: number;
   conflicted: number;

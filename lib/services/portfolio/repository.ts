@@ -349,10 +349,7 @@ export function createPortfolioRepository(supabase: SupabaseClient) {
     if (isCryptoHolding(holding)) {
       payload.metadata = buildCryptoHoldingMetadata(holding);
     } else if (holding.assetType !== "cash") {
-      const investmentMetadata = buildInvestmentHoldingMetadata(holding);
-      if (investmentMetadata) {
-        payload.metadata = investmentMetadata;
-      }
+      payload.metadata = buildInvestmentHoldingMetadata(holding);
     }
 
     const { error: updateError } = await supabase

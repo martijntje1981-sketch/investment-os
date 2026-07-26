@@ -36,6 +36,8 @@ export function passiveIncomeIneligibilityReason(
   switch (classification.policy) {
     case "accumulating":
       return "Accumulating/reinvesting instruments contribute no cash passive income.";
+    case "non_distributing":
+      return "No current cash distributions — not eligible for passive-income estimation.";
     case "unknown":
       return "Unknown distribution policy — no passive-income estimate.";
     case "not_applicable":

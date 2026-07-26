@@ -27,6 +27,8 @@ function policyBadgeClass(policy: PassiveIncomeHoldingRecord["distributionPolicy
       return "bg-emerald-50 text-emerald-800 ring-emerald-200";
     case "accumulating":
       return "bg-amber-50 text-amber-900 ring-amber-200";
+    case "non_distributing":
+      return "bg-slate-100 text-slate-800 ring-slate-300";
     case "not_applicable":
       return "bg-slate-100 text-slate-700 ring-slate-200";
     default:
@@ -40,6 +42,8 @@ function formatPolicyLabel(policy: PassiveIncomeHoldingRecord["distributionPolic
       return "Distributing";
     case "accumulating":
       return "Accumulating";
+    case "non_distributing":
+      return "No current distributions";
     case "not_applicable":
       return "Not applicable";
     default:

@@ -259,7 +259,7 @@ export function mapStoredHoldingToDbInsert(
     currency: String(holding.currency ?? "EUR").toUpperCase(),
     sort_order: sortOrder,
     deleted_at: null,
-    ...(investmentMetadata ? { metadata: investmentMetadata } : {}),
+    ...(assetType === "investment" ? { metadata: investmentMetadata } : {}),
   };
 }
 
