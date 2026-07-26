@@ -16,8 +16,10 @@ import {
 } from "lucide-react";
 import { ConversionDetailsDisclosure } from "@/components/currency/ConversionDetailsDisclosure";
 import { DividendIntelligenceSection } from "@/components/analysis/DividendIntelligenceSection";
+import { PortfolioExposureSection } from "@/components/analysis/PortfolioExposureSection";
 import { PortfolioPerformanceSection } from "@/components/analysis/performance/PortfolioPerformanceSection";
 import { MarketConsensusSection } from "@/components/analysis/marketConsensus/MarketConsensusSection";
+import { buildPortfolioExposureAllocation } from "@/lib/services/classification";
 import BottomNavigation from "@/components/home/BottomNav";
 import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer";
 import { PageHero } from "@/components/layout/PageHero";
@@ -96,6 +98,11 @@ export default function PortfolioAnalysisPage() {
 
   const analysis = useMemo(
     () => buildPortfolioAnalysis(holdings),
+    [holdings],
+  );
+
+  const exposureAllocation = useMemo(
+    () => buildPortfolioExposureAllocation(holdings),
     [holdings],
   );
 
@@ -184,9 +191,6 @@ export default function PortfolioAnalysisPage() {
                       : "No valued positions"
                   }
                 />
-                <div className="sm:col-span-2 xl:col-span-4">
-                  <ConversionDetailsDisclosure compactTrigger />
-                </div>
                 <SummaryCard
                   icon={<BriefcaseBusiness className="h-5 w-5" />}
                   label="Investment holdings"
@@ -220,6 +224,12 @@ export default function PortfolioAnalysisPage() {
                   }
                 />
               </section>
+
+              <div className="mt-3">
+                <ConversionDetailsDisclosure compactTrigger />
+              </div>
+
+              <PortfolioExposureSection allocation={exposureAllocation} />
 
               <div className="mt-7">
                 <PortfolioPerformanceSection holdings={holdings} />

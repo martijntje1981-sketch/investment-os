@@ -12,38 +12,17 @@ import {
 } from "@/components/layout/appSurface";
 import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 import { ANALYSIS_PATH } from "@/lib/navigation/newsHubRoutes";
-import type {
-  ExposureGroupId,
-  PortfolioExposureAllocation,
+import {
+  EXPOSURE_GROUP_BAR_CLASS,
+  EXPOSURE_GROUP_DOT_CLASS,
+  type PortfolioExposureAllocation,
 } from "@/lib/services/classification";
 
-const GROUP_BAR_CLASS: Record<ExposureGroupId, string> = {
-  technology_communication: "bg-sky-600",
-  healthcare: "bg-rose-500",
-  consumer: "bg-orange-500",
-  financials_real_estate: "bg-indigo-600",
-  industrials_resources: "bg-amber-600",
-  diversified_equity: "bg-slate-700",
-  crypto: "bg-violet-600",
-  cash: "bg-emerald-600",
-  other_unclassified: "bg-slate-300",
-};
-
-const GROUP_DOT_CLASS: Record<ExposureGroupId, string> = {
-  technology_communication: "bg-sky-600",
-  healthcare: "bg-rose-500",
-  consumer: "bg-orange-500",
-  financials_real_estate: "bg-indigo-600",
-  industrials_resources: "bg-amber-600",
-  diversified_equity: "bg-slate-700",
-  crypto: "bg-violet-600",
-  cash: "bg-emerald-600",
-  other_unclassified: "bg-slate-300",
-};
+const ANALYSIS_PORTFOLIO_EXPOSURE_HREF = `${ANALYSIS_PATH}#portfolio-exposure`;
 
 /**
  * Compact Dashboard preview of portfolio exposure (whole-instrument classification).
- * Not sector look-through. Full analysis detail may follow later on Analysis.
+ * Not sector look-through. Detail lives on Analysis `#portfolio-exposure`.
  */
 export function DashboardPortfolioExposureCard({
   allocation,
@@ -85,7 +64,7 @@ export function DashboardPortfolioExposureCard({
               {allocation.groups.map((group) => (
                 <div
                   key={group.groupId}
-                  className={`h-full min-w-0 ${GROUP_BAR_CLASS[group.groupId]}`}
+                  className={`h-full min-w-0 ${EXPOSURE_GROUP_BAR_CLASS[group.groupId]}`}
                   style={{ width: `${group.displayPercent}%` }}
                   title={`${group.displayLabel}: ${group.displayPercent}%`}
                 />
@@ -100,7 +79,7 @@ export function DashboardPortfolioExposureCard({
                 >
                   <span className="flex min-w-0 items-center gap-2">
                     <span
-                      className={`h-2.5 w-2.5 shrink-0 rounded-full ${GROUP_DOT_CLASS[group.groupId]}`}
+                      className={`h-2.5 w-2.5 shrink-0 rounded-full ${EXPOSURE_GROUP_DOT_CLASS[group.groupId]}`}
                       aria-hidden
                     />
                     <span className="truncate text-sm font-medium text-slate-800">
@@ -124,7 +103,7 @@ export function DashboardPortfolioExposureCard({
         )}
 
         <Link
-          href={ANALYSIS_PATH}
+          href={ANALYSIS_PORTFOLIO_EXPOSURE_HREF}
           className="inline-flex min-h-[40px] items-center text-sm font-semibold text-slate-700 transition hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2"
         >
           Open Analysis

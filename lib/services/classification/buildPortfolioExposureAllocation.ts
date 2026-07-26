@@ -11,6 +11,7 @@ import {
   type ExposureGroupId,
   type PortfolioExposureAllocation,
   type PortfolioExposureGroupSlice,
+  type PortfolioExposureHoldingContribution,
 } from "@/lib/services/classification/types";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
@@ -81,9 +82,16 @@ export function buildPortfolioExposureAllocation(
     };
   }
 
-  const totals = new Map<ExposureGroupId, { value: number; holdingCount: number }>();
+  const totals = new Map<
+    ExposureGroupId,
+    {
+      value: number;
+      holdingCount: number;
+      holdings: PortfolioExposureHoldingContribution[];
+    }
+  >();
   for (const groupId of EXPOSURE_GROUP_IDS) {
-    totals.set(groupId, { value: 0, holdingCount: 0 });
+    totals.set(groupId, { value: 0, holdingCount: 0, holdings: [] });
   }
 
   let excludedHoldingCount = 0;
@@ -114,15 +122,29 @@ export function buildPortfolioExposureAllocation(
     const bucket = totals.get(classification.normalizedGroupId)!;
     bucket.value += marketValue;
     bucket.holdingCount += 1;
+    bucket.holdings.push({
+      id: holding.id,
+      symbol: holding.symbol,
+      name: holding.name,
+      value: marketValue,
+      assetType: holding.assetType,
+    });
   }
 
   const nonEmpty = EXPOSURE_GROUP_IDS.map((groupId) => {
     const bucket = totals.get(groupId)!;
+    const holdingsSorted = [...bucket.holdings].sort((left, right) => {
+      if (right.value !== left.value) {
+        return right.value - left.value;
+      }
+      return left.symbol.localeCompare(right.symbol);
+    });
     return {
       groupId,
       displayLabel: EXPOSURE_GROUP_LABELS[groupId],
       value: bucket.value,
       holdingCount: bucket.holdingCount,
+      holdings: holdingsSorted,
     };
   }).filter((row) => row.value > 0 && row.holdingCount > 0);
 
@@ -145,6 +167,7 @@ export function buildPortfolioExposureAllocation(
     rawPercent: totalValue > 0 ? (row.value / totalValue) * 100 : 0,
     displayPercent: displayPercents[index] ?? 0,
     holdingCount: row.holdingCount,
+    holdings: row.holdings,
   }));
 
   let coverageLabel: string | null = null;

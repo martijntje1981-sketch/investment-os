@@ -59,6 +59,15 @@ export type HoldingExposureClassification = {
   reason: string;
 };
 
+/** Contributing holding included in a valued exposure group. */
+export type PortfolioExposureHoldingContribution = {
+  id: string;
+  symbol: string;
+  name: string;
+  value: number;
+  assetType?: "investment" | "cash" | "crypto";
+};
+
 export type PortfolioExposureGroupSlice = {
   groupId: ExposureGroupId;
   displayLabel: string;
@@ -66,6 +75,8 @@ export type PortfolioExposureGroupSlice = {
   rawPercent: number;
   displayPercent: number;
   holdingCount: number;
+  /** Valued holdings in this group, highest value first. */
+  holdings: PortfolioExposureHoldingContribution[];
 };
 
 export type PortfolioExposureAllocation = {

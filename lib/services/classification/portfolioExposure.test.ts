@@ -170,6 +170,11 @@ describe("buildPortfolioExposureAllocation", () => {
       "crypto",
       "cash",
     ]);
+    expect(allocation.groups[0]?.holdings.map((row) => row.symbol)).toEqual([
+      "VWCE",
+    ]);
+    expect(allocation.groups[1]?.holdings[0]?.symbol).toBe("BTC");
+    expect(allocation.groups[2]?.holdings[0]?.assetType).toBe("cash");
   });
 
   it("keeps Other / Unclassified in the denominator", () => {
@@ -218,6 +223,36 @@ describe("buildPortfolioExposureAllocation", () => {
     expect(allocation.excludedHoldingCount).toBe(1);
     expect(allocation.includedHoldingCount).toBe(1);
     expect(allocation.coverageLabel).toMatch(/excluded/i);
+    expect(allocation.groups[0]?.holdings).toHaveLength(1);
+    expect(allocation.groups[0]?.holdings[0]?.symbol).toBe("VWCE");
+  });
+
+  it("lists multiple contributing holdings under the same category", () => {
+    const allocation = buildPortfolioExposureAllocation([
+      holding({
+        id: "a",
+        symbol: "AAA",
+        name: "Alpha",
+        providerSymbol: "AAA.US",
+        quantity: 1,
+        currentPrice: 60,
+      }),
+      holding({
+        id: "b",
+        symbol: "BBB",
+        name: "Beta",
+        providerSymbol: "BBB.US",
+        quantity: 1,
+        currentPrice: 40,
+      }),
+    ]);
+
+    const other = allocation.groups.find(
+      (group) => group.groupId === "other_unclassified",
+    );
+    expect(other?.holdingCount).toBe(2);
+    expect(other?.holdings.map((row) => row.symbol)).toEqual(["AAA", "BBB"]);
+    expect(other?.holdings[0]?.value).toBe(60);
   });
 
   it("handles empty, crypto-only and cash-only portfolios", () => {
@@ -288,10 +323,12 @@ describe("dashboard portfolio exposure integration", () => {
     expect(goalIdx).toBeGreaterThan(exposureIdx);
   });
 
-  it("uses ANALYSIS_PATH CTA and keeps Phase 1/2 sections", () => {
+  it("uses ANALYSIS_PATH CTA with portfolio-exposure hash and keeps Phase 1/2 sections", () => {
     expect(cardSource).toContain("ANALYSIS_PATH");
+    expect(cardSource).toContain("#portfolio-exposure");
     expect(cardSource).toContain("Open Analysis");
     expect(cardSource).toContain("Portfolio exposure");
+    expect(cardSource).toContain("EXPOSURE_GROUP_BAR_CLASS");
     expect(cardSource).not.toContain("overflow-x-auto");
     expect(cardSource).not.toContain("overflow-x-scroll");
     expect(dashboardSource).toContain("DashboardSummary");
