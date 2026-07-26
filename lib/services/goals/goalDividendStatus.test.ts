@@ -13,6 +13,7 @@ const emptyProjection: PassiveIncomeProjectionSnapshot = {
   excludedHoldingsCount: 0,
   awaitingDataHoldingsCount: 0,
   hasUsableEstimate: false,
+  includesUserEstimates: false,
   holdingRecords: [],
   updatedAt: null,
 };

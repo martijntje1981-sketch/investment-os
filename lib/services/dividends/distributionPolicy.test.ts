@@ -664,6 +664,85 @@ describe("distribution policy persistence", () => {
 
     expect(merged.distributionPolicyUserOverride).toBeUndefined();
   });
+
+  it("round-trips passive income user estimates through investment metadata", () => {
+    const estimate = {
+      mode: "annual_yield" as const,
+      annualYieldPercent: 4.5,
+      updatedAt: "2026-07-26T10:00:00.000Z",
+    };
+    const built = buildInvestmentHoldingMetadata(
+      holding({
+        symbol: "CUSTOM",
+        name: "Custom Dist",
+        distributionPolicyUserOverride: "distributing",
+        passiveIncomeUserEstimate: estimate,
+      }),
+    );
+    const parsed = parseInvestmentHoldingMetadata(built);
+    const merged = applyInvestmentMetadataToStoredHolding(
+      holding({ symbol: "CUSTOM", name: "Custom Dist" }),
+      parsed ?? {},
+    );
+
+    expect(built.passiveIncomeUserEstimate).toEqual(estimate);
+    expect(built.distributionPolicyUserOverride).toBe("distributing");
+    expect(merged.passiveIncomeUserEstimate).toEqual(estimate);
+    expect(merged.distributionPolicyUserOverride).toBe("distributing");
+  });
+
+  it("stores only one estimate mode and supports removal", () => {
+    const cashEstimate = {
+      mode: "annual_cash_amount" as const,
+      annualCashAmountEur: 1200,
+      updatedAt: "2026-07-26T10:00:00.000Z",
+    };
+    const withCash = buildInvestmentHoldingMetadata(
+      holding({
+        symbol: "CUSTOM",
+        name: "Custom Dist",
+        passiveIncomeUserEstimate: cashEstimate,
+      }),
+    );
+    expect(withCash.passiveIncomeUserEstimate).toEqual(cashEstimate);
+    expect(
+      (withCash.passiveIncomeUserEstimate as { annualYieldPercent?: number })
+        .annualYieldPercent,
+    ).toBeUndefined();
+
+    const removed = applyInvestmentMetadataToStoredHolding(
+      holding({
+        symbol: "CUSTOM",
+        name: "Custom Dist",
+        passiveIncomeUserEstimate: cashEstimate,
+      }),
+      parseInvestmentHoldingMetadata({ passiveIncomeUserEstimate: null }) ?? {
+        passiveIncomeUserEstimate: null,
+      },
+    );
+    expect(removed.passiveIncomeUserEstimate).toBeUndefined();
+  });
+
+  it("preserves an existing estimate when only policy override metadata is applied", () => {
+    const estimate = {
+      mode: "annual_cash_amount" as const,
+      annualCashAmountEur: 200,
+      updatedAt: "2026-07-26T10:00:00.000Z",
+    };
+    const merged = applyInvestmentMetadataToStoredHolding(
+      holding({
+        symbol: "CUSTOM",
+        name: "Custom Dist",
+        passiveIncomeUserEstimate: estimate,
+      }),
+      parseInvestmentHoldingMetadata({
+        distributionPolicyUserOverride: "distributing",
+      }) ?? {},
+    );
+
+    expect(merged.distributionPolicyUserOverride).toBe("distributing");
+    expect(merged.passiveIncomeUserEstimate).toEqual(estimate);
+  });
 });
 
 describe("non_distributing classification", () => {

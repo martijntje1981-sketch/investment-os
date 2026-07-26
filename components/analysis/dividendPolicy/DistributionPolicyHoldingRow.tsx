@@ -7,6 +7,7 @@ import {
   DistributionPolicyConflictBadge,
   DistributionPolicyStatusBadge,
 } from "@/components/analysis/dividendPolicy/DistributionPolicyBadges";
+import { PassiveIncomeUserEstimateControl } from "@/components/goals/PassiveIncomeUserEstimateControl";
 import {
   appSectionBodyClass,
   appSectionLabelClass,
@@ -21,11 +22,27 @@ import {
 import { DistributionPolicyOfficialSourceLink } from "@/components/analysis/dividendPolicy/DistributionPolicyOfficialSourceLink";
 import type { DistributionPolicyHoldingViewModel } from "@/lib/client/dividendPolicy/buildDividendPolicyViewModel";
 import type { DistributionPolicyUserOverride } from "@/lib/types/distributionPolicy";
+import type { PassiveIncomeHoldingRecord } from "@/lib/types/dividends";
+import type { PassiveIncomeUserEstimate } from "@/lib/types/passiveIncomeUserEstimate";
 
 function canReviewDistributionPolicy(
   holding: DistributionPolicyHoldingViewModel["holding"],
 ): boolean {
   return holding.assetType !== "cash" && holding.assetType !== "crypto";
+}
+
+function canShowPassiveIncomeEstimateControls(
+  holding: DistributionPolicyHoldingViewModel["holding"],
+  record: PassiveIncomeHoldingRecord | undefined,
+): boolean {
+  if (!record) return false;
+  if (holding.assetType === "cash" || holding.assetType === "crypto") {
+    return false;
+  }
+  return (
+    record.eligibility === "eligible" ||
+    record.storedUserEstimate != null
+  );
 }
 
 export function DistributionPolicyUserConfirmControl({
@@ -104,18 +121,28 @@ export function DistributionPolicyHoldingRow({
   expanded,
   onToggle,
   onPolicyOverrideChange,
+  passiveIncomeRecord,
+  onPassiveIncomeEstimateChange,
   canEdit = true,
 }: {
   item: DistributionPolicyHoldingViewModel;
   expanded: boolean;
   onToggle: () => void;
   onPolicyOverrideChange?: (value: DistributionPolicyUserOverride) => void;
+  passiveIncomeRecord?: PassiveIncomeHoldingRecord;
+  onPassiveIncomeEstimateChange?: (
+    estimate: PassiveIncomeUserEstimate | null,
+  ) => void;
   canEdit?: boolean;
 }) {
   const { holding, classification } = item;
   const updatedLabel = formatPolicyUpdatedAt(classification.dataUpdatedAt);
   const detailsId = `distribution-policy-${holding.id}`;
   const showReviewControl = canReviewDistributionPolicy(holding);
+  const showEstimateControls = canShowPassiveIncomeEstimateControls(
+    holding,
+    passiveIncomeRecord,
+  );
 
   return (
     <article className="rounded-[20px] border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
@@ -177,6 +204,25 @@ export function DistributionPolicyHoldingRow({
               <DistributionPolicyUserConfirmControl
                 currentOverride={holding.distributionPolicyUserOverride}
                 onChange={onPolicyOverrideChange}
+              />
+            ) : null}
+            {showEstimateControls &&
+            passiveIncomeRecord &&
+            canEdit &&
+            onPassiveIncomeEstimateChange ? (
+              <PassiveIncomeUserEstimateControl
+                currentEstimate={passiveIncomeRecord.storedUserEstimate}
+                providerDataUsed={
+                  passiveIncomeRecord.eligibility === "eligible" &&
+                  passiveIncomeRecord.estimateSource === "provider"
+                }
+                retainedButExcluded={
+                  passiveIncomeRecord.eligibility === "ineligible" &&
+                  passiveIncomeRecord.storedUserEstimate != null
+                }
+                exclusionReason={passiveIncomeRecord.explanation}
+                onSave={onPassiveIncomeEstimateChange}
+                onRemove={() => onPassiveIncomeEstimateChange(null)}
               />
             ) : null}
           </div>

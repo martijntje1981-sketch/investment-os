@@ -3,6 +3,7 @@
 import { useId, useState } from "react";
 import { ChevronDown, TrendingUp } from "lucide-react";
 
+import { PassiveIncomeUserEstimateControl } from "@/components/goals/PassiveIncomeUserEstimateControl";
 import {
   appSectionLabelClass,
   appSectionSubtitleClass,
@@ -20,6 +21,7 @@ import {
 } from "@/lib/services/goals/goalDividendStatus";
 import type { PassiveIncomeHoldingRecord } from "@/lib/types/dividends";
 import type { PortfolioDividendSnapshot } from "@/lib/types/dividends";
+import type { PassiveIncomeUserEstimate } from "@/lib/types/passiveIncomeUserEstimate";
 
 function policyBadgeClass(policy: PassiveIncomeHoldingRecord["distributionPolicy"]): string {
   switch (policy) {
@@ -51,10 +53,28 @@ function formatPolicyLabel(policy: PassiveIncomeHoldingRecord["distributionPolic
   }
 }
 
+function formatEstimateSource(source: PassiveIncomeHoldingRecord["estimateSource"]): string {
+  switch (source) {
+    case "provider":
+      return "Provider data";
+    case "user_annual_yield":
+      return "User estimate (annual yield)";
+    case "user_annual_cash_amount":
+      return "User estimate (annual cash amount)";
+    default:
+      return "Unavailable";
+  }
+}
+
 function PassiveIncomeGoalDetails({
   records,
+  onEstimateChange,
 }: {
   records: PassiveIncomeHoldingRecord[];
+  onEstimateChange?: (
+    holdingId: string,
+    estimate: PassiveIncomeUserEstimate | null,
+  ) => void;
 }) {
   const [open, setOpen] = useState(false);
   const panelId = useId();
@@ -88,57 +108,96 @@ function PassiveIncomeGoalDetails({
           aria-labelledby={buttonId}
           className="mt-3 space-y-3"
         >
-          {records.map((record) => (
-            <article
-              key={record.holdingId}
-              className="rounded-[18px] border border-slate-200 bg-slate-50 p-4"
-            >
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-sm font-bold text-slate-900">{record.symbol}</p>
-                  <p className="mt-0.5 text-sm text-slate-600">{record.name}</p>
-                </div>
-                <span
-                  className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${policyBadgeClass(record.distributionPolicy)}`}
-                >
-                  {formatPolicyLabel(record.distributionPolicy)}
-                </span>
-              </div>
+          {records.map((record) => {
+            const showEstimateEditor =
+              Boolean(onEstimateChange) &&
+              record.distributionPolicy !== "not_applicable" &&
+              (record.acceptsUserEstimate ||
+                record.estimateSource === "provider" ||
+                (record.eligibility === "ineligible" &&
+                  record.storedUserEstimate != null));
 
-              <p className="mt-3 text-sm leading-6 text-slate-700">{record.explanation}</p>
+            return (
+              <article
+                key={record.holdingId}
+                className="rounded-[18px] border border-slate-200 bg-slate-50 p-4"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-slate-900">{record.symbol}</p>
+                    <p className="mt-0.5 text-sm text-slate-600">{record.name}</p>
+                  </div>
+                  <span
+                    className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${policyBadgeClass(record.distributionPolicy)}`}
+                  >
+                    {formatPolicyLabel(record.distributionPolicy)}
+                  </span>
+                </div>
 
-              <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
-                <div>
-                  <dt className="font-semibold text-slate-500">Status</dt>
-                  <dd className="mt-0.5 text-slate-800">
-                    {record.eligibility === "eligible" ? "Eligible" : "Ineligible"}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="font-semibold text-slate-500">Evidence</dt>
-                  <dd className="mt-0.5 text-slate-800">{record.confidenceLabel}</dd>
-                </div>
-                {record.estimatedAnnualCashDistributionEur != null ? (
-                  <div className="sm:col-span-2">
+                <p className="mt-3 text-sm leading-6 text-slate-700">{record.explanation}</p>
+
+                <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
+                  <div>
+                    <dt className="font-semibold text-slate-500">Status</dt>
+                    <dd className="mt-0.5 text-slate-800">
+                      {record.eligibility === "eligible" ? "Eligible" : "Ineligible"}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="font-semibold text-slate-500">Evidence</dt>
+                    <dd className="mt-0.5 text-slate-800">{record.confidenceLabel}</dd>
+                  </div>
+                  <div>
+                    <dt className="font-semibold text-slate-500">Estimate source</dt>
+                    <dd className="mt-0.5 text-slate-800">
+                      {formatEstimateSource(record.estimateSource)}
+                    </dd>
+                  </div>
+                  <div>
                     <dt className="font-semibold text-slate-500">
                       Estimated annual cash distribution
                     </dt>
                     <dd className="mt-0.5 font-semibold text-slate-900">
-                      {formatPortfolioCurrency(record.estimatedAnnualCashDistributionEur)}
+                      {record.estimatedAnnualCashDistributionEur != null
+                        ? formatPortfolioCurrency(
+                            record.estimatedAnnualCashDistributionEur,
+                          )
+                        : "Unavailable"}
                     </dd>
                   </div>
-                ) : null}
-                {record.dataUpdatedAt ? (
-                  <div className="sm:col-span-2">
-                    <dt className="font-semibold text-slate-500">Source updated</dt>
-                    <dd className="mt-0.5 text-slate-800">
-                      {formatShortDate(record.dataUpdatedAt)}
-                    </dd>
+                  {record.dataUpdatedAt ? (
+                    <div className="sm:col-span-2">
+                      <dt className="font-semibold text-slate-500">Updated</dt>
+                      <dd className="mt-0.5 text-slate-800">
+                        {formatShortDate(record.dataUpdatedAt)}
+                      </dd>
+                    </div>
+                  ) : null}
+                </dl>
+
+                {showEstimateEditor && onEstimateChange ? (
+                  <div className="mt-4">
+                    <PassiveIncomeUserEstimateControl
+                      currentEstimate={record.storedUserEstimate}
+                      providerDataUsed={
+                        record.eligibility === "eligible" &&
+                        record.estimateSource === "provider"
+                      }
+                      retainedButExcluded={
+                        record.eligibility === "ineligible" &&
+                        record.storedUserEstimate != null
+                      }
+                      exclusionReason={record.explanation}
+                      onSave={(estimate) =>
+                        onEstimateChange(record.holdingId, estimate)
+                      }
+                      onRemove={() => onEstimateChange(record.holdingId, null)}
+                    />
                   </div>
                 ) : null}
-              </dl>
-            </article>
-          ))}
+              </article>
+            );
+          })}
         </div>
       ) : null}
     </div>
@@ -165,9 +224,14 @@ function formatProgressPercent(value: number | null): string {
 export function PassiveIncomeGoalCard({
   snapshot,
   passiveIncomeTarget,
+  onEstimateChange,
 }: {
   snapshot: PortfolioDividendSnapshot;
   passiveIncomeTarget?: number | null;
+  onEstimateChange?: (
+    holdingId: string,
+    estimate: PassiveIncomeUserEstimate | null,
+  ) => void;
 }) {
   const projection = snapshot.passiveIncome;
   const progressState = buildPassiveIncomeGoalProgressState({
@@ -266,6 +330,10 @@ export function PassiveIncomeGoalCard({
         .
       </p>
 
+      {projection.includesUserEstimates ? (
+        <p className={`mt-1 ${appSectionSubtitleClass}`}>Includes user estimates.</p>
+      ) : null}
+
       <p className={`mt-2 ${appSectionSubtitleClass}`}>{dividendMessage}</p>
 
       <p className={`mt-2 ${appSectionSubtitleClass}`}>
@@ -297,7 +365,10 @@ export function PassiveIncomeGoalCard({
         </p>
       ) : null}
 
-      <PassiveIncomeGoalDetails records={projection.holdingRecords} />
+      <PassiveIncomeGoalDetails
+        records={projection.holdingRecords}
+        onEstimateChange={onEstimateChange}
+      />
     </section>
   );
 }

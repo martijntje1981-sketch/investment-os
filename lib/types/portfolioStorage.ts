@@ -76,6 +76,11 @@ export type StoredPortfolioHolding = {
   createdAt?: string;
   /** User-confirmed distribution policy override for this exact holding. */
   distributionPolicyUserOverride?: import("@/lib/types/distributionPolicy").DistributionPolicyUserOverride;
+  /**
+   * Optional user income estimate used only when provider annual income is unavailable.
+   * Never combined with a provider amount for the same holding.
+   */
+  passiveIncomeUserEstimate?: import("@/lib/types/passiveIncomeUserEstimate").PassiveIncomeUserEstimate | null;
 };
 
 /** Payload sent to POST /api/prices and POST /api/briefing. */

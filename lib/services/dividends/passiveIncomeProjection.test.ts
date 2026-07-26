@@ -451,6 +451,280 @@ describe("passive income projection", () => {
   });
 });
 
+describe("passive income user estimates (phase 1B)", () => {
+  function eligibleWithoutProvider(overrides: Partial<StoredPortfolioHolding> = {}) {
+    return holding({
+      symbol: "CUSTOM",
+      name: "Custom Fund Dist",
+      providerSymbol: "CUSTOM.XETRA",
+      distributionPolicyUserOverride: "distributing",
+      quantity: 10,
+      currentPrice: 200,
+      purchasePrice: 50,
+      ...overrides,
+    });
+  }
+
+  function emptyQuote(symbol = "CUSTOM"): DividendApiQuote {
+    return quote({
+      symbol,
+      providerSymbol: `${symbol}.XETRA`,
+      paysDividends: false,
+      estimatedAnnualDividendEur: null,
+      dividendYield: null,
+      forwardAnnualDividendRate: null,
+    });
+  }
+
+  it("uses 4.5% yield against current market value, never purchase value", () => {
+    const dist = eligibleWithoutProvider({
+      quantity: 10,
+      currentPrice: 200,
+      purchasePrice: 50,
+      passiveIncomeUserEstimate: {
+        mode: "annual_yield",
+        annualYieldPercent: 4.5,
+        updatedAt: "2026-07-26T09:00:00.000Z",
+      },
+    });
+
+    const projection = buildPassiveIncomeProjection([dist], [emptyQuote()]);
+    const record = projection.holdingRecords[0]!;
+
+    // market value = 10 * 200 = 2000; 4.5% = 90. Purchase capital would be 500.
+    expect(record.estimateStatus).toBe("user_estimated");
+    expect(record.estimateSource).toBe("user_annual_yield");
+    expect(record.estimatedAnnualCashDistributionEur).toBe(90);
+    expect(projection.eligibleEstimatedAnnualCashDistributionEur).toBe(90);
+    expect(projection.includesUserEstimates).toBe(true);
+    expect(dist.purchasePrice).toBe(50);
+    expect(dist.quantity).toBe(10);
+  });
+
+  it("applies annual cash amount without requiring current valuation", () => {
+    const dist = eligibleWithoutProvider({
+      currentPrice: 0,
+      previousClose: undefined,
+      passiveIncomeUserEstimate: {
+        mode: "annual_cash_amount",
+        annualCashAmountEur: 480,
+        updatedAt: "2026-07-26T09:00:00.000Z",
+      },
+    });
+
+    const projection = buildPassiveIncomeProjection([dist], [emptyQuote()]);
+    const record = projection.holdingRecords[0]!;
+
+    expect(record.estimateStatus).toBe("user_estimated");
+    expect(record.estimateSource).toBe("user_annual_cash_amount");
+    expect(record.estimatedAnnualCashDistributionEur).toBe(480);
+  });
+
+  it("marks yield unavailable when market value is missing", () => {
+    const dist = eligibleWithoutProvider({
+      currentPrice: 0,
+      previousClose: undefined,
+      passiveIncomeUserEstimate: {
+        mode: "annual_yield",
+        annualYieldPercent: 4.5,
+        updatedAt: "2026-07-26T09:00:00.000Z",
+      },
+    });
+
+    const projection = buildPassiveIncomeProjection([dist], [emptyQuote()]);
+    const record = projection.holdingRecords[0]!;
+
+    expect(record.estimateStatus).toBe("market_value_unavailable");
+    expect(record.estimatedAnnualCashDistributionEur).toBeNull();
+    expect(projection.hasUsableEstimate).toBe(false);
+  });
+
+  it("gives provider data priority and never adds provider plus user estimates", () => {
+    const dist = eligibleWithoutProvider({
+      passiveIncomeUserEstimate: {
+        mode: "annual_cash_amount",
+        annualCashAmountEur: 999,
+        updatedAt: "2026-07-26T09:00:00.000Z",
+      },
+    });
+    // Quote amounts are per-unit; lookup scales by quantity (10).
+    const dividendQuote = quote({
+      symbol: "CUSTOM",
+      providerSymbol: "CUSTOM.XETRA",
+      estimatedAnnualDividendEur: 12,
+    });
+
+    const projection = buildPassiveIncomeProjection([dist], [dividendQuote]);
+    const record = projection.holdingRecords[0]!;
+
+    expect(record.estimateSource).toBe("provider");
+    expect(record.estimateStatus).toBe("estimated");
+    expect(record.estimatedAnnualCashDistributionEur).toBe(120);
+    expect(record.storedUserEstimate?.mode).toBe("annual_cash_amount");
+    expect(projection.eligibleEstimatedAnnualCashDistributionEur).toBe(120);
+    expect(projection.includesUserEstimates).toBe(false);
+  });
+
+  it("falls back to the stored user estimate when provider data disappears", () => {
+    const dist = eligibleWithoutProvider({
+      passiveIncomeUserEstimate: {
+        mode: "annual_cash_amount",
+        annualCashAmountEur: 300,
+        updatedAt: "2026-07-26T09:00:00.000Z",
+      },
+    });
+
+    const withProvider = buildPassiveIncomeProjection(
+      [dist],
+      [quote({ symbol: "CUSTOM", providerSymbol: "CUSTOM.XETRA", estimatedAnnualDividendEur: 8 })],
+    );
+    expect(withProvider.holdingRecords[0]?.estimateSource).toBe("provider");
+    expect(withProvider.eligibleEstimatedAnnualCashDistributionEur).toBe(80);
+
+    const withoutProvider = buildPassiveIncomeProjection([dist], [emptyQuote()]);
+    expect(withoutProvider.holdingRecords[0]?.estimateSource).toBe(
+      "user_annual_cash_amount",
+    );
+    expect(withoutProvider.eligibleEstimatedAnnualCashDistributionEur).toBe(300);
+  });
+
+  it("retains but excludes estimates when the holding becomes ineligible", () => {
+    const estimate = {
+      mode: "annual_cash_amount" as const,
+      annualCashAmountEur: 250,
+      updatedAt: "2026-07-26T09:00:00.000Z",
+    };
+    const accumulating = holding({
+      symbol: "CUSTOM",
+      name: "Custom Fund Acc",
+      providerSymbol: "CUSTOM.XETRA",
+      distributionPolicyUserOverride: "accumulating",
+      passiveIncomeUserEstimate: estimate,
+    });
+
+    const projection = buildPassiveIncomeProjection(
+      [accumulating],
+      [
+        quote({
+          symbol: "CUSTOM",
+          providerSymbol: "CUSTOM.XETRA",
+          estimatedAnnualDividendEur: 999,
+        }),
+      ],
+    );
+    const record = projection.holdingRecords[0]!;
+
+    expect(record.eligibility).toBe("ineligible");
+    expect(record.estimatedAnnualCashDistributionEur).toBeNull();
+    expect(record.storedUserEstimate).toEqual(estimate);
+    expect(record.warnings.some((warning) => /retained/i.test(warning))).toBe(true);
+    expect(projection.eligibleEstimatedAnnualCashDistributionEur).toBe(0);
+  });
+
+  it("reuses a retained estimate when the holding becomes eligible again", () => {
+    const estimate = {
+      mode: "annual_yield" as const,
+      annualYieldPercent: 5,
+      updatedAt: "2026-07-26T09:00:00.000Z",
+    };
+    const eligible = eligibleWithoutProvider({
+      quantity: 10,
+      currentPrice: 100,
+      passiveIncomeUserEstimate: estimate,
+    });
+
+    const projection = buildPassiveIncomeProjection([eligible], [emptyQuote()]);
+    expect(projection.holdingRecords[0]?.estimatedAnnualCashDistributionEur).toBe(50);
+  });
+
+  it("excludes spot crypto and never invents staking income", () => {
+    const btc = holding({
+      symbol: "BTC",
+      name: "Bitcoin",
+      assetType: "crypto",
+      quantity: 1,
+      currentPrice: 50_000,
+      passiveIncomeUserEstimate: {
+        mode: "annual_yield",
+        annualYieldPercent: 5,
+        updatedAt: "2026-07-26T09:00:00.000Z",
+      },
+    });
+
+    const projection = buildPassiveIncomeProjection([btc], []);
+    const record = projection.holdingRecords[0]!;
+
+    expect(record.eligibility).toBe("ineligible");
+    expect(record.estimateStatus).toBe("not_applicable");
+    expect(record.acceptsUserEstimate).toBe(false);
+    expect(record.estimatedAnnualCashDistributionEur).toBeNull();
+    expect(record.explanation).toMatch(/staking/i);
+    expect(projection.eligibleEstimatedAnnualCashDistributionEur).toBe(0);
+  });
+
+  it("shows Unavailable rather than a verified zero when no estimate exists", () => {
+    const dist = eligibleWithoutProvider();
+    const projection = buildPassiveIncomeProjection([dist], [emptyQuote()]);
+
+    expect(projection.holdingRecords[0]?.estimateStatus).toBe("insufficient_data");
+    expect(projection.holdingRecords[0]?.estimatedAnnualCashDistributionEur).toBeNull();
+    expect(projection.hasUsableEstimate).toBe(false);
+    expect(projection.holdingRecords[0]?.acceptsUserEstimate).toBe(true);
+
+    const progress = buildPassiveIncomeGoalProgressState({
+      projection,
+      passiveIncomeTargetEur: 2_400,
+    });
+    expect(progress.status).toBe("estimate-unavailable");
+  });
+
+  it("keeps Dashboard and Goals totals identical via the same snapshot", () => {
+    const dist = eligibleWithoutProvider({
+      passiveIncomeUserEstimate: {
+        mode: "annual_cash_amount",
+        annualCashAmountEur: 360,
+        updatedAt: "2026-07-26T09:00:00.000Z",
+      },
+    });
+    const snapshot = buildPortfolioDividendSnapshot([dist], [emptyQuote()]);
+
+    expect(snapshot.estimatedAnnualIncomeEur).toBe(360);
+    expect(snapshot.passiveIncome.eligibleEstimatedAnnualCashDistributionEur).toBe(360);
+    expect(snapshot.passiveIncome.includesUserEstimates).toBe(true);
+  });
+
+  it("does not mutate cash, valuation, quantity or purchase data when estimating", () => {
+    const cash = holding({
+      id: "cash-1",
+      symbol: "EUR",
+      name: "Euro cash",
+      assetType: "cash",
+      quantity: 5_000,
+      purchasePrice: 1,
+      currentPrice: 1,
+    });
+    const dist = eligibleWithoutProvider({
+      id: "inv-1",
+      quantity: 7,
+      purchasePrice: 88,
+      currentPrice: 120,
+      passiveIncomeUserEstimate: {
+        mode: "annual_yield",
+        annualYieldPercent: 3,
+        updatedAt: "2026-07-26T09:00:00.000Z",
+      },
+    });
+
+    buildPassiveIncomeProjection([cash, dist], [emptyQuote()]);
+
+    expect(cash.quantity).toBe(5_000);
+    expect(cash.currentPrice).toBe(1);
+    expect(dist.quantity).toBe(7);
+    expect(dist.purchasePrice).toBe(88);
+    expect(dist.currentPrice).toBe(120);
+  });
+});
+
 describe("passive income goal progress", () => {
   function projection(total: number, contributing = 1): ReturnType<typeof buildPassiveIncomeProjection> {
     return {
@@ -460,6 +734,7 @@ describe("passive income goal progress", () => {
       excludedHoldingsCount: 0,
       awaitingDataHoldingsCount: 0,
       hasUsableEstimate: contributing > 0 && total > 0,
+      includesUserEstimates: false,
       holdingRecords: [],
       updatedAt: "2026-07-20T00:00:00.000Z",
     };
@@ -528,6 +803,7 @@ describe("passive income goal progress", () => {
         excludedHoldingsCount: 0,
         awaitingDataHoldingsCount: 1,
         hasUsableEstimate: false,
+        includesUserEstimates: false,
         holdingRecords: [],
         updatedAt: null,
       },

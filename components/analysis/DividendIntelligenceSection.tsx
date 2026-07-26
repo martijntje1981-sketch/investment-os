@@ -15,11 +15,13 @@ import {
   formatPortfolioPercent,
 } from "@/lib/client/portfolioAnalysis";
 import { buildDistributionPolicyViewModel } from "@/lib/client/dividendPolicy/buildDividendPolicyViewModel";
+import { buildPassiveIncomeProjection } from "@/lib/services/dividends/passiveIncomeProjection";
 import type { DividendApiQuote } from "@/lib/types/dividends";
 import type {
   DistributionPolicyUserOverride,
   PortfolioDistributionPolicySnapshot,
 } from "@/lib/types/distributionPolicy";
+import type { PassiveIncomeUserEstimate } from "@/lib/types/passiveIncomeUserEstimate";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
 export function DividendIntelligenceSection({
@@ -27,6 +29,7 @@ export function DividendIntelligenceSection({
   quotes,
   isLoading = false,
   onPolicyOverrideChange,
+  onPassiveIncomeEstimateChange,
 }: {
   holdings: StoredPortfolioHolding[];
   quotes: DividendApiQuote[];
@@ -35,11 +38,21 @@ export function DividendIntelligenceSection({
     holdingId: string,
     value: DistributionPolicyUserOverride,
   ) => void;
+  onPassiveIncomeEstimateChange?: (
+    holdingId: string,
+    estimate: PassiveIncomeUserEstimate | null,
+  ) => void;
 }) {
   const viewModel = useMemo(
     () => buildDistributionPolicyViewModel({ holdings, quotes }),
     [holdings, quotes],
   );
+  const passiveIncomeByHoldingId = useMemo(() => {
+    const projection = buildPassiveIncomeProjection(holdings, quotes);
+    return new Map(
+      projection.holdingRecords.map((record) => [record.holdingId, record]),
+    );
+  }, [holdings, quotes]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   return (
@@ -81,10 +94,21 @@ export function DividendIntelligenceSection({
                     current === item.holding.id ? null : item.holding.id,
                   )
                 }
-                canEdit={Boolean(onPolicyOverrideChange)}
+                canEdit={Boolean(
+                  onPolicyOverrideChange || onPassiveIncomeEstimateChange,
+                )}
                 onPolicyOverrideChange={
                   onPolicyOverrideChange
                     ? (value) => onPolicyOverrideChange(item.holding.id, value)
+                    : undefined
+                }
+                passiveIncomeRecord={passiveIncomeByHoldingId.get(
+                  item.holding.id,
+                )}
+                onPassiveIncomeEstimateChange={
+                  onPassiveIncomeEstimateChange
+                    ? (estimate) =>
+                        onPassiveIncomeEstimateChange(item.holding.id, estimate)
                     : undefined
                 }
               />

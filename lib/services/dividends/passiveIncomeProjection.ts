@@ -1,8 +1,9 @@
 /**
  * Conservative passive-income projection — single canonical model for Goals and Dashboard.
- * Uses distribution-policy eligibility + existing dividend quote annual estimates only.
+ * Hierarchy: reliable provider annual EUR amount, otherwise one valid user estimate.
  */
 
+import { getHoldingMarketValue } from "@/lib/client/portfolioAnalysis";
 import {
   classifyDistributionPolicy,
 } from "@/lib/services/dividends/classifyDistributionPolicy";
@@ -14,10 +15,15 @@ import {
 import type { DistributionPolicyClassification } from "@/lib/types/distributionPolicy";
 import type {
   DividendApiQuote,
+  PassiveIncomeEstimateSource,
   PassiveIncomeEstimateStatus,
   PassiveIncomeHoldingRecord,
   PassiveIncomeProjectionSnapshot,
 } from "@/lib/types/dividends";
+import {
+  normalizePassiveIncomeUserEstimate,
+  type PassiveIncomeUserEstimate,
+} from "@/lib/types/passiveIncomeUserEstimate";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
 export type PassiveIncomeGoalProgressState = {
@@ -40,11 +46,6 @@ function isValidAnnualEstimate(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value) && value > 0;
 }
 
-/**
- * Accept only EUR (or missing currency treated as portfolio-base EUR).
- * Non-EUR quotes lack explicit conversion-applied metadata on DividendApiQuote,
- * so their amounts cannot be proven to be portfolio-base EUR.
- */
 function isSafeEurConversion(quote: DividendApiQuote): boolean {
   const currency = quote.currency?.trim().toUpperCase();
   return !currency || currency === "EUR";
@@ -81,12 +82,85 @@ function confidenceLabelFor(classification: DistributionPolicyClassification): s
   }
 }
 
+function readStoredUserEstimate(
+  holding: StoredPortfolioHolding,
+): PassiveIncomeUserEstimate | null {
+  return normalizePassiveIncomeUserEstimate(holding.passiveIncomeUserEstimate);
+}
+
+/**
+ * Resolves a stored user estimate to an annual EUR amount.
+ * Yield mode uses current market value only — never purchase/invested capital.
+ */
+export function resolveUserPassiveIncomeAnnualEur(
+  holding: StoredPortfolioHolding,
+  estimate: PassiveIncomeUserEstimate | null,
+): {
+  amountEur: number | null;
+  status: PassiveIncomeEstimateStatus;
+  source: PassiveIncomeEstimateSource;
+} {
+  if (!estimate) {
+    return { amountEur: null, status: "insufficient_data", source: null };
+  }
+
+  if (estimate.mode === "annual_cash_amount") {
+    return {
+      amountEur: estimate.annualCashAmountEur,
+      status: "user_estimated",
+      source: "user_annual_cash_amount",
+    };
+  }
+
+  const marketValue = getCurrentMarketValueForYield(holding);
+  if (marketValue == null || !(marketValue > 0)) {
+    return {
+      amountEur: null,
+      status: "market_value_unavailable",
+      source: "user_annual_yield",
+    };
+  }
+
+  return {
+    amountEur: (marketValue * estimate.annualYieldPercent) / 100,
+    status: "user_estimated",
+    source: "user_annual_yield",
+  };
+}
+
+/**
+ * Current market value for yield estimates.
+ * Reuses the centralized market-value helper, but rejects purchase-price
+ * fallbacks so invested capital is never treated as current valuation.
+ */
+function getCurrentMarketValueForYield(
+  holding: StoredPortfolioHolding,
+): number | null {
+  if (!Number.isFinite(holding.quantity) || holding.quantity < 0) {
+    return null;
+  }
+
+  const hasCurrentPrice =
+    Number.isFinite(holding.currentPrice) && holding.currentPrice > 0;
+  const hasCryptoPairPrice =
+    holding.assetType === "crypto" &&
+    Number.isFinite(holding.currentPairPrice) &&
+    (holding.currentPairPrice as number) > 0;
+
+  if (!hasCurrentPrice && !hasCryptoPairPrice) {
+    return null;
+  }
+
+  return getHoldingMarketValue(holding);
+}
+
 function explanationForRecord(input: {
   estimateStatus: PassiveIncomeEstimateStatus;
   classification: DistributionPolicyClassification;
   holding?: StoredPortfolioHolding;
+  estimateSource?: PassiveIncomeEstimateSource;
 }): string {
-  const { estimateStatus, classification, holding } = input;
+  const { estimateStatus, classification, holding, estimateSource } = input;
 
   switch (estimateStatus) {
     case "estimated":
@@ -97,8 +171,14 @@ function explanationForRecord(input: {
         return "Included — verified distributing share class.";
       }
       return "Included — reviewed distributing share class.";
+    case "user_estimated":
+      return estimateSource === "user_annual_yield"
+        ? "Included — user estimate (annual yield on current market value)."
+        : "Included — user estimate (annual cash amount).";
     case "insufficient_data":
       return "Income estimate unavailable — verified policy, but no reliable annual distribution data.";
+    case "market_value_unavailable":
+      return "Yield estimate unavailable — current market value is required.";
     case "ineligible_accumulating":
       return "Excluded — income is reinvested internally.";
     case "ineligible_non_distributing":
@@ -139,47 +219,107 @@ function estimateStatusForIneligible(
   }
 }
 
+function baseRecordFields(input: {
+  holding: StoredPortfolioHolding;
+  classification: DistributionPolicyClassification;
+  storedUserEstimate: PassiveIncomeUserEstimate | null;
+}): Pick<
+  PassiveIncomeHoldingRecord,
+  | "holdingId"
+  | "symbol"
+  | "name"
+  | "distributionPolicy"
+  | "classificationConfidence"
+  | "storedUserEstimate"
+> {
+  return {
+    holdingId: input.holding.id,
+    symbol: input.holding.symbol,
+    name: input.holding.name || input.holding.symbol,
+    distributionPolicy: input.classification.policy,
+    classificationConfidence: input.classification.classificationConfidence,
+    storedUserEstimate: input.storedUserEstimate,
+  };
+}
+
 function buildEligibleRecord(input: {
   holding: StoredPortfolioHolding;
   classification: DistributionPolicyClassification;
   quote: DividendApiQuote | null;
 }): PassiveIncomeHoldingRecord {
   const { holding, classification, quote } = input;
-  const warnings: string[] = [];
+  const storedUserEstimate = readStoredUserEstimate(holding);
+  const base = baseRecordFields({ holding, classification, storedUserEstimate });
+  const acceptsUserEstimate = true;
 
-  if (!quote) {
+  const providerSafe =
+    quote != null &&
+    isSafeEurConversion(quote) &&
+    isValidAnnualEstimate(quote.estimatedAnnualDividendEur);
+
+  if (providerSafe && quote) {
     return {
-      holdingId: holding.id,
-      symbol: holding.symbol,
-      name: holding.name || holding.symbol,
-      distributionPolicy: classification.policy,
-      classificationConfidence: classification.classificationConfidence,
+      ...base,
       eligibility: "eligible",
       eligibilityReason: null,
-      estimateStatus: "insufficient_data",
-      estimatedAnnualCashDistributionEur: null,
+      estimateStatus: "estimated",
+      estimatedAnnualCashDistributionEur: quote.estimatedAnnualDividendEur,
+      estimateSource: "provider",
       confidenceLabel: confidenceLabelFor(classification),
       explanation: explanationForRecord({
-        estimateStatus: "insufficient_data",
+        estimateStatus: "estimated",
         classification,
+        estimateSource: "provider",
       }),
-      warnings,
-      sourceFieldsUsed: [],
-      dataUpdatedAt: classification.dataUpdatedAt,
+      warnings: [
+        "Estimates are not guaranteed distributions.",
+        ...(storedUserEstimate
+          ? ["A saved user estimate remains stored but provider data is used."]
+          : []),
+      ],
+      sourceFieldsUsed: sourceFieldsUsedForQuote(quote),
+      dataUpdatedAt: quote.updatedAt ?? classification.dataUpdatedAt,
+      acceptsUserEstimate: false,
     };
   }
 
-  if (!isSafeEurConversion(quote)) {
+  if (quote && !isSafeEurConversion(quote)) {
+    const userResolved = resolveUserPassiveIncomeAnnualEur(
+      holding,
+      storedUserEstimate,
+    );
+    if (isValidAnnualEstimate(userResolved.amountEur)) {
+      return {
+        ...base,
+        eligibility: "eligible",
+        eligibilityReason: null,
+        estimateStatus: "user_estimated",
+        estimatedAnnualCashDistributionEur: userResolved.amountEur,
+        estimateSource: userResolved.source,
+        confidenceLabel: "User estimate",
+        explanation: explanationForRecord({
+          estimateStatus: "user_estimated",
+          classification,
+          estimateSource: userResolved.source,
+        }),
+        warnings: [
+          "User estimate — provider conversion unavailable.",
+          "Estimates are not guaranteed distributions.",
+          "Provider data will take priority when available.",
+        ],
+        sourceFieldsUsed: ["passiveIncomeUserEstimate"],
+        dataUpdatedAt: storedUserEstimate?.updatedAt ?? classification.dataUpdatedAt,
+        acceptsUserEstimate,
+      };
+    }
+
     return {
-      holdingId: holding.id,
-      symbol: holding.symbol,
-      name: holding.name || holding.symbol,
-      distributionPolicy: classification.policy,
-      classificationConfidence: classification.classificationConfidence,
+      ...base,
       eligibility: "eligible",
       eligibilityReason: null,
       estimateStatus: "conversion_unavailable",
       estimatedAnnualCashDistributionEur: null,
+      estimateSource: null,
       confidenceLabel: confidenceLabelFor(classification),
       explanation: explanationForRecord({
         estimateStatus: "conversion_unavailable",
@@ -188,50 +328,81 @@ function buildEligibleRecord(input: {
       warnings: ["EUR conversion unavailable for this dividend quote."],
       sourceFieldsUsed: sourceFieldsUsedForQuote(quote),
       dataUpdatedAt: quote.updatedAt ?? classification.dataUpdatedAt,
+      acceptsUserEstimate,
     };
   }
 
-  const annualEur = quote.estimatedAnnualDividendEur;
-  if (!isValidAnnualEstimate(annualEur)) {
+  const userResolved = resolveUserPassiveIncomeAnnualEur(
+    holding,
+    storedUserEstimate,
+  );
+
+  if (isValidAnnualEstimate(userResolved.amountEur)) {
     return {
-      holdingId: holding.id,
-      symbol: holding.symbol,
-      name: holding.name || holding.symbol,
-      distributionPolicy: classification.policy,
-      classificationConfidence: classification.classificationConfidence,
+      ...base,
       eligibility: "eligible",
       eligibilityReason: null,
-      estimateStatus: "insufficient_data",
-      estimatedAnnualCashDistributionEur: null,
-      confidenceLabel: confidenceLabelFor(classification),
+      estimateStatus: "user_estimated",
+      estimatedAnnualCashDistributionEur: userResolved.amountEur,
+      estimateSource: userResolved.source,
+      confidenceLabel: "User estimate",
       explanation: explanationForRecord({
-        estimateStatus: "insufficient_data",
+        estimateStatus: "user_estimated",
         classification,
+        estimateSource: userResolved.source,
       }),
-      warnings,
-      sourceFieldsUsed: sourceFieldsUsedForQuote(quote),
-      dataUpdatedAt: quote.updatedAt ?? classification.dataUpdatedAt,
+      warnings: [
+        "User estimate — not guaranteed distributions.",
+        "Provider data will take priority when available.",
+        ...(userResolved.source === "user_annual_cash_amount"
+          ? [
+              "Annual cash amount does not automatically adjust when quantity changes.",
+            ]
+          : []),
+      ],
+      sourceFieldsUsed: ["passiveIncomeUserEstimate"],
+      dataUpdatedAt: storedUserEstimate?.updatedAt ?? classification.dataUpdatedAt,
+      acceptsUserEstimate,
+    };
+  }
+
+  if (userResolved.status === "market_value_unavailable") {
+    return {
+      ...base,
+      eligibility: "eligible",
+      eligibilityReason: null,
+      estimateStatus: "market_value_unavailable",
+      estimatedAnnualCashDistributionEur: null,
+      estimateSource: "user_annual_yield",
+      confidenceLabel: "User estimate",
+      explanation: explanationForRecord({
+        estimateStatus: "market_value_unavailable",
+        classification,
+        estimateSource: "user_annual_yield",
+      }),
+      warnings: ["Current market value is required for an annual yield estimate."],
+      sourceFieldsUsed: ["passiveIncomeUserEstimate"],
+      dataUpdatedAt: storedUserEstimate?.updatedAt ?? classification.dataUpdatedAt,
+      acceptsUserEstimate,
     };
   }
 
   return {
-    holdingId: holding.id,
-    symbol: holding.symbol,
-    name: holding.name || holding.symbol,
-    distributionPolicy: classification.policy,
-    classificationConfidence: classification.classificationConfidence,
+    ...base,
     eligibility: "eligible",
     eligibilityReason: null,
-    estimateStatus: "estimated",
-    estimatedAnnualCashDistributionEur: annualEur,
+    estimateStatus: "insufficient_data",
+    estimatedAnnualCashDistributionEur: null,
+    estimateSource: null,
     confidenceLabel: confidenceLabelFor(classification),
     explanation: explanationForRecord({
-      estimateStatus: "estimated",
+      estimateStatus: "insufficient_data",
       classification,
     }),
-    warnings: ["Estimate — not guaranteed future cash distributions."],
-    sourceFieldsUsed: sourceFieldsUsedForQuote(quote),
-    dataUpdatedAt: quote.updatedAt ?? classification.dataUpdatedAt,
+    warnings: ["Add an optional user estimate when provider data is unavailable."],
+    sourceFieldsUsed: quote ? sourceFieldsUsedForQuote(quote) : [],
+    dataUpdatedAt: quote?.updatedAt ?? classification.dataUpdatedAt,
+    acceptsUserEstimate,
   };
 }
 
@@ -241,27 +412,34 @@ function buildIneligibleRecord(input: {
 }): PassiveIncomeHoldingRecord {
   const { holding, classification } = input;
   const estimateStatus = estimateStatusForIneligible(classification);
+  const storedUserEstimate = readStoredUserEstimate(holding);
 
   return {
-    holdingId: holding.id,
-    symbol: holding.symbol,
-    name: holding.name || holding.symbol,
-    distributionPolicy: classification.policy,
-    classificationConfidence: classification.classificationConfidence,
+    ...baseRecordFields({ holding, classification, storedUserEstimate }),
     eligibility: "ineligible",
     eligibilityReason: passiveIncomeIneligibilityReason(classification),
     estimateStatus,
     estimatedAnnualCashDistributionEur: null,
+    estimateSource: null,
     confidenceLabel: confidenceLabelFor(classification),
     explanation: explanationForRecord({
       estimateStatus,
       classification,
       holding,
     }),
-    warnings: [],
+    warnings: storedUserEstimate
+      ? [
+          "A saved user estimate is retained but excluded while this holding is ineligible.",
+        ]
+      : [],
     sourceFieldsUsed: [],
     dataUpdatedAt: classification.dataUpdatedAt,
+    acceptsUserEstimate: false,
   };
+}
+
+function isContributingStatus(status: PassiveIncomeEstimateStatus): boolean {
+  return status === "estimated" || status === "user_estimated";
 }
 
 export function buildPassiveIncomeProjection(
@@ -286,7 +464,7 @@ export function buildPassiveIncomeProjection(
 
   const eligibleEstimatedAnnualCashDistributionEur = holdingRecords.reduce(
     (sum, record) =>
-      record.estimateStatus === "estimated" &&
+      isContributingStatus(record.estimateStatus) &&
       isValidAnnualEstimate(record.estimatedAnnualCashDistributionEur)
         ? sum + record.estimatedAnnualCashDistributionEur
         : sum,
@@ -296,16 +474,20 @@ export function buildPassiveIncomeProjection(
   const eligibleHoldingsCount = holdingRecords.filter(
     (record) => record.eligibility === "eligible",
   ).length;
-  const contributingHoldingsCount = holdingRecords.filter(
-    (record) => record.estimateStatus === "estimated",
+  const contributingHoldingsCount = holdingRecords.filter((record) =>
+    isContributingStatus(record.estimateStatus),
   ).length;
   const excludedHoldingsCount = holdingRecords.filter(
     (record) => record.eligibility === "ineligible",
   ).length;
   const awaitingDataHoldingsCount = holdingRecords.filter(
     (record) =>
-      record.eligibility === "eligible" && record.estimateStatus !== "estimated",
+      record.eligibility === "eligible" &&
+      !isContributingStatus(record.estimateStatus),
   ).length;
+  const includesUserEstimates = holdingRecords.some(
+    (record) => record.estimateStatus === "user_estimated",
+  );
 
   const updatedAt = holdingRecords
     .map((record) => record.dataUpdatedAt)
@@ -320,6 +502,7 @@ export function buildPassiveIncomeProjection(
     excludedHoldingsCount,
     awaitingDataHoldingsCount,
     hasUsableEstimate: contributingHoldingsCount > 0,
+    includesUserEstimates,
     holdingRecords,
     updatedAt,
   };

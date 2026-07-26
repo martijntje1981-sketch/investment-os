@@ -86,7 +86,7 @@ function projectValue(
 }
 
 export default function GoalsPage() {
-  const { userSub, holdings, portfolioReady } = useUserPortfolio();
+  const { userSub, holdings, portfolioReady, saveHoldings } = useUserPortfolio();
   const { goal: savedGoal, hasSavedGoal, persistGoal } = useUserGoal();
   const goalProgress = useGoalProgress({ holdings, goal: savedGoal, hasSavedGoal });
   const { snapshot: dividendSnapshot } = usePortfolioDividends(
@@ -384,6 +384,18 @@ export default function GoalsPage() {
             <PassiveIncomeGoalCard
               snapshot={dividendSnapshot}
               passiveIncomeTarget={savedGoal?.passiveIncomeTarget ?? goal.passiveIncomeTarget}
+              onEstimateChange={(holdingId, estimate) => {
+                saveHoldings(
+                  holdings.map((holding) =>
+                    holding.id === holdingId
+                      ? {
+                          ...holding,
+                          passiveIncomeUserEstimate: estimate ?? undefined,
+                        }
+                      : holding,
+                  ),
+                );
+              }}
             />
           </div>
       </PageContainer>

@@ -55,6 +55,9 @@ export function DashboardDividendCard({
             distributing holding
             {snapshot.passiveIncome.contributingHoldingsCount === 1 ? "" : "s"}.
             Estimates are not guaranteed distributions.
+            {snapshot.passiveIncome.includesUserEstimates
+              ? " Includes user estimates."
+              : ""}
           </p>
         ) : null}
 

@@ -1,8 +1,13 @@
 import type { DistributionPolicyUserOverride } from "@/lib/types/distributionPolicy";
+import {
+  normalizePassiveIncomeUserEstimate,
+  type PassiveIncomeUserEstimate,
+} from "@/lib/types/passiveIncomeUserEstimate";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
 export type InvestmentHoldingMetadata = {
   distributionPolicyUserOverride?: DistributionPolicyUserOverride;
+  passiveIncomeUserEstimate?: PassiveIncomeUserEstimate | null;
 };
 
 function isValidOverride(
@@ -21,52 +26,77 @@ export function parseInvestmentHoldingMetadata(
   if (!metadata || typeof metadata !== "object") return null;
 
   const record = metadata as Record<string, unknown>;
-  const override = record.distributionPolicyUserOverride;
+  const parsed: InvestmentHoldingMetadata = {};
 
-  if (override == null) {
-    return {};
+  if (isValidOverride(record.distributionPolicyUserOverride)) {
+    parsed.distributionPolicyUserOverride = record.distributionPolicyUserOverride;
   }
 
-  if (!isValidOverride(override)) {
-    return {};
+  if ("passiveIncomeUserEstimate" in record) {
+    if (record.passiveIncomeUserEstimate == null) {
+      parsed.passiveIncomeUserEstimate = null;
+    } else {
+      const estimate = normalizePassiveIncomeUserEstimate(
+        record.passiveIncomeUserEstimate,
+      );
+      if (estimate) {
+        parsed.passiveIncomeUserEstimate = estimate;
+      }
+    }
   }
 
-  return {
-    distributionPolicyUserOverride: override,
-  };
+  return parsed;
 }
 
 export function buildInvestmentHoldingMetadata(
   holding: StoredPortfolioHolding,
 ): Record<string, unknown> {
+  const metadata: Record<string, unknown> = {};
   const override = holding.distributionPolicyUserOverride ?? null;
+
   if (isValidOverride(override)) {
-    return {
-      distributionPolicyUserOverride: override,
-    };
+    metadata.distributionPolicyUserOverride = override;
   }
 
-  // Empty object clears a previous override on sync without inventing parallel fields.
-  return {};
+  const estimate = normalizePassiveIncomeUserEstimate(
+    holding.passiveIncomeUserEstimate,
+  );
+  if (estimate) {
+    metadata.passiveIncomeUserEstimate = estimate;
+  }
+
+  return metadata;
 }
 
 export function applyInvestmentMetadataToStoredHolding(
   holding: StoredPortfolioHolding,
   metadata: InvestmentHoldingMetadata,
 ): StoredPortfolioHolding {
+  let next: StoredPortfolioHolding = { ...holding };
+
   if (isValidOverride(metadata.distributionPolicyUserOverride)) {
-    return {
-      ...holding,
+    next = {
+      ...next,
       distributionPolicyUserOverride: metadata.distributionPolicyUserOverride,
+    };
+  } else if (holding.distributionPolicyUserOverride != null) {
+    next = {
+      ...next,
+      distributionPolicyUserOverride: undefined,
     };
   }
 
-  if (holding.distributionPolicyUserOverride == null) {
-    return holding;
+  if (metadata.passiveIncomeUserEstimate) {
+    next = {
+      ...next,
+      passiveIncomeUserEstimate: metadata.passiveIncomeUserEstimate,
+    };
+  } else if ("passiveIncomeUserEstimate" in metadata) {
+    next = {
+      ...next,
+      passiveIncomeUserEstimate: undefined,
+    };
   }
 
-  return {
-    ...holding,
-    distributionPolicyUserOverride: undefined,
-  };
+  return next;
 }

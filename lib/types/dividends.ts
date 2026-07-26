@@ -47,13 +47,21 @@ export type DividendNextPayment = {
 
 export type PassiveIncomeEstimateStatus =
   | "estimated"
+  | "user_estimated"
   | "insufficient_data"
   | "ineligible_accumulating"
   | "ineligible_non_distributing"
   | "ineligible_unknown_policy"
   | "ineligible_conflict"
   | "not_applicable"
-  | "conversion_unavailable";
+  | "conversion_unavailable"
+  | "market_value_unavailable";
+
+export type PassiveIncomeEstimateSource =
+  | "provider"
+  | "user_annual_yield"
+  | "user_annual_cash_amount"
+  | null;
 
 export type PassiveIncomeHoldingRecord = {
   holdingId: string;
@@ -65,11 +73,18 @@ export type PassiveIncomeHoldingRecord = {
   eligibilityReason: string | null;
   estimateStatus: PassiveIncomeEstimateStatus;
   estimatedAnnualCashDistributionEur: number | null;
+  estimateSource: PassiveIncomeEstimateSource;
   confidenceLabel: string;
   explanation: string;
   warnings: string[];
   sourceFieldsUsed: string[];
   dataUpdatedAt: string | null;
+  /** True when the holding may accept or edit a user estimate in UI. */
+  acceptsUserEstimate: boolean;
+  /** Stored user estimate retained even when provider data currently wins. */
+  storedUserEstimate:
+    | import("@/lib/types/passiveIncomeUserEstimate").PassiveIncomeUserEstimate
+    | null;
 };
 
 export type PassiveIncomeProjectionSnapshot = {
@@ -79,6 +94,7 @@ export type PassiveIncomeProjectionSnapshot = {
   excludedHoldingsCount: number;
   awaitingDataHoldingsCount: number;
   hasUsableEstimate: boolean;
+  includesUserEstimates: boolean;
   holdingRecords: PassiveIncomeHoldingRecord[];
   updatedAt: string | null;
 };

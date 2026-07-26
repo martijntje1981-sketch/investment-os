@@ -292,6 +292,18 @@ export default function PortfolioAnalysisPage() {
                     ),
                   );
                 }}
+                onPassiveIncomeEstimateChange={(holdingId, estimate) => {
+                  saveHoldings(
+                    holdings.map((holding) =>
+                      holding.id === holdingId
+                        ? {
+                            ...holding,
+                            passiveIncomeUserEstimate: estimate ?? undefined,
+                          }
+                        : holding,
+                    ),
+                  );
+                }}
               />
 
               <section className="mt-7 grid gap-4 lg:grid-cols-2">
