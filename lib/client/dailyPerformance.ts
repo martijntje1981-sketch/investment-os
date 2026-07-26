@@ -1,5 +1,6 @@
 import { getHoldingMarketValue } from "@/lib/client/portfolioAnalysis";
 import {
+  formatMoverPeriodLabel,
   resolveHoldingMovePeriod,
   resolvePortfolioMovePeriod,
   type HoldingMovePeriod,
@@ -287,7 +288,7 @@ export type HeroMover = {
 export function resolveMoverChangePeriodLabel(
   holding: StoredPortfolioHolding,
 ): string {
-  return resolveHoldingMovePeriod(holding).primaryLabel;
+  return formatMoverPeriodLabel(holding);
 }
 
 export function resolveMoverChangePeriodMeta(
@@ -332,7 +333,7 @@ export function pickTopAndLowestMovers(snapshot: DailyPerformanceSnapshot): {
       holding: performer.holding,
       changePercent: performer.changePercent,
       changeAmount: performer.move,
-      changePeriodLabel: period.primaryLabel,
+      changePeriodLabel: formatMoverPeriodLabel(performer.holding),
       changePeriodAccessibleDescription: period.accessibleDescription,
     };
   };

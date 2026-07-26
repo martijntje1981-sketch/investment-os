@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   MIXED_PORTFOLIO_MOVE_EXPLANATION,
   classifyHoldingForPerformancePeriod,
+  formatMoverPeriodLabel,
+  formatMoverSessionDateLabel,
   formatPortfolioMovePeriodContextLine,
   formatProviderSessionDateLabel,
   providerSessionDateKey,
@@ -181,6 +183,42 @@ describe("resolveHoldingMovePeriod", () => {
   it("preserves date-only provider values without timezone day-shift", () => {
     expect(formatProviderSessionDateLabel("2026-07-24")).toBe("Jul 24");
     expect(providerSessionDateKey("2026-07-24")).toBe("2026-07-24");
+  });
+
+  it("formats mover session dates with weekday for completed sessions", () => {
+    expect(formatMoverSessionDateLabel("2026-07-24")).toBe("Fri 24 Jul");
+    expect(formatMoverSessionDateLabel("2026-07-24T15:30:00.000Z")).toBe(
+      "Fri 24 Jul",
+    );
+    expect(formatMoverSessionDateLabel(null)).toBeNull();
+    expect(formatMoverSessionDateLabel("not-a-date")).toBeNull();
+  });
+
+  it("labels individual movers with crypto/session context without inventing dates", () => {
+    expect(
+      formatMoverPeriodLabel(holding({ symbol: "BTC", assetType: "crypto" })),
+    ).toBe("24h");
+    expect(
+      formatMoverPeriodLabel(
+        holding({
+          symbol: "VWCE",
+          marketPriceUpdatedAt: "2026-07-24",
+        }),
+      ),
+    ).toBe("Last session · Fri 24 Jul");
+    expect(formatMoverPeriodLabel(holding({ symbol: "AAPL" }))).toBe(
+      "Last session",
+    );
+    expect(
+      formatMoverPeriodLabel(holding({ symbol: "EUR", assetType: "cash" })),
+    ).toBe("");
+    expect(
+      formatMoverPeriodLabel({
+        assetType: undefined,
+        marketPriceUpdatedAt: undefined,
+        priceUpdatedAt: undefined,
+      }),
+    ).toBe("");
   });
 
   it("does not invent period metadata from base-currency preference fields", () => {

@@ -3,7 +3,6 @@ import { GoalProgressCard } from "@/components/dashboard/GoalProgressCard";
 import { DashboardSummarySkeleton } from "@/components/dashboard/DashboardSummarySkeleton";
 import type { DashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
 import type { RefreshPricesUiStatus } from "@/lib/client/livePortfolioPriceRefreshAction";
-import type { ReactNode } from "react";
 
 export type DashboardRefreshControl = {
   onRefresh: () => void;
@@ -16,12 +15,13 @@ export type DashboardRefreshControl = {
 
 export function DashboardSummary({
   snapshot,
-  welcome,
+  welcomeFirstName = null,
   isLoading = false,
   refresh,
 }: {
   snapshot: DashboardPortfolioSnapshot;
-  welcome?: ReactNode;
+  /** Existing first name only — never fetch solely for this greeting. */
+  welcomeFirstName?: string | null;
   isLoading?: boolean;
   refresh?: DashboardRefreshControl;
 }) {
@@ -31,12 +31,11 @@ export function DashboardSummary({
 
   return (
     <section aria-label="Portfolio summary" className="space-y-6 md:space-y-7">
-      {welcome ? (
-        <div className="min-w-0 overflow-hidden rounded-[24px] border border-slate-800/70 bg-slate-950 text-white shadow-[0_16px_40px_-20px_rgba(15,23,42,0.45)] md:rounded-[28px]">
-          {welcome}
-        </div>
-      ) : null}
-      <PortfolioValueCard snapshot={snapshot} refresh={refresh} />
+      <PortfolioValueCard
+        snapshot={snapshot}
+        refresh={refresh}
+        welcomeFirstName={welcomeFirstName}
+      />
       <GoalProgressCard snapshot={snapshot} />
     </section>
   );

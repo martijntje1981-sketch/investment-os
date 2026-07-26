@@ -126,6 +126,90 @@ export function formatProviderSessionDateLabel(
   }).format(new Date(parsed));
 }
 
+/**
+ * Mover-tile session date: weekday + day + month (e.g. "Fri 24 Jul").
+ * Uses the same provider timestamp rules as formatProviderSessionDateLabel —
+ * never invents a calendar day from "today".
+ */
+export function formatMoverSessionDateLabel(
+  isoOrDate: string | null | undefined,
+): string | null {
+  if (!isoOrDate || !String(isoOrDate).trim()) {
+    return null;
+  }
+
+  const trimmed = String(isoOrDate).trim();
+  let date: Date;
+  let timeZone: string;
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    const [year, month, day] = trimmed.split("-").map(Number);
+    if (!year || !month || !day) {
+      return null;
+    }
+    date = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+    timeZone = "UTC";
+  } else {
+    const parsed = Date.parse(trimmed);
+    if (!Number.isFinite(parsed)) {
+      return null;
+    }
+    date = new Date(parsed);
+    timeZone = AMSTERDAM_TIME_ZONE;
+  }
+
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    timeZone,
+  }).formatToParts(date);
+
+  const weekday = parts.find((part) => part.type === "weekday")?.value;
+  const day = parts.find((part) => part.type === "day")?.value;
+  const month = parts.find((part) => part.type === "month")?.value;
+  if (!weekday || !day || !month) {
+    return null;
+  }
+
+  return `${weekday} ${day} ${month}`;
+}
+
+/**
+ * Compact period label for an individual hero/top mover tile.
+ * Crypto → 24h; exchange with date → Last session · {date}; exchange without → Last session.
+ * Does not invent dates. Unknown / cash without trustworthy metadata → empty (neutral).
+ */
+export function formatMoverPeriodLabel(
+  holding: Pick<
+    StoredPortfolioHolding,
+    "assetType" | "marketPriceUpdatedAt" | "priceUpdatedAt"
+  >,
+): string {
+  const assetClass = classifyHoldingForPerformancePeriod(holding);
+
+  if (assetClass === "cash") {
+    return "";
+  }
+
+  if (assetClass === "native_crypto") {
+    return "24h";
+  }
+
+  const providerTimestamp = resolveProviderSessionTimestamp(holding);
+  const sessionDateLabel = formatMoverSessionDateLabel(providerTimestamp);
+
+  if (assetClass === "unknown") {
+    return sessionDateLabel ? `Last session · ${sessionDateLabel}` : "";
+  }
+
+  if (sessionDateLabel) {
+    return `Last session · ${sessionDateLabel}`;
+  }
+
+  return "Last session";
+}
+
 /** Stable calendar key for comparing session dates across holdings. */
 export function providerSessionDateKey(
   isoOrDate: string | null | undefined,

@@ -47,13 +47,17 @@ describe("dashboard portfolio value widget", () => {
     expect(summarySource).toContain("PortfolioValueCard");
     expect(summarySource).not.toContain("TodayCard");
     expect(summarySource).not.toContain("DashboardHeroMovers");
+    expect(summarySource).not.toContain("welcome ?");
     expect(valueSource).toContain("Latest portfolio move");
     expect(valueSource).toContain("dailyMoveContextLine");
     expect(valueSource).toContain("Top mover");
     expect(valueSource).toContain("Lowest mover");
+    expect(valueSource).toContain("Welcome back");
     expect(valueSource).toContain("RefreshPricesButton");
     expect(valueSource).toContain("formatEur");
     expect(dashboardSource).toContain("DashboardSummary");
+    expect(dashboardSource).not.toContain("PageHero");
+    expect(dashboardSource).not.toContain("DashboardMoverCard");
   });
 
   it("exposes composition-aware period context lines", () => {

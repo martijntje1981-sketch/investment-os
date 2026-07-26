@@ -87,6 +87,7 @@ function MoverItem({
         : Minus;
   const displayName = mover.holding.name || mover.holding.symbol;
   const href = `/portfolio/${mover.holding.symbol.toLowerCase()}`;
+  const periodLabel = mover.changePeriodLabel.trim();
 
   return (
     <article className="min-w-0 rounded-2xl border border-white/[0.08] bg-white/[0.03] px-3.5 py-3">
@@ -107,14 +108,30 @@ function MoverItem({
             <p className="mt-0.5 truncate text-xs text-white/55">{displayName}</p>
           ) : null}
         </Link>
-        <div className={`flex shrink-0 items-center gap-1 ${accentClass}`}>
-          <Icon className="h-4 w-4" aria-hidden />
-          <span className="text-sm font-bold tabular-nums">
-            {signedPercent(mover.changePercent)}
-          </span>
+        <div
+          className={`flex shrink-0 flex-col items-end gap-0.5 ${accentClass}`}
+        >
+          <div className="flex items-center gap-1">
+            <Icon className="h-4 w-4 shrink-0" aria-hidden />
+            <span className="text-sm font-bold tabular-nums">
+              {signedPercent(mover.changePercent)}
+            </span>
+          </div>
+          {periodLabel ? (
+            <span
+              className="max-w-[9.5rem] truncate text-right text-[11px] font-medium leading-snug text-white/50"
+              title={mover.changePeriodAccessibleDescription}
+              aria-label={mover.changePeriodAccessibleDescription}
+            >
+              {periodLabel}
+            </span>
+          ) : (
+            <span className="sr-only">
+              {mover.changePeriodAccessibleDescription}
+            </span>
+          )}
         </div>
       </div>
-      <p className="sr-only">{mover.changePeriodAccessibleDescription}</p>
     </article>
   );
 }
@@ -168,8 +185,10 @@ function MoversSection({
 export function PortfolioValueCard({
   snapshot,
   refresh,
+  welcomeFirstName = null,
 }: {
   snapshot: DashboardPortfolioSnapshot;
+  welcomeFirstName?: string | null;
   refresh?: {
     onRefresh: () => void;
     isRefreshing: boolean;
@@ -182,6 +201,9 @@ export function PortfolioValueCard({
   const { formatEur } = useBaseCurrencyDisplay();
   const showMove = snapshot.hasDailyData;
   const moveTone = moveToneClass(snapshot);
+  const welcomeLine = welcomeFirstName?.trim()
+    ? `Welcome back, ${welcomeFirstName.trim()}`
+    : "Welcome back";
 
   const amountLabel = showMove
     ? formatSignedPortfolioCurrency(snapshot.todayChange, formatEur)
@@ -209,7 +231,10 @@ export function PortfolioValueCard({
       />
 
       <div className="relative px-5 pb-5 pt-6 sm:px-7 sm:pb-6 sm:pt-7 md:px-8 md:pb-7 md:pt-8">
-        <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-white/55">
+        <p className="text-[11px] font-medium tracking-[0.02em] text-white/45">
+          {welcomeLine}
+        </p>
+        <p className="mt-3 text-[12px] font-bold uppercase tracking-[0.14em] text-white/55">
           Portfolio value
         </p>
         <p

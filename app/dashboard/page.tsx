@@ -7,7 +7,6 @@ import { DashboardDividendCard } from "@/components/dashboard/DashboardDividendC
 import { DashboardAnalystCard } from "@/components/dashboard/DashboardAnalystCard";
 import { DashboardGoalProgressCard } from "@/components/dashboard/DashboardGoalProgressCard";
 import { DashboardIntelligencePreview } from "@/components/dashboard/DashboardIntelligencePreview";
-import { DashboardMoverCard } from "@/components/dashboard/DashboardHero";
 import { DashboardPortfolioHealthCard } from "@/components/dashboard/DashboardPortfolioHealthCard";
 import { DashboardSummary } from "@/components/dashboard/DashboardSummary";
 import { DashboardTodaysDecision } from "@/components/dashboard/DashboardTodaysDecision";
@@ -16,7 +15,6 @@ import { HoldingsToday } from "@/components/dashboard/HoldingsToday";
 import { DashboardInsightCard } from "@/components/dashboard/DashboardInsightCard";
 import { DashboardMarketStatus } from "@/components/dashboard/DashboardMarketStatus";
 import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer";
-import { PageHero } from "@/components/layout/PageHero";
 import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
 import PortfolioSyncBanner from "@/components/PortfolioSyncBanner";
 import { buildPortfolioAnalysis } from "@/lib/client/portfolioAnalysis";
@@ -140,10 +138,6 @@ export default function DashboardPage() {
     portfolioReady,
   ]);
 
-  const heroTitle = firstName
-    ? `Welcome back, ${firstName}`
-    : "Portfolio Dashboard";
-
   if (!portfolioReady) {
     return <AppPageLoading />;
   }
@@ -176,6 +170,7 @@ export default function DashboardPage() {
         <>
           <DashboardSummary
             snapshot={snapshot}
+            welcomeFirstName={firstName}
             refresh={{
               onRefresh: () => void refreshPrices(),
               isRefreshing,
@@ -184,14 +179,6 @@ export default function DashboardPage() {
               message: refreshMessage,
               liveRefreshAt,
             }}
-            welcome={
-              <PageHero
-                embedded
-                variant="dashboard"
-                title={heroTitle}
-                subtitle="Your portfolio at a glance — value, latest move, and what needs attention."
-              />
-            }
           />
 
           <div className="space-y-6 md:space-y-8">
@@ -230,25 +217,6 @@ export default function DashboardPage() {
             </section>
 
             <DashboardInsightCard sections={insightSections} />
-
-            <section className="grid min-w-0 grid-cols-1 gap-6 sm:grid-cols-2">
-              <DashboardMoverCard
-                label="Biggest winner"
-                mover={snapshot.bestMover}
-                tone="positive"
-                hasDailyData={snapshot.hasDailyData}
-                hasReliableMoverData={snapshot.bestMover !== null}
-                coverageMessage={snapshot.dailyPerformanceCoverageMessage}
-              />
-              <DashboardMoverCard
-                label="Biggest loser"
-                mover={snapshot.worstMover}
-                tone="negative"
-                hasDailyData={snapshot.hasDailyData}
-                hasReliableMoverData={snapshot.worstMover !== null}
-                coverageMessage={snapshot.dailyPerformanceCoverageMessage}
-              />
-            </section>
 
             <DashboardMarketStatus lastUpdatedAt={marketUpdatedAt} />
           </div>

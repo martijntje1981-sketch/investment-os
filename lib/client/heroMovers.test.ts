@@ -133,10 +133,10 @@ describe("pickTopAndLowestMovers", () => {
           marketPriceUpdatedAt: "2026-07-24",
         }),
       ),
-    ).toBe("Last session · Jul 24");
+    ).toBe("Last session · Fri 24 Jul");
     expect(
       resolveMoverChangePeriodLabel(holding({ symbol: "AAPL" })),
-    ).toBe("Latest available");
+    ).toBe("Last session");
   });
 
   it("returns movers from covered holdings when coverage is incomplete", () => {
