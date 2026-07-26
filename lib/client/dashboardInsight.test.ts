@@ -154,8 +154,8 @@ describe("home and dashboard hierarchy", () => {
     expect(dashboard).not.toContain("BottomNavigation");
     expect(dashboard).toContain("buildDashboardInsightSections");
     expect(summary).toContain("PortfolioValueCard");
-    expect(summary).toContain("TodayCard");
     expect(summary).toContain("GoalProgressCard");
+    expect(summary).not.toContain("TodayCard");
     expect(holdingsToday).toContain("Your holdings");
     expect(holdingsToday).not.toContain("Your holdings today");
     expect(holdingsToday).toContain("md:hidden");

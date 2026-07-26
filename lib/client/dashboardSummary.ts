@@ -10,7 +10,10 @@ import {
   summarizeDailyPerformance,
   type HeroMover,
 } from "@/lib/client/dailyPerformance";
-import { resolveHoldingMovePeriod } from "@/lib/client/performancePeriod";
+import {
+  formatPortfolioMovePeriodContextLine,
+  resolveHoldingMovePeriod,
+} from "@/lib/client/performancePeriod";
 import { buildPortfolioPerformance } from "@/lib/client/portfolioPerformance";
 import {
   computeGoalProgress,
@@ -48,6 +51,7 @@ export type DashboardSummary = {
   dailyMoveHeroLabel: string;
   dailyMovePeriodDetail: string | null;
   dailyMoveAccessibleDescription: string;
+  dailyMoveContextLine: string;
   bestMover: DashboardMover | null;
   worstMover: DashboardMover | null;
   heroTopMover: HeroMover | null;
@@ -128,6 +132,7 @@ export function buildDashboardSummary(
     dailyMoveHeroLabel: movePeriod.primaryLabel,
     dailyMovePeriodDetail: movePeriod.detail,
     dailyMoveAccessibleDescription: movePeriod.accessibleDescription,
+    dailyMoveContextLine: formatPortfolioMovePeriodContextLine(movePeriod),
     bestMover: bestPerformer
       ? buildMover(
           bestPerformer.holding,

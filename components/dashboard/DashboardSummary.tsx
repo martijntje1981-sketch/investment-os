@@ -1,9 +1,6 @@
 import { PortfolioValueCard } from "@/components/dashboard/PortfolioValueCard";
-import { TodayCard } from "@/components/dashboard/TodayCard";
 import { GoalProgressCard } from "@/components/dashboard/GoalProgressCard";
-import { DashboardHeroMovers } from "@/components/dashboard/DashboardHeroMovers";
 import { DashboardSummarySkeleton } from "@/components/dashboard/DashboardSummarySkeleton";
-import { appHeroShellClass } from "@/components/layout/appSurface";
 import type { DashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
 import type { RefreshPricesUiStatus } from "@/lib/client/livePortfolioPriceRefreshAction";
 import type { ReactNode } from "react";
@@ -34,20 +31,12 @@ export function DashboardSummary({
 
   return (
     <section aria-label="Portfolio summary" className="space-y-6 md:space-y-7">
-      <div className={appHeroShellClass}>
-        {welcome}
-        <DashboardHeroMovers
-          topMover={snapshot.heroTopMover}
-          lowestMover={snapshot.heroLowestMover}
-          hasReliableHeroMoverData={snapshot.hasReliableHeroMoverData}
-          hasDailyData={snapshot.hasDailyData}
-          coverageMessage={snapshot.dailyPerformanceCoverageMessage}
-        />
-        <div className="grid min-w-0 grid-cols-1 border-t border-white/[0.08] md:grid-cols-2">
-          <PortfolioValueCard snapshot={snapshot} embedded refresh={refresh} />
-          <TodayCard snapshot={snapshot} embedded />
+      {welcome ? (
+        <div className="min-w-0 overflow-hidden rounded-[24px] border border-slate-800/70 bg-slate-950 text-white shadow-[0_16px_40px_-20px_rgba(15,23,42,0.45)] md:rounded-[28px]">
+          {welcome}
         </div>
-      </div>
+      ) : null}
+      <PortfolioValueCard snapshot={snapshot} refresh={refresh} />
       <GoalProgressCard snapshot={snapshot} />
     </section>
   );

@@ -348,3 +348,30 @@ export function resolveHoldingsMoveColumnLabel(
   }
   return "Move";
 }
+
+/**
+ * Short contextual line under the portfolio move figure.
+ * Reflects actual composition — never invents live/today/session claims.
+ */
+export function formatPortfolioMovePeriodContextLine(
+  period: PortfolioMovePeriod,
+): string {
+  if (period.kind === "mixed") {
+    return "Exchange-traded: last session · Crypto: 24h";
+  }
+  if (period.kind === "rolling_24h") {
+    return "Crypto: 24h";
+  }
+  if (period.kind === "last_session") {
+    return period.sessionDateLabel
+      ? `Exchange-traded: last session · ${period.sessionDateLabel}`
+      : "Exchange-traded: last session";
+  }
+  if (period.kind === "latest_sessions") {
+    return "Exchange-traded: latest sessions";
+  }
+  if (period.kind === "latest_available") {
+    return "Latest available";
+  }
+  return "Movement period unavailable";
+}

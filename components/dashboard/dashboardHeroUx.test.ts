@@ -3,9 +3,13 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 describe("dashboard hero movers integration", () => {
-  it("renders compact hero movers from the centralized snapshot", () => {
+  it("renders compact hero movers inside the portfolio value widget", () => {
     const summarySource = readFileSync(
       path.resolve(process.cwd(), "components/dashboard/DashboardSummary.tsx"),
+      "utf8",
+    );
+    const valueSource = readFileSync(
+      path.resolve(process.cwd(), "components/dashboard/PortfolioValueCard.tsx"),
       "utf8",
     );
     const dashboardSource = readFileSync(
@@ -20,8 +24,9 @@ describe("dashboard hero movers integration", () => {
       "utf8",
     );
 
-    expect(summarySource).toContain("DashboardHeroMovers");
-    expect(summarySource).toContain("heroTopMover");
+    expect(summarySource).toContain("PortfolioValueCard");
+    expect(valueSource).toContain("heroTopMover");
+    expect(valueSource).toContain("Top mover");
     expect(dashboardSource).not.toContain("Also worth noting");
     expect(intelligenceSource).not.toContain("Also worth noting");
   });

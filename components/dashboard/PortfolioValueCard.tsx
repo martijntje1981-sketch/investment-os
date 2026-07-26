@@ -1,54 +1,175 @@
 "use client";
 
+import Link from "next/link";
+import { Minus, TrendingDown, TrendingUp } from "lucide-react";
+
 import { ConversionDetailsDisclosure } from "@/components/currency/ConversionDetailsDisclosure";
 import { RefreshPricesButton } from "@/components/portfolio/RefreshPricesButton";
 import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
-import { formatMarketUpdateTime } from "@/lib/client/marketStatus";
-import { formatAmsterdamPriceRefreshTime } from "@/lib/client/marketSnapshotSync";
-import { formatSignedPortfolioPercent } from "@/lib/client/portfolioMovementFormat";
+import type { HeroMover } from "@/lib/client/dailyPerformance";
+import { RANKING_AFTER_CLOSE } from "@/lib/client/investorOverviewCopy";
 import type { RefreshPricesUiStatus } from "@/lib/client/livePortfolioPriceRefreshAction";
+import { formatAmsterdamPriceRefreshTime } from "@/lib/client/marketSnapshotSync";
+import { formatMarketUpdateTime } from "@/lib/client/marketStatus";
+import { formatPortfolioPercent } from "@/lib/client/portfolioAnalysis";
 import {
-  appDashboardDarkBodyMediumClass,
-  appDashboardDarkMetaClass,
-  appDashboardDarkMutedClass,
-  appDisplayClass,
-  appHeroMetricLabelClass,
-} from "@/components/layout/appSurface";
+  formatSignedPortfolioCurrency,
+  formatSignedPortfolioPercent,
+} from "@/lib/client/portfolioMovementFormat";
 import type { DashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
 
-function sinceInceptionToneClass(
-  snapshot: DashboardPortfolioSnapshot,
-): string {
-  if (!snapshot.canShowPerformance) {
-    return "text-white/85";
-  }
-
-  if (snapshot.totalReturnPercent > 0) {
-    return "text-emerald-300";
-  }
-
-  if (snapshot.totalReturnPercent < 0) {
-    return "text-red-300";
-  }
-
-  return "text-white/85";
+function signedPercent(value: number) {
+  const formatted = formatPortfolioPercent(Math.abs(value));
+  return value >= 0 ? `+${formatted}` : `−${formatted}`;
 }
 
-function sinceInceptionLabel(snapshot: DashboardPortfolioSnapshot): string {
-  if (!snapshot.canShowPerformance) {
-    return "Return unavailable";
+function moveToneClass(snapshot: DashboardPortfolioSnapshot): string {
+  if (!snapshot.hasDailyData) {
+    return "text-slate-300";
+  }
+  if (snapshot.todayChange > 0) {
+    return "text-emerald-300";
+  }
+  if (snapshot.todayChange < 0) {
+    return "text-red-300";
+  }
+  return "text-slate-200";
+}
+
+function ambientGlowClass(snapshot: DashboardPortfolioSnapshot): string {
+  if (!snapshot.hasDailyData || snapshot.todayChange === 0) {
+    return "from-slate-950 via-slate-950 to-slate-900";
+  }
+  if (snapshot.todayChange > 0) {
+    return "from-slate-950 via-slate-950 to-emerald-950/40";
+  }
+  return "from-slate-950 via-slate-950 to-red-950/35";
+}
+
+function ambientOrbClass(snapshot: DashboardPortfolioSnapshot): string {
+  if (!snapshot.hasDailyData || snapshot.todayChange === 0) {
+    return "bg-white/[0.04]";
+  }
+  if (snapshot.todayChange > 0) {
+    return "bg-emerald-400/10";
+  }
+  return "bg-red-400/10";
+}
+
+function HoldingMark({ symbol }: { symbol: string }) {
+  const initials = symbol.trim().slice(0, 2).toUpperCase() || "—";
+  return (
+    <span
+      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/[0.08] text-[11px] font-black tracking-wide text-white/90 ring-1 ring-white/10"
+      aria-hidden
+    >
+      {initials}
+    </span>
+  );
+}
+
+function MoverItem({
+  label,
+  mover,
+  tone,
+}: {
+  label: string;
+  mover: HeroMover;
+  tone: "positive" | "negative";
+}) {
+  const isPositive = tone === "positive";
+  const accentClass = isPositive ? "text-emerald-300" : "text-red-300";
+  const Icon =
+    isPositive || mover.changePercent > 0
+      ? TrendingUp
+      : mover.changePercent < 0
+        ? TrendingDown
+        : Minus;
+  const displayName = mover.holding.name || mover.holding.symbol;
+  const href = `/portfolio/${mover.holding.symbol.toLowerCase()}`;
+
+  return (
+    <article className="min-w-0 rounded-2xl border border-white/[0.08] bg-white/[0.03] px-3.5 py-3">
+      <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/55">
+        {label}
+      </p>
+      <div className="mt-2.5 flex min-w-0 items-center gap-3">
+        <HoldingMark symbol={mover.holding.symbol} />
+        <Link
+          href={href}
+          className="min-w-0 flex-1 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/50 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+          title={displayName}
+        >
+          <p className="truncate text-sm font-bold text-white">
+            {mover.holding.symbol}
+          </p>
+          {displayName !== mover.holding.symbol ? (
+            <p className="mt-0.5 truncate text-xs text-white/55">{displayName}</p>
+          ) : null}
+        </Link>
+        <div className={`flex shrink-0 items-center gap-1 ${accentClass}`}>
+          <Icon className="h-4 w-4" aria-hidden />
+          <span className="text-sm font-bold tabular-nums">
+            {signedPercent(mover.changePercent)}
+          </span>
+        </div>
+      </div>
+      <p className="sr-only">{mover.changePeriodAccessibleDescription}</p>
+    </article>
+  );
+}
+
+function MoversSection({
+  snapshot,
+}: {
+  snapshot: DashboardPortfolioSnapshot;
+}) {
+  if (!snapshot.hasReliableHeroMoverData || !snapshot.heroTopMover) {
+    const unavailableCopy =
+      snapshot.hasDailyData && snapshot.dailyPerformanceCoverageMessage
+        ? snapshot.dailyPerformanceCoverageMessage
+        : RANKING_AFTER_CLOSE;
+
+    return (
+      <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] px-4 py-3.5">
+        <p className="text-sm leading-relaxed text-white/60">{unavailableCopy}</p>
+      </div>
+    );
   }
 
-  return `${formatSignedPortfolioPercent(snapshot.totalReturnPercent)} since inception`;
+  return (
+    <div
+      className="grid min-w-0 grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-3"
+      aria-label="Portfolio movers"
+    >
+      <MoverItem
+        label="Top mover"
+        mover={snapshot.heroTopMover}
+        tone="positive"
+      />
+      {snapshot.heroLowestMover ? (
+        <MoverItem
+          label="Lowest mover"
+          mover={snapshot.heroLowestMover}
+          tone="negative"
+        />
+      ) : (
+        <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] px-3.5 py-3">
+          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/55">
+            Lowest mover
+          </p>
+          <p className="mt-2.5 text-sm text-white/55">No negative mover</p>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function PortfolioValueCard({
   snapshot,
-  embedded = false,
   refresh,
 }: {
   snapshot: DashboardPortfolioSnapshot;
-  embedded?: boolean;
   refresh?: {
     onRefresh: () => void;
     isRefreshing: boolean;
@@ -59,8 +180,15 @@ export function PortfolioValueCard({
   };
 }) {
   const { formatEur } = useBaseCurrencyDisplay();
-  const showBreakdown =
-    snapshot.cashValue > 0 && snapshot.investedAssetsValue > 0;
+  const showMove = snapshot.hasDailyData;
+  const moveTone = moveToneClass(snapshot);
+
+  const amountLabel = showMove
+    ? formatSignedPortfolioCurrency(snapshot.todayChange, formatEur)
+    : "—";
+  const percentLabel = showMove
+    ? formatSignedPortfolioPercent(snapshot.todayPercent)
+    : null;
 
   const updatedLabel = refresh?.liveRefreshAt
     ? `Updated ${formatAmsterdamPriceRefreshTime(refresh.liveRefreshAt)}`
@@ -68,66 +196,94 @@ export function PortfolioValueCard({
 
   return (
     <article
-      className={
-        embedded
-          ? "min-w-0 px-5 py-7 text-white sm:px-7 sm:py-8 md:px-8 md:py-9"
-          : "min-w-0 rounded-[24px] border border-slate-800/90 bg-slate-950 px-5 py-7 text-white shadow-[0_16px_48px_rgba(15,23,42,0.28)] md:rounded-[28px] md:px-8 md:py-9"
-      }
+      aria-label="Portfolio value"
+      className={`relative min-w-0 overflow-hidden rounded-[28px] border border-white/[0.08] bg-gradient-to-b ${ambientGlowClass(snapshot)} text-white shadow-[0_28px_80px_-24px_rgba(2,6,23,0.75)] md:rounded-[32px]`}
     >
-      <p className={appHeroMetricLabelClass}>Portfolio value</p>
-      <p className={`mt-3 ${appDisplayClass}`}>
-        {snapshot.portfolioValueAvailable
-          ? formatEur(snapshot.portfolioValue)
-          : "Unavailable"}
-      </p>
-      <div className="mt-2">
-        <ConversionDetailsDisclosure compactTrigger tone="dark" />
-      </div>
-      {snapshot.portfolioValueCoverageMessage ? (
-        <p className={`mt-2 ${appDashboardDarkMetaClass}`}>
-          {snapshot.portfolioValueCoverageMessage}
+      <div
+        className={`pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full blur-3xl ${ambientOrbClass(snapshot)}`}
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute -bottom-24 -left-10 h-48 w-48 rounded-full bg-sky-400/[0.04] blur-3xl"
+        aria-hidden
+      />
+
+      <div className="relative px-5 pb-5 pt-6 sm:px-7 sm:pb-6 sm:pt-7 md:px-8 md:pb-7 md:pt-8">
+        <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-white/55">
+          Portfolio value
         </p>
-      ) : null}
-      <p
-        className={`mt-3 ${appDashboardDarkBodyMediumClass} ${sinceInceptionToneClass(snapshot)}`}
-      >
-        {sinceInceptionLabel(snapshot)}
-      </p>
-      {showBreakdown ? (
-        <p className={`mt-4 ${appDashboardDarkMutedClass}`}>
-          Invested {formatEur(snapshot.investedAssetsValue)}
-          {" · "}
-          Cash {formatEur(snapshot.cashValue)}
+        <p
+          className="mt-3 max-w-full break-words text-[2.75rem] font-black leading-[0.95] tracking-[-0.045em] text-white tabular-nums sm:text-[3.25rem] md:text-[3.75rem] lg:text-[4.25rem]"
+        >
+          {snapshot.portfolioValueAvailable
+            ? formatEur(snapshot.portfolioValue)
+            : "Unavailable"}
         </p>
-      ) : null}
-      <div className="mt-4 flex flex-wrap items-center gap-3">
-        <p className={appDashboardDarkMetaClass}>
-          {snapshot.isStale && !refresh?.liveRefreshAt ? "Stale prices · " : null}
-          {updatedLabel}
-        </p>
-        {refresh ? (
-          <RefreshPricesButton
-            variant="compact"
-            onClick={refresh.onRefresh}
-            isRefreshing={refresh.isRefreshing}
-            disabled={refresh.disabled}
-            status={refresh.status}
-          />
+
+        <div className="mt-2.5">
+          <ConversionDetailsDisclosure compactTrigger tone="dark" />
+        </div>
+        {snapshot.portfolioValueCoverageMessage ? (
+          <p className="mt-2 text-[13px] font-medium text-white/60">
+            {snapshot.portfolioValueCoverageMessage}
+          </p>
+        ) : null}
+
+        <div className="mt-7 border-t border-white/[0.08] pt-6">
+          <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-white/55">
+            Latest portfolio move
+          </p>
+          <p
+            className={`mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-[1.875rem] font-bold leading-none tracking-[-0.035em] tabular-nums sm:text-[2.25rem] md:text-[2.75rem] lg:text-[3rem] ${moveTone}`}
+            title={snapshot.dailyMoveAccessibleDescription}
+          >
+            <span>{showMove ? amountLabel : "Change unavailable"}</span>
+            {showMove && percentLabel ? (
+              <span className="opacity-95">{percentLabel}</span>
+            ) : null}
+          </p>
+          <p className="mt-3 text-[13px] font-medium leading-snug text-white/60">
+            {showMove
+              ? snapshot.dailyMoveContextLine
+              : snapshot.dailyPerformanceCoverageMessage ??
+                "Movement period unavailable"}
+          </p>
+        </div>
+
+        <div className="mt-6">
+          <MoversSection snapshot={snapshot} />
+        </div>
+
+        <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-white/[0.08] pt-5">
+          <p className="text-[13px] font-medium text-white/65">
+            {snapshot.isStale && !refresh?.liveRefreshAt ? "Stale prices · " : null}
+            {updatedLabel}
+          </p>
+          {refresh ? (
+            <RefreshPricesButton
+              variant="compact"
+              onClick={refresh.onRefresh}
+              isRefreshing={refresh.isRefreshing}
+              disabled={refresh.disabled}
+              status={refresh.status}
+              className="border-white/15 bg-white/[0.06] hover:bg-white/[0.1]"
+            />
+          ) : null}
+        </div>
+        {refresh?.message &&
+        (refresh.status === "success" ||
+          refresh.status === "error" ||
+          refresh.status === "loading") ? (
+          <p
+            className="mt-2 text-[13px] font-medium text-white/65"
+            role="status"
+            aria-live="polite"
+            data-refresh-feedback={refresh.status}
+          >
+            {refresh.message}
+          </p>
         ) : null}
       </div>
-      {refresh?.message &&
-      (refresh.status === "success" ||
-        refresh.status === "error" ||
-        refresh.status === "loading") ? (
-        <p
-          className={`mt-2 ${appDashboardDarkMetaClass}`}
-          role="status"
-          aria-live="polite"
-          data-refresh-feedback={refresh.status}
-        >
-          {refresh.message}
-        </p>
-      ) : null}
     </article>
   );
 }

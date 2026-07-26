@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   MIXED_PORTFOLIO_MOVE_EXPLANATION,
   classifyHoldingForPerformancePeriod,
+  formatPortfolioMovePeriodContextLine,
   formatProviderSessionDateLabel,
   providerSessionDateKey,
   resolveHoldingMovePeriod,
@@ -193,7 +194,7 @@ describe("resolveHoldingMovePeriod", () => {
       holding({
         symbol: "VWCE",
         marketPriceUpdatedAt: "2026-07-24",
-        currency: "USD",
+        quantity: 25,
       }),
     );
 
@@ -346,5 +347,21 @@ describe("labelling request impact", () => {
     expect(snapshotSource).toContain("resolveHoldingMovePeriod");
     expect(summarySource).toContain("resolveDailyMovePeriodFromPerformers");
     expect(summarySource).toContain("resolveHoldingMovePeriod");
+  });
+});
+
+describe("portfolio move context line", () => {
+  it("formats composition-aware context under the portfolio move", () => {
+    expect(
+      formatPortfolioMovePeriodContextLine(
+        resolvePortfolioMovePeriod([
+          holding({
+            symbol: "VWCE",
+            marketPriceUpdatedAt: "2026-07-24",
+          }),
+          holding({ symbol: "BTC", assetType: "crypto" }),
+        ]),
+      ),
+    ).toBe("Exchange-traded: last session · Crypto: 24h");
   });
 });

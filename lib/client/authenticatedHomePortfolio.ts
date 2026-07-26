@@ -8,6 +8,7 @@ import {
   resolveDailyMovePeriodFromPerformers,
   type DailyPerformer,
 } from "@/lib/client/dailyPerformance";
+import { formatPortfolioMovePeriodContextLine } from "@/lib/client/performancePeriod";
 import { loadUserPortfolioHoldings } from "@/lib/client/portfolioPricing";
 import { resolvePortfolioTotalValueAvailability } from "@/lib/client/portfolioValuationAvailability";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
@@ -52,6 +53,7 @@ export function summarizeAuthenticatedHomePortfolio(
     dailyMoveHeroLabel: movePeriod.primaryLabel,
     dailyMovePeriodDetail: movePeriod.detail,
     dailyMoveAccessibleDescription: movePeriod.accessibleDescription,
+    dailyMoveContextLine: formatPortfolioMovePeriodContextLine(movePeriod),
     bestHolding: toHomeHolding(daily.bestPerformer),
     worstHolding: toHomeHolding(daily.worstPerformer),
     latestUpdatedAt: daily.latestMarketUpdateAt,

@@ -52,6 +52,7 @@ function emptyDashboardSummary(): DashboardSummary {
     dailyMoveHeroLabel: "Latest available",
     dailyMovePeriodDetail: null,
     dailyMoveAccessibleDescription: "No market-move period is available yet.",
+    dailyMoveContextLine: "Movement period unavailable",
     bestMover: null,
     worstMover: null,
     heroTopMover: null,
