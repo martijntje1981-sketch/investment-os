@@ -306,7 +306,9 @@ describe("dashboard Today's Decision integration", () => {
     expect(decisionSection).toContain("TodaysDecisionBlock");
     expect(decisionSection).toContain("buildTodaysDecision");
     expect(preview).toContain("buildIntelligenceDisplayMessage");
+    expect(preview).toContain("NEWS_HUB_PATH");
     expect(preview).not.toContain("TodaysDecisionBlock");
+    expect(preview).not.toContain("DiscoverMissedTeaser");
     expect(dashboard).not.toContain("BottomNavigation");
     expect(dashboard).not.toMatch(/innerWidth|matchMedia|useMediaQuery/);
   });

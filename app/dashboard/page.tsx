@@ -20,7 +20,6 @@ import PortfolioSyncBanner from "@/components/PortfolioSyncBanner";
 import { buildPortfolioAnalysis } from "@/lib/client/portfolioAnalysis";
 import { buildDashboardInsightSections } from "@/lib/client/dashboardInsight";
 import { buildDashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
-import { useDiscoverSnapshot } from "@/lib/client/discoverSnapshot";
 import { areMajorMarketsClosed } from "@/lib/client/todaysDecision";
 import { useAuthenticatedFirstName } from "@/lib/client/useAuthenticatedFirstName";
 import { useInvestmentIntelligence } from "@/lib/client/useInvestmentIntelligence";
@@ -79,12 +78,6 @@ export default function DashboardPage() {
     userSub,
     holdings.length > 0,
   );
-  const { snapshot: discoverSnapshot } = useDiscoverSnapshot({
-    userSub,
-    holdings,
-    goal,
-    enabled: portfolioReady && holdings.length > 0,
-  });
   const { lastRefreshedAt: snapshotRefreshedAt } = useMarketSnapshotMetadata(
     portfolioReady && holdings.length > 0,
   );
@@ -182,39 +175,39 @@ export default function DashboardPage() {
           />
 
           <div className="space-y-6 md:space-y-8">
-            <DashboardTodaysDecision
-              intelligence={intelligence}
-              intelligenceFromCache={intelligenceFromCache}
-              goalProgress={goalProgress}
-              upcomingEvents={payload.upcomingEvents}
-              marketsClosed={marketsClosed}
-            />
+            <div className="grid min-w-0 gap-6 lg:grid-cols-2">
+              <DashboardTodaysDecision
+                intelligence={intelligence}
+                intelligenceFromCache={intelligenceFromCache}
+                goalProgress={goalProgress}
+                upcomingEvents={payload.upcomingEvents}
+                marketsClosed={marketsClosed}
+              />
 
-            <DashboardIntelligencePreview
-              intelligence={intelligence}
-              goalProgress={goalProgress}
-              marketsClosed={marketsClosed}
-              intelligenceFromCache={intelligenceFromCache}
-              missedItems={discoverSnapshot?.thingsYouMayHaveMissed ?? []}
-            />
+              <DashboardIntelligencePreview
+                intelligence={intelligence}
+                goalProgress={goalProgress}
+                marketsClosed={marketsClosed}
+                intelligenceFromCache={intelligenceFromCache}
+              />
+            </div>
 
             <HoldingsToday snapshot={snapshot} />
 
-            <div className="grid min-w-0 gap-6 lg:grid-cols-2">
-              <DashboardPortfolioHealthCard health={portfolioHealth} />
-              <DashboardGoalProgressCard progress={goalProgress} />
-            </div>
+            <DashboardPortfolioHealthCard health={portfolioHealth} />
 
-            <section className="space-y-6 md:space-y-7">
+            <div className="grid min-w-0 gap-6 lg:grid-cols-2">
+              <DashboardGoalProgressCard progress={goalProgress} />
               <DashboardDividendCard
                 snapshot={dividendSnapshot}
                 isLoading={dividendsLoading}
               />
-              <DashboardAnalystCard
-                snapshot={analystSnapshot}
-                isLoading={analystLoading}
-              />
-            </section>
+            </div>
+
+            <DashboardAnalystCard
+              snapshot={analystSnapshot}
+              isLoading={analystLoading}
+            />
 
             <DashboardInsightCard sections={insightSections} />
 

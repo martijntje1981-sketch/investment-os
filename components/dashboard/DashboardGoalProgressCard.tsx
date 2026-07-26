@@ -1,16 +1,16 @@
 "use client";
 
-import type { ReactNode } from "react";
 import { Goal, TrendingDown, TrendingUp, Minus } from "lucide-react";
 import Link from "next/link";
 
 import { DashboardSectionHeader } from "@/components/dashboard/DashboardSectionHeader";
 import {
-  appCardPaddingCompactClass,
+  appCardPaddingClass,
   appCardValueClass,
   appDashboardLightCardClass,
   appSectionBodyClass,
   appSectionLabelClass,
+  appSectionMetaClass,
 } from "@/components/layout/appSurface";
 import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 import { formatPortfolioPercent } from "@/lib/client/portfolioAnalysis";
@@ -23,6 +23,10 @@ const TRAJECTORY_STYLES = {
   Unknown: "bg-slate-100 text-slate-600",
 } as const;
 
+/**
+ * Compact Dashboard preview of Goal Progress (lower section).
+ * Full goal analysis lives on `/goals`. Goal Performance near the top is separate.
+ */
 export function DashboardGoalProgressCard({
   progress,
 }: {
@@ -42,108 +46,86 @@ export function DashboardGoalProgressCard({
         ? TrendingDown
         : Minus;
 
+  const statusLabel = progress.hasGoal ? progress.status : "No goal set";
+
   return (
     <section className={appDashboardLightCardClass}>
       <DashboardSectionHeader
+        variant="compact"
         title="Goal progress"
-        subtitle="Track where you are against your target"
+        subtitle="Progress against your target"
         icon={<Goal className="h-5 w-5" />}
         bordered={false}
       />
 
-      <div className={`border-b border-slate-100 ${appCardPaddingCompactClass}`}>
-        <div className="mt-1 h-2 overflow-hidden rounded-full bg-slate-100">
-          <div
-            className="h-full rounded-full bg-gradient-to-r from-blue-600 via-violet-600 to-fuchsia-500"
-            style={{ width: `${progressWidth}%` }}
-          />
-        </div>
-
-        <div className="mt-5 grid grid-cols-3 gap-3">
-          <Metric label="Current value" value={formatEur(progress.currentValue)} />
-          <Metric
-            label="Goal value"
-            value={
-              progress.hasGoal
-                ? formatEur(progress.targetValue)
-                : "Not set"
-            }
-          />
-          <Metric
-            label="Progress"
-            value={
-              progress.hasGoal
-                ? formatPortfolioPercent(progress.currentProgressPercent)
-                : "—"
-            }
-          />
-        </div>
-      </div>
-
-      <div className="grid gap-px bg-slate-100 sm:grid-cols-3">
-        <InfoBlock label="Current trajectory">
-          <span
-            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${TRAJECTORY_STYLES[progress.currentTrajectory]}`}
-          >
-            <TrajectoryIcon className="h-3.5 w-3.5" />
-            {progress.currentTrajectory}
-          </span>
-        </InfoBlock>
-        <InfoBlock label="Estimated completion">
-          <p className={appCardValueClass}>
-            {progress.estimatedCompletionLabel}
-          </p>
-        </InfoBlock>
-        <InfoBlock label="Remaining to goal">
-          <p className={appCardValueClass}>
-            {progress.hasGoal
-              ? formatEur(progress.remainingAmount)
-              : "—"}
-          </p>
-        </InfoBlock>
-      </div>
-
-      <div className={appCardPaddingCompactClass}>
-        <p className={appSectionLabelClass}>Summary</p>
-        <p className={`mt-2.5 ${appSectionBodyClass} text-slate-700`}>
-          {progress.summary}
-        </p>
-
+      <div className={`${appCardPaddingClass} space-y-4 pt-0`}>
         {!progress.hasGoal ? (
-          <Link
-            href="/goals"
-            className="mt-5 inline-flex min-h-[44px] items-center justify-center rounded-xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white"
-          >
-            Set your goal
-          </Link>
-        ) : null}
+          <>
+            <p className={appSectionBodyClass}>
+              Set a target to track progress from your current portfolio value.
+            </p>
+            <p className={`truncate ${appCardValueClass}`}>
+              {formatEur(progress.currentValue)}
+            </p>
+            <Link
+              href="/goals"
+              className="inline-flex min-h-[40px] items-center text-sm font-semibold text-blue-700 transition hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+            >
+              Set your goal
+            </Link>
+          </>
+        ) : (
+          <>
+            <div className="flex flex-wrap items-center gap-2">
+              <span
+                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${TRAJECTORY_STYLES[progress.currentTrajectory]}`}
+              >
+                <TrajectoryIcon className="h-3.5 w-3.5" aria-hidden />
+                {statusLabel}
+              </span>
+              <span className={appSectionMetaClass}>
+                {formatPortfolioPercent(progress.currentProgressPercent)} complete
+              </span>
+            </div>
+
+            <div className="grid min-w-0 grid-cols-2 gap-3">
+              <div className="min-w-0">
+                <p className={appSectionLabelClass}>Current</p>
+                <p className={`mt-1 truncate ${appCardValueClass}`}>
+                  {formatEur(progress.currentValue)}
+                </p>
+              </div>
+              <div className="min-w-0">
+                <p className={appSectionLabelClass}>Target</p>
+                <p className={`mt-1 truncate ${appCardValueClass}`}>
+                  {formatEur(progress.targetValue)}
+                </p>
+              </div>
+            </div>
+
+            <div
+              className="h-2 overflow-hidden rounded-full bg-slate-100"
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={Math.round(progressWidth)}
+              aria-label="Goal progress"
+            >
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-blue-600 via-violet-600 to-fuchsia-500"
+                style={{ width: `${progressWidth}%` }}
+              />
+            </div>
+
+            <Link
+              href="/goals"
+              className="inline-flex min-h-[40px] items-center text-sm font-semibold text-blue-700 transition hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+            >
+              Open Goals
+            </Link>
+          </>
+        )}
       </div>
     </section>
-  );
-}
-
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-[16px] border border-slate-200 bg-slate-50 px-3 py-3">
-      <p className={appSectionLabelClass}>{label}</p>
-      <p className={`mt-1.5 truncate ${appCardValueClass}`}>
-        {value}
-      </p>
-    </div>
-  );
-}
-
-function InfoBlock({
-  label,
-  children,
-}: {
-  label: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className={`bg-white ${appCardPaddingCompactClass}`}>
-      <p className={appSectionLabelClass}>{label}</p>
-      <div className="mt-2.5">{children}</div>
-    </div>
   );
 }

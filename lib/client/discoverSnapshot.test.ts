@@ -80,8 +80,9 @@ describe("discover UI integration", () => {
 
     expect(discoverPage).toContain("ThingsYouMayHaveMissedSection");
     expect(discoverPage).not.toContain("BottomNavigation");
-    expect(preview).toContain("DiscoverMissedTeaser");
-    expect(dashboard).toContain("useDiscoverSnapshot");
+    expect(preview).not.toContain("DiscoverMissedTeaser");
+    expect(preview).toContain("NEWS_HUB_PATH");
+    expect(dashboard).not.toContain("useDiscoverSnapshot");
     expect(dashboard).toContain("DashboardIntelligencePreview");
     expect(discoverPage).not.toMatch(/innerWidth|matchMedia|useMediaQuery/);
   });
