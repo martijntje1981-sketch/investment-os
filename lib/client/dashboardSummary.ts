@@ -6,12 +6,11 @@ import {
   formatDailyPerformanceCoverageMessage,
   pickBestAndWorstMovers,
   pickTopAndLowestMovers,
-  resolveDailyMoveHeroLabel,
-  resolveDailyMovePeriodDetail,
-  summarizeDailyMovePeriods,
+  resolveDailyMovePeriodFromPerformers,
   summarizeDailyPerformance,
   type HeroMover,
 } from "@/lib/client/dailyPerformance";
+import { resolveHoldingMovePeriod } from "@/lib/client/performancePeriod";
 import { buildPortfolioPerformance } from "@/lib/client/portfolioPerformance";
 import {
   computeGoalProgress,
@@ -25,6 +24,8 @@ export type DashboardMover = {
   symbol: string;
   changePercent: number;
   changeAmount: number;
+  changePeriodLabel: string;
+  changePeriodAccessibleDescription: string;
 };
 
 export type DashboardSummary = {
@@ -46,6 +47,7 @@ export type DashboardSummary = {
   dailyPerformanceCoverageMessage: string | null;
   dailyMoveHeroLabel: string;
   dailyMovePeriodDetail: string | null;
+  dailyMoveAccessibleDescription: string;
   bestMover: DashboardMover | null;
   worstMover: DashboardMover | null;
   heroTopMover: HeroMover | null;
@@ -68,11 +70,14 @@ function buildMover(
   move: number,
   changePercent: number,
 ): DashboardMover {
+  const period = resolveHoldingMovePeriod(holding);
   return {
     name: holding.name || holding.symbol,
     symbol: holding.symbol,
     changePercent,
     changeAmount: move,
+    changePeriodLabel: period.primaryLabel,
+    changePeriodAccessibleDescription: period.accessibleDescription,
   };
 }
 
@@ -92,7 +97,7 @@ export function buildDashboardSummary(
   const { bestMover: bestPerformer, worstMover: worstPerformer } =
     pickBestAndWorstMovers(daily);
   const heroMovers = pickTopAndLowestMovers(daily);
-  const movePeriods = summarizeDailyMovePeriods(daily.performers);
+  const movePeriod = resolveDailyMovePeriodFromPerformers(daily.performers);
 
   const topDailyDriver = [...daily.performers].sort(
     (a, b) => Math.abs(b.move) - Math.abs(a.move),
@@ -120,8 +125,9 @@ export function buildDashboardSummary(
     eligibleMarketHoldingCount: daily.eligibleMarketHoldingCount,
     performanceCoverageComplete: daily.performanceCoverageComplete,
     dailyPerformanceCoverageMessage: formatDailyPerformanceCoverageMessage(daily),
-    dailyMoveHeroLabel: resolveDailyMoveHeroLabel(movePeriods),
-    dailyMovePeriodDetail: resolveDailyMovePeriodDetail(movePeriods),
+    dailyMoveHeroLabel: movePeriod.primaryLabel,
+    dailyMovePeriodDetail: movePeriod.detail,
+    dailyMoveAccessibleDescription: movePeriod.accessibleDescription,
     bestMover: bestPerformer
       ? buildMover(
           bestPerformer.holding,

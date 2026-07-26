@@ -1,9 +1,9 @@
 /** Friendly display copy for Home and Dashboard — presentation only. */
 
 export const DAILY_PERFORMANCE_AFTER_CLOSE =
-  "Today's performance will appear after market close.";
+  "Latest session performance will appear when price data is available.";
 export const RANKING_AFTER_CLOSE =
-  "Today's ranking will appear after market close.";
+  "Latest movers will appear when price data is available.";
 
 export function formatTodayMoveValue(input: {
   hasDailyData: boolean;

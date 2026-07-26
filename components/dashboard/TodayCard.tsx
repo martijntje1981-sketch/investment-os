@@ -51,8 +51,7 @@ export function TodayCard({
   const percentLabel = formatTodayMoveDetail({
     hasDailyData: snapshot.hasDailyData,
     performanceCoverageComplete: snapshot.performanceCoverageComplete,
-    formatPercent: () =>
-      `${formatSignedPortfolioPercent(snapshot.todayPercent)} today`,
+    formatPercent: () => formatSignedPortfolioPercent(snapshot.todayPercent),
     coverageMessage: snapshot.dailyPerformanceCoverageMessage,
     mixedPeriodDetail: snapshot.dailyMovePeriodDetail,
   });
@@ -68,7 +67,10 @@ export function TodayCard({
           : "min-w-0 rounded-[24px] border border-slate-200/80 bg-white px-5 py-6 shadow-sm md:px-6 md:py-7"
       }
     >
-      <p className={embedded ? appHeroMetricLabelClass : appSectionLabelClass}>
+      <p
+        className={embedded ? appHeroMetricLabelClass : appSectionLabelClass}
+        title={snapshot.dailyMoveAccessibleDescription}
+      >
         {snapshot.dailyMoveHeroLabel}
       </p>
       <p

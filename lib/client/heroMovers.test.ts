@@ -22,6 +22,8 @@ function holding(
     changePercent: overrides.changePercent,
     previousClose: overrides.previousClose,
     change24hPercent: overrides.change24hPercent,
+    marketPriceUpdatedAt: overrides.marketPriceUpdatedAt,
+    priceUpdatedAt: overrides.priceUpdatedAt,
   };
 }
 
@@ -118,15 +120,23 @@ describe("pickTopAndLowestMovers", () => {
     expect(movers.lowestMover).toBeNull();
   });
 
-  it("labels crypto movers with 24h and equities with Today", () => {
+  it("labels crypto movers with 24h and equities with Last session", () => {
     expect(
       resolveMoverChangePeriodLabel(
         holding({ symbol: "BTC", assetType: "crypto" }),
       ),
     ).toBe("24h");
-    expect(resolveMoverChangePeriodLabel(holding({ symbol: "VWCE" }))).toBe(
-      "Today",
-    );
+    expect(
+      resolveMoverChangePeriodLabel(
+        holding({
+          symbol: "VWCE",
+          marketPriceUpdatedAt: "2026-07-24",
+        }),
+      ),
+    ).toBe("Last session · Jul 24");
+    expect(
+      resolveMoverChangePeriodLabel(holding({ symbol: "AAPL" })),
+    ).toBe("Latest available");
   });
 
   it("returns movers from covered holdings when coverage is incomplete", () => {

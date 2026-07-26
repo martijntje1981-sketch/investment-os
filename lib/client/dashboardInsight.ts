@@ -23,7 +23,7 @@ function formatSignedCurrency(value: number): string {
 
 function buildDriverSentence(summary: DashboardSummary): string {
   if (!summary.hasDailyData || !summary.topDailyDriver) {
-    return "Today's move cannot be measured yet because previous-close prices are not available for all holdings.";
+    return "The latest portfolio move cannot be measured yet because previous-close prices are not available for all holdings.";
   }
 
   if (!summary.performanceCoverageComplete && summary.dailyPerformanceCoverageMessage) {
@@ -33,11 +33,14 @@ function buildDriverSentence(summary: DashboardSummary): string {
 
   if (!summary.performanceCoverageComplete) {
     return summary.dailyPerformanceCoverageMessage ??
-      "Today's move is incomplete because previous-close prices are missing for some holdings.";
+      "The latest portfolio move is incomplete because previous-close prices are missing for some holdings.";
   }
 
   const { symbol, move } = summary.topDailyDriver;
-  return `The largest daily driver is ${symbol}, contributing ${formatSignedCurrency(move)} to today's portfolio move.`;
+  const periodPhrase = summary.dailyMoveHeroLabel
+    ? summary.dailyMoveHeroLabel.toLowerCase()
+    : "latest portfolio move";
+  return `The largest driver is ${symbol}, contributing ${formatSignedCurrency(move)} to the ${periodPhrase}.`;
 }
 
 function buildRiskSentence(summary: DashboardSummary): string {
@@ -82,10 +85,10 @@ function buildConclusionSentence(summary: DashboardSummary): string {
   }
 
   if (summary.todayChange >= 0) {
-    return "Conclusion: today's move is constructive, but concentration and goal progress still deserve a quick review.";
+    return "Conclusion: the latest move is constructive, but concentration and goal progress still deserve a quick review.";
   }
 
-  return "Conclusion: today's pullback warrants monitoring, but long-term goal progress matters more than one session.";
+  return "Conclusion: the latest pullback warrants monitoring, but long-term goal progress matters more than one session.";
 }
 
 export type DashboardInsightSections = {

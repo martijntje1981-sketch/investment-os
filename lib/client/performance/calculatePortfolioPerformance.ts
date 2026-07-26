@@ -22,6 +22,7 @@ import {
   resolveHoldingChangePercent,
   summarizeDailyPerformance,
 } from "@/lib/client/dailyPerformance";
+import { resolvePortfolioMovePeriod } from "@/lib/client/performancePeriod";
 import {
   buildPortfolioPerformance,
 } from "@/lib/client/portfolioPerformance";
@@ -224,7 +225,7 @@ function buildDailyPerformance(
 
   return {
     period: "1D",
-    periodLabel: periodLabel("1D"),
+    periodLabel: resolvePortfolioMovePeriod(holdings).primaryLabel,
     calculationMethod: METHOD,
     dataAvailability,
     availabilityMessage,

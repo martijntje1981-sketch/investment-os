@@ -120,6 +120,16 @@ function holdingTodayLabel(
   );
 }
 
+function holdingPeriodMeta(row: DashboardHoldingRow): string | null {
+  if (row.assetType === "cash" || row.isCrypto) {
+    return null;
+  }
+  if (row.changeStatus !== "available" || !row.changePeriodLabel) {
+    return null;
+  }
+  return row.changePeriodLabel;
+}
+
 export function HoldingsTodayRow({
   row,
   layout,
@@ -131,6 +141,7 @@ export function HoldingsTodayRow({
 }) {
   const { formatEur } = useBaseCurrencyDisplay();
   const changeLabel = holdingTodayLabel(row, formatEur);
+  const periodMeta = holdingPeriodMeta(row);
   const surfaceClass = rowSurfaceClass(index, layout);
 
   if (layout === "desktop") {
@@ -148,9 +159,15 @@ export function HoldingsTodayRow({
           <HoldingValueLabel row={row} formatEur={formatEur} />
         </td>
         <td
-          className={`whitespace-nowrap px-4 py-4 text-right align-middle ${appTableChangeClass} ${changeToneClass(row)}`}
+          className={`px-4 py-4 text-right align-middle ${appTableChangeClass} ${changeToneClass(row)}`}
+          title={row.changePeriodAccessibleDescription || undefined}
         >
-          {changeLabel}
+          <p className="whitespace-nowrap">{changeLabel}</p>
+          {periodMeta ? (
+            <p className="mt-0.5 text-[11px] font-medium text-slate-500">
+              {periodMeta}
+            </p>
+          ) : null}
         </td>
       </tr>
     );
@@ -164,13 +181,21 @@ export function HoldingsTodayRow({
         <p className={`truncate ${appTableNameClass}`}>{row.name}</p>
         <p className={`mt-0.5 ${appTickerClass}`}>{holdingSecondaryLabel(row)}</p>
       </div>
-      <div className="shrink-0 text-right">
+      <div
+        className="shrink-0 text-right"
+        title={row.changePeriodAccessibleDescription || undefined}
+      >
         <p className={appTableValueClass}>
           <HoldingValueLabel row={row} formatEur={formatEur} />
         </p>
         <p className={`mt-1 ${appTableChangeClass} ${changeToneClass(row)}`}>
           {changeLabel}
         </p>
+        {periodMeta ? (
+          <p className="mt-0.5 text-[11px] font-medium text-slate-500">
+            {periodMeta}
+          </p>
+        ) : null}
       </div>
     </div>
   );

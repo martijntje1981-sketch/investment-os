@@ -112,8 +112,8 @@ describe("investor overview copy", () => {
         formatPercent: () => "+1.2%",
       }),
     ).toBe(DAILY_PERFORMANCE_AFTER_CLOSE);
-    expect(RANKING_AFTER_CLOSE).toContain("ranking");
-    expect(RANKING_AFTER_CLOSE).toContain("after market close");
+    expect(RANKING_AFTER_CLOSE).toContain("movers");
+    expect(RANKING_AFTER_CLOSE.toLowerCase()).toContain("available");
   });
 });
 
@@ -156,7 +156,8 @@ describe("home and dashboard hierarchy", () => {
     expect(summary).toContain("PortfolioValueCard");
     expect(summary).toContain("TodayCard");
     expect(summary).toContain("GoalProgressCard");
-    expect(holdingsToday).toContain("Your holdings today");
+    expect(holdingsToday).toContain("Your holdings");
+    expect(holdingsToday).not.toContain("Your holdings today");
     expect(holdingsToday).toContain("md:hidden");
     expect(holdingsToday).toContain("hidden md:block");
     expect(preview).not.toContain("Also worth noting");

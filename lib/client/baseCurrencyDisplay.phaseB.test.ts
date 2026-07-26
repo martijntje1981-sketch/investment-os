@@ -13,7 +13,39 @@ import { formatPortfolioCurrency } from "@/lib/client/portfolioAnalysis";
 /**
  * Markup contract for Conversion details (avoids importing .tsx into vitest).
  */
-function ConversionDetailsFixture({ open = false }: { open?: boolean }) {
+function ConversionDetailsFixture({
+  open = false,
+  baseCurrency = "USD",
+}: {
+  open?: boolean;
+  baseCurrency?: "EUR" | "USD" | "GBP";
+}) {
+  const rateBody =
+    baseCurrency === "EUR"
+      ? createElement(
+          "p",
+          null,
+          "Portfolio ledger and selected base currency are both EUR. No conversion is required.",
+        )
+      : createElement(
+          "div",
+          null,
+          createElement("p", null, baseCurrency),
+          createElement("p", null, "Latest available FX rate"),
+          createElement(
+            "p",
+            null,
+            baseCurrency === "USD" ? "€1 = $1.1765" : "€1 = £1.25",
+          ),
+          createElement(
+            "p",
+            null,
+            baseCurrency === "USD" ? "$1 = €0.85" : "£1 = €0.8",
+          ),
+          createElement("p", null, "Source: EODHD"),
+          createElement("p", null, `EUR → ${baseCurrency}`),
+        );
+
   return createElement(
     "div",
     null,
@@ -35,9 +67,7 @@ function ConversionDetailsFixture({ open = false }: { open?: boolean }) {
             role: "region",
             "aria-labelledby": "conversion-details-trigger",
           },
-          createElement("p", null, "Converted from EUR"),
-          createElement("p", null, "Latest available FX rate"),
-          createElement("p", null, "Source: EODHD"),
+          rateBody,
         )
       : null,
   );
@@ -55,10 +85,23 @@ describe("conversion details disclosure accessibility", () => {
       createElement(ConversionDetailsFixture, { open: true }),
     );
     expect(open).toContain('role="region"');
-    expect(open).toContain("Converted from EUR");
     expect(open).toContain("Latest available FX rate");
+    expect(open).toContain("€1 = $1.1765");
+    expect(open).toContain("$1 = €0.85");
     expect(open).toContain("EODHD");
+    expect(open).toContain("EUR → USD");
+    expect(open).not.toContain("US$");
     expect(open).not.toContain("Live rate");
+  });
+
+  it("explains EUR identity without provider-rate details", () => {
+    const open = renderToStaticMarkup(
+      createElement(ConversionDetailsFixture, { open: true, baseCurrency: "EUR" }),
+    );
+    expect(open).toContain("both EUR");
+    expect(open).toContain("No conversion is required");
+    expect(open).not.toContain("EODHD");
+    expect(open).not.toContain("€1 =");
   });
 
   it("supports a dark-tone trigger class for hero surfaces", () => {
@@ -75,6 +118,20 @@ describe("conversion details disclosure accessibility", () => {
     );
     expect(html).toContain("text-slate-200");
     expect(html).toContain("min-h-[44px]");
+  });
+
+  it("keeps conversion details as a disclosure over existing FX snapshot data", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { resolve } = await import("node:path");
+    const source = readFileSync(
+      resolve(process.cwd(), "components/currency/ConversionDetailsDisclosure.tsx"),
+      "utf8",
+    );
+
+    expect(source).toContain("useBaseCurrencyDisplay");
+    expect(source).toContain("formatFxRateDisclosureLines");
+    expect(source).not.toMatch(/fetchFx|PriceService|getForex|loadFx/i);
+    expect(source).toContain("tone === \"dark\"");
   });
 });
 

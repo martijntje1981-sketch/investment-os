@@ -189,7 +189,7 @@ export default function DashboardPage() {
                 embedded
                 variant="dashboard"
                 title={heroTitle}
-                subtitle="Your portfolio at a glance — value, today's move, and what needs attention."
+                subtitle="Your portfolio at a glance — value, latest move, and what needs attention."
               />
             }
           />

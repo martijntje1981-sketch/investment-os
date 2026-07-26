@@ -36,6 +36,7 @@ import {
   resolveHoldingDisplayPrice,
 } from "@/lib/client/holdingValuation";
 import { resolveHoldingChangePercent } from "@/lib/client/dailyPerformance";
+import { resolveHoldingMovePeriod } from "@/lib/client/performancePeriod";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 
 type Currency = "EUR" | "USD" | "GBP";
@@ -727,6 +728,7 @@ export default function HoldingDetailPage() {
   const dailyChange = resolveHoldingChangePercent(holding);
   const hasDailyChange =
     typeof dailyChange === "number" && Number.isFinite(dailyChange);
+  const movePeriod = resolveHoldingMovePeriod(holding);
   const resolvedPrice = displayPrice.price;
   const thesisStatus =
     intelligence.healthScore >= 85
@@ -839,13 +841,22 @@ export default function HoldingDetailPage() {
                   <TrendingDown className="h-5 w-5" />
                 )
               }
-              label="Today's change"
+              label={
+                movePeriod.primaryLabel ||
+                (holding.assetType === "crypto" ? "24h" : "Latest available")
+              }
               value={
                 hasDailyChange
                   ? `${dailyChange >= 0 ? "+" : ""}${formatPercentage(dailyChange)}`
                   : "Awaiting data"
               }
-              detail="Versus previous close"
+              detail={
+                movePeriod.kind === "rolling_24h"
+                  ? "Change over the last 24 hours"
+                  : movePeriod.sessionDateLabel
+                    ? `Versus previous close · ${movePeriod.sessionDateLabel}`
+                    : "Versus previous close"
+              }
               tone={
                 !hasDailyChange
                   ? "neutral"

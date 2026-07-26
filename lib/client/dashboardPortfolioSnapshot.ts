@@ -1,5 +1,6 @@
 import { buildDashboardSummary, type DashboardSummary } from "@/lib/client/dashboardSummary";
 import { logLivePriceRefreshTrace } from "@/lib/client/marketDataRefreshTrace";
+import { resolveHoldingMovePeriod } from "@/lib/client/performancePeriod";
 import {
   computeHoldingDayMove,
   resolveHoldingChangePercent,
@@ -32,10 +33,14 @@ export type DashboardHoldingRow = {
   portfolioWeightPercent: number | null;
   dailyChangeAmount: number | null;
   dailyChangePercent: number | null;
+  changePeriodLabel: string;
+  changePeriodAccessibleDescription: string;
   priceStatus: DashboardHoldingPriceStatus;
   changeStatus: DashboardHoldingChangeStatus;
   priceQuality: DashboardHoldingPriceQuality;
   lastUpdatedAt: string | null;
+  marketPriceUpdatedAt: string | null;
+  priceUpdatedAt: string | null;
   isStale: boolean;
   isCrypto: boolean;
 };
@@ -72,10 +77,14 @@ function buildDashboardHoldingRow(
           : null,
       dailyChangeAmount: null,
       dailyChangePercent: null,
+      changePeriodLabel: "",
+      changePeriodAccessibleDescription: "Cash has no market-move period.",
       priceStatus: currentValue !== null ? "available" : "unavailable",
       changeStatus: "available",
       priceQuality: "live",
       lastUpdatedAt: null,
+      marketPriceUpdatedAt: null,
+      priceUpdatedAt: null,
       isStale: false,
       isCrypto: false,
     };
@@ -96,6 +105,7 @@ function buildDashboardHoldingRow(
         : holding.priceDataStatus === "stale"
           ? "stale"
           : "live";
+  const movePeriod = resolveHoldingMovePeriod(holding);
 
   return {
     id: holding.id,
@@ -114,13 +124,17 @@ function buildDashboardHoldingRow(
         : null,
     dailyChangeAmount,
     dailyChangePercent,
+    changePeriodLabel: movePeriod.primaryLabel,
+    changePeriodAccessibleDescription: movePeriod.accessibleDescription,
     priceStatus: currentValue !== null ? "available" : "unavailable",
     changeStatus:
       currentValue !== null && dailyChangePercent !== null
         ? "available"
         : "unavailable",
     priceQuality,
-    lastUpdatedAt: holding.marketPriceUpdatedAt ?? holding.updatedAt ?? null,
+    lastUpdatedAt: holding.marketPriceUpdatedAt ?? holding.priceUpdatedAt ?? holding.updatedAt ?? null,
+    marketPriceUpdatedAt: holding.marketPriceUpdatedAt ?? null,
+    priceUpdatedAt: holding.priceUpdatedAt ?? null,
     isStale: holding.priceDataStatus === "stale",
     isCrypto: holding.assetType === "crypto",
   };

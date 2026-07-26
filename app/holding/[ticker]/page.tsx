@@ -10,6 +10,7 @@ import {
   computeHoldingDayMove,
   resolveHoldingChangePercent,
 } from "@/lib/client/dailyPerformance";
+import { resolveHoldingMovePeriod } from "@/lib/client/performancePeriod";
 import {
   buildHoldingValuation,
   getHoldingCostBasis,
@@ -194,6 +195,7 @@ export default function HoldingPage() {
     dayChangeValue === null
       ? "Awaiting data"
       : `${dayChangeValue >= 0 ? "+" : ""}${euro.format(dayChangeValue)}`;
+  const movePeriod = resolveHoldingMovePeriod(holding);
 
   return (
     <>
@@ -258,8 +260,11 @@ export default function HoldingPage() {
                         ? "text-slate-400"
                         : getPerformanceClass(dailyChangePercent)
                     }`}
+                    title={movePeriod.accessibleDescription}
                   >
-                    {dayChangeLabel} today
+                    {dailyChangePercent === null
+                      ? dayChangeLabel
+                      : `${dayChangeLabel} · ${movePeriod.primaryLabel}`}
                   </p>
                 </div>
 

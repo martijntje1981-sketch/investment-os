@@ -287,10 +287,10 @@ describe("mixed portfolio daily movement", () => {
     expect(summary.validPerformanceCount).toBe(2);
     expect(summary.todayChange).toBeGreaterThan(0);
     expect(resolveDailyMoveHeroLabel(summarizeDailyMovePeriods(summary.performers))).toBe(
-      "Market move",
+      "Latest portfolio move",
     );
     expect(resolveDailyMovePeriodDetail(summarizeDailyMovePeriods(summary.performers))).toBe(
-      "Equities today · Crypto 24h",
+      "Exchange-traded assets use their latest session; crypto uses 24h.",
     );
   });
 
@@ -415,8 +415,10 @@ describe("mixed portfolio daily movement", () => {
     expect(summary.performanceCoverageComplete).toBe(false);
     expect(summary.todayChange).toBeGreaterThan(0);
     expect(summary.dailyPerformanceCoverageMessage).toBe("Based on 2 of 3 holdings.");
-    expect(summary.dailyMoveHeroLabel).toBe("Market move");
-    expect(summary.dailyMovePeriodDetail).toBe("Equities today · Crypto 24h");
+    expect(summary.dailyMoveHeroLabel).toBe("Latest portfolio move");
+    expect(summary.dailyMovePeriodDetail).toBe(
+      "Exchange-traded assets use their latest session; crypto uses 24h.",
+    );
 
     const movers = pickTopAndLowestMovers(summarizeDailyPerformance([
       equity({

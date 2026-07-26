@@ -11,6 +11,7 @@ import {
   appSectionLabelClass,
 } from "@/components/layout/appSurface";
 import type { DashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
+import { resolveHoldingsMoveColumnLabel } from "@/lib/client/performancePeriod";
 
 export function HoldingsToday({
   snapshot,
@@ -19,6 +20,14 @@ export function HoldingsToday({
   snapshot: DashboardPortfolioSnapshot;
   isLoading?: boolean;
 }) {
+  const moveColumnLabel = resolveHoldingsMoveColumnLabel(
+    snapshot.marketHoldings.map((row) => ({
+      assetType: row.assetType,
+      marketPriceUpdatedAt: row.marketPriceUpdatedAt ?? undefined,
+      priceUpdatedAt: row.priceUpdatedAt ?? undefined,
+    })),
+  );
+
   if (isLoading) {
     return <HoldingsTodaySkeleton />;
   }
@@ -28,15 +37,14 @@ export function HoldingsToday({
       <section className={appDashboardLightCardClass}>
         <DashboardSectionHeader
           variant="holdings"
-          title="Your holdings today"
-          subtitle="Live values and today's movement"
+          title="Your holdings"
+          subtitle="Live values and latest movement"
           icon={<Wallet className="h-5 w-5" />}
           bordered={false}
         />
         <div className={appCardPaddingClass}>
           <p className={appSectionBodyClass}>
-            Add market-priced holdings to see live values and today&apos;s
-            movement.
+            Add market-priced holdings to see live values and latest movement.
           </p>
           <Link
             href="/upload"
@@ -52,13 +60,13 @@ export function HoldingsToday({
 
   const positionSubtitle = `${snapshot.marketHoldings.length} ${
     snapshot.marketHoldings.length === 1 ? "position" : "positions"
-  } monitored today`;
+  } monitored`;
 
   return (
     <section className={appDashboardLightCardClass}>
       <DashboardSectionHeader
         variant="holdings"
-        title="Your holdings today"
+        title="Your holdings"
         subtitle={positionSubtitle}
         icon={<Wallet className="h-5 w-5" />}
       />
@@ -88,7 +96,7 @@ export function HoldingsToday({
                   Value
                 </th>
                 <th className={`w-[32%] px-4 py-3.5 text-right ${appSectionLabelClass}`}>
-                  Today
+                  {moveColumnLabel}
                 </th>
               </tr>
             </thead>

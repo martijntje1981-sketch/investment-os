@@ -93,8 +93,8 @@ describe("Dashboard hero movers responsive layout", () => {
       ]),
     );
 
-    expect(movers.topMover?.changePeriodLabel).toBe("Today");
-    expect(movers.lowestMover?.changePeriodLabel).toBe("Today");
+    expect(movers.topMover?.changePeriodLabel).toBe("Latest available");
+    expect(movers.lowestMover?.changePeriodLabel).toBe("Latest available");
   });
 
   it("does not fabricate movers when change data is unavailable", () => {

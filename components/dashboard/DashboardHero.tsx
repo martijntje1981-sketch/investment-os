@@ -231,10 +231,18 @@ export function DashboardMoverCard({
               {signedCurrency(mover.changeAmount, formatEur)}
             </p>
           </div>
+          {mover.changePeriodLabel ? (
+            <p
+              className={`mt-1.5 ${appSectionMetaClass} text-slate-600`}
+              title={mover.changePeriodAccessibleDescription}
+            >
+              {mover.changePeriodLabel}
+            </p>
+          ) : null}
         </>
       ) : (
         <p className={`mt-2.5 ${appSectionBodyClass} text-slate-600`}>
-          No {tone === "positive" ? "positive" : "negative"} mover today.
+          No {tone === "positive" ? "positive" : "negative"} mover for this period.
         </p>
       )}
     </article>

@@ -5,7 +5,7 @@ export function HoldingsTodaySkeleton() {
   return (
     <section className={appCardClass} aria-busy="true" aria-label="Loading holdings">
       <DashboardSectionHeader
-        title="Your holdings today"
+        title="Your holdings"
         subtitle="Loading positions…"
         bordered={false}
       />

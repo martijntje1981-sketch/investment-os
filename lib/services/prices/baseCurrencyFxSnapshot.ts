@@ -129,6 +129,7 @@ export function formatBaseCurrencyAmount(
   return new Intl.NumberFormat("en-GB", {
     style: "currency",
     currency: snapshot.baseCurrency,
+    currencyDisplay: "narrowSymbol",
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   }).format(converted);
@@ -180,18 +181,67 @@ export function baseCurrencyFxStatusLabel(
   }
 }
 
-export function formatEurToBaseRateDisclosure(
+/** Trim FX rate decimals (max 4) without trailing zeros. */
+export function formatFxRateValue(rate: number): string {
+  if (!isValidFxRate(rate)) {
+    return "";
+  }
+
+  const fixed = rate.toFixed(4);
+  if (!fixed.includes(".")) {
+    return fixed;
+  }
+
+  return fixed.replace(/\.?0+$/, "");
+}
+
+export type FxRateDisclosureLines = {
+  forward: string;
+  reciprocal: string;
+  conversionPath: string;
+};
+
+/**
+ * Human-readable forward and reciprocal FX lines for conversion details.
+ * Uses narrow symbols (€, $, £). Returns null when rates are missing/invalid.
+ */
+export function formatFxRateDisclosureLines(
   snapshot: BaseCurrencyFxSnapshot,
-): string | null {
-  if (
-    snapshot.baseCurrency === "EUR" ||
-    snapshot.eurToBaseRate == null ||
-    !Number.isFinite(snapshot.eurToBaseRate)
-  ) {
+): FxRateDisclosureLines | null {
+  if (snapshot.baseCurrency === "EUR") {
     return null;
   }
 
-  return `1 EUR = ${snapshot.eurToBaseRate.toFixed(4)} ${snapshot.baseCurrency}`;
+  const rate = snapshot.eurToBaseRate;
+  if (!isValidFxRate(rate)) {
+    return null;
+  }
+
+  const reciprocal = 1 / rate;
+  if (!isValidFxRate(reciprocal)) {
+    return null;
+  }
+
+  const baseSymbol =
+    snapshot.baseCurrency === "USD"
+      ? "$"
+      : snapshot.baseCurrency === "GBP"
+        ? "£"
+        : "€";
+
+  return {
+    forward: `€1 = ${baseSymbol}${formatFxRateValue(rate)}`,
+    reciprocal: `${baseSymbol}1 = €${formatFxRateValue(reciprocal)}`,
+    conversionPath: `EUR → ${snapshot.baseCurrency}`,
+  };
+}
+
+/** @deprecated Prefer formatFxRateDisclosureLines for dual-direction copy. */
+export function formatEurToBaseRateDisclosure(
+  snapshot: BaseCurrencyFxSnapshot,
+): string | null {
+  const lines = formatFxRateDisclosureLines(snapshot);
+  return lines?.forward ?? null;
 }
 
 /**

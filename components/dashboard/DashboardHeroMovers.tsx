@@ -68,7 +68,11 @@ function MoverTile({
               {signedPercent(mover.changePercent)}
             </span>
           </div>
-          <span className={`${appDashboardDarkMetaClass} text-[11px]`}>
+          <span
+            className={`${appDashboardDarkMetaClass} text-[11px]`}
+            title={mover.changePeriodAccessibleDescription}
+            aria-label={mover.changePeriodAccessibleDescription}
+          >
             {mover.changePeriodLabel}
           </span>
         </div>

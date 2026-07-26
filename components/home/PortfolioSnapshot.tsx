@@ -168,7 +168,7 @@ export function PortfolioSnapshot({
   hasDailyData = true,
   performanceCoverageComplete = true,
   dailyPerformanceCoverageMessage = null,
-  dailyMoveHeroLabel = "Today's change",
+  dailyMoveHeroLabel = "Last session",
   dailyMovePeriodDetail = null,
   bestHolding,
   worstHolding,
@@ -236,7 +236,7 @@ export function PortfolioSnapshot({
           </div>
           <div className="min-w-0 bg-white px-5 py-4 sm:px-6">
             <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-              Today&apos;s %
+              Change %
             </p>
             <p
               className={`mt-1 text-2xl font-black tracking-[-0.03em] ${
@@ -245,11 +245,15 @@ export function PortfolioSnapshot({
             >
               {todayPercentValue}
             </p>
-            <p className="mt-1 text-base text-slate-500">
-              {showTodayMove
-                ? dailyMovePeriodDetail ?? "Compared with previous close"
-                : todayDetail}
-            </p>
+            {showTodayMove ? (
+              dailyMovePeriodDetail ? (
+                <p className="mt-1 text-base text-slate-500">
+                  {dailyMovePeriodDetail}
+                </p>
+              ) : null
+            ) : (
+              <p className="mt-1 text-base text-slate-500">{todayDetail}</p>
+            )}
           </div>
         </div>
 
@@ -273,7 +277,7 @@ export function PortfolioSnapshot({
 
         <div className="border-t border-slate-100 px-5 py-4 sm:px-6">
           <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-            Best & worst today
+            Best &amp; worst movers
           </p>
           <div className="mt-3 space-y-2">
             <MoverRow
