@@ -12,6 +12,7 @@ import { DashboardSummary } from "@/components/dashboard/DashboardSummary";
 import { DashboardTodaysDecision } from "@/components/dashboard/DashboardTodaysDecision";
 import { DashboardProductionDebugMarker } from "@/components/dashboard/DashboardProductionDebugMarker";
 import { HoldingsToday } from "@/components/dashboard/HoldingsToday";
+import { DashboardPortfolioExposureCard } from "@/components/dashboard/DashboardPortfolioExposureCard";
 import { DashboardInsightCard } from "@/components/dashboard/DashboardInsightCard";
 import { DashboardMarketStatus } from "@/components/dashboard/DashboardMarketStatus";
 import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer";
@@ -31,6 +32,7 @@ import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 import { useMarketSnapshotMetadata } from "@/lib/client/useMarketSnapshotMetadata";
 import { useLivePortfolioPriceRefresh } from "@/lib/client/useLivePortfolioPriceRefresh";
 import { buildPortfolioHealthScore } from "@/lib/services/portfolio/portfolioHealthScore";
+import { buildPortfolioExposureAllocation } from "@/lib/services/classification";
 import { logDashboardProductionDiagnostics } from "@/lib/client/investmentOsProductionDebug";
 
 export default function DashboardPage() {
@@ -85,6 +87,11 @@ export default function DashboardPage() {
   const snapshot = useMemo(
     () => buildDashboardPortfolioSnapshot(holdings, goal, hasSavedGoal),
     [goal, hasSavedGoal, holdings],
+  );
+
+  const exposureAllocation = useMemo(
+    () => buildPortfolioExposureAllocation(holdings),
+    [holdings],
   );
 
   const marketUpdatedAt = snapshotRefreshedAt ?? snapshot.lastUpdatedAt;
@@ -193,6 +200,8 @@ export default function DashboardPage() {
             </div>
 
             <HoldingsToday snapshot={snapshot} />
+
+            <DashboardPortfolioExposureCard allocation={exposureAllocation} />
 
             <DashboardPortfolioHealthCard health={portfolioHealth} />
 
