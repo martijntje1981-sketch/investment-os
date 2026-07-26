@@ -54,21 +54,54 @@ describe("dividend intelligence", () => {
     expect(scaled.estimatedNextPaymentEur).toBe(12.5);
   });
 
-  it("builds portfolio dividend snapshot totals", () => {
-    const holdings = [
-      holding({ symbol: "VWCE", name: "Vanguard All-World", quantity: 10, currentPrice: 100, providerSymbol: "VWCE.XETRA" }),
-      holding({ symbol: "ASML", name: "ASML", quantity: 2, currentPrice: 900, providerSymbol: "ASML.AS" }),
-    ];
+  it("builds portfolio dividend snapshot totals from eligible distributing holdings", () => {
+    const dist = holding({
+      symbol: "SYN-DIST",
+      name: "Synthetic Global Dist UCITS ETF",
+      isin: "IE00TESTDIST01",
+      providerSymbol: "SYNDIST.XETRA",
+      quantity: 10,
+      currentPrice: 100,
+    });
+    const asml = holding({
+      symbol: "ASML",
+      name: "ASML",
+      quantity: 2,
+      currentPrice: 900,
+      providerSymbol: "ASML.AS",
+    });
 
-    const snapshot = buildPortfolioDividendSnapshot(holdings, [
-      quote({ symbol: "VWCE", estimatedAnnualDividendEur: 12 }),
-      quote({ symbol: "ASML", estimatedAnnualDividendEur: 15, dividendYield: 1.2 }),
-    ]);
+    const snapshot = buildPortfolioDividendSnapshot(
+      [dist, asml],
+      [
+        quote({
+          symbol: "SYN-DIST",
+          providerSymbol: "SYNDIST.XETRA",
+          estimatedAnnualDividendEur: 12,
+          verifiedCashDistributionEvent: {
+            date: "2026-06-01",
+            amount: 0.42,
+            currency: "EUR",
+          },
+        }),
+        quote({
+          symbol: "ASML",
+          providerSymbol: "ASML.AS",
+          estimatedAnnualDividendEur: 15,
+          dividendYield: 1.2,
+          verifiedCashDistributionEvent: {
+            date: "2026-05-01",
+            amount: 1.52,
+            currency: "EUR",
+          },
+        }),
+      ],
+    );
 
     expect(snapshot.estimatedAnnualIncomeEur).toBe(150);
     expect(snapshot.payingHoldingsCount).toBe(2);
     expect(snapshot.hasDividendData).toBe(true);
-    expect(snapshot.largestContributor?.symbol).toBe("VWCE");
+    expect(snapshot.passiveIncome.contributingHoldingsCount).toBe(2);
   });
 
   it("generates concentration insight when income is concentrated", () => {

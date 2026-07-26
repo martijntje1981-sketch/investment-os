@@ -6,4 +6,5 @@ export * from "@/lib/services/dividends/dividendInsights";
 export * from "@/lib/services/dividends/resolveDividendQuote";
 export * from "@/lib/services/dividends/classifyDistributionPolicy";
 export * from "@/lib/services/dividends/passiveIncomeEligibility";
-export * from "@/lib/services/dividends/reviewedDistributionPolicyRegistry";
+export * from "@/lib/services/dividends/passiveIncomeProjection";
+export * from "@/lib/services/dividends/dividendQuoteLookup";

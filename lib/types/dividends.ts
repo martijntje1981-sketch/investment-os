@@ -45,6 +45,43 @@ export type DividendNextPayment = {
   amountEur: number;
 };
 
+export type PassiveIncomeEstimateStatus =
+  | "estimated"
+  | "insufficient_data"
+  | "ineligible_accumulating"
+  | "ineligible_unknown_policy"
+  | "ineligible_conflict"
+  | "not_applicable"
+  | "conversion_unavailable";
+
+export type PassiveIncomeHoldingRecord = {
+  holdingId: string;
+  symbol: string;
+  name: string;
+  distributionPolicy: import("@/lib/types/distributionPolicy").DistributionPolicy;
+  classificationConfidence: import("@/lib/types/distributionPolicy").DistributionPolicyConfidence;
+  eligibility: "eligible" | "ineligible";
+  eligibilityReason: string | null;
+  estimateStatus: PassiveIncomeEstimateStatus;
+  estimatedAnnualCashDistributionEur: number | null;
+  confidenceLabel: string;
+  explanation: string;
+  warnings: string[];
+  sourceFieldsUsed: string[];
+  dataUpdatedAt: string | null;
+};
+
+export type PassiveIncomeProjectionSnapshot = {
+  eligibleEstimatedAnnualCashDistributionEur: number;
+  eligibleHoldingsCount: number;
+  contributingHoldingsCount: number;
+  excludedHoldingsCount: number;
+  awaitingDataHoldingsCount: number;
+  hasUsableEstimate: boolean;
+  holdingRecords: PassiveIncomeHoldingRecord[];
+  updatedAt: string | null;
+};
+
 export type PortfolioDividendSnapshot = {
   hasDividendData: boolean;
   estimatedAnnualIncomeEur: number;
@@ -64,6 +101,8 @@ export type PortfolioDividendSnapshot = {
   observations: string[];
   insight: string;
   updatedAt: string | null;
+  /** Conservative passive-income projection used by Goals and Dashboard. */
+  passiveIncome: PassiveIncomeProjectionSnapshot;
 };
 
 export type DividendApiResponse = {

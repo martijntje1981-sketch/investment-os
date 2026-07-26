@@ -3,6 +3,12 @@
  */
 
 import { getHoldingMarketValue } from "@/lib/client/portfolioAnalysis";
+import { buildDividendInsight, buildDividendObservations } from "@/lib/services/dividends/dividendInsights";
+import { buildPassiveIncomeProjection } from "@/lib/services/dividends/passiveIncomeProjection";
+import {
+  findDividendQuoteForHolding,
+  scaleDividendQuoteForQuantity,
+} from "@/lib/services/dividends/dividendQuoteLookup";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 import type {
   DividendAllocationItem,
@@ -10,52 +16,8 @@ import type {
   DividendNextPayment,
   PortfolioDividendSnapshot,
 } from "@/lib/types/dividends";
-import { buildDividendInsight, buildDividendObservations } from "@/lib/services/dividends/dividendInsights";
 
-function quoteLookupKeys(quote: DividendApiQuote): string[] {
-  return [
-    quote.symbol.trim().toUpperCase(),
-    quote.providerSymbol.trim().toUpperCase(),
-  ];
-}
-
-export function scaleDividendQuoteForQuantity(
-  quote: DividendApiQuote,
-  quantity: number,
-): DividendApiQuote {
-  if (quantity <= 0 || quantity === 1) return quote;
-
-  return {
-    ...quote,
-    estimatedAnnualDividendEur:
-      quote.estimatedAnnualDividendEur != null
-        ? quote.estimatedAnnualDividendEur * quantity
-        : null,
-    estimatedNextPaymentEur:
-      quote.estimatedNextPaymentEur != null
-        ? quote.estimatedNextPaymentEur * quantity
-        : null,
-  };
-}
-
-export function findDividendQuoteForHolding(
-  holding: StoredPortfolioHolding,
-  quotes: DividendApiQuote[],
-): DividendApiQuote | null {
-  const keys = new Set<string>();
-  keys.add(holding.symbol.trim().toUpperCase());
-  if (holding.providerSymbol) {
-    keys.add(holding.providerSymbol.trim().toUpperCase());
-  }
-
-  const base =
-    quotes.find((quote) =>
-      quoteLookupKeys(quote).some((key) => keys.has(key)),
-    ) ?? null;
-
-  if (!base) return null;
-  return scaleDividendQuoteForQuantity(base, holding.quantity);
-}
+export { findDividendQuoteForHolding, scaleDividendQuoteForQuantity };
 
 function incomeDiversificationLabel(
   concentrationSharePercent: number,
@@ -69,32 +31,45 @@ export function buildPortfolioDividendSnapshot(
   holdings: StoredPortfolioHolding[],
   quotes: DividendApiQuote[],
 ): PortfolioDividendSnapshot {
+  const passiveIncome = buildPassiveIncomeProjection(holdings, quotes);
   const investments = holdings.filter((holding) => holding.assetType !== "cash");
   const portfolioValue = holdings.reduce(
     (sum, holding) => sum + (getHoldingMarketValue(holding) ?? 0),
     0,
   );
 
-  const matched = investments
-    .map((holding) => ({
-      holding,
-      quote: findDividendQuoteForHolding(holding, quotes),
-    }))
-    .filter(({ quote }) => quote?.paysDividends && (quote.estimatedAnnualDividendEur ?? 0) > 0);
+  const matched = passiveIncome.holdingRecords
+    .filter((record) => record.estimateStatus === "estimated")
+    .map((record) => {
+      const holding = investments.find((item) => item.id === record.holdingId);
+      const quote = holding
+        ? findDividendQuoteForHolding(holding, quotes)
+        : null;
+      return { holding, quote, record };
+    })
+    .filter(
+      (
+        item,
+      ): item is {
+        holding: StoredPortfolioHolding;
+        quote: DividendApiQuote;
+        record: (typeof passiveIncome.holdingRecords)[number];
+      } => Boolean(item.holding && item.quote),
+    );
 
-  const estimatedAnnualIncomeEur = matched.reduce(
-    (sum, { quote }) => sum + (quote?.estimatedAnnualDividendEur ?? 0),
-    0,
-  );
+  const estimatedAnnualIncomeEur =
+    passiveIncome.eligibleEstimatedAnnualCashDistributionEur;
 
   const allocation: DividendAllocationItem[] = matched
-    .map(({ holding, quote }) => ({
+    .map(({ holding, record }) => ({
       symbol: holding.symbol,
       name: holding.name || holding.symbol,
-      incomeEur: quote?.estimatedAnnualDividendEur ?? 0,
+      incomeEur: record.estimatedAnnualCashDistributionEur ?? 0,
       sharePercent:
         estimatedAnnualIncomeEur > 0
-          ? ((quote?.estimatedAnnualDividendEur ?? 0) / estimatedAnnualIncomeEur) * 100
+          ? ((record.estimatedAnnualCashDistributionEur ?? 0) /
+              estimatedAnnualIncomeEur) *
+            100
           : 0,
     }))
     .sort((a, b) => b.incomeEur - a.incomeEur);
@@ -162,6 +137,7 @@ export function buildPortfolioDividendSnapshot(
     ...snapshotBase,
     observations,
     insight,
+    passiveIncome,
   };
 }
 

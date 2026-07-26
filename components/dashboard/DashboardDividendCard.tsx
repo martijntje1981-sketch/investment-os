@@ -22,7 +22,7 @@ export function DashboardDividendCard({
   snapshot,
   isLoading = false,
 }: DashboardDividendCardProps) {
-  if (!snapshot.hasDividendData && !isLoading) {
+  if (!snapshot.passiveIncome.hasUsableEstimate && !snapshot.hasDividendData && !isLoading) {
     return null;
   }
 
@@ -34,7 +34,7 @@ export function DashboardDividendCard({
     >
       <DashboardSectionHeader
         title="Dividend intelligence"
-        subtitle="Estimated annual dividend income"
+        subtitle="Estimated annual cash distributions from eligible holdings"
         icon={<Coins className="h-5 w-5" />}
         iconToneClassName="bg-emerald-50 text-emerald-700"
         bordered={false}
@@ -44,8 +44,26 @@ export function DashboardDividendCard({
         <p className={appCardValueClass}>
           {isLoading
             ? "Loading dividend insights…"
-            : formatPortfolioCurrency(snapshot.estimatedAnnualIncomeEur)}
+            : snapshot.passiveIncome.hasUsableEstimate
+              ? formatPortfolioCurrency(snapshot.estimatedAnnualIncomeEur)
+              : "Unavailable"}
         </p>
+
+        {!isLoading && snapshot.passiveIncome.hasUsableEstimate ? (
+          <p className={`mt-2 ${appSectionMetaClass}`}>
+            Based on {snapshot.passiveIncome.contributingHoldingsCount} eligible
+            distributing holding
+            {snapshot.passiveIncome.contributingHoldingsCount === 1 ? "" : "s"}.
+            Estimates are not guaranteed distributions.
+          </p>
+        ) : null}
+
+        {!isLoading && !snapshot.passiveIncome.hasUsableEstimate ? (
+          <p className={`mt-2 ${appSectionMetaClass}`}>
+            Some holdings are excluded because their distribution policy or income
+            data is not verified.
+          </p>
+        ) : null}
 
         {!isLoading ? (
           <>
@@ -87,10 +105,10 @@ export function DashboardDividendCard({
             </div>
 
             <Link
-              href="/analysis"
+              href="/goals"
               className="mt-6 inline-flex min-h-[44px] items-center text-sm font-semibold text-blue-700"
             >
-              View dividend analysis
+              View passive income goal
             </Link>
           </>
         ) : null}

@@ -1,15 +1,19 @@
-import type { PortfolioDividendSnapshot } from "@/lib/types/dividends";
+import type { PassiveIncomeProjectionSnapshot } from "@/lib/types/dividends";
 
 export type GoalDividendReliability = "reliable" | "partial" | "unavailable";
 
 export function getGoalDividendReliability(
-  snapshot: PortfolioDividendSnapshot,
+  projection: PassiveIncomeProjectionSnapshot,
 ): GoalDividendReliability {
-  if (snapshot.hasDividendData && snapshot.estimatedAnnualIncomeEur > 0) {
+  if (projection.hasUsableEstimate) {
     return "reliable";
   }
 
-  if (snapshot.payingHoldingsCount > 0 || snapshot.updatedAt) {
+  if (
+    projection.eligibleHoldingsCount > 0 ||
+    projection.awaitingDataHoldingsCount > 0 ||
+    projection.updatedAt
+  ) {
     return "partial";
   }
 
@@ -18,13 +22,17 @@ export function getGoalDividendReliability(
 
 export function buildGoalDividendMessage(
   reliability: GoalDividendReliability,
+  projection: PassiveIncomeProjectionSnapshot,
 ): string {
   switch (reliability) {
     case "reliable":
-      return "Estimated from verified dividend data on matched holdings.";
+      return `Based on ${projection.contributingHoldingsCount} eligible holding${projection.contributingHoldingsCount === 1 ? "" : "s"}. Estimates are not guaranteed distributions.`;
     case "partial":
-      return "Some holdings lack reliable dividend data. Figures may be incomplete.";
+      if (projection.eligibleHoldingsCount > 0 && !projection.hasUsableEstimate) {
+        return "Some eligible holdings lack reliable annual distribution data. Figures may be incomplete.";
+      }
+      return "Some holdings are excluded because their distribution policy or income data is not verified.";
     default:
-      return "Dividend estimates are temporarily unavailable for the current portfolio.";
+      return "Passive-income estimates are temporarily unavailable for the current portfolio.";
   }
 }
