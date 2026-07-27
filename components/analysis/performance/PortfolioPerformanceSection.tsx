@@ -13,6 +13,7 @@ import {
 } from "@/components/analysis/performance/PortfolioPerformanceChart";
 import {
   appAnalysisDarkHeaderCopyClass,
+  appAnalysisDarkTitleClass,
   appCardValueClass,
   appDashboardDarkBodyMediumClass,
   appDashboardDarkMetaClass,
@@ -20,7 +21,6 @@ import {
   appDisplayClass,
   appHeroMetricLabelClass,
   appSectionBodyClass,
-  appSectionTitleClass,
 } from "@/components/layout/appSurface";
 import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 import {
@@ -112,7 +112,7 @@ export function PortfolioPerformanceSection({
               <LineChart className="h-4 w-4" />
             </div>
             <div className="min-w-0">
-              <h2 className={`${appSectionTitleClass} text-white`}>
+              <h2 className={`${appAnalysisDarkTitleClass}`}>
                 Portfolio performance
               </h2>
               <p className={`mt-1 ${appAnalysisDarkHeaderCopyClass}`}>

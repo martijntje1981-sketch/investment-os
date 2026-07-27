@@ -2,8 +2,8 @@
 
 import {
   appCardValueClass,
-  appSectionLabelClass,
-  appSectionMetaClass,
+  appDashboardDarkMetaClass,
+  appHeroMetricLabelClass,
 } from "@/components/layout/appSurface";
 import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 import {
@@ -87,26 +87,22 @@ function KpiCard({
 }) {
   const toneClass =
     tone === "positive"
-      ? "text-emerald-700"
+      ? "text-emerald-300"
       : tone === "negative"
-        ? "text-red-700"
-        : "text-slate-950";
+        ? "text-red-300"
+        : "text-white";
 
   return (
-    <article className="rounded-[16px] border border-slate-200/80 bg-slate-50/80 px-3 py-2.5 sm:px-3.5">
-      <p className={`${appSectionLabelClass} text-[11px] sm:text-xs`}>
-        {label}
-      </p>
-      <p className={`mt-1 ${appCardValueClass} text-[1.05rem] sm:text-[1.1rem] ${toneClass}`}>
+    <article className="rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2.5">
+      <p className={appHeroMetricLabelClass}>{label}</p>
+      <p className={`mt-1 ${appCardValueClass} text-base ${toneClass}`}>
         {value}
       </p>
       {secondaryValue ? (
-        <p className={`mt-0.5 ${appSectionMetaClass} text-slate-600`}>
-          {secondaryValue}
-        </p>
+        <p className={`mt-0.5 ${appDashboardDarkMetaClass}`}>{secondaryValue}</p>
       ) : null}
       {hint ? (
-        <p className={`mt-1 ${appSectionMetaClass} text-[11px] leading-snug text-slate-500 sm:text-xs`}>
+        <p className={`mt-1 ${appDashboardDarkMetaClass} text-[11px] leading-snug`}>
           {hint}
         </p>
       ) : null}

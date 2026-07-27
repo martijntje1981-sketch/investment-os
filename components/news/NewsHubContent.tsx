@@ -11,7 +11,6 @@ import {
 import { NewsBriefingSection } from "@/components/news/NewsBriefingSection";
 import { NewsBriefingSkeleton } from "@/components/news/NewsBriefingSkeleton";
 import { NewsCompactArticleRow } from "@/components/news/NewsCompactArticleRow";
-import { NewsCompactEventRow } from "@/components/news/NewsCompactEventsList";
 import { NewsCompactVideoRow } from "@/components/news/NewsCompactVideoRow";
 import { NewsDataStatusBanner, countNewsHubVerifiedItems } from "@/components/news/NewsDataStatusBanner";
 import { resolveNewsMediaTypeFromItem } from "@/lib/services/news/newsMediaType";
@@ -136,16 +135,6 @@ export function NewsHubContent({
     return { count, sectionId: PORTFOLIO_NEWS_SECTION_ID };
   }, [briefing.portfolioCards]);
 
-  const upcomingEvents = useMemo(() => {
-    const today = new Date().toISOString().slice(0, 10);
-    return payload.upcomingEvents.filter((event) => event.date >= today);
-  }, [payload.upcomingEvents]);
-
-  const eventsEmptyDescription =
-    payload.dataStatus.eventsState === "provider_unavailable"
-      ? "The economic calendar provider is unavailable right now. Events will return when the feed reconnects."
-      : "No verified macro or calendar events matched the current window.";
-
   const verifiedItemCount = useMemo(
     () => countNewsHubVerifiedItems(payload),
     [payload],
@@ -156,8 +145,7 @@ export function NewsHubContent({
     briefing.portfolioCards.length > 0 ||
     briefing.macroGroups.length > 0 ||
     briefing.marketsToday.length > 0 ||
-    briefing.allVideos.length > 0 ||
-    upcomingEvents.length > 0;
+    briefing.allVideos.length > 0;
 
   function clearSearch() {
     setSearchQuery("");
@@ -174,6 +162,10 @@ export function NewsHubContent({
         onRefresh={onRefresh}
         isRefreshing={isRefreshing}
       />
+
+      {!isSearchActive && hasBriefingContent && !isRefreshing ? (
+        <NewsMarketsTodaySection regions={briefing.marketsToday} />
+      ) : null}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <NewsSearchBar
@@ -238,7 +230,6 @@ export function NewsHubContent({
           <NewsMarketBriefSection headlines={briefing.marketBriefHeadlines} />
           <NewsForPortfolioSection cards={briefing.portfolioCards} />
           <NewsMacroGroupsSection groups={briefing.macroGroups} />
-          <NewsMarketsTodaySection regions={briefing.marketsToday} />
 
           <NewsBriefingSection
             id="news-videos"
@@ -249,17 +240,6 @@ export function NewsHubContent({
             emptyTitle="No videos"
             emptyDescription="Verified market videos will appear here when available."
             renderItem={(item) => <NewsCompactVideoRow item={item} />}
-          />
-
-          <NewsBriefingSection
-            id="news-upcoming-events"
-            title="Upcoming Events"
-            description="Earnings, central bank decisions, CPI, and macro catalysts."
-            allItems={upcomingEvents}
-            previewLimit={5}
-            emptyTitle="No upcoming events"
-            emptyDescription={eventsEmptyDescription}
-            renderItem={(event) => <NewsCompactEventRow event={event} />}
           />
         </div>
       ) : null}

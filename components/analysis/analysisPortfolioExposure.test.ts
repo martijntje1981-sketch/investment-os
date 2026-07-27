@@ -48,9 +48,10 @@ const dashboardCardSource = readFileSync(
 describe("Analysis portfolio exposure section", () => {
   it("places summary cards in one responsive grid with conversion details below", () => {
     const gridStart = analysisPageSource.indexOf(
-      'className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4"',
+      'className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.4fr)]"',
     );
     const totalIdx = analysisPageSource.indexOf('label="Total portfolio value"');
+    const compositionIdx = analysisPageSource.indexOf("Portfolio composition");
     const investmentIdx = analysisPageSource.indexOf(
       'label="Investment holdings"',
     );
@@ -68,7 +69,8 @@ describe("Analysis portfolio exposure section", () => {
 
     expect(gridStart).toBeGreaterThan(-1);
     expect(totalIdx).toBeGreaterThan(gridStart);
-    expect(investmentIdx).toBeGreaterThan(totalIdx);
+    expect(compositionIdx).toBeGreaterThan(totalIdx);
+    expect(investmentIdx).toBeGreaterThan(compositionIdx);
     expect(cashIdx).toBeGreaterThan(investmentIdx);
     expect(largestIdx).toBeGreaterThan(cashIdx);
     expect(conversionIdx).toBeGreaterThan(largestIdx);

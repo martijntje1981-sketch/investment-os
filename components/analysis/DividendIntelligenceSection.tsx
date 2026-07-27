@@ -5,6 +5,9 @@ import { Coins } from "lucide-react";
 
 import { DistributionPolicyHoldingRow } from "@/components/analysis/dividendPolicy/DistributionPolicyHoldingRow";
 import {
+  appAnalysisDarkHeaderCopyClass,
+  appAnalysisDarkTitleClass,
+  appHeroMetricLabelClass,
   appSectionBodyClass,
   appSectionLabelClass,
   appSectionMetaClass,
@@ -59,17 +62,17 @@ export function DividendIntelligenceSection({
     <section className="mt-7 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
       <div className="border-b border-slate-200 bg-gradient-to-br from-emerald-700 to-slate-950 px-5 py-6 text-white sm:px-8">
         <div
-          className={`inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 ${appSectionLabelClass} text-emerald-100`}
+          className={`inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 ${appHeroMetricLabelClass} text-emerald-100`}
         >
           <Coins className="h-3.5 w-3.5" aria-hidden="true" />
           Dividend intelligence
         </div>
-        <h2 className={`mt-4 ${appCardValueClass} text-white`}>
+        <h2 className={`mt-4 ${appAnalysisDarkTitleClass}`}>
           {isLoading
             ? "Loading distribution policy…"
             : "Distribution policy classification"}
         </h2>
-        <p className={`mt-3 max-w-2xl text-sm leading-6 text-emerald-50/95`}>
+        <p className={`mt-3 max-w-2xl ${appAnalysisDarkHeaderCopyClass} text-emerald-50/95`}>
           Confirmed first, unknown by default. This section classifies whether holdings
           pay cash distributions or reinvest internally. It does not estimate income.
         </p>

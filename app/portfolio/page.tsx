@@ -36,6 +36,8 @@ import { IDENTITY_EUR_FX_SNAPSHOT } from "@/lib/services/prices/baseCurrencyFxSn
 import { portfolioBaseCurrencySymbol } from "@/lib/types/portfolioBaseCurrency";
 import {
   appCardValueClass,
+  appDashboardDarkBodyClass,
+  appHeroMetricLabelClass,
   appSectionBodyClass,
   appSectionLabelClass,
   appSectionMetaClass,
@@ -646,10 +648,10 @@ export default function PortfolioPage() {
 
           <section className="rounded-[28px] bg-slate-950 p-6 text-white sm:p-8">
             <div className="flex items-start gap-4">
-              <div className="rounded-2xl bg-violet-500/20 p-3 text-violet-300"><Sparkles className="h-5 w-5" /></div>
+              <div className="rounded-2xl bg-violet-500/20 p-3 text-violet-200"><Sparkles className="h-5 w-5" /></div>
               <div>
-                <p className={appSectionLabelClass}>Portfolio insight</p>
-                <p className={`mt-3 max-w-3xl ${appSectionBodyClass} text-slate-200`}>
+                <p className={appHeroMetricLabelClass}>Portfolio insight</p>
+                <p className={`mt-3 max-w-3xl ${appDashboardDarkBodyClass}`}>
                   {largest && totalValue > 0 ? `${largest.symbol} is your largest position at ${largestWeightPercent.toFixed(1)}%. ` : performance.hasUnvaluedInvestments ? "Some holdings are excluded until market prices are available. " : ""}
                   {cashValue > 0 && totalValue > 0 ? `Cash represents ${(cashValue / totalValue * 100).toFixed(1)}% of total portfolio value.` : "No cash holding is currently recorded."}
                 </p>

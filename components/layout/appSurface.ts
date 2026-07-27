@@ -102,6 +102,10 @@ export const appDashboardDarkMutedClass =
 export const appDashboardDarkMetaClass =
   "text-[13px] font-medium leading-snug text-white/75";
 
+/** Section titles on dark analysis / gradient header shells. */
+export const appAnalysisDarkTitleClass =
+  "text-xl font-bold tracking-[-0.02em] text-white";
+
 /** Supporting copy on dark analysis section headers (gradient shells). */
 export const appAnalysisDarkHeaderCopyClass = appDashboardDarkMutedClass;
 

@@ -63,10 +63,14 @@ export function GoalMilestonesRow({
       >
         Milestones
       </p>
-      <div className="flex flex-wrap gap-2">
+      <p className={`${appSectionMetaClass} text-slate-400`}>
+        Progress checkpoints based on your goal projection.
+      </p>
+      <div className="flex flex-wrap gap-2" role="list">
         {milestones.map((milestone) => (
           <span
             key={`${milestone.label}-${milestone.value}`}
+            role="listitem"
             className={`rounded-full border px-3 py-1.5 text-sm font-semibold ${
               milestone.reached
                 ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-100"

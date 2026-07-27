@@ -24,6 +24,15 @@ describe("news hub UI structure", () => {
     expect(hubSource).toContain("NewsMacroGroupsSection");
     expect(hubSource).toContain("NewsMarketsTodaySection");
     expect(hubSource).toContain("NewsCompactVideoRow");
+    expect(hubSource).not.toContain("NewsCompactEventRow");
+    expect(hubSource).not.toContain("news-upcoming-events");
+    expect(hubSource).not.toContain("Upcoming Events");
+    expect(hubSource.indexOf("<NewsMarketsTodaySection")).toBeLessThan(
+      hubSource.indexOf("<NewsBriefingDiscoverLink"),
+    );
+    expect(hubSource.indexOf("<NewsBriefingDiscoverLink")).toBeLessThan(
+      hubSource.indexOf("<NewsMarketBriefSection"),
+    );
     expect(sectionSource).toContain("Show more");
     expect(sectionSource).toContain("Show less");
     expect(sectionSource).toContain("aria-expanded");
