@@ -30,18 +30,37 @@ export type TopPerformerHolding = {
   periodLabel: string;
   periodAccessibleDescription: string;
   groupId: ExposureGroupId;
+  displayLabel: string;
+};
+
+export type CategoryWinnerRelationKind =
+  | "portfolio_leader"
+  | "tied"
+  | "behind";
+
+export type CategoryWinnerRelation = {
+  kind: CategoryWinnerRelationKind;
+  /** Raw overall − category percentage-point gap (0 when leader or tied). */
+  gapPercentagePoints: number;
+  /** Short secondary comparison line for UI. */
+  comparisonLabel: string;
 };
 
 export type TopPerformersCategoryGroup = {
   groupId: ExposureGroupId;
   displayLabel: string;
   holdings: TopPerformerHolding[];
+  categoryWinner: TopPerformerHolding;
+  relationToPortfolioLeader: CategoryWinnerRelation;
 };
 
 export type TopPerformersByCategoryResult = {
+  overallWinner: TopPerformerHolding | null;
   groups: TopPerformersCategoryGroup[];
   sectionPeriodLabel: string;
   sectionPeriodDetail: string | null;
+  /** Clear basis copy shared by overall + category comparisons. */
+  sectionBasisCopy: string;
   usesLastSessionWording: boolean;
   classification: {
     classified: Array<{ symbol: string; groupId: ExposureGroupId; label: string }>;
@@ -110,7 +129,68 @@ function toTopPerformer(
     periodLabel: formatMoverPeriodLabel(holding),
     periodAccessibleDescription: period.accessibleDescription,
     groupId,
+    displayLabel: EXPOSURE_GROUP_LABELS[groupId],
   };
+}
+
+/** Format raw percentage-point gap for display (rounding only here). */
+export function formatPercentagePointGap(gapPercentagePoints: number): string {
+  const rounded = Math.round(Math.abs(gapPercentagePoints) * 10) / 10;
+  const formatted =
+    Number.isInteger(rounded) && Math.abs(rounded - Math.trunc(rounded)) < 1e-9
+      ? String(Math.trunc(rounded))
+      : rounded.toFixed(1);
+  const unit = rounded === 1 ? "percentage point" : "percentage points";
+  return `${formatted} ${unit}`;
+}
+
+export function buildCategoryWinnerRelation(
+  overallWinner: TopPerformerHolding,
+  categoryWinner: TopPerformerHolding,
+): CategoryWinnerRelation {
+  if (categoryWinner.id === overallWinner.id) {
+    return {
+      kind: "portfolio_leader",
+      gapPercentagePoints: 0,
+      comparisonLabel: "Portfolio leader.",
+    };
+  }
+
+  if (categoryWinner.changePercent === overallWinner.changePercent) {
+    return {
+      kind: "tied",
+      gapPercentagePoints: 0,
+      comparisonLabel: "Tied with the portfolio leader.",
+    };
+  }
+
+  const gapPercentagePoints =
+    overallWinner.changePercent - categoryWinner.changePercent;
+
+  return {
+    kind: "behind",
+    gapPercentagePoints,
+    comparisonLabel: `${formatPercentagePointGap(gapPercentagePoints)} behind the portfolio leader.`,
+  };
+}
+
+function resolveSectionBasisCopy(input: {
+  usesLastSessionWording: boolean;
+  periodKind: string;
+}): string {
+  if (input.periodKind === "rolling_24h") {
+    return "Based on today’s movement";
+  }
+  if (
+    input.periodKind === "last_session" ||
+    input.periodKind === "latest_sessions" ||
+    input.periodKind === "latest_available" ||
+    input.periodKind === "mixed" ||
+    input.usesLastSessionWording
+  ) {
+    return "Based on the last available market session";
+  }
+  return "Based on today’s movement";
 }
 
 /** Build up to three top movers per exposure category from loaded holdings. */
@@ -123,6 +203,7 @@ export function buildTopPerformersByCategory(
     [];
   const byGroup = new Map<ExposureGroupId, TopPerformerHolding[]>();
   const eligibleHoldings: StoredPortfolioHolding[] = [];
+  const allEligiblePerformers: TopPerformerHolding[] = [];
 
   for (const holding of holdings) {
     if (holding.assetType === "cash") {
@@ -157,19 +238,35 @@ export function buildTopPerformersByCategory(
     }
 
     eligibleHoldings.push(holding);
+    allEligiblePerformers.push(performer);
     const existing = byGroup.get(classification.normalizedGroupId) ?? [];
     existing.push(performer);
     byGroup.set(classification.normalizedGroupId, existing);
   }
 
+  const overallWinner =
+    [...allEligiblePerformers].sort(compareTopPerformers)[0] ?? null;
+
   const groups: TopPerformersCategoryGroup[] = [...byGroup.entries()]
-    .map(([groupId, groupHoldings]) => ({
-      groupId,
-      displayLabel: EXPOSURE_GROUP_LABELS[groupId],
-      holdings: [...groupHoldings]
+    .map(([groupId, groupHoldings]) => {
+      const holdingsRanked = [...groupHoldings]
         .sort(compareTopPerformers)
-        .slice(0, TOP_PERFORMERS_PER_CATEGORY),
-    }))
+        .slice(0, TOP_PERFORMERS_PER_CATEGORY);
+      const categoryWinner = holdingsRanked[0]!;
+      return {
+        groupId,
+        displayLabel: EXPOSURE_GROUP_LABELS[groupId],
+        holdings: holdingsRanked,
+        categoryWinner,
+        relationToPortfolioLeader: overallWinner
+          ? buildCategoryWinnerRelation(overallWinner, categoryWinner)
+          : {
+              kind: "portfolio_leader" as const,
+              gapPercentagePoints: 0,
+              comparisonLabel: "Portfolio leader.",
+            },
+      };
+    })
     .filter((group) => group.holdings.length > 0)
     .sort((a, b) => a.displayLabel.localeCompare(b.displayLabel));
 
@@ -177,12 +274,18 @@ export function buildTopPerformersByCategory(
   const usesLastSessionWording =
     portfolioPeriod.kind === "last_session" ||
     portfolioPeriod.kind === "mixed" ||
-    portfolioPeriod.kind === "latest_sessions";
+    portfolioPeriod.kind === "latest_sessions" ||
+    portfolioPeriod.kind === "latest_available";
 
   return {
+    overallWinner,
     groups,
     sectionPeriodLabel: portfolioPeriod.primaryLabel,
     sectionPeriodDetail: portfolioPeriod.detail,
+    sectionBasisCopy: resolveSectionBasisCopy({
+      usesLastSessionWording,
+      periodKind: portfolioPeriod.kind,
+    }),
     usesLastSessionWording,
     classification: { classified, unclassified },
   };

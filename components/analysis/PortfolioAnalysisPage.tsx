@@ -5,16 +5,12 @@ import Link from "next/link";
 import {
   AlertCircle,
   ArrowRight,
-  Banknote,
   BriefcaseBusiness,
-  ChartPie,
   Layers3,
-  PieChart,
   Scale,
   Sparkles,
   Upload,
 } from "lucide-react";
-import { ConversionDetailsDisclosure } from "@/components/currency/ConversionDetailsDisclosure";
 import { DividendIntelligenceSection } from "@/components/analysis/DividendIntelligenceSection";
 import { PortfolioExposureSection } from "@/components/analysis/PortfolioExposureSection";
 import { PortfolioPerformanceSection } from "@/components/analysis/performance/PortfolioPerformanceSection";
@@ -179,71 +175,25 @@ export default function PortfolioAnalysisPage() {
                 </div>
               )}
 
-              <section className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.4fr)]">
-                <SummaryCard
-                  icon={<PieChart className="h-5 w-5" />}
-                  label="Total portfolio value"
-                  value={
-                    hasValuedPositions
-                      ? formatEur(analysis.totalValue)
-                      : "—"
-                  }
-                  detail={
-                    hasValuedPositions
-                      ? `${analysis.valuedPositions.length} valued positions`
-                      : "No valued positions"
-                  }
+              <div className="mt-6">
+                <PortfolioPerformanceSection
+                  holdings={holdings}
+                  compositionMeta={{
+                    investmentCount: analysis.investmentCount,
+                    cashCurrencyCount: analysis.cashCurrencyCount,
+                    cashWeightPercent: analysis.cashWeightPercent,
+                    largestSymbol: analysis.largestPosition?.holding.symbol ?? null,
+                    largestWeightPercent:
+                      analysis.largestPosition?.weightPercent ?? null,
+                  }}
                 />
-                <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-                  <p className={appSectionLabelClass}>Portfolio composition</p>
-                  <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                    <CompactMetric
-                      icon={<BriefcaseBusiness className="h-4 w-4" />}
-                      label="Investment holdings"
-                      value={String(analysis.investmentCount)}
-                      detail="Based on stored asset type"
-                    />
-                    <CompactMetric
-                      icon={<Banknote className="h-4 w-4" />}
-                      label="Cash currencies"
-                      value={String(analysis.cashCurrencyCount)}
-                      detail={
-                        analysis.cashWeightPercent > 0
-                          ? `${formatPortfolioPercent(analysis.cashWeightPercent)} of valued portfolio`
-                          : "No cash recorded"
-                      }
-                    />
-                    <CompactMetric
-                      icon={<ChartPie className="h-4 w-4" />}
-                      label="Largest position"
-                      value={
-                        analysis.largestPosition
-                          ? analysis.largestPosition.holding.symbol
-                          : "—"
-                      }
-                      detail={
-                        analysis.largestPosition
-                          ? `${formatPortfolioPercent(analysis.largestPosition.weightPercent)} of valued portfolio`
-                          : "No valued positions"
-                      }
-                    />
-                  </div>
-                </article>
-              </section>
-
-              <div className="mt-3">
-                <ConversionDetailsDisclosure compactTrigger />
-              </div>
-
-              <PortfolioExposureSection allocation={exposureAllocation} />
-
-              <div className="mt-7">
-                <PortfolioPerformanceSection holdings={holdings} />
               </div>
 
               <div className="mt-7">
                 <TopPerformersByCategorySection holdings={holdings} />
               </div>
+
+              <PortfolioExposureSection allocation={exposureAllocation} />
 
               <MarketConsensusSection
                 analysis={analysis}
@@ -498,58 +448,6 @@ export default function PortfolioAnalysisPage() {
       </PageContainer>
       <BottomNavigation />
     </>
-  );
-}
-
-function SummaryCard({
-  icon,
-  label,
-  value,
-  detail,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  detail?: string;
-}) {
-  return (
-    <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
-        {icon}
-      </div>
-      <p className={`mt-4 ${appSectionLabelClass}`}>
-        {label}
-      </p>
-      <p className={`mt-2 ${appCardValueClass}`}>{value}</p>
-      {detail && <p className={`mt-1.5 ${appSectionMetaClass}`}>{detail}</p>}
-    </article>
-  );
-}
-
-function CompactMetric({
-  icon,
-  label,
-  value,
-  detail,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  detail?: string;
-}) {
-  return (
-    <div className="min-w-0 rounded-xl border border-slate-100 bg-slate-50/80 px-3 py-3">
-      <div className="flex items-center gap-2 text-slate-600">
-        {icon}
-        <p className={`${appSectionLabelClass} text-[11px]`}>{label}</p>
-      </div>
-      <p className={`mt-2 ${appCardValueClass} text-base`}>{value}</p>
-      {detail ? (
-        <p className={`mt-1 ${appSectionMetaClass} text-[12px] leading-snug`}>
-          {detail}
-        </p>
-      ) : null}
-    </div>
   );
 }
 

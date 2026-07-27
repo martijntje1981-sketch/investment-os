@@ -46,42 +46,41 @@ const dashboardCardSource = readFileSync(
 );
 
 describe("Analysis portfolio exposure section", () => {
-  it("places summary cards in one responsive grid with conversion details below", () => {
-    const gridStart = analysisPageSource.indexOf(
-      'className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.4fr)]"',
+  it("places Portfolio Performance first, then Top performers, then Exposure", () => {
+    const performanceIdx = analysisPageSource.indexOf(
+      "<PortfolioPerformanceSection",
     );
-    const totalIdx = analysisPageSource.indexOf('label="Total portfolio value"');
-    const compositionIdx = analysisPageSource.indexOf("Portfolio composition");
-    const investmentIdx = analysisPageSource.indexOf(
-      'label="Investment holdings"',
-    );
-    const cashIdx = analysisPageSource.indexOf('label="Cash currencies"');
-    const largestIdx = analysisPageSource.indexOf('label="Largest position"');
-    const conversionIdx = analysisPageSource.indexOf(
-      "<ConversionDetailsDisclosure compactTrigger />",
+    const topPerformersIdx = analysisPageSource.indexOf(
+      "<TopPerformersByCategorySection",
     );
     const exposureIdx = analysisPageSource.indexOf(
       "<PortfolioExposureSection",
     );
-    const performanceIdx = analysisPageSource.indexOf(
-      "<PortfolioPerformanceSection",
+
+    expect(performanceIdx).toBeGreaterThan(-1);
+    expect(topPerformersIdx).toBeGreaterThan(performanceIdx);
+    expect(exposureIdx).toBeGreaterThan(topPerformersIdx);
+
+    expect(analysisPageSource).not.toContain('label="Total portfolio value"');
+    expect(analysisPageSource).not.toContain("Portfolio composition");
+    expect(analysisPageSource).not.toContain(
+      'className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.4fr)]"',
     );
 
-    expect(gridStart).toBeGreaterThan(-1);
-    expect(totalIdx).toBeGreaterThan(gridStart);
-    expect(compositionIdx).toBeGreaterThan(totalIdx);
-    expect(investmentIdx).toBeGreaterThan(compositionIdx);
-    expect(cashIdx).toBeGreaterThan(investmentIdx);
-    expect(largestIdx).toBeGreaterThan(cashIdx);
-    expect(conversionIdx).toBeGreaterThan(largestIdx);
-    expect(exposureIdx).toBeGreaterThan(conversionIdx);
-    expect(performanceIdx).toBeGreaterThan(exposureIdx);
+    const performanceCount = (
+      analysisPageSource.match(/<PortfolioPerformanceSection/g) ?? []
+    ).length;
+    const topPerformersCount = (
+      analysisPageSource.match(/<TopPerformersByCategorySection/g) ?? []
+    ).length;
+    const exposureCount = (
+      analysisPageSource.match(/<PortfolioExposureSection/g) ?? []
+    ).length;
+    expect(performanceCount).toBe(1);
+    expect(topPerformersCount).toBe(1);
+    expect(exposureCount).toBe(1);
 
-    const gridSlice = analysisPageSource.slice(gridStart, conversionIdx);
-    expect(gridSlice).not.toContain("ConversionDetailsDisclosure");
-    expect(analysisPageSource).toMatch(
-      /className="mt-3"[\s\S]*?<ConversionDetailsDisclosure compactTrigger \/>/,
-    );
+    expect(analysisPageSource).toContain("compositionMeta={{");
   });
 
   it("renders the portfolio-exposure section with shared allocation wiring", () => {
@@ -197,17 +196,26 @@ describe("Analysis portfolio exposure section", () => {
   });
 
   it("preserves summary values and conversion-details expand behavior", () => {
-    expect(analysisPageSource).toContain("Total portfolio value");
-    expect(analysisPageSource).toContain("Investment holdings");
-    expect(analysisPageSource).toContain("Cash currencies");
-    expect(analysisPageSource).toContain("Largest position");
-    expect(analysisPageSource).toContain("formatEur(analysis.totalValue)");
+    const performanceSource = readFileSync(
+      path.resolve(
+        process.cwd(),
+        "components/analysis/performance/PortfolioPerformanceSection.tsx",
+      ),
+      "utf8",
+    );
+
+    expect(performanceSource).toContain("Total portfolio value");
+    expect(performanceSource).toContain("Holdings ·");
+    expect(performanceSource).toContain("Cash currencies ·");
+    expect(performanceSource).toContain("Largest ·");
+    expect(performanceSource).toContain(
+      "<ConversionDetailsDisclosure compactTrigger tone=\"dark\" />",
+    );
+
     expect(analysisPageSource).toContain("analysis.investmentCount");
     expect(analysisPageSource).toContain("analysis.cashCurrencyCount");
     expect(analysisPageSource).toContain("analysis.largestPosition");
-    expect(analysisPageSource).toContain(
-      "<ConversionDetailsDisclosure compactTrigger />",
-    );
+    expect(analysisPageSource).toContain("compositionMeta={{");
 
     const conversionSource = readFileSync(
       path.resolve(

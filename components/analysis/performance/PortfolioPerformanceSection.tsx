@@ -27,11 +27,20 @@ import {
   formatSignedPortfolioCurrency,
   formatSignedPortfolioPercent,
 } from "@/lib/client/portfolioMovementFormat";
+import { formatPortfolioPercent } from "@/lib/client/portfolioAnalysis";
 import {
   calculatePortfolioPerformance,
   type PerformancePeriodId,
 } from "@/lib/client/performance";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
+
+export type PerformanceHeroCompositionMeta = {
+  investmentCount: number;
+  cashCurrencyCount: number;
+  cashWeightPercent: number;
+  largestSymbol: string | null;
+  largestWeightPercent: number | null;
+};
 
 function formatPerformanceUpdatedAt(value: string | null): string {
   if (!value) {
@@ -83,8 +92,10 @@ function resolveReturnUnavailableReason(
 
 export function PortfolioPerformanceSection({
   holdings,
+  compositionMeta,
 }: {
   holdings: StoredPortfolioHolding[];
+  compositionMeta?: PerformanceHeroCompositionMeta | null;
 }) {
   const { formatEur } = useBaseCurrencyDisplay();
   const [period, setPeriod] = useState<PerformancePeriodId>("1D");
@@ -104,7 +115,11 @@ export function PortfolioPerformanceSection({
           : "text-slate-200";
 
   return (
-    <section className={appDashboardFeatureShellClass}>
+    <section
+      id="portfolio-performance"
+      className={`${appDashboardFeatureShellClass} scroll-mt-24`}
+      aria-labelledby="portfolio-performance-heading"
+    >
       <div className="border-b border-white/10 bg-white/[0.03] px-4 py-4 md:px-5 md:py-4">
         <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex min-w-0 items-start gap-3">
@@ -112,7 +127,10 @@ export function PortfolioPerformanceSection({
               <LineChart className="h-4 w-4" />
             </div>
             <div className="min-w-0">
-              <h2 className={`${appAnalysisDarkTitleClass}`}>
+              <h2
+                id="portfolio-performance-heading"
+                className={appAnalysisDarkTitleClass}
+              >
                 Portfolio performance
               </h2>
               <p className={`mt-1 ${appAnalysisDarkHeaderCopyClass}`}>
@@ -128,10 +146,10 @@ export function PortfolioPerformanceSection({
       </div>
 
       <div className="space-y-3.5 px-4 py-4 md:space-y-4 md:px-5 md:py-5">
-        <div className="rounded-[20px] border border-white/10 bg-white/[0.04] px-4 py-4 sm:px-4 sm:py-4">
+        <div className="px-0.5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className={appHeroMetricLabelClass}>Current portfolio value</p>
+              <p className={appHeroMetricLabelClass}>Total portfolio value</p>
               <p className={`mt-2 ${appDisplayClass} text-white`}>
                 {formatEur(performance.currentPortfolioValue)}
               </p>
@@ -157,7 +175,39 @@ export function PortfolioPerformanceSection({
             </div>
           </div>
 
-          <div className="mt-3.5 flex flex-wrap gap-x-4 gap-y-1 border-t border-white/10 pt-3">
+          {compositionMeta ? (
+            <div className="mt-3.5 grid grid-cols-1 gap-2 border-t border-white/10 pt-3 sm:grid-cols-3">
+              <p className={appDashboardDarkMetaClass}>
+                <span className="text-white/55">Holdings · </span>
+                <span className={appDashboardDarkBodyMediumClass}>
+                  {compositionMeta.investmentCount}
+                </span>
+              </p>
+              <p className={appDashboardDarkMetaClass}>
+                <span className="text-white/55">Cash currencies · </span>
+                <span className={appDashboardDarkBodyMediumClass}>
+                  {compositionMeta.cashCurrencyCount}
+                  {compositionMeta.cashWeightPercent > 0
+                    ? ` · ${formatPortfolioPercent(compositionMeta.cashWeightPercent)}`
+                    : ""}
+                </span>
+              </p>
+              <p className={appDashboardDarkMetaClass}>
+                <span className="text-white/55">Largest · </span>
+                <span className={appDashboardDarkBodyMediumClass}>
+                  {compositionMeta.largestSymbol
+                    ? `${compositionMeta.largestSymbol}${
+                        compositionMeta.largestWeightPercent != null
+                          ? ` · ${formatPortfolioPercent(compositionMeta.largestWeightPercent)}`
+                          : ""
+                      }`
+                    : "—"}
+                </span>
+              </p>
+            </div>
+          ) : null}
+
+          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 border-t border-white/10 pt-3">
             <p className={appDashboardDarkMetaClass}>
               <span className="text-white/60">Period · </span>
               <span className={appDashboardDarkBodyMediumClass}>

@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  buildCategoryWinnerRelation,
   buildTopPerformersByCategory,
+  formatPercentagePointGap,
   TOP_PERFORMERS_PER_CATEGORY,
 } from "@/lib/client/topPerformersByCategory";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
@@ -60,11 +62,8 @@ describe("buildTopPerformersByCategory", () => {
       }),
     ];
 
-    // Force same category via assetType investment without research → diversified or unclassified
-    // Use crypto vs investment to guarantee separate buckets and multiple in unclassified/diversified.
     const techish = holdings.map((item, index) => ({
       ...item,
-      // Without research profiles these land in other_unclassified together.
       changePercent: 20 - index,
       currentPrice: 100 + (20 - index),
       previousClose: 100,
@@ -140,6 +139,7 @@ describe("buildTopPerformersByCategory", () => {
       group.holdings.map((item) => item.symbol),
     );
     expect(symbols).toEqual(["OK"]);
+    expect(result.overallWinner?.symbol).toBe("OK");
     expect(symbols).not.toContain("EUR");
     expect(symbols).not.toContain("NOPX");
   });
@@ -188,6 +188,7 @@ describe("buildTopPerformersByCategory", () => {
 
     const group = result.groups[0];
     expect(group?.holdings.map((item) => item.symbol)).toEqual(["AAA", "ZZZ"]);
+    expect(result.overallWinner?.symbol).toBe("AAA");
   });
 
   it("uses last-session wording when exchange-traded data is not live today", () => {
@@ -204,9 +205,192 @@ describe("buildTopPerformersByCategory", () => {
 
     expect(result.usesLastSessionWording).toBe(true);
     expect(result.sectionPeriodLabel.toLowerCase()).not.toContain("today");
+    expect(result.sectionBasisCopy).toBe(
+      "Based on the last available market session",
+    );
+    expect(result.sectionBasisCopy.toLowerCase()).not.toContain("today");
+  });
+
+  it("selects the overall winner from the same eligible dataset as category rankings", () => {
+    const result = buildTopPerformersByCategory([
+      holding({
+        id: "eq-strong",
+        symbol: "EQ1",
+        name: "Equity Strong",
+        currentPrice: 112,
+        previousClose: 100,
+      }),
+      holding({
+        id: "eq-weak",
+        symbol: "EQ2",
+        name: "Equity Weak",
+        currentPrice: 101,
+        previousClose: 100,
+      }),
+      holding({
+        id: "btc",
+        symbol: "BTC",
+        name: "Bitcoin",
+        assetType: "crypto",
+        change24hPercent: 5,
+        changePercent: 5,
+      }),
+      holding({
+        id: "cash",
+        symbol: "EUR",
+        name: "Cash",
+        assetType: "cash",
+        changePercent: 99,
+      }),
+    ]);
+
+    expect(result.overallWinner?.symbol).toBe("EQ1");
+    expect(result.overallWinner?.changePercent).toBeCloseTo(12, 5);
+
+    const allRankedIds = result.groups.flatMap((group) =>
+      group.holdings.map((item) => item.id),
+    );
+    expect(allRankedIds).toContain(result.overallWinner!.id);
+    expect(allRankedIds).not.toContain("cash");
+  });
+
+  it("marks the category that owns the overall winner as portfolio leader", () => {
+    const result = buildTopPerformersByCategory([
+      holding({
+        id: "leader",
+        symbol: "LEAD",
+        name: "Leader",
+        currentPrice: 115,
+        previousClose: 100,
+      }),
+      holding({
+        id: "btc",
+        symbol: "BTC",
+        name: "Bitcoin",
+        assetType: "crypto",
+        change24hPercent: 2,
+        changePercent: 2,
+      }),
+    ]);
+
+    expect(result.overallWinner?.id).toBe("leader");
+    const leaderGroup = result.groups.find(
+      (group) => group.categoryWinner.id === "leader",
+    );
+    expect(leaderGroup?.relationToPortfolioLeader.kind).toBe("portfolio_leader");
+    expect(leaderGroup?.relationToPortfolioLeader.comparisonLabel).toBe(
+      "Portfolio leader.",
+    );
+
+    const cryptoGroup = result.groups.find((group) => group.groupId === "crypto");
+    expect(cryptoGroup?.relationToPortfolioLeader.kind).toBe("behind");
     expect(
-      result.sectionPeriodLabel.toLowerCase().includes("session") ||
-        result.sectionPeriodLabel.toLowerCase().includes("latest"),
-    ).toBe(true);
+      cryptoGroup?.relationToPortfolioLeader.gapPercentagePoints,
+    ).toBeCloseTo(13, 5);
+    expect(cryptoGroup?.relationToPortfolioLeader.comparisonLabel).toContain(
+      "behind the portfolio leader",
+    );
+  });
+
+  it("uses tied wording when category winner matches overall percent but loses tie-break", () => {
+    const result = buildTopPerformersByCategory([
+      holding({
+        id: "a",
+        symbol: "AAA",
+        name: "Alpha",
+        currentPrice: 110,
+        previousClose: 100,
+      }),
+      holding({
+        id: "z",
+        symbol: "ZZZ",
+        name: "Zulu",
+        assetType: "crypto",
+        change24hPercent: 10,
+        changePercent: 10,
+      }),
+    ]);
+
+    // Same 10% change; AAA wins overall via symbol tie-break.
+    expect(result.overallWinner?.symbol).toBe("AAA");
+    const crypto = result.groups.find((group) => group.groupId === "crypto");
+    expect(crypto?.relationToPortfolioLeader.kind).toBe("tied");
+    expect(crypto?.relationToPortfolioLeader.comparisonLabel).toBe(
+      "Tied with the portfolio leader.",
+    );
+    expect(crypto?.relationToPortfolioLeader.gapPercentagePoints).toBe(0);
+  });
+
+  it("formats percentage-point gaps from raw values with display-only rounding", () => {
+    expect(formatPercentagePointGap(1.74)).toBe("1.7 percentage points");
+    expect(formatPercentagePointGap(1)).toBe("1 percentage point");
+    expect(formatPercentagePointGap(0.4)).toBe("0.4 percentage points");
+
+    const relation = buildCategoryWinnerRelation(
+      {
+        id: "o",
+        symbol: "O",
+        name: "Overall",
+        changePercent: 5.25,
+        changeAmount: null,
+        periodLabel: "Last session",
+        periodAccessibleDescription: "",
+        groupId: "diversified_equity",
+        displayLabel: "Diversified equity",
+      },
+      {
+        id: "c",
+        symbol: "C",
+        name: "Category",
+        changePercent: 3.55,
+        changeAmount: null,
+        periodLabel: "Last session",
+        periodAccessibleDescription: "",
+        groupId: "crypto",
+        displayLabel: "Crypto",
+      },
+    );
+
+    expect(relation.kind).toBe("behind");
+    expect(relation.gapPercentagePoints).toBeCloseTo(1.7, 5);
+    expect(relation.comparisonLabel).toBe(
+      "1.7 percentage points behind the portfolio leader.",
+    );
+  });
+
+  it("uses today’s movement wording for crypto-only comparable sets", () => {
+    const result = buildTopPerformersByCategory([
+      holding({
+        id: "btc",
+        symbol: "BTC",
+        name: "Bitcoin",
+        assetType: "crypto",
+        change24hPercent: 2.5,
+        changePercent: 2.5,
+      }),
+    ]);
+
+    expect(result.usesLastSessionWording).toBe(false);
+    expect(result.sectionBasisCopy).toBe("Based on today’s movement");
+  });
+
+  it("keeps unclassified holdings in the central classifier fallback category", () => {
+    const result = buildTopPerformersByCategory([
+      holding({
+        id: "strc",
+        symbol: "STRC",
+        name: "Strategy",
+        providerSymbol: "STRC.AS",
+        currentPrice: 110,
+        previousClose: 100,
+      }),
+    ]);
+
+    expect(result.classification.unclassified.map((item) => item.symbol)).toContain(
+      "STRC",
+    );
+    expect(result.groups.some((group) => group.groupId === "other_unclassified")).toBe(
+      true,
+    );
   });
 });
