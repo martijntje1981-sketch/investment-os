@@ -5,6 +5,7 @@
  * resolution logic so the engine stays provider-agnostic at its core.
  */
 
+import { persistListingMetadataFromProviderRows } from "@/lib/services/instruments/listingMetadata";
 import {
   buildIdMappingLookupKey,
   buildSearchLookupKey,
@@ -123,6 +124,7 @@ export async function fetchIdMapping(
     lookupKey,
   );
   if (cached) {
+    await persistListingMetadataFromProviderRows(cached);
     return cached;
   }
 
@@ -169,6 +171,7 @@ export async function fetchIdMapping(
     lookupType: "id_mapping",
     result: rows,
   });
+  await persistListingMetadataFromProviderRows(rows);
   return rows;
 }
 
@@ -191,6 +194,7 @@ export async function fetchSearch(
     lookupKey,
   );
   if (cached) {
+    await persistListingMetadataFromProviderRows(cached);
     return cached;
   }
 
@@ -239,5 +243,6 @@ export async function fetchSearch(
     lookupType: "search",
     result: rows,
   });
+  await persistListingMetadataFromProviderRows(rows);
   return rows;
 }

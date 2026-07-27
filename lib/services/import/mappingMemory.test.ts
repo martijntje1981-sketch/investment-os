@@ -45,6 +45,22 @@ describe("import mapping memory", () => {
     ).toBe("isin:IE00BK5BQT80");
   });
 
+  it("remembers quoteCurrency in confirmed mappings", () => {
+    rememberConfirmedImportMappings(USER, [row({ quoteCurrency: "EUR" })]);
+
+    const unmatched = applySavedMappingsToRows(USER, [
+      row({
+        providerSymbol: null,
+        quoteCurrency: null,
+        matchMethod: undefined,
+        reviewTier: undefined,
+        userConfirmed: false,
+      }),
+    ]);
+
+    expect(unmatched[0]?.quoteCurrency).toBe("EUR");
+  });
+
   it("remembers and reapplies confirmed mappings", () => {
     rememberConfirmedImportMappings(USER, [row()]);
 

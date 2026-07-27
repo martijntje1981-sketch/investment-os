@@ -2,9 +2,15 @@
  * Central provider quote currency resolution.
  *
  * Keeps purchase currency (EUR portfolio base), provider quote currency,
- * and user display currency separate. Never infers from exchange suffix alone.
+ * and user display currency separate. Never infers from exchange suffix alone
+ * except via the explicit exchange fallback allowlist.
  */
 
+import { resolveExchangeFallbackQuoteCurrency } from "@/lib/services/instruments/exchangeQuoteCurrencyFallback";
+import {
+  parseProviderSymbolParts,
+  type ListingMetadataRecord,
+} from "@/lib/services/instruments/listingMetadata";
 import { lookupVerifiedByProviderSymbol } from "@/lib/services/instruments/verifiedInstrumentRegistry";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 import type { PriceCurrency } from "@/lib/services/prices/types";
@@ -23,6 +29,8 @@ export type QuoteCurrencySource =
   | "live_quote"
   | "persisted_listing"
   | "verified_registry"
+  | "listing_metadata"
+  | "exchange_fallback"
   | "unresolved";
 
 export type QuoteCurrencyResolution = {
@@ -45,6 +53,8 @@ export function resolveListingQuoteCurrency(input: {
   liveQuoteCurrency?: string | null;
   persistedQuoteCurrency?: PriceCurrency | null;
   providerSymbol?: string | null;
+  exchange?: string | null;
+  listingMetadata?: Pick<ListingMetadataRecord, "quoteCurrency"> | null;
 }): QuoteCurrencyResolution {
   const live = normalizeProviderQuoteCurrency(input.liveQuoteCurrency);
   if (live) {
@@ -68,6 +78,28 @@ export function resolveListingQuoteCurrency(input: {
     return {
       currency: verified.quoteCurrency,
       source: "verified_registry",
+      requiresReview: false,
+    };
+  }
+
+  const metadataCurrency = normalizeProviderQuoteCurrency(
+    input.listingMetadata?.quoteCurrency,
+  );
+  if (metadataCurrency) {
+    return {
+      currency: metadataCurrency,
+      source: "listing_metadata",
+      requiresReview: false,
+    };
+  }
+
+  const parts = parseProviderSymbolParts(input.providerSymbol);
+  const exchange = input.exchange ?? parts?.exchange ?? null;
+  const fallback = resolveExchangeFallbackQuoteCurrency(exchange);
+  if (fallback) {
+    return {
+      currency: fallback,
+      source: "exchange_fallback",
       requiresReview: false,
     };
   }
@@ -99,7 +131,9 @@ export function resolveMatchQuoteCurrency(input: {
 export function backfillListingQuoteCurrency(
   holding: StoredPortfolioHolding,
 ): StoredPortfolioHolding {
-  if (holding.assetType === "cash") {
+  // Cash and crypto use separate denomination models (EUR base / trading pair).
+  // Never apply equity/ETF listing quote-currency resolution to those holdings.
+  if (holding.assetType === "cash" || holding.assetType === "crypto") {
     return holding;
   }
 
@@ -108,7 +142,9 @@ export function backfillListingQuoteCurrency(
   }
 
   const resolution = resolveListingQuoteCurrency({
+    persistedQuoteCurrency: holding.quoteCurrency ?? null,
     providerSymbol: holding.providerSymbol,
+    exchange: holding.exchange,
   });
 
   if (resolution.currency) {

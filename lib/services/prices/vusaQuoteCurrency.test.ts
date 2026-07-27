@@ -4,12 +4,7 @@ import {
   backfillListingQuoteCurrency,
   resolveListingQuoteCurrency,
 } from "@/lib/services/instruments/quoteCurrency";
-import {
-  lookupVerifiedByIsin,
-  lookupVerifiedByProviderSymbol,
-  lookupVerifiedByTickerExchange,
-} from "@/lib/services/instruments/verifiedInstrumentRegistry";
-import { enrichHoldingWithVerifiedMapping } from "@/lib/services/portfolio/enrichHoldingsWithVerifiedMappings";
+import { lookupVerifiedByProviderSymbol } from "@/lib/services/instruments/verifiedInstrumentRegistry";
 import { applyPricesToHoldings } from "@/lib/client/portfolioPricing";
 import { createEodhdMarketDataProvider } from "@/lib/services/prices/providers/eodhdMarketDataProvider";
 import {
@@ -40,34 +35,27 @@ function manualVusaHolding() {
     exchange: "AS",
     isin: "IE00B3XXRP09",
     providerSymbol: "VUSA.AS",
+    quoteCurrency: "EUR" as const,
     confirmationSource: "manual_exact_listing" as const,
     matchMethod: "ticker_exchange" as const,
-    requiresConfirmation: true,
+    requiresConfirmation: false,
     priceDataStatus: "stale" as const,
   };
 }
 
 describe("VUSA.AS Euronext Amsterdam quote currency", () => {
-  it("maps manual Amsterdam listings to VUSA.AS in the verified registry", () => {
-    expect(lookupVerifiedByTickerExchange("VUSA", "Euronext Amsterdam")?.providerSymbol).toBe(
-      "VUSA.AS",
-    );
-    expect(lookupVerifiedByTickerExchange("VUSA", "Amsterdam")?.providerSymbol).toBe(
-      "VUSA.AS",
-    );
-    expect(lookupVerifiedByIsin("IE00B3XXRP09", "Amsterdam")?.providerSymbol).toBe(
-      "VUSA.AS",
-    );
-    expect(lookupVerifiedByProviderSymbol("VUSA.AS")?.quoteCurrency).toBe("EUR");
+  it("does not rely on the verified registry for VUSA.AS", () => {
+    expect(lookupVerifiedByProviderSymbol("VUSA.AS")).toBeNull();
   });
 
-  it("resolves quote targets for manually added VUSA without persisted quoteCurrency", () => {
+  it("resolves quote targets when persisted quoteCurrency is present", () => {
     const { targets, errors, skipped } = resolveQuotePriceTargets([
       {
         symbol: "VUSA",
         providerSymbol: "VUSA.AS",
         isin: "IE00B3XXRP09",
         exchange: "AS",
+        quoteCurrency: "EUR",
         name: "Vanguard S&P 500 UCITS ETF",
       },
     ]);
@@ -81,10 +69,11 @@ describe("VUSA.AS Euronext Amsterdam quote currency", () => {
       symbol: "VUSA",
       providerSymbol: "VUSA.AS",
       isin: "IE00B3XXRP09",
+      quoteCurrency: "EUR",
     })?.currency).toBe("EUR");
   });
 
-  it("backfills EUR quote currency for stored manual VUSA holdings", () => {
+  it("backfills EUR quote currency when persisted on the holding", () => {
     const backfilled = backfillListingQuoteCurrency(manualVusaHolding());
     expect(backfilled.quoteCurrency).toBe("EUR");
     expect(backfilled.currency).toBe("EUR");
@@ -129,7 +118,6 @@ describe("VUSA.AS Euronext Amsterdam quote currency", () => {
   });
 
   it("applies live VUSA quotes instead of leaving a stale manual holding", () => {
-    const enriched = enrichHoldingWithVerifiedMapping(manualVusaHolding());
     const now = new Date().toISOString();
     const quote: PriceApiQuote = {
       symbol: "VUSA",
@@ -147,7 +135,12 @@ describe("VUSA.AS Euronext Amsterdam quote currency", () => {
       cacheStatus: "fresh",
     };
 
-    const [updated] = applyPricesToHoldings([enriched], [quote]);
+    const [updated] = applyPricesToHoldings([manualVusaHolding()], [quote]) as Array<
+      ReturnType<typeof manualVusaHolding> & {
+        previousClose?: number | null;
+        changePercent?: number | null;
+      }
+    >;
     expect(updated?.currentPrice).toBe(124.425);
     expect(updated?.previousClose).toBe(123.96);
     expect(updated?.changePercent).toBeCloseTo(0.3751, 3);

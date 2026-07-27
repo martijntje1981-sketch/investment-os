@@ -41,6 +41,7 @@ import { syncPortfolioPricesFromSnapshot } from "@/lib/client/marketSnapshotSync
 import {
   backfillListingQuoteCurrencies,
   listingQuoteCurrenciesChanged,
+  normalizeProviderQuoteCurrency,
 } from "@/lib/services/instruments/quoteCurrency";
 import { prepareManualHoldingForSave } from "@/lib/services/portfolio/holdingValidation";
 import {
@@ -648,6 +649,8 @@ function applyQuoteToHolding<T extends StoredPortfolioHolding>(
     currentPrice: normalized.priceEur,
     providerSymbol:
       quote.providerSymbol ?? quote.eodhdSymbol ?? holding.providerSymbol ?? null,
+    quoteCurrency:
+      normalizeProviderQuoteCurrency(quote.currency) ?? holding.quoteCurrency ?? null,
     previousClose:
       typeof normalized.previousClose === "number"
         ? normalized.previousClose

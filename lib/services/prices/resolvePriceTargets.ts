@@ -13,12 +13,14 @@ import type {
 import type { InstrumentMatchInput } from "@/lib/types/instrument";
 
 function resolveTargetQuoteCurrency(
-  input: Pick<PriceHoldingInput, "currency" | "quoteCurrency">,
+  input: Pick<PriceHoldingInput, "quoteCurrency">,
   providerSymbol: string,
+  exchange?: string | null,
 ): PriceCurrency | null {
   return resolveListingQuoteCurrency({
-    persistedQuoteCurrency: input.quoteCurrency ?? input.currency ?? null,
+    persistedQuoteCurrency: input.quoteCurrency ?? null,
     providerSymbol,
+    exchange,
   }).currency;
 }
 
@@ -36,7 +38,7 @@ export function resolveQuotePriceTarget(
     providerSymbol: input.providerSymbol,
     isin: input.isin ?? null,
     name: input.instrumentName ?? input.name ?? userSymbol,
-    currency: resolveTargetQuoteCurrency(input, input.providerSymbol),
+    currency: resolveTargetQuoteCurrency(input, input.providerSymbol, input.exchange),
   };
 }
 
@@ -75,7 +77,11 @@ export function resolveQuotePriceTargets(
       continue;
     }
 
-    const targetCurrency = resolveTargetQuoteCurrency(holding, holding.providerSymbol);
+    const targetCurrency = resolveTargetQuoteCurrency(
+      holding,
+      holding.providerSymbol,
+      holding.exchange,
+    );
     if (!targetCurrency) {
       skipped += 1;
       const label = holding.symbol || holding.isin || holding.name || "Unknown";
@@ -88,7 +94,6 @@ export function resolveQuotePriceTargets(
     const target = resolveQuotePriceTarget({
       ...holding,
       quoteCurrency: targetCurrency,
-      currency: targetCurrency,
     });
     if (!target) {
       continue;
@@ -117,7 +122,11 @@ export async function resolvePriceTarget(
   const userSymbol = input.symbol.trim().toUpperCase();
 
   if (input.providerSymbol) {
-    const currency = resolveTargetQuoteCurrency(input, input.providerSymbol);
+    const currency = resolveTargetQuoteCurrency(
+      { quoteCurrency: input.quoteCurrency ?? null },
+      input.providerSymbol,
+      input.exchange,
+    );
     return {
       symbol: userSymbol || input.providerSymbol.split(".")[0] || input.providerSymbol,
       providerSymbol: input.providerSymbol,
@@ -212,6 +221,7 @@ export async function resolveDefaultWatchlist(): Promise<ResolvedPriceTarget[]> 
       currency: resolveTargetQuoteCurrency(
         { quoteCurrency: resolved.quoteCurrency ?? null },
         resolved.providerSymbol,
+        resolved.exchange,
       ),
     });
   }

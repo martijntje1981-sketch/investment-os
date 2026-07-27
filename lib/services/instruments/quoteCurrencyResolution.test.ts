@@ -65,7 +65,7 @@ describe("resolveListingQuoteCurrency", () => {
     });
   });
 
-  it("does not infer currency from exchange suffix alone", () => {
+  it("does not infer currency from exchange suffix alone for ambiguous exchanges", () => {
     expect(
       resolveListingQuoteCurrency({
         providerSymbol: "UNKNOWN.AS",
@@ -77,12 +77,16 @@ describe("resolveListingQuoteCurrency", () => {
     });
   });
 
-  it("does not silently default unresolved listings to EUR or USD", () => {
-    const resolution = resolveListingQuoteCurrency({
-      providerSymbol: "NEWCO.XETRA",
+  it("uses exchange fallback for unambiguous XETRA listings", () => {
+    expect(
+      resolveListingQuoteCurrency({
+        providerSymbol: "NEWCO.XETRA",
+      }),
+    ).toEqual({
+      currency: "EUR",
+      source: "exchange_fallback",
+      requiresReview: false,
     });
-    expect(resolution.currency).toBeNull();
-    expect(resolution.requiresReview).toBe(true);
   });
 });
 
@@ -173,18 +177,18 @@ describe("provider normalization", () => {
     expect(normalized.currency).toBe("EUR");
   });
 
-  it("returns unavailable when currency cannot be verified", () => {
+  it("returns unavailable when currency cannot be verified on ambiguous exchanges", () => {
     const provider = createEodhdMarketDataProvider("test-key");
     const normalized = provider.normalizeQuote(
       {
-        symbol: "NEWCO",
-        providerSymbol: "NEWCO.XETRA",
+        symbol: "FOO",
+        providerSymbol: "FOO.AS",
         isin: null,
-        name: "NEWCO",
+        name: "FOO",
         currency: null,
       },
       {
-        providerSymbol: "NEWCO.XETRA",
+        providerSymbol: "FOO.AS",
         wireCurrency: null,
         originalCurrency: "EUR",
         originalPrice: 10,
@@ -243,16 +247,38 @@ describe("holding backfill", () => {
     expect(backfilled.currency).toBe("EUR");
   });
 
-  it("marks unknown listings for review instead of defaulting currency", () => {
-    const backfilled = backfillListingQuoteCurrency({
-      id: "new",
-      symbol: "NEWCO",
-      name: "NEWCO",
+  it("does not apply equity listing backfill to crypto holdings", () => {
+    const crypto = backfillListingQuoteCurrency({
+      id: "btc",
+      symbol: "BTC",
+      name: "Bitcoin",
       quantity: 1,
       purchasePrice: 10,
       currentPrice: 0,
       currency: "EUR",
-      providerSymbol: "NEWCO.XETRA",
+      assetType: "crypto",
+      pairCurrency: "EUR",
+      providerSymbol: "BTC-EUR.CC",
+      requiresConfirmation: false,
+      matchWarnings: [],
+    });
+
+    expect(crypto.quoteCurrency).toBeUndefined();
+    expect(crypto.pairCurrency).toBe("EUR");
+    expect(crypto.requiresConfirmation).toBe(false);
+    expect(crypto.matchWarnings).toEqual([]);
+  });
+
+  it("marks ambiguous Amsterdam listings for review instead of defaulting currency", () => {
+    const backfilled = backfillListingQuoteCurrency({
+      id: "new",
+      symbol: "FOO",
+      name: "FOO",
+      quantity: 1,
+      purchasePrice: 10,
+      currentPrice: 0,
+      currency: "EUR",
+      providerSymbol: "FOO.AS",
     });
 
     expect(backfilled.quoteCurrency).toBeUndefined();

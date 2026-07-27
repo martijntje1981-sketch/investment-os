@@ -54,6 +54,7 @@ import {
   writePersistedQuote,
 } from "@/lib/services/marketData/persistentQuoteCache";
 import { EODHD_QUOTE_PROVIDER_ID } from "@/lib/services/instruments/eodhdQuoteGuard";
+import { enrichHoldingsWithListingQuoteCurrency } from "@/lib/services/instruments/listingQuoteCurrencyResolver";
 import {
   dedupeResolvedTargets,
   resolveDefaultWatchlist,
@@ -717,16 +718,23 @@ export async function loadPricesForHoldings(
 ): Promise<PricePayload> {
   const metricsBefore = getPriceServiceMetricsSnapshot();
   const holdingsRequested = holdings.length;
+
+  const enrichment = await enrichHoldingsWithListingQuoteCurrency(holdings, {
+    allowProviderLookup: !options?.estimateOnly,
+  });
+  const enrichedHoldings = enrichment.holdings;
+
   const { targets, errors: resolutionErrors, skipped } = resolveQuotePriceTargets(
-    holdings,
+    enrichedHoldings,
     { onlyProviderSymbols: options?.onlyProviderSymbols },
   );
+  const mergedResolutionErrors = [...enrichment.errors, ...resolutionErrors];
 
   if (targets.length === 0) {
     const payload = buildNoQuotablePayload(
       holdingsRequested,
       skipped,
-      resolutionErrors,
+      mergedResolutionErrors,
     );
     logRefreshOutcome(holdingsRequested, skipped, 0, metricsBefore);
     return attachCryptoRefreshDiagnostics(holdings, payload, options);
@@ -754,7 +762,7 @@ export async function loadPricesForHoldings(
       });
       return attachCryptoRefreshDiagnostics(
         holdings,
-        buildPricePayload([], [...resolutionErrors, message], holdingsRequested, DEFAULT_FX_RATES, {
+        buildPricePayload([], [...mergedResolutionErrors, message], holdingsRequested, DEFAULT_FX_RATES, {
           message,
           forceSuccess: false,
           metricsBefore,
@@ -775,7 +783,7 @@ export async function loadPricesForHoldings(
   if (options?.estimateOnly) {
     const eodhdBudget = await getEodhdDailyUsage();
     logRefreshOutcome(holdingsRequested, skipped, targets.length, metricsBefore, estimate);
-    return buildPricePayload([], resolutionErrors, holdingsRequested, DEFAULT_FX_RATES, {
+    return buildPricePayload([], mergedResolutionErrors, holdingsRequested, DEFAULT_FX_RATES, {
       forceSuccess: true,
       metricsBefore,
       refreshSummary: {
@@ -815,7 +823,7 @@ export async function loadPricesForHoldings(
     holdings,
     {
       ...payload,
-      errors: [...resolutionErrors, ...payload.errors],
+      errors: [...mergedResolutionErrors, ...payload.errors],
       requested: holdingsRequested,
       refreshSummary,
       quoteSource: payload.quoteSource,

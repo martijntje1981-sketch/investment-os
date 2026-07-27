@@ -103,6 +103,7 @@ export function finalizeImportRowForSave(row: ImportRow): StoredPortfolioHolding
     matchConfidence: row.matchConfidence,
     requiresConfirmation: ready ? false : row.requiresConfirmation ?? true,
     matchWarnings: row.matchWarnings,
+    quoteCurrency: row.quoteCurrency ?? null,
   });
 }
 

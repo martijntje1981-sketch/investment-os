@@ -249,6 +249,7 @@ export function applyManualExactListingToImportRow(
     symbol: parsed.ticker,
     exchange: parsed.exchange,
     providerSymbol: parsed.providerSymbol,
+    quoteCurrency: parsed.resolved.quoteCurrency ?? null,
     matchMethod: "ticker_exchange",
     matchConfidence: 1,
     confirmationSource: "manual_exact_listing",

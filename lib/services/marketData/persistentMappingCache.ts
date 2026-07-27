@@ -4,8 +4,9 @@ import type {
   EodhdIdMappingRow,
   EodhdSearchRow,
 } from "@/lib/services/instruments/eodhdClient";
+import type { ListingMetadataRecord } from "@/lib/services/instruments/listingMetadata";
 
-type LookupType = "id_mapping" | "search";
+type LookupType = "id_mapping" | "search" | "listing_metadata";
 
 function buildLookupKey(type: LookupType, parts: Record<string, string>): string {
   const normalized = Object.entries(parts)
@@ -33,6 +34,44 @@ export function buildSearchLookupKey(query: string, exchange?: string | null): s
     query: query.trim().toUpperCase(),
     exchange: exchange?.trim().toUpperCase() ?? "",
   });
+}
+
+export function buildListingMetadataLookupKey(providerSymbol: string): string {
+  return buildLookupKey("listing_metadata", {
+    providerSymbol: providerSymbol.trim().toUpperCase(),
+  });
+}
+
+const LISTING_METADATA_TTL_MS = 120 * 24 * 60 * 60 * 1000;
+
+export async function readListingMetadata(
+  providerSymbol: string,
+): Promise<ListingMetadataRecord | null> {
+  const lookupKey = buildListingMetadataLookupKey(providerSymbol);
+  return readPersistedInstrumentLookup<ListingMetadataRecord>(lookupKey);
+}
+
+export async function writeListingMetadata(
+  metadata: ListingMetadataRecord,
+): Promise<void> {
+  const admin = createAdminClient();
+  if (!admin) return;
+
+  const now = Date.now();
+  const expiresAt = new Date(now + LISTING_METADATA_TTL_MS).toISOString();
+
+  await admin.from("instrument_lookup_cache").upsert(
+    {
+      lookup_key: buildListingMetadataLookupKey(metadata.providerSymbol),
+      provider_id: "eodhd",
+      lookup_type: "listing_metadata",
+      result_json: metadata,
+      fetched_at: metadata.resolvedAt,
+      expires_at: expiresAt,
+      updated_at: new Date(now).toISOString(),
+    },
+    { onConflict: "lookup_key" },
+  );
 }
 
 export async function readPersistedInstrumentLookup<T>(
