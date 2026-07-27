@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 
-import { resolveExchangeForMatching } from "@/lib/services/instruments/exchangeNormalizer";
+import { normalizeExchange } from "@/lib/services/instruments/exchangeNormalizer";
 import {
   findExchangeOption,
   formatExchangeInputValue,
@@ -119,7 +119,7 @@ export function ExchangeFieldEditor({
   }
 
   function commitFreeTextExchange(trimmed: string) {
-    const normalized = resolveExchangeForMatching(trimmed) ?? trimmed.toUpperCase();
+    const normalized = normalizeExchange(trimmed) ?? trimmed.toUpperCase();
     setValidationMessage(null);
     onCommit(normalized, false);
   }

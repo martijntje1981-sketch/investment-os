@@ -10,21 +10,21 @@ import { normalizeExchange } from "@/lib/services/instruments/exchangeNormalizer
 describe("resolveExchangeInput", () => {
   it("resolves catalog labels and alias codes through the same ranked lookup", () => {
     const parisLabel = resolveExchangeInput("Euronext Paris");
-    expect(parisLabel.exact).toEqual({
+    expect(parisLabel.exact).toMatchObject({
       code: "PA",
       label: "Euronext Paris",
     });
     expect(parisLabel.matches[0]).toEqual(parisLabel.exact);
 
     const parisAlias = resolveExchangeInput("EPA");
-    expect(parisAlias.exact).toEqual({
+    expect(parisAlias.exact).toMatchObject({
       code: "PA",
       label: "Euronext Paris",
     });
   });
 
   it("resolves full catalog labels that only match by label scoring", () => {
-    expect(resolveExchangeInput("London Stock Exchange").exact).toEqual({
+    expect(resolveExchangeInput("London Stock Exchange").exact).toMatchObject({
       code: "LSE",
       label: "London Stock Exchange",
     });
@@ -47,7 +47,11 @@ describe("searchExchanges", () => {
     expect(xetra[0]?.code).toBe("XETRA");
 
     const amsterdam = await searchExchanges("Amsterdam");
-    expect(amsterdam.some((item) => item.code === "AS")).toBe(true);
+    expect(amsterdam.filter((item) => item.code === "AS")).toHaveLength(1);
+    expect(amsterdam[0]).toMatchObject({
+      code: "AS",
+      label: "Amsterdam (Euronext)",
+    });
   });
 
   it("maps EPA to Euronext Paris", async () => {
@@ -60,7 +64,7 @@ describe("searchExchanges", () => {
     const exact = findExchangeOption(input);
     const search = await searchExchanges(input);
 
-    expect(exact).toEqual({ code: "PA", label: "Euronext Paris" });
+    expect(exact).toMatchObject({ code: "PA", label: "Euronext Paris" });
     expect(search[0]).toEqual(exact);
   });
 
@@ -75,14 +79,14 @@ describe("searchExchanges", () => {
 
 describe("findExchangeOption", () => {
   it("maps normalized exchange codes to catalog labels", () => {
-    expect(findExchangeOption("XETR")).toEqual({
+    expect(findExchangeOption("XETR")).toMatchObject({
       code: "XETRA",
       label: "Xetra",
     });
   });
 
   it("maps EPA to Euronext Paris", () => {
-    expect(findExchangeOption("EPA")).toEqual({
+    expect(findExchangeOption("EPA")).toMatchObject({
       code: "PA",
       label: "Euronext Paris",
     });
@@ -90,14 +94,35 @@ describe("findExchangeOption", () => {
   });
 
   it("resolves catalog labels used in autocomplete", () => {
-    expect(findExchangeOption("Euronext Paris")).toEqual({
+    expect(findExchangeOption("Euronext Paris")).toMatchObject({
       code: "PA",
       label: "Euronext Paris",
     });
-    expect(findExchangeOption("London Stock Exchange")).toEqual({
+    expect(findExchangeOption("London Stock Exchange")).toMatchObject({
       code: "LSE",
       label: "London Stock Exchange",
     });
+  });
+
+  it("resolves Tradegate from the exchange picker catalog", () => {
+    expect(findExchangeOption("Tradegate")).toMatchObject({
+      code: "TDG",
+      label: "Tradegate",
+    });
+    expect(findExchangeOption("TDG")).toMatchObject({
+      code: "TDG",
+      label: "Tradegate",
+    });
+    expect(normalizeExchange("TDG")).toBe("TDG");
+  });
+
+  it("resolves Amsterdam aliases to one Amsterdam (Euronext) option", () => {
+    for (const alias of ["Amsterdam", "Euronext Amsterdam", "XAMS", "AS"]) {
+      expect(findExchangeOption(alias)).toMatchObject({
+        code: "AS",
+        label: "Amsterdam (Euronext)",
+      });
+    }
   });
 
   it("returns null for unknown exchange codes", () => {

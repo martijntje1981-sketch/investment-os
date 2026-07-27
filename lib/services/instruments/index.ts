@@ -20,10 +20,24 @@ export {
   exchangesMatch,
   exchangeResolutionMessage,
   isKnownProviderExchange,
+  isRecognizedExchange,
   normalizeExchange,
   normalizeProviderExchangeCode,
+  providerExchangesMatch,
   resolveExchangeForMatching,
 } from "./exchangeNormalizer";
+export {
+  EXCHANGE_REGISTRY,
+  formatRegistryExchangeLabel,
+  getExchangeRegistryEntry,
+  isProviderPricingExchange,
+  isValidPurchaseVenue,
+  listUserSelectableExchanges,
+  normalizePurchaseExchangeCode,
+  resolveProviderPricingExchange,
+  type ExchangeMarketGroup,
+  type ExchangeRegistryEntry,
+} from "./exchangeRegistry";
 export {
   findExchangeOption,
   formatExchangeInputValue,

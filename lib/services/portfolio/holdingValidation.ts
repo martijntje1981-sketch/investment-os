@@ -1,4 +1,4 @@
-import { resolveExchangeForMatching } from "@/lib/services/instruments/exchangeNormalizer";
+import { normalizeExchange } from "@/lib/services/instruments/exchangeNormalizer";
 import {
   isCryptoHolding,
   prepareCryptoHoldingForSave,
@@ -59,7 +59,7 @@ export function normalizeOptionalExchange(
 ): string | null {
   const raw = String(exchange ?? "").trim();
   if (!raw) return null;
-  return resolveExchangeForMatching(raw) ?? raw.toUpperCase();
+  return normalizeExchange(raw) ?? raw.toUpperCase();
 }
 
 export function resolveHoldingMatchStatus(

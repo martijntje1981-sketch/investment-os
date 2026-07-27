@@ -1,135 +1,99 @@
-import { resolveExchangeForMatching } from "@/lib/services/instruments/exchangeNormalizer";
+import {
+  getExchangeRegistryEntry,
+  listUserSelectableExchanges,
+  type ExchangeRegistryEntry,
+} from "@/lib/services/instruments/exchangeRegistry";
+import {
+  normalizeExchange,
+  resolveExchangeForMatching,
+} from "@/lib/services/instruments/exchangeNormalizer";
 
 export type ExchangeOption = {
   code: string;
   label: string;
+  marketGroup?: string;
 };
-
-type ExchangeCatalogEntry = ExchangeOption & {
-  searchTerms: string[];
-};
-
-const EXCHANGE_CATALOG: ExchangeCatalogEntry[] = [
-  {
-    code: "XETRA",
-    label: "Xetra",
-    searchTerms: ["xetra", "xetr", "xfra", "frankfurt", "germany", "de", "xet"],
-  },
-  {
-    code: "TDG",
-    label: "Tradegate",
-    searchTerms: ["tradegate", "tdg", "tg", "trade gate", "tradegate bsx"],
-  },
-  {
-    code: "AS",
-    label: "Euronext Amsterdam",
-    searchTerms: ["amsterdam", "ams", "xams", "euronext amsterdam"],
-  },
-  {
-    code: "PA",
-    label: "Euronext Paris",
-    searchTerms: ["paris", "pa", "epa", "xpar", "xepa", "euronext paris"],
-  },
-  {
-    code: "BR",
-    label: "Euronext Brussels",
-    searchTerms: ["brussels", "br", "xbru", "euronext brussels"],
-  },
-  {
-    code: "LSE",
-    label: "London Stock Exchange",
-    searchTerms: ["lse", "lon", "london", "xlon"],
-  },
-  {
-    code: "US",
-    label: "US markets",
-    searchTerms: ["us", "nasdaq", "nyse", "arca", "xnas", "xnys", "united states"],
-  },
-  {
-    code: "SW",
-    label: "SIX Swiss Exchange",
-    searchTerms: ["sw", "six", "swiss", "zurich", "xswx"],
-  },
-  {
-    code: "MI",
-    label: "Borsa Italiana",
-    searchTerms: ["mi", "milan", "italy", "xmil"],
-  },
-  {
-    code: "MC",
-    label: "Bolsa de Madrid",
-    searchTerms: ["mc", "madrid", "spain", "xmad"],
-  },
-  {
-    code: "ST",
-    label: "Nasdaq Stockholm",
-    searchTerms: ["st", "stockholm", "sweden", "xsto"],
-  },
-  {
-    code: "HE",
-    label: "Nasdaq Helsinki",
-    searchTerms: ["he", "helsinki", "finland", "xhel"],
-  },
-  {
-    code: "IR",
-    label: "Euronext Dublin",
-    searchTerms: ["ir", "dublin", "ireland", "xdub"],
-  },
-  {
-    code: "VI",
-    label: "Vienna Stock Exchange",
-    searchTerms: ["vi", "vienna", "austria", "xvie"],
-  },
-];
-
-/** Minimum score for an unambiguous exact catalog or alias match. */
-const EXACT_MATCH_SCORE = 90;
 
 type RankedExchangeMatch = {
   option: ExchangeOption;
   score: number;
 };
 
-function scoreExchangeMatch(entry: ExchangeCatalogEntry, query: string): number {
+/** Minimum score for an unambiguous exact catalog or alias match. */
+const EXACT_MATCH_SCORE = 90;
+
+function toOption(entry: ExchangeRegistryEntry): ExchangeOption {
+  return {
+    code: entry.purchaseCode,
+    label: entry.displayLabel,
+    marketGroup: entry.marketGroup,
+  };
+}
+
+function scoreExchangeMatch(
+  entry: ExchangeRegistryEntry,
+  query: string,
+): number {
   const normalized = query.trim().toLowerCase();
   if (!normalized) return 0;
 
-  if (entry.code.toLowerCase() === normalized) return 100;
-  if (entry.label.toLowerCase() === normalized) return 95;
-  if (entry.label.toLowerCase().startsWith(normalized)) return 85;
-  if (entry.code.toLowerCase().startsWith(normalized)) return 80;
+  if (entry.purchaseCode.toLowerCase() === normalized) return 100;
+  if (entry.displayLabel.toLowerCase() === normalized) return 95;
+  if (entry.displayLabel.toLowerCase().startsWith(normalized)) return 85;
+  if (entry.purchaseCode.toLowerCase().startsWith(normalized)) return 80;
 
-  for (const term of entry.searchTerms) {
+  for (const alias of entry.aliases) {
+    const term = alias.toLowerCase();
     if (term === normalized) return 90;
     if (term.startsWith(normalized)) return 70;
     if (term.includes(normalized)) return 55;
   }
 
-  if (entry.label.toLowerCase().includes(normalized)) return 50;
+  // Allow spaced labels such as "trade gate" / "euronext amsterdam".
+  const compactLabel = entry.displayLabel.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const compactQuery = normalized.replace(/[^a-z0-9]/g, "");
+  if (compactLabel === compactQuery) return 95;
+  if (compactLabel.startsWith(compactQuery) && compactQuery.length >= 2) {
+    return 80;
+  }
+
+  if (entry.displayLabel.toLowerCase().includes(normalized)) return 50;
+  if (entry.marketGroup?.toLowerCase().includes(normalized)) return 40;
   return 0;
 }
 
 /**
- * Single exchange lookup: ranks catalog entries for any user input.
- * Combines catalog label/term scoring with provider alias normalization.
+ * Ranks selectable registry entries for any user input.
+ * Combines label/alias scoring with purchase and provider normalization.
  */
 function rankExchangeMatches(query: string): RankedExchangeMatch[] {
   const trimmed = query.trim();
   if (!trimmed) return [];
 
+  const purchaseCode = normalizeExchange(trimmed);
   const providerCode = resolveExchangeForMatching(trimmed);
 
-  return EXCHANGE_CATALOG.map((entry) => {
-    let score = scoreExchangeMatch(entry, trimmed);
-    if (providerCode === entry.code) {
-      score = Math.max(score, 100);
-    }
+  return listUserSelectableExchanges()
+    .map((entry) => {
+      let score = scoreExchangeMatch(entry, trimmed);
+      if (purchaseCode === entry.purchaseCode) {
+        score = Math.max(score, 100);
+      }
+      // Provider path match (e.g. NASDAQ → US) must not collapse distinct
+      // US purchase venues into a single exact pick when the query is US.
+      if (
+        providerCode &&
+        entry.providerPricingCode === providerCode &&
+        purchaseCode === entry.purchaseCode
+      ) {
+        score = Math.max(score, 100);
+      }
 
-    return {
-      option: { code: entry.code, label: entry.label },
-      score,
-    };
-  })
+      return {
+        option: toOption(entry),
+        score,
+      };
+    })
     .filter((item) => item.score > 0)
     .sort(
       (a, b) =>
@@ -147,8 +111,13 @@ function pickExactExchangeMatch(
   const topScore = ranked[0].score;
   const topMatches = ranked.filter((item) => item.score === topScore);
 
-  if (topScore >= 95) {
+  if (topScore >= 95 && topMatches.length === 1) {
     return ranked[0].option;
+  }
+
+  if (topScore >= 95) {
+    // Prefer the registry entry whose purchase code equals the normalized query.
+    return topMatches[0]?.option ?? null;
   }
 
   if (topScore >= EXACT_MATCH_SCORE && topMatches.length === 1) {
@@ -174,7 +143,16 @@ export function findExchangeOption(
   value: string | null | undefined,
 ): ExchangeOption | null {
   if (!value?.trim()) return null;
-  return resolveExchangeInput(value).exact;
+
+  const exact = resolveExchangeInput(value).exact;
+  if (exact) return exact;
+
+  const entry = getExchangeRegistryEntry(value);
+  if (entry?.userSelectable) {
+    return toOption(entry);
+  }
+
+  return null;
 }
 
 export function formatExchangeInputValue(
@@ -185,10 +163,9 @@ export function formatExchangeInputValue(
 }
 
 export function getCommonExchangeOptions(limit = 8): ExchangeOption[] {
-  return EXCHANGE_CATALOG.slice(0, limit).map((entry) => ({
-    code: entry.code,
-    label: entry.label,
-  }));
+  return listUserSelectableExchanges()
+    .slice(0, limit)
+    .map((entry) => toOption(entry));
 }
 
 export function searchExchanges(

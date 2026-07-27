@@ -1,3 +1,4 @@
+import { formatRegistryExchangeLabel } from "@/lib/services/instruments/exchangeRegistry";
 import { applyResolvedToHolding } from "@/lib/services/instruments/applyResolved";
 import type { ImportRow } from "@/lib/services/import/types";
 import { annotateImportRow } from "@/lib/services/import/confidencePolicy";
@@ -28,16 +29,7 @@ export type ListingDisplay = {
 };
 
 export function formatExchangeLabel(code: string | null | undefined): string {
-  switch (code?.trim().toUpperCase()) {
-    case "XETRA":
-      return "Xetra";
-    case "TDG":
-      return "Tradegate";
-    case "AS":
-      return "Euronext Amsterdam";
-    default:
-      return code?.trim() || "—";
-  }
+  return formatRegistryExchangeLabel(code);
 }
 
 export function describePricingSource(
@@ -55,7 +47,7 @@ export function describePricingSource(
     ? formatExchangeLabel(listing.exchange)
     : "your broker";
 
-  return `Live prices use the ${pricingLabel} listing (${listing.providerSymbol ?? "—"}). Your ${purchaseLabel} purchase is preserved.`;
+  return `Purchased on: ${purchaseLabel}. Price source: ${pricingLabel} (${listing.providerSymbol ?? "—"}).`;
 }
 
 function formatListingCurrency(

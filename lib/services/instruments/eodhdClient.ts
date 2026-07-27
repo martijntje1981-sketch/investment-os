@@ -7,6 +7,11 @@
 
 import { persistListingMetadataFromProviderRows } from "@/lib/services/instruments/listingMetadata";
 import {
+  isKnownProviderExchange,
+  normalizeProviderExchangeCode,
+  resolveExchangeForMatching,
+} from "@/lib/services/instruments/exchangeNormalizer";
+import {
   buildIdMappingLookupKey,
   buildSearchLookupKey,
   readPersistedInstrumentLookup,
@@ -101,12 +106,22 @@ function parseJsonArray<T>(data: unknown): T[] {
   return [];
 }
 
-/** Builds an EODHD provider symbol from code and exchange parts. */
+/** Builds an EODHD provider symbol from code and a provider pricing exchange. */
 export function buildProviderSymbol(
   code: string,
   exchange: string,
 ): string {
-  return `${code.trim().toUpperCase()}.${exchange.trim().toUpperCase()}`;
+  const providerExchange =
+    resolveExchangeForMatching(exchange) ??
+    normalizeProviderExchangeCode(exchange);
+
+  if (!providerExchange || !isKnownProviderExchange(providerExchange)) {
+    throw new Error(
+      `Cannot build provider symbol: "${exchange}" is not a provider pricing exchange.`,
+    );
+  }
+
+  return `${code.trim().toUpperCase()}.${providerExchange}`;
 }
 
 /**

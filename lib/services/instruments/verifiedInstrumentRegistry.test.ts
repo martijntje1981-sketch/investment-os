@@ -77,7 +77,9 @@ describe("verifiedInstrumentRegistry", () => {
     expect(resolved.exchange).toBe("TDG");
     expect(resolved.pricingExchange).toBe("XETRA");
     expect(resolved.isin).toBe("IE0003Z9E2Y3");
-    expect(describePricingSource(resolved)).toMatch(/Live prices use the Xetra listing/i);
+    expect(describePricingSource(resolved)).toMatch(
+      /Purchased on: Tradegate\. Price source: Xetra \(4COP\.XETRA\)/i,
+    );
   });
 
   it("resolves 4COP by ISIN with Tradegate purchase exchange", () => {

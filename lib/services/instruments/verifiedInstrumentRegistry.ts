@@ -3,6 +3,7 @@
  * Used before external provider search so known holdings match offline.
  */
 
+import { normalizePurchaseExchangeCode } from "@/lib/services/instruments/exchangeRegistry";
 import { buildProviderSymbol } from "@/lib/services/instruments/eodhdClient";
 import {
   exchangesMatch,
@@ -88,13 +89,6 @@ const VERIFIED_INSTRUMENTS: VerifiedInstrumentEntry[] = [
   },
 ];
 
-const PURCHASE_EXCHANGE_ALIASES: Record<string, string> = {
-  TDG: "TDG",
-  TRADEGATE: "TDG",
-  TG: "TDG",
-  TRADEGATEBSX: "TDG",
-};
-
 const byProviderSymbol = new Map<string, VerifiedInstrumentEntry>();
 const byIsin = new Map<string, VerifiedInstrumentEntry[]>();
 const byTickerExchange = new Map<string, VerifiedInstrumentEntry>();
@@ -119,16 +113,11 @@ for (const entry of VERIFIED_INSTRUMENTS) {
   }
 }
 
-/** Normalizes broker purchase venue labels (e.g. Tradegate → TDG). */
+/** Normalizes broker purchase venue labels via the central exchange registry. */
 export function normalizePurchaseExchange(
   raw: string | null | undefined,
 ): string | null {
-  if (!raw?.trim()) return null;
-
-  const cleaned = raw.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
-  if (!cleaned) return null;
-
-  return PURCHASE_EXCHANGE_ALIASES[cleaned] ?? cleaned;
+  return normalizePurchaseExchangeCode(raw);
 }
 
 function entryMatchesPurchaseExchange(

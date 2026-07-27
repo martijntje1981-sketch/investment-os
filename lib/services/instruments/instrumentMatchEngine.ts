@@ -24,7 +24,12 @@ import {
   isEodhdInstrumentQuotaExhausted,
   markEodhdInstrumentQuotaExhausted,
 } from "./eodhdQuotaGuard";
-import { exchangesMatch, exchangeResolutionMessage, normalizeProviderExchangeCode, resolveExchangeForMatching } from "./exchangeNormalizer";
+import {
+  exchangeResolutionMessage,
+  normalizeProviderExchangeCode,
+  providerExchangesMatch,
+  resolveExchangeForMatching,
+} from "./exchangeNormalizer";
 import {
   looksLikeProviderSymbolInput,
   parseProviderSymbolInput,
@@ -129,7 +134,6 @@ function rowToResolved(
   const code = row.Code?.trim().toUpperCase() ?? "";
   const exchange =
     normalizeProviderExchangeCode(row.Exchange) ??
-    row.Exchange?.trim().toUpperCase() ??
     null;
   const providerSymbol =
     code && exchange ? buildProviderSymbol(code, exchange) : null;
@@ -166,7 +170,7 @@ function disambiguateRows<T extends EodhdIdMappingRow | EodhdSearchRow>(
 
   if (preferredExchange) {
     const onExchange = rows.filter((row) =>
-      exchangesMatch(row.Exchange, preferredExchange),
+      providerExchangesMatch(row.Exchange, preferredExchange),
     );
     if (onExchange.length === 1) {
       return { best: onExchange[0], ambiguous: [] };
@@ -335,7 +339,7 @@ async function resolveByTickerAndExchange(
   }
 
   const exchangeMatchedRows = searchRows.filter((row) =>
-    exchangesMatch(row.Exchange, normalizedExchange),
+    providerExchangesMatch(row.Exchange, normalizedExchange),
   );
 
   if (exchangeMatchedRows.length === 0) {

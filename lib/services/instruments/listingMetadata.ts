@@ -2,7 +2,9 @@
  * Listing metadata helpers — extract quote currency from EODHD rows and provider symbols.
  */
 
-import { exchangesMatch } from "@/lib/services/instruments/exchangeNormalizer";
+import {
+  providerExchangesMatch,
+} from "@/lib/services/instruments/exchangeNormalizer";
 import { normalizeProviderQuoteCurrency } from "@/lib/services/instruments/quoteCurrency";
 import { normalizeIsin } from "@/lib/services/instruments/validation";
 import { writeListingMetadata } from "@/lib/services/marketData/persistentMappingCache";
@@ -46,7 +48,7 @@ function rowMatchesProviderSymbol(
   if (code !== parts.ticker) {
     return false;
   }
-  return exchangesMatch(row.Exchange, parts.exchange);
+  return providerExchangesMatch(row.Exchange, parts.exchange);
 }
 
 export function extractQuoteCurrencyFromProviderRows(

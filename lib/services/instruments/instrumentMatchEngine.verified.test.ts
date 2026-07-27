@@ -133,7 +133,27 @@ describe("matchInstrument verified mappings", () => {
     expect(resolved.pricingExchange).toBe("XETRA");
     expect(resolved.isin).toBe("IE0003Z9E2Y3");
     expect(resolved.confirmationSource).toBe("verified_mapping");
+    expect(resolved.warnings ?? []).not.toEqual(
+      expect.arrayContaining([
+        expect.stringMatching(/not a recognized exchange/i),
+      ]),
+    );
     expect(fetchIdMapping).not.toHaveBeenCalled();
     expect(fetchSearch).not.toHaveBeenCalled();
+  });
+
+  it("does not warn when exchange picker selects TDG", async () => {
+    const resolved = await matchInstrument({
+      ticker: "4COP",
+      exchange: "TDG",
+      assetType: "investment",
+    });
+
+    expect(resolved.providerSymbol).toBe("4COP.XETRA");
+    expect(resolved.warnings ?? []).not.toEqual(
+      expect.arrayContaining([
+        expect.stringMatching(/not a recognized exchange/i),
+      ]),
+    );
   });
 });

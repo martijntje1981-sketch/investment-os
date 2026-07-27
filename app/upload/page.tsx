@@ -31,7 +31,7 @@ import {
   applyManualExactListingToImportRow,
 } from "@/lib/services/instruments/listingConfirmation";
 import { parseProviderSymbolInput } from "@/lib/services/instruments/providerSymbolInput";
-import { resolveExchangeForMatching } from "@/lib/services/instruments/exchangeNormalizer";
+import { normalizeExchange } from "@/lib/services/instruments/exchangeNormalizer";
 import { saveImportedPortfolio } from "@/lib/client/importSavePortfolio";
 import {
   clearPendingImportSession,
@@ -298,7 +298,7 @@ export default function UploadPage() {
       return;
     }
 
-    const normalizedExchange = resolveExchangeForMatching(exchangeCode);
+    const normalizedExchange = normalizeExchange(exchangeCode);
     if (!normalizedExchange) {
       return;
     }
