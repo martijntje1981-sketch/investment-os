@@ -6,6 +6,7 @@ import { DashboardEmptyState } from "@/components/dashboard/DashboardEmptyState"
 import { DashboardDividendCard } from "@/components/dashboard/DashboardDividendCard";
 import { DashboardAnalystCard } from "@/components/dashboard/DashboardAnalystCard";
 import { DashboardGoalProgressCard } from "@/components/dashboard/DashboardGoalProgressCard";
+import { DashboardContributionsCard } from "@/components/contributions/DashboardContributionsCard";
 import { DashboardIntelligencePreview } from "@/components/dashboard/DashboardIntelligencePreview";
 import { DashboardPortfolioHealthCard } from "@/components/dashboard/DashboardPortfolioHealthCard";
 import { DashboardSummary } from "@/components/dashboard/DashboardSummary";
@@ -207,6 +208,7 @@ export default function DashboardPage() {
 
             <div className="grid min-w-0 gap-6 lg:grid-cols-2">
               <DashboardGoalProgressCard progress={goalProgress} />
+              <DashboardContributionsCard snapshot={snapshot} />
               <DashboardDividendCard
                 snapshot={dividendSnapshot}
                 isLoading={dividendsLoading}

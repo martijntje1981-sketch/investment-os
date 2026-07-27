@@ -26,6 +26,7 @@ const userOwnedTables = [
   "briefing_snapshots",
   "saved_import_mappings",
   "portfolio_sync_events",
+  "portfolio_contributions",
 ];
 
 describe("Phase 1 migration security verification", () => {
