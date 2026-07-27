@@ -322,19 +322,21 @@ export function ManageContributionsDialog({
                 <span className={appSectionLabelClass}>
                   Amount ({baseCurrency})
                 </span>
-                <NumericInput
-                  value={draft.amount > 0 ? String(draft.amount) : ""}
-                  onValueChange={(value) =>
-                    setDraft((current) => ({
-                      ...current,
-                      amount: Number(value) || 0,
-                      currency: baseCurrency,
-                    }))
-                  }
-                  prefix={currencySymbol}
-                  placeholder="0"
-                  inputMode="decimal"
-                />
+                <span className="flex min-h-[44px] items-center rounded-xl border border-slate-200 bg-white px-3 focus-within:border-blue-400">
+                  <span className="font-semibold text-slate-400">{currencySymbol}</span>
+                  <NumericInput
+                    value={draft.amount}
+                    onChange={(value) =>
+                      setDraft((current) => ({
+                        ...current,
+                        amount: value,
+                        currency: baseCurrency,
+                      }))
+                    }
+                    placeholder="0"
+                    className="min-w-0 flex-1 bg-transparent py-2.5 text-sm outline-none"
+                  />
+                </span>
                 <span className={appSectionMetaClass}>
                   Entries are stored in your portfolio base currency ({baseCurrency}).
                 </span>
