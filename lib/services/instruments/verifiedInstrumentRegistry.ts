@@ -43,6 +43,16 @@ const VERIFIED_INSTRUMENTS: VerifiedInstrumentEntry[] = [
       "EODHD real-time STRC.AS quotes omit currency but are USD-denominated; convert to EUR via FX.",
   },
   {
+    ticker: "VUSA",
+    exchange: "AS",
+    providerSymbol: "VUSA.AS",
+    instrumentName: "Vanguard S&P 500 UCITS ETF",
+    isin: "IE00B3XXRP09",
+    quoteCurrency: "EUR",
+    quoteCurrencyNote:
+      "EODHD real-time VUSA.AS quotes omit currency but are EUR-denominated on Euronext Amsterdam.",
+  },
+  {
     ticker: "AIFS",
     exchange: "XETRA",
     providerSymbol: "AIFS.XETRA",

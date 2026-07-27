@@ -16,6 +16,9 @@ describe("verifiedInstrumentRegistry", () => {
     ["STRC", "Euronext Amsterdam", "STRC.AS"],
     ["STRC", "Amsterdam", "STRC.AS"],
     ["STRC", "AS", "STRC.AS"],
+    ["VUSA", "Euronext Amsterdam", "VUSA.AS"],
+    ["VUSA", "Amsterdam", "VUSA.AS"],
+    ["VUSA", "AS", "VUSA.AS"],
     ["AIFS", "Xetra", "AIFS.XETRA"],
     ["AIFS", "XETRA", "AIFS.XETRA"],
     ["NUKL", "xetra", "NUKL.XETRA"],
@@ -33,6 +36,9 @@ describe("verifiedInstrumentRegistry", () => {
     expect(lookupVerifiedByIsin("IE00BK5BQT80", "XETRA")?.providerSymbol).toBe(
       "VWCE.XETRA",
     );
+    expect(lookupVerifiedByIsin("IE00B3XXRP09", "Amsterdam")?.providerSymbol).toBe(
+      "VUSA.AS",
+    );
   });
 
   it("recognizes direct provider symbols case-insensitively", () => {
@@ -44,6 +50,12 @@ describe("verifiedInstrumentRegistry", () => {
     const entry = lookupVerifiedByProviderSymbol("STRC.AS");
     expect(entry?.quoteCurrency).toBe("USD");
     expect(entry?.quoteCurrencyNote).toMatch(/USD/i);
+  });
+
+  it("documents VUSA.AS as EUR-denominated when EODHD omits currency", () => {
+    const entry = lookupVerifiedByProviderSymbol("VUSA.AS");
+    expect(entry?.quoteCurrency).toBe("EUR");
+    expect(entry?.quoteCurrencyNote).toMatch(/EUR/i);
   });
 
   it("returns null for unknown instruments", () => {
