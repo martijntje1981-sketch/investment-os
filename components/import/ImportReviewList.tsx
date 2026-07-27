@@ -6,14 +6,15 @@ import { useState } from "react";
 import NumericInput from "@/components/NumericInput";
 import { SupportStatusBadge } from "@/components/marketing/SupportStatusBadge";
 import { ExchangeFieldEditor } from "@/components/import/ExchangeFieldEditor";
-import {
-  ListingCandidatePicker,
-  SelectedListingSummary,
-} from "@/components/instruments/ListingCandidatePicker";
+import { HoldingVenueSummary } from "@/components/instruments/HoldingVenueSummary";
+import { ListingCandidatePicker } from "@/components/instruments/ListingCandidatePicker";
 import { ExactListingSymbolField } from "@/components/import/ExactListingSymbolField";
 import {
   buildListingCandidates,
 } from "@/lib/services/instruments/listingConfirmation";
+import {
+  needsManualPricingSelection,
+} from "@/lib/client/holdingVenuePresentation";
 import {
   isMultipleListingGuidanceMessage,
   PURCHASE_EXCHANGE_CONFIRMED_HELPER,
@@ -127,7 +128,12 @@ function ImportReviewCard({
   const confidence = roundConfidencePercent(
     row.matchConfidence ?? row.extractionConfidence,
   );
+  const unresolvedCandidates = row.candidates ?? [];
   const alternatives = buildListingCandidates(row);
+  const showPricingListingPicker = needsManualPricingSelection({
+    providerSymbol: row.providerSymbol,
+    candidates: unresolvedCandidates,
+  });
   const uncertainFields = getExtractionFieldsNeedingReview(row);
   const otherUncertainFields = uncertainFields.filter((field) => field !== "exchange");
   const [exchangeFieldActive, setExchangeFieldActive] = useState(false);
@@ -184,17 +190,27 @@ function ImportReviewCard({
         <ReadOnlyFieldGrid row={row} uncertainFields={uncertainFields} />
 
         {row.reviewReason ? (
-          isMultipleListingGuidanceMessage(row.reviewReason) &&
-          Boolean(row.exchange?.trim()) ? (
-            <p className="mt-3 text-sm leading-6 text-slate-600">
-              {PURCHASE_EXCHANGE_CONFIRMED_HELPER}
-            </p>
-          ) : (
-            <p className="mt-3 flex items-start gap-2 text-sm leading-6 text-amber-800">
-              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-              {row.reviewReason}
-            </p>
-          )
+          (() => {
+            const multipleListing = isMultipleListingGuidanceMessage(
+              row.reviewReason,
+            );
+            if (multipleListing && showPricingListingPicker && row.exchange?.trim()) {
+              return (
+                <p className="mt-3 text-sm leading-6 text-slate-600">
+                  {PURCHASE_EXCHANGE_CONFIRMED_HELPER}
+                </p>
+              );
+            }
+            if (multipleListing && row.providerSymbol?.trim()) {
+              return null;
+            }
+            return (
+              <p className="mt-3 flex items-start gap-2 text-sm leading-6 text-amber-800">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                {row.reviewReason}
+              </p>
+            );
+          })()
         ) : null}
       </div>
 
@@ -229,14 +245,21 @@ function ImportReviewCard({
           <OptionalPurchaseDateField row={row} onChange={onFieldChange} />
         ) : null}
 
-        {needsMatchReview && alternatives.length > 0 ? (
+        {showPricingListingPicker ? (
           <ListingCandidatePicker
-            source={row}
+            source={{
+              instrumentName: row.instrumentName ?? row.name,
+              exchange: row.exchange,
+              isin: row.isin,
+              matchMethod: row.matchMethod,
+              matchConfidence: row.matchConfidence,
+              candidates: unresolvedCandidates,
+            }}
             selectedProviderSymbol={row.providerSymbol}
             onSelect={onSelectCandidate}
             title={
               row.exchange?.trim()
-                ? "Select live pricing listing"
+                ? undefined
                 : "Likely matches"
             }
           />
@@ -250,18 +273,13 @@ function ImportReviewCard({
         ) : null}
 
         {row.providerSymbol ? (
-          <SelectedListingSummary
-            listing={{
-              providerSymbol: row.providerSymbol,
-              instrumentName: row.instrumentName ?? row.name,
-              exchange: row.exchange ?? null,
-              isin: row.isin ?? null,
-              pricingExchange: row.pricingExchange ?? null,
-              matchMethod: row.matchMethod ?? "unresolved",
-              confidence: row.matchConfidence ?? 0.8,
-              requiresConfirmation: false,
-              warnings: [],
-            }}
+          <HoldingVenueSummary
+            exchange={row.exchange}
+            pricingExchange={row.pricingExchange}
+            providerSymbol={row.providerSymbol}
+            instrumentName={row.instrumentName ?? row.name}
+            confirmationSource={row.confirmationSource}
+            showPurchaseExchange={!showExchangeField}
           />
         ) : null}
 

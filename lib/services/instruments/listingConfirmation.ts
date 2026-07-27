@@ -4,6 +4,7 @@ import type { ImportRow } from "@/lib/services/import/types";
 import { annotateImportRow } from "@/lib/services/import/confidencePolicy";
 import { resolveListingQuoteCurrency } from "@/lib/services/instruments/quoteCurrency";
 import type { ParsedProviderSymbol } from "@/lib/services/instruments/providerSymbolInput";
+import type { ListingConfirmationSource } from "@/lib/services/instruments/listingConfirmationSource";
 import type { InstrumentMatchInput, ResolvedInstrument } from "@/lib/types/instrument";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 export type ListingCandidateSource = {
@@ -125,6 +126,7 @@ export function applySelectedListing<
     name: string;
     isin?: string | null;
     exchange?: string | null;
+    pricingExchange?: string | null;
     providerSymbol?: string | null;
     instrumentName?: string | null;
     matchMethod?: ResolvedInstrument["matchMethod"];
@@ -181,6 +183,7 @@ export function draftToImportRow(
     currency: draft.currency ?? "EUR",
     isin: draft.isin ?? null,
     exchange: draft.exchange ?? null,
+    pricingExchange: draft.pricingExchange ?? null,
     providerSymbol: draft.providerSymbol ?? null,
     instrumentName: draft.instrumentName ?? null,
     matchMethod: draft.matchMethod as ResolvedInstrument["matchMethod"] | undefined,
@@ -188,6 +191,9 @@ export function draftToImportRow(
     requiresConfirmation: draft.requiresConfirmation,
     matchWarnings: draft.matchWarnings,
     quoteCurrency: draft.quoteCurrency ?? null,
+    confirmationSource: draft.confirmationSource as
+      | ListingConfirmationSource
+      | undefined,
     candidates,
     userConfirmed: Boolean(draft.providerSymbol),
   };

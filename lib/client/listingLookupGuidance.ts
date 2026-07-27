@@ -3,10 +3,12 @@
  * Does not change matching logic — only presentation.
  */
 
+import { MANUAL_PRICING_SELECTION_TITLE } from "@/lib/client/holdingVenuePresentation";
+
 const MULTIPLE_LISTING_PATTERN = /multiple listings/i;
 
 export const PURCHASE_EXCHANGE_CONFIRMED_HELPER =
-  "Purchase exchange confirmed. Next, select the live pricing listing below.";
+  `Purchase exchange confirmed. ${MANUAL_PRICING_SELECTION_TITLE}`;
 
 export function isMultipleListingGuidanceMessage(
   message: string | null | undefined,
@@ -18,19 +20,27 @@ export function isMultipleListingGuidanceMessage(
 /**
  * Maps engine multiple-listing warnings to neutral next-step copy so the
  * selected purchase exchange is not framed as an error.
+ *
+ * When a provider symbol is already resolved, skip selection guidance —
+ * the live pricing source is shown as a read-only confirmation instead.
  */
 export function formatListingLookupGuidance(
   messages: string[],
+  options?: { hasResolvedProviderSymbol?: boolean },
 ): {
   guidance: string[];
   alerts: string[];
 } {
   const guidance: string[] = [];
   const alerts: string[] = [];
+  const skipSelectionGuidance = Boolean(options?.hasResolvedProviderSymbol);
 
   for (const message of messages) {
     if (isMultipleListingGuidanceMessage(message)) {
-      if (!guidance.includes(PURCHASE_EXCHANGE_CONFIRMED_HELPER)) {
+      if (
+        !skipSelectionGuidance &&
+        !guidance.includes(PURCHASE_EXCHANGE_CONFIRMED_HELPER)
+      ) {
         guidance.push(PURCHASE_EXCHANGE_CONFIRMED_HELPER);
       }
       continue;

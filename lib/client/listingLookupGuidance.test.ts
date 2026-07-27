@@ -5,6 +5,7 @@ import {
   isMultipleListingGuidanceMessage,
   PURCHASE_EXCHANGE_CONFIRMED_HELPER,
 } from "@/lib/client/listingLookupGuidance";
+import { MANUAL_PRICING_SELECTION_TITLE } from "@/lib/client/holdingVenuePresentation";
 
 describe("listingLookupGuidance", () => {
   it("recognizes multiple-listing engine messages", () => {
@@ -27,6 +28,7 @@ describe("listingLookupGuidance", () => {
     ]);
 
     expect(result.guidance).toEqual([PURCHASE_EXCHANGE_CONFIRMED_HELPER]);
+    expect(result.guidance[0]).toContain(MANUAL_PRICING_SELECTION_TITLE);
     expect(result.alerts).toEqual([
       "Instrument lookup is temporarily unavailable. You can continue manually and save your holding.",
     ]);
@@ -38,8 +40,18 @@ describe("listingLookupGuidance", () => {
     ]);
 
     expect(result.guidance[0]).toMatch(/Purchase exchange confirmed/i);
-    expect(result.guidance[0]).toMatch(/live pricing/i);
+    expect(result.guidance[0]).toMatch(/live prices/i);
     expect(result.guidance[0]).not.toMatch(/failed|incorrect|unrecognized/i);
+    expect(result.alerts).toEqual([]);
+  });
+
+  it("skips selection guidance when a provider symbol is already resolved", () => {
+    const result = formatListingLookupGuidance(
+      ["Multiple listings match this ticker and exchange — confirm the instrument."],
+      { hasResolvedProviderSymbol: true },
+    );
+
+    expect(result.guidance).toEqual([]);
     expect(result.alerts).toEqual([]);
   });
 });

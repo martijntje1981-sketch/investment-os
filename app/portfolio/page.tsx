@@ -24,6 +24,9 @@ import { PortfolioFundingSection } from "@/components/contributions/PortfolioFun
 import {
   formatListingLookupGuidance,
 } from "@/lib/client/listingLookupGuidance";
+import {
+  needsManualPricingSelection,
+} from "@/lib/client/holdingVenuePresentation";
 import BottomNavigation from "@/components/home/BottomNav";
 import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer";
 import { PageHero } from "@/components/layout/PageHero";
@@ -42,7 +45,6 @@ import {
   appCardValueClass,
   appDashboardDarkBodyClass,
   appHeroMetricLabelClass,
-  appSectionBodyClass,
   appSectionLabelClass,
   appSectionMetaClass,
   appSectionSubtitleClass,
@@ -56,10 +58,8 @@ import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
 import PortfolioSyncBanner from "@/components/PortfolioSyncBanner";
 import CryptoRefreshTechnicalDetails from "@/components/portfolio/CryptoRefreshTechnicalDetails";
 import { RefreshPricesButton } from "@/components/portfolio/RefreshPricesButton";
-import {
-  ListingCandidatePicker,
-  SelectedListingSummary,
-} from "@/components/instruments/ListingCandidatePicker";
+import { HoldingVenueSummary } from "@/components/instruments/HoldingVenueSummary";
+import { ListingCandidatePicker } from "@/components/instruments/ListingCandidatePicker";
 import {
   HoldingDividendMeta,
 } from "@/components/analysis/DividendIntelligenceSection";
@@ -228,9 +228,16 @@ export default function PortfolioPage() {
   const largestWeightPercent =
     portfolioAnalysis.largestPosition?.weightPercent ?? 0;
   const listingLookupMessages = useMemo(
-    () => formatListingLookupGuidance(listingWarnings),
-    [listingWarnings],
+    () =>
+      formatListingLookupGuidance(listingWarnings, {
+        hasResolvedProviderSymbol: Boolean(draft.providerSymbol?.trim()),
+      }),
+    [draft.providerSymbol, listingWarnings],
   );
+  const showPricingListingPicker = needsManualPricingSelection({
+    providerSymbol: draft.providerSymbol,
+    candidates: listingCandidates,
+  });
 
   if (!portfolioReady) {
     return <AppPageLoading />;
@@ -791,10 +798,9 @@ export default function PortfolioPage() {
                   </div>
                 ) : null}
 
-                {listingCandidates.length > 0 ? (
+                {showPricingListingPicker ? (
                   <ListingCandidatePicker
                     source={{
-                      providerSymbol: draft.providerSymbol,
                       instrumentName: draft.instrumentName ?? draft.name,
                       exchange: draft.exchange,
                       isin: draft.isin,
@@ -804,25 +810,17 @@ export default function PortfolioPage() {
                     }}
                     selectedProviderSymbol={draft.providerSymbol}
                     onSelect={selectListing}
-                    title="Select live pricing listing"
                   />
                 ) : null}
 
                 {draft.providerSymbol ? (
-                  <SelectedListingSummary
-                    listing={{
-                      providerSymbol: draft.providerSymbol,
-                      instrumentName: draft.instrumentName ?? draft.name,
-                      exchange: draft.exchange ?? null,
-                      isin: draft.isin ?? null,
-                      pricingExchange: draft.pricingExchange ?? null,
-                      matchMethod:
-                        (draft.matchMethod as ResolvedInstrument["matchMethod"]) ??
-                        "ticker_exchange",
-                      confidence: draft.matchConfidence ?? 1,
-                      requiresConfirmation: false,
-                      warnings: [],
-                    }}
+                  <HoldingVenueSummary
+                    exchange={draft.exchange}
+                    pricingExchange={draft.pricingExchange}
+                    providerSymbol={draft.providerSymbol}
+                    instrumentName={draft.instrumentName ?? draft.name}
+                    confirmationSource={draft.confirmationSource}
+                    showPurchaseExchange={false}
                   />
                 ) : null}
 
