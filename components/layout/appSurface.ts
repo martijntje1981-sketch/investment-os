@@ -8,8 +8,9 @@ export const appCardPaddingClass = "px-4 py-5 md:px-6 md:py-6";
 
 export const appCardPaddingCompactClass = "px-4 py-4 md:px-5 md:py-5";
 
+/** Shared solid dark hero surface — matches PageHero / main authenticated pages. */
 export const appHeroShellClass =
-  "min-w-0 overflow-hidden rounded-[28px] border border-slate-800/75 bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900 text-white shadow-[0_24px_64px_-16px_rgba(15,23,42,0.38)] md:rounded-[32px]";
+  "min-w-0 overflow-hidden rounded-[28px] border border-slate-800/90 bg-slate-950 text-white shadow-[0_16px_48px_rgba(15,23,42,0.28)] md:rounded-[32px]";
 
 /** Display — main portfolio value and true hero KPIs only. */
 export const appDisplayClass =

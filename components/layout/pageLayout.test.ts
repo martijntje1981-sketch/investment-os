@@ -18,7 +18,7 @@ const authenticatedPages = [
 ];
 
 describe("authenticated page layout", () => {
-  it("uses shared PageContainer and PageHero across main authenticated pages", () => {
+  it("uses shared PageContainer across main authenticated pages", () => {
     for (const relativePath of authenticatedPages) {
       const source = readFileSync(
         path.resolve(process.cwd(), relativePath),
@@ -26,6 +26,23 @@ describe("authenticated page layout", () => {
       );
 
       expect(source, relativePath).toContain("PageContainer");
+    }
+  });
+
+  it("uses PageHero on authenticated pages except the dashboard portfolio hero", () => {
+    const dashboardSource = readFileSync(
+      path.resolve(process.cwd(), "app/dashboard/page.tsx"),
+      "utf8",
+    );
+    expect(dashboardSource).not.toContain("PageHero");
+    expect(dashboardSource).toContain("DashboardSummary");
+
+    for (const relativePath of authenticatedPagesWithBackLink) {
+      const source = readFileSync(
+        path.resolve(process.cwd(), relativePath),
+        "utf8",
+      );
+
       expect(source, relativePath).toContain("PageHero");
     }
   });

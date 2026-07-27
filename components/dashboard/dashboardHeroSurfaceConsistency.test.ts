@@ -1,0 +1,44 @@
+import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import path from "node:path";
+
+describe("dashboard hero surface consistency", () => {
+  const valueSource = readFileSync(
+    path.resolve(process.cwd(), "components/dashboard/PortfolioValueCard.tsx"),
+    "utf8",
+  );
+  const emptySource = readFileSync(
+    path.resolve(process.cwd(), "components/dashboard/DashboardEmptyState.tsx"),
+    "utf8",
+  );
+  const surfaceSource = readFileSync(
+    path.resolve(process.cwd(), "components/layout/appSurface.ts"),
+    "utf8",
+  );
+  const pageHeroSource = readFileSync(
+    path.resolve(process.cwd(), "components/layout/PageHero.tsx"),
+    "utf8",
+  );
+
+  it("uses the shared solid dark hero shell instead of a gradient", () => {
+    const heroShellMatch = surfaceSource.match(
+      /export const appHeroShellClass =\s*"([^"]+)"/,
+    );
+    expect(heroShellMatch?.[1]).toContain("bg-slate-950");
+    expect(heroShellMatch?.[1]).toContain("border-slate-800/90");
+    expect(heroShellMatch?.[1]).not.toContain("bg-gradient");
+    expect(valueSource).toContain("appHeroShellClass");
+    expect(valueSource).not.toContain("bg-gradient-to-b");
+    expect(valueSource).not.toContain("ambientGlowClass");
+    expect(emptySource).toContain("appHeroShellClass");
+    expect(emptySource).not.toContain("bg-gradient-to-b");
+  });
+
+  it("matches the solid PageHero surface token", () => {
+    expect(pageHeroSource).toContain("bg-slate-950");
+    expect(pageHeroSource).not.toContain("bg-gradient-to-b");
+    expect(surfaceSource).toContain(
+      "border border-slate-800/90 bg-slate-950 text-white shadow-[0_16px_48px_rgba(15,23,42,0.28)]",
+    );
+  });
+});

@@ -16,6 +16,7 @@ import {
   formatSignedPortfolioCurrency,
   formatSignedPortfolioPercent,
 } from "@/lib/client/portfolioMovementFormat";
+import { appHeroShellClass } from "@/components/layout/appSurface";
 import type { DashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
 
 function signedPercent(value: number) {
@@ -34,26 +35,6 @@ function moveToneClass(snapshot: DashboardPortfolioSnapshot): string {
     return "text-red-300";
   }
   return "text-slate-200";
-}
-
-function ambientGlowClass(snapshot: DashboardPortfolioSnapshot): string {
-  if (!snapshot.hasDailyData || snapshot.todayChange === 0) {
-    return "from-slate-950 via-slate-950 to-slate-900";
-  }
-  if (snapshot.todayChange > 0) {
-    return "from-slate-950 via-slate-950 to-emerald-950/40";
-  }
-  return "from-slate-950 via-slate-950 to-red-950/35";
-}
-
-function ambientOrbClass(snapshot: DashboardPortfolioSnapshot): string {
-  if (!snapshot.hasDailyData || snapshot.todayChange === 0) {
-    return "bg-white/[0.04]";
-  }
-  if (snapshot.todayChange > 0) {
-    return "bg-emerald-400/10";
-  }
-  return "bg-red-400/10";
 }
 
 function MoverItem({
@@ -202,17 +183,8 @@ export function PortfolioValueCard({
   return (
     <article
       aria-label="Portfolio value"
-      className={`relative min-w-0 overflow-hidden rounded-[28px] border border-white/[0.08] bg-gradient-to-b ${ambientGlowClass(snapshot)} text-white shadow-[0_28px_80px_-24px_rgba(2,6,23,0.75)] md:rounded-[32px]`}
+      className={`relative ${appHeroShellClass}`}
     >
-      <div
-        className={`pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full blur-3xl ${ambientOrbClass(snapshot)}`}
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute -bottom-24 -left-10 h-48 w-48 rounded-full bg-sky-400/[0.04] blur-3xl"
-        aria-hidden
-      />
-
       <div className="relative px-4 pb-4 pt-4 sm:px-6 sm:pb-5 sm:pt-5 md:px-8 md:pb-6 md:pt-6">
         <p className="text-[11px] font-medium tracking-[0.02em] text-white/45">
           {welcomeLine}
