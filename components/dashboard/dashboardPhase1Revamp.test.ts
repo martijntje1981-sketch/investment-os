@@ -118,7 +118,7 @@ describe("dashboard phase 1 revamp", () => {
   it("keeps portfolio hero movers rendered", () => {
     expect(valueSource).toContain("heroTopMover");
     expect(valueSource).toContain("Top mover");
-    expect(valueSource).toContain("Lowest mover");
+    expect(valueSource).toContain("Weakest mover");
     expect(valueSource).toContain("changePeriodLabel");
 
     const movers = pickTopAndLowestMovers(

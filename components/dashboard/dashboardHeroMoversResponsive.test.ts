@@ -29,22 +29,23 @@ function holding(
 describe("Dashboard hero movers responsive layout", () => {
   it("renders two movers in a shared responsive grid when both exist", () => {
     const source = readFileSync(
-      path.resolve(process.cwd(), "components/dashboard/DashboardHeroMovers.tsx"),
+      path.resolve(process.cwd(), "components/dashboard/PortfolioValueCard.tsx"),
       "utf8",
     );
 
-    expect(source).toContain("sm:grid-cols-2");
+    expect(source).toContain("grid-cols-2");
     expect(source).toContain("Top mover");
-    expect(source).toContain("Lowest mover");
+    expect(source).toContain("Weakest mover");
   });
 
-  it("keeps a single available mover compact without full-width stretching", () => {
+  it("keeps a single available mover tile when the second mover is missing", () => {
     const source = readFileSync(
-      path.resolve(process.cwd(), "components/dashboard/DashboardHeroMovers.tsx"),
+      path.resolve(process.cwd(), "components/dashboard/PortfolioValueCard.tsx"),
       "utf8",
     );
 
-    expect(source).toContain("sm:max-w-xs");
+    expect(source).toContain("No negative mover");
+    expect(source).toContain("Weakest mover");
   });
 
   it("keeps crypto 24-hour period labels from mover selection logic", () => {
@@ -155,13 +156,13 @@ describe("Dashboard hero movers responsive layout", () => {
 
   it("keeps percentage and period labels visible in compact mover tiles", () => {
     const source = readFileSync(
-      path.resolve(process.cwd(), "components/dashboard/DashboardHeroMovers.tsx"),
+      path.resolve(process.cwd(), "components/dashboard/PortfolioValueCard.tsx"),
       "utf8",
     );
 
     expect(source).toContain("changePeriodLabel");
     expect(source).toContain("signedPercent");
-    expect(source).toContain("line-clamp-2");
-    expect(source).toContain("truncate text-sm font-bold");
+    expect(source).toContain("text-xl font-black");
+    expect(source).toContain("text-base font-bold");
   });
 });

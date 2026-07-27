@@ -51,7 +51,8 @@ describe("dashboard portfolio value widget", () => {
     expect(valueSource).toContain("Latest portfolio move");
     expect(valueSource).toContain("dailyMoveContextLine");
     expect(valueSource).toContain("Top mover");
-    expect(valueSource).toContain("Lowest mover");
+    expect(valueSource).toContain("Weakest mover");
+    expect(valueSource).not.toContain("Lowest mover");
     expect(valueSource).toContain("Welcome back");
     expect(valueSource).toContain("RefreshPricesButton");
     expect(valueSource).toContain("formatEur");
@@ -149,11 +150,12 @@ describe("dashboard portfolio value widget", () => {
       path.resolve(process.cwd(), "components/dashboard/PortfolioValueCard.tsx"),
       "utf8",
     );
-    expect(valueSource).toContain("text-[2.75rem]");
+    expect(valueSource).toContain("text-[2.625rem]");
     expect(valueSource).toContain("lg:text-[4.25rem]");
-    expect(valueSource).toContain("text-[1.875rem]");
+    expect(valueSource).toContain("text-[1.625rem]");
     expect(valueSource).toContain("lg:text-[3rem]");
     expect(valueSource).toContain("tabular-nums");
-    expect(valueSource).toContain("sm:grid-cols-2");
+    expect(valueSource).toContain("grid-cols-2");
+    expect(valueSource).toContain("text-xl font-black");
   });
 });

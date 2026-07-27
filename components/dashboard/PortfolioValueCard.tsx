@@ -56,18 +56,6 @@ function ambientOrbClass(snapshot: DashboardPortfolioSnapshot): string {
   return "bg-red-400/10";
 }
 
-function HoldingMark({ symbol }: { symbol: string }) {
-  const initials = symbol.trim().slice(0, 2).toUpperCase() || "—";
-  return (
-    <span
-      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/[0.08] text-[11px] font-black tracking-wide text-white/90 ring-1 ring-white/10"
-      aria-hidden
-    >
-      {initials}
-    </span>
-  );
-}
-
 function MoverItem({
   label,
   mover,
@@ -90,48 +78,43 @@ function MoverItem({
   const periodLabel = mover.changePeriodLabel.trim();
 
   return (
-    <article className="min-w-0 rounded-2xl border border-white/[0.08] bg-white/[0.03] px-3.5 py-3">
-      <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/55">
+    <article className="min-w-0 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-2.5 py-2.5 sm:px-3.5 sm:py-3">
+      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/55">
         {label}
       </p>
-      <div className="mt-2.5 flex min-w-0 items-center gap-3">
-        <HoldingMark symbol={mover.holding.symbol} />
-        <Link
-          href={href}
-          className="min-w-0 flex-1 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/50 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
-          title={displayName}
-        >
-          <p className="truncate text-sm font-bold text-white">
-            {mover.holding.symbol}
+      <Link
+        href={href}
+        className="mt-1.5 block min-w-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/50 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+        title={displayName}
+      >
+        <p className="truncate text-base font-bold leading-tight text-white sm:text-lg">
+          {mover.holding.symbol}
+        </p>
+        {displayName !== mover.holding.symbol ? (
+          <p className="mt-0.5 hidden truncate text-xs text-white/55 sm:block">
+            {displayName}
           </p>
-          {displayName !== mover.holding.symbol ? (
-            <p className="mt-0.5 truncate text-xs text-white/55">{displayName}</p>
-          ) : null}
-        </Link>
-        <div
-          className={`flex shrink-0 flex-col items-end gap-0.5 ${accentClass}`}
-        >
-          <div className="flex items-center gap-1">
-            <Icon className="h-4 w-4 shrink-0" aria-hidden />
-            <span className="text-sm font-bold tabular-nums">
-              {signedPercent(mover.changePercent)}
-            </span>
-          </div>
-          {periodLabel ? (
-            <span
-              className="max-w-[9.5rem] truncate text-right text-[11px] font-medium leading-snug text-white/50"
-              title={mover.changePeriodAccessibleDescription}
-              aria-label={mover.changePeriodAccessibleDescription}
-            >
-              {periodLabel}
-            </span>
-          ) : (
-            <span className="sr-only">
-              {mover.changePeriodAccessibleDescription}
-            </span>
-          )}
-        </div>
+        ) : null}
+      </Link>
+      <div className={`mt-1.5 flex min-w-0 items-center gap-1 ${accentClass}`}>
+        <Icon className="h-4 w-4 shrink-0 sm:h-5 sm:w-5" aria-hidden />
+        <span className="truncate text-xl font-black leading-none tracking-[-0.03em] tabular-nums sm:text-2xl">
+          {signedPercent(mover.changePercent)}
+        </span>
       </div>
+      {periodLabel ? (
+        <span
+          className="mt-1 hidden max-w-full truncate text-[11px] font-medium leading-snug text-white/50 sm:block"
+          title={mover.changePeriodAccessibleDescription}
+          aria-label={mover.changePeriodAccessibleDescription}
+        >
+          {periodLabel}
+        </span>
+      ) : (
+        <span className="sr-only">
+          {mover.changePeriodAccessibleDescription}
+        </span>
+      )}
     </article>
   );
 }
@@ -148,7 +131,7 @@ function MoversSection({
         : RANKING_AFTER_CLOSE;
 
     return (
-      <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] px-4 py-3.5">
+      <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] px-3 py-2.5">
         <p className="text-sm leading-relaxed text-white/60">{unavailableCopy}</p>
       </div>
     );
@@ -156,7 +139,7 @@ function MoversSection({
 
   return (
     <div
-      className="grid min-w-0 grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-3"
+      className="grid min-w-0 grid-cols-2 gap-2 sm:gap-3"
       aria-label="Portfolio movers"
     >
       <MoverItem
@@ -166,16 +149,16 @@ function MoversSection({
       />
       {snapshot.heroLowestMover ? (
         <MoverItem
-          label="Lowest mover"
+          label="Weakest mover"
           mover={snapshot.heroLowestMover}
           tone="negative"
         />
       ) : (
-        <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] px-3.5 py-3">
-          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/55">
-            Lowest mover
+        <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] px-2.5 py-2.5 sm:px-3.5 sm:py-3">
+          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/55">
+            Weakest mover
           </p>
-          <p className="mt-2.5 text-sm text-white/55">No negative mover</p>
+          <p className="mt-1.5 text-sm text-white/55">No negative mover</p>
         </div>
       )}
     </div>
@@ -230,36 +213,36 @@ export function PortfolioValueCard({
         aria-hidden
       />
 
-      <div className="relative px-5 pb-5 pt-6 sm:px-7 sm:pb-6 sm:pt-7 md:px-8 md:pb-7 md:pt-8">
+      <div className="relative px-4 pb-4 pt-4 sm:px-6 sm:pb-5 sm:pt-5 md:px-8 md:pb-6 md:pt-6">
         <p className="text-[11px] font-medium tracking-[0.02em] text-white/45">
           {welcomeLine}
         </p>
-        <p className="mt-3 text-[12px] font-bold uppercase tracking-[0.14em] text-white/55">
+        <p className="mt-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-white/55 sm:text-[12px]">
           Portfolio value
         </p>
         <p
-          className="mt-3 max-w-full break-words text-[2.75rem] font-black leading-[0.95] tracking-[-0.045em] text-white tabular-nums sm:text-[3.25rem] md:text-[3.75rem] lg:text-[4.25rem]"
+          className="mt-2 max-w-full break-words text-[2.625rem] font-black leading-[0.95] tracking-[-0.045em] text-white tabular-nums sm:text-[3.25rem] md:text-[3.75rem] lg:text-[4.25rem]"
         >
           {snapshot.portfolioValueAvailable
             ? formatEur(snapshot.portfolioValue)
             : "Unavailable"}
         </p>
 
-        <div className="mt-2.5">
+        <div className="mt-1.5">
           <ConversionDetailsDisclosure compactTrigger tone="dark" />
         </div>
         {snapshot.portfolioValueCoverageMessage ? (
-          <p className="mt-2 text-[13px] font-medium text-white/60">
+          <p className="mt-1.5 text-[12px] font-medium text-white/60 sm:text-[13px]">
             {snapshot.portfolioValueCoverageMessage}
           </p>
         ) : null}
 
-        <div className="mt-7 border-t border-white/[0.08] pt-6">
-          <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-white/55">
+        <div className="mt-4 border-t border-white/[0.08] pt-4 sm:mt-5 sm:pt-5">
+          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-white/55 sm:text-[12px]">
             Latest portfolio move
           </p>
           <p
-            className={`mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-[1.875rem] font-bold leading-none tracking-[-0.035em] tabular-nums sm:text-[2.25rem] md:text-[2.75rem] lg:text-[3rem] ${moveTone}`}
+            className={`mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-[1.625rem] font-bold leading-none tracking-[-0.035em] tabular-nums sm:text-[2.25rem] md:text-[2.75rem] lg:text-[3rem] ${moveTone}`}
             title={snapshot.dailyMoveAccessibleDescription}
           >
             <span>{showMove ? amountLabel : "Change unavailable"}</span>
@@ -267,7 +250,7 @@ export function PortfolioValueCard({
               <span className="opacity-95">{percentLabel}</span>
             ) : null}
           </p>
-          <p className="mt-3 text-[13px] font-medium leading-snug text-white/60">
+          <p className="mt-1.5 text-[12px] font-medium leading-snug text-white/60 sm:mt-2 sm:text-[13px]">
             {showMove
               ? snapshot.dailyMoveContextLine
               : snapshot.dailyPerformanceCoverageMessage ??
@@ -275,12 +258,12 @@ export function PortfolioValueCard({
           </p>
         </div>
 
-        <div className="mt-6">
+        <div className="mt-3.5 sm:mt-5">
           <MoversSection snapshot={snapshot} />
         </div>
 
-        <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-white/[0.08] pt-5">
-          <p className="text-[13px] font-medium text-white/65">
+        <div className="mt-3.5 flex flex-wrap items-center gap-2.5 border-t border-white/[0.08] pt-3.5 sm:mt-5 sm:gap-3 sm:pt-4">
+          <p className="text-[12px] font-medium text-white/65 sm:text-[13px]">
             {snapshot.isStale && !refresh?.liveRefreshAt ? "Stale prices · " : null}
             {updatedLabel}
           </p>
@@ -300,7 +283,7 @@ export function PortfolioValueCard({
           refresh.status === "error" ||
           refresh.status === "loading") ? (
           <p
-            className="mt-2 text-[13px] font-medium text-white/65"
+            className="mt-1.5 text-[12px] font-medium text-white/65 sm:mt-2 sm:text-[13px]"
             role="status"
             aria-live="polite"
             data-refresh-feedback={refresh.status}
