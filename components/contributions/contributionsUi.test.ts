@@ -7,10 +7,21 @@ describe("contributions ledger UI", () => {
     path.resolve(process.cwd(), "app/dashboard/page.tsx"),
     "utf8",
   );
+  const portfolioSource = readFileSync(
+    path.resolve(process.cwd(), "app/portfolio/page.tsx"),
+    "utf8",
+  );
   const cardSource = readFileSync(
     path.resolve(
       process.cwd(),
       "components/contributions/DashboardContributionsCard.tsx",
+    ),
+    "utf8",
+  );
+  const fundingSource = readFileSync(
+    path.resolve(
+      process.cwd(),
+      "components/contributions/PortfolioFundingSection.tsx",
     ),
     "utf8",
   );
@@ -34,7 +45,73 @@ describe("contributions ledger UI", () => {
     );
   });
 
-  it("shows onboarding when no entries exist", () => {
+  it("renders portfolio funding before the holdings list", () => {
+    expect(portfolioSource).toContain("PortfolioFundingSection");
+    expect(portfolioSource).toMatch(
+      /PortfolioFundingSection[\s\S]*<section className="overflow-hidden rounded-\[28px\] border border-slate-200 bg-white shadow-sm">[\s\S]*<h2 className=\{appSectionTitleClass\}>Holdings<\/h2>/,
+    );
+  });
+
+  it("shows portfolio empty state and opening contribution action", () => {
+    expect(fundingSource).toContain("PORTFOLIO_FUNDING_EMPTY_COPY");
+    expect(fundingSource).toContain("PORTFOLIO_FUNDING_OPENING_ACTION");
+    expect(copySource).toContain(
+      "Track how much money you have added to or withdrawn from this portfolio.",
+    );
+  });
+
+  it("shows populated summary values on the portfolio page", () => {
+    expect(fundingSource).toContain("Total contributed");
+    expect(fundingSource).toContain("Total withdrawn");
+    expect(fundingSource).toContain("Net contributed");
+    expect(fundingSource).toContain("Current portfolio value");
+    expect(fundingSource).toContain("Value above contributions");
+    expect(fundingSource).toContain("summary.netContributed");
+    expect(fundingSource).toContain("summary.totalWithdrawn");
+  });
+
+  it("shows the latest three entries and more-than-three copy", () => {
+    expect(fundingSource).toContain("RECENT_ENTRY_LIMIT = 3");
+    expect(fundingSource).toContain("entries.slice(0, RECENT_ENTRY_LIMIT)");
+    expect(fundingSource).toContain(
+      "Showing {RECENT_ENTRY_LIMIT} of {entries.length} entries",
+    );
+    expect(fundingSource).toContain("Recent activity");
+  });
+
+  it("reuses ManageContributionsDialog instead of duplicating CRUD", () => {
+    expect(fundingSource).toContain(
+      'from "@/components/contributions/ManageContributionsDialog"',
+    );
+    expect(fundingSource).toContain("<ManageContributionsDialog");
+    expect(fundingSource).not.toContain("createPortfolioContribution");
+    expect(cardSource).toContain("<ManageContributionsDialog");
+    expect(dialogSource).toContain('<option value="withdrawal">Withdrawal</option>');
+  });
+
+  it("handles current value unavailable on portfolio funding", () => {
+    expect(fundingSource).toContain("Current portfolio value is unavailable");
+    expect(fundingSource).toContain("portfolioValueAvailable");
+  });
+
+  it("supports loading and fetch error states on portfolio funding", () => {
+    expect(fundingSource).toContain('status === "loading"');
+    expect(fundingSource).toContain("FundingSkeleton");
+    expect(fundingSource).toContain('status === "error"');
+    expect(fundingSource).toContain("Retry");
+  });
+
+  it("keeps the dashboard card compact without recent activity", () => {
+    expect(cardSource).toContain("Net contributed");
+    expect(cardSource).toContain("Current value");
+    expect(cardSource).toContain("Value above contributions");
+    expect(cardSource).toContain("CONTRIBUTIONS_MANAGE_LABEL");
+    expect(cardSource).not.toContain("Recent activity");
+    expect(cardSource).not.toContain("summary.totalContributed");
+    expect(cardSource).not.toContain("summary.totalWithdrawn");
+  });
+
+  it("shows dashboard onboarding when no entries exist", () => {
     expect(cardSource).toContain("!hasEntries");
     expect(cardSource).toContain("CONTRIBUTIONS_ONBOARDING_COPY");
     expect(copySource).toContain(
@@ -50,20 +127,8 @@ describe("contributions ledger UI", () => {
     expect(dialogSource).toContain("Delete this entry permanently?");
   });
 
-  it("displays totals and unavailable percentage behavior", () => {
-    expect(cardSource).toContain("Net contributed");
-    expect(cardSource).toContain("Value above contributions");
+  it("displays unavailable percentage behavior on the dashboard", () => {
     expect(cardSource).toContain("valueAboveContributionsPercent");
     expect(cardSource).toContain("Portfolio value is unavailable");
-    expect(copySource).toContain(CONTRIBUTIONS_EXPLANATORY_COPY);
-  });
-
-  it("reduces net contributed when withdrawals are saved", () => {
-    expect(dialogSource).toContain('<option value="withdrawal">Withdrawal</option>');
-    expect(cardSource).toContain("summary.totalWithdrawn");
-    expect(cardSource).toContain("summary.netContributed");
   });
 });
-
-const CONTRIBUTIONS_EXPLANATORY_COPY =
-  "Compares current portfolio value with deposits minus withdrawals. It does not account for the timing of cash flows.";

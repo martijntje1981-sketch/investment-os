@@ -20,6 +20,7 @@ import {
   X,
 } from "lucide-react";
 import { ConversionDetailsDisclosure } from "@/components/currency/ConversionDetailsDisclosure";
+import { PortfolioFundingSection } from "@/components/contributions/PortfolioFundingSection";
 import BottomNavigation from "@/components/home/BottomNav";
 import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer";
 import { PageHero } from "@/components/layout/PageHero";
@@ -491,6 +492,11 @@ export default function PortfolioPage() {
             <Metric icon={<PieChart className="h-5 w-5" />} label="Largest position" value={largest?.symbol ?? "—"} detail={largest && totalValue > 0 ? `${largestWeightPercent.toFixed(1)}% of portfolio` : holdings.length > 0 ? "Awaiting price data" : "No holdings"} />
           </section>
           <ConversionDetailsDisclosure compactTrigger />
+
+          <PortfolioFundingSection
+            portfolioValueEur={totalValue}
+            portfolioValueAvailable={performance.totalValueAvailable}
+          />
 
           <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
             <div className="flex items-center justify-between border-b border-slate-200 px-5 py-5 sm:px-7">

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowDownCircle, ArrowUpCircle, PiggyBank } from "lucide-react";
+import { PiggyBank } from "lucide-react";
 
 import { ManageContributionsDialog } from "@/components/contributions/ManageContributionsDialog";
 import { DashboardSectionHeader } from "@/components/dashboard/DashboardSectionHeader";
@@ -15,25 +15,15 @@ import {
 } from "@/components/layout/appSurface";
 import {
   CONTRIBUTIONS_ADD_LABEL,
-  CONTRIBUTIONS_EXPLANATORY_COPY,
   CONTRIBUTIONS_MANAGE_LABEL,
   CONTRIBUTIONS_ONBOARDING_COPY,
 } from "@/lib/client/contributionsCopy";
 import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
-import { formatContributionBaseAmount } from "@/lib/client/contributionsFormat";
+import { formatContributionBaseAmount, formatSignedContributionPercent } from "@/lib/client/contributionsFormat";
 import { usePortfolioContributions } from "@/lib/client/usePortfolioContributions";
 import { formatSignedPortfolioCurrency } from "@/lib/client/portfolioMovementFormat";
 import { formatPortfolioPercent } from "@/lib/client/portfolioAnalysis";
 import type { DashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
-
-function formatSignedPercent(value: number | null): string | null {
-  if (value == null || !Number.isFinite(value)) {
-    return null;
-  }
-
-  const formatted = formatPortfolioPercent(Math.abs(value));
-  return value >= 0 ? `+${formatted}` : `−${formatted}`;
-}
 
 export function DashboardContributionsCard({
   snapshot,
@@ -62,8 +52,9 @@ export function DashboardContributionsCard({
   );
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const valueAbovePercent = formatSignedPercent(
+  const valueAbovePercent = formatSignedContributionPercent(
     summary.valueAboveContributionsPercent,
+    formatPortfolioPercent,
   );
 
   return (
@@ -154,19 +145,6 @@ export function DashboardContributionsCard({
                   shown.
                 </p>
               )}
-
-              <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600">
-                <span className="inline-flex items-center gap-1.5">
-                  <ArrowUpCircle className="h-3.5 w-3.5" aria-hidden />
-                  Contributed {formatContributionAmount(summary.totalContributed)}
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <ArrowDownCircle className="h-3.5 w-3.5" aria-hidden />
-                  Withdrawn {formatContributionAmount(summary.totalWithdrawn)}
-                </span>
-              </div>
-
-              <p className={appSectionMetaClass}>{CONTRIBUTIONS_EXPLANATORY_COPY}</p>
 
               <button
                 type="button"
