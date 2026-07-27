@@ -39,6 +39,10 @@ import {
   isNewsSearchActive,
   type NewsSearchScopeFilter,
 } from "@/lib/services/news/newsSearchFilter";
+import {
+  countHoldingsMentionedInPortfolioCards,
+  PORTFOLIO_NEWS_SECTION_ID,
+} from "@/lib/services/news/portfolioNewsNav";
 import type { NewsApiResponse, NewsContentItem } from "@/lib/types/newsContent";
 
 export function NewsHubContent({
@@ -121,6 +125,27 @@ export function NewsHubContent({
     [payload, pageDedupSeed],
   );
 
+  const portfolioNewsNav = useMemo(() => {
+    if (briefing.portfolioCards.length === 0) {
+      return null;
+    }
+    const count = countHoldingsMentionedInPortfolioCards(briefing.portfolioCards);
+    if (count <= 0) {
+      return null;
+    }
+    return { count, sectionId: PORTFOLIO_NEWS_SECTION_ID };
+  }, [briefing.portfolioCards]);
+
+  const upcomingEvents = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    return payload.upcomingEvents.filter((event) => event.date >= today);
+  }, [payload.upcomingEvents]);
+
+  const eventsEmptyDescription =
+    payload.dataStatus.eventsState === "provider_unavailable"
+      ? "The economic calendar provider is unavailable right now. Events will return when the feed reconnects."
+      : "No verified macro or calendar events matched the current window.";
+
   const verifiedItemCount = useMemo(
     () => countNewsHubVerifiedItems(payload),
     [payload],
@@ -132,7 +157,7 @@ export function NewsHubContent({
     briefing.macroGroups.length > 0 ||
     briefing.marketsToday.length > 0 ||
     briefing.allVideos.length > 0 ||
-    briefing.upcomingEvents.totalCount > 0;
+    upcomingEvents.length > 0;
 
   function clearSearch() {
     setSearchQuery("");
@@ -145,6 +170,7 @@ export function NewsHubContent({
         intelligence={intelligence}
         portfolioItems={preliminaryBriefing.allPortfolioItems}
         upcomingEvents={payload.upcomingEvents}
+        portfolioNewsNav={portfolioNewsNav}
         onRefresh={onRefresh}
         isRefreshing={isRefreshing}
       />
@@ -229,10 +255,10 @@ export function NewsHubContent({
             id="news-upcoming-events"
             title="Upcoming Events"
             description="Earnings, central bank decisions, CPI, and macro catalysts."
-            allItems={payload.upcomingEvents}
+            allItems={upcomingEvents}
             previewLimit={5}
             emptyTitle="No upcoming events"
-            emptyDescription="Calendar events will appear when verified by the events provider."
+            emptyDescription={eventsEmptyDescription}
             renderItem={(event) => <NewsCompactEventRow event={event} />}
           />
         </div>

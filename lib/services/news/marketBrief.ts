@@ -15,8 +15,22 @@ function buildInsight(
   kind: TodaysMarketBrief["keyInsights"][number]["kind"],
   insightType: "fact" | "interpretation",
   sourceName?: string | null,
+  source?: Pick<
+    NewsContentItem,
+    "canonicalUrl" | "thumbnailUrl" | "sourceType"
+  > | null,
 ) {
-  return { id, label, text, kind, insightType, sourceName };
+  return {
+    id,
+    label,
+    text,
+    kind,
+    insightType,
+    sourceName,
+    canonicalUrl: source?.canonicalUrl ?? null,
+    thumbnailUrl: source?.thumbnailUrl ?? null,
+    sourceType: source?.sourceType,
+  };
 }
 
 function factFromItem(item: NewsContentItem): string {
@@ -71,6 +85,7 @@ export function buildTodaysMarketBrief(
         "macro",
         "fact",
         macroNews[0].sourceName,
+        macroNews[0],
       ),
     );
   }
@@ -84,6 +99,7 @@ export function buildTodaysMarketBrief(
         "macro",
         "fact",
         macroNews[1].sourceName,
+        macroNews[1],
       ),
     );
   }
@@ -97,6 +113,7 @@ export function buildTodaysMarketBrief(
         "portfolio",
         "fact",
         portfolioNews[0].sourceName,
+        portfolioNews[0],
       ),
     );
     insights.push(
@@ -107,6 +124,7 @@ export function buildTodaysMarketBrief(
         "portfolio",
         "interpretation",
         portfolioNews[0].sourceName,
+        portfolioNews[0],
       ),
     );
   }

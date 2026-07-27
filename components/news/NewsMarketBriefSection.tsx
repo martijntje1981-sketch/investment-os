@@ -1,5 +1,5 @@
-import { ArrowUpRight } from "lucide-react";
-
+import { formatNewsPublishedAt } from "@/components/news/newsFormatting";
+import { NewsStoryCard } from "@/components/news/NewsStoryCard";
 import {
   appSectionSubtitleClass,
   appSectionTitleClass,
@@ -10,14 +10,6 @@ import {
   type NewsBriefHeadline,
 } from "@/lib/services/news/newsBriefingLayout";
 import { NewsExpandableList } from "@/components/news/NewsBriefingSection";
-import { NewsCompactCardLayout } from "@/components/news/NewsCompactCardLayout";
-import { formatNewsPublishedAt } from "@/components/news/newsFormatting";
-import { NewsMediaThumbnail } from "@/components/news/NewsMediaThumbnail";
-import {
-  newsCompactCardClass,
-  newsCompactMetaClass,
-  newsExternalLinkClass,
-} from "@/components/news/newsCardStyles";
 import { buildNewsBriefHeadlinePresentation } from "@/lib/services/news/newsMediaType";
 
 export function NewsMarketBriefSection({
@@ -59,52 +51,25 @@ export function NewsMarketBriefSection({
           });
 
           return (
-            <article className={newsCompactCardClass}>
-              <NewsCompactCardLayout
-                media={
-                  <NewsMediaThumbnail
-                    thumbnailUrl={headline.thumbnailUrl}
-                    sourceType={headline.sourceType}
-                    fallbackCategory={presentation.thumbnailFallbackCategory}
-                    size="compact"
-                    showPlayIndicator={presentation.showPlayIndicator}
-                  />
-                }
-                action={
-                  headline.canonicalUrl !== "#" ? (
-                    <a
-                      href={headline.canonicalUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={newsExternalLinkClass}
-                    >
-                      {presentation.ctaLabel}
-                      <ArrowUpRight className="h-4 w-4" aria-hidden />
-                    </a>
-                  ) : undefined
-                }
-              >
-                <h3 className={`${appValueSemiboldClass} break-words leading-snug`}>
-                  {headline.headline}
-                </h3>
-                <p className="mt-1.5 line-clamp-2 break-words text-sm leading-relaxed text-slate-600">
-                  {headline.summary}
-                </p>
-                <p className="mt-2 break-words text-sm leading-relaxed text-slate-700">
-                  <span className="font-semibold text-slate-800">
-                    Why it matters:
-                  </span>{" "}
-                  {headline.whyItMatters}
-                </p>
-                <div className={`${newsCompactMetaClass} text-slate-500`}>
+            <NewsStoryCard
+              headline={headline.headline}
+              summary={headline.summary}
+              whyItMatters={headline.whyItMatters}
+              canonicalUrl={headline.canonicalUrl}
+              thumbnailUrl={headline.thumbnailUrl}
+              sourceType={headline.sourceType}
+              presentation={presentation}
+              headlineClassName={`${appValueSemiboldClass} break-words leading-snug`}
+              meta={
+                <>
                   <span>{headline.affectedMarket}</span>
                   <span aria-hidden>·</span>
                   <span>{formatNewsPublishedAt(headline.publishedAt)}</span>
                   <span aria-hidden>·</span>
                   <span>{headline.sourceName}</span>
-                </div>
-              </NewsCompactCardLayout>
-            </article>
+                </>
+              }
+            />
           );
         }}
       />

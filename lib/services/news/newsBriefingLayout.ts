@@ -25,6 +25,7 @@ import {
 } from "@/lib/services/news/newsPortfolioSentiment";
 import { isTrustedVideoSource } from "@/lib/services/news/newsSourceQuality";
 import { selectTrustedNewsThumbnail } from "@/lib/services/news/newsThumbnail";
+import { isNavigableNewsUrl } from "@/lib/services/news/sanitizeNewsUrl";
 import { resolveNewsMediaTypeFromItem } from "@/lib/services/news/newsMediaType";
 import { mergePortfolioSectionItems } from "@/lib/services/news/newsHubModel";
 import type {
@@ -146,6 +147,10 @@ function insightToHeadline(
   insight: TodaysMarketBrief["keyInsights"][number],
   index: number,
 ): NewsBriefHeadline {
+  const canonicalUrl = isNavigableNewsUrl(insight.canonicalUrl)
+    ? insight.canonicalUrl
+    : "#";
+
   return {
     id: `brief-insight-${index}`,
     headline: insight.label,
@@ -168,10 +173,13 @@ function insightToHeadline(
           : "general",
     publishedAt: new Date().toISOString(),
     sourceName: insight.sourceName ?? "Verified feed",
-    canonicalUrl: "#",
-    thumbnailUrl: null,
-    mediaType: "article",
-    sourceType: "news",
+    canonicalUrl,
+    thumbnailUrl: selectTrustedNewsThumbnail({
+      thumbnailUrl: insight.thumbnailUrl ?? null,
+      sourceType: insight.sourceType ?? "news",
+    }),
+    mediaType: insight.sourceType === "youtube" ? "video" : "article",
+    sourceType: insight.sourceType ?? "news",
   };
 }
 
@@ -421,7 +429,9 @@ export function buildNewsBriefingLayout(
     dividendItems: payload.dividendNews ?? [],
   });
 
-  const events = [...payload.upcomingEvents].sort((left, right) => {
+  const events = [...payload.upcomingEvents]
+    .filter((event) => event.date >= new Date(now).toISOString().slice(0, 10))
+    .sort((left, right) => {
     const impactScore = (event: UpcomingMarketEvent) =>
       event.impact === "High" ? 2 : 1;
     const impactDiff = impactScore(right) - impactScore(left);

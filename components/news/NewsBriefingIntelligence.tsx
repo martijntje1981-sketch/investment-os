@@ -22,6 +22,9 @@ import {
   buildTodaysDecision,
 } from "@/lib/client/todaysDecision";
 import { findSupportingBriefingItems } from "@/lib/services/news/newsBriefingLayout";
+import { selectTrustedNewsThumbnailFromUrl } from "@/lib/services/news/newsThumbnail";
+import { renderPortfolioSummaryMessage } from "@/components/news/PortfolioHoldingsMentionedLink";
+import type { PortfolioNewsNavTarget } from "@/components/news/PortfolioHoldingsMentionedLink";
 import {
   buildNewsMediaPresentation,
   getNewsMediaCtaLabel,
@@ -59,12 +62,14 @@ export function NewsBriefingIntelligence({
   intelligence,
   portfolioItems,
   upcomingEvents,
+  portfolioNewsNav = null,
   onRefresh,
   isRefreshing,
 }: {
   intelligence: InvestmentIntelligence;
   portfolioItems: NewsContentItem[];
   upcomingEvents: UpcomingMarketEvent[];
+  portfolioNewsNav?: PortfolioNewsNavTarget | null;
   onRefresh?: () => void;
   isRefreshing?: boolean;
 }) {
@@ -97,6 +102,12 @@ export function NewsBriefingIntelligence({
   const mustWatchDetail = mustWatchItem ? itemSupportingText(mustWatchItem) : null;
   const mustWatchPresentation = mustWatchItem
     ? buildNewsMediaPresentation(mustWatchItem)
+    : null;
+  const mustWatchThumbnailUrl = mustWatchItem
+    ? selectTrustedNewsThumbnailFromUrl(
+        mustWatchItem.thumbnailUrl,
+        mustWatchItem.sourceType,
+      )
     : null;
   const showMustWatchDetail =
     Boolean(mustWatchDetail) &&
@@ -150,7 +161,7 @@ export function NewsBriefingIntelligence({
             Today&apos;s portfolio summary
           </p>
           <p className={`mt-3 ${appSectionBodyMediumClass} text-slate-950`}>
-            {summaryMessage}
+            {renderPortfolioSummaryMessage(summaryMessage, portfolioNewsNav)}
           </p>
         </div>
 
@@ -182,7 +193,7 @@ export function NewsBriefingIntelligence({
           <div className="overflow-hidden rounded-[18px] border border-violet-200 bg-violet-50 px-4 py-4">
             <p className={`${appSectionBodyMediumClass} text-violet-900`}>Top story</p>
             <div className="mt-3 flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
-              {mustWatchItem && mustWatchPresentation ? (
+              {mustWatchItem && mustWatchPresentation && mustWatchThumbnailUrl ? (
                 <NewsMediaThumbnail
                   thumbnailUrl={mustWatchItem.thumbnailUrl}
                   sourceType={mustWatchItem.sourceType}
@@ -190,6 +201,7 @@ export function NewsBriefingIntelligence({
                   size="editorial"
                   showPlayIndicator={mustWatchPresentation.showPlayIndicator}
                   priority
+                  alt={intelligence.mustWatch.title}
                 />
               ) : null}
               <div className="min-w-0 flex-1">

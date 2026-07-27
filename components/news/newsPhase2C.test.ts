@@ -193,7 +193,7 @@ describe("News media rendering contracts", () => {
 
     expect(articleRow).toContain("NewsMediaThumbnail");
     expect(portfolioSection).toContain('size="compact"');
-    expect(marketBrief).toContain("NewsMediaThumbnail");
+    expect(marketBrief).toContain("NewsStoryCard");
   });
 
   it("uses editorial Top Story and compact supporting coverage layouts", () => {
@@ -203,6 +203,7 @@ describe("News media rendering contracts", () => {
     );
 
     expect(intelligenceSource).toContain('size="editorial"');
+    expect(intelligenceSource).toContain("selectTrustedNewsThumbnailFromUrl");
     expect(intelligenceSource).toContain("NewsCompactArticleRow");
     expect(intelligenceSource).toContain("Top story");
   });

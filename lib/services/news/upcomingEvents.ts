@@ -48,6 +48,12 @@ const MEDIUM_IMPACT_KEYWORDS = [
   "producer price index",
   "ppi",
   "jobless claims",
+  "unemployment",
+  "gdp",
+  "trade balance",
+  "industrial production",
+  "housing starts",
+  "manufacturing",
 ];
 
 const CATEGORY_PATTERNS: Array<{
@@ -124,6 +130,8 @@ function formatTimeLabel(dateValue: string): string {
 }
 
 function mapEodhdEvents(events: EodhdEconomicEvent[]): UpcomingMarketEvent[] {
+  const today = createDateString(new Date());
+
   return events
     .map((event, index) => {
       const title = normaliseText(event.type);
@@ -131,6 +139,10 @@ function mapEodhdEvents(events: EodhdEconomicEvent[]): UpcomingMarketEvent[] {
       const impact = getImpact(title);
 
       if (!title || !date || !impact) {
+        return null;
+      }
+
+      if (date < today) {
         return null;
       }
 

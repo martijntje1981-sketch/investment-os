@@ -15,6 +15,7 @@ import {
   writeEodhdNewsCache,
 } from "@/lib/services/news/cache/eodhdNewsCache";
 import { sanitizeNewsText, sanitizeNewsUrl } from "@/lib/services/news/sanitizeNewsUrl";
+import { selectTrustedNewsThumbnailFromUrl } from "@/lib/services/news/newsThumbnail";
 import {
   isProviderUnavailable,
   normalizeProviderError,
@@ -28,6 +29,8 @@ export type EodhdNewsItem = {
   link?: string;
   symbols?: string[];
   tags?: string[];
+  image?: string;
+  thumbnail?: string;
   sentiment?: {
     polarity?: number;
   };
@@ -105,7 +108,10 @@ function mapEodhdItem(
     sourceName: EODHD_SOURCE,
     sourceType: "news",
     canonicalUrl,
-    thumbnailUrl: null,
+    thumbnailUrl: selectTrustedNewsThumbnailFromUrl(
+      raw.image ?? raw.thumbnail ?? null,
+      "news",
+    ),
     publishedAt,
     description,
     summary: "",

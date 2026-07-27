@@ -34,7 +34,7 @@ describe("upcomingEvents", () => {
           {
             type: "US Consumer Price Index",
             country: "United States",
-            date: "2026-07-22",
+            date: "2026-08-22",
             estimate: 3.1,
             previous: 3.0,
           },
@@ -50,7 +50,7 @@ describe("upcomingEvents", () => {
     expect(result.events).toHaveLength(1);
     expect(result.events[0]).toMatchObject({
       title: "US Consumer Price Index",
-      date: "2026-07-22",
+      date: "2026-08-22",
       source: "EODHD Economic Calendar",
       impact: "High",
     });
@@ -74,5 +74,39 @@ describe("upcomingEvents", () => {
     const result = await fetchUpcomingMarketEvents();
     expect(result.events).toEqual([]);
     expect(result.state).toBe("empty");
+  });
+
+  it("filters out past events", async () => {
+    vi.stubEnv("EODHD_API_KEY", "test-key");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => [
+          {
+            type: "US Consumer Price Index",
+            country: "United States",
+            date: "2020-01-01",
+            estimate: 3.1,
+            previous: 3.0,
+          },
+          {
+            type: "US Gross Domestic Product",
+            country: "United States",
+            date: "2026-08-01",
+            estimate: 2.4,
+            previous: 2.1,
+          },
+        ],
+      }),
+    );
+
+    const { fetchUpcomingMarketEvents } = await import(
+      "@/lib/services/news/upcomingEvents"
+    );
+
+    const result = await fetchUpcomingMarketEvents();
+    expect(result.events).toHaveLength(1);
+    expect(result.events[0]?.title).toContain("Gross Domestic Product");
   });
 });

@@ -4,6 +4,10 @@ import type { NewsContentItem, NewsSourceType } from "@/lib/types/newsContent";
 /** Hostnames allowed for trusted remote thumbnails already present in feed metadata. */
 export const TRUSTED_NEWS_THUMBNAIL_HOSTS = new Set([
   "i.ytimg.com",
+  "i1.ytimg.com",
+  "i2.ytimg.com",
+  "i3.ytimg.com",
+  "i4.ytimg.com",
   "img.youtube.com",
 ]);
 

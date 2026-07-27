@@ -77,6 +77,13 @@ export function sanitizeNewsUrl(
   }
 }
 
+export function isNavigableNewsUrl(
+  value: string | null | undefined,
+): value is string {
+  const sanitized = sanitizeNewsUrl(value);
+  return Boolean(sanitized && sanitized !== "#");
+}
+
 export function sanitizeNewsText(
   value: string | null | undefined,
   maxLength = 500,

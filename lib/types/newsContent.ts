@@ -72,6 +72,9 @@ export type MarketBriefInsight = {
   kind: "macro" | "portfolio" | "general";
   insightType: "fact" | "interpretation";
   sourceName?: string | null;
+  canonicalUrl?: string | null;
+  thumbnailUrl?: string | null;
+  sourceType?: NewsSourceType;
 };
 
 export type TodaysMarketBrief = {

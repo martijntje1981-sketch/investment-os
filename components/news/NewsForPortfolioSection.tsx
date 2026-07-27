@@ -31,7 +31,11 @@ export function NewsForPortfolioSection({
   cards: PortfolioNewsCard[];
 }) {
   return (
-    <section aria-labelledby="news-for-portfolio-heading" className="min-w-0 space-y-3">
+    <section
+      id="portfolio-news"
+      aria-labelledby="news-for-portfolio-heading"
+      className="min-w-0 scroll-mt-24 space-y-3 rounded-[20px] transition-shadow duration-500 motion-reduce:transition-none"
+    >
       <div>
         <h2 id="news-for-portfolio-heading" className={appSectionTitleClass}>
           For Your Portfolio

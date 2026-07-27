@@ -8,12 +8,19 @@ import {
 
 describe("newsThumbnail", () => {
   it("accepts trusted YouTube thumbnail URLs over HTTPS", () => {
-    const url = "https://i.ytimg.com/vi/abc123/hqdefault.jpg";
-    expect(isTrustedNewsThumbnailUrl(url)).toBe(true);
-    expect(selectTrustedNewsThumbnail({
-      thumbnailUrl: url,
-      sourceType: "youtube",
-    })).toBe(url);
+    const urls = [
+      "https://i.ytimg.com/vi/abc123/hqdefault.jpg",
+      "https://i3.ytimg.com/vi/abc123/hqdefault.jpg",
+    ];
+    for (const url of urls) {
+      expect(isTrustedNewsThumbnailUrl(url)).toBe(true);
+      expect(
+        selectTrustedNewsThumbnail({
+          thumbnailUrl: url,
+          sourceType: "youtube",
+        }),
+      ).toBe(url);
+    }
   });
 
   it("returns null when image metadata is missing", () => {
@@ -61,6 +68,10 @@ describe("newsThumbnail", () => {
   it("documents the exact trusted thumbnail hostnames", () => {
     expect([...TRUSTED_NEWS_THUMBNAIL_HOSTS].sort()).toEqual([
       "i.ytimg.com",
+      "i1.ytimg.com",
+      "i2.ytimg.com",
+      "i3.ytimg.com",
+      "i4.ytimg.com",
       "img.youtube.com",
     ]);
   });

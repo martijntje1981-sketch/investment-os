@@ -43,6 +43,10 @@ export function NewsMediaThumbnail({
   const showImage = Boolean(trustedUrl) && !failed;
   const FallbackIcon = getNewsMediaFallbackIcon(fallbackCategory);
   const fallbackStyle = getNewsMediaFallbackStyle(fallbackCategory);
+  const sizeClass =
+    size === "editorial" && !showImage
+      ? SIZE_CLASSES.compact
+      : SIZE_CLASSES[size];
 
   return (
     <div
@@ -50,7 +54,7 @@ export function NewsMediaThumbnail({
         showImage
           ? "bg-slate-100"
           : `${fallbackStyle.surfaceClass} ${fallbackStyle.borderClass}`
-      } ${SIZE_CLASSES[size]}`}
+      } ${sizeClass}`}
     >
       {showImage ? (
         <>
