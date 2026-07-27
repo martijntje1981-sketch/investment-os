@@ -4,7 +4,10 @@ import {
   findConsensusResultForHolding,
   formatConsensusUpdatedAt,
 } from "@/lib/client/marketConsensus/consensusHelpers";
-import { classifyMarketConsensusHolding } from "@/lib/client/marketConsensus/holdingClassification";
+import {
+  classifyMarketConsensusHolding,
+  resolveNotApplicableStatusLabel,
+} from "@/lib/client/marketConsensus/holdingClassification";
 import {
   normalizeConsensusResultForHolding,
   shouldUseEtfNeutralFallback,
@@ -41,16 +44,28 @@ function hasEquityAnalystData(result: AnalystConsensusResult): boolean {
   );
 }
 
-function mapCoverageType(result: AnalystConsensusResult): MarketConsensusCoverageType {
+function mapCoverageType(
+  result: AnalystConsensusResult,
+  holding: StoredPortfolioHolding,
+): MarketConsensusCoverageType {
+  const notApplicable = resolveNotApplicableStatusLabel(holding);
+  if (notApplicable) {
+    return "Not applicable";
+  }
+
   switch (result.coverageType) {
     case "equity-analyst":
-      return result.availability === "limited"
-        ? "Limited coverage"
-        : "Analyst coverage";
+      if (
+        result.availability === "available" ||
+        (result.availability === "limited" && (result.analystCount ?? 0) > 0)
+      ) {
+        return "Analyst coverage";
+      }
+      return "No analyst coverage";
     case "underlying-market":
-      return "Underlying market outlook";
+      return "Not applicable";
     case "crypto-market-outlook":
-      return "Market outlook";
+      return "Not applicable";
     default:
       return "No reliable coverage";
   }
@@ -102,21 +117,31 @@ function mapCardState(
 }
 
 function mapStatusLabel(
+  holding: StoredPortfolioHolding,
   result: AnalystConsensusResult | null,
   state: MarketConsensusCardState,
 ): MarketConsensusStatusLabel | null {
-  if (state === "etf_outlook") {
-    return "Underlying market outlook";
-  }
-
-  if (state === "crypto_outlook") {
-    return "Market outlook";
+  if (state === "etf_outlook" || state === "crypto_outlook") {
+    return (
+      resolveNotApplicableStatusLabel(holding) ??
+      (state === "crypto_outlook"
+        ? "Not applicable — crypto"
+        : "Not applicable — ETF")
+    );
   }
 
   if (state === "error") {
-    return result?.errorCode === "provider_unavailable"
-      ? "Analyst data temporarily unavailable"
-      : "Limited coverage";
+    if (result?.errorCode === "provider_unavailable") {
+      return "Analyst data temporarily unavailable";
+    }
+    if (
+      result?.errorCode === "not_found" ||
+      result?.errorCode === "unsupported" ||
+      result?.errorCode === "unsupported_instrument"
+    ) {
+      return "Symbol could not be resolved";
+    }
+    return "Analyst data temporarily unavailable";
   }
 
   if (state === "partial_equity_coverage") {
@@ -124,7 +149,14 @@ function mapStatusLabel(
   }
 
   if (state === "no_coverage" || state === "loading") {
-    return "Limited coverage";
+    return "No analyst coverage";
+  }
+
+  if (state === "equity_coverage") {
+    return (
+      classificationStatusLabel(result?.classification ?? "unavailable") ??
+      "Analyst coverage"
+    );
   }
 
   return classificationStatusLabel(result?.classification ?? "unavailable");
@@ -289,18 +321,23 @@ export function mapConsensusResultToCard(input: {
     name: holding.name,
     weightPercent,
     currentValueLabel,
-    coverageType: result ? mapCoverageType(result) : mapCoverageType({
-      instrumentId: holding.id,
-      coverageType:
-        category === "etf"
-          ? "underlying-market"
-          : category === "crypto_etp"
-            ? "crypto-market-outlook"
-            : "unavailable",
-      availability: "unavailable",
-      classification: "unavailable",
-    }),
-    statusLabel: mapStatusLabel(result, state),
+    coverageType: result
+      ? mapCoverageType(result, holding)
+      : mapCoverageType(
+          {
+            instrumentId: holding.id,
+            coverageType:
+              category === "etf"
+                ? "underlying-market"
+                : category === "crypto_etp"
+                  ? "crypto-market-outlook"
+                  : "unavailable",
+            availability: "unavailable",
+            classification: "unavailable",
+          },
+          holding,
+        ),
+    statusLabel: mapStatusLabel(holding, result, state),
     analystAgreementLabel:
       showsEquityAnalystDetails(state)
         ? agreementLevelLabel(result?.agreementLevel)
@@ -361,7 +398,13 @@ export function mapPortfolioSummaryToViewModel(
     holdingsWithCoverage: summary.holdingsWithCoverage,
     positiveConsensus: summary.positiveConsensus,
     mixedConsensus: summary.mixedConsensus,
-    limitedCoverage: summary.limitedCoverage,
+    negativeConsensus: summary.negativeConsensus,
+    noAnalystCoverage: summary.noAnalystCoverage,
+    notApplicable: summary.notApplicable,
+    eligibleHoldings: summary.eligibleHoldings,
+    providerUnavailable: summary.providerUnavailable,
+    symbolMappingIssues: summary.symbolMappingIssues,
+    limitedCoverage: summary.noAnalystCoverage,
     isDemoData: false,
   };
 }

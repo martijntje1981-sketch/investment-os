@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -278,17 +280,15 @@ describe("buildTopPerformersByCategory", () => {
       (group) => group.categoryWinner.id === "leader",
     );
     expect(leaderGroup?.relationToPortfolioLeader.kind).toBe("portfolio_leader");
-    expect(leaderGroup?.relationToPortfolioLeader.comparisonLabel).toBe(
-      "Portfolio leader.",
-    );
+    expect(leaderGroup?.relationToPortfolioLeader.comparisonLabel).toBe("");
 
     const cryptoGroup = result.groups.find((group) => group.groupId === "crypto");
     expect(cryptoGroup?.relationToPortfolioLeader.kind).toBe("behind");
     expect(
       cryptoGroup?.relationToPortfolioLeader.gapPercentagePoints,
     ).toBeCloseTo(13, 5);
-    expect(cryptoGroup?.relationToPortfolioLeader.comparisonLabel).toContain(
-      "behind the portfolio leader",
+    expect(cryptoGroup?.relationToPortfolioLeader.comparisonLabel).toBe(
+      "13 pp behind leader",
     );
   });
 
@@ -316,15 +316,15 @@ describe("buildTopPerformersByCategory", () => {
     const crypto = result.groups.find((group) => group.groupId === "crypto");
     expect(crypto?.relationToPortfolioLeader.kind).toBe("tied");
     expect(crypto?.relationToPortfolioLeader.comparisonLabel).toBe(
-      "Tied with the portfolio leader.",
+      "Tied with portfolio leader",
     );
     expect(crypto?.relationToPortfolioLeader.gapPercentagePoints).toBe(0);
   });
 
   it("formats percentage-point gaps from raw values with display-only rounding", () => {
-    expect(formatPercentagePointGap(1.74)).toBe("1.7 percentage points");
-    expect(formatPercentagePointGap(1)).toBe("1 percentage point");
-    expect(formatPercentagePointGap(0.4)).toBe("0.4 percentage points");
+    expect(formatPercentagePointGap(1.74)).toBe("1.7 pp");
+    expect(formatPercentagePointGap(1)).toBe("1 pp");
+    expect(formatPercentagePointGap(0.4)).toBe("0.4 pp");
 
     const relation = buildCategoryWinnerRelation(
       {
@@ -353,9 +353,7 @@ describe("buildTopPerformersByCategory", () => {
 
     expect(relation.kind).toBe("behind");
     expect(relation.gapPercentagePoints).toBeCloseTo(1.7, 5);
-    expect(relation.comparisonLabel).toBe(
-      "1.7 percentage points behind the portfolio leader.",
-    );
+    expect(relation.comparisonLabel).toBe("1.7 pp behind leader");
   });
 
   it("uses today’s movement wording for crypto-only comparable sets", () => {
@@ -392,5 +390,24 @@ describe("buildTopPerformersByCategory", () => {
     expect(result.groups.some((group) => group.groupId === "other_unclassified")).toBe(
       true,
     );
+  });
+});
+
+describe("TopPerformersByCategorySection compact UI", () => {
+  it("avoids redundant Portfolio leader and Category winner copy", () => {
+    const source = readFileSync(
+      path.resolve(
+        process.cwd(),
+        "components/analysis/TopPerformersByCategorySection.tsx",
+      ),
+      "utf8",
+    );
+
+    expect(source).toContain("Portfolio leader");
+    expect(source).not.toContain("Category winner");
+    expect(source).toContain("max-w-md");
+    expect(source).toContain('kind === "portfolio_leader"');
+    // Label + aria-label only — not repeated per category.
+    expect(source.match(/Portfolio leader/g)?.length).toBe(2);
   });
 });

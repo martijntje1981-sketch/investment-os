@@ -57,6 +57,20 @@ export type PortfolioConsensusSummary = {
   holdingsWithCoverage: number;
   positiveConsensus: number;
   mixedConsensus: number;
+  /** Eligible equities classified negative (preserved when present). */
+  negativeConsensus: number;
+  /** Eligible equities with valid routing but no usable analyst data. */
+  noAnalystCoverage: number;
+  /** ETFs, ETPs, ETCs, crypto-linked and other non-eligible investments. */
+  notApplicable: number;
+  /** Company equities eligible for classic analyst consensus. */
+  eligibleHoldings: number;
+  providerUnavailable: number;
+  symbolMappingIssues: number;
+  /**
+   * @deprecated Prefer {@link noAnalystCoverage}. Kept for transitional callers;
+   * equals noAnalystCoverage and no longer includes not-applicable instruments.
+   */
   limitedCoverage: number;
   totalInvestments: number;
   providerAvailable: boolean;

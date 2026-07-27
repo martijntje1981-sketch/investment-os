@@ -28,6 +28,30 @@ const STATUS_STYLES: Record<
     className: "border-rose-200 bg-rose-50 text-rose-950",
     Icon: TrendingDown,
   },
+  "Analyst coverage": {
+    className: "border-emerald-200 bg-emerald-50 text-emerald-900",
+    Icon: TrendingUp,
+  },
+  "No analyst coverage": {
+    className: "border-slate-200 bg-slate-50 text-slate-800",
+    Icon: CircleHelp,
+  },
+  "Not applicable — ETF": {
+    className: "border-slate-200 bg-slate-50 text-slate-700",
+    Icon: Minus,
+  },
+  "Not applicable — ETP": {
+    className: "border-slate-200 bg-slate-50 text-slate-700",
+    Icon: Minus,
+  },
+  "Not applicable — ETC": {
+    className: "border-slate-200 bg-slate-50 text-slate-700",
+    Icon: Minus,
+  },
+  "Not applicable — crypto": {
+    className: "border-slate-200 bg-slate-50 text-slate-700",
+    Icon: Minus,
+  },
   "Underlying market outlook": {
     className: "border-blue-200 bg-blue-50 text-blue-950",
     Icon: BarChart3,
@@ -36,16 +60,16 @@ const STATUS_STYLES: Record<
     className: "border-violet-200 bg-violet-50 text-violet-950",
     Icon: BarChart3,
   },
-  "Limited coverage": {
-    className: "border-slate-200 bg-slate-50 text-slate-800",
-    Icon: CircleHelp,
-  },
   "Partial analyst coverage": {
     className: "border-amber-200 bg-amber-50 text-amber-950",
     Icon: BarChart3,
   },
   "Analyst data temporarily unavailable": {
     className: "border-rose-200 bg-rose-50 text-rose-950",
+    Icon: AlertTriangle,
+  },
+  "Symbol could not be resolved": {
+    className: "border-amber-200 bg-amber-50 text-amber-950",
     Icon: AlertTriangle,
   },
 };

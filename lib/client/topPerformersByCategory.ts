@@ -133,15 +133,14 @@ function toTopPerformer(
   };
 }
 
-/** Format raw percentage-point gap for display (rounding only here). */
+/** Format raw percentage-point gap for compact display (rounding only here). */
 export function formatPercentagePointGap(gapPercentagePoints: number): string {
   const rounded = Math.round(Math.abs(gapPercentagePoints) * 10) / 10;
   const formatted =
     Number.isInteger(rounded) && Math.abs(rounded - Math.trunc(rounded)) < 1e-9
       ? String(Math.trunc(rounded))
       : rounded.toFixed(1);
-  const unit = rounded === 1 ? "percentage point" : "percentage points";
-  return `${formatted} ${unit}`;
+  return `${formatted} pp`;
 }
 
 export function buildCategoryWinnerRelation(
@@ -152,7 +151,7 @@ export function buildCategoryWinnerRelation(
     return {
       kind: "portfolio_leader",
       gapPercentagePoints: 0,
-      comparisonLabel: "Portfolio leader.",
+      comparisonLabel: "",
     };
   }
 
@@ -160,7 +159,7 @@ export function buildCategoryWinnerRelation(
     return {
       kind: "tied",
       gapPercentagePoints: 0,
-      comparisonLabel: "Tied with the portfolio leader.",
+      comparisonLabel: "Tied with portfolio leader",
     };
   }
 
@@ -170,7 +169,7 @@ export function buildCategoryWinnerRelation(
   return {
     kind: "behind",
     gapPercentagePoints,
-    comparisonLabel: `${formatPercentagePointGap(gapPercentagePoints)} behind the portfolio leader.`,
+    comparisonLabel: `${formatPercentagePointGap(gapPercentagePoints)} behind leader`,
   };
 }
 
@@ -263,7 +262,7 @@ export function buildTopPerformersByCategory(
           : {
               kind: "portfolio_leader" as const,
               gapPercentagePoints: 0,
-              comparisonLabel: "Portfolio leader.",
+              comparisonLabel: "",
             },
       };
     })

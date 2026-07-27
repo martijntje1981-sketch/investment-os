@@ -14,17 +14,24 @@ export type MarketConsensusStatusLabel =
   | "Neutral consensus"
   | "Mixed consensus"
   | "Negative consensus"
+  | "Analyst coverage"
+  | "No analyst coverage"
+  | "Not applicable — ETF"
+  | "Not applicable — ETP"
+  | "Not applicable — ETC"
+  | "Not applicable — crypto"
   | "Underlying market outlook"
   | "Market outlook"
-  | "Limited coverage"
   | "Partial analyst coverage"
-  | "Analyst data temporarily unavailable";
+  | "Analyst data temporarily unavailable"
+  | "Symbol could not be resolved";
 
 export type MarketConsensusCoverageType =
   | "Analyst coverage"
   | "Underlying market outlook"
   | "Market outlook"
-  | "Limited coverage"
+  | "No analyst coverage"
+  | "Not applicable"
   | "No reliable coverage";
 
 export type MarketConsensusRatingDistribution = {
@@ -68,6 +75,13 @@ export type MarketConsensusPortfolioSummaryModel = {
   holdingsWithCoverage: number | null;
   positiveConsensus: number | null;
   mixedConsensus: number | null;
+  negativeConsensus: number | null;
+  noAnalystCoverage: number | null;
+  notApplicable: number | null;
+  eligibleHoldings: number | null;
+  providerUnavailable: number | null;
+  symbolMappingIssues: number | null;
+  /** @deprecated Prefer noAnalystCoverage */
   limitedCoverage: number | null;
   isDemoData: boolean;
 };
@@ -85,10 +99,13 @@ export const MARKET_CONSENSUS_CRYPTO_DISCLAIMER =
   "Crypto forecasts are less standardized than equity analyst targets and can vary significantly.";
 
 export const MARKET_CONSENSUS_UNAVAILABLE_TITLE =
-  "No reliable consensus data available";
+  "No analyst coverage";
 
 export const MARKET_CONSENSUS_UNAVAILABLE_COPY =
-  "We could not find sufficiently reliable third-party analyst coverage for this holding. Your performance and allocation data remain available.";
+  "No verified third-party analyst coverage was returned for this company share. Your performance and allocation data remain available.";
 
 export const MARKET_CONSENSUS_NARRATIVE_TOOLTIP =
   "AI summarizes available third-party data and does not provide investment advice.";
+
+export const MARKET_CONSENSUS_ELIGIBLE_HELPER =
+  "Coverage counts use consensus-eligible company equities only. Funds, ETPs, ETCs and crypto-linked instruments are marked not applicable.";
