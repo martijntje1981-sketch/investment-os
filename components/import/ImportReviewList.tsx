@@ -14,6 +14,10 @@ import { ExactListingSymbolField } from "@/components/import/ExactListingSymbolF
 import {
   buildListingCandidates,
 } from "@/lib/services/instruments/listingConfirmation";
+import {
+  isMultipleListingGuidanceMessage,
+  PURCHASE_EXCHANGE_CONFIRMED_HELPER,
+} from "@/lib/client/listingLookupGuidance";
 import { canConfirmImportRow } from "@/lib/services/portfolio/holdingValidation";
 import {
   shouldShowExactListingFallback,
@@ -180,10 +184,17 @@ function ImportReviewCard({
         <ReadOnlyFieldGrid row={row} uncertainFields={uncertainFields} />
 
         {row.reviewReason ? (
-          <p className="mt-3 flex items-start gap-2 text-sm leading-6 text-amber-800">
-            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-            {row.reviewReason}
-          </p>
+          isMultipleListingGuidanceMessage(row.reviewReason) &&
+          Boolean(row.exchange?.trim()) ? (
+            <p className="mt-3 text-sm leading-6 text-slate-600">
+              {PURCHASE_EXCHANGE_CONFIRMED_HELPER}
+            </p>
+          ) : (
+            <p className="mt-3 flex items-start gap-2 text-sm leading-6 text-amber-800">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              {row.reviewReason}
+            </p>
+          )
         ) : null}
       </div>
 
@@ -223,7 +234,11 @@ function ImportReviewCard({
             source={row}
             selectedProviderSymbol={row.providerSymbol}
             onSelect={onSelectCandidate}
-            title="Likely matches"
+            title={
+              row.exchange?.trim()
+                ? "Select live pricing listing"
+                : "Likely matches"
+            }
           />
         ) : null}
 

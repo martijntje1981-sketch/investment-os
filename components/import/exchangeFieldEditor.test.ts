@@ -41,6 +41,15 @@ describe("ExchangeFieldEditor input behaviour", () => {
     expect(formatExchangeInputValue(selected!.code)).toBe("Xetra");
   });
 
+  it("treats a catalog selection as a confirmed purchase exchange", () => {
+    const selected = findExchangeOption("Tradegate");
+    expect(selected).toMatchObject({
+      code: "TDG",
+      label: "Tradegate",
+    });
+    expect(Boolean(selected)).toBe(true);
+  });
+
   it("accepts unknown exchange text when free-text mode is enabled", () => {
     const typed = "Unknown venue";
     expect(findExchangeOption(typed)).toBeNull();

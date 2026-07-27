@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import { Check } from "lucide-react";
 
 import { normalizeExchange } from "@/lib/services/instruments/exchangeNormalizer";
 import {
@@ -177,10 +178,20 @@ export function ExchangeFieldEditor({
     !isSearchingExchanges &&
     exchangeSuggestions.length === 0;
 
+  const purchaseExchangeConfirmed = Boolean(selectedExchange);
+
   return (
     <label className="block">
-      <span className="mb-1.5 block text-[11px] font-black uppercase tracking-[0.1em] text-slate-400">
-        Exchange
+      <span className="mb-1.5 flex items-center justify-between gap-2">
+        <span className="text-[11px] font-black uppercase tracking-[0.1em] text-slate-400">
+          Purchase exchange
+        </span>
+        {purchaseExchangeConfirmed ? (
+          <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.1em] text-emerald-800">
+            <Check className="h-3 w-3" aria-hidden />
+            Confirmed
+          </span>
+        ) : null}
       </span>
       <div className="relative">
         <input
@@ -194,6 +205,9 @@ export function ExchangeFieldEditor({
           aria-autocomplete="list"
           aria-controls={listboxId}
           aria-expanded={showSuggestions && exchangeSuggestions.length > 0}
+          aria-describedby={
+            purchaseExchangeConfirmed ? "purchase-exchange-confirmed" : undefined
+          }
           onChange={(event) => handleInputChange(event.target.value)}
           onFocus={() => {
             onFocusChange?.(true);
@@ -207,8 +221,21 @@ export function ExchangeFieldEditor({
             }
           }}
           onBlur={handleBlur}
-          className="w-full min-h-[48px] rounded-xl border border-amber-200 bg-amber-50/40 px-4 py-3 text-sm font-bold outline-none focus:border-amber-300"
+          className={`w-full min-h-[48px] rounded-xl border px-4 py-3 text-sm font-bold outline-none ${
+            purchaseExchangeConfirmed
+              ? "border-emerald-300 bg-emerald-50/50 focus:border-emerald-400"
+              : "border-slate-200 bg-slate-50 focus:border-blue-400"
+          }`}
         />
+
+        {purchaseExchangeConfirmed ? (
+          <p
+            id="purchase-exchange-confirmed"
+            className="mt-1.5 text-xs font-semibold text-emerald-800"
+          >
+            {selectedExchange!.label} selected as purchase venue.
+          </p>
+        ) : null}
 
         {isSearchingExchanges ? (
           <p className="mt-1.5 text-xs font-semibold text-slate-500">
@@ -217,7 +244,7 @@ export function ExchangeFieldEditor({
         ) : null}
 
         {showEmptyState ? (
-          <p className="mt-1.5 text-xs font-semibold text-amber-800">
+          <p className="mt-1.5 text-xs font-semibold text-slate-600">
             {allowFreeText
               ? "No exchange match found. You can keep your text or leave this blank."
               : "No exchange found. Try the exchange name or code."}

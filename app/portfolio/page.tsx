@@ -21,6 +21,9 @@ import {
 } from "lucide-react";
 import { ConversionDetailsDisclosure } from "@/components/currency/ConversionDetailsDisclosure";
 import { PortfolioFundingSection } from "@/components/contributions/PortfolioFundingSection";
+import {
+  formatListingLookupGuidance,
+} from "@/lib/client/listingLookupGuidance";
 import BottomNavigation from "@/components/home/BottomNav";
 import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer";
 import { PageHero } from "@/components/layout/PageHero";
@@ -224,6 +227,10 @@ export default function PortfolioPage() {
   const largest = portfolioAnalysis.largestPosition?.holding ?? null;
   const largestWeightPercent =
     portfolioAnalysis.largestPosition?.weightPercent ?? 0;
+  const listingLookupMessages = useMemo(
+    () => formatListingLookupGuidance(listingWarnings),
+    [listingWarnings],
+  );
 
   if (!portfolioReady) {
     return <AppPageLoading />;
@@ -753,14 +760,33 @@ export default function PortfolioPage() {
                 </button>
 
                 {listingWarnings.length > 0 ? (
-                  <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                    {listingWarnings.map((warning) => (
-                      <p key={warning}>{warning}</p>
-                    ))}
-                    {lookupUnavailable ? (
-                      <p className="mt-2 font-semibold">
-                        Your entries are kept. You can save without finding a listing.
-                      </p>
+                  <div className="space-y-3">
+                    {listingLookupMessages.guidance.length > 0 ? (
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                        {listingLookupMessages.guidance.map((message) => (
+                          <p key={message}>{message}</p>
+                        ))}
+                      </div>
+                    ) : null}
+                    {listingLookupMessages.alerts.length > 0 ? (
+                      <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                        {listingLookupMessages.alerts.map((warning) => (
+                          <p key={warning}>{warning}</p>
+                        ))}
+                        {lookupUnavailable ? (
+                          <p className="mt-2 font-semibold">
+                            Your entries are kept. You can save without finding a
+                            listing.
+                          </p>
+                        ) : null}
+                      </div>
+                    ) : lookupUnavailable ? (
+                      <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                        <p className="font-semibold">
+                          Your entries are kept. You can save without finding a
+                          listing.
+                        </p>
+                      </div>
                     ) : null}
                   </div>
                 ) : null}
@@ -778,6 +804,7 @@ export default function PortfolioPage() {
                     }}
                     selectedProviderSymbol={draft.providerSymbol}
                     onSelect={selectListing}
+                    title="Select live pricing listing"
                   />
                 ) : null}
 
