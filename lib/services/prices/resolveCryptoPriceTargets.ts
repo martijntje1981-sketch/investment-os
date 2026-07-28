@@ -56,9 +56,10 @@ export function resolveCryptoPriceTargets(
 
     if (!target) {
       skipped += 1;
+      const hasCcProvider = holding.providerSymbol?.trim().toUpperCase().endsWith(".CC");
       if (!holding.pairCurrency?.trim()) {
         errors.push(`${label}: missing trading-pair currency.`);
-      } else if (!isLivePricedCryptoBaseAsset(holding.symbol)) {
+      } else if (!hasCcProvider && !isLivePricedCryptoBaseAsset(holding.symbol)) {
         errors.push(`${label}: unsupported crypto symbol for live pricing.`);
       } else {
         errors.push(`${label}: unsupported pair ${holding.symbol}/${holding.pairCurrency}.`);

@@ -33,8 +33,15 @@ describe("cryptoBaseAssetRegistry", () => {
 
   it("rejects invalid ticker shapes", () => {
     expect(isValidCryptoBaseAssetSymbol("")).toBe(false);
-    expect(isValidCryptoBaseAssetSymbol("BAD-COIN")).toBe(false);
-    expect(isValidCryptoBaseAssetSymbol("WAYTOOLONGSYMBOL")).toBe(false);
+    expect(isValidCryptoBaseAssetSymbol("BAD COIN")).toBe(false);
+    expect(
+      isValidCryptoBaseAssetSymbol("WAYTOOLONGSYMBOLWAYTOOLONGSYMBOLWAYTOOLONG"),
+    ).toBe(false);
+  });
+
+  it("preserves non-letter ticker characters when syntactically valid", () => {
+    expect(isValidCryptoBaseAssetSymbol("1000SHIB")).toBe(true);
+    expect(normalizeCryptoBaseAssetSymbol("1000SHIB")).toBe("1000SHIB");
   });
 
   it("allows unknown but syntactically valid symbols to save without live pricing", () => {

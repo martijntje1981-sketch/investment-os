@@ -85,6 +85,26 @@ describe("cryptoHolding validation and preparation", () => {
     expect(saved.pricingStatus).toBe("price_unavailable");
   });
 
+  it("persists catalog-resolved SHIB/USD generically", () => {
+    const saved = prepareCryptoHoldingForSave(
+      cryptoDraft({
+        name: "Shiba Inu",
+        symbol: "SHIB",
+        quantity: 5_000_000,
+        pairCurrency: "USD",
+        providerSymbol: "SHIB-USD.CC",
+        exchange: "CC",
+      }),
+    );
+
+    expect(saved.symbol).toBe("SHIB");
+    expect(saved.tradingPair).toBe("SHIB/USD");
+    expect(saved.pairCurrency).toBe("USD");
+    expect(saved.providerSymbol).toBe("SHIB-USD.CC");
+    expect(saved.exchange).toBe("CC");
+    expect(saved.pricingStatus).toBe("price_unavailable");
+  });
+
   it("keeps USDC distinct from USD", () => {
     const usdc = prepareCryptoHoldingForSave(
       cryptoDraft({
@@ -136,6 +156,22 @@ describe("cryptoHolding validation and preparation", () => {
     );
 
     expect(result.ok).toBe(true);
+  });
+
+  it("accepts very small positive SHIB-style purchase prices without rounding to zero", () => {
+    const saved = prepareCryptoHoldingForSave(
+      cryptoDraft({
+        name: "Shiba Inu",
+        symbol: "SHIB",
+        quantity: 1000,
+        pairCurrency: "USD",
+        purchasePrice: 0.00001234,
+        providerSymbol: "SHIB-USD.CC",
+        exchange: "CC",
+      }),
+    );
+
+    expect(saved.purchasePrice).toBe(0.00001234);
   });
 
   it("rejects zero and negative amounts", () => {

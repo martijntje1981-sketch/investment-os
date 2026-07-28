@@ -72,7 +72,7 @@ const REGISTRY_BY_NAME = new Map<string, CryptoBaseAssetEntry>(
 /** Validates ticker shape without accepting arbitrary free text. */
 export function isValidCryptoBaseAssetSymbol(symbol: string): boolean {
   const normalized = symbol.trim().toUpperCase();
-  return /^[A-Z0-9]{1,10}$/.test(normalized);
+  return /^[A-Z0-9][A-Z0-9._-]{0,31}$/.test(normalized);
 }
 
 export function normalizeCryptoBaseAssetSymbol(symbol: string): string | null {

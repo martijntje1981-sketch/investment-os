@@ -1,7 +1,7 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
-import { Loader2, X } from "lucide-react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
+import { Check, Loader2, Search, X } from "lucide-react";
 
 import NumericInput from "@/components/NumericInput";
 import {
@@ -10,16 +10,23 @@ import {
   appSectionTitleClass,
 } from "@/components/layout/appSurface";
 import {
+  applyCryptoSearchResultToHolding,
+  type CryptoSearchResult,
+} from "@/lib/services/portfolio/cryptoCatalog";
+import {
   buildCryptoTradingPair,
   CRYPTO_PAIR_CURRENCIES,
   type CryptoPairCurrency,
 } from "@/lib/types/cryptoHolding";
 import {
-  isKnownCryptoSymbol,
   recognizeKnownCrypto,
   validateCryptoHoldingForSave,
   type CryptoFormField,
 } from "@/lib/services/portfolio/cryptoHolding";
+import {
+  resolveCryptoDraftSearchQuery,
+  searchCryptoCatalogForPair,
+} from "@/lib/client/cryptoCatalogSearch";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
 type AddCryptoHoldingFormProps = {
@@ -43,6 +50,9 @@ export function AddCryptoHoldingForm({
     Partial<Record<CryptoFormField, string>>
   >({});
   const [formError, setFormError] = useState<string | null>(null);
+  const [searchResults, setSearchResults] = useState<CryptoSearchResult[]>([]);
+  const [searchPending, setSearchPending] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
 
   const tradingPair = useMemo(() => {
     const symbol = draft.symbol.trim().toUpperCase();
@@ -52,29 +62,92 @@ export function AddCryptoHoldingForm({
     }
     return buildCryptoTradingPair(symbol, pair);
   }, [draft.pairCurrency, draft.symbol]);
-
-  const showUnknownBanner =
-    draft.symbol.trim().length > 0 && !isKnownCryptoSymbol(draft.symbol);
+  const searchQuery = useMemo(
+    () => resolveCryptoDraftSearchQuery(draft),
+    [draft],
+  );
+  const selectedSearchResult =
+    searchResults.find(
+      (result) =>
+        result.providerSymbol === draft.providerSymbol ||
+        (result.baseAsset === draft.symbol.trim().toUpperCase() &&
+          result.requestedDisplayPair === tradingPair),
+    ) ?? null;
 
   function updateDraft(partial: Partial<StoredPortfolioHolding>) {
     onDraftChange({ ...draft, ...partial });
   }
 
+  useEffect(() => {
+    const query = searchQuery.trim();
+    if (!query) {
+      setSearchResults([]);
+      setSearchError(null);
+      setSearchPending(false);
+      return;
+    }
+
+    const timeout = window.setTimeout(async () => {
+      setSearchPending(true);
+      setSearchError(null);
+      try {
+        const response = await searchCryptoCatalogForPair({
+          query,
+          pairCurrency: draft.pairCurrency ?? "EUR",
+        });
+        if (!response.success) {
+          setSearchResults([]);
+          setSearchError(
+            response.error ?? "Crypto catalog is temporarily unavailable.",
+          );
+          return;
+        }
+        setSearchResults(response.results);
+        setSearchError(null);
+      } catch {
+        setSearchResults([]);
+        setSearchError("Crypto catalog is temporarily unavailable.");
+      } finally {
+        setSearchPending(false);
+      }
+    }, 220);
+
+    return () => window.clearTimeout(timeout);
+  }, [draft.pairCurrency, searchQuery]);
+
   function handleSymbolChange(value: string) {
     const symbol = value.toUpperCase();
     const recognized = recognizeKnownCrypto({ symbol, name: draft.name });
-    updateDraft({
+    onDraftChange({
+      ...draft,
       symbol,
       name: recognized?.name ?? draft.name,
+      providerSymbol: null,
+      providerId: null,
+      providerName: null,
+      providerDisplayName: null,
+      exchange: null,
+      pricingStatus: "needs_review",
     });
   }
 
   function handleNameChange(value: string) {
     const recognized = recognizeKnownCrypto({ name: value, symbol: draft.symbol });
-    updateDraft({
+    onDraftChange({
+      ...draft,
       name: value,
       symbol: recognized?.symbol ?? draft.symbol,
+      providerSymbol: null,
+      providerId: null,
+      providerName: null,
+      providerDisplayName: null,
+      exchange: null,
+      pricingStatus: "needs_review",
     });
+  }
+
+  function selectSearchResult(result: CryptoSearchResult) {
+    onDraftChange(applyCryptoSearchResultToHolding(draft, result));
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -161,8 +234,15 @@ export function AddCryptoHoldingForm({
                 id="crypto-pair-currency"
                 value={draft.pairCurrency ?? "EUR"}
                 onChange={(event) =>
-                  updateDraft({
+                  onDraftChange({
+                    ...draft,
                     pairCurrency: event.target.value as CryptoPairCurrency,
+                    providerSymbol: null,
+                    providerId: null,
+                    providerName: null,
+                    providerDisplayName: null,
+                    exchange: null,
+                    pricingStatus: "needs_review",
                   })
                 }
                 className="mt-2 min-h-[44px] w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-[15px] font-semibold text-slate-900 outline-none focus:border-blue-400"
@@ -186,6 +266,88 @@ export function AddCryptoHoldingForm({
               </p>
             </div>
 
+            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+              <div className="flex items-center gap-2">
+                <Search className="h-4 w-4 text-slate-500" />
+                <p className={appSectionLabelClass}>Crypto search</p>
+              </div>
+              {searchPending ? (
+                <p className={`mt-2 ${appSectionMetaClass}`}>Searching EODHD CC coverage…</p>
+              ) : searchError ? (
+                <p className="mt-2 text-sm font-medium text-amber-800">
+                  Crypto catalog temporarily unavailable. You can still save manually, but live pricing may need review.
+                </p>
+              ) : searchQuery.trim() && searchResults.length === 0 ? (
+                <p className={`mt-2 ${appSectionMetaClass}`}>
+                  No matching crypto was found in EODHD CC coverage for this query.
+                </p>
+              ) : searchResults.length > 0 ? (
+                <div className="mt-3 space-y-2">
+                  {searchResults.map((result) => {
+                    const active =
+                      result.providerSymbol != null &&
+                      result.providerSymbol === draft.providerSymbol;
+                    return (
+                      <button
+                        key={`${result.baseAsset}:${result.requestedDisplayPair}:${result.providerSymbol ?? "unavailable"}`}
+                        type="button"
+                        onClick={() => selectSearchResult(result)}
+                        className={`w-full rounded-2xl border px-4 py-3 text-left transition ${
+                          active
+                            ? "border-slate-900 bg-slate-950 text-white"
+                            : "border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className={`text-sm font-bold ${active ? "text-white" : "text-slate-950"}`}>
+                              {result.name ?? result.baseAsset}
+                            </p>
+                            <p className={`mt-1 text-xs font-semibold ${active ? "text-white/80" : "text-slate-600"}`}>
+                              {result.baseAsset} · {result.requestedDisplayPair}
+                            </p>
+                            {result.providerSymbol ? (
+                              <p className={`mt-1 text-xs ${active ? "text-white/70" : "text-slate-500"}`}>
+                                {result.providerSymbol}
+                              </p>
+                            ) : (
+                              <p className={`mt-1 text-xs ${active ? "text-white/70" : "text-amber-700"}`}>
+                                Pair not currently resolvable for live pricing.
+                              </p>
+                            )}
+                          </div>
+                          {active ? <Check className="mt-0.5 h-4 w-4 shrink-0" /> : null}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : null}
+            </div>
+
+            {selectedSearchResult ? (
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                <p className={appSectionLabelClass}>Live pricing source</p>
+                <p className={`mt-1 ${appSectionTitleClass}`}>EODHD</p>
+                {selectedSearchResult.providerSymbol ? (
+                  <>
+                    <p className={`mt-1 ${appSectionMetaClass}`}>
+                      Provider symbol: {selectedSearchResult.providerSymbol}
+                    </p>
+                    <p className={`mt-1 ${appSectionMetaClass}`}>
+                      {selectedSearchResult.conversionApplied
+                        ? `${selectedSearchResult.sourcePair} converted to ${selectedSearchResult.requestedDisplayPair}`
+                        : `${selectedSearchResult.requestedDisplayPair} is a direct CC pair`}
+                    </p>
+                  </>
+                ) : (
+                  <p className="mt-1 text-sm font-medium text-amber-800">
+                    This query matched the asset, but the selected trading pair is not currently resolvable for live pricing.
+                  </p>
+                )}
+              </div>
+            ) : null}
+
             <CryptoAmountField
               id="crypto-average-price"
               label="Average purchase price (optional)"
@@ -200,17 +362,6 @@ export function AddCryptoHoldingForm({
               value={draft.platform ?? ""}
               onChange={(value) => updateDraft({ platform: value || null })}
             />
-
-            {showUnknownBanner ? (
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4">
-                <p className="text-sm font-bold text-amber-950">
-                  Live price unavailable
-                </p>
-                <p className="mt-2 text-sm leading-relaxed text-amber-900">
-                  This asset has not yet been matched to a reliable price source.
-                </p>
-              </div>
-            ) : null}
 
             {formError ? (
               <p className="text-sm font-semibold text-red-700" role="alert">

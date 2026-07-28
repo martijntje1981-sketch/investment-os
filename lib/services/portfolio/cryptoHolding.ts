@@ -41,6 +41,10 @@ export function isCryptoHolding(
   return holding.assetType === "crypto";
 }
 
+function isResolvedCryptoProviderSymbol(providerSymbol: string | null | undefined): boolean {
+  return providerSymbol?.trim().toUpperCase().endsWith(".CC") ?? false;
+}
+
 export function createEmptyCryptoDraft(): StoredPortfolioHolding {
   const now = new Date().toISOString();
   const portfolioCurrency = "EUR" as const;
@@ -86,8 +90,8 @@ export function validateCryptoHoldingForSave(
 
   if (!symbol) {
     fieldErrors.symbol = "Enter a symbol.";
-  } else if (!isValidCryptoBaseAssetSymbol(symbol)) {
-    fieldErrors.symbol = "Enter a valid crypto symbol (letters and numbers only).";
+  } else if (!isValidCryptoBaseAssetSymbol(symbol) && !isResolvedCryptoProviderSymbol(holding.providerSymbol)) {
+    fieldErrors.symbol = "Enter a valid crypto symbol.";
   }
 
   if (!Number.isFinite(amount) || amount <= 0) {
@@ -161,9 +165,13 @@ export function prepareCryptoHoldingForSave(
     Number.isFinite(holding.purchasePrice) && holding.purchasePrice > 0
       ? holding.purchasePrice
       : 0;
-  const providerSymbol = isLivePricedCryptoBaseAsset(symbol)
-    ? resolveCryptoProviderSymbol(symbol, pairCurrency)
-    : null;
+  const explicitProviderSymbol = holding.providerSymbol?.trim().toUpperCase() || null;
+  const providerSymbol = isResolvedCryptoProviderSymbol(explicitProviderSymbol)
+    ? explicitProviderSymbol
+    : isLivePricedCryptoBaseAsset(symbol)
+      ? resolveCryptoProviderSymbol(symbol, pairCurrency)
+      : null;
+  const hasResolvedProvider = isResolvedCryptoProviderSymbol(providerSymbol);
 
   return {
     ...holding,
@@ -177,7 +185,7 @@ export function prepareCryptoHoldingForSave(
     currency: "EUR",
     portfolioCurrency: "EUR",
     pairCurrency,
-    pricingStatus: resolvePricingStatus(symbol),
+    pricingStatus: hasResolvedProvider ? "price_unavailable" : resolvePricingStatus(symbol),
     tradingPair: buildCryptoTradingPair(symbol, pairCurrency),
     platform: holding.platform?.trim() || null,
     providerAssetId: null,
@@ -196,7 +204,7 @@ export function prepareCryptoHoldingForSave(
     priceDataStatus: "unavailable",
     providerSymbol,
     isin: null,
-    exchange: null,
+    exchange: providerSymbol ? "CC" : holding.exchange ?? null,
     createdAt: holding.createdAt ?? now,
     updatedAt: now,
   };

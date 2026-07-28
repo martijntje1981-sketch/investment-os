@@ -247,6 +247,24 @@ describe("crypto Supabase mappers", () => {
     expect(insert).not.toHaveProperty("exchange");
   });
 
+  it("round-trips SHIB/USD with CC exchange metadata and provider symbol intact", () => {
+    const holding = cryptoHolding({
+      id: "shib-1",
+      name: "Shiba Inu",
+      symbol: "SHIB",
+      pairCurrency: "USD",
+      providerSymbol: "SHIB-USD.CC",
+      exchange: "CC",
+    });
+
+    const restored = mapDbHoldingToStored(dbCryptoRow(holding));
+    expect(restored.symbol).toBe("SHIB");
+    expect(restored.pairCurrency).toBe("USD");
+    expect(restored.providerSymbol).toBe("SHIB-USD.CC");
+    expect(restored.exchange).toBe("CC");
+    expect(restored.tradingPair).toBe("SHIB/USD");
+  });
+
   it("parses metadata safely when fields are missing", () => {
     const parsed = parseCryptoHoldingMetadata({});
     expect(parsed?.pairCurrency).toBe("EUR");

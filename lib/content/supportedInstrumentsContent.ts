@@ -1,9 +1,3 @@
-import {
-  listLivePricedCryptoBaseAssets,
-  type CryptoBaseAssetEntry,
-  type CryptoPricingRouteKind,
-} from "@/lib/services/portfolio/cryptoBaseAssetRegistry";
-
 export const SUPPORTED_INSTRUMENTS_PATH = "/supported-instruments";
 
 export type InstrumentSupportStatusId =
@@ -60,27 +54,26 @@ export type SupportedCryptoDisplayRow = {
   notes: string;
 };
 
-const CRYPTO_PRICING_ROUTE_LABELS: Record<CryptoPricingRouteKind, string> = {
-  direct_or_converted:
-    "Direct pair when available; otherwise USD pair + live FX conversion",
-  direct_when_available: "Direct market pair when available from the provider",
-};
-
-function buildCryptoDisplayRow(entry: CryptoBaseAssetEntry): SupportedCryptoDisplayRow {
-  return {
-    name: entry.name,
-    symbol: entry.symbol,
-    livePricingStatus: entry.livePricing ? "Supported" : "Not currently supported",
-    pricingRoute: CRYPTO_PRICING_ROUTE_LABELS[entry.pricingRoute],
-    notes:
-      entry.publicNote ??
-      "Availability depends on the selected trading pair and provider coverage.",
-  };
-}
-
-/** Public supported-crypto rows — sourced from the live-pricing registry only. */
+/** Public crypto support overview — generic capability, not a coin allowlist. */
 export function getSupportedCryptoDisplayRows(): SupportedCryptoDisplayRow[] {
-  return listLivePricedCryptoBaseAssets().map(buildCryptoDisplayRow);
+  return [
+    {
+      name: "Active EODHD CC pairs",
+      symbol: "BASE/QUOTE",
+      livePricingStatus: "Supported",
+      pricingRoute: "Direct pair when the exact CC listing exists",
+      notes:
+        "Investment OS treats EODHD's active CC coverage as the source of truth instead of a fixed coin list.",
+    },
+    {
+      name: "Supported conversion pairs",
+      symbol: "BASE/EUR",
+      livePricingStatus: "Supported via conversion",
+      pricingRoute: "USD source pair plus a verified live FX conversion when needed",
+      notes:
+        "If the direct CC pair is missing, Investment OS can reuse a supported USD pair when the required conversion path is already verified.",
+    },
+  ];
 }
 
 export const supportedInstrumentsHero = {
@@ -91,9 +84,9 @@ export const supportedInstrumentsHero = {
 
 export const cryptoSectionCopy = {
   intro:
-    "Crypto pricing depends on the selected trading pair and market-data availability. When a direct pair is unavailable, Investment OS may use a supported USD pair and a live currency conversion rate.",
+    "Crypto pricing depends on the selected trading pair and active EODHD CC coverage. When a direct pair is unavailable, Investment OS may use a supported USD pair and a live currency conversion rate.",
   footnote:
-    "Crypto assets not listed here can still be saved, but live pricing may not yet be available.",
+    "Coverage is pair-based, not coin-list based: a crypto can be supported for one trading pair and unavailable for another.",
 } as const;
 
 export const stocksEtfsSectionCopy = {
@@ -117,7 +110,7 @@ export const supportedInstrumentsCta = {
 
 export const uploadSupportedInstrumentsCallout = {
   title: "Supported instruments",
-  body: "Most listed stocks, ETFs and ETCs, plus selected major cryptocurrencies, support live pricing. Unsupported holdings can still be saved.",
+  body: "Most listed stocks, ETFs and ETCs, plus crypto pairs covered by EODHD CC, support live pricing. Unsupported holdings can still be saved.",
   linkLabel: "View supported instruments",
 } as const;
 

@@ -7,6 +7,7 @@ import {
 } from "@/lib/types/cryptoHolding";
 
 export type CryptoHoldingMetadata = {
+  exchange?: string | null;
   pairCurrency: CryptoPairCurrency;
   portfolioCurrency: "EUR";
   pricingStatus: CryptoPricingStatus;
@@ -45,6 +46,7 @@ export function buildCryptoHoldingMetadata(
 
   return {
     pairCurrency,
+    exchange: readOptionalString(holding.exchange) ?? (holding.providerSymbol ? "CC" : null),
     portfolioCurrency: "EUR",
     pricingStatus: holding.pricingStatus ?? "needs_review",
     tradingPair:
@@ -80,6 +82,7 @@ export function parseCryptoHoldingMetadata(
 
   return {
     pairCurrency,
+    exchange: readOptionalString(record.exchange) ?? null,
     portfolioCurrency: "EUR",
     pricingStatus: normalizedPricingStatus,
     tradingPair:
@@ -103,6 +106,7 @@ export function applyCryptoMetadataToStoredHolding(
   return {
     ...holding,
     pairCurrency: metadata.pairCurrency,
+    exchange: metadata.exchange ?? holding.exchange ?? null,
     portfolioCurrency: metadata.portfolioCurrency,
     pricingStatus: metadata.pricingStatus,
     tradingPair: metadata.tradingPair,

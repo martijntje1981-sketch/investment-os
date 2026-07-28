@@ -82,6 +82,10 @@ import {
   formatCrypto24hChange,
   formatCryptoPairPrice,
 } from "@/lib/client/cryptoPriceDisplay";
+import {
+  resolveCryptoDraftSearchQuery,
+  searchCryptoCatalogForPair,
+} from "@/lib/client/cryptoCatalogSearch";
 import { buildPortfolioPerformance } from "@/lib/client/portfolioPerformance";
 import {
   applyManualListingSelection,
@@ -110,6 +114,7 @@ import {
   isCryptoHolding,
   mergeHoldingOnSave,
 } from "@/lib/services/portfolio/cryptoHolding";
+import { applyCryptoSearchResultToHolding } from "@/lib/services/portfolio/cryptoCatalog";
 import type { ResolvedInstrument } from "@/lib/types/instrument";
 import { usePortfolioDividends } from "@/lib/client/usePortfolioDividends";
 import { usePortfolioAnalyst } from "@/lib/client/usePortfolioAnalyst";
@@ -400,6 +405,49 @@ export default function PortfolioPage() {
     setEditorOpen(false);
   }
 
+  async function resolveCryptoDraftForSave(nextDraft: Holding): Promise<Holding> {
+    const query = resolveCryptoDraftSearchQuery(nextDraft);
+    if (!query.trim()) {
+      return nextDraft;
+    }
+
+    try {
+      const response = await searchCryptoCatalogForPair({
+        query,
+        pairCurrency: nextDraft.pairCurrency ?? "EUR",
+      });
+      if (!response.success || response.results.length === 0) {
+        return nextDraft;
+      }
+
+      const normalizedSymbol = nextDraft.symbol.trim().toUpperCase();
+      const normalizedName = nextDraft.name.trim().toUpperCase();
+      const normalizedProviderSymbol =
+        nextDraft.providerSymbol?.trim().toUpperCase() ?? "";
+      const normalizedTradingPair = nextDraft.tradingPair?.trim().toUpperCase() ?? "";
+
+      const exactMatch =
+        response.results.find(
+          (result) =>
+            (normalizedProviderSymbol &&
+              result.providerSymbol === normalizedProviderSymbol) ||
+            (normalizedTradingPair &&
+              result.requestedDisplayPair === normalizedTradingPair) ||
+            (normalizedSymbol && result.baseAsset === normalizedSymbol) ||
+            (normalizedName &&
+              (result.name?.trim().toUpperCase() ?? "") === normalizedName),
+        ) ??
+        response.results.find((result) => result.score >= 900) ??
+        null;
+
+      return exactMatch
+        ? applyCryptoSearchResultToHolding(nextDraft, exactMatch)
+        : nextDraft;
+    } catch {
+      return nextDraft;
+    }
+  }
+
   async function submitCryptoHolding(nextDraft: Holding) {
     if (isSavingCrypto) return;
 
@@ -410,12 +458,13 @@ export default function PortfolioPage() {
 
     setIsSavingCrypto(true);
     try {
-      const cleaned = normalizeHoldingForSave(nextDraft);
+      const resolvedDraft = await resolveCryptoDraftForSave(nextDraft);
+      const cleaned = normalizeHoldingForSave(resolvedDraft);
       saveHoldings(mergeHoldingOnSave(holdings, cleaned));
       setMessage(
         cleaned.pricingStatus === "needs_review"
-          ? "Crypto holding saved. Live pricing is not available for this asset yet."
-          : "Crypto holding saved. Live pricing will be added in a future update.",
+          ? "Crypto holding saved. Live pricing is not available for this pair yet."
+          : "Crypto holding saved. Live pricing will refresh from EODHD.",
       );
       setCryptoEditorOpen(false);
     } finally {

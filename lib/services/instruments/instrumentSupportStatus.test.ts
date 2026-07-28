@@ -50,17 +50,32 @@ describe("instrumentSupportStatus", () => {
     ).toBe("supported");
   });
 
-  it("marks unknown crypto as not currently supported", () => {
+  it("treats CC-mapped crypto as supported during import review", () => {
     expect(
       resolveImportRowInstrumentSupportStatus(
         baseImportRow({
           symbol: "MYST",
+          assetType: "crypto",
           providerSymbol: "MYST.CC",
           matchMethod: "unresolved",
           reviewTier: "blocked",
         }),
       ),
-    ).toBe("not_supported");
+    ).toBe("supported");
+  });
+
+  it("keeps unmapped crypto pending until it is matched or reviewed", () => {
+    expect(
+      resolveImportRowInstrumentSupportStatus(
+        baseImportRow({
+          symbol: "MYST",
+          providerSymbol: null,
+          matchMethod: "unresolved",
+          reviewTier: "blocked",
+          assetType: "crypto",
+        }),
+      ),
+    ).toBe("pending_match");
   });
 
   it("marks unmatched investments as pending match", () => {

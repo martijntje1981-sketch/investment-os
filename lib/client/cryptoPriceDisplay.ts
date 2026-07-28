@@ -14,7 +14,15 @@ export function formatCryptoPairPrice(
     typeof quoteCurrency === "string" && quoteCurrency.trim()
       ? quoteCurrency.trim().toUpperCase()
       : "USD";
-  return formatPortfolioCurrency(price, currency, 2);
+  const decimals =
+    price >= 1000
+      ? 2
+      : price >= 1
+        ? 4
+        : price >= 0.01
+          ? 6
+          : 8;
+  return formatPortfolioCurrency(price, currency, decimals);
 }
 
 export function formatCryptoQuoteTimestamp(

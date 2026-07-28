@@ -21,6 +21,10 @@ function isUnsupportedCryptoImport(
     return false;
   }
 
+  if (row.providerSymbol?.trim().toUpperCase().endsWith(".CC")) {
+    return false;
+  }
+
   if (row.isin?.trim() || row.exchange?.trim()) {
     return false;
   }
@@ -40,8 +44,9 @@ export function resolveImportRowInstrumentSupportStatus(
   }
 
   const symbol = row.symbol.trim().toUpperCase();
+  const hasCcProvider = row.providerSymbol?.trim().toUpperCase().endsWith(".CC");
 
-  if (isLivePricedCryptoBaseAsset(symbol)) {
+  if (hasCcProvider || isLivePricedCryptoBaseAsset(symbol)) {
     return "supported";
   }
 
@@ -75,7 +80,8 @@ export function resolveHoldingInstrumentSupportStatus(
 
   if (holding.assetType === "crypto") {
     const symbol = holding.symbol.trim().toUpperCase();
-    if (!isLivePricedCryptoBaseAsset(symbol)) {
+    const hasCcProvider = holding.providerSymbol?.trim().toUpperCase().endsWith(".CC");
+    if (!hasCcProvider && !isLivePricedCryptoBaseAsset(symbol)) {
       return "not_supported";
     }
     if (holding.priceDataStatus === "unavailable" && holding.pricingStatus !== "needs_review") {

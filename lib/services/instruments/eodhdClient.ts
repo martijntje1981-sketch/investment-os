@@ -12,8 +12,10 @@ import {
   resolveExchangeForMatching,
 } from "@/lib/services/instruments/exchangeNormalizer";
 import {
+  buildExchangeSymbolListLookupKey,
   buildIdMappingLookupKey,
   buildSearchLookupKey,
+  readPersistedInstrumentLookupEntry,
   readPersistedInstrumentLookup,
   writePersistedInstrumentLookup,
 } from "@/lib/services/marketData/persistentMappingCache";
@@ -45,6 +47,18 @@ export type EodhdSearchRow = {
   Country?: string;
   Currency?: string;
   ISIN?: string;
+};
+
+export type EodhdExchangeSymbolListRow = {
+  Code?: string;
+  Name?: string;
+  Exchange?: string;
+  Currency?: string;
+  Type?: string;
+  Country?: string;
+  IsActive?: boolean | string | number | null;
+  Active?: boolean | string | number | null;
+  Delisted?: boolean | string | number | null;
 };
 
 type IdMappingFilters = {
@@ -260,4 +274,83 @@ export async function fetchSearch(
   });
   await persistListingMetadataFromProviderRows(rows);
   return rows;
+}
+
+/**
+ * EODHD exchange symbol coverage list.
+ * GET /api/exchange-symbol-list/{exchange}
+ */
+export async function fetchExchangeSymbolList(
+  exchange: string,
+  options: { ttlMs?: number } = {},
+  apiKey: string = getEodhdApiKey(),
+): Promise<{
+  rows: EodhdExchangeSymbolListRow[];
+  source: "cache" | "provider" | "stale_cache";
+}> {
+  const normalizedExchange = exchange.trim().toUpperCase();
+  if (!normalizedExchange) {
+    return { rows: [], source: "cache" };
+  }
+
+  assertProviderAvailable(EODHD_PROVIDER_ID);
+
+  const lookupKey = buildExchangeSymbolListLookupKey(normalizedExchange);
+  const cached = await readPersistedInstrumentLookup<EodhdExchangeSymbolListRow[]>(
+    lookupKey,
+  );
+  if (cached) {
+    return { rows: cached, source: "cache" };
+  }
+
+  const stale = await readPersistedInstrumentLookupEntry<EodhdExchangeSymbolListRow[]>(
+    lookupKey,
+  );
+  const url = new URL(
+    `https://eodhd.com/api/exchange-symbol-list/${encodeURIComponent(normalizedExchange)}`,
+  );
+  url.searchParams.set("api_token", apiKey);
+  url.searchParams.set("fmt", "json");
+
+  try {
+    const response = await fetch(url.toString(), {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      const details = await response.text();
+      const normalized = classifyHttpProviderError(
+        response.status,
+        details,
+        response.headers.get("retry-after"),
+      );
+      if (isProviderQuotaOrRateLimit(normalized)) {
+        recordProviderCircuitFailure(
+          EODHD_PROVIDER_ID,
+          new EodhdProviderError(response.status, details),
+        );
+      }
+      throw new EodhdProviderError(
+        response.status,
+        `EODHD exchange-symbol-list returned ${response.status}: ${details}`,
+      );
+    }
+
+    const data = (await response.json()) as unknown;
+    const rows = parseJsonArray<EodhdExchangeSymbolListRow>(data);
+    await writePersistedInstrumentLookup({
+      lookupKey,
+      lookupType: "exchange_symbol_list",
+      result: rows,
+      ttlMs: options.ttlMs,
+    });
+    return { rows, source: "provider" };
+  } catch (error) {
+    if (stale?.result) {
+      return { rows: stale.result, source: "stale_cache" };
+    }
+    throw error;
+  }
 }

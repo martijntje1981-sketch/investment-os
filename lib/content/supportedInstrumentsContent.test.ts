@@ -6,44 +6,32 @@ import {
   getSupportedCryptoDisplayRows,
   SUPPORTED_INSTRUMENTS_PATH,
 } from "@/lib/content/supportedInstrumentsContent";
-import {
-  CRYPTO_BASE_ASSET_REGISTRY,
-  listLivePricedCryptoBaseAssets,
-} from "@/lib/services/portfolio/cryptoBaseAssetRegistry";
 
 describe("supportedInstrumentsContent", () => {
-  it("sources supported crypto rows from the registry only", () => {
+  it("describes generic crypto support without a coin allowlist", () => {
     const rows = getSupportedCryptoDisplayRows();
-    const livePriced = listLivePricedCryptoBaseAssets();
 
-    expect(rows).toHaveLength(livePriced.length);
-    expect(rows.map((row) => row.symbol)).toEqual(
-      livePriced.map((entry) => entry.symbol),
-    );
-    expect(rows.every((row) => row.livePricingStatus === "Supported")).toBe(true);
+    expect(rows).toHaveLength(2);
+    expect(rows[0]?.symbol).toBe("BASE/QUOTE");
+    expect(rows[0]?.notes).toMatch(/source of truth/i);
   });
 
-  it("includes XRP as supported", () => {
+  it("includes conversion support messaging", () => {
     const rows = getSupportedCryptoDisplayRows();
-    const xrp = rows.find((row) => row.symbol === "XRP");
+    const converted = rows.find((row) => row.livePricingStatus === "Supported via conversion");
 
-    expect(xrp).toEqual(
+    expect(converted).toEqual(
       expect.objectContaining({
-        name: "XRP",
-        symbol: "XRP",
-        livePricingStatus: "Supported",
+        symbol: "BASE/EUR",
+        livePricingStatus: "Supported via conversion",
       }),
     );
   });
 
-  it("does not present unknown crypto as supported", () => {
+  it("does not present a hardcoded production coin list", () => {
     const rows = getSupportedCryptoDisplayRows();
-    const registrySymbols = new Set(
-      CRYPTO_BASE_ASSET_REGISTRY.map((entry) => entry.symbol),
-    );
-
-    expect(rows.some((row) => row.symbol === "MYST")).toBe(false);
-    expect(registrySymbols.has("MYST")).toBe(false);
+    expect(rows.some((row) => row.symbol === "BTC")).toBe(false);
+    expect(rows.some((row) => row.symbol === "SHIB")).toBe(false);
   });
 
   it("avoids duplicate hard-coded crypto lists in public surfaces", () => {
@@ -64,7 +52,7 @@ describe("supportedInstrumentsContent", () => {
       "utf8",
     );
 
-    expect(contentSource).toContain("listLivePricedCryptoBaseAssets");
+    expect(contentSource).not.toContain("listLivePricedCryptoBaseAssets");
     expect(pageSource).toContain("getSupportedCryptoDisplayRows");
     expect(pageSource).not.toMatch(/symbol:\s*"BTC"/);
     expect(homeSource).not.toMatch(/symbol:\s*"BTC"/);

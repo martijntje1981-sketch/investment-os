@@ -1,12 +1,17 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { DEFAULT_MARKET_DATA_CACHE_POLICY } from "@/lib/services/marketData/cachePolicy";
 import type {
+  EodhdExchangeSymbolListRow,
   EodhdIdMappingRow,
   EodhdSearchRow,
 } from "@/lib/services/instruments/eodhdClient";
 import type { ListingMetadataRecord } from "@/lib/services/instruments/listingMetadata";
 
-type LookupType = "id_mapping" | "search" | "listing_metadata";
+type LookupType =
+  | "id_mapping"
+  | "search"
+  | "listing_metadata"
+  | "exchange_symbol_list";
 
 function buildLookupKey(type: LookupType, parts: Record<string, string>): string {
   const normalized = Object.entries(parts)
@@ -33,6 +38,12 @@ export function buildSearchLookupKey(query: string, exchange?: string | null): s
   return buildLookupKey("search", {
     query: query.trim().toUpperCase(),
     exchange: exchange?.trim().toUpperCase() ?? "",
+  });
+}
+
+export function buildExchangeSymbolListLookupKey(exchange: string): string {
+  return buildLookupKey("exchange_symbol_list", {
+    exchange: exchange.trim().toUpperCase(),
   });
 }
 
@@ -77,6 +88,14 @@ export async function writeListingMetadata(
 export async function readPersistedInstrumentLookup<T>(
   lookupKey: string,
 ): Promise<T | null> {
+  const entry = await readPersistedInstrumentLookupEntry<T>(lookupKey);
+  if (!entry || Date.parse(entry.expiresAt) <= Date.now()) return null;
+  return entry.result;
+}
+
+export async function readPersistedInstrumentLookupEntry<T>(
+  lookupKey: string,
+): Promise<{ result: T; expiresAt: string } | null> {
   const admin = createAdminClient();
   if (!admin) return null;
 
@@ -87,21 +106,24 @@ export async function readPersistedInstrumentLookup<T>(
     .maybeSingle();
 
   if (error || !data) return null;
-  if (Date.parse(data.expires_at) <= Date.now()) return null;
-  return data.result_json as T;
+  return {
+    result: data.result_json as T,
+    expiresAt: data.expires_at,
+  };
 }
 
 export async function writePersistedInstrumentLookup(input: {
   lookupKey: string;
   lookupType: LookupType;
-  result: EodhdIdMappingRow[] | EodhdSearchRow[];
+  result: EodhdIdMappingRow[] | EodhdSearchRow[] | EodhdExchangeSymbolListRow[] | ListingMetadataRecord;
+  ttlMs?: number;
 }): Promise<void> {
   const admin = createAdminClient();
   if (!admin) return;
 
   const now = Date.now();
   const expiresAt = new Date(
-    now + DEFAULT_MARKET_DATA_CACHE_POLICY.instrumentMappingFreshMs,
+    now + (input.ttlMs ?? DEFAULT_MARKET_DATA_CACHE_POLICY.instrumentMappingFreshMs),
   ).toISOString();
 
   await admin.from("instrument_lookup_cache").upsert(
