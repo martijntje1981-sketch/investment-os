@@ -5,11 +5,9 @@ import Link from "next/link";
 import {
   AlertCircle,
   ArrowRight,
-  BriefcaseBusiness,
   Layers3,
   Scale,
   Sparkles,
-  Upload,
 } from "lucide-react";
 import { DividendIntelligenceSection } from "@/components/analysis/DividendIntelligenceSection";
 import { PortfolioExposureSection } from "@/components/analysis/PortfolioExposureSection";
@@ -30,12 +28,12 @@ import {
   appSectionBodyClass,
   appSectionLabelClass,
   appSectionMetaClass,
-  appSectionSubtitleClass,
   appSectionTitleClass,
   appTableNameClass,
   appTableValueClass,
 } from "@/components/layout/appSurface";
 import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
+import { EmptyPortfolioGuide } from "@/components/onboarding/EmptyPortfolioGuide";
 import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 import {
   buildPortfolioAnalysis,
@@ -153,30 +151,10 @@ export default function PortfolioAnalysisPage() {
           />
 
           {!hasHoldings ? (
-            <section className="rounded-[28px] border border-slate-200 bg-white p-8 text-center shadow-sm sm:p-12">
-              <BriefcaseBusiness className="mx-auto h-10 w-10 text-slate-300" />
-              <h2 className={`mt-4 ${appSectionTitleClass}`}>No portfolio to analyse yet</h2>
-              <p className={`mx-auto mt-3 max-w-xl ${appSectionSubtitleClass}`}>
-                Add holdings manually or import a portfolio to see allocation,
-                concentration, and diversification insights here.
-              </p>
-              <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-                <Link
-                  href="/upload"
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white"
-                >
-                  <Upload className="h-4 w-4" />
-                  Upload portfolio
-                </Link>
-                <Link
-                  href="/portfolio"
-                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold"
-                >
-                  Open portfolio
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </div>
-            </section>
+            <EmptyPortfolioGuide
+              title="No portfolio to analyse yet"
+              body="Import a CSV or Excel file, or add holdings manually, to see allocation, concentration and diversification insights."
+            />
           ) : (
             <>
               {analysis.unvaluedHoldings.length > 0 && (

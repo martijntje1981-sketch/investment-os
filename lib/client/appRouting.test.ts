@@ -47,8 +47,9 @@ describe("authenticated routing", () => {
     expect(bottomNav).toContain('label: "Dashboard"');
     expect(bottomNav).not.toContain('label: "Home"');
     expect(bottomNav).not.toContain("/?view=home");
+    expect(bottomNav).not.toContain('href: "/news"');
     expect(bottomNav.indexOf('href: "/dashboard"')).toBeLessThan(
-      bottomNav.indexOf('href: "/news"'),
+      bottomNav.indexOf('href: "/portfolio"'),
     );
   });
 });

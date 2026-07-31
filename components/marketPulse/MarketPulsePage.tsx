@@ -8,6 +8,9 @@ import { BackButton } from "@/components/layout/BackButton";
 import BottomNavigation from "@/components/home/BottomNav";
 import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer";
 import {
+  PORTFOLIO_SETUP_ROUTES,
+} from "@/lib/client/portfolioSetup";
+import {
   appHeroMetricLabelClass,
   appHeroShellClass,
   appSectionBodyClass,
@@ -239,18 +242,26 @@ export default function MarketPulsePage() {
   const [featuredId, setFeaturedId] = useState<string | null>(null);
 
   useEffect(() => {
-    setFilter(readStoredFilter());
+    if (!portfolioReady) return;
+    if (holdings.length === 0) {
+      setFilter("all");
+    } else {
+      setFilter(readStoredFilter());
+    }
     setFilterReady(true);
-  }, []);
+  }, [holdings.length, portfolioReady]);
 
   const persistFilter = useCallback((value: "all" | "portfolio") => {
+    if (holdings.length === 0 && value === "portfolio") {
+      return;
+    }
     setFilter(value);
     try {
       window.localStorage.setItem(FILTER_STORAGE_KEY, value);
     } catch {
       /* ignore */
     }
-  }, []);
+  }, [holdings.length]);
 
   const load = useCallback(
     async (options?: { quiet?: boolean }) => {
@@ -395,10 +406,17 @@ export default function MarketPulsePage() {
               id="market-pulse-hero"
               className="mt-2 text-[28px] font-black tracking-[-0.04em] text-white sm:text-4xl"
             >
-              Markets shaping your portfolio
+              {holdings.length === 0
+                ? "Markets at a glance"
+                : "Markets shaping your portfolio"}
             </h1>
 
-            {hero?.kind === "dominant" && hero.name ? (
+            {holdings.length === 0 ? (
+              <p className="mt-5 max-w-xl text-[15px] font-medium leading-relaxed text-white/80">
+                Browse live market context without holdings. Import your
+                portfolio to unlock Portfolio Markets and personalised links.
+              </p>
+            ) : hero?.kind === "dominant" && hero.name ? (
               <div className="mt-5 max-w-lg">
                 <p className="text-[13px] font-semibold uppercase tracking-[0.08em] text-white/55">
                   {hero.summary}
@@ -429,6 +447,18 @@ export default function MarketPulsePage() {
               </p>
             )}
 
+            {holdings.length === 0 ? (
+              <div className="mt-5">
+                <Link
+                  href={PORTFOLIO_SETUP_ROUTES.import}
+                  className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-white px-5 py-2.5 text-[14px] font-semibold text-slate-950"
+                >
+                  Import portfolio
+                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </Link>
+              </div>
+            ) : null}
+
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <div
                 className="inline-flex rounded-full border border-white/15 bg-white/5 p-1"
@@ -445,10 +475,19 @@ export default function MarketPulsePage() {
                     key={value}
                     type="button"
                     onClick={() => persistFilter(value)}
+                    disabled={holdings.length === 0 && value === "portfolio"}
+                    aria-disabled={holdings.length === 0 && value === "portfolio"}
+                    title={
+                      holdings.length === 0 && value === "portfolio"
+                        ? "Add holdings to use Portfolio Markets"
+                        : undefined
+                    }
                     className={`min-h-[44px] rounded-full px-4 text-[13px] font-semibold ${
                       filter === value
                         ? "bg-white text-slate-950"
-                        : "text-white/75"
+                        : holdings.length === 0 && value === "portfolio"
+                          ? "cursor-not-allowed text-white/35"
+                          : "text-white/75"
                     }`}
                   >
                     {label}

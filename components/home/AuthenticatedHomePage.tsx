@@ -1,8 +1,6 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo } from "react";
-import { BriefcaseBusiness, Upload } from "lucide-react";
 import { DiscoverMissedTeaser } from "@/components/discover/DiscoverSections";
 import { TodaysDecisionBlock } from "@/components/investor/TodaysDecisionBlock";
 import { PortfolioSnapshot } from "@/components/home/PortfolioSnapshot";
@@ -10,6 +8,7 @@ import { HomeIntelligenceSummary } from "@/components/home/HomeIntelligenceSumma
 import { HomePageHeroStats } from "@/components/layout/HomePageHeroStats";
 import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer";
 import { PageHero } from "@/components/layout/PageHero";
+import { EmptyPortfolioGuide } from "@/components/onboarding/EmptyPortfolioGuide";
 import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
 import { summarizeAuthenticatedHomePortfolio } from "@/lib/client/authenticatedHomePortfolio";
 import { useAuthenticatedFirstName } from "@/lib/client/useAuthenticatedFirstName";
@@ -119,23 +118,10 @@ export default function AuthenticatedHomePage() {
         />
 
         {summary.holdingCount === 0 ? (
-          <section className="rounded-[28px] border border-slate-200 bg-white p-8 text-center shadow-sm sm:p-10">
-            <BriefcaseBusiness className="mx-auto h-10 w-10 text-slate-300" />
-            <h2 className="mt-4 text-xl font-black sm:text-2xl">
-              No portfolio saved yet
-            </h2>
-            <p className="mx-auto mt-3 max-w-xl text-base leading-relaxed text-slate-500">
-              Import or add holdings to see your value, daily move, and market
-              status here.
-            </p>
-            <Link
-              href="/upload"
-              className="mt-6 inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-base font-bold text-white"
-            >
-              <Upload className="h-4 w-4" />
-              Add portfolio
-            </Link>
-          </section>
+          <EmptyPortfolioGuide
+            title="No portfolio saved yet"
+            body="Import a CSV or Excel file, or add holdings manually, to see your value, daily move and market status here."
+          />
         ) : (
           <PortfolioSnapshot
             totalValue={summary.totalValue}

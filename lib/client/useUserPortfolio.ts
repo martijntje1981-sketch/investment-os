@@ -54,6 +54,7 @@ import {
 } from "@/lib/services/portfolio/portfolioPersistenceGuard";
 import { useAuthenticatedUserSub } from "@/lib/client/useAuthenticatedUserSub";
 import { readSavedUserGoal } from "@/lib/client/userGoalStorage";
+import { markPortfolioSetupCompleted } from "@/lib/client/portfolioSetup";
 import { readImportMappingsFromCache } from "@/lib/services/import/mappingMemory";
 import {
   buildMigrationIdempotencyKey,
@@ -521,6 +522,9 @@ export function useUserPortfolio() {
       holdingsGenerationRef.current += 1;
       dispatchPortfolioUpdated(userSub);
       setHoldings(applyCachedPrices(userSub, next));
+      if (next.length > 0) {
+        markPortfolioSetupCompleted(userSub);
+      }
       setRecoveryOffer(
         getLegacyRecoveryOffer(userSub) ?? getPortfolioBackupRecoveryOffer(userSub),
       );
@@ -789,6 +793,13 @@ export function useUserPortfolio() {
     dismissLegacyPortfolioRecovery(userSub);
     setRecoveryOffer(null);
   }, [userSub]);
+
+  useEffect(() => {
+    if (!userSub || !portfolioReady) return;
+    if (holdings.length > 0) {
+      markPortfolioSetupCompleted(userSub);
+    }
+  }, [holdings.length, portfolioReady, userSub]);
 
   return {
     userSub,

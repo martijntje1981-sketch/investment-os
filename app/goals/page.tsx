@@ -27,6 +27,7 @@ import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer
 import { PageHero } from "@/components/layout/PageHero";
 import { GoalHeroProgressVisual } from "@/components/goals/GoalHeroProgressVisual";
 import { PassiveIncomeGoalCard } from "@/components/goals/PassiveIncomeGoalCard";
+import { EmptyPortfolioGuide } from "@/components/onboarding/EmptyPortfolioGuide";
 import {
   GoalCoachCard,
   GoalHeroMilestones,
@@ -342,6 +343,15 @@ export default function GoalsPage() {
             ) : null
           }
         />
+
+        {holdings.length === 0 ? (
+          <EmptyPortfolioGuide
+            density="compact"
+            title="Goals work best with a portfolio"
+            body="You can still set a target now. Import or add holdings so progress, projections and portfolio fit use your real positions."
+            availableWithoutHoldings="Goal settings remain available without holdings."
+          />
+        ) : null}
 
         {healthAlignmentPreview &&
         healthAlignmentPreview.goalAlignment.label !== "Goal data unavailable" ? (

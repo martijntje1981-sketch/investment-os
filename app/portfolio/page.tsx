@@ -1,11 +1,10 @@
 "use client";
 
-import { FormEvent, useMemo, useRef, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Banknote,
   BarChart3,
-  BriefcaseBusiness,
   ChevronRight,
   CircleDollarSign,
   Coins,
@@ -30,6 +29,7 @@ import {
 import BottomNavigation from "@/components/home/BottomNav";
 import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer";
 import { PageHero } from "@/components/layout/PageHero";
+import { EmptyPortfolioGuide } from "@/components/onboarding/EmptyPortfolioGuide";
 import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 import {
   convertHoldingBaseDraftToEur,
@@ -47,7 +47,6 @@ import {
   appHeroMetricLabelClass,
   appSectionLabelClass,
   appSectionMetaClass,
-  appSectionSubtitleClass,
   appSectionTitleClass,
   appTableNameClass,
   appTableValueClass,
@@ -171,6 +170,7 @@ export default function PortfolioPage() {
     recoverPortfolio,
     dismissRecovery,
   } = useUserPortfolio();
+  const addParamHandledRef = useRef(false);
   const [isMigrating, setIsMigrating] = useState(false);
   const { quotes: dividendQuotes } = usePortfolioDividends(
     holdings,
@@ -243,6 +243,45 @@ export default function PortfolioPage() {
     providerSymbol: draft.providerSymbol,
     candidates: listingCandidates,
   });
+
+  useEffect(() => {
+    if (!portfolioReady || addParamHandledRef.current) return;
+    const add = new URLSearchParams(window.location.search).get("add");
+    if (add !== "investment" && add !== "cash" && add !== "crypto") return;
+    addParamHandledRef.current = true;
+
+    if (add === "crypto") {
+      setCryptoDraft(createEmptyCryptoDraft());
+      setCryptoEditorOpen(true);
+      return;
+    }
+
+    const assetType: AssetType = add === "cash" ? "cash" : "investment";
+    const sessionSnapshot = canPersistBaseCurrencyAmounts(snapshot)
+      ? snapshot
+      : IDENTITY_EUR_FX_SNAPSHOT;
+    editorSessionRef.current = sessionSnapshot;
+    setEditorCurrencyLocked(sessionSnapshot.baseCurrency);
+    setDraft({
+      ...emptyDraft,
+      id: crypto.randomUUID(),
+      assetType,
+      symbol: assetType === "cash" ? "EUR" : "",
+      name: assetType === "cash" ? "EUR Cash" : "",
+      purchasePrice: assetType === "cash" ? 1 : 0,
+      currentPrice: assetType === "cash" ? 1 : 0,
+    });
+    setListingCandidates([]);
+    setListingWarnings([]);
+    setListingLookupPending(false);
+    setLookupUnavailable(false);
+    if (!canPersistBaseCurrencyAmounts(snapshot) && baseCurrency !== "EUR") {
+      setEditorError(FX_UNAVAILABLE_EDIT_MESSAGE);
+    } else {
+      setEditorError(null);
+    }
+    setEditorOpen(true);
+  }, [baseCurrency, portfolioReady, snapshot]);
 
   if (!portfolioReady) {
     return <AppPageLoading />;
@@ -585,14 +624,13 @@ export default function PortfolioPage() {
             </div>
 
             {holdings.length === 0 ? (
-              <div className="px-6 py-16 text-center">
-                <BriefcaseBusiness className="mx-auto h-10 w-10 text-slate-300" />
-                <h3 className={`mt-4 ${appSectionTitleClass}`}>No holdings yet</h3>
-                <p className={`mt-2 ${appSectionSubtitleClass}`}>Add an investment, crypto, cash position or import your portfolio.</p>
-                <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
-                  <button onClick={() => openAdd("investment")} className="min-h-[44px] rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white">Add investment</button>
-                  <button onClick={openAddCrypto} className="min-h-[44px] rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-900">Add crypto</button>
-                </div>
+              <div className="px-4 py-6 sm:px-6">
+                <EmptyPortfolioGuide
+                  density="compact"
+                  title="No holdings yet"
+                  body="Import a CSV or Excel file, or add an investment, crypto or cash position to get started."
+                  className="border-0 shadow-none"
+                />
               </div>
             ) : (
               <div className="overflow-x-auto">

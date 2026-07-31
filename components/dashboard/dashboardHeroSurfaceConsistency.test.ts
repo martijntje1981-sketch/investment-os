@@ -11,6 +11,13 @@ describe("dashboard hero surface consistency", () => {
     path.resolve(process.cwd(), "components/dashboard/DashboardEmptyState.tsx"),
     "utf8",
   );
+  const onboardingSource = readFileSync(
+    path.resolve(
+      process.cwd(),
+      "components/onboarding/PortfolioSetupOnboarding.tsx",
+    ),
+    "utf8",
+  );
   const surfaceSource = readFileSync(
     path.resolve(process.cwd(), "components/layout/appSurface.ts"),
     "utf8",
@@ -30,8 +37,9 @@ describe("dashboard hero surface consistency", () => {
     expect(valueSource).toContain("appHeroShellClass");
     expect(valueSource).not.toContain("bg-gradient-to-b");
     expect(valueSource).not.toContain("ambientGlowClass");
-    expect(emptySource).toContain("appHeroShellClass");
-    expect(emptySource).not.toContain("bg-gradient-to-b");
+    expect(emptySource).toContain("PortfolioSetupOnboarding");
+    expect(onboardingSource).toContain("appHeroShellClass");
+    expect(onboardingSource).not.toContain("bg-gradient-to-b");
   });
 
   it("matches the solid PageHero surface token", () => {

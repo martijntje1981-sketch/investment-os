@@ -32,6 +32,7 @@ import {
 import { PortfolioDnaRings } from "@/components/portfolioHealth/PortfolioDnaRings";
 import { RiskReturnMap } from "@/components/portfolioHealth/RiskReturnMap";
 import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
+import { EmptyPortfolioGuide } from "@/components/onboarding/EmptyPortfolioGuide";
 import { buildPortfolioAnalysis } from "@/lib/client/portfolioAnalysis";
 import { usePortfolioDividends } from "@/lib/client/usePortfolioDividends";
 import { useUserGoal } from "@/lib/client/useUserGoal";
@@ -215,6 +216,17 @@ export default function PortfolioHealthPage() {
         ) : null}
 
         {!profile.hasValuedPortfolio ? (
+          holdings.length === 0 ? (
+            <div className="space-y-4">
+              <div className="mb-1">
+                <BackButton />
+              </div>
+              <EmptyPortfolioGuide
+                title="Portfolio Health needs holdings"
+                body="Import or add valued holdings to reveal identity, behaviour and goal fit."
+              />
+            </div>
+          ) : (
           <section className={`${appHeroShellClass} px-5 py-9 sm:px-8`}>
             <div className="mb-4">
               <BackButton />
@@ -234,6 +246,7 @@ export default function PortfolioHealthPage() {
               Open portfolio
             </Link>
           </section>
+          )
         ) : (
           <>
             {/* Hero — main story only */}

@@ -33,6 +33,7 @@ import { useUserGoal } from "@/lib/client/useUserGoal";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 import { useMarketSnapshotMetadata } from "@/lib/client/useMarketSnapshotMetadata";
 import { useLivePortfolioPriceRefresh } from "@/lib/client/useLivePortfolioPriceRefresh";
+import { needsPortfolioSetup } from "@/lib/client/portfolioSetup";
 import { buildPortfolioHealthProfile } from "@/lib/services/portfolio/portfolioHealthProfile";
 import { buildPortfolioExposureAllocation } from "@/lib/services/classification";
 import { logDashboardProductionDiagnostics } from "@/lib/client/investmentOsProductionDebug";
@@ -171,8 +172,13 @@ export default function DashboardPage() {
         onDismiss={dismissRecovery}
       />
 
-      {holdings.length === 0 && syncState.status !== "loading" ? (
-        <DashboardEmptyState />
+      {needsPortfolioSetup({
+        authenticated: Boolean(userSub),
+        holdingsCount: holdings.length,
+        portfolioReady,
+        syncLoading: syncState.status === "loading",
+      }) ? (
+        <DashboardEmptyState userSub={userSub} />
       ) : holdings.length > 0 ? (
         <>
           <DashboardSummary

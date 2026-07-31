@@ -41,7 +41,7 @@ describe("news hub UI structure", () => {
     expect(hubSource).not.toContain("NewsHubTabs");
     expect(hubSource).not.toContain("matchMedia");
     expect(hubSource).not.toContain("PortfolioNewsPreview");
-    expect(newsPage).not.toContain("BottomNavigation");
+    expect(newsPage).toContain("BottomNavigation");
     expect(newsPage).toContain("PageContainer");
     expect(newsPage).toContain("PageHero");
     expect(newsPage).toContain("Market Intelligence");
@@ -100,14 +100,20 @@ describe("news hub UI structure", () => {
     expect(source).toContain("resolveLegacyBriefingRedirect");
   });
 
-  it("routes bottom navigation news item to /news", () => {
-    const source = readFileSync(
+  it("keeps News in the profile Explore menu rather than bottom navigation", () => {
+    const bottomNav = readFileSync(
       path.resolve(process.cwd(), "components/home/BottomNav.tsx"),
       "utf8",
     );
+    const userMenu = readFileSync(
+      path.resolve(process.cwd(), "components/auth/UserMenu.tsx"),
+      "utf8",
+    );
 
-    expect(source).toContain('href: "/news"');
-    expect(source).toContain('label: "News"');
+    expect(bottomNav).not.toContain('href: "/news"');
+    expect(bottomNav).not.toContain('label: "News"');
+    expect(userMenu).toContain('href: "/news"');
+    expect(userMenu).toContain('label: "News"');
   });
 });
 

@@ -79,7 +79,7 @@ describe("discover UI integration", () => {
     );
 
     expect(discoverPage).toContain("ThingsYouMayHaveMissedSection");
-    expect(discoverPage).not.toContain("BottomNavigation");
+    expect(discoverPage).toContain("BottomNavigation");
     expect(preview).not.toContain("DiscoverMissedTeaser");
     expect(preview).toContain("NEWS_HUB_PATH");
     expect(dashboard).not.toContain("useDiscoverSnapshot");

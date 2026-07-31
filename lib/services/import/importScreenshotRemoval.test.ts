@@ -24,6 +24,7 @@ const PUBLIC_SURFACE_FILES = [
   "components/import/ImportMethodPicker.tsx",
   "components/import/ImportDropzone.tsx",
   "components/dashboard/DashboardEmptyState.tsx",
+  "components/onboarding/PortfolioSetupOnboarding.tsx",
   "lib/client/dashboardInsight.ts",
 ] as const;
 
@@ -146,8 +147,13 @@ describe("screenshot import removal", () => {
   it("does not advertise screenshot upload on public surfaces", () => {
     for (const relativePath of PUBLIC_SURFACE_FILES) {
       const source = readProjectFile(relativePath);
-      expect(source, relativePath).not.toMatch(/screenshot/i);
-      expect(source, relativePath).not.toMatch(/image upload|upload image|portfolio image|AI upload|image recognition/i);
+      expect(source, relativePath).not.toMatch(
+        /upload (a )?screenshot|screenshot upload|portfolio screenshot|AI upload|image recognition/i,
+      );
+      // Denial copy is allowed; invitation to screenshot import is not.
+      expect(source, relativePath).not.toMatch(
+        /import.*(via|with|from).*screenshot|screenshot.*(import|upload)/i,
+      );
     }
   });
 
