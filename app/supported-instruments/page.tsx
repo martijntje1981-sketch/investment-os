@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Coins, Layers3, ListChecks, Mail } from "lucide-react";
 
+import { BackButton } from "@/components/layout/BackButton";
 import MarketingHeader from "@/components/marketing/MarketingHeader";
 import { SupportStatusBadge } from "@/components/marketing/SupportStatusBadge";
 import {
@@ -24,7 +25,10 @@ export default function SupportedInstrumentsPage() {
         <section className="relative overflow-hidden border-b border-slate-200 bg-white">
           <div className="absolute left-1/2 top-0 h-[420px] w-[760px] -translate-x-1/2 rounded-full bg-gradient-to-br from-blue-200/40 via-violet-200/30 to-transparent blur-3xl" />
 
-          <div className="relative mx-auto max-w-4xl px-5 py-20 text-center sm:px-8 sm:py-24">
+          <div className="relative mx-auto max-w-4xl px-5 pb-20 pt-8 text-center sm:px-8 sm:pb-24 sm:pt-10">
+            <div className="mb-6 flex justify-start">
+              <BackButton variant="light" />
+            </div>
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-950 text-white shadow-xl">
               <ListChecks className="h-7 w-7" />
             </div>

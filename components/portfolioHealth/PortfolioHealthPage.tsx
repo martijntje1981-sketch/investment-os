@@ -15,6 +15,7 @@ import {
   Zap,
 } from "lucide-react";
 
+import { BackButton } from "@/components/layout/BackButton";
 import BottomNavigation from "@/components/home/BottomNav";
 import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer";
 import {
@@ -215,6 +216,9 @@ export default function PortfolioHealthPage() {
 
         {!profile.hasValuedPortfolio ? (
           <section className={`${appHeroShellClass} px-5 py-9 sm:px-8`}>
+            <div className="mb-4">
+              <BackButton />
+            </div>
             <p className={appHeroMetricLabelClass}>Portfolio Health</p>
             <h1 className="mt-4 text-3xl font-black tracking-[-0.04em] text-white">
               Waiting on portfolio data
@@ -246,6 +250,9 @@ export default function PortfolioHealthPage() {
                 }}
               />
               <div className="relative max-w-2xl">
+                <div className="mb-4">
+                  <BackButton />
+                </div>
                 <p className={appHeroMetricLabelClass}>Portfolio Health</p>
                 <h1
                   id="portfolio-health-hero"

@@ -12,6 +12,12 @@ const authenticatedPagesWithBackLink = [
   "app/upload/page.tsx",
 ];
 
+const secondaryPagesWithSharedBack = [
+  "components/marketPulse/MarketPulsePage.tsx",
+  "components/portfolioHealth/PortfolioHealthPage.tsx",
+  "app/supported-instruments/page.tsx",
+];
+
 const authenticatedPages = [
   "app/dashboard/page.tsx",
   ...authenticatedPagesWithBackLink,
@@ -99,6 +105,23 @@ describe("authenticated page layout", () => {
       );
 
       expect(source, relativePath).toContain("backToDashboard");
+    }
+  });
+
+  it("uses the shared BackButton on secondary standalone pages", () => {
+    const backButtonSource = readFileSync(
+      path.resolve(process.cwd(), "components/layout/BackButton.tsx"),
+      "utf8",
+    );
+    expect(backButtonSource).toContain("router.back");
+    expect(backButtonSource).toContain('fallbackHref = "/dashboard"');
+
+    for (const relativePath of secondaryPagesWithSharedBack) {
+      const source = readFileSync(
+        path.resolve(process.cwd(), relativePath),
+        "utf8",
+      );
+      expect(source, relativePath).toContain("BackButton");
     }
   });
 

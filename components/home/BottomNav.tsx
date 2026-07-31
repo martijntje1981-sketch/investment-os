@@ -7,21 +7,16 @@ import { usePathname } from "next/navigation";
 import {
   ChartNoAxesColumnIncreasing,
   LayoutDashboard,
-  Radio,
   ScanLine,
   Target,
 } from "lucide-react";
 
+/** Primary daily workflow only — secondary pages live in the profile menu. */
 const navigationItems = [
   {
     label: "Dashboard",
     href: "/dashboard",
     icon: LayoutDashboard,
-  },
-  {
-    label: "News",
-    href: "/news",
-    icon: Radio,
   },
   {
     label: "Portfolio",
@@ -48,7 +43,7 @@ export default function BottomNavigation() {
       aria-label="Main"
       className="fixed bottom-0 left-0 right-0 z-50 max-w-full overflow-hidden border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur"
     >
-      <div className="mx-auto grid w-full max-w-6xl grid-cols-5 gap-0.5 px-1 py-2 sm:gap-2 sm:px-4">
+      <div className="mx-auto grid w-full max-w-6xl grid-cols-4 gap-0.5 px-1 py-2 sm:gap-2 sm:px-4">
         {navigationItems.map((item) => {
           const Icon = item.icon;
           const active = isBottomNavItemActive(pathname, item.href);

@@ -1,6 +1,7 @@
 "use client";
 
 import { NewsHubContent } from "@/components/news/NewsHubContent";
+import BottomNavigation from "@/components/home/BottomNav";
 import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer";
 import { PageHero } from "@/components/layout/PageHero";
 import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
@@ -28,28 +29,31 @@ export default function NewsPage() {
   }
 
   return (
-    <PageContainer>
-      <PageHero
-        title="Market Intelligence"
-        subtitle="Personalized news, market developments and events relevant to your portfolio."
-        backToDashboard
-      />
+    <>
+      <PageContainer>
+        <PageHero
+          title="Market Intelligence"
+          subtitle="Personalized news, market developments and events relevant to your portfolio."
+          backToDashboard
+        />
 
-      <PortfolioRecoveryBanner
-        offer={recoveryOffer}
-        onRecover={() => {
-          recoverPortfolio();
-        }}
-        onDismiss={dismissRecovery}
-      />
+        <PortfolioRecoveryBanner
+          offer={recoveryOffer}
+          onRecover={() => {
+            recoverPortfolio();
+          }}
+          onDismiss={dismissRecovery}
+        />
 
-      <NewsHubContent
-        payload={payload ?? EMPTY_NEWS_RESPONSE}
-        intelligence={intelligence}
-        isStale={isStale}
-        onRefresh={() => void reload()}
-        isRefreshing={isLoading}
-      />
-    </PageContainer>
+        <NewsHubContent
+          payload={payload ?? EMPTY_NEWS_RESPONSE}
+          intelligence={intelligence}
+          isStale={isStale}
+          onRefresh={() => void reload()}
+          isRefreshing={isLoading}
+        />
+      </PageContainer>
+      <BottomNavigation />
+    </>
   );
 }

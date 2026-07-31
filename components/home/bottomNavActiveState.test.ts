@@ -10,22 +10,27 @@ describe("bottom navigation active state", () => {
     "utf8",
   );
 
+  it("keeps only primary workflow destinations", () => {
+    expect(source).toContain('href: "/dashboard"');
+    expect(source).toContain('href: "/portfolio"');
+    expect(source).toContain('href: "/analysis"');
+    expect(source).toContain('href: "/goals"');
+    expect(source).not.toContain('href: "/news"');
+    expect(source).not.toContain('href: "/market-pulse"');
+    expect(source).not.toContain('href: "/portfolio-health"');
+    expect(source).toContain("grid-cols-4");
+  });
+
   it("highlights only the matching main route", () => {
     expect(isBottomNavItemActive("/dashboard", "/dashboard")).toBe(true);
     expect(isBottomNavItemActive("/news", "/dashboard")).toBe(false);
-    expect(isBottomNavItemActive("/news", "/news")).toBe(true);
-    expect(isBottomNavItemActive("/portfolio", "/news")).toBe(false);
+    expect(isBottomNavItemActive("/portfolio", "/portfolio")).toBe(true);
     expect(isBottomNavItemActive("/portfolio/vwce", "/portfolio")).toBe(true);
     expect(isBottomNavItemActive("/analysis", "/analysis")).toBe(true);
     expect(isBottomNavItemActive("/goals", "/goals")).toBe(true);
-    expect(isBottomNavItemActive("/goals", "/news")).toBe(false);
   });
 
-  it("does not give News featured/selected styling when inactive", () => {
-    expect(source).not.toContain("featured: true");
-    expect(source).not.toContain("ring-violet");
-    expect(source).not.toContain("bg-violet-600");
-    expect(source).not.toContain("appBottomNavFeaturedLabelClass");
+  it("uses shared active styling tokens", () => {
     expect(source).toContain('aria-current={active ? "page" : undefined}');
     expect(source).toContain("bg-slate-950 text-white shadow-lg");
     expect(source).toContain(

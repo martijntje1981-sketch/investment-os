@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, RefreshCw } from "lucide-react";
 
+import { BackButton } from "@/components/layout/BackButton";
 import BottomNavigation from "@/components/home/BottomNav";
 import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer";
 import {
@@ -386,6 +387,9 @@ export default function MarketPulsePage() {
             }}
           />
           <div className="relative">
+            <div className="mb-4">
+              <BackButton />
+            </div>
             <p className={appHeroMetricLabelClass}>Market Pulse</p>
             <h1
               id="market-pulse-hero"

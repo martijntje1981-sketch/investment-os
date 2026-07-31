@@ -249,9 +249,30 @@ describe("UserMenu profile wiring", () => {
     expect(source).toContain('aria-expanded={open}');
     expect(source).toContain("aria-controls={menuId}");
     expect(source).toContain('aria-label="Profile menu"');
-    expect(source).toContain('href="/settings"');
-    expect(source).toContain('href="/news"');
     expect(source).toContain("Sign out");
     expect(source).not.toContain("<details");
+  });
+
+  it("exposes Account and Explore secondary destinations", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { resolve } = await import("node:path");
+    const source = readFileSync(
+      resolve(process.cwd(), "components/auth/UserMenu.tsx"),
+      "utf8",
+    );
+
+    expect(source).toContain('href: "/settings"');
+    expect(source).toContain('label: "Profile"');
+    expect(source).toContain('label: "Settings"');
+    expect(source).toContain('href: "/news"');
+    expect(source).toContain('href: "/discover"');
+    expect(source).toContain('href: "/portfolio-health"');
+    expect(source).toContain('href: "/market-pulse"');
+    expect(source).toContain('href: "/supported-instruments"');
+    expect(source).toContain('href: "/upload"');
+    expect(source).toContain('title="Explore"');
+    expect(source).toContain('title="Account"');
+    expect(source).toContain("aria-current={active ? \"page\" : undefined}");
+    expect(source).toContain("w-[15.5rem]");
   });
 });
