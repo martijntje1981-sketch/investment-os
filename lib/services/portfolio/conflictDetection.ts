@@ -4,13 +4,22 @@ import {
   localHasPendingCryptoUpload,
   portfolioContentFingerprint,
 } from "@/lib/services/portfolio/idempotency";
-import { summarizePortfolioHoldings } from "@/lib/services/portfolio/portfolioPersistenceGuard";
+import {
+  isSuspiciousCashOnlyShrink,
+  summarizePortfolioHoldings,
+} from "@/lib/services/portfolio/portfolioPersistenceGuard";
 import type {
   PortfolioSyncPreview,
   PortfolioSyncResolution,
   RemotePortfolioSnapshot,
 } from "@/lib/services/portfolio/types";
 
+/**
+ * Resolve sync state for an authenticated user.
+ * Cloud is canonical whenever a usable remote portfolio exists.
+ * Divergent local copies no longer surface a conflict UI — they are treated as
+ * aligned to remote so hydrate can overwrite the stale device cache.
+ */
 export function resolvePortfolioSyncState(
   localHoldings: StoredPortfolioHolding[],
   remoteSnapshot: RemotePortfolioSnapshot,
@@ -43,6 +52,12 @@ export function resolvePortfolioSyncState(
     return { kind: "remote_only", snapshot: remoteSnapshot };
   }
 
+  // Safety: never auto-prefer a cash-only incomplete cloud over a fuller local book.
+  // Keep local silently (no conflict banner) so the user is not prompted repeatedly.
+  if (isSuspiciousCashOnlyShrink(localHoldings, remoteSnapshot.holdings)) {
+    return { kind: "local_only", localHoldings };
+  }
+
   const localSummary = summarizePortfolioHoldings(localHoldings);
   const remoteSummary = summarizePortfolioHoldings(remoteSnapshot.holdings);
 
@@ -51,11 +66,7 @@ export function resolvePortfolioSyncState(
     remoteSummary.investments === 0 &&
     localCount > remoteCount
   ) {
-    return {
-      kind: "conflict",
-      localFingerprint,
-      remoteFingerprint,
-    };
+    return { kind: "local_only", localHoldings };
   }
 
   if (localFingerprint === remoteFingerprint) {
@@ -66,11 +77,8 @@ export function resolvePortfolioSyncState(
     return { kind: "aligned", snapshot: remoteSnapshot };
   }
 
-  return {
-    kind: "conflict",
-    localFingerprint,
-    remoteFingerprint,
-  };
+  // Authenticated cloud wins for ordinary content divergence.
+  return { kind: "aligned", snapshot: remoteSnapshot };
 }
 
 export function buildMigrationPreviewFromLocal(

@@ -29,6 +29,7 @@ import {
 } from "@/lib/client/portfolioSyncApi";
 import {
   applyRemoteSnapshotToLocalCache,
+  clearObsoletePortfolioConflictMarkers,
   markConflictResolutionVerified,
   readPortfolioSyncMeta,
   recordLocalPortfolioSave,
@@ -239,6 +240,7 @@ export function useUserPortfolio() {
           context: "hydrate",
         });
         setHoldings(merged);
+        clearObsoletePortfolioConflictMarkers(userSub);
 
         if (
           remoteVerifiedListingPricesStale(

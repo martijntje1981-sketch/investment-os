@@ -577,6 +577,27 @@ export function markConflictResolutionVerified(
   });
 }
 
+/** Clears obsolete conflict-resolution markers without touching preferences. */
+export function clearObsoletePortfolioConflictMarkers(userSub: string): void {
+  const meta = readPortfolioSyncMeta(userSub);
+  if (
+    meta.lastResolvedContentFingerprint === undefined &&
+    meta.lastSyncError === null
+  ) {
+    return;
+  }
+  const {
+    lastResolvedContentFingerprint: _,
+    ...rest
+  } = meta;
+  void _;
+  writePortfolioSyncMeta(userSub, {
+    ...rest,
+    version: PORTFOLIO_SYNC_VERSION,
+    lastSyncError: null,
+  });
+}
+
 export function recordSyncFailure(userSub: string, message: string): void {
   const meta = readPortfolioSyncMeta(userSub);
   writePortfolioSyncMeta(userSub, {

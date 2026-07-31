@@ -1,18 +1,22 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import {
+  ArrowRight,
   CalendarDays,
   Check,
   Goal,
   PiggyBank,
   Save,
+  Scale,
   Target,
   TrendingUp,
 } from "lucide-react";
 import {
   appCardValueClass,
   appHeroMetricLabelClass,
+  appHeroShellClass,
   appSectionLabelClass,
   appSectionMetaClass,
   appSectionTitleClass,
@@ -62,6 +66,8 @@ import { useGoalProgress } from "@/lib/client/useGoalProgress";
 import { useUserGoal } from "@/lib/client/useUserGoal";
 import { usePortfolioDividends } from "@/lib/client/usePortfolioDividends";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
+import { buildPortfolioExposureAllocation } from "@/lib/services/classification";
+import { buildPortfolioHealthProfile } from "@/lib/services/portfolio/portfolioHealthProfile";
 import {
   IDENTITY_EUR_FX_SNAPSHOT,
   type BaseCurrencyFxSnapshot,
@@ -110,6 +116,16 @@ export default function GoalsPage() {
     userSub,
     holdings.length > 0,
   );
+  const healthAlignmentPreview = useMemo(() => {
+    if (!hasSavedGoal || holdings.length === 0) return null;
+    return buildPortfolioHealthProfile({
+      holdings,
+      goal: savedGoal,
+      hasSavedGoal,
+      dividends: dividendSnapshot,
+      exposure: buildPortfolioExposureAllocation(holdings),
+    });
+  }, [dividendSnapshot, hasSavedGoal, holdings, savedGoal]);
   const [goal, setGoal] = useState<GoalSettings>(GOAL_FORM_DEFAULT);
   const [formSession, setFormSession] = useState<BaseCurrencyFxSnapshot>(
     IDENTITY_EUR_FX_SNAPSHOT,
@@ -326,6 +342,39 @@ export default function GoalsPage() {
             ) : null
           }
         />
+
+        {healthAlignmentPreview &&
+        healthAlignmentPreview.goalAlignment.label !== "Goal data unavailable" ? (
+          <section
+            className={`${appHeroShellClass} px-5 py-6 sm:px-7`}
+            aria-labelledby="goals-health-alignment"
+          >
+            <div className="flex items-start gap-3">
+              <div className="rounded-2xl bg-white/10 p-3 text-white">
+                <Scale className="h-5 w-5" aria-hidden="true" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className={appHeroMetricLabelClass}>Portfolio fit</p>
+                <h2
+                  id="goals-health-alignment"
+                  className="mt-2 text-xl font-bold tracking-[-0.03em] text-white"
+                >
+                  {healthAlignmentPreview.goalAlignment.label}
+                </h2>
+                <p className="mt-2 max-w-2xl text-[15px] font-medium leading-relaxed text-white/80">
+                  {healthAlignmentPreview.goalAlignment.reason}
+                </p>
+                <Link
+                  href="/portfolio-health"
+                  className="mt-4 inline-flex min-h-[44px] items-center gap-1.5 text-[15px] font-semibold text-sky-300"
+                >
+                  Open Portfolio Health
+                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </Link>
+              </div>
+            </div>
+          </section>
+        ) : null}
 
           <div className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
             <form

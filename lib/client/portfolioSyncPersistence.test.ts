@@ -145,7 +145,7 @@ describe("portfolio persistence and sync safety", () => {
     expect(restored.some((row) => row.symbol === "STRC")).toBe(true);
   });
 
-  it("shows conflict instead of silently using incomplete cloud portfolio on hydrate", () => {
+  it("keeps fuller local without conflict UI when cloud is cash-only incomplete", () => {
     const local = [
       holding({ id: "strc", symbol: "STRC", quantity: 5, purchasePrice: 10 }),
       holding({ id: "cash", symbol: "EUR", assetType: "cash", quantity: 1000, purchasePrice: 1, currentPrice: 1 }),
@@ -155,7 +155,10 @@ describe("portfolio persistence and sync safety", () => {
     ]);
 
     const state = resolveClientSyncState(USER, local, remote, false, null, []);
-    expect(state.status).toBe("conflict");
+    expect(state.status).toBe("ready");
+    if (state.status === "ready") {
+      expect(state.source).toBe("local");
+    }
   });
 
   it("does not show conflict for identical portfolios", () => {

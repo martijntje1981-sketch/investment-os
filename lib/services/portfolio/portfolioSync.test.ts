@@ -170,14 +170,17 @@ describe("portfolio conflict detection", () => {
     expect(resolution.kind).toBe("remote_only");
   });
 
-  it("detects conflict when local and remote differ", () => {
+  it("prefers cloud when local and remote differ", () => {
     const remote = snapshotWith([holding("1", "VWCE")]);
     const resolution = resolvePortfolioSyncState(
       [holding("2", "IWDA")],
       remote,
       USER_ID,
     );
-    expect(resolution.kind).toBe("conflict");
+    expect(resolution.kind).toBe("aligned");
+    if (resolution.kind === "aligned") {
+      expect(resolution.snapshot.holdings[0]?.symbol).toBe("VWCE");
+    }
   });
 
   it("treats matching content as aligned even with different holding ids", () => {
@@ -221,11 +224,26 @@ describe("portfolio conflict detection", () => {
     expect(resolution.kind).toBe("aligned");
   });
 
-  it("detects conflict when quantity differs", () => {
+  it("prefers cloud when quantity differs", () => {
     const local = [holding("1", "VWCE", { quantity: 10 })];
     const remote = snapshotWith([holding("2", "VWCE", { quantity: 12 })]);
     const resolution = resolvePortfolioSyncState(local, remote, USER_ID);
-    expect(resolution.kind).toBe("conflict");
+    expect(resolution.kind).toBe("aligned");
+    if (resolution.kind === "aligned") {
+      expect(resolution.snapshot.holdings[0]?.quantity).toBe(12);
+    }
+  });
+
+  it("keeps fuller local silently when remote is cash-only incomplete", () => {
+    const local = [
+      holding("1", "VWCE"),
+      holding("2", "EUR", { assetType: "cash", currentPrice: 1 }),
+    ];
+    const remote = snapshotWith([
+      holding("3", "EUR", { assetType: "cash", currentPrice: 1 }),
+    ]);
+    const resolution = resolvePortfolioSyncState(local, remote, USER_ID);
+    expect(resolution.kind).toBe("local_only");
   });
 });
 
@@ -685,7 +703,7 @@ describe("client portfolio sync state", () => {
     expect(resolution.kind).toBe("aligned");
   });
 
-  it("treats local goal and absent cloud goal as conflict before apply", () => {
+  it("prefers cloud when local goal differs from absent cloud goal", () => {
     const goal = {
       targetValue: 500000,
       targetYear: 2035,
@@ -701,7 +719,7 @@ describe("client portfolio sync state", () => {
       USER_ID,
       goal,
     );
-    expect(resolution.kind).toBe("conflict");
+    expect(resolution.kind).toBe("aligned");
   });
 
   it("aligns after use-cloud when local had goal but cloud does not", () => {
@@ -780,7 +798,7 @@ describe("client portfolio sync state", () => {
     expect(verified.ok).toBe(false);
   });
 
-  it("keeps conflict unresolved when pushed snapshot verification fails", () => {
+  it("prefers cloud after failed push verification instead of conflict UI", () => {
     const local = [holding("legacy-1", "VWCE")];
     const mismatched = snapshotWith([holding("cloud-1", "IWDA")]);
 
@@ -800,7 +818,34 @@ describe("client portfolio sync state", () => {
       null,
       [],
     );
-    expect(afterReload.status).toBe("conflict");
+    expect(afterReload.status).toBe("ready");
+    if (afterReload.status === "ready") {
+      expect(afterReload.source).toBe("remote");
+    }
+  });
+
+  it("clears obsolete conflict markers without touching preferences", async () => {
+    const { clearObsoletePortfolioConflictMarkers, readPortfolioSyncMeta, writePortfolioSyncMeta } =
+      await import("@/lib/client/portfolioSyncState");
+    const { portfolioSyncMetaKey } = await import(
+      "@/lib/client/portfolioStorageKeys"
+    );
+    const currencyKey = `investment-os-base-currency:${USER_ID}`;
+    localStorage.setItem(currencyKey, "EUR");
+    writePortfolioSyncMeta(USER_ID, {
+      version: 1,
+      lastResolvedContentFingerprint: "stale-conflict-marker",
+      lastSyncError: "old conflict",
+      lastLocalRevision: 3,
+    });
+
+    clearObsoletePortfolioConflictMarkers(USER_ID);
+    const meta = readPortfolioSyncMeta(USER_ID);
+    expect(meta.lastResolvedContentFingerprint).toBeUndefined();
+    expect(meta.lastSyncError).toBeNull();
+    expect(meta.lastLocalRevision).toBe(3);
+    expect(localStorage.getItem(currencyKey)).toBe("EUR");
+    expect(localStorage.getItem(portfolioSyncMetaKey(USER_ID))).toBeTruthy();
   });
 });
 

@@ -486,6 +486,20 @@ export default function PortfolioPage() {
           backToDashboard
           actions={
             <>
+              <Link
+                href="/portfolio-health"
+                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-bold text-white hover:bg-white/15"
+              >
+                <PieChart className="h-4 w-4" aria-hidden="true" />
+                View Portfolio Health
+              </Link>
+              <Link
+                href="/market-pulse"
+                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-bold text-white hover:bg-white/15"
+              >
+                <BarChart3 className="h-4 w-4" aria-hidden="true" />
+                Market Pulse
+              </Link>
               <RefreshPricesButton
                 onClick={() => void refreshPrices()}
                 isRefreshing={isRefreshing}

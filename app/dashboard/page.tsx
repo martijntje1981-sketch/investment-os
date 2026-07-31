@@ -9,6 +9,7 @@ import { DashboardGoalProgressCard } from "@/components/dashboard/DashboardGoalP
 import { DashboardContributionsCard } from "@/components/contributions/DashboardContributionsCard";
 import { DashboardIntelligencePreview } from "@/components/dashboard/DashboardIntelligencePreview";
 import { DashboardPortfolioHealthCard } from "@/components/dashboard/DashboardPortfolioHealthCard";
+import { DashboardMarketPulseCard } from "@/components/dashboard/DashboardMarketPulseCard";
 import { DashboardSummary } from "@/components/dashboard/DashboardSummary";
 import { DashboardTodaysDecision } from "@/components/dashboard/DashboardTodaysDecision";
 import { DashboardProductionDebugMarker } from "@/components/dashboard/DashboardProductionDebugMarker";
@@ -32,7 +33,7 @@ import { useUserGoal } from "@/lib/client/useUserGoal";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 import { useMarketSnapshotMetadata } from "@/lib/client/useMarketSnapshotMetadata";
 import { useLivePortfolioPriceRefresh } from "@/lib/client/useLivePortfolioPriceRefresh";
-import { buildPortfolioHealthScore } from "@/lib/services/portfolio/portfolioHealthScore";
+import { buildPortfolioHealthProfile } from "@/lib/services/portfolio/portfolioHealthProfile";
 import { buildPortfolioExposureAllocation } from "@/lib/services/classification";
 import { logDashboardProductionDiagnostics } from "@/lib/client/investmentOsProductionDebug";
 
@@ -102,19 +103,24 @@ export default function DashboardPage() {
     [snapshot],
   );
 
-  const portfolioHealth = useMemo(() => {
+  const portfolioHealthProfile = useMemo(() => {
     const analysis = buildPortfolioAnalysis(holdings);
-    return buildPortfolioHealthScore({
-      concentrationLevel: analysis.concentrationLevel,
-      investmentCount: analysis.investmentCount,
-      largestPositionWeightPercent: analysis.largestPosition?.weightPercent ?? null,
-      cashWeightPercent: analysis.cashWeightPercent,
-      goalProgress,
-      isStale: snapshot.isStale,
-      portfolioStatus: intelligence.portfolioStatus,
-      quietMarket: intelligence.quietMarket,
+    return buildPortfolioHealthProfile({
+      holdings,
+      goal,
+      hasSavedGoal,
+      dividends: dividendsLoading ? null : dividendSnapshot,
+      analysis,
+      exposure: exposureAllocation,
     });
-  }, [goalProgress, holdings, intelligence.portfolioStatus, intelligence.quietMarket, snapshot.isStale]);
+  }, [
+    dividendSnapshot,
+    dividendsLoading,
+    exposureAllocation,
+    goal,
+    hasSavedGoal,
+    holdings,
+  ]);
 
   const marketsClosed = useMemo(() => areMajorMarketsClosed(), []);
 
@@ -204,7 +210,15 @@ export default function DashboardPage() {
 
             <DashboardPortfolioExposureCard allocation={exposureAllocation} />
 
-            <DashboardPortfolioHealthCard health={portfolioHealth} />
+            <DashboardPortfolioHealthCard profile={portfolioHealthProfile} />
+
+            <DashboardMarketPulseCard
+              leadLabel={
+                portfolioHealthProfile.classification.cryptoWeight >= 20
+                  ? "Bitcoin and linked markets may be moving with your portfolio."
+                  : "See commodities, crypto and markets connected to your holdings."
+              }
+            />
 
             <div className="grid min-w-0 gap-6 lg:grid-cols-2">
               <DashboardGoalProgressCard progress={goalProgress} />

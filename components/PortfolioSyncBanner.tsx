@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, CloudUpload, Loader2, RefreshCw, ShieldCheck } from "lucide-react";
+import { CloudUpload, Loader2, RefreshCw, ShieldCheck } from "lucide-react";
 
 import type { PortfolioSyncPreview } from "@/lib/services/portfolio/types";
 import type { ClientPortfolioSyncState } from "@/lib/client/portfolioSyncState";
@@ -10,8 +10,8 @@ type PortfolioSyncBannerProps = {
   migrationPreview: PortfolioSyncPreview | null;
   onMigrate: () => void | Promise<void>;
   onRetry: () => void | Promise<void>;
-  onUseRemote: () => void;
-  onKeepLocal: () => void;
+  onUseRemote?: () => void;
+  onKeepLocal?: () => void;
   migrating?: boolean;
 };
 
@@ -38,8 +38,6 @@ export default function PortfolioSyncBanner({
   migrationPreview,
   onMigrate,
   onRetry,
-  onUseRemote,
-  onKeepLocal,
   migrating = false,
 }: PortfolioSyncBannerProps) {
   if (syncState.status === "loading") {
@@ -90,39 +88,8 @@ export default function PortfolioSyncBanner({
   }
 
   if (syncState.status === "conflict") {
-    return (
-      <div className="mb-4 rounded-xl border border-amber-900/60 bg-amber-950/20 px-4 py-4">
-        <div className="flex items-start gap-3">
-          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" />
-          <div className="min-w-0 flex-1">
-            <p className="font-medium text-amber-50">Portfolio conflict</p>
-            <p className="mt-1 text-sm text-zinc-300">
-              This device and your cloud account both have different portfolios.
-              Nothing was overwritten. Choose which copy to keep viewing.
-            </p>
-            {syncState.errorMessage ? (
-              <p className="mt-2 text-sm text-amber-200">{syncState.errorMessage}</p>
-            ) : null}
-            <div className="mt-3 flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => void onUseRemote()}
-                className="rounded-lg bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-white"
-              >
-                Use cloud portfolio
-              </button>
-              <button
-                type="button"
-                onClick={() => void onKeepLocal()}
-                className="rounded-lg border border-zinc-600 px-4 py-2 text-sm font-medium text-zinc-100 hover:border-zinc-400"
-              >
-                Keep this device copy
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    // Conflict UI retired: authenticated users prefer cloud automatically.
+    return null;
   }
 
   if (syncState.status === "sync_error") {

@@ -117,12 +117,30 @@ export default function PortfolioAnalysisPage() {
       <PageContainer>
         <PageHero
           title="Portfolio Analysis"
-          subtitle="Understand performance, risk, allocation and portfolio trends."
+          subtitle="Detailed metrics for performance, allocation and income. For the portfolio story open Portfolio Health. For markets influencing holdings, open Market Pulse."
           backToDashboard
           stats={
             <p className={`${appDashboardDarkMetaClass} mt-0`}>
               Last portfolio update: {formatUpdatedAt(analysis.lastUpdatedAt)}
             </p>
+          }
+          actions={
+            <div className="flex flex-wrap gap-2">
+              <Link
+                href="/portfolio-health"
+                className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-white/20 px-4 py-2.5 text-[15px] font-semibold text-white"
+              >
+                Portfolio Health
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+              <Link
+                href="/market-pulse"
+                className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-white/20 px-4 py-2.5 text-[15px] font-semibold text-white"
+              >
+                Market Pulse
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+            </div>
           }
         />
 
