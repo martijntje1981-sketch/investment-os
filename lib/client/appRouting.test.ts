@@ -34,11 +34,11 @@ describe("authenticated routing", () => {
       "utf8",
     );
 
-    expect(loginAction).toContain('redirect("/dashboard")');
+    expect(loginAction).toContain('safeAuthRedirectPath(nextRaw, "/dashboard")');
     expect(authCallback).toContain('"/dashboard"');
   });
 
-  it("uses dashboard as the first primary navigation item", () => {
+  it("uses dashboard as the first authenticated primary navigation item", () => {
     const bottomNav = readFileSync(
       path.resolve(process.cwd(), "components/home/BottomNav.tsx"),
       "utf8",
@@ -47,7 +47,8 @@ describe("authenticated routing", () => {
     expect(bottomNav).toContain('label: "Dashboard"');
     expect(bottomNav).not.toContain('label: "Home"');
     expect(bottomNav).not.toContain("/?view=home");
-    expect(bottomNav).not.toContain('href: "/news"');
+    expect(bottomNav).toContain("authenticatedItems");
+    expect(bottomNav).toContain("guestItems");
     expect(bottomNav.indexOf('href: "/dashboard"')).toBeLessThan(
       bottomNav.indexOf('href: "/portfolio"'),
     );

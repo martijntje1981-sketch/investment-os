@@ -8,9 +8,6 @@ import { BackButton } from "@/components/layout/BackButton";
 import BottomNavigation from "@/components/home/BottomNav";
 import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer";
 import {
-  PORTFOLIO_SETUP_ROUTES,
-} from "@/lib/client/portfolioSetup";
-import {
   appHeroMetricLabelClass,
   appHeroShellClass,
   appSectionBodyClass,
@@ -19,6 +16,8 @@ import {
 } from "@/components/layout/appSurface";
 import { MarketPulseFeaturedChart } from "@/components/marketPulse/MarketPulseFeaturedChart";
 import { MarketPulseSparkline } from "@/components/marketPulse/MarketPulseSparkline";
+import { MakeTobaileyYoursCard } from "@/components/conversion/MakeTobaileyYoursCard";
+import { resolveAudienceState } from "@/lib/auth/routeAccess";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 import { formatQuotePeriodLabel } from "@/lib/services/marketPulse/quoteModel";
 import type {
@@ -231,7 +230,11 @@ function SupportingMarketCard({ asset }: { asset: MarketPulseAsset }) {
 }
 
 export default function MarketPulsePage() {
-  const { holdings, portfolioReady } = useUserPortfolio();
+  const { holdings, portfolioReady, userSub } = useUserPortfolio();
+  const audience = resolveAudienceState({
+    authenticated: Boolean(userSub),
+    holdingsCount: holdings.length,
+  });
   const [snapshot, setSnapshot] = useState<MarketPulseSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -447,18 +450,6 @@ export default function MarketPulsePage() {
               </p>
             )}
 
-            {holdings.length === 0 ? (
-              <div className="mt-5">
-                <Link
-                  href={PORTFOLIO_SETUP_ROUTES.import}
-                  className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-white px-5 py-2.5 text-[14px] font-semibold text-slate-950"
-                >
-                  Import portfolio
-                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                </Link>
-              </div>
-            ) : null}
-
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <div
                 className="inline-flex rounded-full border border-white/15 bg-white/5 p-1"
@@ -522,6 +513,10 @@ export default function MarketPulsePage() {
             </p>
           </div>
         </section>
+
+        {audience !== "authenticated_holdings" ? (
+          <MakeTobaileyYoursCard audience={audience} />
+        ) : null}
 
         {error ? (
           <div className="rounded-[20px] border border-rose-200 bg-rose-50 px-4 py-4 text-[14px] font-medium text-rose-900">

@@ -1,19 +1,10 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const protectedRoutes = [
-  "/dashboard",
-  "/portfolio",
-  "/upload",
-  "/analysis",
-  "/briefing",
-  "/news",
-  "/discover",
-  "/goals",
-  "/holding",
-  "/events",
-  "/perspectives",
-];
+import {
+  isAuthRequiredPath,
+  safeAuthRedirectPath,
+} from "@/lib/auth/routeAccess";
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -38,26 +29,27 @@ export async function updateSession(request: NextRequest) {
   );
 
   const { data } = await supabase.auth.getUser();
-  const isProtected = protectedRoutes.some((route) =>
-    request.nextUrl.pathname.startsWith(route),
-  );
+  const pathname = request.nextUrl.pathname;
+  const isProtected = isAuthRequiredPath(pathname);
 
   if (isProtected && !data.user) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
-    loginUrl.searchParams.set("next", request.nextUrl.pathname);
+    loginUrl.search = "";
+    loginUrl.searchParams.set("next", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
   if (
     data.user &&
-    (request.nextUrl.pathname === "/login" ||
-      request.nextUrl.pathname === "/signup")
+    (pathname === "/login" || pathname === "/signup")
   ) {
-    const dashboardUrl = request.nextUrl.clone();
-    dashboardUrl.pathname = "/dashboard";
-    dashboardUrl.search = "";
-    return NextResponse.redirect(dashboardUrl);
+    const nextParam = request.nextUrl.searchParams.get("next");
+    const destination = safeAuthRedirectPath(nextParam, "/dashboard");
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = destination;
+    redirectUrl.search = "";
+    return NextResponse.redirect(redirectUrl);
   }
 
   return response;

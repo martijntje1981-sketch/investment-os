@@ -23,9 +23,11 @@ const benefits = [
 export default async function SignupPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; next?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, next } = await searchParams;
+  const { safeAuthRedirectPath } = await import("@/lib/auth/routeAccess");
+  const safeNext = safeAuthRedirectPath(next, "/dashboard");
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
@@ -73,6 +75,7 @@ export default async function SignupPage({
               action={signup}
               noValidate
             >
+              <input type="hidden" name="next" value={safeNext} />
               {error && (
                 <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">
                   {error}

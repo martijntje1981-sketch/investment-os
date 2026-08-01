@@ -2,17 +2,27 @@
 
 import { appBottomNavLabelClass } from "@/components/layout/appSurface";
 import { isBottomNavItemActive } from "@/components/home/bottomNavActive";
+import {
+  isAuthRequiredPath,
+  isMarketingPath,
+  isPublicAppPath,
+} from "@/lib/auth/routeAccess";
+import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   ChartNoAxesColumnIncreasing,
   LayoutDashboard,
+  ListChecks,
+  LogIn,
+  Newspaper,
   ScanLine,
+  Sparkles,
   Target,
 } from "lucide-react";
 
 /** Primary daily workflow only — secondary pages live in the profile menu. */
-const navigationItems = [
+const authenticatedItems = [
   {
     label: "Dashboard",
     href: "/dashboard",
@@ -35,8 +45,46 @@ const navigationItems = [
   },
 ] as const;
 
+const guestItems = [
+  {
+    label: "Perspectives",
+    href: "/perspectives",
+    icon: Sparkles,
+  },
+  {
+    label: "Markets",
+    href: "/news",
+    icon: Newspaper,
+  },
+  {
+    label: "Instruments",
+    href: "/supported-instruments",
+    icon: ListChecks,
+  },
+  {
+    label: "Sign in",
+    href: "/login",
+    icon: LogIn,
+  },
+] as const;
+
+function shouldShowNav(pathname: string, authenticated: boolean): boolean {
+  if (isMarketingPath(pathname)) return false;
+  if (pathname.startsWith("/auth")) return false;
+  if (authenticated) {
+    return isAuthRequiredPath(pathname) || isPublicAppPath(pathname);
+  }
+  return isPublicAppPath(pathname);
+}
+
 export default function BottomNavigation() {
   const pathname = usePathname();
+  const { userSub, portfolioReady } = useUserPortfolio();
+
+  if (!portfolioReady) return null;
+  if (!shouldShowNav(pathname, Boolean(userSub))) return null;
+
+  const items = userSub ? authenticatedItems : guestItems;
 
   return (
     <nav
@@ -44,7 +92,7 @@ export default function BottomNavigation() {
       className="fixed bottom-0 left-0 right-0 z-50 max-w-full overflow-hidden border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur"
     >
       <div className="mx-auto grid w-full max-w-6xl grid-cols-4 gap-0.5 px-1 py-2 sm:gap-2 sm:px-4">
-        {navigationItems.map((item) => {
+        {items.map((item) => {
           const Icon = item.icon;
           const active = isBottomNavItemActive(pathname, item.href);
 

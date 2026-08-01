@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
 import { buildSignupUserMetadata } from "@/lib/types/portfolioBaseCurrency";
+import { safeAuthRedirectPath } from "@/lib/auth/routeAccess";
 
 function redirectWithError(path: string, message: string): never {
   redirect(`${path}?error=${encodeURIComponent(message)}`);
@@ -13,6 +14,7 @@ function redirectWithError(path: string, message: string): never {
 export async function login(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
+  const nextRaw = String(formData.get("next") ?? "").trim();
 
   if (!email || !password) {
     redirectWithError("/login", "Enter your email address and password.");
@@ -25,7 +27,7 @@ export async function login(formData: FormData) {
     redirectWithError("/login", "The email address or password is incorrect.");
   }
 
-  redirect("/dashboard");
+  redirect(safeAuthRedirectPath(nextRaw, "/dashboard"));
 }
 
 export async function signup(formData: FormData) {
@@ -54,6 +56,8 @@ export async function signup(formData: FormData) {
 
   const requestHeaders = await headers();
   const origin = requestHeaders.get("origin") ?? "http://localhost:3000";
+  const nextRaw = String(formData.get("next") ?? "").trim();
+  const safeNext = safeAuthRedirectPath(nextRaw, "/dashboard");
   const supabase = await createClient();
   const userMetadata = buildSignupUserMetadata({
     fullName: name,
@@ -64,7 +68,7 @@ export async function signup(formData: FormData) {
     password,
     options: {
       data: userMetadata,
-      emailRedirectTo: `${origin}/auth/callback`,
+      emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(safeNext)}`,
     },
   });
 
@@ -74,7 +78,8 @@ export async function signup(formData: FormData) {
 
   redirect(
     "/login?message=" +
-      encodeURIComponent("Check your email to confirm your account, then sign in."),
+      encodeURIComponent("Check your email to confirm your account, then sign in.") +
+      `&next=${encodeURIComponent(safeNext)}`,
   );
 }
 

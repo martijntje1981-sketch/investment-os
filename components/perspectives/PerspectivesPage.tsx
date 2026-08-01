@@ -18,12 +18,21 @@ import {
   PerspectiveCompactCard,
   PerspectiveFeaturedCard,
 } from "@/components/perspectives/PerspectiveCards";
+import { MakeTobaileyYoursCard } from "@/components/conversion/MakeTobaileyYoursCard";
+import { resolveAudienceState } from "@/lib/auth/routeAccess";
+import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 import type { PerspectivesPayload } from "@/lib/services/perspectives/types";
 
 export default function PerspectivesPage() {
+  const { userSub, holdings, portfolioReady } = useUserPortfolio();
   const [payload, setPayload] = useState<PerspectivesPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const audience = resolveAudienceState({
+    authenticated: Boolean(userSub),
+    holdingsCount: holdings.length,
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -59,7 +68,7 @@ export default function PerspectivesPage() {
     };
   }, []);
 
-  if (loading && !payload) {
+  if ((!portfolioReady && userSub) || (loading && !payload)) {
     return <AppPageLoading />;
   }
 
@@ -85,6 +94,10 @@ export default function PerspectivesPage() {
             creators — macro, bitcoin, investing, and technology.
           </p>
         </section>
+
+        {audience !== "authenticated_holdings" ? (
+          <MakeTobaileyYoursCard audience={audience} showSoftLine />
+        ) : null}
 
         {error ? (
           <div className={`${appCardClass} px-5 py-6`}>

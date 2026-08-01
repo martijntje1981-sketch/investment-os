@@ -10,12 +10,17 @@ describe("bottom navigation active state", () => {
     "utf8",
   );
 
-  it("keeps only primary workflow destinations", () => {
+  it("keeps authenticated primary workflow destinations and guest explore destinations", () => {
+    expect(source).toContain("authenticatedItems");
     expect(source).toContain('href: "/dashboard"');
     expect(source).toContain('href: "/portfolio"');
     expect(source).toContain('href: "/analysis"');
     expect(source).toContain('href: "/goals"');
-    expect(source).not.toContain('href: "/news"');
+    expect(source).toContain("guestItems");
+    expect(source).toContain('href: "/perspectives"');
+    expect(source).toContain('href: "/news"');
+    expect(source).toContain('href: "/supported-instruments"');
+    expect(source).toContain('href: "/login"');
     expect(source).not.toContain('href: "/market-pulse"');
     expect(source).not.toContain('href: "/portfolio-health"');
     expect(source).toContain("grid-cols-4");

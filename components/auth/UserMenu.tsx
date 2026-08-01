@@ -23,25 +23,12 @@ import { useDismissibleMenu } from "@/lib/client/useDismissibleMenu";
 import { useUpcomingEventsNavVisible } from "@/lib/client/useUpcomingEventsNavVisible";
 import { clearCachedBaseCurrency } from "@/lib/client/portfolioBaseCurrencyStorage";
 import { filterExploreLinksForEventsAvailability } from "@/lib/services/events/availability";
+import {
+  isAuthRequiredPath,
+  isMarketingPath,
+  isPublicAppPath,
+} from "@/lib/auth/routeAccess";
 import { createClient } from "@/lib/supabase/client";
-
-const protectedRoutes = [
-  "/dashboard",
-  "/portfolio",
-  "/upload",
-  "/analysis",
-  "/briefing",
-  "/news",
-  "/discover",
-  "/goals",
-  "/settings",
-  "/holding",
-  "/market-pulse",
-  "/portfolio-health",
-  "/supported-instruments",
-  "/events",
-  "/perspectives",
-];
 
 type MenuLink = {
   href: string;
@@ -65,6 +52,13 @@ const exploreLinks: MenuLink[] = [
   { href: "/upload", label: "Import holdings", icon: FileUp },
 ];
 
+const guestExploreLinks: MenuLink[] = [
+  { href: "/perspectives", label: "Perspectives", icon: Sparkles },
+  { href: "/news", label: "Markets / News", icon: Newspaper },
+  { href: "/market-pulse", label: "Market Pulse", icon: Waves },
+  { href: "/supported-instruments", label: "Supported Instruments", icon: ListChecks },
+];
+
 function isMenuLinkActive(pathname: string, href: string, label: string): boolean {
   if (href === "/settings") {
     if (label === "Profile" || label === "Settings") {
@@ -72,6 +66,11 @@ function isMenuLinkActive(pathname: string, href: string, label: string): boolea
     }
   }
   return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function shouldShowAppHeader(pathname: string): boolean {
+  if (isMarketingPath(pathname)) return false;
+  return isAuthRequiredPath(pathname) || isPublicAppPath(pathname);
 }
 
 function MenuSection({
@@ -117,12 +116,66 @@ function MenuSection({
   );
 }
 
-/** Shared authenticated app header: Tobailey logo + profile menu. */
+function GuestHeader({ pathname }: { pathname: string }) {
+  return (
+    <header className="fixed inset-x-0 top-0 z-[60] border-b border-slate-200/80 bg-white/90 backdrop-blur-xl">
+      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 sm:h-16 sm:px-6">
+        <Link
+          href="/"
+          className="min-w-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+          aria-label="Tobailey home"
+        >
+          <TobaileyLogo size={36} showWordmark className="sm:gap-3" />
+        </Link>
+
+        <nav
+          className="hidden items-center gap-1 md:flex"
+          aria-label="Explore"
+        >
+          {guestExploreLinks.map((link) => {
+            const active = isMenuLinkActive(pathname, link.href, link.label);
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`rounded-lg px-3 py-2 text-[13px] font-semibold transition ${
+                  active
+                    ? "bg-brand/15 text-brand-navy"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-brand-navy"
+                }`}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div className="flex items-center gap-2">
+          <Link
+            href="/login"
+            className="inline-flex min-h-[40px] items-center rounded-xl px-3 text-[13px] font-semibold text-brand-navy transition hover:bg-brand-soft"
+          >
+            Sign in
+          </Link>
+          <Link
+            href="/signup"
+            className="inline-flex min-h-[40px] items-center rounded-xl bg-brand px-3.5 text-[13px] font-bold text-brand-navy transition hover:bg-brand-hover"
+          >
+            Get started
+          </Link>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+/** Shared app header: guest chrome on public routes, profile menu when signed in. */
 export default function UserMenu() {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
   const [user, setUser] = useState<User | null>(null);
+  const [authReady, setAuthReady] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const {
     open,
@@ -142,17 +195,21 @@ export default function UserMenu() {
     [upcomingEventsNavVisible],
   );
 
-  const isProtectedPage = protectedRoutes.some((route) =>
-    pathname.startsWith(route),
-  );
+  const showHeader = shouldShowAppHeader(pathname);
 
   useEffect(() => {
-    if (!isProtectedPage) return;
+    if (!showHeader) {
+      setAuthReady(true);
+      return;
+    }
 
     let active = true;
 
     supabase.auth.getUser().then(({ data }) => {
-      if (active) setUser(data.user ?? null);
+      if (active) {
+        setUser(data.user ?? null);
+        setAuthReady(true);
+      }
     });
 
     const { data: listener } = supabase.auth.onAuthStateChange(
@@ -165,9 +222,14 @@ export default function UserMenu() {
       active = false;
       listener.subscription.unsubscribe();
     };
-  }, [isProtectedPage, supabase]);
+  }, [showHeader, supabase]);
 
-  if (!isProtectedPage || !user) return null;
+  if (!showHeader || !authReady) return null;
+
+  if (!user) {
+    if (!isPublicAppPath(pathname)) return null;
+    return <GuestHeader pathname={pathname} />;
+  }
 
   const fullName =
     typeof user.user_metadata?.full_name === "string"

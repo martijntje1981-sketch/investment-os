@@ -21,9 +21,11 @@ const benefits = [
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; message?: string }>;
+  searchParams: Promise<{ error?: string; message?: string; next?: string }>;
 }) {
-  const { error, message } = await searchParams;
+  const { error, message, next } = await searchParams;
+  const { safeAuthRedirectPath } = await import("@/lib/auth/routeAccess");
+  const safeNext = safeAuthRedirectPath(next, "/dashboard");
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
@@ -69,6 +71,7 @@ export default async function LoginPage({
               className="mt-9 space-y-5"
               action={login}
             >
+              <input type="hidden" name="next" value={safeNext} />
               {message && (
                 <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
                   {message}

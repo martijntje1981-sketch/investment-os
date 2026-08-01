@@ -1,14 +1,13 @@
 ﻿import { NextResponse } from "next/server";
 
+import { safeAuthRedirectPath } from "@/lib/auth/routeAccess";
 import { createClient } from "@/lib/supabase/server";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
   const next = url.searchParams.get("next");
-  const safeNext = next?.startsWith("/") && !next.startsWith("//")
-    ? next
-    : "/dashboard";
+  const safeNext = safeAuthRedirectPath(next, "/dashboard");
 
   if (code) {
     const supabase = await createClient();
@@ -23,4 +22,3 @@ export async function GET(request: Request) {
     new URL("/login?error=The confirmation link is invalid or expired.", url.origin),
   );
 }
-
