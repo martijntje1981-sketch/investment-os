@@ -14,6 +14,7 @@ import { DashboardSummary } from "@/components/dashboard/DashboardSummary";
 import { DashboardTodaysDecision } from "@/components/dashboard/DashboardTodaysDecision";
 import { DashboardProductionDebugMarker } from "@/components/dashboard/DashboardProductionDebugMarker";
 import { DashboardUpcomingEventsWidget } from "@/components/dashboard/DashboardUpcomingEventsWidget";
+import { DashboardPerspectivesWidget } from "@/components/dashboard/DashboardPerspectivesWidget";
 import { HoldingsToday } from "@/components/dashboard/HoldingsToday";
 import { DashboardPortfolioExposureCard } from "@/components/dashboard/DashboardPortfolioExposureCard";
 import { DashboardInsightCard } from "@/components/dashboard/DashboardInsightCard";
@@ -196,6 +197,8 @@ export default function DashboardPage() {
           />
 
           <DashboardUpcomingEventsWidget />
+
+          <DashboardPerspectivesWidget />
 
           <div className="space-y-6 md:space-y-8">
             <div className="grid min-w-0 gap-6 lg:grid-cols-2">

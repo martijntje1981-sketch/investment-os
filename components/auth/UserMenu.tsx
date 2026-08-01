@@ -11,6 +11,7 @@ import {
   LogOut,
   Newspaper,
   Settings,
+  Sparkles,
   UserRound,
   Waves,
 } from "lucide-react";
@@ -39,6 +40,7 @@ const protectedRoutes = [
   "/portfolio-health",
   "/supported-instruments",
   "/events",
+  "/perspectives",
 ];
 
 type MenuLink = {
@@ -55,6 +57,7 @@ const accountLinks: MenuLink[] = [
 const exploreLinks: MenuLink[] = [
   { href: "/news", label: "News", icon: Newspaper },
   { href: "/discover", label: "Discover", icon: Compass },
+  { href: "/perspectives", label: "Perspectives", icon: Sparkles },
   { href: "/events", label: "Upcoming Events", icon: CalendarDays },
   { href: "/portfolio-health", label: "Portfolio Health", icon: Activity },
   { href: "/market-pulse", label: "Market Pulse", icon: Waves },
