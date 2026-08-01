@@ -77,7 +77,7 @@ export function MarketConsensusSection({
         <p className={`mt-3 max-w-3xl ${appAnalysisDarkHeaderCopyClass} text-sky-50/95`}>
           See how third-party analysts and market research currently assess the
           holdings in your portfolio. Consensus data reflects external opinions
-          and is not an Investment OS recommendation.
+          and is not an Tobailey recommendation.
         </p>
       </div>
 

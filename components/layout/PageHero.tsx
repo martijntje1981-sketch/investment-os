@@ -53,7 +53,7 @@ export function PageHero({
             ? "px-5 py-7 sm:px-7 sm:py-8 md:px-8 md:py-9"
             : "px-4 py-5 sm:px-6 sm:py-6"
           : cn(
-              "rounded-[24px] border border-slate-800/90 bg-slate-950 shadow-[0_16px_48px_rgba(15,23,42,0.28)]",
+              "rounded-[24px] border border-brand-navy/90 bg-brand-navy shadow-[0_16px_48px_rgba(11,31,58,0.28)]",
               "px-4 py-5 sm:rounded-[28px] sm:px-6 sm:py-6",
               "lg:min-h-[168px] lg:px-6 lg:py-6",
             ),

@@ -8,6 +8,7 @@ const RECOMMENDATION_PATTERNS = [
   /\bwe believe\b/i,
   /\bour (?:view|outlook|rating)\b/i,
   /\binvestment os\b/i,
+  /\itobailey\b/i,
   /\bstrong opportunity\b/i,
   /\bguaranteed\b/i,
   /\bwill (?:rise|fall|grow|decline)\b/i,

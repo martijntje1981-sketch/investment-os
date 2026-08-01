@@ -145,17 +145,18 @@ describe("dashboard portfolio value widget", () => {
     expect(flat.dailyMoveContextLine).toContain("Exchange-traded");
   });
 
-  it("uses large responsive typography classes for value and move", () => {
+  it("uses matched KPI typography for portfolio value and latest move", () => {
     const valueSource = readFileSync(
       path.resolve(process.cwd(), "components/dashboard/PortfolioValueCard.tsx"),
       "utf8",
     );
-    expect(valueSource).toContain("text-[2.625rem]");
-    expect(valueSource).toContain("lg:text-[4.25rem]");
-    expect(valueSource).toContain("text-[1.625rem]");
-    expect(valueSource).toContain("lg:text-[3rem]");
+    expect(valueSource).toContain("appHeroMatchedKpiClass");
+    expect(valueSource).toContain("appHeroMetricLabelClass");
+    expect(valueSource).toContain("appHeroPaddingCompactClass");
+    expect(valueSource).toContain("sm:grid-cols-2");
     expect(valueSource).toContain("tabular-nums");
     expect(valueSource).toContain("grid-cols-2");
-    expect(valueSource).toContain("text-xl font-black");
+    expect(valueSource).not.toContain("text-[2.625rem]");
+    expect(valueSource).not.toContain("lg:text-[4.25rem]");
   });
 });

@@ -6,11 +6,12 @@ import {
   LockKeyhole,
   Mail,
   ShieldCheck,
-  Sparkles,
   UserRound,
 } from "lucide-react";
 
 import { signup } from "@/app/auth/actions";
+import { TobaileyLogo } from "@/components/brand/TobaileyLogo";
+import { BRAND } from "@/lib/brand";
 import { PORTFOLIO_BASE_CURRENCY_OPTIONS } from "@/lib/types/portfolioBaseCurrency";
 
 const benefits = [
@@ -33,21 +34,9 @@ export default async function SignupPage({
           <div className="flex items-center justify-between">
             <Link
               href="/"
-              className="flex items-center gap-3"
+              className="flex items-center"
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-white shadow-lg">
-                <Sparkles className="h-5 w-5" />
-              </div>
-
-              <div>
-                <p className="text-sm font-black tracking-[-0.02em]">
-                  Investment OS
-                </p>
-
-                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-                  Complete investment system
-                </p>
-              </div>
+              <TobaileyLogo size={44} showWordmark showTagline />
             </Link>
 
             <Link
@@ -61,19 +50,19 @@ export default async function SignupPage({
 
           <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center py-14">
             <div>
-              <p className="text-sm font-bold uppercase tracking-[0.18em] text-blue-600">
+              <p className="text-sm font-bold uppercase tracking-[0.18em] text-brand">
                 Create your account
               </p>
 
-              <h1 className="mt-3 text-4xl font-black tracking-[-0.045em] sm:text-5xl">
+              <h1 className="mt-3 text-4xl font-black tracking-[-0.045em] text-brand-navy sm:text-5xl">
                 Build your personal
                 <span className="block text-slate-400">
-                  Investment OS
+                  {BRAND.name}
                 </span>
               </h1>
 
               <p className="mt-5 text-base leading-7 text-slate-600">
-                Bring your portfolio, market context and
+                {BRAND.tagline} Bring your portfolio, market context and
                 long-term financial goal together in one
                 clear investment control centre.
               </p>
@@ -245,7 +234,7 @@ export default async function SignupPage({
 
               <button
                 type="submit"
-                className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-6 text-sm font-bold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-slate-800"
+                className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-brand px-6 text-sm font-bold text-brand-navy shadow-lg transition hover:-translate-y-0.5 hover:bg-brand-hover"
               >
                 Create account
                 <ArrowRight className="h-4 w-4" />
@@ -275,15 +264,15 @@ export default async function SignupPage({
           </div>
         </section>
 
-        <section className="relative hidden overflow-hidden bg-gradient-to-br from-slate-950 via-slate-950 to-violet-950 px-12 py-14 text-white lg:flex lg:flex-col lg:justify-between">
-          <div className="absolute -right-40 -top-40 h-[540px] w-[540px] rounded-full bg-violet-600/25 blur-3xl" />
+        <section className="relative hidden overflow-hidden bg-brand-navy px-12 py-14 text-white lg:flex lg:flex-col lg:justify-between">
+          <div className="absolute -right-40 -top-40 h-[540px] w-[540px] rounded-full bg-brand/25 blur-3xl" />
 
-          <div className="absolute -bottom-48 -left-32 h-[540px] w-[540px] rounded-full bg-blue-600/20 blur-3xl" />
+          <div className="absolute -bottom-48 -left-32 h-[540px] w-[540px] rounded-full bg-sky-400/15 blur-3xl" />
 
           <div className="relative">
             <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold text-slate-200">
-              <ShieldCheck className="h-4 w-4 text-emerald-300" />
-              Built for private investors
+              <ShieldCheck className="h-4 w-4 text-brand" />
+              Your investments. Understood.
             </div>
 
             <h2 className="mt-8 max-w-2xl text-5xl font-black leading-[1.02] tracking-[-0.055em]">
@@ -292,7 +281,7 @@ export default async function SignupPage({
             </h2>
 
             <p className="mt-6 max-w-xl text-lg leading-8 text-slate-300">
-              Investment OS helps you understand what you
+              Tobailey helps you understand what you
               own, what is influencing it and what is
               required to reach your long-term target.
             </p>
@@ -321,7 +310,7 @@ export default async function SignupPage({
             </p>
 
             <p className="mt-3 text-xl font-bold">
-              Start your Investment OS
+              Start with Tobailey
             </p>
 
             <p className="mt-3 text-sm leading-6 text-slate-300">

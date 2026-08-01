@@ -12,7 +12,7 @@ export function ImportTrustBanner() {
             Private by design
           </h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
-            Investment OS never asks for your broker password. Uploads are read
+            Tobailey never asks for your broker password. Uploads are read
             once to build your portfolio, then saved securely to your account.
           </p>
         </div>

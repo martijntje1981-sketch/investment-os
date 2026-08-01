@@ -32,9 +32,9 @@ describe("bottom navigation active state", () => {
 
   it("uses shared active styling tokens", () => {
     expect(source).toContain('aria-current={active ? "page" : undefined}');
-    expect(source).toContain("bg-slate-950 text-white shadow-lg");
+    expect(source).toContain("bg-brand text-brand-navy shadow-sm");
     expect(source).toContain(
-      "text-slate-600 hover:bg-slate-100 hover:text-slate-950",
+      "text-slate-600 hover:bg-brand-soft hover:text-brand-navy",
     );
   });
 });

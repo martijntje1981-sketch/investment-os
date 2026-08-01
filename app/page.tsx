@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 
 import MarketingHeader from "@/components/marketing/MarketingHeader";
+import { TobaileyLogo } from "@/components/brand/TobaileyLogo";
 import {
   pricingAvailabilityNote,
   SUPPORTED_INSTRUMENTS_PATH,
@@ -104,15 +105,15 @@ const benefits = [
 const faqItems = [
   {
     question:
-      "Does Investment OS provide financial advice?",
+      "Does Tobailey provide financial advice?",
     answer:
-      "No. Investment OS is a monitoring and decision-support tool. It organises portfolio information, market context and scenarios, but it does not provide regulated personal financial advice.",
+      "No. Tobailey is a monitoring and decision-support tool. It organises portfolio information, market context and scenarios, but it does not provide regulated personal financial advice.",
   },
   {
     question:
-      "How does Investment OS receive my portfolio?",
+      "How does Tobailey receive my portfolio?",
     answer:
-      "Investment OS supports manual entry and CSV or Excel import, followed by a review step. You remain in control of which holdings are saved.",
+      "Tobailey supports manual entry and CSV or Excel import, followed by a review step. You remain in control of which holdings are saved.",
   },
   {
     question:
@@ -122,15 +123,15 @@ const faqItems = [
   },
   {
     question:
-      "Can I use Investment OS with any broker?",
+      "Can I use Tobailey with any broker?",
     answer:
-      "Yes. Investment OS is independent and supports portfolio information through manual entry and supported CSV or Excel imports — no broker login required.",
+      "Yes. Tobailey is independent and supports portfolio information through manual entry and supported CSV or Excel imports — no broker login required.",
   },
   {
     question:
       "Is my portfolio stored securely?",
     answer:
-      "Investment OS uses appropriate technical and organisational safeguards to protect account and portfolio information. You remain in control of the information you upload.",
+      "Tobailey uses appropriate technical and organisational safeguards to protect account and portfolio information. You remain in control of the information you upload.",
   },
 ];
 
@@ -169,24 +170,24 @@ export default async function MarketingHomePage() {
 
       <main>
         <section className="relative overflow-hidden border-b border-slate-200 bg-slate-50">
-          <div className="absolute left-1/2 top-0 h-[560px] w-[860px] -translate-x-1/2 rounded-full bg-gradient-to-br from-blue-200/45 via-violet-200/30 to-transparent blur-3xl" />
+          <div className="absolute left-1/2 top-0 h-[560px] w-[860px] -translate-x-1/2 rounded-full bg-gradient-to-br from-brand/30 via-sky-100/40 to-transparent blur-3xl" />
 
           <div className="relative mx-auto grid max-w-7xl gap-14 px-5 pb-20 pt-16 sm:px-8 sm:pb-28 sm:pt-24 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700">
-                <Sparkles className="h-4 w-4" />
-                Portfolio intelligence in one system
+              <div className="inline-flex items-center gap-2 rounded-full border border-brand/30 bg-brand-soft px-3 py-1.5 text-xs font-bold text-brand-navy">
+                <Sparkles className="h-4 w-4 text-brand" />
+                Your investments. Understood.
               </div>
 
-              <h1 className="mt-7 max-w-4xl text-5xl font-black leading-[0.98] tracking-[-0.065em] text-slate-950 sm:text-7xl">
+              <h1 className="mt-7 max-w-4xl text-5xl font-black leading-[0.98] tracking-[-0.065em] text-brand-navy sm:text-7xl">
                 Take control of your
-                <span className="block bg-gradient-to-r from-blue-600 via-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
+                <span className="block text-brand">
                   investment journey
                 </span>
               </h1>
 
               <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-600 sm:text-xl">
-                Investment OS brings your portfolio,
+                Tobailey brings your portfolio,
                 market context and long-term financial
                 goal together in one clear control
                 centre.
@@ -195,7 +196,7 @@ export default async function MarketingHomePage() {
               <div className="mt-9 flex flex-col gap-3 sm:flex-row">
                 <Link
                   href="/upload"
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-6 py-4 text-sm font-bold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-slate-800"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand px-6 py-4 text-sm font-bold text-brand-navy shadow-lg transition hover:-translate-y-0.5 hover:bg-brand-hover"
                 >
                   Start with your portfolio
                   <ArrowRight className="h-4 w-4" />
@@ -374,7 +375,7 @@ export default async function MarketingHomePage() {
 
         <section
           id="how-it-works"
-          className="scroll-mt-24 bg-slate-950 px-5 py-20 text-white sm:px-8 sm:py-28"
+          className="scroll-mt-24 bg-brand-navy px-5 py-20 text-white sm:px-8 sm:py-28"
         >
           <div className="mx-auto max-w-7xl">
             <div className="grid gap-12 lg:grid-cols-[0.75fr_1.25fr] lg:items-start">
@@ -389,7 +390,7 @@ export default async function MarketingHomePage() {
                 </h2>
 
                 <p className="mt-5 text-lg leading-8 text-slate-300">
-                  Investment OS is designed to remove
+                  Tobailey is designed to remove
                   friction. Start with what you already
                   have and build a clearer investment
                   process around it.
@@ -500,7 +501,7 @@ export default async function MarketingHomePage() {
           <div className="mx-auto max-w-6xl">
             <SectionHeading
               eyebrow="Simple pricing"
-              title="One plan. Your complete Investment OS."
+              title="One plan. Complete clarity with Tobailey."
               description="Monitor your portfolio, understand what is moving it and stay focused on your long-term financial goal."
             />
 
@@ -513,7 +514,7 @@ export default async function MarketingHomePage() {
                     </p>
 
                     <h3 className="mt-3 text-3xl font-black">
-                      Investment OS
+                      Tobailey
                     </h3>
 
                     <p className="mt-3 max-w-lg leading-7 text-slate-300">
@@ -557,7 +558,7 @@ export default async function MarketingHomePage() {
 
                 <Link
                   href="/upload"
-                  className="mt-9 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-6 py-4 text-sm font-bold text-white transition hover:bg-slate-800"
+                  className="mt-9 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand px-6 py-4 text-sm font-bold text-brand-navy transition hover:bg-brand-hover"
                 >
                   Start your 24-hour free trial
                   <ArrowRight className="h-4 w-4" />
@@ -605,7 +606,7 @@ export default async function MarketingHomePage() {
           </div>
         </section>
 
-        <section className="bg-slate-950 px-5 py-20 text-white sm:px-8 sm:py-24">
+        <section className="bg-brand-navy px-5 py-20 text-white sm:px-8 sm:py-24">
           <div className="mx-auto max-w-7xl">
             <div className="grid gap-5 md:grid-cols-3">
               {trustItems.map((item) => {
@@ -653,7 +654,7 @@ export default async function MarketingHomePage() {
                 <p className="mt-5 max-w-2xl text-lg leading-8 text-blue-100">
                   Bring your portfolio, market context
                   and financial goal together in one
-                  Investment Operating System.
+                  Your investments. Understood.
                 </p>
               </div>
 
@@ -681,21 +682,8 @@ export default async function MarketingHomePage() {
 
       <footer className="border-t border-slate-200 bg-slate-50 px-5 py-10 sm:px-8">
         <div className="mx-auto flex max-w-7xl flex-col justify-between gap-8 lg:flex-row lg:items-center">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-950 text-white">
-              <Sparkles className="h-5 w-5" />
-            </div>
-
-            <div>
-              <p className="font-black text-slate-950">
-                Investment OS
-              </p>
-
-              <p className="text-xs text-slate-500">
-                Portfolio intelligence, goals and market
-                context.
-              </p>
-            </div>
+          <div className="flex items-center">
+            <TobaileyLogo size={40} showWordmark showTagline />
           </div>
 
           <nav className="flex flex-wrap gap-x-6 gap-y-3 text-sm font-semibold text-slate-600">
@@ -710,7 +698,7 @@ export default async function MarketingHomePage() {
           </nav>
 
           <p className="max-w-md text-xs leading-5 text-slate-500 lg:text-right">
-            Investment OS is a decision-support and
+            Tobailey is a decision-support and
             monitoring tool. It does not provide personal
             financial advice or guarantee investment
             results.

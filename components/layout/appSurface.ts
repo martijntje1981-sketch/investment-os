@@ -8,13 +8,29 @@ export const appCardPaddingClass = "px-4 py-5 md:px-6 md:py-6";
 
 export const appCardPaddingCompactClass = "px-4 py-4 md:px-5 md:py-5";
 
-/** Shared solid dark hero surface — matches PageHero / main authenticated pages. */
+/** Shared solid dark hero surface — Tobailey navy. */
 export const appHeroShellClass =
-  "min-w-0 overflow-hidden rounded-[28px] border border-slate-800/90 bg-slate-950 text-white shadow-[0_16px_48px_rgba(15,23,42,0.28)] md:rounded-[32px]";
+  "min-w-0 overflow-hidden rounded-[28px] border border-brand-navy/90 bg-brand-navy text-white shadow-[0_16px_48px_rgba(11,31,58,0.28)] md:rounded-[32px]";
+
+/** Compact padding for dense dark heroes (dashboard + peers). */
+export const appHeroPaddingCompactClass =
+  "px-4 py-4 sm:px-6 sm:py-5";
+
+/** Matched KPI value size on dark heroes (portfolio value + move). */
+export const appHeroMatchedKpiClass =
+  "max-w-full break-words text-[1.625rem] font-bold leading-none tracking-[-0.035em] tabular-nums sm:text-[2rem] md:text-[2.25rem]";
 
 /** Display — main portfolio value and true hero KPIs only. */
 export const appDisplayClass =
   "text-[2.25rem] font-black leading-none tracking-[-0.04em] sm:text-[3rem] md:text-[3.375rem]";
+
+/** Primary action button — Tobailey blue with navy text for contrast. */
+export const appPrimaryButtonClass =
+  "inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-brand px-5 py-3 text-sm font-bold text-brand-navy transition hover:bg-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2";
+
+/** Soft / secondary brand accent control. */
+export const appBrandSoftButtonClass =
+  "inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-brand/30 bg-brand-soft px-5 py-3 text-sm font-bold text-brand-navy transition hover:bg-brand/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2";
 
 /** Secondary hero KPI (e.g. today's move) — card-value scale, not display. */
 export const appHeroKpiClass =
@@ -135,7 +151,7 @@ export const appBottomNavFeaturedLabelClass = "text-[13px] font-semibold";
 
 /** News hub — aligned to shared scale. */
 export const appNewsEyebrowClass =
-  "text-[13px] font-bold uppercase tracking-[0.1em] text-blue-700";
+  "text-[13px] font-bold uppercase tracking-[0.1em] text-brand-navy";
 
 export const appNewsSectionTitleClass = appSectionTitleClass;
 

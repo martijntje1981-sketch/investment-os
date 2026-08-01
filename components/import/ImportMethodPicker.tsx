@@ -52,8 +52,8 @@ function ImportMethodCard({
   prominent?: boolean;
 }) {
   const buttonClass = prominent
-    ? "mt-5 inline-flex min-h-[48px] w-full items-center justify-center rounded-xl bg-slate-950 px-4 py-3 text-sm font-bold text-white sm:w-auto"
-    : "mt-5 inline-flex min-h-[48px] w-full items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-900 sm:w-auto";
+    ? "mt-5 inline-flex min-h-[48px] w-full items-center justify-center rounded-xl bg-brand px-4 py-3 text-sm font-bold text-brand-navy sm:w-auto"
+    : "mt-5 inline-flex min-h-[48px] w-full items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-brand-navy sm:w-auto";
 
   return (
     <article

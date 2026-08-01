@@ -5,7 +5,7 @@ export const LIVE_PRICING_AUTO_SELECTED_COPY =
   "Automatically selected from a verified listing.";
 
 export const MANUAL_PRICING_SELECTION_TITLE =
-  "Choose the listing Investment OS should use for live prices.";
+  "Choose the listing Tobailey should use for live prices.";
 
 export type HoldingVenuePresentation = {
   purchaseExchangeCode: string | null;

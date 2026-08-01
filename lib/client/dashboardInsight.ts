@@ -118,7 +118,7 @@ export function buildDashboardInsightSections(
 export function buildDashboardInsight(summary: DashboardSummary): string {
   if (summary.holdingCount === 0) {
     return limitWords(
-      "Add holdings manually or import a spreadsheet to receive a daily insight based on your holdings, goal progress, and verified market moves. Investment OS only reports what your saved data supports.",
+      "Add holdings manually or import a spreadsheet to receive a daily insight based on your holdings, goal progress, and verified market moves. Tobailey only reports what your saved data supports.",
       MAX_WORDS,
     );
   }

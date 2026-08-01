@@ -16,6 +16,7 @@ import {
 import Link from "next/link";
 import type { User } from "@supabase/supabase-js";
 
+import { TobaileyLogo } from "@/components/brand/TobaileyLogo";
 import { useDismissibleMenu } from "@/lib/client/useDismissibleMenu";
 import { clearCachedBaseCurrency } from "@/lib/client/portfolioBaseCurrencyStorage";
 import { createClient } from "@/lib/supabase/client";
@@ -94,7 +95,7 @@ function MenuSection({
               aria-current={active ? "page" : undefined}
               className={`flex min-h-[40px] items-center gap-2.5 rounded-lg px-2.5 text-[13px] font-semibold transition ${
                 active
-                  ? "bg-white/15 text-white"
+                  ? "bg-brand/20 text-brand"
                   : "text-white/75 hover:bg-white/10 hover:text-white"
               }`}
             >
@@ -108,6 +109,7 @@ function MenuSection({
   );
 }
 
+/** Shared authenticated app header: Tobailey logo + profile menu. */
 export default function UserMenu() {
   const pathname = usePathname();
   const router = useRouter();
@@ -161,7 +163,7 @@ export default function UserMenu() {
       .filter(Boolean)
       .slice(0, 2)
       .map((part) => part[0]?.toUpperCase())
-      .join("") || "IO";
+      .join("") || "TB";
 
   async function handleSignOut() {
     close();
@@ -173,87 +175,97 @@ export default function UserMenu() {
   }
 
   return (
-    <div className="fixed right-4 top-4 z-[60] sm:right-6 sm:top-5">
-      <div ref={containerRef} className="relative">
-        <button
-          ref={triggerRef}
-          type="button"
-          aria-expanded={open}
-          aria-controls={menuId}
-          aria-haspopup="menu"
-          aria-label="Profile menu"
-          onClick={toggle}
-          className="flex cursor-pointer list-none items-center gap-2 rounded-xl border border-slate-800/80 bg-slate-950 px-2 py-1.5 text-white shadow-lg transition hover:bg-slate-900 sm:gap-2.5 sm:px-2.5 sm:py-2"
+    <header className="fixed inset-x-0 top-0 z-[60] border-b border-slate-200/80 bg-white/90 backdrop-blur-xl">
+      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 sm:h-16 sm:px-6">
+        <Link
+          href="/dashboard"
+          className="min-w-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+          aria-label="Tobailey dashboard"
         >
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 text-[11px] font-black text-white">
-            {initials}
-          </span>
-          <span className="hidden min-w-0 text-left sm:block">
-            <span className="block max-w-[8.5rem] truncate text-[13px] font-bold leading-tight text-white">
-              {fullName}
-            </span>
-            <span className="block max-w-[8.5rem] truncate text-[11px] font-medium text-white/50">
-              Signed in
-            </span>
-          </span>
-        </button>
+          <TobaileyLogo size={36} showWordmark className="sm:gap-3" />
+        </Link>
 
-        {open ? (
-          <div
-            id={menuId}
-            role="menu"
-            aria-label="Profile"
-            className="absolute right-0 mt-2 w-[15.5rem] overflow-hidden rounded-xl border border-white/10 bg-slate-950 shadow-[0_18px_40px_rgba(15,23,42,0.45)] sm:w-64"
+        <div ref={containerRef} className="relative shrink-0">
+          <button
+            ref={triggerRef}
+            type="button"
+            aria-expanded={open}
+            aria-controls={menuId}
+            aria-haspopup="menu"
+            aria-label="Profile menu"
+            onClick={toggle}
+            className="flex cursor-pointer list-none items-center gap-2 rounded-xl border border-brand-navy/15 bg-brand-navy px-2 py-1.5 text-white shadow-sm transition hover:bg-brand-navy/90 sm:gap-2.5 sm:px-2.5 sm:py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
           >
-            <div className="border-b border-white/10 px-3 py-2.5">
-              <div className="flex items-center gap-2.5">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/10 text-[11px] font-black text-white">
-                  {initials}
-                </span>
-                <div className="min-w-0">
-                  <p className="truncate text-[13px] font-bold text-white">
-                    {fullName}
-                  </p>
-                  <p className="mt-0.5 truncate text-[11px] font-medium text-white/45">
-                    {email}
-                  </p>
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand/20 text-[11px] font-black text-brand">
+              {initials}
+            </span>
+            <span className="hidden min-w-0 text-left sm:block">
+              <span className="block max-w-[8.5rem] truncate text-[13px] font-bold leading-tight text-white">
+                {fullName}
+              </span>
+              <span className="block max-w-[8.5rem] truncate text-[11px] font-medium text-white/50">
+                Signed in
+              </span>
+            </span>
+          </button>
+
+          {open ? (
+            <div
+              id={menuId}
+              role="menu"
+              aria-label="Profile"
+              className="absolute right-0 mt-2 w-[15.5rem] overflow-hidden rounded-xl border border-white/10 bg-brand-navy shadow-[0_18px_40px_rgba(11,31,58,0.45)] sm:w-64"
+            >
+              <div className="border-b border-white/10 px-3 py-2.5">
+                <div className="flex items-center gap-2.5">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand/20 text-[11px] font-black text-brand">
+                    {initials}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="truncate text-[13px] font-bold text-white">
+                      {fullName}
+                    </p>
+                    <p className="mt-0.5 truncate text-[11px] font-medium text-white/45">
+                      {email}
+                    </p>
+                  </div>
                 </div>
               </div>
+
+              <MenuSection
+                title="Account"
+                links={accountLinks}
+                pathname={pathname}
+                onNavigate={close}
+              />
+
+              <div className="mx-3 border-t border-white/10" />
+
+              <MenuSection
+                title="Explore"
+                links={exploreLinks}
+                pathname={pathname}
+                onNavigate={close}
+              />
+
+              <div className="mx-3 border-t border-white/10" />
+
+              <div className="px-1.5 py-1.5">
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => void handleSignOut()}
+                  disabled={isSigningOut}
+                  className="flex min-h-[40px] w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-[13px] font-semibold text-rose-300 transition hover:bg-rose-500/10 disabled:cursor-wait disabled:opacity-60"
+                >
+                  <LogOut className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                  {isSigningOut ? "Signing out…" : "Sign out"}
+                </button>
+              </div>
             </div>
-
-            <MenuSection
-              title="Account"
-              links={accountLinks}
-              pathname={pathname}
-              onNavigate={close}
-            />
-
-            <div className="mx-3 border-t border-white/10" />
-
-            <MenuSection
-              title="Explore"
-              links={exploreLinks}
-              pathname={pathname}
-              onNavigate={close}
-            />
-
-            <div className="mx-3 border-t border-white/10" />
-
-            <div className="px-1.5 py-1.5">
-              <button
-                type="button"
-                role="menuitem"
-                onClick={() => void handleSignOut()}
-                disabled={isSigningOut}
-                className="flex min-h-[40px] w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-[13px] font-semibold text-rose-300 transition hover:bg-rose-500/10 disabled:cursor-wait disabled:opacity-60"
-              >
-                <LogOut className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                {isSigningOut ? "Signing out…" : "Sign out"}
-              </button>
-            </div>
-          </div>
-        ) : null}
+          ) : null}
+        </div>
       </div>
-    </div>
+    </header>
   );
 }

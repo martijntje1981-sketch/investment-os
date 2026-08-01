@@ -8,7 +8,7 @@ const sections = [
     title: "1. Who we are",
     content: (
       <p>
-        Investment OS is an independent portfolio monitoring and decision-support
+        Tobailey is an independent portfolio monitoring and decision-support
         platform. For privacy questions or requests,
         please use our <Link href="/contact">contact form</Link>.
       </p>
@@ -60,7 +60,7 @@ const sections = [
     title: "5. AI-assisted processing",
     content: (
       <p>
-        Investment OS may use AI services to produce portfolio summaries and
+        Tobailey may use AI services to produce portfolio summaries and
         analysis. AI output can be inaccurate. Imported and manually entered
         information must be reviewed before it is saved or relied upon. Uploaded
         information is shared with service providers only as needed to perform the
@@ -99,7 +99,7 @@ const sections = [
         We use reasonable technical and organisational safeguards designed to
         protect information. No online service can guarantee absolute security.
         Do not upload passwords, identity documents or information that is not
-        needed to use Investment OS.
+        needed to use Tobailey.
       </p>
     ),
   },
@@ -165,7 +165,7 @@ export default function PrivacyPage() {
               Privacy Policy
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600">
-              This policy explains how Investment OS handles personal information
+              This policy explains how Tobailey handles personal information
               when you visit or use the platform.
             </p>
             <p className="mt-4 text-sm font-semibold text-slate-500">

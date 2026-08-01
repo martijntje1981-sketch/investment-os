@@ -511,7 +511,7 @@ const defaultIntelligence: HoldingIntelligence = {
   thesis:
     "This investment forms part of the portfolio. Its precise role and investment thesis should be reviewed and classified.",
   osInsight:
-    "Investment OS has loaded the position successfully, but more product information is needed for a complete intelligence assessment.",
+    "Tobailey has loaded the position successfully, but more product information is needed for a complete intelligence assessment.",
   action: "Review holding",
   actionReason:
     "Confirm the investment category, strategic role and acceptable portfolio allocation.",
@@ -987,7 +987,7 @@ export default function HoldingDetailPage() {
 
                 <div>
                   <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
-                    Investment OS action
+                    Tobailey action
                   </p>
 
                   <h2 className="mt-1 text-2xl font-bold">
@@ -1034,7 +1034,7 @@ export default function HoldingDetailPage() {
                     </p>
 
                     <h2 className="mt-1 text-2xl font-bold">
-                      What Investment OS follows
+                      What Tobailey follows
                     </h2>
                   </div>
                 </div>
@@ -1185,7 +1185,7 @@ export default function HoldingDetailPage() {
                   <p className="mt-3 leading-7 text-slate-600">
                     The position currently represents{" "}
                     <strong>{formatPercentage(allocation)}</strong> of the
-                    portfolio. Its Investment OS monitoring level is{" "}
+                    portfolio. Its Tobailey monitoring level is{" "}
                     <strong>
                       {formatPercentage(intelligence.concentrationLimit)}
                     </strong>

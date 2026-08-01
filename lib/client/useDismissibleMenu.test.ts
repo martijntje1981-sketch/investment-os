@@ -249,6 +249,8 @@ describe("UserMenu profile wiring", () => {
     expect(source).toContain('aria-expanded={open}');
     expect(source).toContain("aria-controls={menuId}");
     expect(source).toContain('aria-label="Profile menu"');
+    expect(source).toContain("TobaileyLogo");
+    expect(source).toContain('href="/dashboard"');
     expect(source).toContain("Sign out");
     expect(source).not.toContain("<details");
   });

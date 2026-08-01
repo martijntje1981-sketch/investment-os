@@ -152,7 +152,7 @@ export default function DashboardPage() {
 
   return (
     <PageContainer
-      className="bg-[#F4F7FB] px-4 pb-32 pt-6 sm:px-6 sm:pt-8"
+      className="bg-[#F4F7FB] px-4 pb-32 pt-[4.5rem] sm:px-6 sm:pt-[5rem]"
       stackClassName="gap-6 md:gap-8"
     >
       <PortfolioSyncBanner
@@ -248,7 +248,7 @@ export default function DashboardPage() {
       ) : null}
 
       <p className="rounded-[28px] border border-slate-200/70 bg-white/95 px-5 py-5 text-center text-[13px] leading-[1.7] text-slate-500 shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:px-6 sm:py-6 sm:text-sm">
-        Investment OS is a monitoring tool. It does not provide personal
+        Tobailey is a monitoring tool. It does not provide personal
         financial advice.
       </p>
 

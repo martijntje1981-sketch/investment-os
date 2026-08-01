@@ -559,7 +559,7 @@ export default function PortfolioPage() {
               </button>
               <button
                 onClick={() => openAdd("investment")}
-                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-slate-950"
+                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-bold text-brand-navy hover:bg-brand-hover"
               >
                 <Plus className="h-4 w-4" /> Add investment
               </button>
@@ -620,7 +620,7 @@ export default function PortfolioPage() {
                 <h2 className={appSectionTitleClass}>Holdings</h2>
                 <p className={`mt-1.5 ${appSectionMetaClass}`}>{holdings.length} positions</p>
               </div>
-              <Link href="/upload" className="inline-flex items-center gap-2 text-sm font-bold text-blue-700"><Upload className="h-4 w-4" /> Import</Link>
+              <Link href="/upload" className="inline-flex items-center gap-2 text-sm font-bold text-brand-navy hover:text-brand"><Upload className="h-4 w-4" /> Import</Link>
             </div>
 
             {holdings.length === 0 ? (
@@ -997,7 +997,7 @@ export default function PortfolioPage() {
                 (editorCurrencyLocked !== "EUR" &&
                   baseCurrency !== editorCurrencyLocked)
               }
-              className="w-full rounded-xl bg-slate-950 px-5 py-3.5 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-60"
+              className="w-full rounded-xl bg-brand px-5 py-3.5 text-sm font-bold text-brand-navy hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-60"
             >
               Save holding
             </button>

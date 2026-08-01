@@ -6,19 +6,19 @@ import MarketingHeader from "@/components/marketing/MarketingHeader";
 const sections = [
   {
     title: "1. About these terms",
-    text: "These Terms & Conditions govern access to and use of Investment OS. By creating an account or using the platform, you agree to these terms. If you do not agree, do not use the service.",
+    text: "These Terms & Conditions govern access to and use of Tobailey. By creating an account or using the platform, you agree to these terms. If you do not agree, do not use the service.",
   },
   {
     title: "2. The service",
-    text: "Investment OS is an independent portfolio-monitoring and decision-support platform. Features may include portfolio imports, market information, calculations, goal tracking, news summaries and AI-assisted insights. Features, availability and data coverage may change as the product develops.",
+    text: "Tobailey is an independent portfolio-monitoring and decision-support platform. Features may include portfolio imports, market information, calculations, goal tracking, news summaries and AI-assisted insights. Features, availability and data coverage may change as the product develops.",
   },
   {
     title: "3. No financial advice",
-    text: "Investment OS does not provide personalised investment, tax, legal or financial advice. Information and calculations are provided for general informational and monitoring purposes only. Nothing on the platform is a recommendation to buy, sell or hold any asset. You remain responsible for your decisions and should consult a qualified professional where appropriate.",
+    text: "Tobailey does not provide personalised investment, tax, legal or financial advice. Information and calculations are provided for general informational and monitoring purposes only. Nothing on the platform is a recommendation to buy, sell or hold any asset. You remain responsible for your decisions and should consult a qualified professional where appropriate.",
   },
   {
     title: "4. Market data and AI limitations",
-    text: "Market data may be delayed, incomplete or unavailable. AI-generated extraction and summaries can contain errors. You must review imported holdings, prices, calculations and AI output before relying on them. Investment OS does not guarantee that information is accurate, complete, current or suitable for a particular purpose.",
+    text: "Market data may be delayed, incomplete or unavailable. AI-generated extraction and summaries can contain errors. You must review imported holdings, prices, calculations and AI output before relying on them. Tobailey does not guarantee that information is accurate, complete, current or suitable for a particular purpose.",
   },
   {
     title: "5. Accounts and acceptable use",
@@ -26,11 +26,11 @@ const sections = [
   },
   {
     title: "6. Your portfolio information",
-    text: "You retain responsibility for and rights in the information you upload. You permit Investment OS and its service providers to process that information only as needed to operate, secure and improve the requested service. Do not upload broker passwords, identity documents or unnecessary sensitive information.",
+    text: "You retain responsibility for and rights in the information you upload. You permit Tobailey and its service providers to process that information only as needed to operate, secure and improve the requested service. Do not upload broker passwords, identity documents or unnecessary sensitive information.",
   },
   {
     title: "7. Service availability and records",
-    text: "The platform may occasionally contain errors or experience interruptions. Important financial records should always be retained independently; Investment OS must not be used as your only record of a portfolio.",
+    text: "The platform may occasionally contain errors or experience interruptions. Important financial records should always be retained independently; Tobailey must not be used as your only record of a portfolio.",
   },
   {
     title: "8. Subscriptions, trial and cancellation",
@@ -38,7 +38,7 @@ const sections = [
   },
   {
     title: "9. Intellectual property",
-    text: "Investment OS and its software, design, branding and original content are protected by intellectual-property rights. These terms grant you a limited, personal, non-exclusive and non-transferable right to use the service for its intended purpose. Third-party data and content remain subject to their owners' rights and licence terms.",
+    text: "Tobailey and its software, design, branding and original content are protected by intellectual-property rights. These terms grant you a limited, personal, non-exclusive and non-transferable right to use the service for its intended purpose. Third-party data and content remain subject to their owners' rights and licence terms.",
   },
   {
     title: "10. Availability and changes",
@@ -46,7 +46,7 @@ const sections = [
   },
   {
     title: "11. Liability",
-    text: "To the fullest extent permitted by applicable law, Investment OS is not liable for investment losses, missed opportunities, decisions based on inaccurate or delayed information, third-party services, or indirect or consequential loss. Nothing in these terms excludes liability that cannot legally be excluded or limits mandatory consumer rights.",
+    text: "To the fullest extent permitted by applicable law, Tobailey is not liable for investment losses, missed opportunities, decisions based on inaccurate or delayed information, third-party services, or indirect or consequential loss. Nothing in these terms excludes liability that cannot legally be excluded or limits mandatory consumer rights.",
   },
   {
     title: "12. Suspension and termination",
@@ -54,7 +54,7 @@ const sections = [
   },
   {
     title: "13. Privacy",
-    text: "Our Privacy Policy explains how personal information is handled. It forms part of the framework governing your use of Investment OS.",
+    text: "Our Privacy Policy explains how personal information is handled. It forms part of the framework governing your use of Tobailey.",
   },
   {
     title: "14. Governing law and disputes",
@@ -94,7 +94,7 @@ export default function TermsPage() {
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600">
               These terms explain the rules and responsibilities that apply when
-              using Investment OS.
+              using Tobailey.
             </p>
             <p className="mt-4 text-sm font-semibold text-slate-500">
               Effective 17 July 2026 · Last updated 17 July 2026
@@ -122,7 +122,7 @@ export default function TermsPage() {
                       href="/contact"
                       className="mt-3 inline-flex font-bold text-blue-700 underline"
                     >
-                      Contact Investment OS
+                      Contact Tobailey
                     </Link>
                   )}
                 </section>

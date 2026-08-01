@@ -357,7 +357,7 @@ export function ManageContributionsDialog({
                   className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm"
                   placeholder={
                     showOpeningBalance
-                      ? "e.g. Total contributed before using Investment OS"
+                      ? "e.g. Total contributed before using Tobailey"
                       : "Optional note"
                   }
                 />

@@ -52,12 +52,12 @@ export const PORTFOLIO_SETUP_STEPS = [
 ] as const;
 
 export const PORTFOLIO_SETUP_COPY = {
-  welcomeEyebrow: "Welcome to Investment OS",
+  welcomeEyebrow: "Welcome to Tobailey",
   returningEyebrow: "Portfolio empty",
   headline: "Build your portfolio",
   returningHeadline: "Add holdings to continue",
   supporting:
-    "Add your investments so Investment OS can analyse your performance, exposure, market drivers and goals.",
+    "Your investments. Understood. Add your holdings so Tobailey can analyse your performance, exposure, market drivers and goals.",
   returningSupporting:
     "Your portfolio has no positions yet. Import a spreadsheet or add holdings to restore analysis and goals.",
   importPrimary: "Import portfolio",

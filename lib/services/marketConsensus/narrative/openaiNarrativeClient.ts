@@ -29,7 +29,7 @@ function buildPrompt(input: MarketConsensusNarrativeInput): string {
     "Write a neutral summary of third-party market consensus data.",
     "Rules:",
     "- Do not recommend buying, selling or holding.",
-    "- Do not use phrases like 'we believe', 'you should', 'guaranteed', or 'Investment OS'.",
+    "- Do not use phrases like 'we believe', 'you should', 'guaranteed', 'Investment OS', or 'Tobailey'.",
     "- Do not invent numbers, targets, analyst counts or facts not present in the input.",
     "- Use at most 3 concise sentences in the summary.",
     "- Provide up to 3 supporting factors and up to 3 key risks, each max 90 characters.",

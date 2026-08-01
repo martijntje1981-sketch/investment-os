@@ -9,9 +9,9 @@ import {
   Mail,
   MessageSquareText,
   ShieldCheck,
-  Sparkles,
 } from "lucide-react";
 
+import { TobaileyLogo } from "@/components/brand/TobaileyLogo";
 const contactOptions = [
   {
     icon: Bug,
@@ -23,7 +23,7 @@ const contactOptions = [
     icon: Lightbulb,
     title: "Feature requests",
     description:
-      "Share ideas that could make Investment OS more useful for private investors.",
+      "Share ideas that could make Tobailey more useful for private investors.",
   },
   {
     icon: Building2,
@@ -38,20 +38,8 @@ export default function ContactPage() {
     <main className="min-h-screen bg-slate-50 text-slate-950">
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5 sm:px-8">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-950 text-white shadow-lg">
-              <Sparkles className="h-5 w-5" />
-            </div>
-
-            <div>
-              <p className="text-sm font-black tracking-[-0.02em]">
-                Investment OS
-              </p>
-
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-                Complete investment system
-              </p>
-            </div>
+          <Link href="/" className="inline-flex items-center">
+            <TobaileyLogo size={44} showWordmark showTagline />
           </Link>
 
           <Link
@@ -73,7 +61,7 @@ export default function ContactPage() {
           </div>
 
           <p className="mt-7 text-sm font-bold uppercase tracking-[0.18em] text-blue-600">
-            Contact Investment OS
+            Contact Tobailey
           </p>
 
           <h1 className="mt-4 text-5xl font-black tracking-[-0.055em] sm:text-6xl">
@@ -82,7 +70,7 @@ export default function ContactPage() {
 
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-slate-600">
             Ask a question, report a problem or share an idea. Feedback from
-            early users helps us build a stronger Investment OS.
+            early users helps us build a stronger Tobailey.
           </p>
         </div>
       </section>
@@ -123,7 +111,7 @@ export default function ContactPage() {
               </h2>
 
               <p className="mt-3 text-sm leading-7 text-slate-300">
-                Investment OS support will never ask for your broker password,
+                Tobailey support will never ask for your broker password,
                 recovery codes or trading credentials.
               </p>
             </article>
@@ -227,7 +215,7 @@ export default function ContactPage() {
                 />
 
                 <span>
-                  I understand that Investment OS does not provide personal
+                  I understand that Tobailey does not provide personal
                   financial advice.
                 </span>
               </label>
@@ -248,7 +236,7 @@ export default function ContactPage() {
 
                 <p className="text-sm leading-6 text-slate-600">
                   For commercial or partnership enquiries, include your
-                  organisation and intended use of Investment OS in the
+                  organisation and intended use of Tobailey in the
                   message.
                 </p>
               </div>
@@ -260,7 +248,7 @@ export default function ContactPage() {
       <footer className="border-t border-slate-200 bg-white px-5 py-8 sm:px-8">
         <div className="mx-auto flex max-w-6xl flex-col justify-between gap-5 sm:flex-row sm:items-center">
           <p className="text-xs leading-5 text-slate-500">
-            © {new Date().getFullYear()} Investment OS. All rights reserved.
+            © {new Date().getFullYear()} Tobailey. All rights reserved.
           </p>
 
           <nav className="flex flex-wrap gap-5 text-xs font-bold text-slate-600">

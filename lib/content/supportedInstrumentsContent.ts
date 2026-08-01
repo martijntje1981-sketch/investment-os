@@ -63,7 +63,7 @@ export function getSupportedCryptoDisplayRows(): SupportedCryptoDisplayRow[] {
       livePricingStatus: "Supported",
       pricingRoute: "Direct pair when the exact CC listing exists",
       notes:
-        "Investment OS treats EODHD's active CC coverage as the source of truth instead of a fixed coin list.",
+        "Tobailey treats EODHD's active CC coverage as the source of truth instead of a fixed coin list.",
     },
     {
       name: "Supported conversion pairs",
@@ -71,7 +71,7 @@ export function getSupportedCryptoDisplayRows(): SupportedCryptoDisplayRow[] {
       livePricingStatus: "Supported via conversion",
       pricingRoute: "USD source pair plus a verified live FX conversion when needed",
       notes:
-        "If the direct CC pair is missing, Investment OS can reuse a supported USD pair when the required conversion path is already verified.",
+        "If the direct CC pair is missing, Tobailey can reuse a supported USD pair when the required conversion path is already verified.",
     },
   ];
 }
@@ -79,12 +79,12 @@ export function getSupportedCryptoDisplayRows(): SupportedCryptoDisplayRow[] {
 export const supportedInstrumentsHero = {
   title: "Supported instruments",
   subtitle:
-    "See which investments currently support live pricing in Investment OS. Unsupported holdings can still be saved, but live prices and performance may be unavailable.",
+    "See which investments currently support live pricing in Tobailey. Unsupported holdings can still be saved, but live prices and performance may be unavailable.",
 } as const;
 
 export const cryptoSectionCopy = {
   intro:
-    "Crypto pricing depends on the selected trading pair and active EODHD CC coverage. When a direct pair is unavailable, Investment OS may use a supported USD pair and a live currency conversion rate.",
+    "Crypto pricing depends on the selected trading pair and active EODHD CC coverage. When a direct pair is unavailable, Tobailey may use a supported USD pair and a live currency conversion rate.",
   footnote:
     "Coverage is pair-based, not coin-list based: a crypto can be supported for one trading pair and unavailable for another.",
 } as const;
@@ -94,7 +94,7 @@ export const stocksEtfsSectionCopy = {
   paragraphs: [
     "Most listed European and US stocks, ETFs and ETCs can be matched using ticker, ISIN and exchange information.",
     "Live pricing depends on the instrument and market-data coverage.",
-    "The same security may trade on multiple exchanges; Investment OS uses a reference exchange where appropriate.",
+    "The same security may trade on multiple exchanges; Tobailey uses a reference exchange where appropriate.",
     "An unsupported or unmatched holding can still be saved for manual review.",
   ],
   notice:

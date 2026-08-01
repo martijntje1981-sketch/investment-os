@@ -1,5 +1,5 @@
 /**
- * Normalizes provider-specific analyst ratings into Investment OS labels.
+ * Normalizes provider-specific analyst ratings into Tobailey labels.
  */
 
 import type {

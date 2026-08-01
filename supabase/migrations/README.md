@@ -1,6 +1,6 @@
 # Phase 1 database migrations
 
-These SQL migrations define the Investment OS cloud data foundation. They are **not wired to the Next.js app yet** and do not change current localStorage behaviour.
+These SQL migrations define the Tobailey cloud data foundation. They are **not wired to the Next.js app yet** and do not change current localStorage behaviour.
 
 ## Before applying remotely
 

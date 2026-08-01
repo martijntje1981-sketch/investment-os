@@ -21,7 +21,7 @@ describe("authenticated routing", () => {
     );
 
     expect(homePage).toContain("MarketingHeader");
-    expect(homePage).toContain("Investment OS");
+    expect(homePage).toContain("Tobailey");
   });
 
   it("routes login and auth callback to dashboard by default", () => {

@@ -13,6 +13,7 @@ import {
   Sparkles,
 } from "lucide-react";
 
+import { TobaileyLogo } from "@/components/brand/TobaileyLogo";
 import {
   SUPPORTED_INSTRUMENTS_PATH,
 } from "@/lib/content/supportedInstrumentsContent";
@@ -36,23 +37,23 @@ const faqSections: Array<{
   questions: FaqQuestion[];
 }> = [
   {
-    title: "About Investment OS",
+    title: "About Tobailey",
     icon: Sparkles,
     questions: [
       {
-        question: "What is Investment OS?",
+        question: "What is Tobailey?",
         answer:
-          "Investment OS is a portfolio-monitoring and decision-support platform for private investors. It brings portfolio information, market context, holding analysis and financial goals together in one organised system.",
+          "Tobailey is a portfolio-monitoring and decision-support platform for private investors. It brings portfolio information, market context, holding analysis and financial goals together in one organised system.",
       },
       {
-        question: "Who is Investment OS designed for?",
+        question: "Who is Tobailey designed for?",
         answer:
-          "Investment OS is designed primarily for private investors who want a clearer overview of their portfolio and a more structured way to monitor risks, opportunities and long-term progress.",
+          "Tobailey is designed primarily for private investors who want a clearer overview of their portfolio and a more structured way to monitor risks, opportunities and long-term progress.",
       },
       {
-        question: "Does Investment OS provide financial advice?",
+        question: "Does Tobailey provide financial advice?",
         answer:
-          "No. Investment OS is an informational, analytical and decision-support tool. It does not provide regulated personal financial advice, investment recommendations or guarantees about future performance.",
+          "No. Tobailey is an informational, analytical and decision-support tool. It does not provide regulated personal financial advice, investment recommendations or guarantees about future performance.",
       },
     ],
   },
@@ -63,12 +64,12 @@ const faqSections: Array<{
       {
         question: "How do I add my portfolio?",
         answer:
-          "You can add your portfolio through manual entry, CSV or Excel import, or by recording cash on the portfolio page. Investment OS helps match holdings to the correct instruments, and you review the details before they are saved.",
+          "You can add your portfolio through manual entry, CSV or Excel import, or by recording cash on the portfolio page. Tobailey helps match holdings to the correct instruments, and you review the details before they are saved.",
       },
       {
         question: "Which brokers are supported?",
         answer:
-          "Investment OS is broker-independent. Add portfolio information through manual entry or supported CSV or Excel imports — no broker login required. Every imported position is reviewed before it is saved.",
+          "Tobailey is broker-independent. Add portfolio information through manual entry or supported CSV or Excel imports — no broker login required. Every imported position is reviewed before it is saved.",
       },
       {
         question: "Can I edit recognised holdings?",
@@ -91,10 +92,10 @@ const faqSections: Array<{
       {
         question: "How often are market prices updated?",
         answer:
-          "Update frequency depends on the market-data provider, exchange and subscription level. Investment OS indicates whether a displayed price is live, cached or based on fallback portfolio information.",
+          "Update frequency depends on the market-data provider, exchange and subscription level. Tobailey indicates whether a displayed price is live, cached or based on fallback portfolio information.",
       },
       {
-        question: "Why can Investment OS differ from my broker?",
+        question: "Why can Tobailey differ from my broker?",
         answer:
           "Small differences can occur because providers may use different exchanges, update times, currency-conversion rates or delayed market feeds. Your broker remains the authoritative source for execution and account value.",
       },
@@ -127,7 +128,7 @@ const faqSections: Array<{
       {
         question: "What is the portfolio health score?",
         answer:
-          "The portfolio health score is an indicative Investment OS metric based on factors such as concentration, diversification and the return required to achieve your selected goal. It is not a credit rating or professional suitability assessment.",
+          "The portfolio health score is an indicative Tobailey metric based on factors such as concentration, diversification and the return required to achieve your selected goal. It is not a credit rating or professional suitability assessment.",
       },
     ],
   },
@@ -138,17 +139,17 @@ const faqSections: Array<{
       {
         question: "Is my portfolio stored securely?",
         answer:
-          "Investment OS uses secure authentication and appropriate technical and organisational safeguards. Portfolio information is processed only to provide the requested platform features.",
+          "Tobailey uses secure authentication and appropriate technical and organisational safeguards. Portfolio information is processed only to provide the requested platform features.",
       },
       {
-        question: "Does Investment OS need access to my broker account?",
+        question: "Does Tobailey need access to my broker account?",
         answer:
-          "No. The current workflow does not require your broker password or trading access. Never share broker login credentials with Investment OS.",
+          "No. The current workflow does not require your broker password or trading access. Never share broker login credentials with Tobailey.",
       },
       {
-        question: "Will Investment OS execute trades?",
+        question: "Will Tobailey execute trades?",
         answer:
-          "No. Investment OS is not a broker and does not place, modify or cancel investment orders.",
+          "No. Tobailey is not a broker and does not place, modify or cancel investment orders.",
       },
       {
         question: "Can I delete my account and portfolio data?",
@@ -162,9 +163,9 @@ const faqSections: Array<{
     icon: Database,
     questions: [
       {
-        question: "How much does Investment OS cost?",
+        question: "How much does Tobailey cost?",
         answer:
-          "Investment OS costs €7.99 per month after a 24-hour free trial. The applicable price and payment terms are shown before checkout.",
+          "Tobailey costs €7.99 per month after a 24-hour free trial. The applicable price and payment terms are shown before checkout.",
       },
       {
         question: "What is included in the subscription?",
@@ -185,20 +186,8 @@ export default function FAQPage() {
     <main className="min-h-screen bg-slate-50 text-slate-950">
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5 sm:px-8">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-950 text-white shadow-lg">
-              <Sparkles className="h-5 w-5" />
-            </div>
-
-            <div>
-              <p className="text-sm font-black tracking-[-0.02em]">
-                Investment OS
-              </p>
-
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-                Complete investment system
-              </p>
-            </div>
+          <Link href="/" className="inline-flex items-center">
+            <TobaileyLogo size={44} showWordmark showTagline />
           </Link>
 
           <Link
@@ -228,7 +217,7 @@ export default function FAQPage() {
           </h1>
 
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-slate-600">
-            Learn how Investment OS handles portfolios, market data,
+            Learn how Tobailey handles portfolios, market data,
             goals, privacy and your subscription.
           </p>
         </div>
@@ -298,7 +287,7 @@ export default function FAQPage() {
             </h2>
 
             <p className="mt-4 text-sm leading-7 text-slate-300">
-              Investment OS is a decision-support and portfolio-monitoring
+              Tobailey is a decision-support and portfolio-monitoring
               tool. It does not provide personal financial advice and cannot
               guarantee investment results.
             </p>
@@ -314,7 +303,7 @@ export default function FAQPage() {
             </h2>
 
             <p className="mt-4 text-sm leading-7 text-slate-600">
-              Contact the Investment OS team about account access, support,
+              Contact the Tobailey team about account access, support,
               partnerships or product feedback.
             </p>
 
@@ -332,7 +321,7 @@ export default function FAQPage() {
       <footer className="border-t border-slate-200 bg-white px-5 py-8 sm:px-8">
         <div className="mx-auto flex max-w-6xl flex-col justify-between gap-5 sm:flex-row sm:items-center">
           <p className="text-xs leading-5 text-slate-500">
-            © {new Date().getFullYear()} Investment OS. All rights reserved.
+            © {new Date().getFullYear()} Tobailey. All rights reserved.
           </p>
 
           <nav className="flex flex-wrap gap-5 text-xs font-bold text-slate-600">

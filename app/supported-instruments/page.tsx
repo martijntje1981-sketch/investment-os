@@ -148,7 +148,7 @@ export default function SupportedInstrumentsPage() {
             <SectionIntro
               icon={ListChecks}
               title="Support statuses"
-              description="Investment OS uses clear labels so you can see whether live pricing is available, pending review, or temporarily unavailable."
+              description="Tobailey uses clear labels so you can see whether live pricing is available, pending review, or temporarily unavailable."
             />
 
             <div className="mt-8 grid gap-4 md:grid-cols-2">

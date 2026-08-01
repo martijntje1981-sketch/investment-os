@@ -326,7 +326,7 @@ export default function HoldingPage() {
           <section className="mt-6 grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
             <article className="rounded-3xl bg-white p-7 shadow-sm md:p-8">
               <p className="text-sm font-semibold uppercase tracking-wider text-blue-600">
-                Investment OS Analysis
+                Tobailey Analysis
               </p>
 
               <h2 className="mt-2 text-2xl font-bold text-slate-900">

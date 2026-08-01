@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { ArrowRight, KeyRound, LockKeyhole, Sparkles } from "lucide-react";
+import { ArrowRight, KeyRound, LockKeyhole } from "lucide-react";
 
 import { updatePassword } from "@/app/auth/actions";
+import { TobaileyLogo } from "@/components/brand/TobaileyLogo";
 
 export default async function ResetPasswordPage({
   searchParams,
@@ -13,11 +14,8 @@ export default async function ResetPasswordPage({
   return (
     <main className="min-h-screen bg-slate-50 px-5 py-8 text-slate-950 sm:px-8">
       <div className="mx-auto max-w-md">
-        <Link href="/" className="flex items-center gap-3">
-          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-950 text-white shadow-lg">
-            <Sparkles className="h-5 w-5" />
-          </span>
-          <span className="font-black">Investment OS</span>
+        <Link href="/" className="inline-flex items-center">
+          <TobaileyLogo size={44} showWordmark showTagline />
         </Link>
 
         <div className="mt-16 rounded-[2rem] border border-slate-200 bg-white p-7 shadow-xl sm:p-10">

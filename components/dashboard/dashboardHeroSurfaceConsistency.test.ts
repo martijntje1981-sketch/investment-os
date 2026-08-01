@@ -31,8 +31,8 @@ describe("dashboard hero surface consistency", () => {
     const heroShellMatch = surfaceSource.match(
       /export const appHeroShellClass =\s*"([^"]+)"/,
     );
-    expect(heroShellMatch?.[1]).toContain("bg-slate-950");
-    expect(heroShellMatch?.[1]).toContain("border-slate-800/90");
+    expect(heroShellMatch?.[1]).toContain("bg-brand-navy");
+    expect(heroShellMatch?.[1]).toContain("border-brand-navy/90");
     expect(heroShellMatch?.[1]).not.toContain("bg-gradient");
     expect(valueSource).toContain("appHeroShellClass");
     expect(valueSource).not.toContain("bg-gradient-to-b");
@@ -43,10 +43,10 @@ describe("dashboard hero surface consistency", () => {
   });
 
   it("matches the solid PageHero surface token", () => {
-    expect(pageHeroSource).toContain("bg-slate-950");
+    expect(pageHeroSource).toContain("bg-brand-navy");
     expect(pageHeroSource).not.toContain("bg-gradient-to-b");
     expect(surfaceSource).toContain(
-      "border border-slate-800/90 bg-slate-950 text-white shadow-[0_16px_48px_rgba(15,23,42,0.28)]",
+      "border border-brand-navy/90 bg-brand-navy text-white shadow-[0_16px_48px_rgba(11,31,58,0.28)]",
     );
   });
 });

@@ -53,10 +53,10 @@ export default function BottomNavigation() {
               key={item.href}
               href={item.href}
               aria-current={active ? "page" : undefined}
-              className={`flex min-h-[58px] min-w-0 touch-manipulation flex-col items-center justify-center rounded-xl px-0.5 ${appBottomNavLabelClass} transition sm:rounded-2xl sm:px-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2 ${
+              className={`flex min-h-[58px] min-w-0 touch-manipulation flex-col items-center justify-center rounded-xl px-0.5 ${appBottomNavLabelClass} transition sm:rounded-2xl sm:px-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 ${
                 active
-                  ? "bg-slate-950 text-white shadow-lg"
-                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-950"
+                  ? "bg-brand text-brand-navy shadow-sm"
+                  : "text-slate-600 hover:bg-brand-soft hover:text-brand-navy"
               }`}
             >
               <Icon className="mb-1 h-5 w-5" strokeWidth={1.8} />
