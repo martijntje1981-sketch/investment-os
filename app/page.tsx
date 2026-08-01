@@ -203,10 +203,10 @@ export default async function MarketingHomePage() {
                 </Link>
 
                 <Link
-                  href="/dashboard"
+                  href="/explore"
                   className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-4 text-sm font-bold text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-50"
                 >
-                  Explore the dashboard
+                  Explore Tobailey
                   <ChevronRight className="h-4 w-4" />
                 </Link>
               </div>
@@ -694,7 +694,7 @@ export default async function MarketingHomePage() {
             <Link href="#contact">Contact</Link>
             <Link href="/privacy">Privacy</Link>
             <Link href="/terms">Terms</Link>
-            <Link href="/dashboard">Dashboard</Link>
+            <Link href="/explore">Explore Tobailey</Link>
           </nav>
 
           <p className="max-w-md text-xs leading-5 text-slate-500 lg:text-right">

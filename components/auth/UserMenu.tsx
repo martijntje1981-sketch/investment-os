@@ -53,6 +53,7 @@ const exploreLinks: MenuLink[] = [
 ];
 
 const guestExploreLinks: MenuLink[] = [
+  { href: "/explore", label: "Explore", icon: Compass },
   { href: "/perspectives", label: "Perspectives", icon: Sparkles },
   { href: "/news", label: "Markets / News", icon: Newspaper },
   { href: "/market-pulse", label: "Market Pulse", icon: Waves },

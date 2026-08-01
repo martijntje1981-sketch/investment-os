@@ -37,6 +37,7 @@ describe("route access matrix", () => {
       expect(isPublicAppPath(route)).toBe(true);
       expect(isAuthRequiredPath(route)).toBe(false);
     }
+    expect(isPublicAppPath("/explore")).toBe(true);
   });
 
   it("does not overlap auth-required and public app prefixes", () => {
@@ -107,15 +108,28 @@ describe("middleware and private API wiring", () => {
     const perspectives = readProjectFile("components/perspectives/PerspectivesPage.tsx");
     const news = readProjectFile("app/news/page.tsx");
     const pulse = readProjectFile("components/marketPulse/MarketPulsePage.tsx");
+    const explore = readProjectFile("app/explore/page.tsx");
+    const marketingHeader = readProjectFile("components/marketing/MarketingHeader.tsx");
+    const landing = readProjectFile("app/page.tsx");
 
     expect(bottomNav).toContain("guestItems");
+    expect(bottomNav).toContain('href: "/perspectives"');
+    expect(bottomNav).toContain('href: "/news"');
+    expect(bottomNav).toContain('href: "/supported-instruments"');
+    expect(bottomNav).toContain('href: "/login"');
+    expect(bottomNav).not.toMatch(/guestItems[\s\S]*href: "\/dashboard"/);
     expect(userMenu).toContain("GuestHeader");
     expect(userMenu).toContain("Get started");
     expect(perspectives).toContain("MakeTobaileyYoursCard");
     expect(news).toContain("MakeTobaileyYoursCard");
     expect(pulse).toContain("MakeTobaileyYoursCard");
-    expect(perspectives).toContain("resolveAudienceState");
-    expect(news).toContain("resolveAudienceState");
+    expect(explore).toContain("MakeTobaileyYoursCard");
+    expect(explore).toContain("PUBLIC_EXPLORE_DESTINATIONS");
+    expect(marketingHeader).toContain("Explore");
+    expect(marketingHeader).toContain("PUBLIC_EXPLORE_DESTINATIONS");
+    expect(landing).toContain("Explore Tobailey");
+    expect(landing).toContain('href="/explore"');
+    expect(landing).not.toContain("Explore the dashboard");
   });
 
   it("does not request private portfolio APIs from guest-safe news helpers", () => {

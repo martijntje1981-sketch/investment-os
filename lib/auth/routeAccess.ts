@@ -23,6 +23,7 @@ export const AUTH_REQUIRED_PREFIXES = [
  * Same pages personalize when the visitor is signed in with holdings.
  */
 export const PUBLIC_APP_PREFIXES = [
+  "/explore",
   "/news",
   "/perspectives",
   "/market-pulse",

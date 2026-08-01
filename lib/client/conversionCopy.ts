@@ -20,6 +20,6 @@ export const CONVERSION_COPY = {
   zeroHoldingsSecondaryCta: "Explore the market",
   primaryHref: "/upload",
   secondaryGuestHref: "/login",
-  exploreHref: "/perspectives",
+  exploreHref: "/explore",
   manualAddHref: "/portfolio?add=investment",
 } as const;
