@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowUpRight, Radio } from "lucide-react";
 
 import { formatNewsRefreshedAt } from "@/components/news/newsFormatting";
+import { DashboardTodaysDecision } from "@/components/dashboard/DashboardTodaysDecision";
 import { DashboardSectionHeader } from "@/components/dashboard/DashboardSectionHeader";
 import {
   appCardPaddingClass,
@@ -12,7 +13,10 @@ import {
   appSectionMetaClass,
 } from "@/components/layout/appSurface";
 import { NEWS_HUB_PATH } from "@/lib/navigation/newsHubRoutes";
-import { buildIntelligenceDisplayMessage } from "@/lib/client/todaysDecision";
+import {
+  buildIntelligenceDisplayMessage,
+  type TodaysDecisionContext,
+} from "@/lib/client/todaysDecision";
 import type { GoalProgress } from "@/lib/services/goals/goalProgressEngine";
 import type { InvestmentIntelligence } from "@/lib/services/news/investmentIntelligence";
 
@@ -27,8 +31,7 @@ const STATUS_STYLES: Record<
 };
 
 /**
- * Compact Dashboard preview of Market Briefing.
- * Lead insight reuses existing mustWatch ranking / intelligence display message.
+ * Combined Market Briefing card: lead insight + optional Today’s Decision.
  * Full briefing lives on Market Intelligence (`/news`).
  */
 export function DashboardIntelligencePreview({
@@ -36,6 +39,7 @@ export function DashboardIntelligencePreview({
   goalProgress = null,
   marketsClosed,
   intelligenceFromCache = false,
+  upcomingEvents,
 }: {
   intelligence: InvestmentIntelligence;
   goalProgress?: Pick<
@@ -44,6 +48,7 @@ export function DashboardIntelligencePreview({
   > | null;
   marketsClosed?: boolean;
   intelligenceFromCache?: boolean;
+  upcomingEvents?: TodaysDecisionContext["upcomingEvents"];
   /** @deprecated Phase 2: missed-item teasers belong on Discover, not Dashboard. */
   missedItems?: unknown;
 }) {
@@ -58,12 +63,20 @@ export function DashboardIntelligencePreview({
   const supportingLine = mustWatch?.reason?.trim() || null;
   const holdingContext = mustWatch?.sourceName?.trim() || null;
 
+  const decisionContext: TodaysDecisionContext = {
+    intelligence,
+    intelligenceFromCache,
+    goalProgress,
+    upcomingEvents,
+    marketsClosed,
+  };
+
   return (
     <section className={appDashboardLightCardClass}>
       <DashboardSectionHeader
         variant="compact"
-        title="Market briefing"
-        subtitle="One lead insight for today"
+        title="Market Briefing"
+        subtitle="Lead insight and today’s decision"
         icon={<Radio className="h-5 w-5" />}
         iconToneClassName="bg-violet-50 text-violet-700 ring-1 ring-violet-100"
       />
@@ -99,6 +112,8 @@ export function DashboardIntelligencePreview({
             <p className={`mt-1.5 ${appSectionMetaClass}`}>{holdingContext}</p>
           ) : null}
         </div>
+
+        <DashboardTodaysDecision {...decisionContext} />
 
         <Link
           href={NEWS_HUB_PATH}

@@ -11,6 +11,7 @@ import {
   buildIntelligenceDisplayMessage,
   buildTodaysDecision,
   resolveTodaysDecisionDestination,
+  shouldShowTodaysDecisionSubsection,
 } from "@/lib/client/todaysDecision";
 import { createEmptyInvestmentIntelligence } from "@/lib/services/news/investmentIntelligence";
 import type { InvestmentIntelligence } from "@/lib/services/news/investmentIntelligence";
@@ -26,6 +27,54 @@ function intelligence(
 }
 
 describe("buildTodaysDecision", () => {
+  it("collapses generic no-action decisions in the briefing subsection", () => {
+    const empty = buildTodaysDecision({
+      intelligence: intelligence({ quietMarket: true }),
+      intelligenceFromCache: true,
+      marketsClosed: false,
+    });
+    expect(
+      shouldShowTodaysDecisionSubsection(
+        empty,
+        intelligence({ quietMarket: true }),
+      ),
+    ).toBe(false);
+
+    const mustWatchIntel = intelligence({
+      mustWatch: {
+        type: "article",
+        itemId: "1",
+        title: "ECB holds rates",
+        sourceName: "Reuters",
+        canonicalUrl: "https://example.com/ecb",
+        reason: "Macro",
+      },
+    });
+    const mustWatchDecision = buildTodaysDecision({
+      intelligence: mustWatchIntel,
+      intelligenceFromCache: true,
+      marketsClosed: false,
+    });
+    expect(
+      shouldShowTodaysDecisionSubsection(mustWatchDecision, mustWatchIntel),
+    ).toBe(false);
+
+    const riskDecision = buildTodaysDecision({
+      intelligence: intelligence({
+        portfolioStatus: "High Attention",
+        keyRisks: [bulletTextOnly("Review concentration risk.")],
+      }),
+      intelligenceFromCache: true,
+      marketsClosed: false,
+    });
+    expect(
+      shouldShowTodaysDecisionSubsection(
+        riskDecision,
+        intelligence({ portfolioStatus: "High Attention" }),
+      ),
+    ).toBe(true);
+  });
+
   it("prioritizes urgent portfolio risk over opportunities", () => {
     const result = buildTodaysDecision({
       intelligence: intelligence({
@@ -295,9 +344,6 @@ describe("dashboard Today's Decision integration", () => {
     );
 
     expect(dashboard.indexOf("<DashboardSummary")).toBeLessThan(
-      dashboard.indexOf("<DashboardTodaysDecision"),
-    );
-    expect(dashboard.indexOf("<DashboardTodaysDecision")).toBeLessThan(
       dashboard.indexOf("<DashboardIntelligencePreview"),
     );
     expect(dashboard.indexOf("<DashboardIntelligencePreview")).toBeLessThan(
@@ -305,9 +351,10 @@ describe("dashboard Today's Decision integration", () => {
     );
     expect(decisionSection).toContain("TodaysDecisionBlock");
     expect(decisionSection).toContain("buildTodaysDecision");
+    expect(decisionSection).toContain("shouldShowTodaysDecisionSubsection");
     expect(preview).toContain("buildIntelligenceDisplayMessage");
     expect(preview).toContain("NEWS_HUB_PATH");
-    expect(preview).not.toContain("TodaysDecisionBlock");
+    expect(preview).toContain("DashboardTodaysDecision");
     expect(preview).not.toContain("DiscoverMissedTeaser");
     expect(dashboard).not.toContain("BottomNavigation");
     expect(dashboard).not.toMatch(/innerWidth|matchMedia|useMediaQuery/);

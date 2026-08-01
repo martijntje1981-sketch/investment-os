@@ -11,7 +11,6 @@ import { DashboardIntelligencePreview } from "@/components/dashboard/DashboardIn
 import { DashboardPortfolioHealthCard } from "@/components/dashboard/DashboardPortfolioHealthCard";
 import { DashboardMarketPulseCard } from "@/components/dashboard/DashboardMarketPulseCard";
 import { DashboardSummary } from "@/components/dashboard/DashboardSummary";
-import { DashboardTodaysDecision } from "@/components/dashboard/DashboardTodaysDecision";
 import { DashboardProductionDebugMarker } from "@/components/dashboard/DashboardProductionDebugMarker";
 import { DashboardUpcomingEventsWidget } from "@/components/dashboard/DashboardUpcomingEventsWidget";
 import { DashboardPerspectivesWidget } from "@/components/dashboard/DashboardPerspectivesWidget";
@@ -198,6 +197,9 @@ export default function DashboardPage() {
               message: refreshMessage,
               liveRefreshAt,
             }}
+            healthProfile={portfolioHealthProfile}
+            intelligence={intelligence}
+            newsPayload={payload}
           />
 
           <DashboardUpcomingEventsWidget />
@@ -205,22 +207,13 @@ export default function DashboardPage() {
           <DashboardPerspectivesWidget />
 
           <div className="space-y-6 md:space-y-8">
-            <div className="grid min-w-0 gap-6 lg:grid-cols-2">
-              <DashboardTodaysDecision
-                intelligence={intelligence}
-                intelligenceFromCache={intelligenceFromCache}
-                goalProgress={goalProgress}
-                upcomingEvents={payload.upcomingEvents}
-                marketsClosed={marketsClosed}
-              />
-
-              <DashboardIntelligencePreview
-                intelligence={intelligence}
-                goalProgress={goalProgress}
-                marketsClosed={marketsClosed}
-                intelligenceFromCache={intelligenceFromCache}
-              />
-            </div>
+            <DashboardIntelligencePreview
+              intelligence={intelligence}
+              goalProgress={goalProgress}
+              marketsClosed={marketsClosed}
+              intelligenceFromCache={intelligenceFromCache}
+              upcomingEvents={payload.upcomingEvents}
+            />
 
             <HoldingsToday snapshot={snapshot} />
 

@@ -140,9 +140,6 @@ describe("home and dashboard hierarchy", () => {
     );
 
     expect(dashboard.indexOf("<DashboardSummary")).toBeLessThan(
-      dashboard.indexOf("<DashboardTodaysDecision"),
-    );
-    expect(dashboard.indexOf("<DashboardTodaysDecision")).toBeLessThan(
       dashboard.indexOf("<DashboardIntelligencePreview"),
     );
     expect(dashboard.indexOf("<DashboardIntelligencePreview")).toBeLessThan(
@@ -161,7 +158,7 @@ describe("home and dashboard hierarchy", () => {
     expect(holdingsToday).toContain("md:hidden");
     expect(holdingsToday).toContain("hidden md:block");
     expect(preview).not.toContain("Also worth noting");
-    expect(preview).not.toContain("TodaysDecisionBlock");
+    expect(preview).toContain("DashboardTodaysDecision");
   });
 
   it("redirects authenticated users away from the marketing home route", async () => {

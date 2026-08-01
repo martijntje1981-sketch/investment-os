@@ -264,6 +264,30 @@ function neutralFallback(reason: string): TodaysDecisionResult {
   };
 }
 
+/**
+ * Whether the decision adds value beneath Market Briefing.
+ * Collapses generic no-action neutrals and must-watch duplicates of the lead insight.
+ */
+export function shouldShowTodaysDecisionSubsection(
+  decision: TodaysDecisionResult,
+  intelligence: InvestmentIntelligence | null | undefined,
+): boolean {
+  const text = decision.decision.trim().toLowerCase();
+  if (
+    text === "no urgent portfolio action is required." ||
+    text === "no action required today."
+  ) {
+    return false;
+  }
+
+  const mustWatchTitle = intelligence?.mustWatch?.title?.trim();
+  if (mustWatchTitle && decision.decision.includes(mustWatchTitle)) {
+    return false;
+  }
+
+  return true;
+}
+
 export function areMajorMarketsClosed(date = new Date()): boolean {
   const statuses = getMarketStatuses(date);
   const tradable = statuses.filter(

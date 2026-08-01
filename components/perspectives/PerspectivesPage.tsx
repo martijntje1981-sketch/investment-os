@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Sparkles } from "lucide-react";
 
 import { BackButton } from "@/components/layout/BackButton";
 import BottomNavigation from "@/components/home/BottomNav";
-import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer";
+import { PageContainer } from "@/components/layout/PageContainer";
 import {
   appCardClass,
   appHeroMetricLabelClass,
@@ -16,23 +16,73 @@ import {
 } from "@/components/layout/appSurface";
 import {
   PerspectiveCompactCard,
-  PerspectiveFeaturedCard,
+  PerspectiveTodaysCard,
 } from "@/components/perspectives/PerspectiveCards";
+import {
+  perspectiveCategoryChipClass,
+  perspectiveCategoryLabel,
+} from "@/components/perspectives/perspectiveStyles";
 import { MakeTobaileyYoursCard } from "@/components/conversion/MakeTobaileyYoursCard";
 import { resolveAudienceState } from "@/lib/auth/routeAccess";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
+import {
+  PERSPECTIVE_CATEGORY_ORDER,
+  type PerspectiveCategoryId,
+} from "@/lib/services/perspectives/creators";
+import {
+  buildPerspectiveRelevance,
+  derivePerspectivePortfolioSignals,
+  orderPerspectivesForAudience,
+  selectTodaysPerspective,
+} from "@/lib/services/perspectives/relevance";
+import { formatUpdatedMinutesAgo } from "@/lib/services/perspectives/relativeTime";
 import type { PerspectivesPayload } from "@/lib/services/perspectives/types";
+
+type CategoryFilter = "all" | PerspectiveCategoryId;
+
+function PerspectivesSkeleton() {
+  return (
+    <div className="space-y-6" aria-hidden>
+      <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white">
+        <div className="aspect-video animate-pulse bg-slate-100 lg:hidden" />
+        <div className="grid lg:grid-cols-2">
+          <div className="hidden aspect-video animate-pulse bg-slate-100 lg:block" />
+          <div className="space-y-3 px-5 py-6">
+            <div className="h-4 w-40 animate-pulse rounded bg-slate-100" />
+            <div className="h-8 w-4/5 animate-pulse rounded bg-slate-100" />
+            <div className="h-4 w-full animate-pulse rounded bg-slate-100" />
+            <div className="h-4 w-2/3 animate-pulse rounded bg-slate-100" />
+          </div>
+        </div>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div
+            key={index}
+            className="h-28 animate-pulse rounded-2xl border border-slate-200 bg-white"
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function PerspectivesPage() {
   const { userSub, holdings, portfolioReady } = useUserPortfolio();
   const [payload, setPayload] = useState<PerspectivesPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
 
   const audience = resolveAudienceState({
     authenticated: Boolean(userSub),
     holdingsCount: holdings.length,
   });
+
+  const signals = useMemo(
+    () => derivePerspectivePortfolioSignals(holdings),
+    [holdings],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -68,8 +118,44 @@ export default function PerspectivesPage() {
     };
   }, []);
 
-  if ((!portfolioReady && userSub) || (loading && !payload)) {
-    return <AppPageLoading />;
+  const todaysPerspective = useMemo(() => {
+    if (!payload?.videos.length) return null;
+    return selectTodaysPerspective(payload.videos, signals);
+  }, [payload, signals]);
+
+  const orderedVideos = useMemo(() => {
+    if (!payload?.videos.length) return [];
+    return orderPerspectivesForAudience(payload.videos, signals).filter(
+      (video) => video.id !== todaysPerspective?.id,
+    );
+  }, [payload, signals, todaysPerspective?.id]);
+
+  const filteredByCategory = useMemo(() => {
+    const groups = PERSPECTIVE_CATEGORY_ORDER.map((category) => ({
+      category,
+      label: perspectiveCategoryLabel(category),
+      videos: orderedVideos.filter((video) => video.category === category),
+    })).filter((group) => group.videos.length > 0);
+
+    if (categoryFilter === "all") return groups;
+    return groups.filter((group) => group.category === categoryFilter);
+  }, [orderedVideos, categoryFilter]);
+
+  if ((!portfolioReady && userSub) || (loading && !payload && !error)) {
+    return (
+      <>
+        <PageContainer stackClassName="gap-5 md:gap-6">
+          <section className={`${appHeroShellClass} px-5 py-7 sm:px-8 sm:py-8`}>
+            <p className={appHeroMetricLabelClass}>Investment intelligence</p>
+            <h1 className="mt-2 text-3xl font-bold tracking-[-0.03em] text-white">
+              Perspectives
+            </h1>
+          </section>
+          <PerspectivesSkeleton />
+        </PageContainer>
+        <BottomNavigation />
+      </>
+    );
   }
 
   return (
@@ -82,17 +168,26 @@ export default function PerspectivesPage() {
           <div className="mb-4">
             <BackButton />
           </div>
-          <p className={appHeroMetricLabelClass}>Investment intelligence</p>
-          <h1
-            id="perspectives-page-heading"
-            className="mt-2 text-3xl font-bold tracking-[-0.03em] text-white"
-          >
-            Perspectives
-          </h1>
-          <p className="mt-2 max-w-2xl text-[15px] font-medium leading-relaxed text-white/75">
-            High-signal market opinions from a curated set of independent
-            creators — macro, bitcoin, investing, and technology.
-          </p>
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div className="min-w-0">
+              <p className={appHeroMetricLabelClass}>Investment intelligence</p>
+              <h1
+                id="perspectives-page-heading"
+                className="mt-2 text-3xl font-bold tracking-[-0.03em] text-white"
+              >
+                Perspectives
+              </h1>
+              <p className="mt-2 max-w-2xl text-[15px] font-medium leading-relaxed text-white/75">
+                High-signal market opinions from a curated set of independent
+                creators — macro, bitcoin, investing, and technology.
+              </p>
+            </div>
+            {payload?.fetchedAt ? (
+              <p className="text-[12px] font-medium text-white/55">
+                {formatUpdatedMinutesAgo(payload.fetchedAt)}
+              </p>
+            ) : null}
+          </div>
         </section>
 
         {audience !== "authenticated_holdings" ? (
@@ -135,26 +230,54 @@ export default function PerspectivesPage() {
               </p>
             ) : null}
 
-            <section aria-labelledby="latest-perspectives-heading">
-              <div className="mb-4 md:mb-5">
-                <h2
-                  id="latest-perspectives-heading"
-                  className={appSectionTitleClass}
-                >
-                  Latest Perspectives
+            {todaysPerspective ? (
+              <section aria-labelledby="todays-perspective-heading">
+                <h2 id="todays-perspective-heading" className="sr-only">
+                  Today’s Perspective
                 </h2>
-                <p className={`mt-1 ${appSectionMetaClass}`}>
-                  Newest featured uploads from the curated creator set.
-                </p>
-              </div>
-              <div className="grid auto-rows-fr gap-4 md:grid-cols-2 md:gap-5 xl:grid-cols-3">
-                {payload.featured.map((video) => (
-                  <PerspectiveFeaturedCard key={video.id} video={video} />
-                ))}
-              </div>
-            </section>
+                <PerspectiveTodaysCard
+                  video={todaysPerspective}
+                  relevance={buildPerspectiveRelevance(
+                    todaysPerspective,
+                    signals,
+                  )}
+                />
+              </section>
+            ) : null}
 
-            {payload.byCategory.map((group) => (
+            <div
+              className="flex flex-wrap gap-2"
+              role="toolbar"
+              aria-label="Perspective categories"
+            >
+              <button
+                type="button"
+                onClick={() => setCategoryFilter("all")}
+                className={`rounded-full px-3 py-1.5 text-[12px] font-bold transition ${
+                  categoryFilter === "all"
+                    ? "bg-brand-navy text-white"
+                    : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
+                }`}
+              >
+                All
+              </button>
+              {PERSPECTIVE_CATEGORY_ORDER.map((category) => (
+                <button
+                  key={category}
+                  type="button"
+                  onClick={() => setCategoryFilter(category)}
+                  className={`rounded-full px-3 py-1.5 text-[12px] font-bold transition ${
+                    categoryFilter === category
+                      ? perspectiveCategoryChipClass(category)
+                      : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
+                  }`}
+                >
+                  {perspectiveCategoryLabel(category)}
+                </button>
+              ))}
+            </div>
+
+            {filteredByCategory.map((group) => (
               <section
                 key={group.category}
                 aria-labelledby={`perspectives-${group.category}`}
@@ -169,12 +292,29 @@ export default function PerspectivesPage() {
                 <ul className="grid gap-2.5 sm:grid-cols-2 sm:gap-3">
                   {group.videos.map((video) => (
                     <li key={video.id}>
-                      <PerspectiveCompactCard video={video} />
+                      <PerspectiveCompactCard
+                        video={video}
+                        relevance={buildPerspectiveRelevance(video, signals)}
+                      />
                     </li>
                   ))}
                 </ul>
               </section>
             ))}
+
+            {filteredByCategory.length === 0 ? (
+              <div className={`${appCardClass} px-5 py-6`}>
+                <p className={appSectionTitleClass}>No videos in this category</p>
+                <p className={`mt-2 ${appSectionSubtitleClass}`}>
+                  Try another category filter or check back after feeds refresh.
+                </p>
+              </div>
+            ) : null}
+
+            <p className={`${appSectionMetaClass} max-w-3xl`}>
+              External views are presented for informational purposes. Inclusion
+              does not imply endorsement by Tobailey.
+            </p>
           </div>
         )}
       </PageContainer>

@@ -53,7 +53,7 @@ describe("dashboard phase 2 compact previews", () => {
   });
 
   it("keeps Today’s Decision present and clickable when a destination exists", () => {
-    expect(dashboardSource).toContain("DashboardTodaysDecision");
+    expect(briefingSource).toContain("DashboardTodaysDecision");
     expect(decisionSource).toContain("TodaysDecisionBlock");
     expect(decisionBlockSource).toContain("resolveDestination");
     expect(decisionBlockSource).toContain("INTERACTIVE_STYLES");
@@ -74,16 +74,17 @@ describe("dashboard phase 2 compact previews", () => {
     expect(briefingSource).not.toContain("macroHighlights");
   });
 
-  it("pairs Today’s Decision and Market Briefing in a responsive two-column grid", () => {
-    const decisionIdx = dashboardSource.indexOf("<DashboardTodaysDecision");
+  it("combines Today’s Decision into Market Briefing as one compact card", () => {
     const briefingIdx = dashboardSource.indexOf("<DashboardIntelligencePreview");
     const holdingsIdx = dashboardSource.indexOf("<HoldingsToday");
-    expect(decisionIdx).toBeGreaterThan(-1);
-    expect(briefingIdx).toBeGreaterThan(decisionIdx);
+    expect(briefingIdx).toBeGreaterThan(-1);
     expect(holdingsIdx).toBeGreaterThan(briefingIdx);
-    expect(dashboardSource).toMatch(
+    expect(dashboardSource).toContain("DashboardIntelligencePreview");
+    expect(dashboardSource).not.toMatch(
       /grid min-w-0 gap-6 lg:grid-cols-2[\s\S]*DashboardTodaysDecision[\s\S]*DashboardIntelligencePreview/,
     );
+    expect(briefingSource).toContain("DashboardTodaysDecision");
+    expect(decisionSource).toContain("shouldShowTodaysDecisionSubsection");
     expect(dashboardSource).not.toMatch(/overflow-x-auto|overflow-x-scroll/);
   });
 

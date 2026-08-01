@@ -159,13 +159,17 @@ function DecisionContent({
 export function TodaysDecisionBlock({
   decision,
   variant = "light",
+  compact = false,
 }: {
   decision: TodaysDecisionResult;
   variant?: "light" | "dark";
+  /** Tighter padding for nested Dashboard briefing use. */
+  compact?: boolean;
 }) {
   const styles = resolveToneStyles(variant, decision.tone);
   const destination = resolveDestination(decision);
-  const shellClassName = `group min-h-[44px] min-w-0 rounded-[18px] border px-4 py-4 md:px-5 md:py-4 ${styles} ${
+  const paddingClass = compact ? "px-3.5 py-3 md:px-4 md:py-3" : "px-4 py-4 md:px-5 md:py-4";
+  const shellClassName = `group min-h-[44px] min-w-0 rounded-[18px] border ${paddingClass} ${styles} ${
     destination ? INTERACTIVE_STYLES[variant] : ""
   }`;
 

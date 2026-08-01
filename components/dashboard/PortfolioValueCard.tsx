@@ -4,9 +4,20 @@ import Link from "next/link";
 import { Minus, TrendingDown, TrendingUp } from "lucide-react";
 
 import { ConversionDetailsDisclosure } from "@/components/currency/ConversionDetailsDisclosure";
+import {
+  HeroHealthRing,
+  HeroTopStoryPreviewCard,
+  HeroTrendMicroVisual,
+} from "@/components/dashboard/DashboardHeroIntelligence";
 import { RefreshPricesButton } from "@/components/portfolio/RefreshPricesButton";
 import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 import type { HeroMover } from "@/lib/client/dailyPerformance";
+import {
+  buildHeroHealthPreview,
+  buildHeroTopStoryPreview,
+  resolveHeroTrendDirection,
+  type HeroTopStoryPreview,
+} from "@/lib/client/dashboardHeroIntelligence";
 import { RANKING_AFTER_CLOSE } from "@/lib/client/investorOverviewCopy";
 import type { RefreshPricesUiStatus } from "@/lib/client/livePortfolioPriceRefreshAction";
 import { formatAmsterdamPriceRefreshTime } from "@/lib/client/marketSnapshotSync";
@@ -23,6 +34,9 @@ import {
   appHeroShellClass,
 } from "@/components/layout/appSurface";
 import type { DashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
+import type { InvestmentIntelligence } from "@/lib/services/news/investmentIntelligence";
+import type { PortfolioHealthProfile } from "@/lib/services/portfolio/portfolioHealthProfile";
+import type { NewsApiResponse } from "@/lib/types/newsContent";
 
 function signedPercent(value: number) {
   const formatted = formatPortfolioPercent(Math.abs(value));
@@ -155,6 +169,9 @@ export function PortfolioValueCard({
   snapshot,
   refresh,
   welcomeFirstName = null,
+  healthProfile = null,
+  intelligence = null,
+  newsPayload = null,
 }: {
   snapshot: DashboardPortfolioSnapshot;
   welcomeFirstName?: string | null;
@@ -166,10 +183,20 @@ export function PortfolioValueCard({
     message?: string | null;
     liveRefreshAt?: string | null;
   };
+  healthProfile?: PortfolioHealthProfile | null;
+  intelligence?: InvestmentIntelligence | null;
+  newsPayload?: NewsApiResponse | null;
 }) {
   const { formatEur } = useBaseCurrencyDisplay();
   const showMove = snapshot.hasDailyData;
   const moveTone = moveToneClass(snapshot);
+  const trendDirection = resolveHeroTrendDirection(snapshot);
+  const healthPreview = buildHeroHealthPreview(healthProfile);
+  const topStory: HeroTopStoryPreview | null = buildHeroTopStoryPreview({
+    intelligence,
+    payload: newsPayload,
+    preferPortfolioRelevant: true,
+  });
   const welcomeLine = welcomeFirstName?.trim()
     ? `Welcome back, ${welcomeFirstName.trim()}`
     : "Welcome back";
@@ -214,7 +241,10 @@ export function PortfolioValueCard({
           </div>
 
           <div className="min-w-0">
-            <p className={appHeroMetricLabelClass}>Latest portfolio move</p>
+            <div className="flex items-center justify-between gap-2">
+              <p className={appHeroMetricLabelClass}>Latest portfolio move</p>
+              <HeroTrendMicroVisual direction={trendDirection} />
+            </div>
             <p
               className={`mt-1.5 flex flex-wrap items-baseline gap-x-2.5 gap-y-1 ${appHeroMatchedKpiClass} ${moveTone}`}
               title={snapshot.dailyMoveAccessibleDescription}
@@ -254,6 +284,14 @@ export function PortfolioValueCard({
             ) : null}
           </div>
         </div>
+
+        <div className="mt-2.5 grid min-w-0 gap-2 border-t border-white/[0.06] pt-2.5 sm:grid-cols-2">
+          <HeroHealthRing preview={healthPreview} />
+          <div className="min-w-0 sm:block">
+            <HeroTopStoryPreviewCard story={topStory} />
+          </div>
+        </div>
+
         {refresh?.message &&
         (refresh.status === "success" ||
           refresh.status === "error" ||

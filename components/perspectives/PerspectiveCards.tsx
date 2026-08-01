@@ -5,12 +5,15 @@ import { ExternalLink } from "lucide-react";
 
 import {
   creatorInitials,
-  formatPerspectiveDate,
   perspectiveCategoryChipClass,
   perspectiveCategoryLabel,
   perspectiveThumbnailCandidates,
 } from "@/components/perspectives/perspectiveStyles";
 import { appPrimaryButtonClass } from "@/components/layout/appSurface";
+import { formatRelativePublicationTime } from "@/lib/services/perspectives/relativeTime";
+import { mapPerspectiveTopicTags } from "@/lib/services/perspectives/topicTags";
+import { buildPerspectiveWhyItMatters } from "@/lib/services/perspectives/whyItMatters";
+import type { PerspectiveRelevance } from "@/lib/services/perspectives/relevance";
 import type { PerspectiveVideo } from "@/lib/services/perspectives/types";
 
 function CreatorAvatar({
@@ -80,7 +83,7 @@ function VideoThumbnail({
           loading="lazy"
           decoding="async"
           referrerPolicy="no-referrer"
-          className="h-full w-full object-cover transition duration-500 ease-out group-hover:scale-[1.04]"
+          className="h-full w-full object-cover transition duration-500 ease-out group-hover:scale-[1.03]"
           onError={() => setIndex((current) => current + 1)}
         />
       ) : (
@@ -92,13 +95,151 @@ function VideoThumbnail({
   );
 }
 
-export function PerspectiveFeaturedCard({
+function TopicTagChips({ tags }: { tags: string[] }) {
+  if (tags.length === 0) return null;
+  return (
+    <ul className="flex flex-wrap gap-1.5" aria-label="Topics">
+      {tags.map((tag) => (
+        <li
+          key={tag}
+          className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-[11px] font-semibold text-slate-600"
+        >
+          {tag}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function RelevanceBlock({ relevance }: { relevance: PerspectiveRelevance }) {
+  if (!relevance.relevant || relevance.reasons.length === 0) return null;
+  return (
+    <div className="rounded-xl border border-brand/20 bg-brand-soft/60 px-3 py-2.5">
+      <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-brand-navy/70">
+        Relevant to your portfolio
+      </p>
+      <ul className="mt-1.5 space-y-1">
+        {relevance.reasons.map((reason) => (
+          <li
+            key={reason}
+            className="text-[13px] font-medium leading-snug text-brand-navy/90"
+          >
+            {reason}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/** Large “Today’s Perspective” featured card. */
+export function PerspectiveTodaysCard({
   video,
+  relevance,
 }: {
   video: PerspectiveVideo;
+  relevance: PerspectiveRelevance;
 }) {
+  const tags = mapPerspectiveTopicTags(video.title);
+  const whyItMatters = buildPerspectiveWhyItMatters({
+    title: video.title,
+    category: video.category,
+    tags,
+  });
+
   return (
-    <article className="group flex h-full flex-col overflow-hidden rounded-[24px] border border-slate-200/90 bg-white shadow-[0_10px_30px_rgba(11,31,58,0.06)] transition duration-300 hover:-translate-y-1 hover:border-brand/45 hover:shadow-[0_18px_40px_rgba(11,31,58,0.12)] md:rounded-[28px]">
+    <article className="group overflow-hidden rounded-[28px] border border-slate-200/90 bg-white shadow-[0_12px_36px_rgba(11,31,58,0.08)] transition duration-300 hover:border-brand/40 hover:shadow-[0_18px_44px_rgba(11,31,58,0.12)]">
+      <div className="grid lg:grid-cols-[1.15fr_0.85fr]">
+        <a
+          href={video.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+          aria-label={`Watch ${video.title} on YouTube`}
+        >
+          <VideoThumbnail
+            video={video}
+            className="lg:min-h-full lg:rounded-none"
+            roundedClassName="rounded-none"
+          />
+        </a>
+
+        <div className="flex flex-col gap-4 px-5 py-5 sm:px-6 sm:py-6">
+          <div className="flex items-start gap-3">
+            <CreatorAvatar
+              name={video.creatorName}
+              avatarUrl={video.creatorAvatarUrl}
+              size={48}
+            />
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-brand-navy/55">
+                Today’s Perspective
+              </p>
+              <p className="mt-1 truncate text-[15px] font-bold text-brand-navy">
+                {video.creatorName}
+              </p>
+              <p className="mt-0.5 text-[12px] font-medium text-slate-500">
+                {formatRelativePublicationTime(video.publishedAt)}
+              </p>
+            </div>
+            <span
+              className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.08em] ${perspectiveCategoryChipClass(video.category)}`}
+            >
+              {perspectiveCategoryLabel(video.category)}
+            </span>
+          </div>
+
+          <h2 className="text-[1.35rem] font-bold leading-snug tracking-[-0.025em] text-brand-navy sm:text-[1.5rem]">
+            <a
+              href={video.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition hover:text-brand"
+            >
+              {video.title}
+            </a>
+          </h2>
+
+          <TopicTagChips tags={tags} />
+          <RelevanceBlock relevance={relevance} />
+
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-500">
+              Why it matters
+            </p>
+            <p className="mt-1.5 text-[14px] font-medium leading-relaxed text-slate-600">
+              {whyItMatters}
+            </p>
+          </div>
+
+          <div className="mt-auto pt-1">
+            <a
+              href={video.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`${appPrimaryButtonClass} w-full sm:w-auto`}
+            >
+              Watch on YouTube
+              <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+            </a>
+          </div>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+export function PerspectiveFeaturedCard({
+  video,
+  relevance,
+}: {
+  video: PerspectiveVideo;
+  relevance?: PerspectiveRelevance;
+}) {
+  const tags = mapPerspectiveTopicTags(video.title).slice(0, 3);
+
+  return (
+    <article className="group flex h-full flex-col overflow-hidden rounded-[24px] border border-slate-200/90 bg-white shadow-[0_10px_30px_rgba(11,31,58,0.06)] transition duration-300 hover:-translate-y-0.5 hover:border-brand/45 hover:shadow-[0_18px_40px_rgba(11,31,58,0.12)] md:rounded-[28px]">
       <a
         href={video.url}
         target="_blank"
@@ -121,7 +262,7 @@ export function PerspectiveFeaturedCard({
               {video.creatorName}
             </p>
             <p className="mt-0.5 text-[12px] font-medium text-slate-500">
-              {formatPerspectiveDate(video.publishedAt)}
+              {formatRelativePublicationTime(video.publishedAt)}
             </p>
           </div>
           <span
@@ -142,6 +283,9 @@ export function PerspectiveFeaturedCard({
           </a>
         </h3>
 
+        <TopicTagChips tags={tags} />
+        {relevance ? <RelevanceBlock relevance={relevance} /> : null}
+
         <div className="mt-auto pt-1">
           <a
             href={video.url}
@@ -160,9 +304,13 @@ export function PerspectiveFeaturedCard({
 
 export function PerspectiveCompactCard({
   video,
+  relevance,
 }: {
   video: PerspectiveVideo;
+  relevance?: PerspectiveRelevance;
 }) {
+  const tags = mapPerspectiveTopicTags(video.title).slice(0, 2);
+
   return (
     <article className="group flex min-w-0 gap-3 rounded-2xl border border-slate-200 bg-white p-3 transition duration-300 hover:-translate-y-0.5 hover:border-brand/35 hover:shadow-sm sm:gap-3.5 sm:p-3.5">
       <a
@@ -201,9 +349,24 @@ export function PerspectiveCompactCard({
             {video.title}
           </a>
         </h3>
-        <p className="mt-1 text-[12px] font-medium text-slate-500">
-          {formatPerspectiveDate(video.publishedAt)}
-        </p>
+        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+          <p className="text-[12px] font-medium text-slate-500">
+            {formatRelativePublicationTime(video.publishedAt)}
+          </p>
+          {tags.slice(0, 1).map((tag) => (
+            <span
+              key={tag}
+              className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-600"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+        {relevance?.relevant ? (
+          <p className="mt-1.5 text-[11px] font-semibold text-brand-navy/75">
+            Relevant to your portfolio
+          </p>
+        ) : null}
       </div>
     </article>
   );

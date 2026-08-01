@@ -143,12 +143,11 @@ describe("dashboard phase 1 revamp", () => {
     expect(movers.lowestMover?.changePeriodLabel).toBe("24h");
   });
 
-  it("keeps Goal Performance, Today’s Decision, AI insight and Trading Hours", () => {
+  it("keeps Goal Performance, Market Briefing, AI insight and Trading Hours", () => {
     expect(summarySource).toContain("GoalProgressCard");
-    expect(dashboardSource).toContain("DashboardTodaysDecision");
+    expect(dashboardSource).toContain("DashboardIntelligencePreview");
     expect(dashboardSource).toContain("DashboardInsightCard");
     expect(dashboardSource).toContain("DashboardMarketStatus");
-    expect(dashboardSource).toContain("DashboardIntelligencePreview");
     expect(dashboardSource).toContain("HoldingsToday");
     expect(dashboardSource).toContain("DashboardGoalProgressCard");
     expect(dashboardSource).toContain("DashboardDividendCard");

@@ -1,16 +1,37 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { DashboardPerspectivesCard } from "@/components/perspectives/DashboardPerspectivesCard";
-import { selectDashboardPerspectives } from "@/lib/services/perspectives/groupPerspectives";
+import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
+import {
+  buildPerspectiveRelevance,
+  derivePerspectivePortfolioSignals,
+  selectDashboardPerspectivesForAudience,
+} from "@/lib/services/perspectives/relevance";
+import type { PerspectiveRelevance } from "@/lib/services/perspectives/relevance";
 import type { PerspectiveVideo } from "@/lib/services/perspectives/types";
 
 export function DashboardPerspectivesWidget() {
+  const { holdings } = useUserPortfolio();
   const [videos, setVideos] = useState<PerspectiveVideo[]>([]);
   const [state, setState] = useState<
     "live" | "empty" | "provider_unavailable" | "loading"
   >("loading");
+
+  const signals = useMemo(
+    () => derivePerspectivePortfolioSignals(holdings),
+    [holdings],
+  );
+
+  const holdingsKey = useMemo(
+    () =>
+      holdings
+        .map((holding) => holding.symbol)
+        .sort()
+        .join("|"),
+    [holdings],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -28,7 +49,12 @@ export function DashboardPerspectivesWidget() {
           throw new Error("Failed");
         }
         if (cancelled) return;
-        const selected = selectDashboardPerspectives(data.videos ?? [], 2);
+        const nextSignals = derivePerspectivePortfolioSignals(holdings);
+        const selected = selectDashboardPerspectivesForAudience(
+          data.videos ?? [],
+          nextSignals,
+          2,
+        );
         setVideos(selected);
         setState(
           selected.length > 0
@@ -49,7 +75,23 @@ export function DashboardPerspectivesWidget() {
     return () => {
       cancelled = true;
     };
-  }, []);
+    // Re-rank when portfolio composition changes; avoid refetch on every holdings identity churn.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [holdingsKey]);
 
-  return <DashboardPerspectivesCard videos={videos} state={state} />;
+  const relevanceById = useMemo(() => {
+    const map: Record<string, PerspectiveRelevance> = {};
+    for (const video of videos) {
+      map[video.id] = buildPerspectiveRelevance(video, signals);
+    }
+    return map;
+  }, [videos, signals]);
+
+  return (
+    <DashboardPerspectivesCard
+      videos={videos}
+      relevanceById={relevanceById}
+      state={state}
+    />
+  );
 }
