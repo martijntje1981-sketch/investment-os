@@ -9,13 +9,23 @@ export type UpcomingEventCategory =
   | "ecb"
   | "macro";
 
+export type UpcomingEventsDiagnostics = {
+  requestedFrom: string;
+  requestedTo: string;
+  providerHttpStatus: number | null;
+  providerRowCount: number;
+  mappedEventCount: number;
+  warning: string | null;
+};
+
 export type UpcomingEventsResult = {
   events: UpcomingMarketEvent[];
   state: EventsDataState;
   source: string | null;
+  diagnostics: UpcomingEventsDiagnostics;
 };
 
-type EodhdEconomicEvent = {
+export type EodhdEconomicEvent = {
   type?: string;
   country?: string;
   date?: string;
@@ -25,6 +35,10 @@ type EodhdEconomicEvent = {
 };
 
 const EODHD_EVENTS_SOURCE = "EODHD Economic Calendar";
+const LOOKAHEAD_DAYS = 21;
+const PROVIDER_LIMIT = 1000;
+/** News strip keep-top size; calendar consumers can request a higher limit. */
+const DEFAULT_MAP_LIMIT = 120;
 
 const HIGH_IMPACT_KEYWORDS = [
   "interest rate decision",
@@ -61,7 +75,10 @@ const CATEGORY_PATTERNS: Array<{
   pattern: RegExp;
 }> = [
   { category: "earnings", pattern: /\bearnings\b/i },
-  { category: "cpi", pattern: /\b(cpi|consumer price index|inflation rate|core inflation)\b/i },
+  {
+    category: "cpi",
+    pattern: /\b(cpi|consumer price index|inflation rate|core inflation)\b/i,
+  },
   { category: "fed", pattern: /\b(fed|federal reserve|fomc)\b/i },
   { category: "ecb", pattern: /\b(ecb|european central bank)\b/i },
 ];
@@ -80,6 +97,60 @@ function normaliseText(value: string | undefined): string {
   return (value ?? "").trim();
 }
 
+function emptyDiagnostics(
+  overrides: Partial<UpcomingEventsDiagnostics> = {},
+): UpcomingEventsDiagnostics {
+  const now = new Date();
+  return {
+    requestedFrom: createDateString(now),
+    requestedTo: createDateString(addDays(now, LOOKAHEAD_DAYS)),
+    providerHttpStatus: null,
+    providerRowCount: 0,
+    mappedEventCount: 0,
+    warning: null,
+    ...overrides,
+  };
+}
+
+function logEventsDiag(
+  message: string,
+  details: Record<string, unknown>,
+): void {
+  if (process.env.NODE_ENV === "production") return;
+  console.info(`[upcoming-events] ${message}`, details);
+}
+
+/** Extract YYYY-MM-DD from EODHD date (`YYYY-MM-DD` or `YYYY-MM-DD HH:MM:SS`). */
+export function extractEventDateKey(dateValue: string): string | null {
+  const trimmed = dateValue.trim();
+  const match = trimmed.match(/^(\d{4}-\d{2}-\d{2})/);
+  return match?.[1] ?? null;
+}
+
+/** Parse EODHD event datetime into a UTC Date. */
+export function parseEodhdEventDate(dateValue: string): Date | null {
+  const trimmed = dateValue.trim();
+  if (!trimmed) return null;
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    const parsed = new Date(`${trimmed}T12:00:00.000Z`);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  if (/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(:\d{2})?/.test(trimmed)) {
+    const normalised = trimmed.includes("T")
+      ? trimmed
+      : trimmed.replace(" ", "T");
+    const withZone = /Z$|[+-]\d{2}:?\d{2}$/.test(normalised)
+      ? normalised
+      : `${normalised}Z`;
+    const parsed = new Date(withZone);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  return null;
+}
+
 function classifyEventCategory(title: string): UpcomingEventCategory {
   for (const entry of CATEGORY_PATTERNS) {
     if (entry.pattern.test(title)) {
@@ -90,7 +161,7 @@ function classifyEventCategory(title: string): UpcomingEventCategory {
   return "macro";
 }
 
-function getImpact(title: string): "High" | "Medium" | null {
+function getImpact(title: string): "High" | "Medium" | "Low" {
   const normalized = title.toLowerCase();
 
   if (HIGH_IMPACT_KEYWORDS.some((keyword) => normalized.includes(keyword))) {
@@ -101,7 +172,7 @@ function getImpact(title: string): "High" | "Medium" | null {
     return "Medium";
   }
 
-  return null;
+  return "Low";
 }
 
 function formatEventDescription(event: EodhdEconomicEvent): string {
@@ -118,47 +189,65 @@ function formatEventDescription(event: EodhdEconomicEvent): string {
   return `${values.join(" · ")}. Markets may react if the print differs from expectations.`;
 }
 
-function formatTimeLabel(dateValue: string): string {
-  const date = new Date(`${dateValue}T12:00:00.000Z`);
-  if (Number.isNaN(date.getTime())) return "Date unavailable";
+function formatTimeLabel(dateKey: string, parsed: Date): string {
+  const hasClock =
+    parsed.getUTCHours() !== 12 ||
+    parsed.getUTCMinutes() !== 0 ||
+    parsed.getUTCSeconds() !== 0;
+
+  if (hasClock) {
+    return new Intl.DateTimeFormat(undefined, {
+      weekday: "short",
+      day: "2-digit",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(parsed);
+  }
 
   return new Intl.DateTimeFormat("en-GB", {
     weekday: "short",
     day: "2-digit",
     month: "short",
-  }).format(date);
+  }).format(new Date(`${dateKey}T12:00:00.000Z`));
 }
 
-function mapEodhdEvents(events: EodhdEconomicEvent[]): UpcomingMarketEvent[] {
-  const today = createDateString(new Date());
+export function mapEodhdEconomicEvents(
+  events: EodhdEconomicEvent[],
+  options: { now?: Date; limit?: number } = {},
+): UpcomingMarketEvent[] {
+  const now = options.now ?? new Date();
+  const today = createDateString(now);
+  const limit = options.limit ?? DEFAULT_MAP_LIMIT;
 
   return events
     .map((event, index) => {
       const title = normaliseText(event.type);
-      const date = normaliseText(event.date);
-      const impact = getImpact(title);
-
-      if (!title || !date || !impact) {
+      const rawDate = normaliseText(event.date);
+      if (!title || !rawDate) {
         return null;
       }
 
-      if (date < today) {
+      const dateKey = extractEventDateKey(rawDate);
+      const parsed = parseEodhdEventDate(rawDate);
+      if (!dateKey || !parsed) {
         return null;
       }
 
-      const parsed = Date.parse(`${date}T12:00:00.000Z`);
-      if (Number.isNaN(parsed)) {
+      // Compare calendar dates only so local/UTC clock skew cannot drop today.
+      if (dateKey < today) {
         return null;
       }
 
       const category = classifyEventCategory(title);
+      const impact = getImpact(title);
 
       return {
-        id: `${date}-${event.country ?? "global"}-${index}-${title}`,
+        id: `${dateKey}-${event.country ?? "global"}-${index}-${title}`,
         title,
         category,
-        date,
-        timeLabel: formatTimeLabel(date),
+        date: dateKey,
+        timeLabel: formatTimeLabel(dateKey, parsed),
         country: normaliseText(event.country) || "Global",
         description: formatEventDescription(event),
         impact,
@@ -166,8 +255,15 @@ function mapEodhdEvents(events: EodhdEconomicEvent[]): UpcomingMarketEvent[] {
       };
     })
     .filter((event): event is UpcomingMarketEvent => event !== null)
-    .sort((a, b) => a.date.localeCompare(b.date))
-    .slice(0, 8);
+    .sort((a, b) => {
+      if (a.date !== b.date) return a.date.localeCompare(b.date);
+      const impactRank = (value: UpcomingMarketEvent["impact"]) =>
+        value === "High" ? 0 : value === "Medium" ? 1 : 2;
+      const impactDiff = impactRank(a.impact) - impactRank(b.impact);
+      if (impactDiff !== 0) return impactDiff;
+      return a.title.localeCompare(b.title);
+    })
+    .slice(0, limit);
 }
 
 /** @deprecated Production must not use fabricated fallback events. Tests only. */
@@ -176,21 +272,47 @@ export function buildFallbackUpcomingEvents(): UpcomingMarketEvent[] {
 }
 
 async function fetchEconomicEventsFromEodhd(): Promise<UpcomingEventsResult> {
-  const apiKey = process.env.EODHD_API_KEY;
+  const now = new Date();
+  const requestedFrom = createDateString(now);
+  const requestedTo = createDateString(addDays(now, LOOKAHEAD_DAYS));
+  const baseDiagnostics = emptyDiagnostics({
+    requestedFrom,
+    requestedTo,
+  });
+
+  const apiKey = process.env.EODHD_API_KEY?.trim();
   if (!apiKey) {
+    const diagnostics = {
+      ...baseDiagnostics,
+      warning: "EODHD_API_KEY is missing.",
+    };
+    logEventsDiag("configuration_missing", {
+      reason: "missing_api_key",
+      from: requestedFrom,
+      to: requestedTo,
+    });
     return {
       events: [],
-      state: "provider_unavailable",
+      state: "configuration_missing",
       source: null,
+      diagnostics,
     };
   }
 
-  const now = new Date();
   const url = new URL("https://eodhd.com/api/economic-events");
-  url.searchParams.set("from", createDateString(now));
-  url.searchParams.set("to", createDateString(addDays(now, 21)));
+  url.searchParams.set("from", requestedFrom);
+  url.searchParams.set("to", requestedTo);
+  url.searchParams.set("limit", String(PROVIDER_LIMIT));
   url.searchParams.set("api_token", apiKey);
   url.searchParams.set("fmt", "json");
+
+  logEventsDiag("request", {
+    endpoint: `${url.origin}${url.pathname}`,
+    from: requestedFrom,
+    to: requestedTo,
+    limit: PROVIDER_LIMIT,
+    fmt: "json",
+  });
 
   try {
     const response = await fetch(url, {
@@ -199,43 +321,110 @@ async function fetchEconomicEventsFromEodhd(): Promise<UpcomingEventsResult> {
     });
 
     if (!response.ok) {
+      const bodyPreview = (await response.text()).slice(0, 180);
+      const isForbidden = response.status === 403 || response.status === 401;
+      const state: EventsDataState = isForbidden
+        ? "configuration_missing"
+        : "provider_unavailable";
+      const warning = isForbidden
+        ? `EODHD economic-events returned HTTP ${response.status} (subscription or token cannot access this feed).`
+        : `EODHD economic-events returned HTTP ${response.status}.`;
+
+      logEventsDiag(state, {
+        httpStatus: response.status,
+        from: requestedFrom,
+        to: requestedTo,
+        bodyPreview,
+      });
+
       return {
         events: [],
-        state: "provider_unavailable",
+        state,
         source: null,
+        diagnostics: {
+          ...baseDiagnostics,
+          providerHttpStatus: response.status,
+          warning,
+        },
       };
     }
 
     const data = (await response.json()) as unknown;
     if (!Array.isArray(data)) {
+      const warning =
+        "EODHD economic-events returned a non-array payload (treated as provider error).";
+      logEventsDiag("provider_unavailable", {
+        httpStatus: response.status,
+        shape: typeof data,
+      });
       return {
         events: [],
-        state: "empty",
+        state: "provider_unavailable",
         source: EODHD_EVENTS_SOURCE,
+        diagnostics: {
+          ...baseDiagnostics,
+          providerHttpStatus: response.status,
+          warning,
+        },
       };
     }
 
-    const mapped = mapEodhdEvents(data as EodhdEconomicEvent[]);
+    const mapped = mapEodhdEconomicEvents(data as EodhdEconomicEvent[], {
+      now,
+      limit: DEFAULT_MAP_LIMIT,
+    });
+
+    logEventsDiag("mapped", {
+      httpStatus: response.status,
+      providerRowCount: data.length,
+      mappedEventCount: mapped.length,
+      from: requestedFrom,
+      to: requestedTo,
+    });
+
     return {
       events: mapped,
       state: mapped.length > 0 ? "live" : "empty",
       source: EODHD_EVENTS_SOURCE,
+      diagnostics: {
+        ...baseDiagnostics,
+        providerHttpStatus: response.status,
+        providerRowCount: data.length,
+        mappedEventCount: mapped.length,
+        warning:
+          data.length > 0 && mapped.length === 0
+            ? "Provider returned rows but none mapped into upcoming events."
+            : null,
+      },
     };
-  } catch {
+  } catch (error) {
+    const warning =
+      error instanceof Error
+        ? `EODHD economic-events request failed: ${error.message}`
+        : "EODHD economic-events request failed.";
+    logEventsDiag("provider_unavailable", { warning });
     return {
       events: [],
       state: "provider_unavailable",
       source: null,
+      diagnostics: {
+        ...baseDiagnostics,
+        warning,
+      },
     };
   }
 }
 
 const getCachedUpcomingEvents = unstable_cache(
   fetchEconomicEventsFromEodhd,
-  ["investment-os-news-upcoming-events-v2"],
+  ["investment-os-news-upcoming-events-v3"],
   { revalidate: 45 * 60 },
 );
 
 export async function fetchUpcomingMarketEvents(): Promise<UpcomingEventsResult> {
+  // Avoid sticky cached 403/empty while iterating on provider access locally.
+  if (process.env.NODE_ENV === "development") {
+    return fetchEconomicEventsFromEodhd();
+  }
   return getCachedUpcomingEvents();
 }

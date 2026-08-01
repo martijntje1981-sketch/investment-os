@@ -35,7 +35,11 @@ export type NewsMatchedHolding = {
 
 export type NewsDataState = "live" | "partial" | "cached" | "unavailable";
 
-export type EventsDataState = "live" | "empty" | "provider_unavailable";
+export type EventsDataState =
+  | "live"
+  | "empty"
+  | "provider_unavailable"
+  | "configuration_missing";
 
 /** Provider-neutral normalized content item for the News page. */
 export type NewsContentItem = {
@@ -112,7 +116,7 @@ export type UpcomingMarketEvent = {
   timeLabel: string;
   country: string;
   description: string;
-  impact: "High" | "Medium";
+  impact: "High" | "Medium" | "Low";
   source: string;
 };
 

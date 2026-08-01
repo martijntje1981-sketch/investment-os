@@ -271,6 +271,8 @@ describe("UserMenu profile wiring", () => {
     expect(source).toContain('href: "/portfolio-health"');
     expect(source).toContain('href: "/market-pulse"');
     expect(source).toContain('href: "/supported-instruments"');
+    expect(source).toContain('href: "/events"');
+    expect(source).toContain('label: "Upcoming Events"');
     expect(source).toContain('href: "/upload"');
     expect(source).toContain('title="Explore"');
     expect(source).toContain('title="Account"');

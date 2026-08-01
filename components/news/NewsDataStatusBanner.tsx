@@ -53,13 +53,17 @@ export function NewsDataStatusBanner({
   });
 
   if (!warning.show || !warning.message) {
-    if (dataStatus.eventsState === "provider_unavailable") {
+    if (
+      dataStatus.eventsState === "provider_unavailable" ||
+      dataStatus.eventsState === "configuration_missing"
+    ) {
       return (
         <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
           <p>
-            Economic calendar data is unavailable. Upcoming events will appear only when verified
-            dates can be loaded.
+            {dataStatus.eventsState === "configuration_missing"
+              ? "Economic calendar access is not enabled for the current EODHD plan. Upcoming events will appear only when verified dates can be loaded."
+              : "Economic calendar data is unavailable. Upcoming events will appear only when verified dates can be loaded."}
           </p>
         </div>
       );

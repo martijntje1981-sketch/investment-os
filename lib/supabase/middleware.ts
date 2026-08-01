@@ -11,6 +11,7 @@ const protectedRoutes = [
   "/discover",
   "/goals",
   "/holding",
+  "/events",
 ];
 
 export async function updateSession(request: NextRequest) {

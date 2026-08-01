@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Activity,
+  CalendarDays,
   Compass,
   FileUp,
   ListChecks,
@@ -18,7 +19,9 @@ import type { User } from "@supabase/supabase-js";
 
 import { TobaileyLogo } from "@/components/brand/TobaileyLogo";
 import { useDismissibleMenu } from "@/lib/client/useDismissibleMenu";
+import { useUpcomingEventsNavVisible } from "@/lib/client/useUpcomingEventsNavVisible";
 import { clearCachedBaseCurrency } from "@/lib/client/portfolioBaseCurrencyStorage";
+import { filterExploreLinksForEventsAvailability } from "@/lib/services/events/availability";
 import { createClient } from "@/lib/supabase/client";
 
 const protectedRoutes = [
@@ -35,6 +38,7 @@ const protectedRoutes = [
   "/market-pulse",
   "/portfolio-health",
   "/supported-instruments",
+  "/events",
 ];
 
 type MenuLink = {
@@ -51,6 +55,7 @@ const accountLinks: MenuLink[] = [
 const exploreLinks: MenuLink[] = [
   { href: "/news", label: "News", icon: Newspaper },
   { href: "/discover", label: "Discover", icon: Compass },
+  { href: "/events", label: "Upcoming Events", icon: CalendarDays },
   { href: "/portfolio-health", label: "Portfolio Health", icon: Activity },
   { href: "/market-pulse", label: "Market Pulse", icon: Waves },
   { href: "/supported-instruments", label: "Supported Instruments", icon: ListChecks },
@@ -124,6 +129,15 @@ export default function UserMenu() {
     triggerRef,
     menuId,
   } = useDismissibleMenu({ closeOnChangeKey: pathname });
+  const upcomingEventsNavVisible = useUpcomingEventsNavVisible();
+  const visibleExploreLinks = useMemo(
+    () =>
+      filterExploreLinksForEventsAvailability(
+        exploreLinks,
+        upcomingEventsNavVisible ? "live" : "configuration_missing",
+      ),
+    [upcomingEventsNavVisible],
+  );
 
   const isProtectedPage = protectedRoutes.some((route) =>
     pathname.startsWith(route),
@@ -243,7 +257,7 @@ export default function UserMenu() {
 
               <MenuSection
                 title="Explore"
-                links={exploreLinks}
+                links={visibleExploreLinks}
                 pathname={pathname}
                 onNavigate={close}
               />

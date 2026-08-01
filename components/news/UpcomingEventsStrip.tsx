@@ -28,9 +28,11 @@ export function UpcomingEventsStrip({
           <div>
             <p className="font-black text-slate-950">No verified upcoming events</p>
             <p className="mt-2 text-sm leading-6 text-slate-500">
-              {eventsState === "provider_unavailable"
-                ? "The economic calendar provider is unavailable right now. Events with unverified dates are never shown."
-                : "No verified macro or calendar events matched the current window."}
+              {eventsState === "configuration_missing"
+                ? "Economic calendar access is not enabled for the current EODHD plan. Events with unverified dates are never shown."
+                : eventsState === "provider_unavailable"
+                  ? "The economic calendar provider is unavailable right now. Events with unverified dates are never shown."
+                  : "No verified macro or calendar events matched the current window."}
             </p>
           </div>
         </div>

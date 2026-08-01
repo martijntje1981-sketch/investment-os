@@ -45,9 +45,11 @@ export function NewsCompactEventsList({
       <p className="rounded-[16px] border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm text-slate-600">
         <span className="font-semibold text-slate-800">No verified upcoming events</span>
         {" — "}
-        {eventsState === "provider_unavailable"
-          ? "The economic calendar provider is unavailable right now."
-          : "No verified macro or calendar events matched the current window."}
+        {eventsState === "configuration_missing"
+          ? "Economic calendar access is not enabled for the current EODHD plan."
+          : eventsState === "provider_unavailable"
+            ? "The economic calendar provider is unavailable right now."
+            : "No verified macro or calendar events matched the current window."}
       </p>
     );
   }
