@@ -67,6 +67,9 @@ import { buildMomentumScoreInputFromHistory } from "@/lib/services/portfolio/sco
 const SCORECARD_PAGE_DISCLAIMER =
   "These scores describe portfolio structure, goal tracking, recent momentum, and data readiness. They do not predict returns.";
 
+const SCORECARD_LEGAL_NOTE =
+  "Tobailey explains portfolio characteristics and scenarios. It does not provide personal investment advice.";
+
 const GOAL_SCORE_METHODOLOGY =
   "Goal Score measures how the current plan tracks toward the configured target using projected attainment, contribution alignment, and remaining time. It is not a probability of success and does not guarantee outcomes.";
 
@@ -285,6 +288,7 @@ export default function PortfolioHealthPage() {
       exposure,
       momentum,
       hasPerformanceHistory,
+      holdings,
     });
   }, [
     analysis,
@@ -369,10 +373,10 @@ export default function PortfolioHealthPage() {
                 </h1>
                 <div className="mt-6 rounded-[24px] bg-white/95 p-4 shadow-sm sm:p-5">
                   <div className="grid min-w-0 grid-cols-2 gap-1 sm:gap-2 lg:grid-cols-4">
-                    <ScoreRing score={scorecard.scores.health} />
-                    <ScoreRing score={scorecard.scores.goal} />
-                    <ScoreRing score={scorecard.scores.momentum} />
-                    <ScoreRing score={scorecard.scores.readiness} />
+                    <ScoreRing score={scorecard.scores.health} showContext />
+                    <ScoreRing score={scorecard.scores.goal} showContext />
+                    <ScoreRing score={scorecard.scores.momentum} showContext />
+                    <ScoreRing score={scorecard.scores.readiness} showContext />
                   </div>
                 </div>
                 <p className="mt-5 max-w-2xl text-[15px] font-semibold leading-relaxed text-white sm:text-base">
@@ -429,6 +433,42 @@ export default function PortfolioHealthPage() {
                   <p className="mt-3 max-w-xl text-[15px] font-medium leading-relaxed text-white/75 sm:text-base">
                     {healthScore.explanation}
                   </p>
+                  {scorecard.scores.health.context ? (
+                    <div className="mt-5 max-w-xl rounded-2xl bg-white/10 px-4 py-3">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/55">
+                        What shapes this score
+                      </p>
+                      <p className="mt-1.5 text-[14px] font-semibold leading-snug text-white">
+                        {scorecard.scores.health.context.headline}
+                      </p>
+                      {scorecard.scores.health.context.detail ? (
+                        <p className="mt-1 text-[13px] font-medium text-white/65">
+                          {scorecard.scores.health.context.detail}
+                        </p>
+                      ) : null}
+                      {scorecard.scores.health.context.factors &&
+                      scorecard.scores.health.context.factors.length > 0 ? (
+                        <ul className="mt-2 space-y-1">
+                          {scorecard.scores.health.context.factors
+                            .slice(0, 3)
+                            .map((factor) => (
+                              <li
+                                key={factor.label}
+                                className="text-[12px] font-medium text-white/70"
+                              >
+                                {factor.label}
+                              </li>
+                            ))}
+                        </ul>
+                      ) : null}
+                      <Link
+                        href={scorecard.scores.health.context.href}
+                        className="mt-3 inline-flex min-h-[44px] items-center text-[13px] font-semibold text-sky-200 underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+                      >
+                        {scorecard.scores.health.context.linkLabel}
+                      </Link>
+                    </div>
+                  ) : null}
                   {profile.hero.traits.length > 0 ? (
                     <p className="mt-4 text-[13px] font-medium tracking-[-0.01em] text-white/55">
                       {profile.hero.traits.join(" · ")}
@@ -923,6 +963,10 @@ export default function PortfolioHealthPage() {
                 Portfolio
               </Link>
             </div>
+
+            <p className={`px-1 pb-2 ${appSectionMetaClass}`}>
+              {SCORECARD_LEGAL_NOTE}
+            </p>
           </>
         ) : null}
 

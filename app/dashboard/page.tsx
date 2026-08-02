@@ -182,6 +182,7 @@ export default function DashboardPage() {
       exposure: exposureAllocation,
       momentum,
       hasPerformanceHistory,
+      holdings,
     });
   }, [
     exposureAllocation,

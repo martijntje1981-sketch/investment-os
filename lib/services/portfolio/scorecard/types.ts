@@ -12,6 +12,21 @@ import type {
   ScoreConfidenceLevel,
 } from "@/lib/services/portfolio/scorecard/config";
 
+export type ScoreContextStatus = "positive" | "neutral" | "attention";
+
+/** Neutral, factual explainability for a Portfolio Score (never advice). */
+export type ScoreContext = {
+  headline: string;
+  detail?: string;
+  status?: ScoreContextStatus;
+  href: string;
+  linkLabel: string;
+  factors?: Array<{
+    label: string;
+    tone: ScoreContextStatus;
+  }>;
+};
+
 export type PortfolioScoreEvidence = {
   id: string;
   label: string;
@@ -46,6 +61,8 @@ export type PortfolioScore = {
   available: boolean;
   unavailableReason?: string;
   href: string;
+  /** Shared factual context — same builder for Dashboard and Scorecard. */
+  context?: ScoreContext;
 };
 
 export type PortfolioScorecardResult = {

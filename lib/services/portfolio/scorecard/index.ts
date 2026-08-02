@@ -20,10 +20,25 @@ export {
   buildScorecardInsightContext,
   toPortfolioScorecardSnapshot,
 } from "@/lib/services/portfolio/scorecard/summary";
+export {
+  buildHealthScoreContext,
+  buildGoalScoreContext,
+  buildMomentumScoreContext,
+  buildReadinessScoreContext,
+  buildAllScoreContexts,
+} from "@/lib/services/portfolio/scorecard/buildScoreContext";
+export {
+  assertNeutralScoreContextCopy,
+  findForbiddenAdvicePhrase,
+  FORBIDDEN_SCORE_ADVICE_PHRASES,
+  guardScoreContext,
+} from "@/lib/services/portfolio/scorecard/scoreContextGuardrail";
 export type {
   PortfolioScore,
   PortfolioScorecardResult,
   PortfolioScorecardSnapshot,
+  ScoreContext,
+  ScoreContextStatus,
   ScoreSnapshot,
 } from "@/lib/services/portfolio/scorecard/types";
 export type {

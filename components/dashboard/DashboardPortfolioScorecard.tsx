@@ -32,10 +32,10 @@ export function DashboardPortfolioScorecard({
 
       <div className={`${appCardPaddingClass} pt-0`}>
         <div className="grid min-w-0 grid-cols-2 gap-1 sm:gap-2 lg:grid-cols-4">
-          <ScoreRing score={health} />
-          <ScoreRing score={goal} />
-          <ScoreRing score={momentum} />
-          <ScoreRing score={readiness} />
+          <ScoreRing score={health} showContext />
+          <ScoreRing score={goal} showContext />
+          <ScoreRing score={momentum} showContext />
+          <ScoreRing score={readiness} showContext />
         </div>
         <p className={`mt-3 ${appSectionMetaClass}`}>
           Scores describe structure, plan tracking, recent movement and data

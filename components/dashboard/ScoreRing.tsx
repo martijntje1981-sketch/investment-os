@@ -17,10 +17,13 @@ export function ScoreRing({
   score,
   size = 104,
   className,
+  showContext = false,
 }: {
   score: PortfolioScore;
   size?: number;
   className?: string;
+  /** Compact factual driver line (Dashboard / Scorecard hero). */
+  showContext?: boolean;
 }) {
   const stroke = Math.max(7, Math.round(size * 0.08));
   const radius = (size - stroke) / 2;
@@ -39,9 +42,10 @@ export function ScoreRing({
   const status = score.available
     ? (score.band?.label ?? score.summary)
     : (score.unavailableReason ?? "Unavailable");
+  const contextLine = showContext ? score.context?.headline : null;
 
   const aria = score.available
-    ? `${score.label} Score ${score.value} out of 100, ${status}. Open ${score.label} details.`
+    ? `${score.label} Score ${score.value} out of 100, ${status}${contextLine ? `. ${contextLine}` : ""}. Open ${score.label} details.`
     : `${score.label} Score unavailable. ${status}. Open ${score.label} details.`;
 
   return (
@@ -105,6 +109,11 @@ export function ScoreRing({
       >
         {status}
       </p>
+      {contextLine ? (
+        <p className="mt-1 line-clamp-2 text-[10px] font-medium leading-snug text-slate-500">
+          {contextLine}
+        </p>
+      ) : null}
       <span className="sr-only">
         {score.available
           ? `${score.label} ${score.value} out of 100. ${status}.`

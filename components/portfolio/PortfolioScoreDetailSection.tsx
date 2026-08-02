@@ -2,11 +2,16 @@
  * Compact detail panel for a Portfolio Score (Goals / Analysis destinations).
  */
 
+import Link from "next/link";
+
 import {
   SCORE_TONE_LABEL_CLASS,
   type ScoreBandTone,
 } from "@/lib/services/portfolio/scorecard/config";
-import type { PortfolioScore } from "@/lib/services/portfolio/scorecard";
+import type {
+  PortfolioScore,
+  ScoreContextStatus,
+} from "@/lib/services/portfolio/scorecard";
 import {
   appCardPaddingClass,
   appDashboardLightCardClass,
@@ -19,6 +24,18 @@ import {
 function cn(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(" ");
 }
+
+const CONTEXT_STATUS_CLASS: Record<ScoreContextStatus, string> = {
+  positive: "text-emerald-700",
+  neutral: "text-slate-600",
+  attention: "text-amber-700",
+};
+
+const FACTOR_TONE_DOT: Record<ScoreContextStatus, string> = {
+  positive: "bg-emerald-500",
+  neutral: "bg-slate-400",
+  attention: "bg-amber-500",
+};
 
 export function PortfolioScoreDetailSection({
   id,
@@ -34,6 +51,7 @@ export function PortfolioScoreDetailSection({
   const tone: ScoreBandTone = score.band?.tone ?? "balanced";
   const valueLabel =
     score.available && score.value != null ? String(score.value) : "—";
+  const context = score.context;
 
   return (
     <section
@@ -85,6 +103,50 @@ export function PortfolioScoreDetailSection({
             </p>
           </div>
         </div>
+
+        {context ? (
+          <div className="rounded-xl bg-slate-50 px-3 py-3">
+            <p className={appSectionLabelClass}>What shapes this score</p>
+            <p
+              className={cn(
+                "mt-1 text-[14px] font-semibold leading-snug text-slate-900",
+                context.status
+                  ? CONTEXT_STATUS_CLASS[context.status]
+                  : undefined,
+              )}
+            >
+              {context.headline}
+            </p>
+            {context.detail ? (
+              <p className={`mt-1 ${appSectionMetaClass}`}>{context.detail}</p>
+            ) : null}
+            {context.factors && context.factors.length > 0 ? (
+              <ul className="mt-2 space-y-1.5">
+                {context.factors.slice(0, 3).map((factor) => (
+                  <li
+                    key={factor.label}
+                    className="flex items-start gap-2 text-[12px] font-medium text-slate-700"
+                  >
+                    <span
+                      className={cn(
+                        "mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full",
+                        FACTOR_TONE_DOT[factor.tone],
+                      )}
+                      aria-hidden
+                    />
+                    <span>{factor.label}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            <Link
+              href={context.href}
+              className="mt-3 inline-flex min-h-[44px] items-center text-[13px] font-semibold text-sky-700 underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
+            >
+              {context.linkLabel}
+            </Link>
+          </div>
+        ) : null}
 
         {score.evidence.length > 0 ? (
           <ul className="space-y-2">
