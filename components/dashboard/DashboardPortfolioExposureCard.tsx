@@ -9,16 +9,15 @@ import {
   appDashboardLightCardClass,
   appSectionBodyClass,
   appSectionMetaClass,
+  appTextLinkClass,
 } from "@/components/layout/appSurface";
 import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
-import { ANALYSIS_PATH } from "@/lib/navigation/newsHubRoutes";
+import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 import {
   EXPOSURE_GROUP_BAR_CLASS,
   EXPOSURE_GROUP_DOT_CLASS,
   type PortfolioExposureAllocation,
 } from "@/lib/services/classification";
-
-const ANALYSIS_PORTFOLIO_EXPOSURE_HREF = `${ANALYSIS_PATH}#portfolio-exposure`;
 
 /**
  * Compact Dashboard preview of portfolio exposure (whole-instrument classification).
@@ -103,10 +102,10 @@ export function DashboardPortfolioExposureCard({
         )}
 
         <Link
-          href={ANALYSIS_PORTFOLIO_EXPOSURE_HREF}
-          className="inline-flex min-h-[40px] items-center text-sm font-semibold text-slate-700 transition hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2"
+          href={DASHBOARD_DEEP_LINKS.portfolioExposure}
+          className={appTextLinkClass}
         >
-          Open Analysis
+          View allocation
         </Link>
       </div>
     </section>

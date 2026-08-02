@@ -35,7 +35,12 @@ function holding(
 describe("classifyHoldingExposure", () => {
   it("classifies cash via assetType", () => {
     const result = classifyHoldingExposure(
-      holding({ symbol: "EUR", assetType: "cash", currentPrice: 1, quantity: 500 }),
+      holding({
+        symbol: "EUR",
+        assetType: "cash",
+        currentPrice: 1,
+        quantity: 500,
+      }),
     );
     expect(result.normalizedGroupId).toBe("cash");
     expect(result.classificationSource).toBe("asset_type");
@@ -102,15 +107,15 @@ describe("classifyHoldingExposure", () => {
     expect(
       resolveGroupFromVerifiedExposureText("Consumer Defensive · Staples"),
     ).toBe("consumer");
-    expect(
-      resolveGroupFromVerifiedExposureText("Financial Services"),
-    ).toBe("financials_real_estate");
+    expect(resolveGroupFromVerifiedExposureText("Financial Services")).toBe(
+      "financials_real_estate",
+    );
     expect(resolveGroupFromVerifiedExposureText("Real Estate")).toBe(
       "financials_real_estate",
     );
-    expect(
-      resolveGroupFromVerifiedExposureText("Communication Services"),
-    ).toBe("technology_communication");
+    expect(resolveGroupFromVerifiedExposureText("Communication Services")).toBe(
+      "technology_communication",
+    );
   });
 
   it("does not treat income as a sector group; STRC stays Other / Unclassified", () => {
@@ -323,10 +328,10 @@ describe("dashboard portfolio exposure integration", () => {
     expect(goalIdx).toBeGreaterThan(exposureIdx);
   });
 
-  it("uses ANALYSIS_PATH CTA with portfolio-exposure hash and keeps Phase 1/2 sections", () => {
-    expect(cardSource).toContain("ANALYSIS_PATH");
-    expect(cardSource).toContain("#portfolio-exposure");
-    expect(cardSource).toContain("Open Analysis");
+  it("uses deep-link CTA with portfolio-exposure hash and keeps Phase 1/2 sections", () => {
+    expect(cardSource).toContain("DASHBOARD_DEEP_LINKS.portfolioExposure");
+    expect(cardSource).toContain("portfolioExposure");
+    expect(cardSource).toContain("View allocation");
     expect(cardSource).toContain("Portfolio exposure");
     expect(cardSource).toContain("EXPOSURE_GROUP_BAR_CLASS");
     expect(cardSource).not.toContain("overflow-x-auto");

@@ -6,7 +6,8 @@ import {
 } from "@/lib/client/marketConsensus/consensusHelpers";
 import {
   classifyMarketConsensusHolding,
-  resolveNotApplicableStatusLabel,
+  resolveMarketOutlookKind,
+  resolveOutlookStatusLabel,
 } from "@/lib/client/marketConsensus/holdingClassification";
 import {
   normalizeConsensusResultForHolding,
@@ -48,9 +49,15 @@ function mapCoverageType(
   result: AnalystConsensusResult,
   holding: StoredPortfolioHolding,
 ): MarketConsensusCoverageType {
-  const notApplicable = resolveNotApplicableStatusLabel(holding);
-  if (notApplicable) {
-    return "Not applicable";
+  const outlookKind = resolveMarketOutlookKind(holding);
+  if (outlookKind === "underlying_market") {
+    return "Underlying market outlook";
+  }
+  if (outlookKind === "theme_level") {
+    return "Theme-level outlook";
+  }
+  if (outlookKind === "asset_class") {
+    return "Asset-class outlook";
   }
 
   switch (result.coverageType) {
@@ -63,9 +70,11 @@ function mapCoverageType(
       }
       return "No analyst coverage";
     case "underlying-market":
-      return "Not applicable";
+      return "Underlying market outlook";
+    case "sector-outlook":
+      return "Theme-level outlook";
     case "crypto-market-outlook":
-      return "Not applicable";
+      return "Asset-class outlook";
     default:
       return "No reliable coverage";
   }
@@ -123,10 +132,10 @@ function mapStatusLabel(
 ): MarketConsensusStatusLabel | null {
   if (state === "etf_outlook" || state === "crypto_outlook") {
     return (
-      resolveNotApplicableStatusLabel(holding) ??
+      resolveOutlookStatusLabel(holding) ??
       (state === "crypto_outlook"
-        ? "Not applicable — crypto"
-        : "Not applicable — ETF")
+        ? "Asset-class outlook"
+        : "Underlying market outlook")
     );
   }
 
@@ -162,7 +171,9 @@ function mapStatusLabel(
   return classificationStatusLabel(result?.classification ?? "unavailable");
 }
 
-function buildPriceTargetLabel(result: AnalystConsensusResult | null): string | null {
+function buildPriceTargetLabel(
+  result: AnalystConsensusResult | null,
+): string | null {
   if (
     result?.averageTarget == null ||
     !Number.isFinite(result.averageTarget) ||
@@ -179,7 +190,9 @@ function buildPriceTargetLabel(result: AnalystConsensusResult | null): string | 
   )}`;
 }
 
-function buildImpliedUpsideLabel(result: AnalystConsensusResult | null): string | null {
+function buildImpliedUpsideLabel(
+  result: AnalystConsensusResult | null,
+): string | null {
   if (
     result?.impliedUpsidePercent == null ||
     !Number.isFinite(result.impliedUpsidePercent)
@@ -191,7 +204,9 @@ function buildImpliedUpsideLabel(result: AnalystConsensusResult | null): string 
   return `Consensus-implied upside: ${prefix}${result.impliedUpsidePercent.toFixed(1)}%`;
 }
 
-function buildAnalystCountLabel(result: AnalystConsensusResult | null): string | null {
+function buildAnalystCountLabel(
+  result: AnalystConsensusResult | null,
+): string | null {
   if (result?.analystCount == null || result.analystCount <= 0) {
     return null;
   }
@@ -207,14 +222,14 @@ function buildSummaryCopy(
   if (state === "etf_outlook") {
     return (
       result?.summary ??
-      "Underlying market outlook data is not available for this ETF yet. ETF holdings are assessed via broader market research rather than single-instrument analyst ratings."
+      "Underlying market outlook data is not available for this fund yet. Fund holdings are assessed via broader market research rather than single-instrument analyst ratings."
     );
   }
 
   if (state === "crypto_outlook") {
     return (
       result?.summary ??
-      "Market outlook data is not available for this crypto-linked holding yet."
+      "Asset-class outlook data is not available for this crypto-linked holding yet."
     );
   }
 
@@ -309,8 +324,7 @@ export function mapConsensusResultToCard(input: {
     : null;
 
   const updatedAtLabel =
-    result?.updatedAt &&
-    (showsEquityAnalystDetails(state) || result.isStale)
+    result?.updatedAt && (showsEquityAnalystDetails(state) || result.isStale)
       ? formatConsensusUpdatedAt(result.updatedAt)
       : null;
 
@@ -338,10 +352,9 @@ export function mapConsensusResultToCard(input: {
           holding,
         ),
     statusLabel: mapStatusLabel(holding, result, state),
-    analystAgreementLabel:
-      showsEquityAnalystDetails(state)
-        ? agreementLevelLabel(result?.agreementLevel)
-        : null,
+    analystAgreementLabel: showsEquityAnalystDetails(state)
+      ? agreementLevelLabel(result?.agreementLevel)
+      : null,
     ratingDistribution:
       showEquityDistribution && result
         ? {
@@ -356,8 +369,9 @@ export function mapConsensusResultToCard(input: {
     impliedUpsideLabel: showsEquityAnalystDetails(state)
       ? buildImpliedUpsideLabel(result)
       : null,
-    targetCurrencyNote:
-      showsEquityAnalystDetails(state) ? result?.targetCurrencyNote ?? null : null,
+    targetCurrencyNote: showsEquityAnalystDetails(state)
+      ? (result?.targetCurrencyNote ?? null)
+      : null,
     analystCountLabel: showsEquityAnalystDetails(state)
       ? buildAnalystCountLabel(result)
       : null,
@@ -367,7 +381,9 @@ export function mapConsensusResultToCard(input: {
     sourceLabel,
     updatedAtLabel,
     cryptoDisclaimer:
-      state === "crypto_outlook" ? MARKET_CONSENSUS_CRYPTO_DISCLAIMER : undefined,
+      state === "crypto_outlook"
+        ? MARKET_CONSENSUS_CRYPTO_DISCLAIMER
+        : undefined,
     unavailableTitle:
       state === "no_coverage" && result?.availability === "unavailable"
         ? MARKET_CONSENSUS_UNAVAILABLE_TITLE
@@ -401,6 +417,7 @@ export function mapPortfolioSummaryToViewModel(
     negativeConsensus: summary.negativeConsensus,
     noAnalystCoverage: summary.noAnalystCoverage,
     notApplicable: summary.notApplicable,
+    marketOutlook: summary.marketOutlook,
     eligibleHoldings: summary.eligibleHoldings,
     providerUnavailable: summary.providerUnavailable,
     symbolMappingIssues: summary.symbolMappingIssues,

@@ -7,7 +7,9 @@ import {
   appDashboardLightCardClass,
   appSectionBodyClass,
   appSectionLabelClass,
+  appTextLinkClass,
 } from "@/components/layout/appSurface";
+import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 import type { PortfolioHealthProfile } from "@/lib/services/portfolio/portfolioHealthProfile";
 
 /**
@@ -37,10 +39,10 @@ export function DashboardPortfolioHealthCard({
             Add valued holdings to see your portfolio identity.
           </p>
           <Link
-            href="/portfolio-health"
-            className="mt-4 inline-flex min-h-[44px] items-center gap-1.5 text-[15px] font-semibold text-slate-950"
+            href={DASHBOARD_DEEP_LINKS.portfolioHealth}
+            className={`mt-4 ${appTextLinkClass}`}
           >
-            Open Portfolio Health
+            View full analysis
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </Link>
         </div>
@@ -86,10 +88,10 @@ export function DashboardPortfolioHealthCard({
         </div>
 
         <Link
-          href="/portfolio-health"
-          className="inline-flex min-h-[44px] items-center gap-1.5 text-[15px] font-semibold text-slate-950 underline-offset-4 hover:underline"
+          href={DASHBOARD_DEEP_LINKS.portfolioHealth}
+          className={`inline-flex min-h-[40px] items-center gap-1.5 ${appTextLinkClass}`}
         >
-          Open Portfolio Health
+          View full analysis
           <ArrowRight className="h-4 w-4" aria-hidden="true" />
         </Link>
       </div>

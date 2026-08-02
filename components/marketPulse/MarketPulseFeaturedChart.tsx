@@ -2,6 +2,10 @@
 
 import { useMemo, useState } from "react";
 
+import {
+  appDarkCardClass,
+  appDarkCardPaddingClass,
+} from "@/components/layout/appSurface";
 import type {
   MarketPulseAsset,
   MarketPulsePeriod,
@@ -74,17 +78,17 @@ export function MarketPulseFeaturedChart({
 
   return (
     <section
-      className="overflow-hidden rounded-[28px] border border-slate-800/90 bg-slate-950 p-5 text-white shadow-sm sm:p-8"
+      className={`${appDarkCardClass} ${appDarkCardPaddingClass}`}
       aria-labelledby="featured-market-heading"
     >
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
-          <p className="text-[12px] font-bold uppercase tracking-[0.12em] text-white/55">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-white/55">
             Featured chart
           </p>
           <h2
             id="featured-market-heading"
-            className="mt-2 text-3xl font-black tracking-[-0.03em] sm:text-4xl"
+            className="mt-2 text-2xl font-bold tracking-[-0.03em] sm:text-3xl"
           >
             {asset.name}
           </h2>

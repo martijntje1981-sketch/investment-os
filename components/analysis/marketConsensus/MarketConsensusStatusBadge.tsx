@@ -36,24 +36,16 @@ const STATUS_STYLES: Record<
     className: "border-slate-200 bg-slate-50 text-slate-800",
     Icon: CircleHelp,
   },
-  "Not applicable — ETF": {
-    className: "border-slate-200 bg-slate-50 text-slate-700",
-    Icon: Minus,
-  },
-  "Not applicable — ETP": {
-    className: "border-slate-200 bg-slate-50 text-slate-700",
-    Icon: Minus,
-  },
-  "Not applicable — ETC": {
-    className: "border-slate-200 bg-slate-50 text-slate-700",
-    Icon: Minus,
-  },
-  "Not applicable — crypto": {
-    className: "border-slate-200 bg-slate-50 text-slate-700",
-    Icon: Minus,
-  },
   "Underlying market outlook": {
     className: "border-blue-200 bg-blue-50 text-blue-950",
+    Icon: BarChart3,
+  },
+  "Theme-level outlook": {
+    className: "border-indigo-200 bg-indigo-50 text-indigo-950",
+    Icon: BarChart3,
+  },
+  "Asset-class outlook": {
+    className: "border-violet-200 bg-violet-50 text-violet-950",
     Icon: BarChart3,
   },
   "Market outlook": {

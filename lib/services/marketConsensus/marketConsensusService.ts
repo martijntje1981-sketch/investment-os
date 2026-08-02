@@ -28,7 +28,8 @@ type MarketConsensusServiceContext = {
   providers?: MarketConsensusProvider[];
 };
 
-let serviceContextOverride: Partial<MarketConsensusServiceContext> | null = null;
+let serviceContextOverride: Partial<MarketConsensusServiceContext> | null =
+  null;
 
 export function resetMarketConsensusServiceForTests(): void {
   serviceContextOverride = null;
@@ -101,11 +102,15 @@ export async function getMarketConsensusForHolding(
   const isFundLike = inferAnalystCoverageKind(holding) === "fund_or_etc";
 
   if (category !== "equity" || isFundLike) {
-    return validateAndSanitizeConsensusResult(buildStaticConsensusResult(holding));
+    return validateAndSanitizeConsensusResult(
+      buildStaticConsensusResult(holding),
+    );
   }
 
   if (!context.providerAvailable) {
-    return validateAndSanitizeConsensusResult(buildStaticConsensusResult(holding));
+    return validateAndSanitizeConsensusResult(
+      buildStaticConsensusResult(holding),
+    );
   }
 
   const cacheKey = buildConsensusCacheKey(holding);
@@ -126,10 +131,14 @@ export async function getMarketConsensusForPortfolio(
   holdings: StoredPortfolioHolding[],
   context: MarketConsensusServiceContext = resolveServiceContext(),
 ): Promise<AnalystConsensusResult[]> {
-  const investments = holdings.filter((holding) => holding.assetType !== "cash");
+  const investments = holdings.filter(
+    (holding) => holding.assetType !== "cash",
+  );
 
   return Promise.all(
-    investments.map((holding) => getMarketConsensusForHolding(holding, context)),
+    investments.map((holding) =>
+      getMarketConsensusForHolding(holding, context),
+    ),
   );
 }
 

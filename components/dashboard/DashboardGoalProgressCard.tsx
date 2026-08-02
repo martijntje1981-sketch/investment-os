@@ -14,6 +14,7 @@ import {
 } from "@/components/layout/appSurface";
 import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 import { formatPortfolioPercent } from "@/lib/client/portfolioAnalysis";
+import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 import type { GoalProgress } from "@/lib/services/goals/goalProgressEngine";
 
 const TRAJECTORY_STYLES = {
@@ -68,7 +69,7 @@ export function DashboardGoalProgressCard({
               {formatEur(progress.currentValue)}
             </p>
             <Link
-              href="/goals"
+              href={DASHBOARD_DEEP_LINKS.goalProgress}
               className="inline-flex min-h-[40px] items-center text-sm font-semibold text-blue-700 transition hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
             >
               Set your goal
@@ -84,7 +85,8 @@ export function DashboardGoalProgressCard({
                 {statusLabel}
               </span>
               <span className={appSectionMetaClass}>
-                {formatPortfolioPercent(progress.currentProgressPercent)} complete
+                {formatPortfolioPercent(progress.currentProgressPercent)}{" "}
+                complete
               </span>
             </div>
 
@@ -118,7 +120,7 @@ export function DashboardGoalProgressCard({
             </div>
 
             <Link
-              href="/goals"
+              href={DASHBOARD_DEEP_LINKS.goalProgress}
               className="inline-flex min-h-[40px] items-center text-sm font-semibold text-blue-700 transition hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
             >
               Open Goals

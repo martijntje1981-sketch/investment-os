@@ -14,15 +14,15 @@ import {
 import { resolveAnalystQuote } from "@/lib/services/analyst/resolveAnalystQuote";
 import type { EodhdAnalystRatings } from "@/lib/services/analyst/eodhdAnalystClient";
 import { eodhdMarketConsensusProvider } from "@/lib/services/marketConsensus/providers/registry";
-import {
-  validateAndSanitizeConsensusResult,
-} from "@/lib/services/marketConsensus/validateConsensusResult";
+import { validateAndSanitizeConsensusResult } from "@/lib/services/marketConsensus/validateConsensusResult";
 import type { AnalystConsensusResult } from "@/lib/services/marketConsensus/types";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
 vi.mock("@/lib/services/analyst/eodhdAnalystClient", async (importOriginal) => {
   const original =
-    await importOriginal<typeof import("@/lib/services/analyst/eodhdAnalystClient")>();
+    await importOriginal<
+      typeof import("@/lib/services/analyst/eodhdAnalystClient")
+    >();
   return {
     ...original,
     fetchEodhdAnalystFundamentals: vi.fn(),
@@ -90,7 +90,9 @@ afterEach(() => {
 
 describe("NVDA consensus provider symbol resolution", () => {
   it("normalizes NVDA + NASDAQ to NVDA.US", () => {
-    expect(buildConsensusProviderSymbolFromParts("NVDA", "NASDAQ")).toBe("NVDA.US");
+    expect(buildConsensusProviderSymbolFromParts("NVDA", "NASDAQ")).toBe(
+      "NVDA.US",
+    );
   });
 
   it("normalizes NVDA + US to NVDA.US", () => {
@@ -116,7 +118,11 @@ describe("NVDA consensus provider symbol resolution", () => {
   it("classifies NVDA as equity", () => {
     expect(
       classifyMarketConsensusHolding(
-        holding({ symbol: "NVDA", name: "NVIDIA Corporation", exchange: "NASDAQ" }),
+        holding({
+          symbol: "NVDA",
+          name: "NVIDIA Corporation",
+          exchange: "NASDAQ",
+        }),
       ),
     ).toBe("equity");
   });
@@ -127,7 +133,11 @@ describe("NVDA analyst normalization", () => {
     const counts = normalizeRatingCounts(NVDA_EODHD_FIXTURE.ratings);
     expect(consensusFromCounts(counts)).toBe("Buy");
     expect(
-      counts.strongBuy + counts.buy + counts.hold + counts.sell + counts.strongSell,
+      counts.strongBuy +
+        counts.buy +
+        counts.hold +
+        counts.sell +
+        counts.strongSell,
     ).toBe(53);
   });
 
@@ -257,7 +267,8 @@ describe("NVDA Market Consensus UI mapping", () => {
       agreementLevel: "high",
       sourceName: "EODHD Fundamentals",
       updatedAt: "2026-07-24T12:00:00.000Z",
-      summary: "Partial third-party analyst data is available for this holding.",
+      summary:
+        "Partial third-party analyst data is available for this holding.",
       ...overrides,
     });
   }

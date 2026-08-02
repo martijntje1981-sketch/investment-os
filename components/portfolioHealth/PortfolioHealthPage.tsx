@@ -17,10 +17,17 @@ import {
 
 import { BackButton } from "@/components/layout/BackButton";
 import BottomNavigation from "@/components/home/BottomNav";
-import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer";
+import {
+  AppPageLoading,
+  PageContainer,
+} from "@/components/layout/PageContainer";
 import {
   appAnalysisDarkBodyClass,
+  appCardClass,
+  appCardPaddingClass,
   appCardValueClass,
+  appDarkCardClass,
+  appDarkCardPaddingClass,
   appDashboardDarkMetaClass,
   appHeroMetricLabelClass,
   appHeroShellClass,
@@ -170,10 +177,7 @@ export default function PortfolioHealthPage() {
   const { snapshot: dividends, isLoading: dividendsLoading } =
     usePortfolioDividends(holdings, userSub, holdings.length > 0);
 
-  const analysis = useMemo(
-    () => buildPortfolioAnalysis(holdings),
-    [holdings],
-  );
+  const analysis = useMemo(() => buildPortfolioAnalysis(holdings), [holdings]);
   const exposure = useMemo(
     () => buildPortfolioExposureAllocation(holdings),
     [holdings],
@@ -227,41 +231,33 @@ export default function PortfolioHealthPage() {
               />
             </div>
           ) : (
-          <section className={`${appHeroShellClass} px-5 py-9 sm:px-8`}>
-            <div className="mb-4">
-              <BackButton />
-            </div>
-            <p className={appHeroMetricLabelClass}>Portfolio Health</p>
-            <h1 className="mt-4 text-3xl font-black tracking-[-0.04em] text-white">
-              Waiting on portfolio data
-            </h1>
-            <p className="mt-3 max-w-md text-base font-medium text-white/75">
-              Add valued holdings to reveal identity, behaviour and goal fit.
-            </p>
-            <Link
-              href="/portfolio"
-              className="mt-7 inline-flex min-h-[44px] items-center gap-2 rounded-full bg-white px-5 py-3 text-[15px] font-semibold text-slate-950"
-            >
-              <Upload className="h-4 w-4" aria-hidden="true" />
-              Open portfolio
-            </Link>
-          </section>
+            <section className={`${appHeroShellClass} px-5 py-9 sm:px-8`}>
+              <div className="mb-4">
+                <BackButton />
+              </div>
+              <p className={appHeroMetricLabelClass}>Portfolio Health</p>
+              <h1 className="mt-4 text-3xl font-black tracking-[-0.04em] text-white">
+                Waiting on portfolio data
+              </h1>
+              <p className="mt-3 max-w-md text-base font-medium text-white/75">
+                Add valued holdings to reveal identity, behaviour and goal fit.
+              </p>
+              <Link
+                href="/portfolio"
+                className="mt-7 inline-flex min-h-[44px] items-center gap-2 rounded-full bg-white px-5 py-3 text-[15px] font-semibold text-slate-950"
+              >
+                <Upload className="h-4 w-4" aria-hidden="true" />
+                Open portfolio
+              </Link>
+            </section>
           )
         ) : (
           <>
             {/* Hero — main story only */}
             <section
-              className={`${appHeroShellClass} relative overflow-hidden px-5 py-8 sm:px-8 sm:py-10`}
+              className={`${appHeroShellClass} relative overflow-hidden ${appDarkCardPaddingClass} sm:py-9`}
               aria-labelledby="portfolio-health-hero"
             >
-              <div
-                className="pointer-events-none absolute inset-0"
-                aria-hidden="true"
-                style={{
-                  background:
-                    "radial-gradient(ellipse at 12% 0%, rgba(99,102,241,0.28), transparent 48%), radial-gradient(ellipse at 92% 100%, rgba(14,165,233,0.14), transparent 42%)",
-                }}
-              />
               <div className="relative max-w-2xl">
                 <div className="mb-4">
                   <BackButton />
@@ -269,15 +265,15 @@ export default function PortfolioHealthPage() {
                 <p className={appHeroMetricLabelClass}>Portfolio Health</p>
                 <h1
                   id="portfolio-health-hero"
-                  className="mt-4 text-[1.85rem] font-black leading-[1.1] tracking-[-0.045em] text-white sm:text-4xl md:text-[2.6rem]"
+                  className="mt-3 text-[1.75rem] font-bold leading-[1.12] tracking-[-0.035em] text-white sm:text-3xl md:text-[2.4rem]"
                 >
                   {profile.hero.identity}
                 </h1>
-                <p className="mt-4 max-w-xl text-base font-medium leading-relaxed text-white/80 sm:text-lg">
+                <p className="mt-3 max-w-xl text-[15px] font-medium leading-relaxed text-white/75 sm:text-base">
                   {profile.hero.tagline}
                 </p>
                 {profile.hero.traits.length > 0 ? (
-                  <p className="mt-6 text-[13px] font-semibold tracking-[-0.01em] text-white/55 sm:text-[14px]">
+                  <p className="mt-5 text-[13px] font-medium tracking-[-0.01em] text-white/55">
                     {profile.hero.traits.join(" · ")}
                   </p>
                 ) : null}
@@ -286,7 +282,7 @@ export default function PortfolioHealthPage() {
 
             {/* DNA — structural only */}
             <section
-              className={`${appHeroShellClass} px-5 py-7 sm:px-8 sm:py-8`}
+              className={`${appDarkCardClass} ${appDarkCardPaddingClass}`}
               aria-labelledby="portfolio-dna-heading"
             >
               <div className="grid gap-6 sm:gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
@@ -322,7 +318,7 @@ export default function PortfolioHealthPage() {
 
             {/* Exposure */}
             <section
-              className="rounded-[28px] border border-slate-200/90 bg-white px-5 py-7 shadow-sm sm:px-8 sm:py-8"
+              className={`${appCardClass} ${appCardPaddingClass}`}
               aria-labelledby="exposure-heading"
             >
               <div className="flex items-start gap-3">
@@ -331,7 +327,10 @@ export default function PortfolioHealthPage() {
                 </div>
                 <div>
                   <p className={appSectionLabelClass}>Exposure</p>
-                  <h2 id="exposure-heading" className={`mt-1 ${appSectionTitleClass}`}>
+                  <h2
+                    id="exposure-heading"
+                    className={`mt-1 ${appSectionTitleClass}`}
+                  >
                     Where is my money invested?
                   </h2>
                 </div>
@@ -348,7 +347,7 @@ export default function PortfolioHealthPage() {
 
             {/* Hidden drivers */}
             <section
-              className={`${appHeroShellClass} px-5 py-7 sm:px-8 sm:py-8`}
+              className={`${appDarkCardClass} ${appDarkCardPaddingClass}`}
               aria-labelledby="hidden-drivers-heading"
             >
               <div className="flex items-start gap-3">
@@ -378,7 +377,7 @@ export default function PortfolioHealthPage() {
               className="grid gap-4 sm:gap-5 md:grid-cols-2"
               aria-label="Strength and vulnerability"
             >
-              <div className="rounded-[28px] border border-slate-200/90 bg-white px-5 py-6 shadow-sm sm:px-7 sm:py-7">
+              <div className={`${appCardClass} ${appCardPaddingClass}`}>
                 <div className="flex items-start gap-3">
                   <div className="rounded-2xl bg-sky-50 p-3 text-sky-700">
                     <Sparkles className="h-5 w-5" aria-hidden="true" />
@@ -397,10 +396,8 @@ export default function PortfolioHealthPage() {
               </div>
 
               <div
-                className={`rounded-[28px] border bg-white px-5 py-6 shadow-sm sm:px-7 sm:py-7 ${
-                  profile.vulnerability?.emphasize
-                    ? "border-rose-200"
-                    : "border-slate-200/90"
+                className={`${appCardClass} ${appCardPaddingClass} ${
+                  profile.vulnerability?.emphasize ? "border-rose-200" : ""
                 }`}
               >
                 <div className="flex items-start gap-3">
@@ -433,7 +430,7 @@ export default function PortfolioHealthPage() {
 
             {/* Goal alignment */}
             <section
-              className={`${appHeroShellClass} px-5 py-7 sm:px-8`}
+              className={`${appDarkCardClass} ${appDarkCardPaddingClass}`}
               aria-labelledby="goal-alignment-heading"
             >
               <div className="flex items-start gap-3">
@@ -477,7 +474,7 @@ export default function PortfolioHealthPage() {
                       left: `${Math.max(4, Math.min(96, profile.goalAlignment.bandPosition * 100))}%`,
                     }}
                   >
-                    <div className="h-3 w-3 rounded-full border-2 border-white bg-slate-950" />
+                    <div className="h-3 w-3 rounded-full border-2 border-white bg-navy-hero" />
                   </div>
                 </div>
               </div>
@@ -485,7 +482,7 @@ export default function PortfolioHealthPage() {
 
             {/* Expected volatility */}
             <section
-              className="rounded-[28px] border border-slate-200/90 bg-white px-5 py-7 shadow-sm sm:px-8"
+              className={`${appCardClass} ${appCardPaddingClass}`}
               aria-labelledby="volatility-heading"
             >
               <div className="flex items-start gap-3">
@@ -494,7 +491,10 @@ export default function PortfolioHealthPage() {
                 </div>
                 <div>
                   <p className={appSectionLabelClass}>Expected volatility</p>
-                  <h2 id="volatility-heading" className={`mt-1 ${appSectionTitleClass}`}>
+                  <h2
+                    id="volatility-heading"
+                    className={`mt-1 ${appSectionTitleClass}`}
+                  >
                     How lively should this feel?
                   </h2>
                 </div>
@@ -517,7 +517,7 @@ export default function PortfolioHealthPage() {
 
             {/* Risk vs return */}
             <section
-              className={`${appHeroShellClass} px-5 py-7 sm:px-8`}
+              className={`${appDarkCardClass} ${appDarkCardPaddingClass}`}
               aria-labelledby="risk-return-heading"
             >
               <p className={appHeroMetricLabelClass}>Risk vs expected return</p>

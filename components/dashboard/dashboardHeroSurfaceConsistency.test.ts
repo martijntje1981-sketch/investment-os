@@ -31,8 +31,7 @@ describe("dashboard hero surface consistency", () => {
     const heroShellMatch = surfaceSource.match(
       /export const appHeroShellClass =\s*"([^"]+)"/,
     );
-    expect(heroShellMatch?.[1]).toContain("bg-brand-navy");
-    expect(heroShellMatch?.[1]).toContain("border-brand-navy/90");
+    expect(heroShellMatch?.[1]).toContain("bg-navy-hero");
     expect(heroShellMatch?.[1]).not.toContain("bg-gradient");
     expect(valueSource).toContain("appHeroShellClass");
     expect(valueSource).not.toContain("bg-gradient-to-b");
@@ -43,10 +42,9 @@ describe("dashboard hero surface consistency", () => {
   });
 
   it("matches the solid PageHero surface token", () => {
-    expect(pageHeroSource).toContain("bg-brand-navy");
+    expect(pageHeroSource).toContain("appHeroShellClass");
     expect(pageHeroSource).not.toContain("bg-gradient-to-b");
-    expect(surfaceSource).toContain(
-      "border border-brand-navy/90 bg-brand-navy text-white shadow-[0_16px_48px_rgba(11,31,58,0.28)]",
-    );
+    expect(surfaceSource).toContain("bg-navy-hero");
+    expect(surfaceSource).toContain("appDarkCardClass");
   });
 });

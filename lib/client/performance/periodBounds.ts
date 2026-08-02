@@ -29,6 +29,7 @@ export function resolvePeriodBounds(
       startDate.setUTCMonth(startDate.getUTCMonth() - 1);
       break;
     case "YTD":
+      // Always calendar year start (1 Jan UTC), not a rolling window.
       startDate.setUTCMonth(0, 1);
       break;
     case "1Y":

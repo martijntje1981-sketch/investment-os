@@ -17,15 +17,16 @@ type CacheEntry = {
 const cache = new Map<string, CacheEntry>();
 const inFlight = new Map<
   string,
-  Promise<{ narrative: MarketConsensusNarrative; source: MarketConsensusNarrativeSource }>
+  Promise<{
+    narrative: MarketConsensusNarrative;
+    source: MarketConsensusNarrativeSource;
+  }>
 >();
 
 export function hashMarketConsensusNarrativeInput(
   input: MarketConsensusNarrativeInput,
 ): string {
-  return createHash("sha256")
-    .update(JSON.stringify(input))
-    .digest("hex");
+  return createHash("sha256").update(JSON.stringify(input)).digest("hex");
 }
 
 export function resetMarketConsensusNarrativeCacheForTests(): void {
@@ -64,7 +65,10 @@ export async function getCachedMarketConsensusNarrative(
     narrative: MarketConsensusNarrative;
     source: MarketConsensusNarrativeSource;
   }>,
-): Promise<{ narrative: MarketConsensusNarrative; source: MarketConsensusNarrativeSource }> {
+): Promise<{
+  narrative: MarketConsensusNarrative;
+  source: MarketConsensusNarrativeSource;
+}> {
   const existing = cache.get(key);
   if (existing && existing.inputHash === inputHash && !isExpired(existing)) {
     return { narrative: existing.narrative, source: existing.source };

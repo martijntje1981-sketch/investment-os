@@ -1,135 +1,164 @@
-/** Shared authenticated-app surface and typography tokens. */
-export const appPageSectionClass = "space-y-7 md:space-y-10";
+/**
+ * Shared authenticated-app surface, typography, and spacing tokens.
+ * Prefer these over page-specific magic values.
+ */
+
+/** Vertical rhythm between major page sections. */
+export const appPageSectionClass = "space-y-8 md:space-y-10";
+
+/** Default page canvas (PageContainer). */
+export const appPageCanvasClass =
+  "min-h-screen w-full max-w-full overflow-x-clip bg-background px-4 pb-28 pt-[4.5rem] text-foreground sm:px-6 sm:pb-28 sm:pt-[5rem]";
+
+/** Inner content column. */
+export const appPageStackClass =
+  "mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-6 md:gap-8";
+
+/* ── Light cards ─────────────────────────────────────────── */
 
 export const appCardClass =
-  "min-w-0 overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm md:rounded-[28px]";
+  "min-w-0 overflow-hidden rounded-[24px] border border-slate-200/90 bg-card shadow-[var(--shadow-card)] md:rounded-[28px]";
 
 export const appCardPaddingClass = "px-4 py-5 md:px-6 md:py-6";
 
 export const appCardPaddingCompactClass = "px-4 py-4 md:px-5 md:py-5";
 
-/** Shared solid dark hero surface — Tobailey navy. */
+/** Interactive light card hover. */
+export const appCardInteractiveClass =
+  "transition duration-200 hover:border-slate-300 hover:shadow-[0_2px_8px_rgba(15,23,42,0.06),0_12px_32px_-14px_rgba(15,23,42,0.14)]";
+
+/* ── Dark navy hierarchy ─────────────────────────────────── */
+
+/** Primary hero — deepest midnight navy. */
 export const appHeroShellClass =
-  "min-w-0 overflow-hidden rounded-[28px] border border-brand-navy/90 bg-brand-navy text-white shadow-[0_16px_48px_rgba(11,31,58,0.28)] md:rounded-[32px]";
+  "min-w-0 overflow-hidden rounded-[28px] border border-white/10 bg-navy-hero text-white shadow-[var(--navy-shadow)] md:rounded-[32px]";
+
+/** Important dark card — slightly lighter navy. */
+export const appDarkCardClass =
+  "min-w-0 overflow-hidden rounded-[24px] border border-white/10 bg-navy-card text-white shadow-[var(--navy-shadow)] md:rounded-[28px]";
+
+/** Subtle inset surface inside dark cards. */
+export const appDarkInsetClass =
+  "rounded-xl border border-white/10 bg-white/[0.06]";
 
 /** Compact padding for dense dark heroes (dashboard + peers). */
-export const appHeroPaddingCompactClass =
-  "px-4 py-4 sm:px-6 sm:py-5";
+export const appHeroPaddingCompactClass = "px-4 py-3.5 sm:px-5 sm:py-4";
 
-/** Matched KPI value size on dark heroes (portfolio value + move). */
-export const appHeroMatchedKpiClass =
-  "max-w-full break-words text-[1.625rem] font-bold leading-none tracking-[-0.035em] tabular-nums sm:text-[2rem] md:text-[2.25rem]";
+/** Standard padding for dark cards. */
+export const appDarkCardPaddingClass = "px-4 py-5 md:px-6 md:py-6";
 
-/** Display — main portfolio value and true hero KPIs only. */
+/* ── Hero / metric type ──────────────────────────────────── */
+
+/** Dominant hero portfolio value. */
 export const appDisplayClass =
-  "text-[2.25rem] font-black leading-none tracking-[-0.04em] sm:text-[3rem] md:text-[3.375rem]";
+  "max-w-full break-words text-[2rem] font-bold leading-none tracking-[-0.04em] tabular-nums sm:text-[2.5rem] md:text-[2.75rem]";
 
-/** Primary action button — Tobailey blue with navy text for contrast. */
+/** Matched KPI size for secondary hero metrics (move). */
+export const appHeroMatchedKpiClass =
+  "max-w-full break-words text-[1.375rem] font-bold leading-none tracking-[-0.03em] tabular-nums sm:text-[1.625rem] md:text-[1.875rem]";
+
+/** Secondary hero KPI — card-value scale. */
+export const appHeroKpiClass =
+  "text-lg font-bold leading-none tracking-[-0.02em] tabular-nums";
+
+/** Quiet eyebrow labels on dark surfaces — small uppercase only. */
+export const appHeroMetricLabelClass =
+  "text-[11px] font-semibold uppercase tracking-[0.08em] text-white/55";
+
+/* ── Buttons ─────────────────────────────────────────────── */
+
 export const appPrimaryButtonClass =
   "inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-brand px-5 py-3 text-sm font-bold text-brand-navy transition hover:bg-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2";
 
-/** Soft / secondary brand accent control. */
+/** Solid navy CTA for primary form actions on light surfaces. */
+export const appSolidButtonClass =
+  "inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-navy-hero px-5 py-3 text-sm font-bold text-white transition hover:bg-navy-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60";
+
 export const appBrandSoftButtonClass =
   "inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-brand/30 bg-brand-soft px-5 py-3 text-sm font-bold text-brand-navy transition hover:bg-brand/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2";
 
-/** Secondary hero KPI (e.g. today's move) — card-value scale, not display. */
-export const appHeroKpiClass =
-  "text-lg font-bold leading-none tracking-[-0.02em]";
+export const appGhostButtonClass =
+  "inline-flex min-h-[40px] items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-brand-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2";
 
-/** Page and section titles — consistent 20px, bold. */
+export const appTextLinkClass =
+  "inline-flex min-h-[40px] items-center gap-1.5 text-sm font-semibold text-brand-navy transition hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2";
+
+/* ── Titles ──────────────────────────────────────────────── */
+
 export const appPageTitleClass =
-  "text-xl font-bold tracking-[-0.02em]";
+  "text-xl font-bold tracking-[-0.02em] text-slate-950";
 
-/** Large dark hero titles — one step above appPageTitleClass. */
 export const appPageHeroTitleClass =
   "break-words text-2xl font-bold tracking-[-0.03em] sm:text-[1.75rem] md:text-3xl";
 
-/** Large dark hero subtitles — one step above the previous 18px hero body. */
 export const appPageHeroSubtitleClass =
-  "mt-2.5 max-w-2xl break-words text-lg font-medium leading-relaxed tracking-[-0.015em] text-white sm:text-xl";
+  "mt-2 max-w-2xl break-words text-[15px] font-medium leading-relaxed tracking-[-0.01em] text-white/70 sm:text-base";
 
-/** Section titles — consistent 20px, bold. */
 export const appSectionTitleClass =
-  "text-xl font-bold tracking-[-0.02em] text-slate-950";
+  "text-lg font-bold tracking-[-0.02em] text-slate-950 md:text-xl";
 
-/** Emphasized body on dark surfaces — 15px, medium. */
+export const appCardTitleClass =
+  "text-base font-bold tracking-[-0.015em] text-slate-950";
+
+/* ── Body / labels ───────────────────────────────────────── */
+
 export const appSectionBodyMediumClass =
   "text-[15px] font-medium leading-relaxed";
 
-/** Primary figures inside cards — 18px, bold. */
 export const appCardValueClass =
   "text-lg font-bold tabular-nums text-slate-950";
 
-/** Body copy — 15px. */
 export const appSectionBodyClass =
-  "text-[15px] font-normal leading-relaxed text-slate-800";
+  "text-[15px] font-normal leading-relaxed text-slate-700";
 
-/** Section subtitles — 15px, regular. */
 export const appSectionSubtitleClass =
-  "text-[15px] font-normal leading-relaxed text-slate-600";
+  "text-[14px] font-normal leading-relaxed text-slate-500";
 
-/** Uppercase labels — 13px, bold, shared tracking. */
+/** Small contextual eyebrow — use sparingly. */
 export const appSectionLabelClass =
-  "text-[13px] font-bold uppercase tracking-[0.1em] text-slate-600";
+  "text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500";
 
-/** Metadata, timestamps — 13px, medium. */
 export const appSectionMetaClass =
-  "text-[13px] font-medium leading-snug text-slate-600";
+  "text-[12px] font-medium leading-snug text-slate-500";
 
-/** Tickers and secondary identifiers — 13px, medium. */
 export const appTickerClass =
-  "text-[13px] font-medium uppercase tracking-[0.1em] text-slate-600";
+  "text-[12px] font-medium uppercase tracking-[0.08em] text-slate-500";
 
-/** Table holding names — 15px, semibold. */
-export const appTableNameClass =
-  "text-[15px] font-semibold text-slate-950";
+export const appTableNameClass = "text-[15px] font-semibold text-slate-950";
 
-/** Table values — 15px, semibold. */
 export const appTableValueClass =
   "text-[15px] font-semibold tabular-nums text-slate-950";
 
-/** Table daily changes — 15px, semibold. */
-export const appTableChangeClass =
-  "text-[15px] font-semibold tabular-nums";
+export const appTableChangeClass = "text-[15px] font-semibold tabular-nums";
 
 /** @deprecated Prefer appSectionLabelClass */
 export const appSectionEyebrowClass = appSectionLabelClass;
 
-export const appSectionHeaderPaddingClass = "px-4 py-5 md:px-6 md:py-5";
+export const appSectionHeaderPaddingClass = "px-4 py-4 md:px-6 md:py-5";
 
 export const appSectionHeaderDividerClass = "border-b border-slate-100";
 
-/** Hero metric labels on dark surfaces. */
-export const appHeroMetricLabelClass =
-  "text-[13px] font-bold uppercase tracking-[0.1em] text-white/75";
+/* ── Dark body copy ──────────────────────────────────────── */
 
-/** Primary body on dark dashboard/card surfaces. */
 export const appDashboardDarkBodyClass =
   "text-[15px] font-normal leading-relaxed text-white";
 
-/** Emphasized body on dark dashboard/card surfaces. */
 export const appDashboardDarkBodyMediumClass =
   "text-[15px] font-medium leading-relaxed text-white/85";
 
-/** Secondary/helper copy on dark dashboard surfaces (~80% white). */
 export const appDashboardDarkMutedClass =
-  "text-[13px] font-medium leading-snug text-white/80";
+  "text-[13px] font-medium leading-snug text-white/65";
 
-/** Tertiary/meta copy on dark dashboard surfaces (~75% white). */
 export const appDashboardDarkMetaClass =
-  "text-[13px] font-medium leading-snug text-white/75";
+  "text-[12px] font-medium leading-snug text-white/55";
 
-/** Section titles on dark analysis / gradient header shells. */
 export const appAnalysisDarkTitleClass =
   "text-xl font-bold tracking-[-0.02em] text-white";
 
-/** Supporting copy on dark analysis section headers (gradient shells). */
 export const appAnalysisDarkHeaderCopyClass = appDashboardDarkMutedClass;
 
-/** Body copy on dark analysis cards and observation panels. */
 export const appAnalysisDarkBodyClass = appDashboardDarkBodyMediumClass;
 
-/** Disclaimer and tertiary copy on dark analysis panels. */
 export const appAnalysisDarkDisclaimerClass = appDashboardDarkMetaClass;
 
 /** @deprecated Use appCardValueClass */
@@ -141,28 +170,26 @@ export const appValueSemiboldClass = appTableValueClass;
 /** @deprecated Use appTableChangeClass */
 export const appChangeClass = appTableChangeClass;
 
-/** Table row breathing room. */
 export const appTableCellPaddingClass = "py-4";
 
-/** Bottom navigation labels — 13px. */
 export const appBottomNavLabelClass = "text-[13px] font-medium";
 
 export const appBottomNavFeaturedLabelClass = "text-[13px] font-semibold";
 
-/** News hub — aligned to shared scale. */
 export const appNewsEyebrowClass =
-  "text-[13px] font-bold uppercase tracking-[0.1em] text-brand-navy";
+  "text-[11px] font-semibold uppercase tracking-[0.08em] text-brand-navy";
 
 export const appNewsSectionTitleClass = appSectionTitleClass;
 
 export const appNewsSectionDescriptionClass = appSectionSubtitleClass;
 
-/** Dashboard-only surfaces for dark/light editorial rhythm. */
-export const appDashboardFeatureShellClass =
-  "min-w-0 overflow-hidden rounded-[24px] border border-slate-800/80 bg-gradient-to-br from-slate-950 via-[#151038] to-slate-950 text-white shadow-[0_20px_60px_-20px_rgba(67,56,202,0.35)] md:rounded-[28px]";
+/**
+ * Secondary dark feature shell — aligned to navy hierarchy
+ * (replaces prior purple gradient for consistency).
+ */
+export const appDashboardFeatureShellClass = appDarkCardClass;
 
-export const appDashboardLightCardClass =
-  "min-w-0 overflow-hidden rounded-[24px] border border-slate-200/90 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_30px_-12px_rgba(15,23,42,0.1)] md:rounded-[28px]";
+export const appDashboardLightCardClass = appCardClass;
 
 /** @deprecated Use appTableValueClass */
 export const appDashboardHoldingsValueClass = appTableValueClass;

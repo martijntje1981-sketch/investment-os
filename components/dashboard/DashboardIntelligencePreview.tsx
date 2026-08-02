@@ -4,42 +4,35 @@ import Link from "next/link";
 import { ArrowUpRight, Radio } from "lucide-react";
 
 import { formatNewsRefreshedAt } from "@/components/news/newsFormatting";
-import { DashboardTodaysDecision } from "@/components/dashboard/DashboardTodaysDecision";
 import { DashboardSectionHeader } from "@/components/dashboard/DashboardSectionHeader";
 import {
   appCardPaddingClass,
   appDashboardLightCardClass,
   appSectionBodyClass,
   appSectionMetaClass,
+  appTextLinkClass,
 } from "@/components/layout/appSurface";
-import { NEWS_HUB_PATH } from "@/lib/navigation/newsHubRoutes";
-import {
-  buildIntelligenceDisplayMessage,
-  type TodaysDecisionContext,
-} from "@/lib/client/todaysDecision";
+import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
+import { buildIntelligenceDisplayMessage } from "@/lib/client/todaysDecision";
 import type { GoalProgress } from "@/lib/services/goals/goalProgressEngine";
 import type { InvestmentIntelligence } from "@/lib/services/news/investmentIntelligence";
 
-const STATUS_STYLES: Record<
-  InvestmentIntelligence["portfolioStatus"],
-  string
-> = {
-  Stable: "border-slate-200 bg-slate-50 text-slate-700",
-  Watching: "border-blue-200 bg-blue-50 text-blue-800",
-  Elevated: "border-violet-200 bg-violet-50 text-violet-800",
-  "High Attention": "border-violet-300 bg-violet-100 text-violet-900",
-};
+const STATUS_STYLES: Record<InvestmentIntelligence["portfolioStatus"], string> =
+  {
+    Stable: "border-slate-200 bg-slate-50 text-slate-700",
+    Watching: "border-blue-200 bg-blue-50 text-blue-800",
+    Elevated: "border-violet-200 bg-violet-50 text-violet-800",
+    "High Attention": "border-violet-300 bg-violet-100 text-violet-900",
+  };
 
 /**
- * Combined Market Briefing card: lead insight + optional Today’s Decision.
- * Full briefing lives on Market Intelligence (`/news`).
+ * Compact Market Briefing card — one lead insight for the intelligence row.
  */
 export function DashboardIntelligencePreview({
   intelligence,
   goalProgress = null,
   marketsClosed,
   intelligenceFromCache = false,
-  upcomingEvents,
 }: {
   intelligence: InvestmentIntelligence;
   goalProgress?: Pick<
@@ -48,7 +41,6 @@ export function DashboardIntelligencePreview({
   > | null;
   marketsClosed?: boolean;
   intelligenceFromCache?: boolean;
-  upcomingEvents?: TodaysDecisionContext["upcomingEvents"];
   /** @deprecated Phase 2: missed-item teasers belong on Discover, not Dashboard. */
   missedItems?: unknown;
 }) {
@@ -63,25 +55,19 @@ export function DashboardIntelligencePreview({
   const supportingLine = mustWatch?.reason?.trim() || null;
   const holdingContext = mustWatch?.sourceName?.trim() || null;
 
-  const decisionContext: TodaysDecisionContext = {
-    intelligence,
-    intelligenceFromCache,
-    goalProgress,
-    upcomingEvents,
-    marketsClosed,
-  };
-
   return (
-    <section className={appDashboardLightCardClass}>
+    <section className={`${appDashboardLightCardClass} h-full`}>
       <DashboardSectionHeader
         variant="compact"
         title="Market Briefing"
-        subtitle="Lead insight and today’s decision"
+        subtitle="One lead insight for today"
         icon={<Radio className="h-5 w-5" />}
         iconToneClassName="bg-violet-50 text-violet-700 ring-1 ring-violet-100"
       />
 
-      <div className={`${appCardPaddingClass} space-y-3.5 pt-0`}>
+      <div
+        className={`${appCardPaddingClass} flex h-full flex-col space-y-3 pt-0`}
+      >
         <div className="flex flex-wrap items-center gap-2">
           <span
             className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${STATUS_STYLES[intelligence.portfolioStatus]}`}
@@ -93,7 +79,7 @@ export function DashboardIntelligencePreview({
           </span>
         </div>
 
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <p
             className={`line-clamp-3 ${appSectionBodyClass} font-semibold text-slate-950`}
             title={leadTitle}
@@ -113,11 +99,9 @@ export function DashboardIntelligencePreview({
           ) : null}
         </div>
 
-        <DashboardTodaysDecision {...decisionContext} />
-
         <Link
-          href={NEWS_HUB_PATH}
-          className="inline-flex min-h-[40px] items-center gap-1.5 text-sm font-semibold text-violet-700 transition hover:text-violet-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2"
+          href={DASHBOARD_DEEP_LINKS.marketBriefing}
+          className={appTextLinkClass}
         >
           Open Market Intelligence
           <ArrowUpRight className="h-4 w-4" aria-hidden />

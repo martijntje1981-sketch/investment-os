@@ -9,7 +9,7 @@ describe("Dashboard hero mobile movers prominence", () => {
   );
 
   it("keeps Top mover and Weakest mover side by side on mobile", () => {
-    expect(source).toContain('grid min-w-0 grid-cols-2 gap-2 sm:gap-2.5');
+    expect(source).toContain("grid min-w-0 grid-cols-2 gap-2");
     expect(source).toContain('label="Top mover"');
     expect(source).toContain('label="Weakest mover"');
     expect(source).not.toContain("Lowest mover");
@@ -17,21 +17,18 @@ describe("Dashboard hero mobile movers prominence", () => {
     expect(source).not.toContain("Today’s biggest loser");
   });
 
-  it("uses larger mover ticker and percentage sizes", () => {
+  it("uses compact mover ticker and percentage sizes", () => {
     expect(source).toContain(
-      "truncate text-sm font-bold leading-tight text-white sm:text-base",
+      "truncate text-sm font-semibold leading-tight text-white",
     );
     expect(source).toContain(
-      "truncate text-base font-bold leading-none tracking-[-0.03em] tabular-nums sm:text-lg",
+      "truncate text-sm font-bold leading-none tracking-[-0.02em] tabular-nums",
     );
   });
 
-  it("reduces secondary text before reducing mover percentages on narrow screens", () => {
+  it("reduces secondary period labels on narrow screens", () => {
     expect(source).toContain(
-      "mt-0.5 hidden truncate text-xs text-white/55 sm:block",
-    );
-    expect(source).toContain(
-      "mt-0.5 hidden max-w-full truncate text-[11px] font-medium leading-snug text-white/50 sm:block",
+      "mt-0.5 hidden max-w-full truncate text-[11px] font-medium text-white/45 sm:block",
     );
   });
 
@@ -39,6 +36,7 @@ describe("Dashboard hero mobile movers prominence", () => {
     expect(source).toContain("appHeroPaddingCompactClass");
     expect(source).toContain("appHeroMatchedKpiClass");
     expect(source).toContain("appHeroMetricLabelClass");
-    expect(source).toContain("mt-3 flex flex-col gap-2.5 border-t");
+    expect(source).toContain("mt-3 border-t border-white/10 pt-3");
+    expect(source).toContain('variant="icon"');
   });
 });

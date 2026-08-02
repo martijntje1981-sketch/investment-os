@@ -49,8 +49,10 @@ describe("authenticated routing", () => {
     expect(bottomNav).not.toContain("/?view=home");
     expect(bottomNav).toContain("authenticatedItems");
     expect(bottomNav).toContain("guestItems");
-    expect(bottomNav.indexOf('href: "/dashboard"')).toBeLessThan(
-      bottomNav.indexOf('href: "/portfolio"'),
+    expect(bottomNav).toContain("DASHBOARD_PATH");
+    expect(bottomNav).toContain("PORTFOLIO_PATH");
+    expect(bottomNav.indexOf("DASHBOARD_PATH")).toBeLessThan(
+      bottomNav.indexOf("href: PORTFOLIO_PATH"),
     );
   });
 });

@@ -9,7 +9,12 @@ import {
   perspectiveCategoryLabel,
   perspectiveThumbnailCandidates,
 } from "@/components/perspectives/perspectiveStyles";
-import { appPrimaryButtonClass } from "@/components/layout/appSurface";
+import {
+  appCardClass,
+  appCardInteractiveClass,
+  appPrimaryButtonClass,
+  appSectionLabelClass,
+} from "@/components/layout/appSurface";
 import { formatRelativePublicationTime } from "@/lib/services/perspectives/relativeTime";
 import { mapPerspectiveTopicTags } from "@/lib/services/perspectives/topicTags";
 import { buildPerspectiveWhyItMatters } from "@/lib/services/perspectives/whyItMatters";
@@ -148,7 +153,7 @@ export function PerspectiveTodaysCard({
   });
 
   return (
-    <article className="group overflow-hidden rounded-[28px] border border-slate-200/90 bg-white shadow-[0_12px_36px_rgba(11,31,58,0.08)] transition duration-300 hover:border-brand/40 hover:shadow-[0_18px_44px_rgba(11,31,58,0.12)]">
+    <article className={`group ${appCardClass} ${appCardInteractiveClass}`}>
       <div className="grid lg:grid-cols-[1.15fr_0.85fr]">
         <a
           href={video.url}
@@ -172,9 +177,7 @@ export function PerspectiveTodaysCard({
               size={48}
             />
             <div className="min-w-0 flex-1">
-              <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-brand-navy/55">
-                Today’s Perspective
-              </p>
+              <p className={appSectionLabelClass}>Today’s Perspective</p>
               <p className="mt-1 truncate text-[15px] font-bold text-brand-navy">
                 {video.creatorName}
               </p>
@@ -239,7 +242,9 @@ export function PerspectiveFeaturedCard({
   const tags = mapPerspectiveTopicTags(video.title).slice(0, 3);
 
   return (
-    <article className="group flex h-full flex-col overflow-hidden rounded-[24px] border border-slate-200/90 bg-white shadow-[0_10px_30px_rgba(11,31,58,0.06)] transition duration-300 hover:-translate-y-0.5 hover:border-brand/45 hover:shadow-[0_18px_40px_rgba(11,31,58,0.12)] md:rounded-[28px]">
+    <article
+      className={`group flex h-full flex-col ${appCardClass} ${appCardInteractiveClass}`}
+    >
       <a
         href={video.url}
         target="_blank"
@@ -258,7 +263,7 @@ export function PerspectiveFeaturedCard({
             size={42}
           />
           <div className="min-w-0 flex-1 pt-0.5">
-            <p className="truncate text-[14px] font-bold text-brand-navy">
+            <p className="truncate text-[14px] font-semibold text-brand-navy">
               {video.creatorName}
             </p>
             <p className="mt-0.5 text-[12px] font-medium text-slate-500">
@@ -266,13 +271,13 @@ export function PerspectiveFeaturedCard({
             </p>
           </div>
           <span
-            className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.08em] ${perspectiveCategoryChipClass(video.category)}`}
+            className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] ${perspectiveCategoryChipClass(video.category)}`}
           >
             {perspectiveCategoryLabel(video.category)}
           </span>
         </div>
 
-        <h3 className="line-clamp-3 text-[17px] font-bold leading-snug tracking-[-0.02em] text-brand-navy sm:text-[1.125rem]">
+        <h3 className="line-clamp-3 text-base font-bold leading-snug tracking-[-0.02em] text-brand-navy sm:text-[1.0625rem]">
           <a
             href={video.url}
             target="_blank"

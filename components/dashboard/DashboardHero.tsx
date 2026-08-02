@@ -10,6 +10,7 @@ import {
   appDisplayClass,
   appHeroKpiClass,
   appHeroMetricLabelClass,
+  appHeroShellClass,
   appSectionBodyClass,
   appSectionLabelClass,
   appSectionMetaClass,
@@ -36,7 +37,11 @@ function signedPercent(value: number) {
   return value >= 0 ? `+${formatted}` : `−${formatted}`;
 }
 
-export function DashboardPortfolioHero({ summary }: { summary: DashboardSummary }) {
+export function DashboardPortfolioHero({
+  summary,
+}: {
+  summary: DashboardSummary;
+}) {
   const { formatEur } = useBaseCurrencyDisplay();
   const showTodayMove = summary.hasDailyData;
   const todayTone =
@@ -64,11 +69,9 @@ export function DashboardPortfolioHero({ summary }: { summary: DashboardSummary 
     summary.totalReturn >= 0 ? "text-emerald-300" : "text-red-300";
 
   return (
-    <section className="min-w-0 overflow-hidden rounded-[24px] border border-slate-800 bg-slate-950 text-white shadow-2xl md:rounded-[32px]">
+    <section className={appHeroShellClass}>
       <div className="px-4 py-5 md:px-8 md:py-6">
-        <p className={`${appHeroMetricLabelClass} text-slate-400`}>
-          Portfolio value
-        </p>
+        <p className={appHeroMetricLabelClass}>Portfolio value</p>
         <p className={`mt-2 ${appDisplayClass}`}>
           {summary.portfolioValueAvailable
             ? formatEur(summary.portfolioValue)
@@ -155,13 +158,13 @@ function HeroMetric({
 }) {
   return (
     <div className="min-w-0 rounded-[18px] border border-white/10 bg-white/[0.04] px-4 py-3.5">
-      <div className={`flex items-center gap-2 ${appSectionLabelClass} text-slate-400`}>
+      <div
+        className={`flex items-center gap-2 ${appSectionLabelClass} text-slate-400`}
+      >
         {icon}
         {label}
       </div>
-      <p className={`mt-1.5 ${appHeroKpiClass} ${valueClassName}`}>
-        {value}
-      </p>
+      <p className={`mt-1.5 ${appHeroKpiClass} ${valueClassName}`}>{value}</p>
       <p className={`mt-1.5 ${appSectionMetaClass} text-slate-400`}>{detail}</p>
     </div>
   );
@@ -186,9 +189,7 @@ export function DashboardMoverCard({
 
   if (!hasReliableMoverData) {
     const unavailableCopy =
-      hasDailyData && coverageMessage
-        ? coverageMessage
-        : RANKING_AFTER_CLOSE;
+      hasDailyData && coverageMessage ? coverageMessage : RANKING_AFTER_CLOSE;
 
     return (
       <article className={`min-w-0 ${appDashboardLightCardClass} px-5 py-5`}>
@@ -206,7 +207,9 @@ export function DashboardMoverCard({
       : "border-red-200 bg-red-50/60";
 
   return (
-    <article className={`min-w-0 ${appDashboardLightCardClass} p-5 ${toneClasses}`}>
+    <article
+      className={`min-w-0 ${appDashboardLightCardClass} p-5 ${toneClasses}`}
+    >
       <p className={appSectionLabelClass}>{label}</p>
       {mover ? (
         <>
@@ -215,9 +218,7 @@ export function DashboardMoverCard({
             className="mt-2.5 block min-w-0 rounded-xl transition hover:bg-white/60"
           >
             <p className={`truncate ${appTableNameClass}`}>{mover.name}</p>
-            <p className={`mt-1 ${appTickerClass}`}>
-              {mover.symbol}
-            </p>
+            <p className={`mt-1 ${appTickerClass}`}>{mover.symbol}</p>
           </Link>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             {tone === "positive" ? (
@@ -242,7 +243,8 @@ export function DashboardMoverCard({
         </>
       ) : (
         <p className={`mt-2.5 ${appSectionBodyClass} text-slate-600`}>
-          No {tone === "positive" ? "positive" : "negative"} mover for this period.
+          No {tone === "positive" ? "positive" : "negative"} mover for this
+          period.
         </p>
       )}
     </article>

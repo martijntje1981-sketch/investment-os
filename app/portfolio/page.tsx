@@ -20,14 +20,12 @@ import {
 } from "lucide-react";
 import { ConversionDetailsDisclosure } from "@/components/currency/ConversionDetailsDisclosure";
 import { PortfolioFundingSection } from "@/components/contributions/PortfolioFundingSection";
+import { formatListingLookupGuidance } from "@/lib/client/listingLookupGuidance";
+import { needsManualPricingSelection } from "@/lib/client/holdingVenuePresentation";
 import {
-  formatListingLookupGuidance,
-} from "@/lib/client/listingLookupGuidance";
-import {
-  needsManualPricingSelection,
-} from "@/lib/client/holdingVenuePresentation";
-import BottomNavigation from "@/components/home/BottomNav";
-import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer";
+  AppPageLoading,
+  PageContainer,
+} from "@/components/layout/PageContainer";
 import { PageHero } from "@/components/layout/PageHero";
 import { EmptyPortfolioGuide } from "@/components/onboarding/EmptyPortfolioGuide";
 import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
@@ -43,6 +41,8 @@ import { IDENTITY_EUR_FX_SNAPSHOT } from "@/lib/services/prices/baseCurrencyFxSn
 import { portfolioBaseCurrencySymbol } from "@/lib/types/portfolioBaseCurrency";
 import {
   appCardValueClass,
+  appDarkCardClass,
+  appDarkCardPaddingClass,
   appDashboardDarkBodyClass,
   appHeroMetricLabelClass,
   appSectionLabelClass,
@@ -59,9 +59,7 @@ import CryptoRefreshTechnicalDetails from "@/components/portfolio/CryptoRefreshT
 import { RefreshPricesButton } from "@/components/portfolio/RefreshPricesButton";
 import { HoldingVenueSummary } from "@/components/instruments/HoldingVenueSummary";
 import { ListingCandidatePicker } from "@/components/instruments/ListingCandidatePicker";
-import {
-  HoldingDividendMeta,
-} from "@/components/analysis/DividendIntelligenceSection";
+import { HoldingDividendMeta } from "@/components/analysis/DividendIntelligenceSection";
 import { HoldingAnalystMeta } from "@/components/analysis/AnalystIntelligenceSection";
 import { ExchangeFieldEditor } from "@/components/import/ExchangeFieldEditor";
 import { AddCryptoHoldingForm } from "@/components/portfolio/AddCryptoHoldingForm";
@@ -97,9 +95,7 @@ import {
 } from "@/lib/client/portfolioPricing";
 import { findDividendQuoteForHolding } from "@/lib/client/portfolioDividends";
 import { findAnalystQuoteForHolding } from "@/lib/client/portfolioAnalyst";
-import {
-  calculateImpliedUpsidePercent,
-} from "@/lib/services/analyst/analystCalculations";
+import { calculateImpliedUpsidePercent } from "@/lib/services/analyst/analystCalculations";
 import { formatDividendFrequency } from "@/lib/services/dividends";
 import { rememberConfirmedHolding } from "@/lib/services/import/mappingMemory";
 import { describePricingSource } from "@/lib/services/instruments/listingConfirmation";
@@ -118,9 +114,7 @@ import type { ResolvedInstrument } from "@/lib/types/instrument";
 import { usePortfolioDividends } from "@/lib/client/usePortfolioDividends";
 import { usePortfolioAnalyst } from "@/lib/client/usePortfolioAnalyst";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
-import {
-  formatPortfolioHeroRefreshLabel,
-} from "@/lib/client/marketSnapshotSync";
+import { formatPortfolioHeroRefreshLabel } from "@/lib/client/marketSnapshotSync";
 import { useMarketSnapshotMetadata } from "@/lib/client/useMarketSnapshotMetadata";
 
 type AssetType = "investment" | "cash";
@@ -146,15 +140,11 @@ function costOf(holding: Holding) {
 }
 
 export default function PortfolioPage() {
-  const {
-    formatEur,
-    snapshot,
-    baseCurrency,
-    canPersistMonetary,
-    refreshFx,
-  } = useBaseCurrencyDisplay();
+  const { formatEur, snapshot, baseCurrency, canPersistMonetary, refreshFx } =
+    useBaseCurrencyDisplay();
   const editorSessionRef = useRef<BaseCurrencyFxSnapshot | null>(null);
-  const [editorCurrencyLocked, setEditorCurrencyLocked] = useState(baseCurrency);
+  const [editorCurrencyLocked, setEditorCurrencyLocked] =
+    useState(baseCurrency);
   const {
     userSub,
     holdings,
@@ -207,11 +197,15 @@ export default function PortfolioPage() {
     [liveRefreshAt, snapshotRefreshedAt],
   );
   const [draft, setDraft] = useState<Holding>(emptyDraft);
-  const [cryptoDraft, setCryptoDraft] = useState<Holding>(createEmptyCryptoDraft());
+  const [cryptoDraft, setCryptoDraft] = useState<Holding>(
+    createEmptyCryptoDraft(),
+  );
   const [editorOpen, setEditorOpen] = useState(false);
   const [cryptoEditorOpen, setCryptoEditorOpen] = useState(false);
   const [isSavingCrypto, setIsSavingCrypto] = useState(false);
-  const [listingCandidates, setListingCandidates] = useState<ResolvedInstrument[]>([]);
+  const [listingCandidates, setListingCandidates] = useState<
+    ResolvedInstrument[]
+  >([]);
   const [listingWarnings, setListingWarnings] = useState<string[]>([]);
   const [listingLookupPending, setListingLookupPending] = useState(false);
   const [lookupUnavailable, setLookupUnavailable] = useState(false);
@@ -295,7 +289,9 @@ export default function PortfolioPage() {
     setEditorError(null);
   }
 
-  function beginEditorSession(sessionSnapshot: BaseCurrencyFxSnapshot = snapshot) {
+  function beginEditorSession(
+    sessionSnapshot: BaseCurrencyFxSnapshot = snapshot,
+  ) {
     editorSessionRef.current = sessionSnapshot;
     setEditorCurrencyLocked(sessionSnapshot.baseCurrency);
   }
@@ -423,7 +419,9 @@ export default function PortfolioPage() {
     const cleaned = normalizeHoldingForSave(converted.value);
     const exists = holdings.some((holding) => holding.id === cleaned.id);
     const next = exists
-      ? holdings.map((holding) => (holding.id === cleaned.id ? cleaned : holding))
+      ? holdings.map((holding) =>
+          holding.id === cleaned.id ? cleaned : holding,
+        )
       : [...holdings, cleaned];
 
     if (userSub && cleaned.providerSymbol) {
@@ -444,7 +442,9 @@ export default function PortfolioPage() {
     setEditorOpen(false);
   }
 
-  async function resolveCryptoDraftForSave(nextDraft: Holding): Promise<Holding> {
+  async function resolveCryptoDraftForSave(
+    nextDraft: Holding,
+  ): Promise<Holding> {
     const query = resolveCryptoDraftSearchQuery(nextDraft);
     if (!query.trim()) {
       return nextDraft;
@@ -463,7 +463,8 @@ export default function PortfolioPage() {
       const normalizedName = nextDraft.name.trim().toUpperCase();
       const normalizedProviderSymbol =
         nextDraft.providerSymbol?.trim().toUpperCase() ?? "";
-      const normalizedTradingPair = nextDraft.tradingPair?.trim().toUpperCase() ?? "";
+      const normalizedTradingPair =
+        nextDraft.tradingPair?.trim().toUpperCase() ?? "";
 
       const exactMatch =
         response.results.find(
@@ -567,75 +568,133 @@ export default function PortfolioPage() {
           }
         />
 
-          <PortfolioSyncBanner
-            syncState={syncState}
-            migrationPreview={migrationPreview}
-            migrating={isMigrating}
-            onMigrate={async () => {
-              setIsMigrating(true);
-              try {
-                await migratePortfolio();
-              } finally {
-                setIsMigrating(false);
-              }
-            }}
-            onRetry={() => void retrySync()}
-            onUseRemote={useRemotePortfolio}
-            onKeepLocal={keepLocalPortfolio}
-          />
+        <PortfolioSyncBanner
+          syncState={syncState}
+          migrationPreview={migrationPreview}
+          migrating={isMigrating}
+          onMigrate={async () => {
+            setIsMigrating(true);
+            try {
+              await migratePortfolio();
+            } finally {
+              setIsMigrating(false);
+            }
+          }}
+          onRetry={() => void retrySync()}
+          onUseRemote={useRemotePortfolio}
+          onKeepLocal={keepLocalPortfolio}
+        />
 
-          <PortfolioRecoveryBanner
-            offer={recoveryOffer}
-            onRecover={() => {
-              if (recoverPortfolio()) {
-                setMessage("Portfolio recovered from this browser.");
-              }
-            }}
-            onDismiss={dismissRecovery}
-          />
+        <PortfolioRecoveryBanner
+          offer={recoveryOffer}
+          onRecover={() => {
+            if (recoverPortfolio()) {
+              setMessage("Portfolio recovered from this browser.");
+            }
+          }}
+          onDismiss={dismissRecovery}
+        />
 
-          <div className="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-800">
-            <p>{message}</p>
-            {showRefreshDiagnostics && refreshDiagnostics ? (
-              <CryptoRefreshTechnicalDetails diagnostics={refreshDiagnostics} />
-            ) : null}
+        <div className="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+          <p>{message}</p>
+          {showRefreshDiagnostics && refreshDiagnostics ? (
+            <CryptoRefreshTechnicalDetails diagnostics={refreshDiagnostics} />
+          ) : null}
+        </div>
+
+        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <Metric
+            icon={<CircleDollarSign className="h-5 w-5" />}
+            label="Total value"
+            value={
+              performance.totalValueAvailable
+                ? formatEur(totalValue)
+                : "Unavailable"
+            }
+            detail={performance.totalValueCoverageMessage ?? undefined}
+          />
+          <Metric
+            icon={<BarChart3 className="h-5 w-5" />}
+            label="Since purchase"
+            value={
+              performance.canShowPerformance
+                ? `${totalReturn >= 0 ? "+" : ""}${formatEur(totalReturn)}`
+                : "Unavailable"
+            }
+            detail={
+              performance.canShowPerformance
+                ? percent(totalReturnPercent)
+                : "Price data required"
+            }
+            tone={
+              performance.canShowPerformance
+                ? totalReturn >= 0
+                  ? "positive"
+                  : "negative"
+                : "neutral"
+            }
+          />
+          <Metric
+            icon={<Banknote className="h-5 w-5" />}
+            label="Cash"
+            value={formatEur(cashValue)}
+            detail={
+              totalValue > 0
+                ? `${((cashValue / totalValue) * 100).toFixed(1)}% of portfolio`
+                : "0.0% of portfolio"
+            }
+          />
+          <Metric
+            icon={<PieChart className="h-5 w-5" />}
+            label="Largest position"
+            value={largest?.symbol ?? "—"}
+            detail={
+              largest && totalValue > 0
+                ? `${largestWeightPercent.toFixed(1)}% of portfolio`
+                : holdings.length > 0
+                  ? "Awaiting price data"
+                  : "No holdings"
+            }
+          />
+        </section>
+        <ConversionDetailsDisclosure compactTrigger />
+
+        <PortfolioFundingSection
+          portfolioValueEur={totalValue}
+          portfolioValueAvailable={performance.totalValueAvailable}
+        />
+
+        <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
+          <div className="flex items-center justify-between border-b border-slate-200 px-5 py-5 sm:px-7">
+            <div>
+              <h2 className={appSectionTitleClass}>Holdings</h2>
+              <p className={`mt-1.5 ${appSectionMetaClass}`}>
+                {holdings.length} positions
+              </p>
+            </div>
+            <Link
+              href="/upload"
+              className="inline-flex items-center gap-2 text-sm font-bold text-brand-navy hover:text-brand"
+            >
+              <Upload className="h-4 w-4" /> Import
+            </Link>
           </div>
 
-          <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <Metric icon={<CircleDollarSign className="h-5 w-5" />} label="Total value" value={performance.totalValueAvailable ? formatEur(totalValue) : "Unavailable"} detail={performance.totalValueCoverageMessage ?? undefined} />
-            <Metric icon={<BarChart3 className="h-5 w-5" />} label="Since purchase" value={performance.canShowPerformance ? `${totalReturn >= 0 ? "+" : ""}${formatEur(totalReturn)}` : "Unavailable"} detail={performance.canShowPerformance ? percent(totalReturnPercent) : "Price data required"} tone={performance.canShowPerformance ? (totalReturn >= 0 ? "positive" : "negative") : "neutral"} />
-            <Metric icon={<Banknote className="h-5 w-5" />} label="Cash" value={formatEur(cashValue)} detail={totalValue > 0 ? `${(cashValue / totalValue * 100).toFixed(1)}% of portfolio` : "0.0% of portfolio"} />
-            <Metric icon={<PieChart className="h-5 w-5" />} label="Largest position" value={largest?.symbol ?? "—"} detail={largest && totalValue > 0 ? `${largestWeightPercent.toFixed(1)}% of portfolio` : holdings.length > 0 ? "Awaiting price data" : "No holdings"} />
-          </section>
-          <ConversionDetailsDisclosure compactTrigger />
-
-          <PortfolioFundingSection
-            portfolioValueEur={totalValue}
-            portfolioValueAvailable={performance.totalValueAvailable}
-          />
-
-          <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
-            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-5 sm:px-7">
-              <div>
-                <h2 className={appSectionTitleClass}>Holdings</h2>
-                <p className={`mt-1.5 ${appSectionMetaClass}`}>{holdings.length} positions</p>
-              </div>
-              <Link href="/upload" className="inline-flex items-center gap-2 text-sm font-bold text-brand-navy hover:text-brand"><Upload className="h-4 w-4" /> Import</Link>
+          {holdings.length === 0 ? (
+            <div className="px-4 py-6 sm:px-6">
+              <EmptyPortfolioGuide
+                density="compact"
+                title="No holdings yet"
+                body="Import a CSV or Excel file, or add an investment, crypto or cash position to get started."
+                className="border-0 shadow-none"
+              />
             </div>
-
-            {holdings.length === 0 ? (
-              <div className="px-4 py-6 sm:px-6">
-                <EmptyPortfolioGuide
-                  density="compact"
-                  title="No holdings yet"
-                  body="Import a CSV or Excel file, or add an investment, crypto or cash position to get started."
-                  className="border-0 shadow-none"
-                />
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
+          ) : (
+            <div className="overflow-x-auto">
               {holdings.some((holding) => isCryptoHolding(holding)) ? (
-                <p className={`border-b border-slate-100 px-5 py-3 text-sm text-slate-600 sm:px-7`}>
+                <p
+                  className={`border-b border-slate-100 px-5 py-3 text-sm text-slate-600 sm:px-7`}
+                >
                   {CRYPTO_PRICING_DISCLOSURE}
                 </p>
               ) : null}
@@ -675,86 +734,156 @@ export default function PortfolioPage() {
                         )
                       : null;
                   return (
-                    <article key={holding.id} className="space-y-3 px-5 py-5 lg:px-7">
-                    <div className="grid gap-4 lg:grid-cols-[0.65fr_1.5fr_1fr_0.8fr_1fr_auto] lg:items-start">
-                      <div className="flex items-start">
-                        <span className={`inline-flex rounded-xl px-3 py-2 ${appTableValueClass} ${holding.assetType === "cash" ? "bg-emerald-100 text-emerald-800" : isCrypto ? "bg-violet-100 text-violet-900" : "bg-slate-950 text-white"}`}>{holding.symbol}</span>
-                      </div>
-                      <div>
-                        <p className={appTableNameClass}>{holding.name}</p>
-                        <p className={`mt-1 ${appSectionMetaClass}`}>
-                          {holding.assetType === "cash"
-                            ? "Cash holding"
-                            : isCrypto
-                              ? `${holding.quantity.toLocaleString("en-GB")} · ${holding.tradingPair ?? `${holding.symbol}/${holding.pairCurrency ?? "EUR"}`}`
-                              : `${holding.quantity.toLocaleString("en-GB")} units · ${holdingMatchStatusLabel(matchStatus, holding.assetType)}`}
-                        </p>
-                        {isCrypto ? (
-                          <div className="mt-2 space-y-1">
-                            <p className={`${appTableValueClass}`}>
-                              {formatCryptoPairPrice(
-                                cryptoDisplayPrice?.price ?? null,
-                                holding.pairCurrency ?? null,
-                              )}
-                            </p>
-                            <p className={`${appSectionMetaClass}`}>
-                              {formatCrypto24hChange(
-                                holding.change24hPercent ?? holding.changePercent,
-                                holding.change24hAmount,
-                              )}
-                            </p>
-                            {cryptoMetadataLine ? (
-                              <p className={`${appTickerClass} normal-case`}>
-                                {cryptoMetadataLine}
-                              </p>
-                            ) : holding.pricingStatus !== "manual" ? (
-                              <p className="text-sm font-semibold text-amber-800">
-                                Live price unavailable
-                              </p>
-                            ) : null}
-                          </div>
-                        ) : null}
-                        {holding.pricingExchange && holding.providerSymbol ? (
-                          <p className={`mt-1 ${appTickerClass} normal-case`}>
-                            {describePricingSource({
-                              exchange: holding.exchange ?? null,
-                              pricingExchange: holding.pricingExchange,
-                              providerSymbol: holding.providerSymbol,
-                            })}
+                    <article
+                      key={holding.id}
+                      className="space-y-3 px-5 py-5 lg:px-7"
+                    >
+                      <div className="grid gap-4 lg:grid-cols-[0.65fr_1.5fr_1fr_0.8fr_1fr_auto] lg:items-start">
+                        <div className="flex items-start">
+                          <span
+                            className={`inline-flex rounded-xl px-3 py-2 ${appTableValueClass} ${holding.assetType === "cash" ? "bg-emerald-100 text-emerald-800" : isCrypto ? "bg-violet-100 text-violet-900" : "bg-slate-950 text-white"}`}
+                          >
+                            {holding.symbol}
+                          </span>
+                        </div>
+                        <div>
+                          <p className={appTableNameClass}>{holding.name}</p>
+                          <p className={`mt-1 ${appSectionMetaClass}`}>
+                            {holding.assetType === "cash"
+                              ? "Cash holding"
+                              : isCrypto
+                                ? `${holding.quantity.toLocaleString("en-GB")} · ${holding.tradingPair ?? `${holding.symbol}/${holding.pairCurrency ?? "EUR"}`}`
+                                : `${holding.quantity.toLocaleString("en-GB")} units · ${holdingMatchStatusLabel(matchStatus, holding.assetType)}`}
                           </p>
-                        ) : null}
+                          {isCrypto ? (
+                            <div className="mt-2 space-y-1">
+                              <p className={`${appTableValueClass}`}>
+                                {formatCryptoPairPrice(
+                                  cryptoDisplayPrice?.price ?? null,
+                                  holding.pairCurrency ?? null,
+                                )}
+                              </p>
+                              <p className={`${appSectionMetaClass}`}>
+                                {formatCrypto24hChange(
+                                  holding.change24hPercent ??
+                                    holding.changePercent,
+                                  holding.change24hAmount,
+                                )}
+                              </p>
+                              {cryptoMetadataLine ? (
+                                <p className={`${appTickerClass} normal-case`}>
+                                  {cryptoMetadataLine}
+                                </p>
+                              ) : holding.pricingStatus !== "manual" ? (
+                                <p className="text-sm font-semibold text-amber-800">
+                                  Live price unavailable
+                                </p>
+                              ) : null}
+                            </div>
+                          ) : null}
+                          {holding.pricingExchange && holding.providerSymbol ? (
+                            <p className={`mt-1 ${appTickerClass} normal-case`}>
+                              {describePricingSource({
+                                exchange: holding.exchange ?? null,
+                                pricingExchange: holding.pricingExchange,
+                                providerSymbol: holding.providerSymbol,
+                              })}
+                            </p>
+                          ) : null}
+                        </div>
+                        <div>
+                          <p className={`${appSectionLabelClass} lg:hidden`}>
+                            Value
+                          </p>
+                          <p className={appTableValueClass}>
+                            {holdingValue === null
+                              ? holdingValueUnavailableLabel(holding)
+                              : formatEur(holdingValue)}
+                            {estimatedPrice && holdingValue !== null ? (
+                              <span className="ml-1 text-xs font-semibold text-amber-700">
+                                est.
+                              </span>
+                            ) : null}
+                          </p>
+                        </div>
+                        <div>
+                          <p className={`${appSectionLabelClass} lg:hidden`}>
+                            Allocation
+                          </p>
+                          <p className={appTableValueClass}>
+                            {holdingValue === null
+                              ? "—"
+                              : `${allocation.toFixed(1)}%`}
+                          </p>
+                        </div>
+                        <div>
+                          <p className={`${appSectionLabelClass} lg:hidden`}>
+                            Return
+                          </p>
+                          <p
+                            className={`${appTableValueClass} ${holdingReturn === null ? "text-slate-600" : holdingReturn >= 0 ? "text-emerald-700" : "text-red-700"}`}
+                          >
+                            {holding.assetType === "cash"
+                              ? "Stable"
+                              : holdingReturn === null
+                                ? holdingValueUnavailableLabel(holding)
+                                : `${holdingReturn >= 0 ? "+" : ""}${formatEur(holdingReturn)}`}
+                          </p>
+                        </div>
+                        <div className="flex items-center justify-end gap-1">
+                          {holding.assetType === "investment" ? (
+                            <Link
+                              href={`/holding/${holding.symbol}`}
+                              aria-label={`View ${holding.name}`}
+                              className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"
+                            >
+                              <ChevronRight className="h-5 w-5" />
+                            </Link>
+                          ) : (
+                            <span
+                              className="rounded-lg p-2 opacity-0 pointer-events-none"
+                              aria-hidden="true"
+                            >
+                              <ChevronRight className="h-5 w-5" />
+                            </span>
+                          )}
+                          <button
+                            onClick={() => openEdit(holding)}
+                            aria-label={`Edit ${holding.name}`}
+                            className="rounded-lg p-2 text-slate-500 hover:bg-slate-100"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => removeHolding(holding)}
+                            aria-label={`Remove ${holding.name}`}
+                            className="rounded-lg p-2 text-red-600 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
                       </div>
-                      <div><p className={`${appSectionLabelClass} lg:hidden`}>Value</p><p className={appTableValueClass}>{holdingValue === null ? holdingValueUnavailableLabel(holding) : formatEur(holdingValue)}{estimatedPrice && holdingValue !== null ? <span className="ml-1 text-xs font-semibold text-amber-700">est.</span> : null}</p></div>
-                      <div><p className={`${appSectionLabelClass} lg:hidden`}>Allocation</p><p className={appTableValueClass}>{holdingValue === null ? "—" : `${allocation.toFixed(1)}%`}</p></div>
-                      <div>
-                        <p className={`${appSectionLabelClass} lg:hidden`}>Return</p>
-                        <p className={`${appTableValueClass} ${holdingReturn === null ? "text-slate-600" : holdingReturn >= 0 ? "text-emerald-700" : "text-red-700"}`}>{holding.assetType === "cash" ? "Stable" : holdingReturn === null ? holdingValueUnavailableLabel(holding) : `${holdingReturn >= 0 ? "+" : ""}${formatEur(holdingReturn)}`}</p>
-                      </div>
-                      <div className="flex items-center justify-end gap-1">
-                        {holding.assetType === "investment" ? (
-                          <Link href={`/holding/${holding.symbol}`} aria-label={`View ${holding.name}`} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"><ChevronRight className="h-5 w-5" /></Link>
-                        ) : (
-                          <span className="rounded-lg p-2 opacity-0 pointer-events-none" aria-hidden="true"><ChevronRight className="h-5 w-5" /></span>
-                        )}
-                        <button onClick={() => openEdit(holding)} aria-label={`Edit ${holding.name}`} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100"><Pencil className="h-4 w-4" /></button>
-                        <button onClick={() => removeHolding(holding)} aria-label={`Remove ${holding.name}`} className="rounded-lg p-2 text-red-600 hover:bg-red-50"><Trash2 className="h-4 w-4" /></button>
-                      </div>
-                    </div>
                       {dividendQuote?.paysDividends ? (
-                          <HoldingDividendMeta
-                            yieldPercent={dividendQuote.dividendYield}
-                            annualIncomeEur={dividendQuote.estimatedAnnualDividendEur}
-                            nextPaymentEur={dividendQuote.estimatedNextPaymentEur}
-                            nextExDate={dividendQuote.nextExDate}
-                            nextPaymentDate={dividendQuote.nextPaymentDate}
-                            frequency={formatDividendFrequency(dividendQuote.frequency)}
-                          />
+                        <HoldingDividendMeta
+                          yieldPercent={dividendQuote.dividendYield}
+                          annualIncomeEur={
+                            dividendQuote.estimatedAnnualDividendEur
+                          }
+                          nextPaymentEur={dividendQuote.estimatedNextPaymentEur}
+                          nextExDate={dividendQuote.nextExDate}
+                          nextPaymentDate={dividendQuote.nextPaymentDate}
+                          frequency={formatDividendFrequency(
+                            dividendQuote.frequency,
+                          )}
+                        />
                       ) : null}
                       {analystQuote ? (
                         <HoldingAnalystMeta
                           quote={analystQuote}
                           currentPriceEur={
-                            holding.currentPrice > 0 ? holding.currentPrice : null
+                            holding.currentPrice > 0
+                              ? holding.currentPrice
+                              : null
                           }
                           impliedUpsidePercent={impliedUpsidePercent}
                         />
@@ -763,24 +892,31 @@ export default function PortfolioPage() {
                   );
                 })}
               </div>
-              </div>
-            )}
-          </section>
-
-          <section className="rounded-[28px] bg-slate-950 p-6 text-white sm:p-8">
-            <div className="flex items-start gap-4">
-              <div className="rounded-2xl bg-violet-500/20 p-3 text-violet-200"><Sparkles className="h-5 w-5" /></div>
-              <div>
-                <p className={appHeroMetricLabelClass}>Portfolio insight</p>
-                <p className={`mt-3 max-w-3xl ${appDashboardDarkBodyClass}`}>
-                  {largest && totalValue > 0 ? `${largest.symbol} is your largest position at ${largestWeightPercent.toFixed(1)}%. ` : performance.hasUnvaluedInvestments ? "Some holdings are excluded until market prices are available. " : ""}
-                  {cashValue > 0 && totalValue > 0 ? `Cash represents ${(cashValue / totalValue * 100).toFixed(1)}% of total portfolio value.` : "No cash holding is currently recorded."}
-                </p>
-              </div>
             </div>
-          </section>
+          )}
+        </section>
+
+        <section className={`${appDarkCardClass} ${appDarkCardPaddingClass}`}>
+          <div className="flex items-start gap-4">
+            <div className="rounded-2xl bg-white/10 p-3 text-brand">
+              <Sparkles className="h-5 w-5" />
+            </div>
+            <div>
+              <p className={appHeroMetricLabelClass}>Portfolio insight</p>
+              <p className={`mt-3 max-w-3xl ${appDashboardDarkBodyClass}`}>
+                {largest && totalValue > 0
+                  ? `${largest.symbol} is your largest position at ${largestWeightPercent.toFixed(1)}%. `
+                  : performance.hasUnvaluedInvestments
+                    ? "Some holdings are excluded until market prices are available. "
+                    : ""}
+                {cashValue > 0 && totalValue > 0
+                  ? `Cash represents ${((cashValue / totalValue) * 100).toFixed(1)}% of total portfolio value.`
+                  : "No cash holding is currently recorded."}
+              </p>
+            </div>
+          </div>
+        </section>
       </PageContainer>
-      <BottomNavigation />
 
       {cryptoEditorOpen ? (
         <AddCryptoHoldingForm
@@ -795,212 +931,270 @@ export default function PortfolioPage() {
 
       {editorOpen && (
         <div className="fixed inset-0 z-[80] flex items-end justify-center bg-slate-950/60 p-0 backdrop-blur-sm sm:items-center sm:p-5">
-          <form onSubmit={submitHolding} className="flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-t-[28px] bg-white shadow-2xl sm:rounded-[28px]">
+          <form
+            onSubmit={submitHolding}
+            className="flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-t-[28px] bg-white shadow-2xl sm:rounded-[28px]"
+          >
             <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 sm:p-8">
-            <div className="flex items-center justify-between">
-              <div><p className={appSectionLabelClass}>{draft.assetType === "cash" ? "Cash" : "Investment"}</p><h2 className={`mt-2 ${appSectionTitleClass}`}>{holdings.some((item) => item.id === draft.id) ? "Edit holding" : "Add holding"}</h2></div>
-              <button type="button" onClick={() => setEditorOpen(false)} className="rounded-xl p-2 hover:bg-slate-100"><X className="h-5 w-5" /></button>
-            </div>
-
-            {draft.assetType === "cash" ? (
-              <div className="mt-7 space-y-5">
-                <Field label="Cash name" value={draft.name} onChange={(value) => setDraft({ ...draft, name: value })} />
-                <Field
-                  label={`Amount (${editorCurrencyLocked})`}
-                  type="number"
-                  prefix={portfolioBaseCurrencySymbol(editorCurrencyLocked)}
-                  min="0"
-                  step="0.01"
-                  value={draft.quantity}
-                  onChange={(value) => setDraft({ ...draft, quantity: Number(value) })}
-                />
-              </div>
-            ) : (
-              <div className="mt-7 space-y-5">
-                <Field
-                  label="Ticker, ISIN, or provider symbol"
-                  required={false}
-                  value={draft.symbol}
-                  onChange={(value) => {
-                    setDraft({ ...draft, symbol: value, providerSymbol: null });
-                  }}
-                />
-                <Field
-                  label="ISIN (optional)"
-                  required={false}
-                  value={draft.isin ?? ""}
-                  onChange={(value) => {
-                    setDraft({ ...draft, isin: value || null, providerSymbol: null });
-                  }}
-                />
-                <Field
-                  label="Instrument name (optional)"
-                  required={false}
-                  value={draft.name}
-                  onChange={(value) => {
-                    setDraft({ ...draft, name: value, providerSymbol: null });
-                  }}
-                />
-                <ExchangeFieldEditor
-                  exchange={draft.exchange}
-                  providerSymbol={draft.providerSymbol}
-                  allowFreeText
-                  onCommit={(exchangeCode) => {
-                    setDraft({
-                      ...draft,
-                      exchange: exchangeCode,
-                      providerSymbol: null,
-                    });
-                  }}
-                />
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className={appSectionLabelClass}>
+                    {draft.assetType === "cash" ? "Cash" : "Investment"}
+                  </p>
+                  <h2 className={`mt-2 ${appSectionTitleClass}`}>
+                    {holdings.some((item) => item.id === draft.id)
+                      ? "Edit holding"
+                      : "Add holding"}
+                  </h2>
+                </div>
                 <button
                   type="button"
-                  onClick={() => void lookupListing()}
-                  disabled={listingLookupPending}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold disabled:opacity-50"
+                  onClick={() => setEditorOpen(false)}
+                  className="rounded-xl p-2 hover:bg-slate-100"
                 >
-                  {listingLookupPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Search className="h-4 w-4" />
-                  )}
-                  Find listing
+                  <X className="h-5 w-5" />
                 </button>
+              </div>
 
-                {listingWarnings.length > 0 ? (
-                  <div className="space-y-3">
-                    {listingLookupMessages.guidance.length > 0 ? (
-                      <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-                        {listingLookupMessages.guidance.map((message) => (
-                          <p key={message}>{message}</p>
-                        ))}
-                      </div>
-                    ) : null}
-                    {listingLookupMessages.alerts.length > 0 ? (
-                      <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                        {listingLookupMessages.alerts.map((warning) => (
-                          <p key={warning}>{warning}</p>
-                        ))}
-                        {lookupUnavailable ? (
-                          <p className="mt-2 font-semibold">
-                            Your entries are kept. You can save without finding a
-                            listing.
-                          </p>
-                        ) : null}
-                      </div>
-                    ) : lookupUnavailable ? (
-                      <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                        <p className="font-semibold">
-                          Your entries are kept. You can save without finding a
-                          listing.
-                        </p>
-                      </div>
-                    ) : null}
-                  </div>
-                ) : null}
-
-                {showPricingListingPicker ? (
-                  <ListingCandidatePicker
-                    source={{
-                      instrumentName: draft.instrumentName ?? draft.name,
-                      exchange: draft.exchange,
-                      isin: draft.isin,
-                      matchMethod: draft.matchMethod as ResolvedInstrument["matchMethod"] | undefined,
-                      matchConfidence: draft.matchConfidence,
-                      candidates: listingCandidates,
-                    }}
-                    selectedProviderSymbol={draft.providerSymbol}
-                    onSelect={selectListing}
-                  />
-                ) : null}
-
-                {draft.providerSymbol ? (
-                  <HoldingVenueSummary
-                    exchange={draft.exchange}
-                    pricingExchange={draft.pricingExchange}
-                    providerSymbol={draft.providerSymbol}
-                    instrumentName={draft.instrumentName ?? draft.name}
-                    confirmationSource={draft.confirmationSource}
-                    showPurchaseExchange={false}
-                  />
-                ) : null}
-
-                <Field label="Quantity" type="number" min="0" step="any" value={draft.quantity} onChange={(value) => setDraft({ ...draft, quantity: Number(value) })} />
-                <div className="grid gap-4 sm:grid-cols-2">
+              {draft.assetType === "cash" ? (
+                <div className="mt-7 space-y-5">
                   <Field
-                    label={`Average purchase price (${editorCurrencyLocked})`}
+                    label="Cash name"
+                    value={draft.name}
+                    onChange={(value) => setDraft({ ...draft, name: value })}
+                  />
+                  <Field
+                    label={`Amount (${editorCurrencyLocked})`}
                     type="number"
                     prefix={portfolioBaseCurrencySymbol(editorCurrencyLocked)}
                     min="0"
-                    step="any"
-                    required={false}
-                    value={draft.purchasePrice}
-                    onChange={(value) => setDraft({ ...draft, purchasePrice: Number(value) })}
-                  />
-                  <Field
-                    label={`Current price (${editorCurrencyLocked})`}
-                    type="number"
-                    prefix={portfolioBaseCurrencySymbol(editorCurrencyLocked)}
-                    min="0"
-                    step="any"
-                    required={false}
-                    value={draft.currentPrice}
-                    onChange={(value) => setDraft({ ...draft, currentPrice: Number(value) })}
+                    step="0.01"
+                    value={draft.quantity}
+                    onChange={(value) =>
+                      setDraft({ ...draft, quantity: Number(value) })
+                    }
                   />
                 </div>
+              ) : (
+                <div className="mt-7 space-y-5">
+                  <Field
+                    label="Ticker, ISIN, or provider symbol"
+                    required={false}
+                    value={draft.symbol}
+                    onChange={(value) => {
+                      setDraft({
+                        ...draft,
+                        symbol: value,
+                        providerSymbol: null,
+                      });
+                    }}
+                  />
+                  <Field
+                    label="ISIN (optional)"
+                    required={false}
+                    value={draft.isin ?? ""}
+                    onChange={(value) => {
+                      setDraft({
+                        ...draft,
+                        isin: value || null,
+                        providerSymbol: null,
+                      });
+                    }}
+                  />
+                  <Field
+                    label="Instrument name (optional)"
+                    required={false}
+                    value={draft.name}
+                    onChange={(value) => {
+                      setDraft({ ...draft, name: value, providerSymbol: null });
+                    }}
+                  />
+                  <ExchangeFieldEditor
+                    exchange={draft.exchange}
+                    providerSymbol={draft.providerSymbol}
+                    allowFreeText
+                    onCommit={(exchangeCode) => {
+                      setDraft({
+                        ...draft,
+                        exchange: exchangeCode,
+                        providerSymbol: null,
+                      });
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void lookupListing()}
+                    disabled={listingLookupPending}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold disabled:opacity-50"
+                  >
+                    {listingLookupPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Search className="h-4 w-4" />
+                    )}
+                    Find listing
+                  </button>
 
-                {editorError ? (
-                  <p className="text-sm font-semibold text-red-700" role="alert">{editorError}</p>
-                ) : null}
-                {!canPersistMonetary && baseCurrency !== "EUR" ? (
-                  <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-                    <p>{FX_UNAVAILABLE_SAVE_MESSAGE}</p>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        refreshFx();
-                        editorSessionRef.current = snapshot;
+                  {listingWarnings.length > 0 ? (
+                    <div className="space-y-3">
+                      {listingLookupMessages.guidance.length > 0 ? (
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                          {listingLookupMessages.guidance.map((message) => (
+                            <p key={message}>{message}</p>
+                          ))}
+                        </div>
+                      ) : null}
+                      {listingLookupMessages.alerts.length > 0 ? (
+                        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                          {listingLookupMessages.alerts.map((warning) => (
+                            <p key={warning}>{warning}</p>
+                          ))}
+                          {lookupUnavailable ? (
+                            <p className="mt-2 font-semibold">
+                              Your entries are kept. You can save without
+                              finding a listing.
+                            </p>
+                          ) : null}
+                        </div>
+                      ) : lookupUnavailable ? (
+                        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                          <p className="font-semibold">
+                            Your entries are kept. You can save without finding
+                            a listing.
+                          </p>
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
+
+                  {showPricingListingPicker ? (
+                    <ListingCandidatePicker
+                      source={{
+                        instrumentName: draft.instrumentName ?? draft.name,
+                        exchange: draft.exchange,
+                        isin: draft.isin,
+                        matchMethod: draft.matchMethod as
+                          ResolvedInstrument["matchMethod"] | undefined,
+                        matchConfidence: draft.matchConfidence,
+                        candidates: listingCandidates,
                       }}
-                      className="mt-2 inline-flex min-h-[44px] items-center font-semibold underline"
-                    >
-                      Retry conversion
-                    </button>
-                  </div>
-                ) : null}
-              </div>
-            )}
+                      selectedProviderSymbol={draft.providerSymbol}
+                      onSelect={selectListing}
+                    />
+                  ) : null}
 
-            {draft.assetType === "cash" && editorError ? (
-              <p className="mt-5 text-sm font-semibold text-red-700" role="alert">
-                {editorError}
-              </p>
-            ) : null}
-            {draft.assetType === "cash" && !canPersistMonetary && baseCurrency !== "EUR" ? (
-              <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-                <p>{FX_UNAVAILABLE_SAVE_MESSAGE}</p>
-                <button
-                  type="button"
-                  onClick={() => refreshFx()}
-                  className="mt-2 inline-flex min-h-[44px] items-center font-semibold underline"
+                  {draft.providerSymbol ? (
+                    <HoldingVenueSummary
+                      exchange={draft.exchange}
+                      pricingExchange={draft.pricingExchange}
+                      providerSymbol={draft.providerSymbol}
+                      instrumentName={draft.instrumentName ?? draft.name}
+                      confirmationSource={draft.confirmationSource}
+                      showPurchaseExchange={false}
+                    />
+                  ) : null}
+
+                  <Field
+                    label="Quantity"
+                    type="number"
+                    min="0"
+                    step="any"
+                    value={draft.quantity}
+                    onChange={(value) =>
+                      setDraft({ ...draft, quantity: Number(value) })
+                    }
+                  />
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Field
+                      label={`Average purchase price (${editorCurrencyLocked})`}
+                      type="number"
+                      prefix={portfolioBaseCurrencySymbol(editorCurrencyLocked)}
+                      min="0"
+                      step="any"
+                      required={false}
+                      value={draft.purchasePrice}
+                      onChange={(value) =>
+                        setDraft({ ...draft, purchasePrice: Number(value) })
+                      }
+                    />
+                    <Field
+                      label={`Current price (${editorCurrencyLocked})`}
+                      type="number"
+                      prefix={portfolioBaseCurrencySymbol(editorCurrencyLocked)}
+                      min="0"
+                      step="any"
+                      required={false}
+                      value={draft.currentPrice}
+                      onChange={(value) =>
+                        setDraft({ ...draft, currentPrice: Number(value) })
+                      }
+                    />
+                  </div>
+
+                  {editorError ? (
+                    <p
+                      className="text-sm font-semibold text-red-700"
+                      role="alert"
+                    >
+                      {editorError}
+                    </p>
+                  ) : null}
+                  {!canPersistMonetary && baseCurrency !== "EUR" ? (
+                    <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+                      <p>{FX_UNAVAILABLE_SAVE_MESSAGE}</p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          refreshFx();
+                          editorSessionRef.current = snapshot;
+                        }}
+                        className="mt-2 inline-flex min-h-[44px] items-center font-semibold underline"
+                      >
+                        Retry conversion
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+              )}
+
+              {draft.assetType === "cash" && editorError ? (
+                <p
+                  className="mt-5 text-sm font-semibold text-red-700"
+                  role="alert"
                 >
-                  Retry conversion
-                </button>
-              </div>
-            ) : null}
+                  {editorError}
+                </p>
+              ) : null}
+              {draft.assetType === "cash" &&
+              !canPersistMonetary &&
+              baseCurrency !== "EUR" ? (
+                <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+                  <p>{FX_UNAVAILABLE_SAVE_MESSAGE}</p>
+                  <button
+                    type="button"
+                    onClick={() => refreshFx()}
+                    className="mt-2 inline-flex min-h-[44px] items-center font-semibold underline"
+                  >
+                    Retry conversion
+                  </button>
+                </div>
+              ) : null}
             </div>
 
             <div className="shrink-0 border-t border-slate-100 bg-white p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-6">
-            <button
-              type="submit"
-              disabled={
-                !canPersistBaseCurrencyAmounts(editorSessionRef.current ?? snapshot) ||
-                (editorCurrencyLocked !== "EUR" &&
-                  baseCurrency !== editorCurrencyLocked)
-              }
-              className="w-full rounded-xl bg-brand px-5 py-3.5 text-sm font-bold text-brand-navy hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              Save holding
-            </button>
+              <button
+                type="submit"
+                disabled={
+                  !canPersistBaseCurrencyAmounts(
+                    editorSessionRef.current ?? snapshot,
+                  ) ||
+                  (editorCurrencyLocked !== "EUR" &&
+                    baseCurrency !== editorCurrencyLocked)
+                }
+                className="w-full rounded-xl bg-brand px-5 py-3.5 text-sm font-bold text-brand-navy hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Save holding
+              </button>
             </div>
           </form>
         </div>
@@ -1009,11 +1203,54 @@ export default function PortfolioPage() {
   );
 }
 
-function Metric({ icon, label, value, detail, tone = "neutral" }: { icon: React.ReactNode; label: string; value: string; detail?: string; tone?: "neutral" | "positive" | "negative" }) {
-  return <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-700">{icon}</div><p className={`mt-4 ${appSectionLabelClass}`}>{label}</p><p className={`mt-2 ${appCardValueClass} ${tone === "positive" ? "text-emerald-700" : tone === "negative" ? "text-red-700" : "text-slate-950"}`}>{value}</p>{detail && <p className={`mt-1.5 ${appSectionMetaClass}`}>{detail}</p>}</article>;
+function Metric({
+  icon,
+  label,
+  value,
+  detail,
+  tone = "neutral",
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  detail?: string;
+  tone?: "neutral" | "positive" | "negative";
+}) {
+  return (
+    <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
+        {icon}
+      </div>
+      <p className={`mt-4 ${appSectionLabelClass}`}>{label}</p>
+      <p
+        className={`mt-2 ${appCardValueClass} ${tone === "positive" ? "text-emerald-700" : tone === "negative" ? "text-red-700" : "text-slate-950"}`}
+      >
+        {value}
+      </p>
+      {detail && <p className={`mt-1.5 ${appSectionMetaClass}`}>{detail}</p>}
+    </article>
+  );
 }
 
-function Field({ label, value, onChange, type = "text", prefix, min, step, required = type === "number" }: { label: string; value: string | number; onChange: (value: string) => void; type?: string; prefix?: string; min?: string; step?: string; required?: boolean }) {
+function Field({
+  label,
+  value,
+  onChange,
+  type = "text",
+  prefix,
+  min,
+  step,
+  required = type === "number",
+}: {
+  label: string;
+  value: string | number;
+  onChange: (value: string) => void;
+  type?: string;
+  prefix?: string;
+  min?: string;
+  step?: string;
+  required?: boolean;
+}) {
   if (type === "number") {
     return (
       <label className="block">
@@ -1033,5 +1270,21 @@ function Field({ label, value, onChange, type = "text", prefix, min, step, requi
     );
   }
 
-  return <label className="block"><span className="text-sm font-bold text-slate-700">{label}</span><span className="mt-2 flex items-center rounded-xl border border-slate-200 bg-slate-50 px-4 focus-within:border-blue-400">{prefix && <span className="font-bold text-slate-400">{prefix}</span>}<input required={required} type={type} min={min} step={step} value={value} onChange={(event) => onChange(event.target.value)} className="min-w-0 flex-1 bg-transparent px-2 py-3.5 font-bold outline-none" /></span></label>;
+  return (
+    <label className="block">
+      <span className="text-sm font-bold text-slate-700">{label}</span>
+      <span className="mt-2 flex items-center rounded-xl border border-slate-200 bg-slate-50 px-4 focus-within:border-blue-400">
+        {prefix && <span className="font-bold text-slate-400">{prefix}</span>}
+        <input
+          required={required}
+          type={type}
+          min={min}
+          step={step}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          className="min-w-0 flex-1 bg-transparent px-2 py-3.5 font-bold outline-none"
+        />
+      </span>
+    </label>
+  );
 }

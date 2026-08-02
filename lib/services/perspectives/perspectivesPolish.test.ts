@@ -77,9 +77,7 @@ describe("perspective topic tags", () => {
 
   it("recognises AI and NVIDIA without inventing unrelated tags", () => {
     const tags = mapPerspectiveTopicTags("NVIDIA AI earnings preview");
-    expect(tags).toEqual(
-      expect.arrayContaining(["NVIDIA", "AI", "Earnings"]),
-    );
+    expect(tags).toEqual(expect.arrayContaining(["NVIDIA", "AI", "Earnings"]));
     expect(tags).not.toContain("Bitcoin");
   });
 });
@@ -91,12 +89,12 @@ describe("relative publication time", () => {
     expect(
       formatRelativePublicationTime("2026-08-01T12:00:00.000Z", now),
     ).toMatch(/3h ago|New today/);
-    expect(
-      formatRelativePublicationTime("2026-07-31T15:00:00.000Z", now),
-    ).toBe("Yesterday");
-    expect(
-      formatRelativePublicationTime("2026-07-30T15:00:00.000Z", now),
-    ).toBe("2 days ago");
+    expect(formatRelativePublicationTime("2026-07-31T15:00:00.000Z", now)).toBe(
+      "Yesterday",
+    );
+    expect(formatRelativePublicationTime("2026-07-30T15:00:00.000Z", now)).toBe(
+      "2 days ago",
+    );
   });
 
   it("formats updated minutes ago", () => {
@@ -308,7 +306,10 @@ describe("dashboard hero intelligence helpers", () => {
 describe("perspectives polish wiring", () => {
   it("keeps thumbnail and avatar fallbacks in cards", () => {
     const cards = readFileSync(
-      path.resolve(process.cwd(), "components/perspectives/PerspectiveCards.tsx"),
+      path.resolve(
+        process.cwd(),
+        "components/perspectives/PerspectiveCards.tsx",
+      ),
       "utf8",
     );
     expect(cards).toContain("perspectiveThumbnailCandidates");
@@ -318,19 +319,31 @@ describe("perspectives polish wiring", () => {
     expect(cards).toContain("Why it matters");
   });
 
-  it("keeps compact hero intelligence strip and disclaimer", () => {
+  it("keeps compact hero trend visual and Perspectives disclaimer", () => {
     const hero = readFileSync(
-      path.resolve(process.cwd(), "components/dashboard/PortfolioValueCard.tsx"),
+      path.resolve(
+        process.cwd(),
+        "components/dashboard/PortfolioValueCard.tsx",
+      ),
       "utf8",
     );
     const page = readFileSync(
-      path.resolve(process.cwd(), "components/perspectives/PerspectivesPage.tsx"),
+      path.resolve(
+        process.cwd(),
+        "components/perspectives/PerspectivesPage.tsx",
+      ),
+      "utf8",
+    );
+    const dashboard = readFileSync(
+      path.resolve(process.cwd(), "app/dashboard/page.tsx"),
       "utf8",
     );
     expect(hero).toContain("HeroTrendMicroVisual");
-    expect(hero).toContain("HeroHealthRing");
-    expect(hero).toContain("HeroTopStoryPreviewCard");
     expect(hero).toContain("appHeroPaddingCompactClass");
+    expect(hero).not.toContain("HeroHealthRing");
+    expect(hero).not.toContain("HeroTopStoryPreviewCard");
+    expect(dashboard).toContain("DashboardPortfolioHealthCard");
+    expect(dashboard).toContain("DashboardTopStoryCard");
     expect(page).toContain(
       "External views are presented for informational purposes",
     );

@@ -6,10 +6,12 @@ import { DashboardSectionHeader } from "@/components/dashboard/DashboardSectionH
 import {
   appCardPaddingClass,
   appCardValueClass,
+  appDarkInsetClass,
+  appDashboardDarkBodyMediumClass,
   appDashboardLightCardClass,
-  appSectionBodyClass,
   appSectionLabelClass,
   appTableValueClass,
+  appTextLinkClass,
 } from "@/components/layout/appSurface";
 import {
   formatAnalystConsensus,
@@ -17,6 +19,7 @@ import {
 } from "@/lib/services/analyst/analystCalculator";
 import { shouldShowAnalystDashboardCard } from "@/lib/services/news/analystNews";
 import { formatPortfolioPercent } from "@/lib/client/portfolioAnalysis";
+import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 import type { PortfolioAnalystSnapshot } from "@/lib/types/analyst";
 
 type DashboardAnalystCardProps = {
@@ -34,11 +37,13 @@ export function DashboardAnalystCard({
 
   const positiveAction = snapshot.recentActions.find(
     (action) =>
-      action.actionType === "upgrade" || action.actionType === "target_increase",
+      action.actionType === "upgrade" ||
+      action.actionType === "target_increase",
   );
   const negativeAction = snapshot.recentActions.find(
     (action) =>
-      action.actionType === "downgrade" || action.actionType === "target_decrease",
+      action.actionType === "downgrade" ||
+      action.actionType === "target_decrease",
   );
 
   return (
@@ -70,7 +75,9 @@ export function DashboardAnalystCard({
               />
               <AnalystStat
                 label="Portfolio coverage"
-                value={formatPortfolioPercent(snapshot.coveragePercentOfInvested)}
+                value={formatPortfolioPercent(
+                  snapshot.coveragePercentOfInvested,
+                )}
               />
               <AnalystStat
                 label="Avg. implied upside"
@@ -107,18 +114,20 @@ export function DashboardAnalystCard({
               </div>
             )}
 
-            <div className="mt-6 rounded-[20px] bg-slate-950 px-4 py-4 text-white sm:px-5 sm:py-5">
+            <div
+              className={`mt-6 ${appDarkInsetClass} bg-navy-card px-4 py-4 text-white sm:px-5 sm:py-5`}
+            >
               <div className="flex items-start gap-3">
-                <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-violet-300" />
-                <p className={`${appSectionBodyClass} text-slate-200`}>
+                <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
+                <p className={appDashboardDarkBodyMediumClass}>
                   {snapshot.insight}
                 </p>
               </div>
             </div>
 
             <Link
-              href="/analysis"
-              className="mt-6 inline-flex min-h-[44px] items-center text-sm font-semibold text-blue-700"
+              href={DASHBOARD_DEEP_LINKS.marketConsensus}
+              className={`mt-5 ${appTextLinkClass}`}
             >
               View analyst analysis
             </Link>
@@ -129,13 +138,7 @@ export function DashboardAnalystCard({
   );
 }
 
-function AnalystStat({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
+function AnalystStat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-3.5">
       <p className={appSectionLabelClass}>{label}</p>

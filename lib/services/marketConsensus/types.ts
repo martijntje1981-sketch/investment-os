@@ -1,11 +1,7 @@
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
 export type ConsensusClassification =
-  | "positive"
-  | "neutral"
-  | "mixed"
-  | "negative"
-  | "unavailable";
+  "positive" | "neutral" | "mixed" | "negative" | "unavailable";
 
 export type CoverageType =
   | "equity-analyst"
@@ -15,12 +11,10 @@ export type CoverageType =
   | "unavailable";
 
 export type ConsensusAvailability =
-  | "available"
-  | "limited"
-  | "unavailable"
-  | "error";
+  "available" | "limited" | "unavailable" | "error";
 
-export type ConsensusAgreementLevel = "high" | "moderate" | "divided" | "limited";
+export type ConsensusAgreementLevel =
+  "high" | "moderate" | "divided" | "limited";
 
 export interface AnalystConsensusResult {
   instrumentId: string;
@@ -61,8 +55,13 @@ export type PortfolioConsensusSummary = {
   negativeConsensus: number;
   /** Eligible equities with valid routing but no usable analyst data. */
   noAnalystCoverage: number;
-  /** ETFs, ETPs, ETCs, crypto-linked and other non-eligible investments. */
+  /**
+   * True unavailable only (no defensible outlook mapping).
+   * Funds/ETPs/crypto with outlook kinds are counted in {@link marketOutlook}.
+   */
   notApplicable: number;
+  /** Funds, ETPs, ETCs and crypto-linked holdings using outlook-derived coverage. */
+  marketOutlook: number;
   /** Company equities eligible for classic analyst consensus. */
   eligibleHoldings: number;
   providerUnavailable: number;
@@ -92,10 +91,12 @@ export type MarketConsensusProviderContext = {
 
 export interface MarketConsensusProvider {
   id: string;
-  supports(holding: Pick<
-    StoredPortfolioHolding,
-    "name" | "symbol" | "providerSymbol" | "assetType"
-  >): boolean;
+  supports(
+    holding: Pick<
+      StoredPortfolioHolding,
+      "name" | "symbol" | "providerSymbol" | "assetType"
+    >,
+  ): boolean;
   getConsensus(
     holding: StoredPortfolioHolding,
     context: MarketConsensusProviderContext,

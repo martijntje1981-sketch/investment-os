@@ -1,6 +1,13 @@
 "use client";
 
+import { Compass } from "lucide-react";
+
 import { TodaysDecisionBlock } from "@/components/investor/TodaysDecisionBlock";
+import { DashboardSectionHeader } from "@/components/dashboard/DashboardSectionHeader";
+import {
+  appCardPaddingClass,
+  appDashboardLightCardClass,
+} from "@/components/layout/appSurface";
 import {
   buildTodaysDecision,
   shouldShowTodaysDecisionSubsection,
@@ -8,8 +15,8 @@ import {
 } from "@/lib/client/todaysDecision";
 
 /**
- * Compact Today’s Decision subsection for the combined Market Briefing card.
- * Returns null when there is no useful additional content.
+ * Standalone Today’s Decision card for the Dashboard intelligence row.
+ * Collapses entirely when there is no useful decision content.
  */
 export function DashboardTodaysDecision(context: TodaysDecisionContext) {
   const decision = buildTodaysDecision(context);
@@ -18,16 +25,17 @@ export function DashboardTodaysDecision(context: TodaysDecisionContext) {
   }
 
   return (
-    <div className="border-t border-slate-200/80 pt-3.5">
-      <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-500">
-        Today’s Decision
-      </p>
-      <p className="mt-0.5 text-[12px] font-medium text-slate-500">
-        What deserves your attention today
-      </p>
-      <div className="mt-2.5">
+    <section className={`${appDashboardLightCardClass} h-full`}>
+      <DashboardSectionHeader
+        variant="compact"
+        title="Today’s Decision"
+        subtitle="What deserves attention now"
+        icon={<Compass className="h-5 w-5" />}
+        iconToneClassName="bg-blue-50 text-blue-700 ring-1 ring-blue-100"
+      />
+      <div className={`${appCardPaddingClass} pt-0`}>
         <TodaysDecisionBlock decision={decision} variant="light" compact />
       </div>
-    </div>
+    </section>
   );
 }

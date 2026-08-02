@@ -10,9 +10,10 @@ import {
   appDashboardLightCardClass,
   appSectionBodyClass,
   appSectionMetaClass,
+  appTextLinkClass,
 } from "@/components/layout/appSurface";
 import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
-import { ANALYSIS_PATH } from "@/lib/navigation/newsHubRoutes";
+import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 import type { PortfolioDividendSnapshot } from "@/lib/types/dividends";
 
 type DashboardDividendCardProps = {
@@ -30,7 +31,11 @@ export function DashboardDividendCard({
 }: DashboardDividendCardProps) {
   const { formatEur } = useBaseCurrencyDisplay();
 
-  if (!snapshot.passiveIncome.hasUsableEstimate && !snapshot.hasDividendData && !isLoading) {
+  if (
+    !snapshot.passiveIncome.hasUsableEstimate &&
+    !snapshot.hasDividendData &&
+    !isLoading
+  ) {
     return null;
   }
 
@@ -86,10 +91,10 @@ export function DashboardDividendCard({
         ) : null}
 
         <Link
-          href={ANALYSIS_PATH}
-          className="inline-flex min-h-[40px] items-center text-sm font-semibold text-emerald-700 transition hover:text-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
+          href={DASHBOARD_DEEP_LINKS.dividendIntelligence}
+          className={appTextLinkClass}
         >
-          Open Dividend Intelligence
+          View details
         </Link>
       </div>
     </section>

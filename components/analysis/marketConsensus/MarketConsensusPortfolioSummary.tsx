@@ -1,6 +1,4 @@
-import {
-  MarketConsensusDemoBadge,
-} from "@/components/analysis/marketConsensus/MarketConsensusStatusBadge";
+import { MarketConsensusDemoBadge } from "@/components/analysis/marketConsensus/MarketConsensusStatusBadge";
 import {
   appCardValueClass,
   appSectionBodyClass,
@@ -54,7 +52,9 @@ export function MarketConsensusPortfolioSummary({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className={appSectionTitleClass}>Portfolio market outlook</h3>
-          <p className={`mt-2 max-w-3xl ${appSectionBodyClass}`}>{summary.summary}</p>
+          <p className={`mt-2 max-w-3xl ${appSectionBodyClass}`}>
+            {summary.summary}
+          </p>
         </div>
         {summary.isDemoData ? <MarketConsensusDemoBadge /> : null}
       </div>
@@ -62,11 +62,7 @@ export function MarketConsensusPortfolioSummary({
       <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2.5 rounded-xl border border-slate-100 bg-slate-50/90 px-3.5 py-3 sm:grid-cols-3 xl:grid-cols-5">
         <SummaryMetric
           label="With coverage"
-          value={
-            zeroEligible
-              ? null
-              : summary.holdingsWithCoverage
-          }
+          value={zeroEligible ? null : summary.holdingsWithCoverage}
           isDemoData={summary.isDemoData}
           deemphasized={zeroEligible}
         />
@@ -89,12 +85,23 @@ export function MarketConsensusPortfolioSummary({
           deemphasized={zeroEligible}
         />
         <SummaryMetric
-          label="Not applicable"
-          value={summary.notApplicable}
+          label="Market outlook"
+          value={summary.marketOutlook}
           isDemoData={summary.isDemoData}
         />
+        {(summary.notApplicable ?? 0) > 0 ? (
+          <SummaryMetric
+            label="Not applicable"
+            value={summary.notApplicable}
+            isDemoData={summary.isDemoData}
+            deemphasized
+          />
+        ) : null}
       </div>
-      <p className={`mt-3 ${appSectionMetaClass}`} title={MARKET_CONSENSUS_ELIGIBLE_HELPER}>
+      <p
+        className={`mt-3 ${appSectionMetaClass}`}
+        title={MARKET_CONSENSUS_ELIGIBLE_HELPER}
+      >
         {MARKET_CONSENSUS_ELIGIBLE_HELPER}
       </p>
     </article>

@@ -1,4 +1,7 @@
-import { classifyMarketConsensusHolding, isCryptoLinkedHolding } from "@/lib/client/marketConsensus/holdingClassification";
+import {
+  classifyMarketConsensusHolding,
+  isCryptoLinkedHolding,
+} from "@/lib/client/marketConsensus/holdingClassification";
 import { inferAnalystCoverageKind } from "@/lib/services/analyst/assetCoverageKind";
 import { buildStaticConsensusResult } from "@/lib/services/marketConsensus/providers/registry";
 import type { AnalystConsensusResult } from "@/lib/services/marketConsensus/types";
@@ -81,13 +84,18 @@ export function normalizeConsensusResultForHolding(
       ...result,
       coverageType: "underlying-market",
       availability:
-        result.availability === "available" ? result.availability : "unavailable",
+        result.availability === "available"
+          ? result.availability
+          : "unavailable",
       classification: "unavailable",
       errorCode: undefined,
     });
   }
 
-  if (isSoftConsensusFailure(result) && shouldUseEtfNeutralFallback(holding, result)) {
+  if (
+    isSoftConsensusFailure(result) &&
+    shouldUseEtfNeutralFallback(holding, result)
+  ) {
     return validateAndSanitizeConsensusResult({
       ...buildStaticConsensusResult(holding),
       summary: result.summary ?? buildStaticConsensusResult(holding).summary,

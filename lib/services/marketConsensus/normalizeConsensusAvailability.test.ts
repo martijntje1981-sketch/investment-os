@@ -161,7 +161,7 @@ describe("ETF card mapping", () => {
     });
 
     expect(card.state).toBe("etf_outlook");
-    expect(card.statusLabel).toBe("Not applicable — ETF");
+    expect(card.statusLabel).toBe("Underlying market outlook");
     expect(card.errorMessage).toBeUndefined();
     expect(card.summary.length).toBeGreaterThan(0);
   });
@@ -184,8 +184,8 @@ describe("ETF card mapping", () => {
 
     expect(card.state).toBe("etf_outlook");
     expect(card.errorMessage).toBeUndefined();
-    expect(card.coverageType).toBe("Not applicable");
-    expect(card.statusLabel).toBe("Not applicable — ETF");
+    expect(card.coverageType).toBe("Theme-level outlook");
+    expect(card.statusLabel).toBe("Theme-level outlook");
   });
 
   it("renders bare-symbol VWCE provider errors as neutral ETF outlook", () => {
@@ -202,7 +202,7 @@ describe("ETF card mapping", () => {
     });
 
     expect(card.state).toBe("etf_outlook");
-    expect(card.statusLabel).toBe("Not applicable — ETF");
+    expect(card.statusLabel).toBe("Underlying market outlook");
     expect(card.errorMessage).toBeUndefined();
   });
 
@@ -253,6 +253,6 @@ describe("ETF service fallback", () => {
     );
 
     expect(result.availability).not.toBe("error");
-    expect(result.coverageType).toBe("underlying-market");
+    expect(result.coverageType).toBe("sector-outlook");
   });
 });

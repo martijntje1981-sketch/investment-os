@@ -79,8 +79,14 @@ describe("buildTodaysDecision", () => {
     const result = buildTodaysDecision({
       intelligence: intelligence({
         portfolioStatus: "High Attention",
-        keyRisks: [bulletTextOnly("Review one holding with elevated concentration risk.")],
-        opportunities: [bulletTextOnly("Uranium sector momentum remains notable.")],
+        keyRisks: [
+          bulletTextOnly(
+            "Review one holding with elevated concentration risk.",
+          ),
+        ],
+        opportunities: [
+          bulletTextOnly("Uranium sector momentum remains notable."),
+        ],
       }),
       intelligenceFromCache: true,
       marketsClosed: false,
@@ -221,7 +227,7 @@ describe("buildTodaysDecision", () => {
       marketsClosed: false,
     });
 
-    expect(result.destinationHref).toBe("/portfolio/NUKL");
+    expect(result.destinationHref).toBe("/holding/NUKL");
     expect(result.destinationLabel).toBe("View holding");
     expect(result.destinationExternal).toBe(false);
   });
@@ -230,13 +236,17 @@ describe("buildTodaysDecision", () => {
     const result = buildTodaysDecision({
       intelligence: intelligence({
         portfolioStatus: "Elevated",
-        keyRisks: [bulletTextOnly("Review one holding with elevated concentration risk.")],
+        keyRisks: [
+          bulletTextOnly(
+            "Review one holding with elevated concentration risk.",
+          ),
+        ],
       }),
       intelligenceFromCache: true,
       marketsClosed: false,
     });
 
-    expect(result.destinationHref).toBe("/news");
+    expect(result.destinationHref).toBe("/news#news-market-brief");
     expect(result.destinationLabel).toBe("View briefing");
     expect(result.destinationExternal).toBe(false);
   });
@@ -314,10 +324,12 @@ describe("investor overview copy", () => {
       }),
     ).toBe(DAILY_PERFORMANCE_AFTER_CLOSE);
 
-    expect(formatMoverUnavailableMessage({
-      hasDailyData: false,
-      hasReliableMoverData: false,
-    })).toBe(RANKING_AFTER_CLOSE);
+    expect(
+      formatMoverUnavailableMessage({
+        hasDailyData: false,
+        hasReliableMoverData: false,
+      }),
+    ).toBe(RANKING_AFTER_CLOSE);
     expect(DAILY_PERFORMANCE_AFTER_CLOSE).not.toBe(RANKING_AFTER_CLOSE);
   });
 });
@@ -332,7 +344,10 @@ describe("dashboard Today's Decision integration", () => {
       "utf8",
     );
     const decisionSection = readFileSync(
-      resolve(process.cwd(), "components/dashboard/DashboardTodaysDecision.tsx"),
+      resolve(
+        process.cwd(),
+        "components/dashboard/DashboardTodaysDecision.tsx",
+      ),
       "utf8",
     );
     const preview = readFileSync(
@@ -344,6 +359,9 @@ describe("dashboard Today's Decision integration", () => {
     );
 
     expect(dashboard.indexOf("<DashboardSummary")).toBeLessThan(
+      dashboard.indexOf("<DashboardTodaysDecision"),
+    );
+    expect(dashboard.indexOf("<DashboardTodaysDecision")).toBeLessThan(
       dashboard.indexOf("<DashboardIntelligencePreview"),
     );
     expect(dashboard.indexOf("<DashboardIntelligencePreview")).toBeLessThan(
@@ -353,8 +371,8 @@ describe("dashboard Today's Decision integration", () => {
     expect(decisionSection).toContain("buildTodaysDecision");
     expect(decisionSection).toContain("shouldShowTodaysDecisionSubsection");
     expect(preview).toContain("buildIntelligenceDisplayMessage");
-    expect(preview).toContain("NEWS_HUB_PATH");
-    expect(preview).toContain("DashboardTodaysDecision");
+    expect(preview).toContain("DASHBOARD_DEEP_LINKS.marketBriefing");
+    expect(preview).not.toContain("DashboardTodaysDecision");
     expect(preview).not.toContain("DiscoverMissedTeaser");
     expect(dashboard).not.toContain("BottomNavigation");
     expect(dashboard).not.toMatch(/innerWidth|matchMedia|useMediaQuery/);

@@ -14,7 +14,8 @@ import {
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
 function holding(
-  overrides: Partial<StoredPortfolioHolding> & Pick<StoredPortfolioHolding, "symbol" | "name">,
+  overrides: Partial<StoredPortfolioHolding> &
+    Pick<StoredPortfolioHolding, "symbol" | "name">,
 ): StoredPortfolioHolding {
   const { symbol, name, ...rest } = overrides;
   return {
@@ -37,7 +38,11 @@ describe("dashboardSummary", () => {
   it("builds portfolio performance metrics from saved holdings", () => {
     const summary = buildDashboardSummary(
       [
-        holding({ symbol: "VWCE", name: "Vanguard FTSE All-World", currentPrice: 110 }),
+        holding({
+          symbol: "VWCE",
+          name: "Vanguard FTSE All-World",
+          currentPrice: 110,
+        }),
         holding({
           symbol: "IB1T",
           name: "Bitcoin",
@@ -135,11 +140,17 @@ describe("home and dashboard hierarchy", () => {
       "utf8",
     );
     const preview = readFileSync(
-      resolve(process.cwd(), "components/dashboard/DashboardIntelligencePreview.tsx"),
+      resolve(
+        process.cwd(),
+        "components/dashboard/DashboardIntelligencePreview.tsx",
+      ),
       "utf8",
     );
 
     expect(dashboard.indexOf("<DashboardSummary")).toBeLessThan(
+      dashboard.indexOf("<DashboardTodaysDecision"),
+    );
+    expect(dashboard.indexOf("<DashboardTodaysDecision")).toBeLessThan(
       dashboard.indexOf("<DashboardIntelligencePreview"),
     );
     expect(dashboard.indexOf("<DashboardIntelligencePreview")).toBeLessThan(
@@ -158,7 +169,7 @@ describe("home and dashboard hierarchy", () => {
     expect(holdingsToday).toContain("md:hidden");
     expect(holdingsToday).toContain("hidden md:block");
     expect(preview).not.toContain("Also worth noting");
-    expect(preview).toContain("DashboardTodaysDecision");
+    expect(preview).not.toContain("TodaysDecisionBlock");
   });
 
   it("redirects authenticated users away from the marketing home route", async () => {

@@ -9,9 +9,11 @@ import {
   appCardPaddingClass,
   appSectionBodyClass,
   appSectionLabelClass,
+  appTextLinkClass,
 } from "@/components/layout/appSurface";
 import type { DashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
 import { resolveHoldingsMoveColumnLabel } from "@/lib/client/performancePeriod";
+import { PORTFOLIO_PATH } from "@/lib/navigation/appRoutes";
 
 export function HoldingsToday({
   snapshot,
@@ -69,6 +71,11 @@ export function HoldingsToday({
         title="Your holdings"
         subtitle={positionSubtitle}
         icon={<Wallet className="h-5 w-5" />}
+        trailing={
+          <Link href={PORTFOLIO_PATH} className={appTextLinkClass}>
+            View portfolio
+          </Link>
+        }
       />
 
       <div className={`md:hidden ${appCardPaddingClass} pt-0`}>
@@ -95,7 +102,9 @@ export function HoldingsToday({
                 >
                   Value
                 </th>
-                <th className={`w-[32%] px-4 py-3.5 text-right ${appSectionLabelClass}`}>
+                <th
+                  className={`w-[32%] px-4 py-3.5 text-right ${appSectionLabelClass}`}
+                >
                   {moveColumnLabel}
                 </th>
               </tr>

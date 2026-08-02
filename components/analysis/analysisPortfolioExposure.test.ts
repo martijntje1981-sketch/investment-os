@@ -53,9 +53,7 @@ describe("Analysis portfolio exposure section", () => {
     const topPerformersIdx = analysisPageSource.indexOf(
       "<TopPerformersByCategorySection",
     );
-    const exposureIdx = analysisPageSource.indexOf(
-      "<PortfolioExposureSection",
-    );
+    const exposureIdx = analysisPageSource.indexOf("<PortfolioExposureSection");
 
     expect(performanceIdx).toBeGreaterThan(-1);
     expect(topPerformersIdx).toBeGreaterThan(performanceIdx);
@@ -105,11 +103,11 @@ describe("Analysis portfolio exposure section", () => {
     );
   });
 
-  it("keeps Dashboard Open Analysis pointed at the Analysis exposure anchor", () => {
-    expect(dashboardCardSource).toContain("#portfolio-exposure");
-    expect(dashboardCardSource).toMatch(
-      /ANALYSIS_PATH.*#portfolio-exposure|#portfolio-exposure.*ANALYSIS_PATH/,
+  it("keeps Dashboard allocation CTA pointed at the Analysis exposure anchor", () => {
+    expect(dashboardCardSource).toContain(
+      "DASHBOARD_DEEP_LINKS.portfolioExposure",
     );
+    expect(dashboardCardSource).toContain("View allocation");
   });
 
   it("shows contributing holdings with accessible Show all / Show less", () => {
@@ -209,7 +207,7 @@ describe("Analysis portfolio exposure section", () => {
     expect(performanceSource).toContain("Cash currencies ·");
     expect(performanceSource).toContain("Largest ·");
     expect(performanceSource).toContain(
-      "<ConversionDetailsDisclosure compactTrigger tone=\"dark\" />",
+      '<ConversionDetailsDisclosure compactTrigger tone="dark" />',
     );
 
     expect(analysisPageSource).toContain("analysis.investmentCount");

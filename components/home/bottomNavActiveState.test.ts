@@ -12,10 +12,11 @@ describe("bottom navigation active state", () => {
 
   it("keeps authenticated primary workflow destinations and guest explore destinations", () => {
     expect(source).toContain("authenticatedItems");
-    expect(source).toContain('href: "/dashboard"');
-    expect(source).toContain('href: "/portfolio"');
-    expect(source).toContain('href: "/analysis"');
-    expect(source).toContain('href: "/goals"');
+    expect(source).toContain("DASHBOARD_PATH");
+    expect(source).toContain("PORTFOLIO_PATH");
+    expect(source).toContain("ANALYSIS_PATH");
+    expect(source).toContain("GOALS_PATH");
+    expect(source).toContain("href: PORTFOLIO_PATH");
     expect(source).toContain("guestItems");
     expect(source).toContain('href: "/perspectives"');
     expect(source).toContain('href: "/news"');
@@ -37,9 +38,9 @@ describe("bottom navigation active state", () => {
 
   it("uses shared active styling tokens", () => {
     expect(source).toContain('aria-current={active ? "page" : undefined}');
-    expect(source).toContain("bg-brand text-brand-navy shadow-sm");
+    expect(source).toContain("bg-brand-soft text-brand-navy");
     expect(source).toContain(
-      "text-slate-600 hover:bg-brand-soft hover:text-brand-navy",
+      "text-slate-600 hover:bg-slate-50 hover:text-brand-navy",
     );
   });
 });

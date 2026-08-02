@@ -1,5 +1,5 @@
 import { getMarketStatuses } from "@/lib/client/marketStatus";
-import { ANALYSIS_PATH, NEWS_HUB_PATH } from "@/lib/navigation/newsHubRoutes";
+import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 import type { GoalProgress } from "@/lib/services/goals/goalProgressEngine";
 import type {
   IntelligenceBullet,
@@ -15,7 +15,8 @@ const NO_MATERIAL_DEVELOPMENTS = "No material developments were detected.";
 const FORBIDDEN_DECISION_PATTERN =
   /\b(buy|sell|increase your position|reduce your position|guaranteed|should outperform)\b/i;
 
-export type TodaysDecisionTone = "neutral" | "positive" | "attention" | "critical";
+export type TodaysDecisionTone =
+  "neutral" | "positive" | "attention" | "critical";
 
 export type TodaysDecisionResult = {
   statusLabel: string;
@@ -84,7 +85,9 @@ function sanitizeDecisionText(text: string): string {
   return trimmed.endsWith(".") ? trimmed : `${trimmed}.`;
 }
 
-function countPortfolioDevelopments(intelligence: InvestmentIntelligence): number {
+function countPortfolioDevelopments(
+  intelligence: InvestmentIntelligence,
+): number {
   const unique = new Set<string>();
   for (const item of intelligence.todayMatters) unique.add(item.text);
   for (const item of intelligence.keyRisks) unique.add(item.text);
@@ -198,7 +201,7 @@ export function resolveTodaysDecisionDestination(
   const reviewSymbol = extractReviewSymbol(result.decision);
   if (reviewSymbol) {
     return {
-      destinationHref: `/portfolio/${encodeURIComponent(reviewSymbol)}`,
+      destinationHref: `/holding/${encodeURIComponent(reviewSymbol)}`,
       destinationLabel: "View holding",
       destinationExternal: false,
     };
@@ -206,7 +209,7 @@ export function resolveTodaysDecisionDestination(
 
   if (result.statusLabel === "Goal watch") {
     return {
-      destinationHref: "/goals",
+      destinationHref: DASHBOARD_DEEP_LINKS.goalProgress,
       destinationLabel: "View goal",
       destinationExternal: false,
     };
@@ -214,7 +217,7 @@ export function resolveTodaysDecisionDestination(
 
   if (shouldLinkToBriefing(result, context.intelligence)) {
     return {
-      destinationHref: NEWS_HUB_PATH,
+      destinationHref: DASHBOARD_DEEP_LINKS.marketBriefing,
       destinationLabel: "View briefing",
       destinationExternal: false,
     };
@@ -225,7 +228,7 @@ export function resolveTodaysDecisionDestination(
     result.reason?.includes("analyst coverage")
   ) {
     return {
-      destinationHref: `${ANALYSIS_PATH}#market-consensus`,
+      destinationHref: DASHBOARD_DEEP_LINKS.marketConsensus,
       destinationLabel: "View analysis",
       destinationExternal: false,
     };
@@ -313,7 +316,8 @@ export function buildTodaysDecision(
         {
           statusLabel: "High attention",
           decision: sanitizeDecisionText(risk.text),
-          reason: "Why: Elevated portfolio attention was detected in the latest briefing.",
+          reason:
+            "Why: Elevated portfolio attention was detected in the latest briefing.",
           tone: "critical",
         },
         sourceFromBullet(risk),
@@ -335,7 +339,8 @@ export function buildTodaysDecision(
         {
           statusLabel: "High attention",
           decision: sanitizeDecisionText(intelligence.todayMatters[0].text),
-          reason: "Why: Today's briefing flagged high-attention portfolio developments.",
+          reason:
+            "Why: Today's briefing flagged high-attention portfolio developments.",
           tone: "critical",
         },
         sourceFromBullet(intelligence.todayMatters[0]),
@@ -393,7 +398,8 @@ export function buildTodaysDecision(
       {
         statusLabel: "Opportunity",
         decision: sanitizeDecisionText(opportunity.text),
-        reason: "Why: A meaningful opportunity was noted in the latest briefing.",
+        reason:
+          "Why: A meaningful opportunity was noted in the latest briefing.",
         tone: "positive",
       },
       sourceFromBullet(opportunity),
@@ -424,8 +430,10 @@ export function buildTodaysDecision(
     if (context.goalProgress?.hasGoal && isGoalHealthy(context.goalProgress)) {
       result = {
         statusLabel: intelligence.portfolioStatus,
-        decision: "Your portfolio remains on track. Stay with the current plan.",
-        reason: "Why: No material risks or events were identified in the latest briefing.",
+        decision:
+          "Your portfolio remains on track. Stay with the current plan.",
+        reason:
+          "Why: No material risks or events were identified in the latest briefing.",
         tone: "positive",
       };
       return applyDecisionDestination(result, context);
@@ -433,7 +441,8 @@ export function buildTodaysDecision(
     result = {
       statusLabel: intelligence.portfolioStatus,
       decision: "No action required today.",
-      reason: "Why: No material risks or events were identified in the latest briefing.",
+      reason:
+        "Why: No material risks or events were identified in the latest briefing.",
       tone: "positive",
     };
     return applyDecisionDestination(result, context);
@@ -507,8 +516,7 @@ export function buildIntelligenceDisplayMessage(
 
   if (
     intelligence.keyRisks.length === 0 &&
-    (intelligence.portfolioStatus === "Stable" ||
-      intelligence.quietMarket) &&
+    (intelligence.portfolioStatus === "Stable" || intelligence.quietMarket) &&
     intelligence.portfolioSummary !== NO_MATERIAL_DEVELOPMENTS
   ) {
     return intelligence.portfolioSummary;
@@ -521,11 +529,18 @@ export function buildIntelligenceDisplayMessage(
     return "No urgent portfolio risks detected in the latest briefing.";
   }
 
-  if (goalProgress?.hasGoal && isGoalHealthy(goalProgress) && intelligence.quietMarket) {
+  if (
+    goalProgress?.hasGoal &&
+    isGoalHealthy(goalProgress) &&
+    intelligence.quietMarket
+  ) {
     return "Your portfolio remains on track toward its current goal.";
   }
 
-  if (intelligenceFromCache && intelligence.portfolioSummary === NO_MATERIAL_DEVELOPMENTS) {
+  if (
+    intelligenceFromCache &&
+    intelligence.portfolioSummary === NO_MATERIAL_DEVELOPMENTS
+  ) {
     return "Latest portfolio briefing loaded from the most recent update.";
   }
 

@@ -54,7 +54,9 @@ export function useMarketConsensus(
     }
 
     const cache = readMarketConsensusCache(userSub);
-    const hasFreshCache = Boolean(cache && isMarketConsensusCacheFresh(cache.cachedAt));
+    const hasFreshCache = Boolean(
+      cache && isMarketConsensusCacheFresh(cache.cachedAt),
+    );
 
     if (!hasFreshCache) {
       setIsLoading(true);

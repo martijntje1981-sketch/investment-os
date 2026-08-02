@@ -12,7 +12,10 @@ describe("dashboard phase 2 compact previews", () => {
     "utf8",
   );
   const decisionSource = readFileSync(
-    path.resolve(process.cwd(), "components/dashboard/DashboardTodaysDecision.tsx"),
+    path.resolve(
+      process.cwd(),
+      "components/dashboard/DashboardTodaysDecision.tsx",
+    ),
     "utf8",
   );
   const decisionBlockSource = readFileSync(
@@ -34,15 +37,24 @@ describe("dashboard phase 2 compact previews", () => {
     "utf8",
   );
   const dividendSource = readFileSync(
-    path.resolve(process.cwd(), "components/dashboard/DashboardDividendCard.tsx"),
+    path.resolve(
+      process.cwd(),
+      "components/dashboard/DashboardDividendCard.tsx",
+    ),
     "utf8",
   );
   const insightSource = readFileSync(
-    path.resolve(process.cwd(), "components/dashboard/DashboardInsightCard.tsx"),
+    path.resolve(
+      process.cwd(),
+      "components/dashboard/DashboardInsightCard.tsx",
+    ),
     "utf8",
   );
   const marketStatusSource = readFileSync(
-    path.resolve(process.cwd(), "components/dashboard/DashboardMarketStatus.tsx"),
+    path.resolve(
+      process.cwd(),
+      "components/dashboard/DashboardMarketStatus.tsx",
+    ),
     "utf8",
   );
 
@@ -53,7 +65,7 @@ describe("dashboard phase 2 compact previews", () => {
   });
 
   it("keeps Today’s Decision present and clickable when a destination exists", () => {
-    expect(briefingSource).toContain("DashboardTodaysDecision");
+    expect(dashboardSource).toContain("DashboardTodaysDecision");
     expect(decisionSource).toContain("TodaysDecisionBlock");
     expect(decisionBlockSource).toContain("resolveDestination");
     expect(decisionBlockSource).toContain("INTERACTIVE_STYLES");
@@ -64,7 +76,7 @@ describe("dashboard phase 2 compact previews", () => {
     expect(briefingSource).toContain("mustWatch");
     expect(briefingSource).toContain("buildIntelligenceDisplayMessage");
     expect(briefingSource).toContain("leadTitle");
-    expect(briefingSource).toContain("NEWS_HUB_PATH");
+    expect(briefingSource).toContain("DASHBOARD_DEEP_LINKS.marketBriefing");
     expect(briefingSource).toContain("Open Market Intelligence");
     expect(briefingSource).toContain("line-clamp-3");
     expect(briefingSource).toContain("mustWatch?.title");
@@ -72,19 +84,21 @@ describe("dashboard phase 2 compact previews", () => {
     expect(briefingSource).not.toContain("Read featured story");
     expect(briefingSource).not.toContain("todayMatters.map");
     expect(briefingSource).not.toContain("macroHighlights");
+    expect(briefingSource).not.toContain("DashboardTodaysDecision");
   });
 
-  it("combines Today’s Decision into Market Briefing as one compact card", () => {
-    const briefingIdx = dashboardSource.indexOf("<DashboardIntelligencePreview");
-    const holdingsIdx = dashboardSource.indexOf("<HoldingsToday");
-    expect(briefingIdx).toBeGreaterThan(-1);
-    expect(holdingsIdx).toBeGreaterThan(briefingIdx);
-    expect(dashboardSource).toContain("DashboardIntelligencePreview");
-    expect(dashboardSource).not.toMatch(
-      /grid min-w-0 gap-6 lg:grid-cols-2[\s\S]*DashboardTodaysDecision[\s\S]*DashboardIntelligencePreview/,
+  it("pairs Today’s Decision and Market Briefing as distinct intelligence cards", () => {
+    const decisionIdx = dashboardSource.indexOf("<DashboardTodaysDecision");
+    const briefingIdx = dashboardSource.indexOf(
+      "<DashboardIntelligencePreview",
     );
-    expect(briefingSource).toContain("DashboardTodaysDecision");
-    expect(decisionSource).toContain("shouldShowTodaysDecisionSubsection");
+    const holdingsIdx = dashboardSource.indexOf("<HoldingsToday");
+    expect(decisionIdx).toBeGreaterThan(-1);
+    expect(briefingIdx).toBeGreaterThan(decisionIdx);
+    expect(holdingsIdx).toBeGreaterThan(briefingIdx);
+    expect(dashboardSource).toMatch(
+      /grid min-w-0 gap-4 md:gap-5 lg:grid-cols-2[\s\S]*DashboardTodaysDecision[\s\S]*DashboardIntelligencePreview/,
+    );
     expect(dashboardSource).not.toMatch(/overflow-x-auto|overflow-x-scroll/);
   });
 
@@ -93,10 +107,10 @@ describe("dashboard phase 2 compact previews", () => {
     expect(goalProgressSource).toContain("targetValue");
     expect(goalProgressSource).toContain("currentProgressPercent");
     expect(goalProgressSource).toContain("progress.status");
-    expect(goalProgressSource).toContain('href="/goals"');
+    expect(goalProgressSource).toContain("DASHBOARD_DEEP_LINKS.goalProgress");
     expect(goalProgressSource).toContain("Open Goals");
     expect(goalProgressSource).toContain("Set your goal");
-    expect(goalProgressSource).toContain("role=\"progressbar\"");
+    expect(goalProgressSource).toContain('role="progressbar"');
     expect(goalProgressSource).not.toContain("estimatedCompletionLabel");
     expect(goalProgressSource).not.toContain("remainingAmount");
     expect(goalProgressSource).not.toContain("progress.summary");
@@ -110,8 +124,10 @@ describe("dashboard phase 2 compact previews", () => {
   it("keeps Dividend Intelligence primary metric, observation, and Analysis CTA", () => {
     expect(dividendSource).toContain("estimatedAnnualIncomeEur");
     expect(dividendSource).toContain("snapshot.insight");
-    expect(dividendSource).toContain("ANALYSIS_PATH");
-    expect(dividendSource).toContain("Open Dividend Intelligence");
+    expect(dividendSource).toContain(
+      "DASHBOARD_DEEP_LINKS.dividendIntelligence",
+    );
+    expect(dividendSource).toContain("View details");
     expect(dividendSource).toContain("passiveIncome.hasUsableEstimate");
     expect(dividendSource).toContain("includesUserEstimates");
     expect(dividendSource).not.toContain("portfolioYieldPercent");

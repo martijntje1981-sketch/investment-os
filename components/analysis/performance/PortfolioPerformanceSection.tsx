@@ -31,7 +31,10 @@ import { formatPortfolioPercent } from "@/lib/client/portfolioAnalysis";
 import {
   calculatePortfolioPerformance,
   type PerformancePeriodId,
+  type PortfolioPerformanceResult,
 } from "@/lib/client/performance";
+import { usePortfolioPerformanceHistory } from "@/lib/client/usePortfolioPerformanceHistory";
+import type { PortfolioPerformanceHistoryApiResponse } from "@/lib/services/performance/types";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
 export type PerformanceHeroCompositionMeta = {
@@ -62,9 +65,7 @@ function formatPerformanceUpdatedAt(value: string | null): string {
   }).format(date);
 }
 
-function resolveStartingUnavailableReason(
-  period: PerformancePeriodId,
-): string {
+function resolveStartingUnavailableReason(period: PerformancePeriodId): string {
   if (period === "1D") {
     return "Daily performance requires previous-close data.";
   }
@@ -76,11 +77,14 @@ function resolveStartingUnavailableReason(
   return "Not available for this period.";
 }
 
-function resolveReturnUnavailableReason(
-  period: PerformancePeriodId,
-): string {
-  if (period === "1W" || period === "1M" || period === "YTD" || period === "1Y") {
-    return "History will build automatically over time.";
+function resolveReturnUnavailableReason(period: PerformancePeriodId): string {
+  if (
+    period === "1W" ||
+    period === "1M" ||
+    period === "YTD" ||
+    period === "1Y"
+  ) {
+    return "Insufficient price history for this period.";
   }
 
   if (period === "1D") {
@@ -88,6 +92,52 @@ function resolveReturnUnavailableReason(
   }
 
   return "Investment return is not available yet.";
+}
+
+function mergeHistoryIntoPerformance(
+  local: PortfolioPerformanceResult,
+  history: PortfolioPerformanceHistoryApiResponse,
+): PortfolioPerformanceResult {
+  const hasSeries = history.chartPoints.length >= 2;
+
+  if (!hasSeries) {
+    // Keep ALL cost-basis KPI summary when EOD chart history is unavailable.
+    if (local.period === "ALL" && local.dataAvailability === "summary_only") {
+      return {
+        ...local,
+        availabilityMessage:
+          history.availabilityMessage ?? local.availabilityMessage,
+        chartHasSeries: false,
+      };
+    }
+
+    return {
+      ...local,
+      dataAvailability: history.dataAvailability,
+      availabilityMessage:
+        history.availabilityMessage ?? local.availabilityMessage,
+      startingPortfolioValue: null,
+      investmentReturn: null,
+      investmentReturnPercent: null,
+      netContributions: null,
+      chartPoints: [],
+      chartHasSeries: false,
+    };
+  }
+
+  return {
+    ...local,
+    calculationMethod: "contribution_adjusted_simple_return",
+    dataAvailability: history.dataAvailability,
+    availabilityMessage: history.availabilityMessage,
+    startingPortfolioValue: history.startingValue,
+    endingPortfolioValue: history.endingValue,
+    netContributions: null,
+    investmentReturn: history.investmentReturn,
+    investmentReturnPercent: history.investmentReturnPercent,
+    chartPoints: history.chartPoints,
+    chartHasSeries: true,
+  };
 }
 
 export function PortfolioPerformanceSection({
@@ -100,10 +150,51 @@ export function PortfolioPerformanceSection({
   const { formatEur } = useBaseCurrencyDisplay();
   const [period, setPeriod] = useState<PerformancePeriodId>("1D");
 
-  const performance = useMemo(
+  const localPerformance = useMemo(
     () => calculatePortfolioPerformance(holdings, { period }),
     [holdings, period],
   );
+
+  const history = usePortfolioPerformanceHistory(holdings, period);
+
+  const performance = useMemo(() => {
+    if (period === "1D") {
+      return localPerformance;
+    }
+
+    if (history.data) {
+      return mergeHistoryIntoPerformance(localPerformance, history.data);
+    }
+
+    if (history.isLoading) {
+      return {
+        ...localPerformance,
+        availabilityMessage: "Loading portfolio history…",
+      };
+    }
+
+    if (history.error) {
+      return {
+        ...localPerformance,
+        availabilityMessage: history.error,
+        chartHasSeries: false,
+        chartPoints: period === "ALL" ? localPerformance.chartPoints : [],
+      };
+    }
+
+    return localPerformance;
+  }, [
+    period,
+    localPerformance,
+    history.data,
+    history.isLoading,
+    history.error,
+  ]);
+
+  const historicalFxApproximate =
+    period !== "1D" &&
+    Boolean(history.data?.historicalFxApproximate) &&
+    performance.chartHasSeries;
 
   const returnToneClass =
     performance.investmentReturn === null
@@ -113,6 +204,12 @@ export function PortfolioPerformanceSection({
         : performance.investmentReturn < 0
           ? "text-red-300"
           : "text-slate-200";
+
+  const chartEmptyMessage = history.isLoading
+    ? "Loading portfolio history…"
+    : performance.availabilityMessage && !performance.chartHasSeries
+      ? performance.availabilityMessage
+      : PORTFOLIO_PERFORMANCE_CHART_EMPTY_MESSAGE;
 
   return (
     <section
@@ -169,8 +266,13 @@ export function PortfolioPerformanceSection({
               </p>
               <p className={`mt-1.5 ${appDashboardDarkMetaClass}`}>
                 {performance.investmentReturnPercent !== null
-                  ? formatSignedPortfolioPercent(performance.investmentReturnPercent)
-                  : resolveReturnUnavailableReason(period)}
+                  ? formatSignedPortfolioPercent(
+                      performance.investmentReturnPercent,
+                    )
+                  : history.isLoading
+                    ? "Loading…"
+                    : (performance.availabilityMessage ??
+                      resolveReturnUnavailableReason(period))}
               </p>
             </div>
           </div>
@@ -231,10 +333,19 @@ export function PortfolioPerformanceSection({
           </div>
         ) : null}
 
+        {historicalFxApproximate ? (
+          <div className="rounded-[16px] border border-white/10 bg-white/[0.03] px-3.5 py-2.5">
+            <p className={`${appSectionBodyClass} text-sm text-slate-300`}>
+              Historical prices are converted to EUR using current FX rates
+              (approximate).
+            </p>
+          </div>
+        ) : null}
+
         <PortfolioPerformanceChart
           points={performance.chartPoints}
           hasSeries={performance.chartHasSeries}
-          emptyMessage={PORTFOLIO_PERFORMANCE_CHART_EMPTY_MESSAGE}
+          emptyMessage={chartEmptyMessage}
         />
 
         <PerformanceKpiGrid
@@ -242,8 +353,18 @@ export function PortfolioPerformanceSection({
           endingValue={performance.endingPortfolioValue}
           investmentReturn={performance.investmentReturn}
           investmentReturnPercent={performance.investmentReturnPercent}
-          startingUnavailableReason={resolveStartingUnavailableReason(period)}
-          returnUnavailableReason={resolveReturnUnavailableReason(period)}
+          startingUnavailableReason={
+            history.isLoading
+              ? "Loading…"
+              : (performance.availabilityMessage ??
+                resolveStartingUnavailableReason(period))
+          }
+          returnUnavailableReason={
+            history.isLoading
+              ? "Loading…"
+              : (performance.availabilityMessage ??
+                resolveReturnUnavailableReason(period))
+          }
         />
 
         <PerformanceHoldingLeaders

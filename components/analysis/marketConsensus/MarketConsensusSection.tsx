@@ -60,9 +60,9 @@ export function MarketConsensusSection({
 
   return (
     <section
-      className="mt-7 min-w-0 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm"
-      aria-labelledby="market-consensus-heading"
       id="market-consensus"
+      className="mt-7 scroll-mt-24 min-w-0 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm"
+      aria-labelledby="market-consensus-heading"
     >
       <div className="border-b border-slate-200 bg-gradient-to-br from-sky-700 to-slate-950 px-5 py-6 text-white sm:px-8">
         <div
@@ -71,10 +71,15 @@ export function MarketConsensusSection({
           <Users className="h-3.5 w-3.5" aria-hidden="true" />
           Market consensus
         </div>
-        <h2 id="market-consensus-heading" className={`mt-4 ${appAnalysisDarkTitleClass}`}>
+        <h2
+          id="market-consensus-heading"
+          className={`mt-4 ${appAnalysisDarkTitleClass}`}
+        >
           Market consensus
         </h2>
-        <p className={`mt-3 max-w-3xl ${appAnalysisDarkHeaderCopyClass} text-sky-50/95`}>
+        <p
+          className={`mt-3 max-w-3xl ${appAnalysisDarkHeaderCopyClass} text-sky-50/95`}
+        >
           See how third-party analysts and market research currently assess the
           holdings in your portfolio. Consensus data reflects external opinions
           and is not an Tobailey recommendation.
@@ -85,8 +90,8 @@ export function MarketConsensusSection({
         {viewModel.showDevPreviewBanner ? (
           <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
             Development preview: cards and metrics marked{" "}
-            <span className="font-bold">Demo data</span> are illustrative only and
-            are never shown in production.
+            <span className="font-bold">Demo data</span> are illustrative only
+            and are never shown in production.
           </div>
         ) : null}
 
@@ -110,8 +115,8 @@ export function MarketConsensusSection({
           <div className="rounded-[24px] border border-slate-200 bg-slate-50 px-5 py-6">
             <p className={appSectionTitleClass}>No investment holdings yet</p>
             <p className={`mt-2 ${appSectionBodyClass}`}>
-              Add investment holdings to your portfolio to see consensus coverage
-              cards here.
+              Add investment holdings to your portfolio to see consensus
+              coverage cards here.
             </p>
           </div>
         )}
@@ -121,8 +126,8 @@ export function MarketConsensusSection({
             <div>
               <h3 className={appSectionTitleClass}>UI state preview</h3>
               <p className={`mt-1.5 ${appSectionBodyClass}`}>
-                Development-only examples of supported card states. These cards use
-                synthetic tickers and demo figures.
+                Development-only examples of supported card states. These cards
+                use synthetic tickers and demo figures.
               </p>
             </div>
             <div className="grid min-w-0 gap-4 lg:grid-cols-2">

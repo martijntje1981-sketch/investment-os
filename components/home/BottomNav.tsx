@@ -7,6 +7,12 @@ import {
   isMarketingPath,
   isPublicAppPath,
 } from "@/lib/auth/routeAccess";
+import {
+  ANALYSIS_PATH,
+  DASHBOARD_PATH,
+  GOALS_PATH,
+  PORTFOLIO_PATH,
+} from "@/lib/navigation/appRoutes";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -25,22 +31,22 @@ import {
 const authenticatedItems = [
   {
     label: "Dashboard",
-    href: "/dashboard",
+    href: DASHBOARD_PATH,
     icon: LayoutDashboard,
   },
   {
     label: "Portfolio",
-    href: "/portfolio",
+    href: PORTFOLIO_PATH,
     icon: ChartNoAxesColumnIncreasing,
   },
   {
     label: "Analysis",
-    href: "/analysis",
+    href: ANALYSIS_PATH,
     icon: ScanLine,
   },
   {
     label: "Goals",
-    href: "/goals",
+    href: GOALS_PATH,
     icon: Target,
   },
 ] as const;
@@ -103,8 +109,8 @@ export default function BottomNavigation() {
               aria-current={active ? "page" : undefined}
               className={`flex min-h-[58px] min-w-0 touch-manipulation flex-col items-center justify-center rounded-xl px-0.5 ${appBottomNavLabelClass} transition sm:rounded-2xl sm:px-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 ${
                 active
-                  ? "bg-brand text-brand-navy shadow-sm"
-                  : "text-slate-600 hover:bg-brand-soft hover:text-brand-navy"
+                  ? "bg-brand-soft text-brand-navy"
+                  : "text-slate-600 hover:bg-slate-50 hover:text-brand-navy"
               }`}
             >
               <Icon className="mb-1 h-5 w-5" strokeWidth={1.8} />

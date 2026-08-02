@@ -14,9 +14,7 @@ import {
   resetMarketConsensusServiceForTests,
 } from "@/lib/services/marketConsensus/marketConsensusService";
 import { resetMarketConsensusNarrativeCacheForTests } from "@/lib/services/marketConsensus/narrative/narrativeCache";
-import {
-  resetMarketConsensusNarrativeServiceForTests,
-} from "@/lib/services/marketConsensus/narrative/marketConsensusNarrativeService";
+import { resetMarketConsensusNarrativeServiceForTests } from "@/lib/services/marketConsensus/narrative/marketConsensusNarrativeService";
 import {
   buildStaticConsensusResult,
   nullMarketConsensusProvider,
@@ -25,9 +23,7 @@ import type {
   AnalystConsensusResult,
   MarketConsensusProvider,
 } from "@/lib/services/marketConsensus/types";
-import {
-  validateAndSanitizeConsensusResult,
-} from "@/lib/services/marketConsensus/validateConsensusResult";
+import { validateAndSanitizeConsensusResult } from "@/lib/services/marketConsensus/validateConsensusResult";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
 import { buildMarketConsensusViewModel } from "@/lib/client/marketConsensus/buildMarketConsensusViewModel";
@@ -110,7 +106,9 @@ describe("market consensus architecture", () => {
   });
 
   it("accepts complete valid equity coverage", () => {
-    const sanitized = validateAndSanitizeConsensusResult(completeEquityResult());
+    const sanitized = validateAndSanitizeConsensusResult(
+      completeEquityResult(),
+    );
 
     expect(sanitized.availability).toBe("available");
     expect(sanitized.classification).toBe("positive");
@@ -284,7 +282,9 @@ describe("market consensus architecture", () => {
 
   it("production view model never uses demo cards", () => {
     const originalEnv = process.env.NODE_ENV;
+    const originalFlag = process.env.NEXT_PUBLIC_SHOW_UI_STATE_PREVIEW;
     process.env.NODE_ENV = "production";
+    process.env.NEXT_PUBLIC_SHOW_UI_STATE_PREVIEW = "true";
 
     const viewModel = buildMarketConsensusViewModel({
       valuedPositions: [
@@ -297,13 +297,15 @@ describe("market consensus architecture", () => {
       unvaluedHoldings: [],
       results: [completeEquityResult()],
       summary: {
-        summary: "Third-party analyst coverage is available for 1 of 1 consensus-eligible holdings.",
+        summary:
+          "Third-party analyst coverage is available for 1 of 1 consensus-eligible holdings.",
         holdingsWithCoverage: 1,
         positiveConsensus: 1,
         mixedConsensus: 0,
         negativeConsensus: 0,
         noAnalystCoverage: 0,
         notApplicable: 0,
+        marketOutlook: 0,
         eligibleHoldings: 1,
         providerUnavailable: 0,
         symbolMappingIssues: 0,
@@ -318,11 +320,16 @@ describe("market consensus architecture", () => {
     expect(viewModel.showDevPreviewBanner).toBe(false);
     expect(viewModel.portfolioSummary.isDemoData).toBe(false);
     expect(viewModel.holdingCards.every((card) => !card.isDemoData)).toBe(true);
-    expect(viewModel.holdingCards.some((card) => card.id.startsWith("demo-"))).toBe(
-      false,
-    );
+    expect(
+      viewModel.holdingCards.some((card) => card.id.startsWith("demo-")),
+    ).toBe(false);
 
     process.env.NODE_ENV = originalEnv;
+    if (originalFlag === undefined) {
+      delete process.env.NEXT_PUBLIC_SHOW_UI_STATE_PREVIEW;
+    } else {
+      process.env.NEXT_PUBLIC_SHOW_UI_STATE_PREVIEW = originalFlag;
+    }
   });
 
   it("static ETF and crypto results stay provider-neutral", () => {

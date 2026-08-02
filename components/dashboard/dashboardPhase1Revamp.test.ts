@@ -139,7 +139,9 @@ describe("dashboard phase 1 revamp", () => {
       ]),
     );
     expect(movers.topMover?.holding.symbol).toBe("VWCE");
-    expect(movers.topMover?.changePeriodLabel).toBe("Last session · Fri 24 Jul");
+    expect(movers.topMover?.changePeriodLabel).toBe(
+      "Last session · Fri 24 Jul",
+    );
     expect(movers.lowestMover?.changePeriodLabel).toBe("24h");
   });
 
@@ -153,9 +155,11 @@ describe("dashboard phase 1 revamp", () => {
     expect(dashboardSource).toContain("DashboardDividendCard");
   });
 
-  it("updates the summary skeleton to a single dark hero without welcome/movers placeholders", () => {
-    expect(skeletonSource).toContain("min-h-[420px]");
-    expect(skeletonSource).toContain("bg-slate-950");
+  it("updates the summary skeleton to a compact navy hero without welcome/movers placeholders", () => {
+    expect(skeletonSource).toContain("min-h-[220px]");
+    expect(skeletonSource).toContain("bg-navy-hero");
+    expect(skeletonSource).toContain('data-skeleton="decision-briefing"');
+    expect(skeletonSource).toContain('data-skeleton="health-story"');
     expect(skeletonSource).not.toContain("min-h-[96px]");
     expect(skeletonSource).not.toContain("Biggest winner");
   });

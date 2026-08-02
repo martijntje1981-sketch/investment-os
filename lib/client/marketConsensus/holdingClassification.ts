@@ -1,17 +1,28 @@
+import { classifyHoldingExposure } from "@/lib/services/classification/classifyHoldingExposure";
 import { inferAnalystCoverageKind } from "@/lib/services/analyst/assetCoverageKind";
+import { lookupInstrumentResearchProfile } from "@/lib/services/discover/instrumentResearchMetadata";
 import { lookupVerifiedByProviderSymbol } from "@/lib/services/instruments/verifiedInstrumentRegistry";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
 const CRYPTO_PATTERN =
   /\b(bitcoin|btc|ethereum|eth|crypto|digital asset|blockchain)\b/i;
 
+const THEME_PATTERN =
+  /\b(ai|artificial intelligence|uranium|copper|nuclear|tech(?:nology)?|clean energy|semiconductor|cyber)\b/i;
+
+const ASSET_CLASS_PATTERN =
+  /\b(gold|silver|commodit(?:y|ies)|precious metal|oil|gas|wheat|corn)\b/i;
+
 export type MarketConsensusHoldingCategory =
-  | "equity"
-  | "etf"
-  | "crypto_etp"
-  | "cash";
+  "equity" | "etf" | "crypto_etp" | "cash";
 
 export type NotApplicableInstrumentKind = "etf" | "etp" | "etc" | "crypto";
+
+export type MarketOutlookKind =
+  "underlying_market" | "theme_level" | "asset_class";
+
+export type MarketOutlookStatusLabel =
+  "Underlying market outlook" | "Theme-level outlook" | "Asset-class outlook";
 
 export function isCryptoLinkedHolding(
   holding: Pick<
@@ -73,6 +84,29 @@ export function isConsensusEligibleHolding(
   return inferAnalystCoverageKind(holding) === "company";
 }
 
+function holdingText(
+  holding: Pick<
+    StoredPortfolioHolding,
+    "name" | "symbol" | "providerSymbol" | "assetType"
+  >,
+): string {
+  const verified = lookupVerifiedByProviderSymbol(holding.providerSymbol);
+  const profile = lookupInstrumentResearchProfile(holding.providerSymbol);
+  const exposure = classifyHoldingExposure(holding);
+  return [
+    holding.name,
+    holding.symbol,
+    verified?.instrumentName ?? "",
+    profile?.fundCategory ?? "",
+    ...(profile?.sectorExposure ?? []),
+    exposure.displayLabel,
+    ...(exposure.researchExposure ?? []),
+    exposure.fundCategory ?? "",
+  ]
+    .join(" ")
+    .toLowerCase();
+}
+
 /**
  * Best-effort ETF/ETP/ETC/crypto label from existing name + verified metadata.
  * Does not invent precision when the type cannot be distinguished.
@@ -95,9 +129,7 @@ export function resolveNotApplicableInstrumentKind(
     return null;
   }
 
-  const verified = lookupVerifiedByProviderSymbol(holding.providerSymbol);
-  const text =
-    `${holding.name} ${holding.symbol} ${verified?.instrumentName ?? ""}`.toLowerCase();
+  const text = holdingText(holding);
 
   if (/\betc\b/.test(text)) {
     return "etc";
@@ -108,21 +140,67 @@ export function resolveNotApplicableInstrumentKind(
   return "etf";
 }
 
+/**
+ * Tiered outlook kind for funds/ETPs/crypto — never invents equity analyst ratings.
+ */
+export function resolveMarketOutlookKind(
+  holding: Pick<
+    StoredPortfolioHolding,
+    "name" | "symbol" | "providerSymbol" | "assetType"
+  >,
+): MarketOutlookKind | null {
+  if (holding.assetType === "cash") {
+    return null;
+  }
+
+  if (isCryptoLinkedHolding(holding)) {
+    return "asset_class";
+  }
+
+  if (inferAnalystCoverageKind(holding) !== "fund_or_etc") {
+    return null;
+  }
+
+  const profile = lookupInstrumentResearchProfile(holding.providerSymbol);
+  const text = holdingText(holding);
+  const instrumentKind = resolveNotApplicableInstrumentKind(holding);
+  const exposureGroup = classifyHoldingExposure(holding).normalizedGroupId;
+
+  if (
+    instrumentKind === "etc" ||
+    exposureGroup === "crypto" ||
+    ASSET_CLASS_PATTERN.test(text) ||
+    /\betc\b/.test(text)
+  ) {
+    return "asset_class";
+  }
+
+  if (profile?.assetClass === "thematic_etf" || THEME_PATTERN.test(text)) {
+    return "theme_level";
+  }
+
+  return "underlying_market";
+}
+
+export function resolveOutlookStatusLabel(
+  holding: Pick<
+    StoredPortfolioHolding,
+    "name" | "symbol" | "providerSymbol" | "assetType"
+  >,
+): MarketOutlookStatusLabel | null {
+  const kind = resolveMarketOutlookKind(holding);
+  if (kind === "underlying_market") return "Underlying market outlook";
+  if (kind === "theme_level") return "Theme-level outlook";
+  if (kind === "asset_class") return "Asset-class outlook";
+  return null;
+}
+
+/** @deprecated Prefer {@link resolveOutlookStatusLabel}. */
 export function resolveNotApplicableStatusLabel(
   holding: Pick<
     StoredPortfolioHolding,
     "name" | "symbol" | "providerSymbol" | "assetType"
   >,
-):
-  | "Not applicable — ETF"
-  | "Not applicable — ETP"
-  | "Not applicable — ETC"
-  | "Not applicable — crypto"
-  | null {
-  const kind = resolveNotApplicableInstrumentKind(holding);
-  if (kind === "crypto") return "Not applicable — crypto";
-  if (kind === "etp") return "Not applicable — ETP";
-  if (kind === "etc") return "Not applicable — ETC";
-  if (kind === "etf") return "Not applicable — ETF";
-  return null;
+): MarketOutlookStatusLabel | null {
+  return resolveOutlookStatusLabel(holding);
 }

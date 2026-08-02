@@ -153,9 +153,10 @@ describe("dashboard portfolio value widget", () => {
     expect(valueSource).toContain("appHeroMatchedKpiClass");
     expect(valueSource).toContain("appHeroMetricLabelClass");
     expect(valueSource).toContain("appHeroPaddingCompactClass");
-    expect(valueSource).toContain("sm:grid-cols-2");
+    expect(valueSource).toContain("appDisplayClass");
     expect(valueSource).toContain("tabular-nums");
     expect(valueSource).toContain("grid-cols-2");
+    expect(valueSource).toContain('variant="icon"');
     expect(valueSource).not.toContain("text-[2.625rem]");
     expect(valueSource).not.toContain("lg:text-[4.25rem]");
   });

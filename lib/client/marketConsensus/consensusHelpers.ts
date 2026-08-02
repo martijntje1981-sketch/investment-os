@@ -1,4 +1,7 @@
-import type { AnalystConsensusResult, PortfolioConsensusSummary } from "@/lib/services/marketConsensus/types";
+import type {
+  AnalystConsensusResult,
+  PortfolioConsensusSummary,
+} from "@/lib/services/marketConsensus/types";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
 export function findConsensusResultForHolding(
@@ -8,7 +11,9 @@ export function findConsensusResultForHolding(
   return results.find((result) => result.instrumentId === holding.id) ?? null;
 }
 
-export function formatConsensusUpdatedAt(value: string | undefined): string | null {
+export function formatConsensusUpdatedAt(
+  value: string | undefined,
+): string | null {
   if (!value) {
     return null;
   }
@@ -38,6 +43,7 @@ export function emptyPortfolioConsensusSummary(
     negativeConsensus: 0,
     noAnalystCoverage: 0,
     notApplicable: 0,
+    marketOutlook: 0,
     eligibleHoldings: 0,
     providerUnavailable: 0,
     symbolMappingIssues: 0,

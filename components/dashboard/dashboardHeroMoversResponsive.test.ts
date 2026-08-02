@@ -154,7 +154,7 @@ describe("Dashboard hero movers responsive layout", () => {
     expect(movers.hasReliableMoverData).toBe(true);
   });
 
-  it("keeps percentage and period labels visible in compact mover tiles", () => {
+  it("keeps percentage and period labels in compact supporting mover tiles", () => {
     const source = readFileSync(
       path.resolve(process.cwd(), "components/dashboard/PortfolioValueCard.tsx"),
       "utf8",
@@ -162,7 +162,11 @@ describe("Dashboard hero movers responsive layout", () => {
 
     expect(source).toContain("changePeriodLabel");
     expect(source).toContain("signedPercent");
-    expect(source).toContain("text-xl font-black");
-    expect(source).toContain("text-base font-bold");
+    expect(source).toContain(
+      "truncate text-sm font-bold leading-none tracking-[-0.02em] tabular-nums",
+    );
+    expect(source).toContain("appDarkInsetClass");
+    expect(source).toContain("TrendingUp");
+    expect(source).toContain("TrendingDown");
   });
 });

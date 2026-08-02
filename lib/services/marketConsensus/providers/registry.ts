@@ -8,17 +8,54 @@ import { resolveAnalystQuote } from "@/lib/services/analyst/resolveAnalystQuote"
 import {
   classifyMarketConsensusHolding,
   isCryptoLinkedHolding,
+  resolveMarketOutlookKind,
 } from "@/lib/client/marketConsensus/holdingClassification";
+import { classifyHoldingExposure } from "@/lib/services/classification/classifyHoldingExposure";
 import { resolveConsensusProviderSymbolSync } from "@/lib/services/marketConsensus/consensusProviderSymbol";
 import type {
   AnalystConsensusResult,
+  CoverageType,
   MarketConsensusProvider,
   MarketConsensusProviderContext,
 } from "@/lib/services/marketConsensus/types";
-import {
-  validateAndSanitizeConsensusResult,
-} from "@/lib/services/marketConsensus/validateConsensusResult";
+import { validateAndSanitizeConsensusResult } from "@/lib/services/marketConsensus/validateConsensusResult";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
+
+function buildOutlookSummary(holding: StoredPortfolioHolding): {
+  coverageType: CoverageType;
+  availability: AnalystConsensusResult["availability"];
+  summary: string;
+} {
+  const outlookKind = resolveMarketOutlookKind(holding);
+  const exposure = classifyHoldingExposure(holding);
+  const exposureHint =
+    exposure.normalizedGroupId !== "other_unclassified" &&
+    exposure.normalizedGroupId !== "cash"
+      ? ` Exposure context: ${exposure.displayLabel}.`
+      : "";
+
+  if (outlookKind === "asset_class") {
+    return {
+      coverageType: "crypto-market-outlook",
+      availability: "limited",
+      summary: `This holding is assessed via asset-class market outlook rather than single-instrument analyst ratings.${exposureHint} No invented analyst buy/hold/sell ratings or price targets are shown.`,
+    };
+  }
+
+  if (outlookKind === "theme_level") {
+    return {
+      coverageType: "sector-outlook",
+      availability: "unavailable",
+      summary: `This thematic fund is assessed via theme-level market outlook rather than single-instrument analyst ratings.${exposureHint} No invented analyst buy/hold/sell ratings or price targets are shown.`,
+    };
+  }
+
+  return {
+    coverageType: "underlying-market",
+    availability: "unavailable",
+    summary: `This fund is assessed via underlying market outlook rather than single-instrument analyst ratings.${exposureHint} No invented analyst buy/hold/sell ratings or price targets are shown.`,
+  };
+}
 
 function buildBaseResult(
   holding: StoredPortfolioHolding,
@@ -168,23 +205,13 @@ export function buildStaticConsensusResult(
     });
   }
 
-  if (category === "etf") {
+  if (category === "etf" || category === "crypto_etp") {
+    const outlook = buildOutlookSummary(holding);
     return buildBaseResult(holding, {
-      coverageType: "underlying-market",
-      availability: "unavailable",
+      coverageType: outlook.coverageType,
+      availability: outlook.availability,
       classification: "unavailable",
-      summary:
-        "ETF holdings are assessed through underlying market outlook rather than single-instrument analyst ratings.",
-    });
-  }
-
-  if (category === "crypto_etp") {
-    return buildBaseResult(holding, {
-      coverageType: "crypto-market-outlook",
-      availability: "limited",
-      classification: "unavailable",
-      summary:
-        "Crypto-linked holdings use market outlook sources rather than traditional equity analyst targets.",
+      summary: outlook.summary,
     });
   }
 

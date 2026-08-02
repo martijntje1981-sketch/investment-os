@@ -157,7 +157,8 @@ describe("market consensus narrative", () => {
     expect(
       validateMarketConsensusNarrative(
         {
-          summary: "We recommend accumulating shares because upside is guaranteed.",
+          summary:
+            "We recommend accumulating shares because upside is guaranteed.",
           supportingFactors: ["Positive revisions"],
           riskFactors: ["Market volatility"],
           generatedAt: new Date().toISOString(),
@@ -325,13 +326,15 @@ describe("market consensus narrative", () => {
         },
       ],
       summary: {
-        summary: "Third-party analyst coverage is available for 1 of 1 consensus-eligible holdings.",
+        summary:
+          "Third-party analyst coverage is available for 1 of 1 consensus-eligible holdings.",
         holdingsWithCoverage: 1,
         positiveConsensus: 1,
         mixedConsensus: 0,
         negativeConsensus: 0,
         noAnalystCoverage: 0,
         notApplicable: 0,
+        marketOutlook: 0,
         eligibleHoldings: 1,
         providerUnavailable: 0,
         symbolMappingIssues: 0,
@@ -345,7 +348,9 @@ describe("market consensus narrative", () => {
 
     expect(viewModel.holdingCards.every((card) => !card.isDemoData)).toBe(true);
     expect(
-      viewModel.holdingCards.some((card) => card.narrativeLabel?.includes("Demo")),
+      viewModel.holdingCards.some((card) =>
+        card.narrativeLabel?.includes("Demo"),
+      ),
     ).toBe(false);
 
     process.env.NODE_ENV = originalEnv;

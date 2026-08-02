@@ -25,9 +25,10 @@ describe("Tobailey brand system", () => {
       "public/manifest.webmanifest",
       "app/icon.svg",
     ]) {
-      expect(existsSync(path.resolve(process.cwd(), relativePath)), relativePath).toBe(
-        true,
-      );
+      expect(
+        existsSync(path.resolve(process.cwd(), relativePath)),
+        relativePath,
+      ).toBe(true);
     }
 
     const manifest = read("public/manifest.webmanifest");
@@ -40,6 +41,8 @@ describe("Tobailey brand system", () => {
     expect(css).toContain("--brand-primary: #5db7ff");
     expect(css).toContain("--color-brand:");
     expect(css).toContain("--color-brand-navy:");
+    expect(css).toContain("--color-navy-hero:");
+    expect(css).toContain("--color-navy-card:");
     expect(css).toContain("--accent-green:");
   });
 

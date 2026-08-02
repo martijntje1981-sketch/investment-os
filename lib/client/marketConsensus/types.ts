@@ -16,11 +16,9 @@ export type MarketConsensusStatusLabel =
   | "Negative consensus"
   | "Analyst coverage"
   | "No analyst coverage"
-  | "Not applicable — ETF"
-  | "Not applicable — ETP"
-  | "Not applicable — ETC"
-  | "Not applicable — crypto"
   | "Underlying market outlook"
+  | "Theme-level outlook"
+  | "Asset-class outlook"
   | "Market outlook"
   | "Partial analyst coverage"
   | "Analyst data temporarily unavailable"
@@ -29,6 +27,8 @@ export type MarketConsensusStatusLabel =
 export type MarketConsensusCoverageType =
   | "Analyst coverage"
   | "Underlying market outlook"
+  | "Theme-level outlook"
+  | "Asset-class outlook"
   | "Market outlook"
   | "No analyst coverage"
   | "Not applicable"
@@ -77,7 +77,10 @@ export type MarketConsensusPortfolioSummaryModel = {
   mixedConsensus: number | null;
   negativeConsensus: number | null;
   noAnalystCoverage: number | null;
+  /** True unavailable only — cash-adjacent edge cases; ETFs/crypto use marketOutlook. */
   notApplicable: number | null;
+  /** Funds/ETPs/ETCs/crypto using outlook-derived coverage. */
+  marketOutlook: number | null;
   eligibleHoldings: number | null;
   providerUnavailable: number | null;
   symbolMappingIssues: number | null;
@@ -98,8 +101,7 @@ export const MARKET_CONSENSUS_DISCLAIMER =
 export const MARKET_CONSENSUS_CRYPTO_DISCLAIMER =
   "Crypto forecasts are less standardized than equity analyst targets and can vary significantly.";
 
-export const MARKET_CONSENSUS_UNAVAILABLE_TITLE =
-  "No analyst coverage";
+export const MARKET_CONSENSUS_UNAVAILABLE_TITLE = "No analyst coverage";
 
 export const MARKET_CONSENSUS_UNAVAILABLE_COPY =
   "No verified third-party analyst coverage was returned for this company share. Your performance and allocation data remain available.";
@@ -108,4 +110,4 @@ export const MARKET_CONSENSUS_NARRATIVE_TOOLTIP =
   "AI summarizes available third-party data and does not provide investment advice.";
 
 export const MARKET_CONSENSUS_ELIGIBLE_HELPER =
-  "Coverage counts use consensus-eligible company equities only. Funds, ETPs, ETCs and crypto-linked instruments are marked not applicable.";
+  "Analyst rating counts use consensus-eligible company equities. Funds, ETPs, ETCs and crypto-linked instruments use underlying, theme-level or asset-class market outlook — not single-security analyst ratings.";

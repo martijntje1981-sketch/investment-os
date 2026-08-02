@@ -1,8 +1,6 @@
 import type { ValuedPosition } from "@/lib/client/portfolioAnalysis";
 import { formatPortfolioPercent } from "@/lib/client/portfolioAnalysis";
-import {
-  buildMarketConsensusDemoPreviewCards,
-} from "@/lib/client/marketConsensus/demoData";
+import { buildMarketConsensusDemoPreviewCards } from "@/lib/client/marketConsensus/demoData";
 import {
   buildLoadingConsensusCard,
   indexConsensusResults,
@@ -20,8 +18,11 @@ import type {
 } from "@/lib/services/marketConsensus/types";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
-function isDevelopmentEnvironment(): boolean {
-  return process.env.NODE_ENV !== "production";
+function shouldShowUiStatePreview(): boolean {
+  return (
+    process.env.NODE_ENV === "development" &&
+    process.env.NEXT_PUBLIC_SHOW_UI_STATE_PREVIEW === "true"
+  );
 }
 
 function buildProductionHoldingCards(input: {
@@ -101,6 +102,7 @@ export function buildMarketConsensusViewModel(input: {
         negativeConsensus: 0,
         noAnalystCoverage: 0,
         notApplicable: 0,
+        marketOutlook: 0,
         eligibleHoldings: 0,
         providerUnavailable: 0,
         symbolMappingIssues: 0,
@@ -110,7 +112,7 @@ export function buildMarketConsensusViewModel(input: {
         generatedAt: new Date().toISOString(),
       });
 
-  if (!isDevelopmentEnvironment()) {
+  if (!shouldShowUiStatePreview()) {
     return {
       showDevPreviewBanner: false,
       portfolioSummary,
@@ -121,7 +123,10 @@ export function buildMarketConsensusViewModel(input: {
   return {
     showDevPreviewBanner: true,
     portfolioSummary,
-    holdingCards: [...productionCards, ...buildMarketConsensusDemoPreviewCards()],
+    holdingCards: [
+      ...productionCards,
+      ...buildMarketConsensusDemoPreviewCards(),
+    ],
   };
 }
 

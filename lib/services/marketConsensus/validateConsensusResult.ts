@@ -88,7 +88,9 @@ export function deriveClassification(input: {
   return "mixed";
 }
 
-export function hasConsistentDistribution(result: AnalystConsensusResult): boolean {
+export function hasConsistentDistribution(
+  result: AnalystConsensusResult,
+): boolean {
   if (result.analystCount == null || result.analystCount <= 0) {
     return false;
   }
@@ -104,14 +106,19 @@ export function hasConsistentDistribution(result: AnalystConsensusResult): boole
   return buy + hold + sell === result.analystCount;
 }
 
-export function hasValidPriceTargetFields(result: AnalystConsensusResult): boolean {
+export function hasValidPriceTargetFields(
+  result: AnalystConsensusResult,
+): boolean {
   return isFinitePositive(result.averageTarget);
 }
 
 export function canCompareTargetToCurrentPrice(
   result: AnalystConsensusResult,
 ): boolean {
-  if (!hasValidPriceTargetFields(result) || !isFinitePositive(result.currentPrice)) {
+  if (
+    !hasValidPriceTargetFields(result) ||
+    !isFinitePositive(result.currentPrice)
+  ) {
     return false;
   }
 
@@ -266,7 +273,12 @@ export function agreementLevelLabel(
 
 export function classificationStatusLabel(
   classification: ConsensusClassification,
-): "Positive consensus" | "Neutral consensus" | "Mixed consensus" | "Negative consensus" | null {
+):
+  | "Positive consensus"
+  | "Neutral consensus"
+  | "Mixed consensus"
+  | "Negative consensus"
+  | null {
   switch (classification) {
     case "positive":
       return "Positive consensus";

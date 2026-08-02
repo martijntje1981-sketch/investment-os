@@ -71,7 +71,9 @@ export function writeMarketConsensusCache(
   );
 }
 
-export function isMarketConsensusCacheFresh(cachedAt: string | undefined): boolean {
+export function isMarketConsensusCacheFresh(
+  cachedAt: string | undefined,
+): boolean {
   if (!cachedAt) return false;
   const age = Date.now() - new Date(cachedAt).getTime();
   return Number.isFinite(age) && age >= 0 && age < CACHE_MAX_AGE_MS;
@@ -81,7 +83,9 @@ export async function refreshMarketConsensus(
   userSub: string,
   holdings: StoredPortfolioHolding[],
 ): Promise<MarketConsensusCachePayload> {
-  const investments = holdings.filter((holding) => holding.assetType !== "cash");
+  const investments = holdings.filter(
+    (holding) => holding.assetType !== "cash",
+  );
   const investmentCount = investments.length;
 
   if (investmentCount === 0) {

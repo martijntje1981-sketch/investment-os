@@ -255,7 +255,7 @@ export default function PerspectivesPage() {
                 onClick={() => setCategoryFilter("all")}
                 className={`rounded-full px-3 py-1.5 text-[12px] font-bold transition ${
                   categoryFilter === "all"
-                    ? "bg-brand-navy text-white"
+                    ? "bg-navy-hero text-white"
                     : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
                 }`}
               >

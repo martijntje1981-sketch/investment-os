@@ -19,11 +19,7 @@ import {
 import { formatMarketConsensusWeightLabel } from "@/lib/client/marketConsensus/buildMarketConsensusViewModel";
 import type { MarketConsensusHoldingCardModel } from "@/lib/client/marketConsensus/types";
 
-function HoldingIdentity({
-  card,
-}: {
-  card: MarketConsensusHoldingCardModel;
-}) {
+function HoldingIdentity({ card }: { card: MarketConsensusHoldingCardModel }) {
   return (
     <div className="flex min-w-0 items-start gap-3">
       <span
@@ -49,7 +45,9 @@ function HoldingIdentity({
 function RatingDistribution({
   distribution,
 }: {
-  distribution: NonNullable<MarketConsensusHoldingCardModel["ratingDistribution"]>;
+  distribution: NonNullable<
+    MarketConsensusHoldingCardModel["ratingDistribution"]
+  >;
 }) {
   const total = distribution.buy + distribution.hold + distribution.sell;
 
@@ -57,9 +55,24 @@ function RatingDistribution({
     <div className="space-y-2">
       <p className={appSectionLabelClass}>Buy / Hold / Sell distribution</p>
       <div className="grid grid-cols-3 gap-2">
-        <DistributionTile label="Buy" value={distribution.buy} total={total} tone="emerald" />
-        <DistributionTile label="Hold" value={distribution.hold} total={total} tone="slate" />
-        <DistributionTile label="Sell" value={distribution.sell} total={total} tone="rose" />
+        <DistributionTile
+          label="Buy"
+          value={distribution.buy}
+          total={total}
+          tone="emerald"
+        />
+        <DistributionTile
+          label="Hold"
+          value={distribution.hold}
+          total={total}
+          tone="slate"
+        />
+        <DistributionTile
+          label="Sell"
+          value={distribution.sell}
+          total={total}
+          tone="rose"
+        />
       </div>
     </div>
   );
@@ -86,20 +99,16 @@ function DistributionTile({
 
   return (
     <div className={`rounded-2xl border px-3 py-3 ${toneClass}`}>
-      <p className="text-[11px] font-bold uppercase tracking-[0.08em]">{label}</p>
+      <p className="text-[11px] font-bold uppercase tracking-[0.08em]">
+        {label}
+      </p>
       <p className={`mt-1 ${appCardValueClass}`}>{value}</p>
       <p className={`mt-0.5 ${appSectionMetaClass}`}>{percent}%</p>
     </div>
   );
 }
 
-function DetailList({
-  title,
-  items,
-}: {
-  title: string;
-  items: string[];
-}) {
+function DetailList({ title, items }: { title: string; items: string[] }) {
   if (items.length === 0) {
     return null;
   }
@@ -166,11 +175,7 @@ function NarrativeSummaryLabel({
   );
 }
 
-function SummaryBlock({
-  card,
-}: {
-  card: MarketConsensusHoldingCardModel;
-}) {
+function SummaryBlock({ card }: { card: MarketConsensusHoldingCardModel }) {
   if (!card.summary) {
     return null;
   }
@@ -188,11 +193,7 @@ function SummaryBlock({
   );
 }
 
-function ExpandedDetails({
-  card,
-}: {
-  card: MarketConsensusHoldingCardModel;
-}) {
+function ExpandedDetails({ card }: { card: MarketConsensusHoldingCardModel }) {
   return (
     <div className="mt-4 space-y-4 border-t border-slate-200 pt-4">
       {card.ratingDistribution ? (
@@ -202,14 +203,18 @@ function ExpandedDetails({
       {card.priceTargetLabel ? (
         <div>
           <p className={appSectionLabelClass}>Third-party price targets</p>
-          <p className={`mt-1 ${appSectionBodyClass}`}>{card.priceTargetLabel}</p>
+          <p className={`mt-1 ${appSectionBodyClass}`}>
+            {card.priceTargetLabel}
+          </p>
         </div>
       ) : null}
 
       {card.impliedUpsideLabel ? (
         <div>
           <p className={appSectionLabelClass}>Consensus-implied upside</p>
-          <p className={`mt-1 ${appCardValueClass}`}>{card.impliedUpsideLabel}</p>
+          <p className={`mt-1 ${appCardValueClass}`}>
+            {card.impliedUpsideLabel}
+          </p>
         </div>
       ) : null}
 
@@ -230,7 +235,9 @@ function ExpandedDetails({
       <DetailList title="Key risks" items={card.keyRisks} />
 
       {card.cryptoDisclaimer ? (
-        <p className={`rounded-2xl border border-violet-100 bg-violet-50 px-4 py-3 ${appSectionBodyClass} text-violet-950`}>
+        <p
+          className={`rounded-2xl border border-violet-100 bg-violet-50 px-4 py-3 ${appSectionBodyClass} text-violet-950`}
+        >
           {card.cryptoDisclaimer}
         </p>
       ) : null}
@@ -241,7 +248,9 @@ function ExpandedDetails({
             <p className={appSectionMetaClass}>Source: {card.sourceLabel}</p>
           ) : null}
           {card.updatedAtLabel ? (
-            <p className={appSectionMetaClass}>Updated: {card.updatedAtLabel}</p>
+            <p className={appSectionMetaClass}>
+              Updated: {card.updatedAtLabel}
+            </p>
           ) : null}
         </div>
       )}
@@ -267,9 +276,7 @@ export function MarketConsensusHoldingCard({
   const showUnavailable =
     card.state === "no_coverage" && card.unavailableTitle != null;
   const showLimitedSummary =
-    card.state === "no_coverage" &&
-    !showUnavailable &&
-    Boolean(card.summary);
+    card.state === "no_coverage" && !showUnavailable && Boolean(card.summary);
   const hasExpandableDetails =
     card.state === "equity_coverage" ||
     card.state === "partial_equity_coverage" ||
@@ -293,7 +300,10 @@ export function MarketConsensusHoldingCard({
           <MetricTile label="Portfolio weight / value" value={weightLabel} />
           <MetricTile label="Coverage type" value={card.coverageType} />
           {card.analystAgreementLabel ? (
-            <MetricTile label="Analyst agreement" value={card.analystAgreementLabel} />
+            <MetricTile
+              label="Analyst agreement"
+              value={card.analystAgreementLabel}
+            />
           ) : null}
           {card.analystCountLabel ? (
             <MetricTile label="Analyst count" value={card.analystCountLabel} />
@@ -301,7 +311,9 @@ export function MarketConsensusHoldingCard({
         </div>
 
         {card.targetCurrencyNote ? (
-          <p className={`rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 ${appSectionBodyClass} text-amber-950`}>
+          <p
+            className={`rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 ${appSectionBodyClass} text-amber-950`}
+          >
             {card.targetCurrencyNote}
           </p>
         ) : null}

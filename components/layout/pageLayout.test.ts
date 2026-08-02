@@ -58,8 +58,13 @@ describe("authenticated page layout", () => {
       path.resolve(process.cwd(), "components/layout/PageContainer.tsx"),
       "utf8",
     );
+    const surfaceSource = readFileSync(
+      path.resolve(process.cwd(), "components/layout/appSurface.ts"),
+      "utf8",
+    );
 
-    expect(containerSource).toContain("max-w-6xl");
+    expect(containerSource).toContain("appPageStackClass");
+    expect(surfaceSource).toContain("max-w-6xl");
 
     for (const relativePath of authenticatedPages) {
       const source = readFileSync(

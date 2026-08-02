@@ -3,7 +3,9 @@ import type {
   MarketConsensusNarrativeInput,
 } from "@/lib/services/marketConsensus/narrative/types";
 
-function classificationPhrase(classification: MarketConsensusNarrativeInput["classification"]): string {
+function classificationPhrase(
+  classification: MarketConsensusNarrativeInput["classification"],
+): string {
   switch (classification) {
     case "positive":
       return "currently positive";
@@ -47,7 +49,9 @@ export function buildDeterministicMarketConsensusNarrative(
       summary:
         "Published crypto market views remain mixed and less standardized than equity analyst coverage. Available third-party context should be interpreted cautiously, with volatility and regulatory uncertainty remaining relevant.",
       supportingFactors: [
-        trimFactor("Institutional adoption trends may support the broader outlook"),
+        trimFactor(
+          "Institutional adoption trends may support the broader outlook",
+        ),
       ],
       riskFactors: [
         trimFactor("Market volatility can change quickly"),
@@ -98,10 +102,11 @@ export function buildDeterministicMarketConsensusNarrative(
       ? ` Available third-party targets imply ${input.impliedUpsidePercent >= 0 ? "upside" : "downside"} of roughly ${Math.abs(input.impliedUpsidePercent).toFixed(1)}%, though targets are not guarantees.`
       : "";
 
-  const summary = `Third-party analyst sentiment for ${input.instrumentName} is ${direction}, with ${agreement} among the available ratings.${upsideLine} Valuation, earnings uncertainty and broader market conditions remain important considerations.`.replace(
-    /\s+/g,
-    " ",
-  );
+  const summary =
+    `Third-party analyst sentiment for ${input.instrumentName} is ${direction}, with ${agreement} among the available ratings.${upsideLine} Valuation, earnings uncertainty and broader market conditions remain important considerations.`.replace(
+      /\s+/g,
+      " ",
+    );
 
   const supportingFactors = [
     input.agreementLevel === "high" || input.agreementLevel === "moderate"
@@ -120,7 +125,9 @@ export function buildDeterministicMarketConsensusNarrative(
       ? trimFactor("Analyst views remain divided or based on a small sample")
       : trimFactor("Consensus views can shift as new data emerges"),
     input.impliedUpsidePercent != null && input.impliedUpsidePercent > 0
-      ? trimFactor("Elevated expectations may leave less room for disappointment")
+      ? trimFactor(
+          "Elevated expectations may leave less room for disappointment",
+        )
       : trimFactor("Earnings and macro uncertainty can alter the outlook"),
     trimFactor("Third-party targets and ratings may be incomplete or delayed"),
   ].slice(0, 3);

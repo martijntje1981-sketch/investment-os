@@ -6,6 +6,10 @@ export const BRAND = {
   primaryHover: "#3AA3F5",
   primarySoft: "#E8F5FF",
   navy: "#0B1F3A",
+  /** Primary midnight-navy hero surface */
+  navyHero: "#0D243F",
+  /** Secondary dark card surface */
+  navyCard: "#16304F",
   text: "#0B1F3A",
 } as const;
 

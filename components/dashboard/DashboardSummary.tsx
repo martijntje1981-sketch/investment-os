@@ -3,9 +3,6 @@ import { GoalProgressCard } from "@/components/dashboard/GoalProgressCard";
 import { DashboardSummarySkeleton } from "@/components/dashboard/DashboardSummarySkeleton";
 import type { DashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
 import type { RefreshPricesUiStatus } from "@/lib/client/livePortfolioPriceRefreshAction";
-import type { InvestmentIntelligence } from "@/lib/services/news/investmentIntelligence";
-import type { PortfolioHealthProfile } from "@/lib/services/portfolio/portfolioHealthProfile";
-import type { NewsApiResponse } from "@/lib/types/newsContent";
 
 export type DashboardRefreshControl = {
   onRefresh: () => void;
@@ -21,18 +18,12 @@ export function DashboardSummary({
   welcomeFirstName = null,
   isLoading = false,
   refresh,
-  healthProfile = null,
-  intelligence = null,
-  newsPayload = null,
 }: {
   snapshot: DashboardPortfolioSnapshot;
   /** Existing first name only — never fetch solely for this greeting. */
   welcomeFirstName?: string | null;
   isLoading?: boolean;
   refresh?: DashboardRefreshControl;
-  healthProfile?: PortfolioHealthProfile | null;
-  intelligence?: InvestmentIntelligence | null;
-  newsPayload?: NewsApiResponse | null;
 }) {
   if (isLoading) {
     return <DashboardSummarySkeleton />;
@@ -44,9 +35,6 @@ export function DashboardSummary({
         snapshot={snapshot}
         refresh={refresh}
         welcomeFirstName={welcomeFirstName}
-        healthProfile={healthProfile}
-        intelligence={intelligence}
-        newsPayload={newsPayload}
       />
       <GoalProgressCard snapshot={snapshot} />
     </section>

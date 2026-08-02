@@ -15,15 +15,21 @@ import {
 } from "lucide-react";
 import {
   appCardValueClass,
+  appDarkCardClass,
+  appDarkCardPaddingClass,
   appHeroMetricLabelClass,
   appHeroShellClass,
   appSectionLabelClass,
   appSectionMetaClass,
   appSectionTitleClass,
+  appSolidButtonClass,
 } from "@/components/layout/appSurface";
 import BottomNavigation from "@/components/home/BottomNav";
 import { ConversionDetailsDisclosure } from "@/components/currency/ConversionDetailsDisclosure";
-import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer";
+import {
+  AppPageLoading,
+  PageContainer,
+} from "@/components/layout/PageContainer";
 import { PageHero } from "@/components/layout/PageHero";
 import { GoalHeroProgressVisual } from "@/components/goals/GoalHeroProgressVisual";
 import { PassiveIncomeGoalCard } from "@/components/goals/PassiveIncomeGoalCard";
@@ -62,7 +68,10 @@ import {
 } from "@/lib/client/userGoalStorage";
 import { projectPortfolioValue } from "@/lib/services/goals/goalProgressEngine";
 import { formatOptionalPassiveIncomeDisplay } from "@/lib/client/goalPassiveIncome";
-import { parseOptionalNumericInput, sanitizeNumericInput } from "@/lib/client/numericInput";
+import {
+  parseOptionalNumericInput,
+  sanitizeNumericInput,
+} from "@/lib/client/numericInput";
 import { useGoalProgress } from "@/lib/client/useGoalProgress";
 import { useUserGoal } from "@/lib/client/useUserGoal";
 import { usePortfolioDividends } from "@/lib/client/usePortfolioDividends";
@@ -102,16 +111,16 @@ function projectValue(
 }
 
 export default function GoalsPage() {
-  const {
-    formatEur,
-    snapshot,
-    baseCurrency,
-    canPersistMonetary,
-    refreshFx,
-  } = useBaseCurrencyDisplay();
-  const { userSub, holdings, portfolioReady, saveHoldings } = useUserPortfolio();
+  const { formatEur, snapshot, baseCurrency, canPersistMonetary, refreshFx } =
+    useBaseCurrencyDisplay();
+  const { userSub, holdings, portfolioReady, saveHoldings } =
+    useUserPortfolio();
   const { goal: savedGoal, hasSavedGoal, persistGoal } = useUserGoal();
-  const goalProgress = useGoalProgress({ holdings, goal: savedGoal, hasSavedGoal });
+  const goalProgress = useGoalProgress({
+    holdings,
+    goal: savedGoal,
+    hasSavedGoal,
+  });
   const { snapshot: dividendSnapshot } = usePortfolioDividends(
     holdings,
     userSub,
@@ -131,7 +140,8 @@ export default function GoalsPage() {
   const [formSession, setFormSession] = useState<BaseCurrencyFxSnapshot>(
     IDENTITY_EUR_FX_SNAPSHOT,
   );
-  const [formCurrency, setFormCurrency] = useState<PortfolioBaseCurrency>("EUR");
+  const [formCurrency, setFormCurrency] =
+    useState<PortfolioBaseCurrency>("EUR");
   const [formDirty, setFormDirty] = useState(false);
   const [fxFormError, setFxFormError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -189,18 +199,20 @@ export default function GoalsPage() {
 
   const currentYear = new Date().getFullYear();
   const monthsRemaining = Math.max((calcGoal.targetYear - currentYear) * 12, 0);
-  const progress = calcGoal.targetValue > 0
-    ? computeGoalProgress(portfolioValue, calcGoal)
-    : 0;
+  const progress =
+    calcGoal.targetValue > 0
+      ? computeGoalProgress(portfolioValue, calcGoal)
+      : 0;
   const goalCompleted = isGoalAchieved(portfolioValue, calcGoal);
 
   const projectedValue = useMemo(
-    () => projectValue(
-      portfolioValue,
-      calcGoal.monthlyContribution,
-      calcGoal.expectedAnnualReturn,
-      monthsRemaining,
-    ),
+    () =>
+      projectValue(
+        portfolioValue,
+        calcGoal.monthlyContribution,
+        calcGoal.expectedAnnualReturn,
+        monthsRemaining,
+      ),
     [calcGoal, monthsRemaining, portfolioValue],
   );
 
@@ -215,7 +227,8 @@ export default function GoalsPage() {
     });
   }, [goalEur, hasSavedGoal, portfolioValue, savedGoal]);
 
-  const coachGoal = hasSavedGoal && savedGoal ? savedGoal : (goalEur ?? calcGoal);
+  const coachGoal =
+    hasSavedGoal && savedGoal ? savedGoal : (goalEur ?? calcGoal);
 
   const goalIntelligence = useMemo(() => {
     if (!engineProgress.hasGoal) {
@@ -228,7 +241,10 @@ export default function GoalsPage() {
         goal: coachGoal,
         projectedValueAtTargetYear: projectedValue,
       }),
-      milestones: buildGoalCurrencyMilestones(portfolioValue, coachGoal.targetValue),
+      milestones: buildGoalCurrencyMilestones(
+        portfolioValue,
+        coachGoal.targetValue,
+      ),
       scenarios: buildGoalScenarioComparison({
         currentValue: portfolioValue,
         goal: coachGoal,
@@ -266,20 +282,21 @@ export default function GoalsPage() {
     portfolioValue,
   ]);
 
-  const health = projectedValue >= calcGoal.targetValue
-    ? "On track"
-    : projectedValue >= calcGoal.targetValue * 0.85
-      ? "Attention needed"
-      : "Off track";
+  const health =
+    projectedValue >= calcGoal.targetValue
+      ? "On track"
+      : projectedValue >= calcGoal.targetValue * 0.85
+        ? "Attention needed"
+        : "Off track";
 
-  const healthClasses = health === "On track"
-    ? "bg-emerald-100 text-emerald-700"
-    : health === "Attention needed"
-      ? "bg-amber-100 text-amber-700"
-      : "bg-red-100 text-red-700";
+  const healthClasses =
+    health === "On track"
+      ? "bg-emerald-100 text-emerald-700"
+      : health === "Attention needed"
+        ? "bg-amber-100 text-amber-700"
+        : "bg-red-100 text-red-700";
 
-  const targetMinBase =
-    convertCanonicalEurAmount(1_000, formSession) ?? 1_000;
+  const targetMinBase = convertCanonicalEurAmount(1_000, formSession) ?? 1_000;
 
   function updateGoal(field: keyof GoalSettings, value: string) {
     setSaved(false);
@@ -291,10 +308,7 @@ export default function GoalsPage() {
     event.preventDefault();
     if (!userSub) return;
 
-    if (
-      formCurrency !== "EUR" &&
-      baseCurrency !== formCurrency
-    ) {
+    if (formCurrency !== "EUR" && baseCurrency !== formCurrency) {
       setFxFormError(
         "Your portfolio base currency changed while editing. Reset or reload the form before saving.",
       );
@@ -328,6 +342,7 @@ export default function GoalsPage() {
     <>
       <PageContainer>
         <PageHero
+          id="goal-progress"
           title="Goals"
           subtitle={goalHeroSubtitle}
           backToDashboard
@@ -354,7 +369,8 @@ export default function GoalsPage() {
         ) : null}
 
         {healthAlignmentPreview &&
-        healthAlignmentPreview.goalAlignment.label !== "Goal data unavailable" ? (
+        healthAlignmentPreview.goalAlignment.label !==
+          "Goal data unavailable" ? (
           <section
             className={`${appHeroShellClass} px-5 py-6 sm:px-7`}
             aria-labelledby="goals-health-alignment"
@@ -386,208 +402,230 @@ export default function GoalsPage() {
           </section>
         ) : null}
 
-          <div className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
-            <form
-              onSubmit={handleSubmit}
-              className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm sm:p-8"
+        <div className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
+          <form
+            onSubmit={handleSubmit}
+            className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm sm:p-8"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-100 text-violet-700">
+                <Goal className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className={appSectionTitleClass}>Set your goal</h2>
+                <p className={`${appSectionMetaClass}`}>
+                  Four inputs, saved in one step.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-7 space-y-5">
+              <GoalInput
+                label={`Target amount (${formCurrency})`}
+                icon={<Target className="h-4 w-4" />}
+                prefix={currencyPrefix}
+                value={goal.targetValue}
+                min={targetMinBase}
+                step={1_000}
+                onChange={(value) => updateGoal("targetValue", value)}
+              />
+              <GoalInput
+                label="Target year"
+                icon={<CalendarDays className="h-4 w-4" />}
+                value={goal.targetYear}
+                min={currentYear + 1}
+                max={currentYear + 60}
+                step={1}
+                onChange={(value) => updateGoal("targetYear", value)}
+              />
+              <GoalInput
+                label={`Monthly contribution (${formCurrency})`}
+                icon={<PiggyBank className="h-4 w-4" />}
+                prefix={currencyPrefix}
+                value={goal.monthlyContribution}
+                min={0}
+                step={50}
+                onChange={(value) => updateGoal("monthlyContribution", value)}
+              />
+              <GoalInput
+                label="Expected annual return"
+                icon={<TrendingUp className="h-4 w-4" />}
+                suffix="%"
+                value={goal.expectedAnnualReturn}
+                min={0}
+                max={50}
+                step={0.5}
+                onChange={(value) => updateGoal("expectedAnnualReturn", value)}
+              />
+              <OptionalGoalInput
+                label={`Passive income target (optional, ${formCurrency})`}
+                icon={<PiggyBank className="h-4 w-4" />}
+                prefix={currencyPrefix}
+                value={goal.passiveIncomeTarget}
+                step={500}
+                onChange={(value) => {
+                  setSaved(false);
+                  setFormDirty(true);
+                  setGoal((current) => {
+                    if (value === undefined) {
+                      const next = { ...current };
+                      delete next.passiveIncomeTarget;
+                      return next;
+                    }
+
+                    return { ...current, passiveIncomeTarget: value };
+                  });
+                }}
+              />
+            </div>
+
+            {fxFormError ? (
+              <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+                <p role="alert">{fxFormError}</p>
+                <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                  {!canPersistMonetary && baseCurrency !== "EUR" ? (
+                    <button
+                      type="button"
+                      onClick={() => refreshFx()}
+                      className="inline-flex min-h-[44px] items-center font-semibold underline"
+                    >
+                      Retry conversion
+                    </button>
+                  ) : null}
+                  {formDirty ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormDirty(false);
+                        setSaved(false);
+                      }}
+                      className="inline-flex min-h-[44px] items-center font-semibold underline"
+                    >
+                      Reset form
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
+
+            <button
+              type="submit"
+              disabled={
+                !canPersistBaseCurrencyAmounts(formSession) ||
+                (formCurrency !== "EUR" && baseCurrency !== formCurrency)
+              }
+              className={`mt-7 w-full ${appSolidButtonClass}`}
             >
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-100 text-violet-700">
-                  <Goal className="h-5 w-5" />
-                </div>
-                <div>
-                  <h2 className={appSectionTitleClass}>Set your goal</h2>
-                  <p className={`${appSectionMetaClass}`}>Four inputs, saved in one step.</p>
-                </div>
+              {saved ? (
+                <Check className="h-4 w-4" />
+              ) : (
+                <Save className="h-4 w-4" />
+              )}
+              {saved ? "Goal saved" : "Save goal"}
+            </button>
+          </form>
+
+          <section className={`${appDarkCardClass} ${appDarkCardPaddingClass}`}>
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <p className={appHeroMetricLabelClass}>Goal dashboard</p>
+                <p className={`mt-3 ${appCardValueClass} text-white`}>
+                  {goalCompleted ? "Goal achieved" : formatPercentage(progress)}
+                </p>
+                <p className={`mt-2 ${appSectionMetaClass} text-white/55`}>
+                  {goalCompleted
+                    ? `Your portfolio has reached ${formatEur(calcGoal.targetValue)}.`
+                    : `of ${formatEur(calcGoal.targetValue)}`}
+                </p>
               </div>
-
-              <div className="mt-7 space-y-5">
-                <GoalInput
-                  label={`Target amount (${formCurrency})`}
-                  icon={<Target className="h-4 w-4" />}
-                  prefix={currencyPrefix}
-                  value={goal.targetValue}
-                  min={targetMinBase}
-                  step={1_000}
-                  onChange={(value) => updateGoal("targetValue", value)}
-                />
-                <GoalInput
-                  label="Target year"
-                  icon={<CalendarDays className="h-4 w-4" />}
-                  value={goal.targetYear}
-                  min={currentYear + 1}
-                  max={currentYear + 60}
-                  step={1}
-                  onChange={(value) => updateGoal("targetYear", value)}
-                />
-                <GoalInput
-                  label={`Monthly contribution (${formCurrency})`}
-                  icon={<PiggyBank className="h-4 w-4" />}
-                  prefix={currencyPrefix}
-                  value={goal.monthlyContribution}
-                  min={0}
-                  step={50}
-                  onChange={(value) => updateGoal("monthlyContribution", value)}
-                />
-                <GoalInput
-                  label="Expected annual return"
-                  icon={<TrendingUp className="h-4 w-4" />}
-                  suffix="%"
-                  value={goal.expectedAnnualReturn}
-                  min={0}
-                  max={50}
-                  step={0.5}
-                  onChange={(value) => updateGoal("expectedAnnualReturn", value)}
-                />
-                <OptionalGoalInput
-                  label={`Passive income target (optional, ${formCurrency})`}
-                  icon={<PiggyBank className="h-4 w-4" />}
-                  prefix={currencyPrefix}
-                  value={goal.passiveIncomeTarget}
-                  step={500}
-                  onChange={(value) => {
-                    setSaved(false);
-                    setFormDirty(true);
-                    setGoal((current) => {
-                      if (value === undefined) {
-                        const next = { ...current };
-                        delete next.passiveIncomeTarget;
-                        return next;
-                      }
-
-                      return { ...current, passiveIncomeTarget: value };
-                    });
-                  }}
-                />
-              </div>
-
-              {fxFormError ? (
-                <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-                  <p role="alert">{fxFormError}</p>
-                  <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-                    {!canPersistMonetary && baseCurrency !== "EUR" ? (
-                      <button
-                        type="button"
-                        onClick={() => refreshFx()}
-                        className="inline-flex min-h-[44px] items-center font-semibold underline"
-                      >
-                        Retry conversion
-                      </button>
-                    ) : null}
-                    {formDirty ? (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setFormDirty(false);
-                          setSaved(false);
-                        }}
-                        className="inline-flex min-h-[44px] items-center font-semibold underline"
-                      >
-                        Reset form
-                      </button>
-                    ) : null}
-                  </div>
-                </div>
-              ) : null}
-
-              <button
-                type="submit"
-                disabled={
-                  !canPersistBaseCurrencyAmounts(formSession) ||
-                  (formCurrency !== "EUR" && baseCurrency !== formCurrency)
-                }
-                className="mt-7 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-3.5 text-sm font-bold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+              <span
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold ${healthClasses}`}
               >
-                {saved ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}
-                {saved ? "Goal saved" : "Save goal"}
-              </button>
-            </form>
+                {health}
+              </span>
+            </div>
 
-            <section className="overflow-hidden rounded-[28px] bg-slate-950 p-6 text-white shadow-xl sm:p-8">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <p className={`${appHeroMetricLabelClass} text-slate-400`}>Goal dashboard</p>
-                  <p className={`mt-3 ${appCardValueClass} text-white`}>
-                    {goalCompleted
-                      ? "Goal achieved"
-                      : formatPercentage(progress)}
-                  </p>
-                  <p className={`mt-2 ${appSectionMetaClass} text-slate-400`}>
-                    {goalCompleted
-                      ? `Your portfolio has reached ${formatEur(calcGoal.targetValue)}.`
-                      : `of ${formatEur(calcGoal.targetValue)}`}
-                  </p>
-                </div>
-                <span className={`rounded-full px-3 py-1.5 text-xs font-black ${healthClasses}`}>
-                  {health}
-                </span>
-              </div>
+            <div className="mt-7 h-3 overflow-hidden rounded-full bg-white/10">
+              <div
+                className="h-full rounded-full bg-brand"
+                style={{
+                  width: `${Math.max(progress, goalCompleted ? 100 : hasSavedGoal ? 1 : 0)}%`,
+                }}
+              />
+            </div>
 
-              <div className="mt-7 h-3 overflow-hidden rounded-full bg-white/10">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-blue-500 via-violet-500 to-fuchsia-500"
-                  style={{ width: `${Math.max(progress, goalCompleted ? 100 : hasSavedGoal ? 1 : 0)}%` }}
-                />
-              </div>
+            <div className="mt-8 grid gap-3 sm:grid-cols-2">
+              <ResultCard
+                label="Current portfolio"
+                value={formatEur(portfolioValue)}
+              />
+              <ResultCard
+                label={`Projected in ${calcGoal.targetYear}`}
+                value={formatEur(projectedValue)}
+              />
+              <ResultCard
+                label="Monthly contribution"
+                value={formatEur(calcGoal.monthlyContribution)}
+              />
+              <ResultCard
+                label="Expected return"
+                value={formatPercentage(calcGoal.expectedAnnualReturn)}
+              />
+            </div>
 
-              <div className="mt-8 grid gap-3 sm:grid-cols-2">
-                <ResultCard label="Current portfolio" value={formatEur(portfolioValue)} />
-                <ResultCard label={`Projected in ${calcGoal.targetYear}`} value={formatEur(projectedValue)} />
-                <ResultCard label="Monthly contribution" value={formatEur(calcGoal.monthlyContribution)} />
-                <ResultCard label="Expected return" value={formatPercentage(calcGoal.expectedAnnualReturn)} />
-              </div>
+            <div className="mt-4">
+              <ConversionDetailsDisclosure compactTrigger tone="dark" />
+            </div>
 
-              <div className="mt-4">
-                <ConversionDetailsDisclosure compactTrigger tone="dark" />
-              </div>
-
-              <div className={`mt-6 rounded-2xl border p-5 ${
+            <div
+              className={`mt-6 rounded-2xl border p-5 ${
                 difference >= 0
                   ? "border-emerald-400/20 bg-emerald-400/10"
                   : "border-amber-400/20 bg-amber-400/10"
-              }`}>
-                <p className="text-sm font-bold">
-                  {difference >= 0
-                    ? `Projected buffer: ${formatEur(difference)}`
-                    : `Projected shortfall: ${formatEur(Math.abs(difference))}`}
-                </p>
-                <p className="mt-2 text-sm leading-6 text-slate-300">
-                  This projection is an estimate based on your inputs. Returns are not guaranteed and this is not financial advice.
-                </p>
+              }`}
+            >
+              <p className="text-sm font-bold">
+                {difference >= 0
+                  ? `Projected buffer: ${formatEur(difference)}`
+                  : `Projected shortfall: ${formatEur(Math.abs(difference))}`}
+              </p>
+              <p className="mt-2 text-sm leading-6 text-slate-300">
+                This projection is an estimate based on your inputs. Returns are
+                not guaranteed and this is not financial advice.
+              </p>
+            </div>
+
+            {goalIntelligence ? (
+              <div className="mt-6 space-y-4">
+                <GoalCoachCard coach={goalIntelligence.coach} />
+                <GoalMilestonesRow milestones={goalIntelligence.milestones} />
+                <GoalWhatIfCard comparison={goalIntelligence.scenarios} />
+                <GoalInsightCard insight={goalIntelligence.insight} />
               </div>
+            ) : null}
+          </section>
+        </div>
 
-              {goalIntelligence ? (
-                <div className="mt-6 space-y-4">
-                  <GoalCoachCard coach={goalIntelligence.coach} />
-                  <GoalMilestonesRow milestones={goalIntelligence.milestones} />
-                  <GoalWhatIfCard comparison={goalIntelligence.scenarios} />
-                  <GoalInsightCard insight={goalIntelligence.insight} />
-                </div>
-              ) : null}
-            </section>
-          </div>
-
-          <div>
-            <PassiveIncomeGoalCard
-              snapshot={dividendSnapshot}
-              passiveIncomeTarget={
-                savedGoal?.passiveIncomeTarget ??
-                goalEur?.passiveIncomeTarget
-              }
-              onEstimateChange={(holdingId, estimate) => {
-                saveHoldings(
-                  holdings.map((holding) =>
-                    holding.id === holdingId
-                      ? {
-                          ...holding,
-                          passiveIncomeUserEstimate: estimate ?? undefined,
-                        }
-                      : holding,
-                  ),
-                );
-              }}
-            />
-          </div>
+        <div>
+          <PassiveIncomeGoalCard
+            snapshot={dividendSnapshot}
+            passiveIncomeTarget={
+              savedGoal?.passiveIncomeTarget ?? goalEur?.passiveIncomeTarget
+            }
+            onEstimateChange={(holdingId, estimate) => {
+              saveHoldings(
+                holdings.map((holding) =>
+                  holding.id === holdingId
+                    ? {
+                        ...holding,
+                        passiveIncomeUserEstimate: estimate ?? undefined,
+                      }
+                    : holding,
+                ),
+              );
+            }}
+          />
+        </div>
       </PageContainer>
       <BottomNavigation />
     </>
@@ -649,7 +687,9 @@ function OptionalGoalInput({
   step?: number;
   onChange: (value: number | undefined) => void;
 }) {
-  const [text, setText] = useState(() => formatOptionalPassiveIncomeDisplay(value));
+  const [text, setText] = useState(() =>
+    formatOptionalPassiveIncomeDisplay(value),
+  );
   const [focused, setFocused] = useState(false);
 
   useEffect(() => {

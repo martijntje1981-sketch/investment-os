@@ -64,6 +64,36 @@ describe("calculatePortfolioPerformance", () => {
     );
   });
 
+  it("does not reuse the 1D previousClose two-point series for longer ranges", () => {
+    const holdings = [
+      makeHolding({
+        id: "1",
+        symbol: "AAPL",
+        quantity: 10,
+        currentPrice: 110,
+        previousClose: 100,
+      }),
+    ];
+
+    const daily = calculatePortfolioPerformance(holdings, {
+      period: "1D",
+      asOf,
+    });
+    expect(daily.chartHasSeries).toBe(true);
+    expect(daily.chartPoints).toHaveLength(2);
+
+    for (const period of ["1W", "1M", "YTD", "1Y"] as const) {
+      const result = calculatePortfolioPerformance(holdings, {
+        period,
+        asOf,
+      });
+      expect(result.chartPoints).toHaveLength(0);
+      expect(result.chartHasSeries).toBe(false);
+      expect(result.calculationMethod).toBe("unavailable");
+      expect(result.investmentReturn).toBeNull();
+    }
+  });
+
   it("uses purchase cost for all-time summary without treating it as a deposit", () => {
     const holdings = [
       makeHolding({

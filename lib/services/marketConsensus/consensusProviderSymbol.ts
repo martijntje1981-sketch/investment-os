@@ -27,7 +27,10 @@ export function buildConsensusProviderSymbolFromParts(
  * Prefers stored providerSymbol, then ticker+exchange, never inventing exchange-less suffixes.
  */
 export function resolveConsensusProviderSymbolSync(
-  holding: Pick<StoredPortfolioHolding, "symbol" | "exchange" | "providerSymbol">,
+  holding: Pick<
+    StoredPortfolioHolding,
+    "symbol" | "exchange" | "providerSymbol"
+  >,
 ): string {
   if (holding.providerSymbol?.trim()) {
     return holding.providerSymbol.trim().toUpperCase();
@@ -64,5 +67,8 @@ export async function resolveConsensusProviderSymbol(
     return matched.providerSymbol.trim().toUpperCase();
   }
 
-  return buildConsensusProviderSymbolFromParts(holding.symbol, holding.exchange);
+  return buildConsensusProviderSymbolFromParts(
+    holding.symbol,
+    holding.exchange,
+  );
 }

@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import { BackToDashboardLink } from "@/components/layout/BackToDashboardLink";
 import {
+  appHeroShellClass,
   appPageHeroSubtitleClass,
   appPageHeroTitleClass,
 } from "@/components/layout/appSurface";
@@ -19,6 +20,7 @@ export function PageHero({
   backToDashboard = false,
   embedded = false,
   variant = "default",
+  id,
 }: {
   title: string;
   subtitle?: string;
@@ -32,6 +34,8 @@ export function PageHero({
   embedded?: boolean;
   /** Dashboard uses a calmer, roomier hero treatment without changing copy or data. */
   variant?: "default" | "dashboard";
+  /** Optional stable deep-link anchor (e.g. Goals progress). */
+  id?: string;
 }) {
   const actionContent =
     backToDashboard || actions ? (
@@ -45,17 +49,19 @@ export function PageHero({
 
   return (
     <section
+      id={id}
       aria-labelledby="app-page-hero-title"
       className={cn(
+        id ? "scroll-mt-24" : null,
         "min-w-0 text-white",
         embedded
           ? isDashboard
             ? "px-5 py-7 sm:px-7 sm:py-8 md:px-8 md:py-9"
             : "px-4 py-5 sm:px-6 sm:py-6"
           : cn(
-              "rounded-[24px] border border-brand-navy/90 bg-brand-navy shadow-[0_16px_48px_rgba(11,31,58,0.28)]",
-              "px-4 py-5 sm:rounded-[28px] sm:px-6 sm:py-6",
-              "lg:min-h-[168px] lg:px-6 lg:py-6",
+              appHeroShellClass,
+              "px-4 py-5 sm:px-6 sm:py-6",
+              "lg:px-6 lg:py-6",
             ),
         hasAside
           ? "lg:grid lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start lg:gap-x-6"

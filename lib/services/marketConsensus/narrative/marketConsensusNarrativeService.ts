@@ -42,7 +42,10 @@ export function configureMarketConsensusNarrativeServiceForTests(
 
 export async function generateMarketConsensusNarrative(
   input: MarketConsensusNarrativeInput,
-): Promise<{ narrative: MarketConsensusNarrative; source: MarketConsensusNarrativeSource }> {
+): Promise<{
+  narrative: MarketConsensusNarrative;
+  source: MarketConsensusNarrativeSource;
+}> {
   const fallback = buildDeterministicMarketConsensusNarrative(input);
 
   if (!shouldAttemptAiNarrative(input)) {
@@ -74,7 +77,10 @@ export async function generateMarketConsensusNarrative(
 export async function getMarketConsensusNarrativeForHolding(
   result: AnalystConsensusResult,
   instrumentName: string,
-): Promise<{ narrative: MarketConsensusNarrative; source: MarketConsensusNarrativeSource }> {
+): Promise<{
+  narrative: MarketConsensusNarrative;
+  source: MarketConsensusNarrativeSource;
+}> {
   const input = buildMarketConsensusNarrativeInput(result, instrumentName);
   const cacheKey = result.instrumentId;
   const inputHash = hashMarketConsensusNarrativeInput(input);

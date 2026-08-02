@@ -1,6 +1,4 @@
-export {
-  buildPortfolioConsensusSummary,
-} from "@/lib/services/marketConsensus/buildPortfolioConsensusSummary";
+export { buildPortfolioConsensusSummary } from "@/lib/services/marketConsensus/buildPortfolioConsensusSummary";
 export {
   configureMarketConsensusServiceForTests,
   getMarketConsensusBundle,

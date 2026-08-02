@@ -36,9 +36,7 @@ function countSentences(value: string): number {
     .filter(Boolean).length;
 }
 
-function collectAllowedNumbers(
-  input: MarketConsensusNarrativeInput,
-): number[] {
+function collectAllowedNumbers(input: MarketConsensusNarrativeInput): number[] {
   const values: number[] = [];
 
   const fields = [
@@ -62,9 +60,7 @@ function collectAllowedNumbers(
 }
 
 function numberIsAllowed(value: number, allowed: number[]): boolean {
-  return allowed.some(
-    (candidate) => Math.abs(candidate - value) <= 0.6,
-  );
+  return allowed.some((candidate) => Math.abs(candidate - value) <= 0.6);
 }
 
 function extractNumbers(text: string): number[] {
@@ -123,7 +119,10 @@ function validateFactorList(
     }
 
     for (const number of extractNumbers(trimmed)) {
-      if (!Number.isFinite(number) || !numberIsAllowed(number, allowedNumbers)) {
+      if (
+        !Number.isFinite(number) ||
+        !numberIsAllowed(number, allowedNumbers)
+      ) {
         return null;
       }
     }

@@ -38,7 +38,7 @@ function equityResult(
 }
 
 describe("buildPortfolioConsensusSummary eligibility model", () => {
-  it("counts ETF/ETP/crypto as not applicable and excludes cash", () => {
+  it("counts ETF/ETP/crypto as market outlook and excludes cash", () => {
     const holdings = [
       holding({
         id: "vwce",
@@ -81,7 +81,8 @@ describe("buildPortfolioConsensusSummary eligibility model", () => {
 
     expect(summary.eligibleHoldings).toBe(1);
     expect(summary.holdingsWithCoverage).toBe(1);
-    expect(summary.notApplicable).toBe(3);
+    expect(summary.marketOutlook).toBe(3);
+    expect(summary.notApplicable).toBe(0);
     expect(summary.noAnalystCoverage).toBe(0);
     expect(summary.limitedCoverage).toBe(0);
     expect(summary.totalInvestments).toBe(4);
@@ -196,17 +197,18 @@ describe("buildPortfolioConsensusSummary eligibility model", () => {
     });
 
     expect(summary.eligibleHoldings).toBe(0);
-    expect(summary.notApplicable).toBe(2);
+    expect(summary.marketOutlook).toBe(2);
+    expect(summary.notApplicable).toBe(0);
     expect(summary.holdingsWithCoverage).toBe(0);
     expect(summary.summary).toContain(
-      "Analyst consensus applies to individual company shares",
+      "underlying, theme-level or asset-class market outlook",
     );
     expect(summary.summary).not.toMatch(/0 of \d+ investment holdings/);
   });
 });
 
 describe("Market Consensus not-applicable card labels", () => {
-  it("labels ETF, ETP and crypto-linked holdings as not applicable", () => {
+  it("labels ETF, ETP and crypto-linked holdings with outlook types", () => {
     const etf = mapConsensusResultToCard({
       holding: holding({
         id: "vwce",
@@ -256,9 +258,9 @@ describe("Market Consensus not-applicable card labels", () => {
       isLoading: false,
     });
 
-    expect(etf.statusLabel).toBe("Not applicable — ETF");
-    expect(etp.statusLabel).toBe("Not applicable — ETP");
-    expect(crypto.statusLabel).toBe("Not applicable — crypto");
+    expect(etf.statusLabel).toBe("Underlying market outlook");
+    expect(etp.statusLabel).toBe("Underlying market outlook");
+    expect(crypto.statusLabel).toBe("Asset-class outlook");
     expect(etf.statusLabel).not.toContain("Limited coverage");
     expect(crypto.state).toBe("crypto_outlook");
     expect(etf.state).toBe("etf_outlook");

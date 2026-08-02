@@ -1,5 +1,6 @@
 import {
   isConsensusEligibleHolding,
+  resolveMarketOutlookKind,
 } from "@/lib/client/marketConsensus/holdingClassification";
 import type {
   AnalystConsensusResult,
@@ -40,8 +41,12 @@ export function buildPortfolioConsensusSummary(
     generatedAt?: string;
   },
 ): PortfolioConsensusSummary {
-  const investments = holdings.filter((holding) => holding.assetType !== "cash");
-  const resultById = new Map(results.map((result) => [result.instrumentId, result]));
+  const investments = holdings.filter(
+    (holding) => holding.assetType !== "cash",
+  );
+  const resultById = new Map(
+    results.map((result) => [result.instrumentId, result]),
+  );
 
   let holdingsWithCoverage = 0;
   let positiveConsensus = 0;
@@ -49,6 +54,7 @@ export function buildPortfolioConsensusSummary(
   let negativeConsensus = 0;
   let noAnalystCoverage = 0;
   let notApplicable = 0;
+  let marketOutlook = 0;
   let eligibleHoldings = 0;
   let providerUnavailable = 0;
   let symbolMappingIssues = 0;
@@ -58,7 +64,11 @@ export function buildPortfolioConsensusSummary(
     const result = resultById.get(holding.id);
 
     if (!eligible) {
-      notApplicable += 1;
+      if (resolveMarketOutlookKind(holding)) {
+        marketOutlook += 1;
+      } else {
+        notApplicable += 1;
+      }
       continue;
     }
 
@@ -95,12 +105,18 @@ export function buildPortfolioConsensusSummary(
   }
 
   let summary: string;
-  if (eligibleHoldings === 0) {
+  if (eligibleHoldings === 0 && marketOutlook > 0) {
     summary =
-      "Analyst consensus applies to individual company shares. Your current portfolio mainly contains funds, ETPs or crypto-linked instruments.";
+      "Your portfolio mainly contains funds, ETPs or crypto-linked instruments. These use underlying, theme-level or asset-class market outlook rather than single-security analyst ratings.";
+  } else if (eligibleHoldings === 0) {
+    summary =
+      "Analyst consensus applies to individual company shares. No consensus-eligible equities are currently in this portfolio.";
   } else if (holdingsWithCoverage > 0) {
     summary = `Third-party analyst coverage is available for ${holdingsWithCoverage} of ${eligibleHoldings} consensus-eligible holdings.`;
-  } else if (!options.providerAvailable || providerUnavailable === eligibleHoldings) {
+  } else if (
+    !options.providerAvailable ||
+    providerUnavailable === eligibleHoldings
+  ) {
     summary =
       "Third-party consensus data is temporarily unavailable. Your portfolio performance and allocation data remain available.";
   } else {
@@ -116,6 +132,7 @@ export function buildPortfolioConsensusSummary(
     negativeConsensus,
     noAnalystCoverage,
     notApplicable,
+    marketOutlook,
     eligibleHoldings,
     providerUnavailable,
     symbolMappingIssues,

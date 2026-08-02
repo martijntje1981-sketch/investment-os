@@ -4,6 +4,10 @@ import { useState } from "react";
 import { ChevronDown, LineChart, Sparkles } from "lucide-react";
 
 import {
+  appCardClass,
+  appDarkInsetClass,
+  appDashboardDarkBodyMediumClass,
+  appHeroMetricLabelClass,
   appSectionLabelClass,
   appCardValueClass,
   appSectionBodyClass,
@@ -37,9 +41,11 @@ export function AnalystIntelligenceSection({
   const emptyStateCopy = getAnalystEmptyStateCopy(snapshot);
 
   return (
-    <section className="mt-7 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
+    <section className={`mt-7 ${appCardClass}`}>
       <div className="border-b border-slate-200 bg-gradient-to-br from-violet-700 to-slate-950 px-5 py-6 text-white sm:px-8">
-        <div className={`inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 ${appSectionLabelClass} text-violet-100`}>
+        <div
+          className={`inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 ${appSectionLabelClass} text-violet-100`}
+        >
           <LineChart className="h-3.5 w-3.5" />
           Analyst intelligence
         </div>
@@ -93,11 +99,15 @@ export function AnalystIntelligenceSection({
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 <Metric
                   label="Portfolio coverage"
-                  value={formatPortfolioPercent(snapshot.coveragePercentOfInvested)}
+                  value={formatPortfolioPercent(
+                    snapshot.coveragePercentOfInvested,
+                  )}
                 />
                 <Metric
                   label="Weighted implied upside"
-                  value={formatUpsideLabel(snapshot.weightedImpliedUpsidePercent)}
+                  value={formatUpsideLabel(
+                    snapshot.weightedImpliedUpsidePercent,
+                  )}
                 />
                 <Metric
                   label="Covered holdings"
@@ -121,7 +131,9 @@ export function AnalystIntelligenceSection({
                 />
                 <Metric
                   label="Data completeness"
-                  value={formatPortfolioPercent(snapshot.dataCompletenessPercent)}
+                  value={formatPortfolioPercent(
+                    snapshot.dataCompletenessPercent,
+                  )}
                 />
               </div>
 
@@ -138,7 +150,9 @@ export function AnalystIntelligenceSection({
                       >
                         <div className="min-w-0">
                           <p className="truncate font-black">{item.symbol}</p>
-                          <p className="truncate text-sm text-slate-500">{item.name}</p>
+                          <p className="truncate text-sm text-slate-500">
+                            {item.name}
+                          </p>
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
                           <span
@@ -194,17 +208,22 @@ export function AnalystIntelligenceSection({
             </p>
           )}
 
-          {snapshot.observations.length > 0 && snapshot.hasMeaningfulCoverage ? (
-            <div className="rounded-[24px] bg-slate-950 px-5 py-5 text-white sm:px-6">
+          {snapshot.observations.length > 0 &&
+          snapshot.hasMeaningfulCoverage ? (
+            <div
+              className={`${appDarkInsetClass} bg-navy-card px-5 py-5 text-white sm:px-6`}
+            >
               <div className="flex items-start gap-3">
-                <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-violet-300" />
+                <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
                 <div>
-                  <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">
-                    Observations
-                  </p>
-                  <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-200">
+                  <p className={appHeroMetricLabelClass}>Observations</p>
+                  <ul
+                    className={`mt-3 space-y-2 ${appDashboardDarkBodyMediumClass}`}
+                  >
                     {snapshot.observations.map((observation, index) => (
-                      <li key={`${index}-${observation.slice(0, 32)}`}>{observation}</li>
+                      <li key={`${index}-${observation.slice(0, 32)}`}>
+                        {observation}
+                      </li>
                     ))}
                   </ul>
                 </div>
@@ -263,7 +282,9 @@ export function HoldingAnalystMeta({
           onClick={() => setExpanded((value) => !value)}
           className="inline-flex min-h-[44px] items-center gap-1 rounded-xl px-3 text-xs font-bold text-violet-800 hover:bg-violet-100"
           aria-expanded={expanded}
-          aria-label={expanded ? "Hide analyst details" : "Show analyst details"}
+          aria-label={
+            expanded ? "Hide analyst details" : "Show analyst details"
+          }
         >
           Details
           <ChevronDown
@@ -316,9 +337,7 @@ export function HoldingAnalystMeta({
 function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-4">
-      <p className={appSectionLabelClass}>
-        {label}
-      </p>
+      <p className={appSectionLabelClass}>{label}</p>
       <p className={`mt-2 ${appCardValueClass}`}>{value}</p>
     </div>
   );
@@ -327,9 +346,7 @@ function Metric({ label, value }: { label: string; value: string }) {
 function MiniStat({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className={`${appSectionLabelClass} text-violet-800/80`}>
-        {label}
-      </p>
+      <p className={`${appSectionLabelClass} text-violet-800/80`}>{label}</p>
       <p className="mt-0.5 text-sm font-bold text-violet-950">{value}</p>
     </div>
   );
@@ -345,7 +362,9 @@ function formatShortDate(value: string) {
   }).format(date);
 }
 
-function formatActionType(actionType: PortfolioAnalystSnapshot["recentActions"][number]["actionType"]) {
+function formatActionType(
+  actionType: PortfolioAnalystSnapshot["recentActions"][number]["actionType"],
+) {
   return actionType
     .split("_")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
@@ -388,9 +407,7 @@ function getAnalystEmptyStateCopy(snapshot: PortfolioAnalystSnapshot): {
 function HeaderMetric({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2">
-      <dt className={`${appSectionLabelClass} text-slate-300`}>
-        {label}
-      </dt>
+      <dt className={`${appSectionLabelClass} text-slate-300`}>{label}</dt>
       <dd className={`mt-1 ${appCardValueClass} text-white`}>{value}</dd>
     </div>
   );

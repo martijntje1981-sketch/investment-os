@@ -13,6 +13,7 @@ import {
 import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 import type { DashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
 import { formatPortfolioPercent } from "@/lib/client/portfolioAnalysis";
+import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 
 export function GoalProgressCard({
   snapshot,
@@ -35,7 +36,7 @@ export function GoalProgressCard({
           Set a target to track progress from your current portfolio value.
         </p>
         <Link
-          href="/goals"
+          href={DASHBOARD_DEEP_LINKS.goalProgress}
           className="mt-6 inline-flex min-h-[44px] items-center rounded-xl bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
         >
           Set your goal

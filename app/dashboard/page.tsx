@@ -4,10 +4,13 @@ import { useEffect, useMemo, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { DashboardZeroHoldingsHero } from "@/components/dashboard/DashboardZeroHoldingsHero";
 import { DashboardDividendCard } from "@/components/dashboard/DashboardDividendCard";
+import { DashboardCashIntelligenceCard } from "@/components/dashboard/DashboardCashIntelligenceCard";
 import { DashboardAnalystCard } from "@/components/dashboard/DashboardAnalystCard";
 import { DashboardGoalProgressCard } from "@/components/dashboard/DashboardGoalProgressCard";
 import { DashboardContributionsCard } from "@/components/contributions/DashboardContributionsCard";
 import { DashboardIntelligencePreview } from "@/components/dashboard/DashboardIntelligencePreview";
+import { DashboardTodaysDecision } from "@/components/dashboard/DashboardTodaysDecision";
+import { DashboardTopStoryCard } from "@/components/dashboard/DashboardTopStoryCard";
 import { DashboardPortfolioHealthCard } from "@/components/dashboard/DashboardPortfolioHealthCard";
 import { DashboardMarketPulseCard } from "@/components/dashboard/DashboardMarketPulseCard";
 import { DashboardSummary } from "@/components/dashboard/DashboardSummary";
@@ -18,7 +21,10 @@ import { HoldingsToday } from "@/components/dashboard/HoldingsToday";
 import { DashboardPortfolioExposureCard } from "@/components/dashboard/DashboardPortfolioExposureCard";
 import { DashboardInsightCard } from "@/components/dashboard/DashboardInsightCard";
 import { DashboardMarketStatus } from "@/components/dashboard/DashboardMarketStatus";
-import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer";
+import {
+  AppPageLoading,
+  PageContainer,
+} from "@/components/layout/PageContainer";
 import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
 import PortfolioSyncBanner from "@/components/PortfolioSyncBanner";
 import { buildPortfolioAnalysis } from "@/lib/client/portfolioAnalysis";
@@ -79,11 +85,11 @@ export default function DashboardPage() {
   const { snapshot: analystSnapshot, isLoading: analystLoading } =
     usePortfolioAnalyst(holdings, userSub, holdings.length > 0);
 
-  const { intelligence, payload, isStale: intelligenceFromCache } = useInvestmentIntelligence(
-    holdings,
-    userSub,
-    holdings.length > 0,
-  );
+  const {
+    intelligence,
+    payload,
+    isStale: intelligenceFromCache,
+  } = useInvestmentIntelligence(holdings, userSub, holdings.length > 0);
   const { lastRefreshedAt: snapshotRefreshedAt } = useMarketSnapshotMetadata(
     portfolioReady && holdings.length > 0,
   );
@@ -152,10 +158,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <PageContainer
-      className="bg-[#F4F7FB] px-4 pb-32 pt-[4.5rem] sm:px-6 sm:pt-[5rem]"
-      stackClassName="gap-6 md:gap-8"
-    >
+    <PageContainer stackClassName="gap-6 md:gap-8">
       <PortfolioSyncBanner
         syncState={syncState}
         migrationPreview={migrationPreview}
@@ -197,29 +200,40 @@ export default function DashboardPage() {
               message: refreshMessage,
               liveRefreshAt,
             }}
-            healthProfile={portfolioHealthProfile}
-            intelligence={intelligence}
-            newsPayload={payload}
           />
+
+          <div className="grid min-w-0 gap-4 md:gap-5 lg:grid-cols-2 lg:items-stretch">
+            <DashboardTodaysDecision
+              intelligence={intelligence}
+              intelligenceFromCache={intelligenceFromCache}
+              goalProgress={goalProgress}
+              upcomingEvents={payload.upcomingEvents}
+              marketsClosed={marketsClosed}
+            />
+            <DashboardIntelligencePreview
+              intelligence={intelligence}
+              goalProgress={goalProgress}
+              marketsClosed={marketsClosed}
+              intelligenceFromCache={intelligenceFromCache}
+            />
+          </div>
 
           <DashboardUpcomingEventsWidget />
 
           <DashboardPerspectivesWidget />
 
           <div className="space-y-6 md:space-y-8">
-            <DashboardIntelligencePreview
-              intelligence={intelligence}
-              goalProgress={goalProgress}
-              marketsClosed={marketsClosed}
-              intelligenceFromCache={intelligenceFromCache}
-              upcomingEvents={payload.upcomingEvents}
-            />
-
             <HoldingsToday snapshot={snapshot} />
 
-            <DashboardPortfolioExposureCard allocation={exposureAllocation} />
+            <div className="grid min-w-0 gap-4 md:gap-5 lg:grid-cols-2">
+              <DashboardPortfolioHealthCard profile={portfolioHealthProfile} />
+              <DashboardTopStoryCard
+                intelligence={intelligence}
+                newsPayload={payload}
+              />
+            </div>
 
-            <DashboardPortfolioHealthCard profile={portfolioHealthProfile} />
+            <DashboardPortfolioExposureCard allocation={exposureAllocation} />
 
             <DashboardMarketPulseCard
               leadLabel={
@@ -236,6 +250,7 @@ export default function DashboardPage() {
                 snapshot={dividendSnapshot}
                 isLoading={dividendsLoading}
               />
+              <DashboardCashIntelligenceCard holdings={holdings} />
             </div>
 
             <DashboardAnalystCard
@@ -251,8 +266,8 @@ export default function DashboardPage() {
       ) : null}
 
       <p className="rounded-[28px] border border-slate-200/70 bg-white/95 px-5 py-5 text-center text-[13px] leading-[1.7] text-slate-500 shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:px-6 sm:py-6 sm:text-sm">
-        Tobailey is a monitoring tool. It does not provide personal
-        financial advice.
+        Tobailey is a monitoring tool. It does not provide personal financial
+        advice.
       </p>
 
       <DashboardProductionDebugMarker />
