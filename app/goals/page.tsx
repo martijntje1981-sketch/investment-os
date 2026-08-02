@@ -76,8 +76,11 @@ import { useGoalProgress } from "@/lib/client/useGoalProgress";
 import { useUserGoal } from "@/lib/client/useUserGoal";
 import { usePortfolioDividends } from "@/lib/client/usePortfolioDividends";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
+import { PortfolioScoreDetailSection } from "@/components/portfolio/PortfolioScoreDetailSection";
+import { SECTION_IDS } from "@/lib/navigation/deepLinks";
 import { buildPortfolioExposureAllocation } from "@/lib/services/classification";
 import { buildPortfolioHealthProfile } from "@/lib/services/portfolio/portfolioHealthProfile";
+import { buildGoalScore } from "@/lib/services/portfolio/scorecard";
 import {
   IDENTITY_EUR_FX_SNAPSHOT,
   type BaseCurrencyFxSnapshot,
@@ -227,6 +230,16 @@ export default function GoalsPage() {
     });
   }, [goalEur, hasSavedGoal, portfolioValue, savedGoal]);
 
+  const goalScore = useMemo(
+    () =>
+      buildGoalScore({
+        goal: hasSavedGoal ? savedGoal : null,
+        hasSavedGoal,
+        progress: goalProgress,
+      }),
+    [goalProgress, hasSavedGoal, savedGoal],
+  );
+
   const coachGoal =
     hasSavedGoal && savedGoal ? savedGoal : (goalEur ?? calcGoal);
 
@@ -357,6 +370,13 @@ export default function GoalsPage() {
               <GoalHeroMilestones milestone={nextGoalMilestone} />
             ) : null
           }
+        />
+
+        <PortfolioScoreDetailSection
+          id={SECTION_IDS.goalScore}
+          score={goalScore}
+          title="Scorecard"
+          methodology="Goal Score measures how the current plan tracks toward the configured target using projected attainment, contribution alignment, and remaining time. It is not a probability of success and does not guarantee outcomes."
         />
 
         {holdings.length === 0 ? (

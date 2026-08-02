@@ -19,16 +19,17 @@ describe("Phase 1 dashboard UI refinement", () => {
   const globals = read("app/globals.css");
   const surface = read("components/layout/appSurface.ts");
 
-  it("keeps Portfolio Health and Cash Intelligence outside the portfolio hero", () => {
+  it("keeps Portfolio Scorecard and Cash Intelligence outside the portfolio hero", () => {
     expect(hero).not.toContain("HeroHealthRing");
     expect(hero).not.toContain("HeroTopStoryPreviewCard");
     expect(hero).not.toContain("buildHeroHealthPreview");
     expect(hero).not.toContain("buildHeroTopStoryPreview");
-    expect(dashboard).toContain("DashboardPortfolioHealthCard");
+    expect(dashboard).toContain("DashboardPortfolioScorecard");
+    expect(dashboard).not.toContain("DashboardPortfolioHealthCard");
     expect(dashboard).toContain("DashboardCashIntelligenceCard");
     expect(dashboard).not.toContain("DashboardTopStoryCard");
     expect(dashboard.indexOf("<DashboardSummary")).toBeLessThan(
-      dashboard.indexOf("<DashboardPortfolioHealthCard"),
+      dashboard.indexOf("<DashboardPortfolioScorecard"),
     );
     expect(dashboard.indexOf("<DashboardSummary")).toBeLessThan(
       dashboard.indexOf("<DashboardCashIntelligenceCard"),

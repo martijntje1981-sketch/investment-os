@@ -342,7 +342,8 @@ describe("perspectives polish wiring", () => {
     expect(hero).toContain("appHeroPaddingCompactClass");
     expect(hero).not.toContain("HeroHealthRing");
     expect(hero).not.toContain("HeroTopStoryPreviewCard");
-    expect(dashboard).toContain("DashboardPortfolioHealthCard");
+    expect(dashboard).toContain("DashboardPortfolioScorecard");
+    expect(dashboard).not.toContain("DashboardPortfolioHealthCard");
     expect(dashboard).not.toContain("DashboardTopStoryCard");
     expect(dashboard).toContain("DashboardCashIntelligenceCard");
     expect(page).toContain(

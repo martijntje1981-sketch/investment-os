@@ -58,10 +58,12 @@ describe("dashboard phase 2 compact previews", () => {
     "utf8",
   );
 
-  it("keeps Goal Performance near the top unchanged in composition", () => {
-    expect(summarySource).toContain("GoalProgressCard");
+  it("keeps portfolio hero at the top; Goal Score lives in Scorecard", () => {
+    expect(summarySource).not.toContain("GoalProgressCard");
     expect(summarySource).toContain("PortfolioValueCard");
     expect(dashboardSource).toContain("DashboardSummary");
+    expect(dashboardSource).toContain("DashboardPortfolioScorecard");
+    expect(dashboardSource).not.toContain("DashboardGoalProgressCard");
   });
 
   it("keeps Today’s Decision present and clickable when a destination exists", () => {
@@ -149,16 +151,17 @@ describe("dashboard phase 2 compact previews", () => {
     expect(dashboardSource).not.toContain("groupBySector");
   });
 
-  it("places compact Goal Progress and Dividend below holdings for future sector insertion", () => {
+  it("places Dividend and Contributions below holdings without a separate Goal Progress card", () => {
     const holdingsIdx = dashboardSource.indexOf("<HoldingsToday");
-    const goalIdx = dashboardSource.indexOf("<DashboardGoalProgressCard");
     const dividendIdx = dashboardSource.indexOf("<DashboardDividendCard");
-    expect(holdingsIdx).toBeGreaterThan(-1);
-    expect(goalIdx).toBeGreaterThan(holdingsIdx);
-    expect(dividendIdx).toBeGreaterThan(holdingsIdx);
-    expect(dashboardSource).toMatch(
-      /grid min-w-0 gap-6 lg:grid-cols-2[\s\S]*DashboardGoalProgressCard[\s\S]*DashboardDividendCard/,
+    const contributionsIdx = dashboardSource.indexOf(
+      "<DashboardContributionsCard",
     );
+    expect(holdingsIdx).toBeGreaterThan(-1);
+    expect(dividendIdx).toBeGreaterThan(holdingsIdx);
+    expect(contributionsIdx).toBeGreaterThan(holdingsIdx);
+    expect(dashboardSource).not.toContain("DashboardGoalProgressCard");
+    expect(dashboardSource).toContain("DashboardPortfolioScorecard");
   });
 
   it("uses mobile-first stacked grids without horizontal scroll utilities", () => {

@@ -1,5 +1,4 @@
 import { PortfolioValueCard } from "@/components/dashboard/PortfolioValueCard";
-import { GoalProgressCard } from "@/components/dashboard/GoalProgressCard";
 import { DashboardSummarySkeleton } from "@/components/dashboard/DashboardSummarySkeleton";
 import type { DashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
 import type { RefreshPricesUiStatus } from "@/lib/client/livePortfolioPriceRefreshAction";
@@ -36,7 +35,6 @@ export function DashboardSummary({
         refresh={refresh}
         welcomeFirstName={welcomeFirstName}
       />
-      <GoalProgressCard snapshot={snapshot} />
     </section>
   );
 }

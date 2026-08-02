@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useId, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Activity,
@@ -45,6 +45,11 @@ import { usePortfolioDividends } from "@/lib/client/usePortfolioDividends";
 import { useUserGoal } from "@/lib/client/useUserGoal";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 import { buildPortfolioExposureAllocation } from "@/lib/services/classification";
+import {
+  buildPortfolioHealthScoreV1,
+  HEALTH_SCORE_DISCLAIMER,
+  PORTFOLIO_HEALTH_SCORE_VERSION,
+} from "@/lib/services/portfolio/healthScore";
 import {
   buildPortfolioHealthProfile,
   type CompositionSlice,
@@ -204,6 +209,32 @@ export default function PortfolioHealthPage() {
     ],
   );
 
+  const healthScore = useMemo(
+    () =>
+      buildPortfolioHealthScoreV1({
+        holdings,
+        analysis,
+        exposure,
+        profile,
+        goal,
+        hasSavedGoal,
+        dividends: dividendsLoading ? null : dividends,
+      }),
+    [
+      analysis,
+      dividends,
+      dividendsLoading,
+      exposure,
+      goal,
+      hasSavedGoal,
+      holdings,
+      profile,
+    ],
+  );
+
+  const methodologyId = useId();
+  const [methodologyOpen, setMethodologyOpen] = useState(false);
+
   if (!portfolioReady || !goalReady) {
     return <AppPageLoading />;
   }
@@ -253,30 +284,146 @@ export default function PortfolioHealthPage() {
           )
         ) : (
           <>
-            {/* Hero — main story only */}
+            {/* Hero — score + identity */}
             <section
               className={`${appHeroShellClass} relative overflow-hidden ${appDarkCardPaddingClass} sm:py-9`}
               aria-labelledby="portfolio-health-hero"
             >
-              <div className="relative max-w-2xl">
+              <div className="relative max-w-3xl">
                 <div className="mb-4">
                   <BackButton />
                 </div>
-                <p className={appHeroMetricLabelClass}>Portfolio Health</p>
+                <p className={appHeroMetricLabelClass}>
+                  Portfolio Health Score
+                </p>
+                <div className="mt-3 flex flex-wrap items-end gap-x-4 gap-y-2">
+                  <p
+                    className="text-5xl font-bold tabular-nums tracking-[-0.04em] text-white sm:text-6xl"
+                    aria-label={`Score ${healthScore.score} out of 100`}
+                  >
+                    {healthScore.score}
+                    <span className="ml-1 text-2xl font-semibold text-white/55">
+                      /100
+                    </span>
+                  </p>
+                  <div className="min-w-0 pb-1">
+                    <p className="text-lg font-bold text-white sm:text-xl">
+                      {healthScore.band.label}
+                    </p>
+                    <p className="mt-1 text-[13px] font-medium text-white/60">
+                      {healthScore.confidence.label} ·{" "}
+                      {healthScore.confidence.classifiedCoveragePercent}%
+                      classified
+                    </p>
+                  </div>
+                </div>
                 <h1
                   id="portfolio-health-hero"
-                  className="mt-3 text-[1.75rem] font-bold leading-[1.12] tracking-[-0.035em] text-white sm:text-3xl md:text-[2.4rem]"
+                  className="mt-5 text-[1.35rem] font-bold leading-[1.15] tracking-[-0.03em] text-white sm:text-2xl md:text-[1.85rem]"
                 >
                   {profile.hero.identity}
                 </h1>
                 <p className="mt-3 max-w-xl text-[15px] font-medium leading-relaxed text-white/75 sm:text-base">
-                  {profile.hero.tagline}
+                  {healthScore.explanation}
+                </p>
+                <p className="mt-3 text-[12px] font-medium text-white/45">
+                  Score version {PORTFOLIO_HEALTH_SCORE_VERSION} · Calculated{" "}
+                  {new Date(healthScore.calculatedAt).toLocaleString("en-GB", {
+                    day: "2-digit",
+                    month: "short",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                 </p>
                 {profile.hero.traits.length > 0 ? (
-                  <p className="mt-5 text-[13px] font-medium tracking-[-0.01em] text-white/55">
+                  <p className="mt-4 text-[13px] font-medium tracking-[-0.01em] text-white/55">
                     {profile.hero.traits.join(" · ")}
                   </p>
                 ) : null}
+              </div>
+            </section>
+
+            {/* Dimension breakdown */}
+            <section
+              className={`${appCardClass} ${appCardPaddingClass}`}
+              aria-labelledby="health-dimensions-heading"
+            >
+              <p className={appSectionLabelClass}>Dimension breakdown</p>
+              <h2
+                id="health-dimensions-heading"
+                className={`mt-1 ${appSectionTitleClass}`}
+              >
+                How the score is built
+              </h2>
+              <ul className="mt-6 space-y-4">
+                {healthScore.dimensions
+                  .filter((dimension) => dimension.applicable)
+                  .map((dimension) => (
+                    <li key={dimension.id} className="min-w-0">
+                      <div className="flex items-baseline justify-between gap-3">
+                        <p className="text-[15px] font-semibold text-slate-950">
+                          {dimension.label}
+                        </p>
+                        <p className="shrink-0 text-[15px] font-bold tabular-nums text-slate-950">
+                          {dimension.score}/100
+                        </p>
+                      </div>
+                      <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
+                        <div
+                          className="h-full rounded-full bg-sky-500"
+                          style={{ width: `${dimension.score ?? 0}%` }}
+                        />
+                      </div>
+                      <p className={`mt-2 ${appSectionMetaClass}`}>
+                        Weight {dimension.effectiveWeight.toFixed(0)}% ·{" "}
+                        {dimension.evidence[0]?.text ?? dimension.explanation}
+                      </p>
+                    </li>
+                  ))}
+              </ul>
+            </section>
+
+            {/* Score strengths / attention */}
+            <section
+              className="grid gap-4 sm:gap-5 md:grid-cols-2"
+              aria-label="Score strengths and attention points"
+            >
+              <div className={`${appCardClass} ${appCardPaddingClass}`}>
+                <p className={appSectionLabelClass}>Score strengths</p>
+                <ul className="mt-3 space-y-3">
+                  {healthScore.strengths.map((item) => (
+                    <li key={item.id}>
+                      <p className="text-[15px] font-semibold text-slate-950">
+                        {item.title}
+                      </p>
+                      <p className={`mt-1 ${appSectionBodyClass}`}>
+                        {item.detail}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className={`${appCardClass} ${appCardPaddingClass}`}>
+                <p className={appSectionLabelClass}>Attention points</p>
+                <ul className="mt-3 space-y-3">
+                  {healthScore.attentionPoints.map((item) => (
+                    <li key={item.id}>
+                      <p className="text-[15px] font-semibold text-slate-950">
+                        {item.title}
+                      </p>
+                      <p className={`mt-1 ${appSectionBodyClass}`}>
+                        {item.detail}
+                      </p>
+                    </li>
+                  ))}
+                  {healthScore.improvementDrivers[0] ? (
+                    <li>
+                      <p className={`mt-1 ${appSectionMetaClass}`}>
+                        {healthScore.improvementDrivers[0]}
+                      </p>
+                    </li>
+                  ) : null}
+                </ul>
               </div>
             </section>
 
@@ -538,6 +685,48 @@ export default function PortfolioHealthPage() {
               <p className={`mt-5 ${appDashboardDarkMetaClass}`}>
                 Descriptive zones from structure — not a forecast or advice.
               </p>
+            </section>
+
+            <section
+              className={`${appCardClass} ${appCardPaddingClass}`}
+              aria-labelledby="health-methodology-heading"
+            >
+              <button
+                type="button"
+                className="flex w-full items-center justify-between gap-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
+                aria-expanded={methodologyOpen}
+                aria-controls={methodologyId}
+                onClick={() => setMethodologyOpen((value) => !value)}
+              >
+                <div>
+                  <p className={appSectionLabelClass}>Methodology</p>
+                  <h2
+                    id="health-methodology-heading"
+                    className={`mt-1 ${appSectionTitleClass}`}
+                  >
+                    What this score means
+                  </h2>
+                </div>
+                <span className="text-sm font-semibold text-slate-600">
+                  {methodologyOpen ? "Hide" : "Show"}
+                </span>
+              </button>
+              {methodologyOpen ? (
+                <div id={methodologyId} className="mt-4 space-y-3">
+                  <p className={appSectionBodyClass}>
+                    {HEALTH_SCORE_DISCLAIMER}
+                  </p>
+                  <p className={appSectionBodyClass}>
+                    Version {PORTFOLIO_HEALTH_SCORE_VERSION}. Applicable
+                    dimensions are weighted and renormalized when goal or income
+                    alignment does not apply. Missing data lowers confidence
+                    rather than inventing zeros for unavailable structure.
+                  </p>
+                  <p className={appSectionMetaClass}>
+                    Confidence: {healthScore.confidence.explanation}
+                  </p>
+                </div>
+              ) : null}
             </section>
 
             <div className="flex flex-wrap items-center gap-4 px-1 pb-1">

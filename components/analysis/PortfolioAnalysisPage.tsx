@@ -15,6 +15,7 @@ import { PortfolioExposureSection } from "@/components/analysis/PortfolioExposur
 import { PortfolioPerformanceSection } from "@/components/analysis/performance/PortfolioPerformanceSection";
 import { MarketConsensusSection } from "@/components/analysis/marketConsensus/MarketConsensusSection";
 import { TopPerformersByCategorySection } from "@/components/analysis/TopPerformersByCategorySection";
+import { PortfolioScoreDetailSection } from "@/components/portfolio/PortfolioScoreDetailSection";
 import { buildPortfolioExposureAllocation } from "@/lib/services/classification";
 import BottomNavigation from "@/components/home/BottomNav";
 import {
@@ -49,7 +50,17 @@ import {
   formatPortfolioPercent,
 } from "@/lib/client/portfolioAnalysis";
 import { usePortfolioDividends } from "@/lib/client/usePortfolioDividends";
+import { usePortfolioPerformanceHistory } from "@/lib/client/usePortfolioPerformanceHistory";
+import { useUserGoal } from "@/lib/client/useUserGoal";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
+import { SECTION_IDS } from "@/lib/navigation/deepLinks";
+import { buildPortfolioHealthProfile } from "@/lib/services/portfolio/portfolioHealthProfile";
+import { buildPortfolioHealthScoreV1 } from "@/lib/services/portfolio/healthScore";
+import {
+  buildMomentumScore,
+  buildReadinessScore,
+} from "@/lib/services/portfolio/scorecard";
+import { buildMomentumScoreInputFromHistory } from "@/lib/services/portfolio/scorecard/momentumInputs";
 
 function formatUpdatedAt(value: string | null) {
   if (!value) {
@@ -95,12 +106,15 @@ export default function PortfolioAnalysisPage() {
     dismissRecovery,
     saveHoldings,
   } = useUserPortfolio();
+  const { goal, hasSavedGoal } = useUserGoal();
 
   const { quotes, isLoading: dividendsLoading } = usePortfolioDividends(
     holdings,
     userSub,
     holdings.length > 0,
   );
+  const weekHistory = usePortfolioPerformanceHistory(holdings, "1W");
+  const monthHistory = usePortfolioPerformanceHistory(holdings, "1M");
 
   const analysis = useMemo(() => buildPortfolioAnalysis(holdings), [holdings]);
 
@@ -108,6 +122,60 @@ export default function PortfolioAnalysisPage() {
     () => buildPortfolioExposureAllocation(holdings),
     [holdings],
   );
+
+  const healthScore = useMemo(() => {
+    if (holdings.length === 0) return null;
+    const profile = buildPortfolioHealthProfile({
+      holdings,
+      goal,
+      hasSavedGoal,
+      dividends: null,
+      analysis,
+      exposure: exposureAllocation,
+    });
+    return buildPortfolioHealthScoreV1({
+      holdings,
+      analysis,
+      exposure: exposureAllocation,
+      profile,
+      goal,
+      hasSavedGoal,
+      dividends: null,
+      isStale: false,
+    });
+  }, [analysis, exposureAllocation, goal, hasSavedGoal, holdings]);
+
+  const momentumScore = useMemo(() => {
+    const input = buildMomentumScoreInputFromHistory({
+      week: weekHistory.data,
+      month: monthHistory.data,
+      holdings,
+    });
+    return buildMomentumScore(input);
+  }, [holdings, monthHistory.data, weekHistory.data]);
+
+  const readinessScore = useMemo(() => {
+    if (!healthScore) return null;
+    return buildReadinessScore({
+      analysis,
+      exposure: exposureAllocation,
+      health: healthScore,
+      hasSavedGoal,
+      hasPerformanceHistory: Boolean(
+        (weekHistory.data?.success &&
+          weekHistory.data.investmentReturnPercent != null) ||
+        (monthHistory.data?.success &&
+          monthHistory.data.investmentReturnPercent != null),
+      ),
+    });
+  }, [
+    analysis,
+    exposureAllocation,
+    hasSavedGoal,
+    healthScore,
+    monthHistory.data,
+    weekHistory.data,
+  ]);
 
   if (!portfolioReady) {
     return <AppPageLoading />;
@@ -191,6 +259,26 @@ export default function PortfolioAnalysisPage() {
                 }}
               />
             </div>
+
+            <div className="mt-6">
+              <PortfolioScoreDetailSection
+                id={SECTION_IDS.portfolioMomentum}
+                score={momentumScore}
+                title="Scorecard"
+                methodology="Momentum Score uses real 1W and 1M portfolio returns from performance history, plus latest-session holding breadth. It never reuses 1D returns as weekly or monthly history, and it is not a buy or sell signal."
+              />
+            </div>
+
+            {readinessScore ? (
+              <div className="mt-6">
+                <PortfolioScoreDetailSection
+                  id={SECTION_IDS.portfolioReadiness}
+                  score={readinessScore}
+                  title="Scorecard"
+                  methodology="Readiness Score measures data and setup completeness for useful analysis — priced coverage, classification, goal configuration, and history availability. It does not rate investment quality."
+                />
+              </div>
+            ) : null}
 
             <div className="mt-7">
               <TopPerformersByCategorySection holdings={holdings} />

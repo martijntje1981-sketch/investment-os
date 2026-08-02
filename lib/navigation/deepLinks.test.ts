@@ -24,6 +24,13 @@ describe("Dashboard deep links", () => {
       "/analysis#portfolio-allocation",
     );
     expect(DASHBOARD_DEEP_LINKS.goalProgress).toBe("/goals#goal-progress");
+    expect(DASHBOARD_DEEP_LINKS.goalScore).toBe("/goals#goal-score");
+    expect(DASHBOARD_DEEP_LINKS.portfolioMomentum).toBe(
+      "/analysis#portfolio-momentum",
+    );
+    expect(DASHBOARD_DEEP_LINKS.portfolioReadiness).toBe(
+      "/analysis#portfolio-readiness",
+    );
     expect(DASHBOARD_DEEP_LINKS.marketBriefing).toBe("/news#news-market-brief");
     expect(DASHBOARD_DEEP_LINKS.portfolioHealth).toBe("/portfolio-health");
     expect(parseSectionHash("#cash-intelligence")).toBe("cash-intelligence");
@@ -39,8 +46,17 @@ describe("Dashboard deep links", () => {
     expect(read("components/analysis/PortfolioAnalysisPage.tsx")).toContain(
       `id="${SECTION_IDS.portfolioAllocation}"`,
     );
+    expect(read("components/analysis/PortfolioAnalysisPage.tsx")).toContain(
+      `id={SECTION_IDS.portfolioMomentum}`,
+    );
+    expect(read("components/analysis/PortfolioAnalysisPage.tsx")).toContain(
+      `id={SECTION_IDS.portfolioReadiness}`,
+    );
     expect(read("app/goals/page.tsx")).toContain(
       `id="${SECTION_IDS.goalProgress}"`,
+    );
+    expect(read("app/goals/page.tsx")).toContain(
+      `id={SECTION_IDS.goalScore}`,
     );
     expect(read("components/news/NewsMarketBriefSection.tsx")).toContain(
       `id="${SECTION_IDS.newsMarketBrief}"`,
@@ -57,14 +73,12 @@ describe("Dashboard deep links", () => {
     expect(
       read("components/dashboard/DashboardPortfolioExposureCard.tsx"),
     ).toContain("DASHBOARD_DEEP_LINKS.portfolioExposure");
-    expect(
-      read("components/dashboard/DashboardGoalProgressCard.tsx"),
-    ).toContain("DASHBOARD_DEEP_LINKS.goalProgress");
+    expect(read("components/dashboard/ScoreRing.tsx")).toContain("score.href");
     expect(
       read("components/dashboard/DashboardIntelligencePreview.tsx"),
     ).toContain("DASHBOARD_DEEP_LINKS.marketBriefing");
     expect(
-      read("components/dashboard/DashboardPortfolioHealthCard.tsx"),
+      read("lib/services/portfolio/scorecard/adaptHealth.ts"),
     ).toContain("DASHBOARD_DEEP_LINKS.portfolioHealth");
   });
 

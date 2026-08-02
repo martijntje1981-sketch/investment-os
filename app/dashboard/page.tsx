@@ -6,13 +6,12 @@ import { DashboardZeroHoldingsHero } from "@/components/dashboard/DashboardZeroH
 import { DashboardDividendCard } from "@/components/dashboard/DashboardDividendCard";
 import { DashboardCashIntelligenceCard } from "@/components/dashboard/DashboardCashIntelligenceCard";
 import { DashboardAnalystCard } from "@/components/dashboard/DashboardAnalystCard";
-import { DashboardGoalProgressCard } from "@/components/dashboard/DashboardGoalProgressCard";
 import { DashboardContributionsCard } from "@/components/contributions/DashboardContributionsCard";
 import { DashboardIntelligencePreview } from "@/components/dashboard/DashboardIntelligencePreview";
 import { DashboardTodaysDecision } from "@/components/dashboard/DashboardTodaysDecision";
-import { DashboardPortfolioHealthCard } from "@/components/dashboard/DashboardPortfolioHealthCard";
 import { DashboardMarketPulseCard } from "@/components/dashboard/DashboardMarketPulseCard";
 import { DashboardSummary } from "@/components/dashboard/DashboardSummary";
+import { DashboardPortfolioScorecard } from "@/components/dashboard/DashboardPortfolioScorecard";
 import { DashboardProductionDebugMarker } from "@/components/dashboard/DashboardProductionDebugMarker";
 import { DashboardUpcomingEventsWidget } from "@/components/dashboard/DashboardUpcomingEventsWidget";
 import { DashboardPerspectivesWidget } from "@/components/dashboard/DashboardPerspectivesWidget";
@@ -27,7 +26,6 @@ import {
 import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
 import PortfolioSyncBanner from "@/components/PortfolioSyncBanner";
 import { buildPortfolioAnalysis } from "@/lib/client/portfolioAnalysis";
-import { buildDashboardInsightSections } from "@/lib/client/dashboardInsight";
 import { buildDashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
 import { areMajorMarketsClosed } from "@/lib/client/todaysDecision";
 import { useAuthenticatedFirstName } from "@/lib/client/useAuthenticatedFirstName";
@@ -39,9 +37,14 @@ import { useUserGoal } from "@/lib/client/useUserGoal";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 import { useMarketSnapshotMetadata } from "@/lib/client/useMarketSnapshotMetadata";
 import { useLivePortfolioPriceRefresh } from "@/lib/client/useLivePortfolioPriceRefresh";
+import { usePortfolioInsight } from "@/lib/client/usePortfolioInsight";
+import { usePortfolioPerformanceHistory } from "@/lib/client/usePortfolioPerformanceHistory";
 import { needsPortfolioSetup } from "@/lib/client/portfolioSetup";
 import { buildPortfolioHealthProfile } from "@/lib/services/portfolio/portfolioHealthProfile";
+import { buildPortfolioHealthScoreV1 } from "@/lib/services/portfolio/healthScore";
 import { buildPortfolioExposureAllocation } from "@/lib/services/classification";
+import { buildPortfolioScorecard } from "@/lib/services/portfolio/scorecard";
+import { buildMomentumScoreInputFromHistory } from "@/lib/services/portfolio/scorecard/momentumInputs";
 import { logDashboardProductionDiagnostics } from "@/lib/client/investmentOsProductionDebug";
 
 export default function DashboardPage() {
@@ -93,6 +96,9 @@ export default function DashboardPage() {
     portfolioReady && holdings.length > 0,
   );
 
+  const weekHistory = usePortfolioPerformanceHistory(holdings, "1W");
+  const monthHistory = usePortfolioPerformanceHistory(holdings, "1M");
+
   const snapshot = useMemo(
     () => buildDashboardPortfolioSnapshot(holdings, goal, hasSavedGoal),
     [goal, hasSavedGoal, holdings],
@@ -105,19 +111,18 @@ export default function DashboardPage() {
 
   const marketUpdatedAt = snapshotRefreshedAt ?? snapshot.lastUpdatedAt;
 
-  const insightSections = useMemo(
-    () => buildDashboardInsightSections(snapshot),
-    [snapshot],
+  const portfolioAnalysis = useMemo(
+    () => buildPortfolioAnalysis(holdings),
+    [holdings],
   );
 
   const portfolioHealthProfile = useMemo(() => {
-    const analysis = buildPortfolioAnalysis(holdings);
     return buildPortfolioHealthProfile({
       holdings,
       goal,
       hasSavedGoal,
       dividends: dividendsLoading ? null : dividendSnapshot,
-      analysis,
+      analysis: portfolioAnalysis,
       exposure: exposureAllocation,
     });
   }, [
@@ -127,7 +132,73 @@ export default function DashboardPage() {
     goal,
     hasSavedGoal,
     holdings,
+    portfolioAnalysis,
   ]);
+
+  const portfolioHealthScore = useMemo(
+    () =>
+      buildPortfolioHealthScoreV1({
+        holdings,
+        analysis: portfolioAnalysis,
+        exposure: exposureAllocation,
+        profile: portfolioHealthProfile,
+        goal,
+        hasSavedGoal,
+        dividends: dividendsLoading ? null : dividendSnapshot,
+        isStale: snapshot.isStale,
+      }),
+    [
+      dividendSnapshot,
+      dividendsLoading,
+      exposureAllocation,
+      goal,
+      hasSavedGoal,
+      holdings,
+      portfolioAnalysis,
+      portfolioHealthProfile,
+      snapshot.isStale,
+    ],
+  );
+
+  const portfolioScorecard = useMemo(() => {
+    if (holdings.length === 0) return null;
+    const momentum = buildMomentumScoreInputFromHistory({
+      week: weekHistory.data,
+      month: monthHistory.data,
+      holdings,
+    });
+    const hasPerformanceHistory = Boolean(
+      (weekHistory.data?.success &&
+        weekHistory.data.investmentReturnPercent != null) ||
+      (monthHistory.data?.success &&
+        monthHistory.data.investmentReturnPercent != null),
+    );
+    return buildPortfolioScorecard({
+      health: portfolioHealthScore,
+      goal,
+      hasSavedGoal,
+      goalProgress,
+      analysis: portfolioAnalysis,
+      exposure: exposureAllocation,
+      momentum,
+      hasPerformanceHistory,
+    });
+  }, [
+    exposureAllocation,
+    goal,
+    goalProgress,
+    hasSavedGoal,
+    holdings,
+    monthHistory.data,
+    portfolioAnalysis,
+    portfolioHealthScore,
+    weekHistory.data,
+  ]);
+
+  const { insight, source: insightSource } = usePortfolioInsight(
+    portfolioScorecard,
+    holdings.length > 0 && portfolioScorecard != null,
+  );
 
   const marketsClosed = useMemo(() => areMajorMarketsClosed(), []);
 
@@ -191,7 +262,7 @@ export default function DashboardPage() {
         </>
       ) : holdings.length > 0 ? (
         <>
-          {/* 1. Portfolio hero + Goal Progress (via DashboardSummary) */}
+          {/* 1. Portfolio hero */}
           <DashboardSummary
             snapshot={snapshot}
             welcomeFirstName={firstName}
@@ -205,7 +276,12 @@ export default function DashboardPage() {
             }}
           />
 
-          {/* 2. Action and intelligence */}
+          {/* 2. Portfolio Scorecard */}
+          {portfolioScorecard ? (
+            <DashboardPortfolioScorecard scorecard={portfolioScorecard} />
+          ) : null}
+
+          {/* 3. Today’s Decision + Market Briefing */}
           <div className="grid min-w-0 gap-4 md:gap-5 lg:grid-cols-2 lg:items-stretch">
             <DashboardTodaysDecision
               intelligence={intelligence}
@@ -222,16 +298,13 @@ export default function DashboardPage() {
             />
           </div>
 
-          {/* 3. Today’s Portfolio Insight */}
-          <DashboardInsightCard sections={insightSections} />
+          {/* 4. Today’s Portfolio Insight */}
+          <DashboardInsightCard insight={insight} source={insightSource} />
 
-          {/* 4. Portfolio Health + Cash Intelligence */}
-          <div className="grid min-w-0 gap-4 md:gap-5 lg:grid-cols-2">
-            <DashboardPortfolioHealthCard profile={portfolioHealthProfile} />
-            <DashboardCashIntelligenceCard holdings={holdings} />
-          </div>
+          {/* 5. Cash Intelligence (Health lives in Scorecard) */}
+          <DashboardCashIntelligenceCard holdings={holdings} />
 
-          {/* 5. Market Pulse */}
+          {/* 6. Market Pulse */}
           <DashboardMarketPulseCard
             holdings={holdings}
             leadLabel={
@@ -241,17 +314,16 @@ export default function DashboardPage() {
             }
           />
 
-          {/* 6. Your Holdings */}
+          {/* 7. Your Holdings */}
           <HoldingsToday snapshot={snapshot} />
 
-          {/* 7. Remaining supporting cards */}
+          {/* 8. Remaining supporting cards */}
           <div className="space-y-6 md:space-y-8">
             <DashboardUpcomingEventsWidget />
             <DashboardPerspectivesWidget />
             <DashboardPortfolioExposureCard allocation={exposureAllocation} />
 
             <div className="grid min-w-0 gap-6 lg:grid-cols-2">
-              <DashboardGoalProgressCard progress={goalProgress} />
               <DashboardContributionsCard snapshot={snapshot} />
               <DashboardDividendCard
                 snapshot={dividendSnapshot}

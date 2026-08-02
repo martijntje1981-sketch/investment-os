@@ -322,10 +322,12 @@ describe("dashboard portfolio exposure integration", () => {
     const exposureIdx = dashboardSource.indexOf(
       "<DashboardPortfolioExposureCard",
     );
-    const goalIdx = dashboardSource.indexOf("<DashboardGoalProgressCard");
+    const contributionsIdx = dashboardSource.indexOf(
+      "<DashboardContributionsCard",
+    );
     expect(holdingsIdx).toBeGreaterThan(-1);
     expect(exposureIdx).toBeGreaterThan(holdingsIdx);
-    expect(goalIdx).toBeGreaterThan(exposureIdx);
+    expect(contributionsIdx).toBeGreaterThan(exposureIdx);
   });
 
   it("uses deep-link CTA with portfolio-exposure hash and keeps Phase 1/2 sections", () => {

@@ -37,11 +37,12 @@ describe("contributions ledger UI", () => {
     "utf8",
   );
 
-  it("places the contributions card near goal progress on the dashboard", () => {
+  it("places the contributions card with dividend intelligence on the dashboard", () => {
     expect(dashboardSource).toContain("DashboardContributionsCard");
-    expect(dashboardSource).toContain("DashboardGoalProgressCard");
+    expect(dashboardSource).not.toContain("DashboardGoalProgressCard");
+    expect(dashboardSource).toContain("DashboardPortfolioScorecard");
     expect(dashboardSource).toMatch(
-      /DashboardGoalProgressCard[\s\S]*DashboardContributionsCard/,
+      /DashboardContributionsCard[\s\S]*DashboardDividendCard/,
     );
   });
 

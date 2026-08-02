@@ -160,9 +160,11 @@ describe("home and dashboard hierarchy", () => {
     expect(dashboard).not.toContain("PortfolioIntelligencePanel");
     expect(dashboard).not.toContain("DashboardPortfolioOverview");
     expect(dashboard).not.toContain("BottomNavigation");
-    expect(dashboard).toContain("buildDashboardInsightSections");
+    expect(dashboard).toContain("buildPortfolioHealthScoreV1");
+    expect(dashboard).toContain("usePortfolioInsight");
+    expect(dashboard).toContain("DashboardPortfolioScorecard");
     expect(summary).toContain("PortfolioValueCard");
-    expect(summary).toContain("GoalProgressCard");
+    expect(summary).not.toContain("GoalProgressCard");
     expect(summary).not.toContain("TodayCard");
     expect(holdingsToday).toContain("Your holdings");
     expect(holdingsToday).not.toContain("Your holdings today");
@@ -185,7 +187,7 @@ describe("home and dashboard hierarchy", () => {
     expect(homePage).not.toContain("AuthenticatedHomePage");
   });
 
-  it("uses concise AI insight blocks on the dashboard", async () => {
+  it("uses evidence-based portfolio insight on the dashboard", async () => {
     const { readFileSync } = await import("node:fs");
     const { resolve } = await import("node:path");
 
@@ -194,9 +196,8 @@ describe("home and dashboard hierarchy", () => {
       "utf8",
     );
 
-    expect(insightCard).toContain("Main risk");
-    expect(insightCard).toContain("Main opportunity");
-    expect(insightCard).toContain("Lead insight");
-    expect(insightCard).toContain("sections.recommendation");
+    expect(insightCard).toContain("insight.headline");
+    expect(insightCard).toContain("insight.scoreLines");
+    expect(insightCard).toContain("Open Portfolio Health");
   });
 });

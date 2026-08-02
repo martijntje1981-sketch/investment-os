@@ -5,19 +5,45 @@ import { DashboardSectionHeader } from "@/components/dashboard/DashboardSectionH
 import {
   appCardPaddingClass,
   appDashboardLightCardClass,
-  appSectionBodyClass,
   appSectionLabelClass,
   appSectionMetaClass,
   appTextLinkClass,
 } from "@/components/layout/appSurface";
-import type { DashboardInsightSections } from "@/lib/client/dashboardInsight";
 import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
+import type { PortfolioInsightResult } from "@/lib/services/portfolio/healthScore";
+import {
+  SCORE_TONE_LABEL_CLASS,
+  type ScoreBandTone,
+} from "@/lib/services/portfolio/scorecard/config";
+
+function toneClass(tone: string | null): string {
+  if (
+    tone === "fragile" ||
+    tone === "attention" ||
+    tone === "balanced" ||
+    tone === "strong" ||
+    tone === "resilient"
+  ) {
+    return SCORE_TONE_LABEL_CLASS[tone as ScoreBandTone];
+  }
+  return "text-slate-600";
+}
 
 export function DashboardInsightCard({
-  sections,
+  insight,
+  source,
 }: {
-  sections: DashboardInsightSections;
+  insight: PortfolioInsightResult | null;
+  source?: "ai" | "rules" | null;
 }) {
+  if (!insight) {
+    return null;
+  }
+
+  const badge =
+    source === "ai" || insight.source === "ai" ? "AI" : "Rules-based";
+  const lines = insight.scoreLines.slice(0, 4);
+
   return (
     <section
       aria-labelledby="todays-portfolio-insight-heading"
@@ -26,44 +52,49 @@ export function DashboardInsightCard({
       <DashboardSectionHeader
         titleId="todays-portfolio-insight-heading"
         title="Today’s portfolio insight"
-        subtitle="Based on your saved holdings and today's data"
+        subtitle="Interpreting your Portfolio Scorecard"
         icon={<Sparkles className="h-5 w-5" />}
         iconToneClassName="bg-violet-50 text-violet-700 ring-1 ring-violet-100"
         bordered={false}
         trailing={
           <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-600">
-            AI
+            {badge}
           </span>
         }
       />
 
-      <div className={`${appCardPaddingClass} space-y-4 pt-0`}>
+      <div className={`${appCardPaddingClass} space-y-3 pt-0`}>
         <div>
           <p className={appSectionLabelClass}>Lead insight</p>
-          <p className="mt-2 text-[17px] font-semibold leading-snug tracking-[-0.02em] text-slate-950 sm:text-[18px]">
-            {sections.recommendation}
+          <p className="mt-1.5 text-[16px] font-bold leading-snug tracking-[-0.02em] text-slate-950 sm:text-[17px]">
+            {insight.headline}
           </p>
         </div>
 
-        <div className="grid min-w-0 gap-3 sm:grid-cols-2">
-          <div className="min-w-0 rounded-2xl bg-slate-50/90 px-3.5 py-3">
-            <p className={appSectionLabelClass}>Main risk</p>
-            <p className={`mt-1.5 line-clamp-3 ${appSectionBodyClass}`}>
-              {sections.mainRisk}
-            </p>
-          </div>
-          <div className="min-w-0 rounded-2xl bg-slate-50/90 px-3.5 py-3">
-            <p className={appSectionLabelClass}>Main opportunity</p>
-            <p className={`mt-1.5 line-clamp-3 ${appSectionBodyClass}`}>
-              {sections.mainOpportunity}
-            </p>
-          </div>
-        </div>
+        <ul className="space-y-1.5">
+          {lines.map((line) => (
+            <li
+              key={line.scoreId}
+              className="flex min-w-0 items-start gap-2 text-[13px] font-medium leading-snug text-slate-700"
+            >
+              <span
+                className={`shrink-0 font-bold tabular-nums ${toneClass(line.tone)}`}
+              >
+                {line.label}
+                {line.value != null ? ` ${line.value}` : ""}
+              </span>
+              <span className="min-w-0 text-slate-600">— {line.text}</span>
+            </li>
+          ))}
+        </ul>
 
-        <p className={appSectionMetaClass}>
-          Generated from your portfolio snapshot — not personal financial
-          advice.
-        </p>
+        {insight.watchItem ? (
+          <p className={`line-clamp-2 ${appSectionMetaClass}`}>
+            Watch: {insight.watchItem}
+          </p>
+        ) : null}
+
+        <p className={appSectionMetaClass}>{insight.disclaimer}</p>
 
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <Link
@@ -74,10 +105,10 @@ export function DashboardInsightCard({
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </Link>
           <Link
-            href={DASHBOARD_DEEP_LINKS.portfolioExposure}
+            href={DASHBOARD_DEEP_LINKS.goalScore}
             className={`inline-flex min-h-[40px] items-center gap-1.5 ${appTextLinkClass}`}
           >
-            Open Analysis
+            Open Goals
           </Link>
         </div>
       </div>

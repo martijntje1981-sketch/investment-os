@@ -122,7 +122,7 @@ describe("goalProgressEngine", () => {
 });
 
 describe("goal progress reuse", () => {
-  it("dashboard uses the shared goal progress hook and card", async () => {
+  it("dashboard uses the shared goal progress hook with Scorecard Goal ring", async () => {
     const { readFileSync } = await import("node:fs");
     const { resolve } = await import("node:path");
 
@@ -132,6 +132,7 @@ describe("goal progress reuse", () => {
     );
 
     expect(dashboard).toContain("useGoalProgress");
-    expect(dashboard).toContain("DashboardGoalProgressCard");
+    expect(dashboard).toContain("DashboardPortfolioScorecard");
+    expect(dashboard).not.toContain("DashboardGoalProgressCard");
   });
 });
