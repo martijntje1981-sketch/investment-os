@@ -304,7 +304,9 @@ export default function PerspectivesPage() {
 
             {filteredByCategory.length === 0 ? (
               <div className={`${appCardClass} px-5 py-6`}>
-                <p className={appSectionTitleClass}>No videos in this category</p>
+                <p className={appSectionTitleClass}>
+                  No videos in this category
+                </p>
                 <p className={`mt-2 ${appSectionSubtitleClass}`}>
                   Try another category filter or check back after feeds refresh.
                 </p>

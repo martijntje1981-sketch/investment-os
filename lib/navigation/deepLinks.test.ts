@@ -24,15 +24,23 @@ describe("Dashboard deep links", () => {
       "/analysis#portfolio-allocation",
     );
     expect(DASHBOARD_DEEP_LINKS.goalProgress).toBe("/goals#goal-progress");
-    expect(DASHBOARD_DEEP_LINKS.goalScore).toBe("/goals#goal-score");
+    expect(DASHBOARD_DEEP_LINKS.goalScore).toBe("/portfolio-health#goal");
     expect(DASHBOARD_DEEP_LINKS.portfolioMomentum).toBe(
-      "/analysis#portfolio-momentum",
+      "/portfolio-health#momentum",
     );
     expect(DASHBOARD_DEEP_LINKS.portfolioReadiness).toBe(
-      "/analysis#portfolio-readiness",
+      "/portfolio-health#readiness",
     );
     expect(DASHBOARD_DEEP_LINKS.marketBriefing).toBe("/news#news-market-brief");
-    expect(DASHBOARD_DEEP_LINKS.portfolioHealth).toBe("/portfolio-health");
+    expect(DASHBOARD_DEEP_LINKS.portfolioHealth).toBe("/portfolio-health#health");
+    expect(DASHBOARD_DEEP_LINKS.scorecardHealth).toBe("/portfolio-health#health");
+    expect(DASHBOARD_DEEP_LINKS.scorecardGoal).toBe("/portfolio-health#goal");
+    expect(DASHBOARD_DEEP_LINKS.scorecardMomentum).toBe(
+      "/portfolio-health#momentum",
+    );
+    expect(DASHBOARD_DEEP_LINKS.scorecardReadiness).toBe(
+      "/portfolio-health#readiness",
+    );
     expect(parseSectionHash("#cash-intelligence")).toBe("cash-intelligence");
   });
 
@@ -46,17 +54,20 @@ describe("Dashboard deep links", () => {
     expect(read("components/analysis/PortfolioAnalysisPage.tsx")).toContain(
       `id="${SECTION_IDS.portfolioAllocation}"`,
     );
-    expect(read("components/analysis/PortfolioAnalysisPage.tsx")).toContain(
-      `id={SECTION_IDS.portfolioMomentum}`,
-    );
-    expect(read("components/analysis/PortfolioAnalysisPage.tsx")).toContain(
-      `id={SECTION_IDS.portfolioReadiness}`,
-    );
+    expect(
+      read("components/portfolioHealth/PortfolioHealthPage.tsx"),
+    ).toContain(`id={SECTION_IDS.scorecardHealth}`);
+    expect(
+      read("components/portfolioHealth/PortfolioHealthPage.tsx"),
+    ).toContain(`id={SECTION_IDS.scorecardGoal}`);
+    expect(
+      read("components/portfolioHealth/PortfolioHealthPage.tsx"),
+    ).toContain(`id={SECTION_IDS.scorecardMomentum}`);
+    expect(
+      read("components/portfolioHealth/PortfolioHealthPage.tsx"),
+    ).toContain(`id={SECTION_IDS.scorecardReadiness}`);
     expect(read("app/goals/page.tsx")).toContain(
       `id="${SECTION_IDS.goalProgress}"`,
-    );
-    expect(read("app/goals/page.tsx")).toContain(
-      `id={SECTION_IDS.goalScore}`,
     );
     expect(read("components/news/NewsMarketBriefSection.tsx")).toContain(
       `id="${SECTION_IDS.newsMarketBrief}"`,
@@ -79,7 +90,7 @@ describe("Dashboard deep links", () => {
     ).toContain("DASHBOARD_DEEP_LINKS.marketBriefing");
     expect(
       read("lib/services/portfolio/scorecard/adaptHealth.ts"),
-    ).toContain("DASHBOARD_DEEP_LINKS.portfolioHealth");
+    ).toContain("DASHBOARD_DEEP_LINKS.scorecardHealth");
   });
 
   it("mounts a shared deep-link scroller once", () => {
@@ -92,5 +103,7 @@ describe("Dashboard deep links", () => {
     expect(read("lib/client/useSectionDeepLink.ts")).toContain(
       "prefers-reduced-motion",
     );
+    expect(read("lib/client/useSectionDeepLink.ts")).toContain('tabindex", "-1"');
+    expect(read("lib/client/useSectionDeepLink.ts")).toContain(".focus(");
   });
 });

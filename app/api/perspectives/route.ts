@@ -12,8 +12,7 @@ export async function GET() {
       { success: true, ...payload },
       {
         headers: {
-          "Cache-Control":
-            "public, s-maxage=2700, stale-while-revalidate=3600",
+          "Cache-Control": "public, s-maxage=2700, stale-while-revalidate=3600",
         },
       },
     );
@@ -32,6 +31,7 @@ export async function GET() {
         creatorCount: 0,
         feedErrors: 0,
         unavailableCreatorIds: [],
+        schemaVersion: "perspectives-identity-v2",
       },
       { status: 500 },
     );

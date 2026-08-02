@@ -1,6 +1,10 @@
 /**
  * Stable Dashboard → destination deep links (hash anchors).
  * Keep IDs in sync with section `id` attributes on destination pages.
+ *
+ * Route strategy: `/portfolio-health` is the canonical Portfolio Scorecard
+ * page (Health, Goal, Momentum, Readiness). Legacy path kept so existing
+ * links remain valid without a second overlapping destination.
  */
 
 import {
@@ -17,15 +21,26 @@ export const SECTION_IDS = {
   portfolioExposure: "portfolio-exposure",
   marketConsensus: "market-consensus",
   portfolioPerformance: "portfolio-performance",
+  /** @deprecated Prefer scorecardMomentum — Analysis keeps performance only. */
   portfolioMomentum: "portfolio-momentum",
+  /** @deprecated Prefer scorecardReadiness */
   portfolioReadiness: "portfolio-readiness",
   goalProgress: "goal-progress",
+  /** @deprecated Prefer scorecardGoal */
   goalScore: "goal-score",
   newsMarketBrief: "news-market-brief",
   portfolioNews: "portfolio-news",
+  /** Central Scorecard page sections (`/portfolio-health`). */
+  scorecardHealth: "health",
+  scorecardGoal: "goal",
+  scorecardMomentum: "momentum",
+  scorecardReadiness: "readiness",
 } as const;
 
 export type SectionId = (typeof SECTION_IDS)[keyof typeof SECTION_IDS];
+
+/** Canonical Portfolio Scorecard route (repurposed `/portfolio-health`). */
+export const SCORECARD_PATH = PORTFOLIO_HEALTH_PATH;
 
 export const DASHBOARD_DEEP_LINKS = {
   cashIntelligence: `${ANALYSIS_PATH}#${SECTION_IDS.cashIntelligence}`,
@@ -34,12 +49,17 @@ export const DASHBOARD_DEEP_LINKS = {
   portfolioExposure: `${ANALYSIS_PATH}#${SECTION_IDS.portfolioExposure}`,
   marketConsensus: `${ANALYSIS_PATH}#${SECTION_IDS.marketConsensus}`,
   portfolioPerformance: `${ANALYSIS_PATH}#${SECTION_IDS.portfolioPerformance}`,
-  portfolioMomentum: `${ANALYSIS_PATH}#${SECTION_IDS.portfolioMomentum}`,
-  portfolioReadiness: `${ANALYSIS_PATH}#${SECTION_IDS.portfolioReadiness}`,
+  portfolioMomentum: `${SCORECARD_PATH}#${SECTION_IDS.scorecardMomentum}`,
+  portfolioReadiness: `${SCORECARD_PATH}#${SECTION_IDS.scorecardReadiness}`,
   goalProgress: `${GOALS_PATH}#${SECTION_IDS.goalProgress}`,
-  goalScore: `${GOALS_PATH}#${SECTION_IDS.goalScore}`,
+  goalScore: `${SCORECARD_PATH}#${SECTION_IDS.scorecardGoal}`,
   goals: GOALS_PATH,
-  portfolioHealth: PORTFOLIO_HEALTH_PATH,
+  portfolioHealth: `${SCORECARD_PATH}#${SECTION_IDS.scorecardHealth}`,
+  scorecard: SCORECARD_PATH,
+  scorecardHealth: `${SCORECARD_PATH}#${SECTION_IDS.scorecardHealth}`,
+  scorecardGoal: `${SCORECARD_PATH}#${SECTION_IDS.scorecardGoal}`,
+  scorecardMomentum: `${SCORECARD_PATH}#${SECTION_IDS.scorecardMomentum}`,
+  scorecardReadiness: `${SCORECARD_PATH}#${SECTION_IDS.scorecardReadiness}`,
   marketBriefing: `${NEWS_HUB_PATH}#${SECTION_IDS.newsMarketBrief}`,
   portfolioNews: `${NEWS_HUB_PATH}#${SECTION_IDS.portfolioNews}`,
   newsHub: NEWS_HUB_PATH,

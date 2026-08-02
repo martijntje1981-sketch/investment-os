@@ -63,7 +63,7 @@ export function buildMomentumScore(
       shortLabel: "Momentum",
       reason: "More history needed",
       calculatedAt,
-      href: DASHBOARD_DEEP_LINKS.portfolioMomentum,
+      href: DASHBOARD_DEEP_LINKS.scorecardMomentum,
     });
   }
 
@@ -214,6 +214,6 @@ export function buildMomentumScore(
           ? ["Latest move is concentrated in one holding"]
           : [],
     calculatedAt,
-    href: DASHBOARD_DEEP_LINKS.portfolioMomentum,
+    href: DASHBOARD_DEEP_LINKS.scorecardMomentum,
   });
 }

@@ -31,16 +31,27 @@ function video(
   overrides: Partial<PerspectiveVideo> &
     Pick<PerspectiveVideo, "id" | "title" | "publishedAt" | "category">,
 ): PerspectiveVideo {
+  const channelId = overrides.channelId ?? `UC${overrides.id}`;
+  const owner =
+    overrides.channelOwnerName ?? overrides.creatorName ?? "Creator";
   return {
     videoId: overrides.videoId ?? overrides.id,
     url: overrides.url ?? `https://www.youtube.com/watch?v=${overrides.id}`,
     thumbnailUrl: null,
     description: null,
+    channelId,
+    channelTitle: overrides.channelTitle ?? owner,
+    channelOwnerName: owner,
     creatorId: overrides.creatorId ?? "creator",
-    creatorName: overrides.creatorName ?? "Creator",
+    creatorName: overrides.creatorName ?? owner,
     creatorAvatarUrl: null,
+    trustedCreatorId: overrides.trustedCreatorId ?? null,
+    trustedCreatorName: overrides.trustedCreatorName ?? null,
+    featuredPersonName: overrides.featuredPersonName ?? null,
+    isTrustedSource: overrides.isTrustedSource ?? false,
     categoryLabel: overrides.categoryLabel ?? "Macro & Economy",
     source: "youtube-rss",
+    schemaVersion: overrides.schemaVersion ?? "perspectives-identity-v2",
     ...overrides,
   };
 }

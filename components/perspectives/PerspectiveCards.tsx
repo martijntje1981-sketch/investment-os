@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ExternalLink } from "lucide-react";
 
+import { PerspectivePublisherLabel } from "@/components/perspectives/PerspectivePublisherLabel";
 import {
   creatorInitials,
   perspectiveCategoryChipClass,
@@ -178,9 +179,12 @@ export function PerspectiveTodaysCard({
             />
             <div className="min-w-0 flex-1">
               <p className={appSectionLabelClass}>Today’s Perspective</p>
-              <p className="mt-1 truncate text-[15px] font-bold text-brand-navy">
-                {video.creatorName}
-              </p>
+              <PerspectivePublisherLabel
+                channelOwnerName={video.channelOwnerName || video.creatorName}
+                featuredPersonName={video.featuredPersonName}
+                isTrustedSource={video.isTrustedSource}
+                className="mt-1"
+              />
               <p className="mt-0.5 text-[12px] font-medium text-slate-500">
                 {formatRelativePublicationTime(video.publishedAt)}
               </p>
@@ -263,9 +267,11 @@ export function PerspectiveFeaturedCard({
             size={42}
           />
           <div className="min-w-0 flex-1 pt-0.5">
-            <p className="truncate text-[14px] font-semibold text-brand-navy">
-              {video.creatorName}
-            </p>
+            <PerspectivePublisherLabel
+              channelOwnerName={video.channelOwnerName || video.creatorName}
+              featuredPersonName={video.featuredPersonName}
+              isTrustedSource={video.isTrustedSource}
+            />
             <p className="mt-0.5 text-[12px] font-medium text-slate-500">
               {formatRelativePublicationTime(video.publishedAt)}
             </p>
@@ -331,13 +337,20 @@ export function PerspectiveCompactCard({
       <div className="flex min-w-0 flex-1 flex-col justify-center py-0.5">
         <div className="flex flex-wrap items-center gap-1.5">
           <CreatorAvatar
-            name={video.creatorName}
+            name={video.channelOwnerName || video.creatorName}
             avatarUrl={video.creatorAvatarUrl}
             size={26}
           />
-          <p className="min-w-0 truncate text-[12px] font-semibold text-brand-navy">
-            {video.creatorName}
-          </p>
+          <div className="min-w-0 flex-1">
+            <p className="min-w-0 truncate text-[12px] font-semibold text-brand-navy">
+              {video.channelOwnerName || video.creatorName}
+            </p>
+            {video.featuredPersonName ? (
+              <p className="truncate text-[11px] font-medium text-slate-500">
+                Featuring {video.featuredPersonName}
+              </p>
+            ) : null}
+          </div>
           <span
             className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] ${perspectiveCategoryChipClass(video.category)}`}
           >

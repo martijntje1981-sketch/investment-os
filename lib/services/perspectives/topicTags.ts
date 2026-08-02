@@ -33,19 +33,48 @@ type TopicRule = {
 const TOPIC_RULES: TopicRule[] = [
   { tag: "Bitcoin", patterns: [/\bbitcoin\b/i, /\bbtc\b/i] },
   { tag: "NVIDIA", patterns: [/\bnvidia\b/i, /\bnvda\b/i] },
-  { tag: "Federal Reserve", patterns: [/\bfederal reserve\b/i, /\bthe fed\b/i, /\bfomc\b/i, /\bfed\b/i] },
+  {
+    tag: "Federal Reserve",
+    patterns: [/\bfederal reserve\b/i, /\bthe fed\b/i, /\bfomc\b/i, /\bfed\b/i],
+  },
   { tag: "ECB", patterns: [/\becb\b/i, /\beuropean central bank\b/i] },
-  { tag: "Interest Rates", patterns: [/\binterest rates?\b/i, /\brate cut\b/i, /\brate hike\b/i, /\brates\b/i] },
+  {
+    tag: "Interest Rates",
+    patterns: [
+      /\binterest rates?\b/i,
+      /\brate cut\b/i,
+      /\brate hike\b/i,
+      /\brates\b/i,
+    ],
+  },
   { tag: "Inflation", patterns: [/\binflation\b/i, /\bcpi\b/i, /\bpce\b/i] },
   { tag: "Liquidity", patterns: [/\bliquidity\b/i] },
   { tag: "Gold", patterns: [/\bgold\b/i] },
-  { tag: "AI", patterns: [/\bartificial intelligence\b/i, /\bai\b/i, /\bgenai\b/i] },
-  { tag: "Crypto", patterns: [/\bcrypto\b/i, /\bdigital assets?\b/i, /\bethereum\b/i, /\beth\b/i, /\bsolana\b/i] },
+  {
+    tag: "AI",
+    patterns: [/\bartificial intelligence\b/i, /\bai\b/i, /\bgenai\b/i],
+  },
+  {
+    tag: "Crypto",
+    patterns: [
+      /\bcrypto\b/i,
+      /\bdigital assets?\b/i,
+      /\bethereum\b/i,
+      /\beth\b/i,
+      /\bsolana\b/i,
+    ],
+  },
   { tag: "ETFs", patterns: [/\betfs?\b/i] },
   { tag: "Earnings", patterns: [/\bearnings\b/i] },
   { tag: "Valuation", patterns: [/\bvaluation\b/i, /\bvaluations\b/i] },
-  { tag: "Equities", patterns: [/\bequities\b/i, /\bstocks?\b/i, /\bequity market\b/i] },
-  { tag: "Technology", patterns: [/\btechnology\b/i, /\btech sector\b/i, /\bsoftware\b/i] },
+  {
+    tag: "Equities",
+    patterns: [/\bequities\b/i, /\bstocks?\b/i, /\bequity market\b/i],
+  },
+  {
+    tag: "Technology",
+    patterns: [/\btechnology\b/i, /\btech sector\b/i, /\bsoftware\b/i],
+  },
   { tag: "Macro", patterns: [/\bmacro\b/i, /\beconomy\b/i, /\beconomic\b/i] },
 ];
 

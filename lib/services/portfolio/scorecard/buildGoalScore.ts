@@ -55,7 +55,7 @@ export function buildGoalScore(input: BuildGoalScoreInput): PortfolioScore {
       shortLabel: "Goal",
       reason: "Set a goal",
       calculatedAt,
-      href: DASHBOARD_DEEP_LINKS.goalScore,
+      href: DASHBOARD_DEEP_LINKS.scorecardGoal,
     });
   }
 
@@ -201,6 +201,6 @@ export function buildGoalScore(input: BuildGoalScoreInput): PortfolioScore {
     strengths,
     attentionPoints: attention,
     calculatedAt,
-    href: DASHBOARD_DEEP_LINKS.goalScore,
+    href: DASHBOARD_DEEP_LINKS.scorecardGoal,
   });
 }

@@ -44,7 +44,7 @@ export function buildReadinessScore(
       shortLabel: "Readiness",
       reason: "Add holdings",
       calculatedAt,
-      href: DASHBOARD_DEEP_LINKS.portfolioReadiness,
+      href: DASHBOARD_DEEP_LINKS.scorecardReadiness,
     });
   }
 
@@ -159,6 +159,6 @@ export function buildReadinessScore(
     strengths,
     attentionPoints: attention,
     calculatedAt,
-    href: DASHBOARD_DEEP_LINKS.portfolioReadiness,
+    href: DASHBOARD_DEEP_LINKS.scorecardReadiness,
   });
 }

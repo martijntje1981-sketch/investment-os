@@ -2,24 +2,33 @@
  * Centralized Perspectives creator allowlist.
  * Official YouTube channel RSS only:
  * https://www.youtube.com/feeds/videos.xml?channel_id=CHANNEL_ID
+ *
+ * Trusted status is granted only via exact channel ID.
+ * Display publisher names must match the real channel when known.
  */
 
+import type { AssociatedPerson } from "@/lib/services/perspectives/normalizePerspectiveVideo";
+
 export type PerspectiveCategoryId =
-  | "macro"
-  | "bitcoin"
-  | "investing"
-  | "technology";
+  "macro" | "bitcoin" | "investing" | "technology";
 
 export type PerspectiveCreator = {
   id: string;
+  /** Trusted-creator display label (may equal channel display name). */
   name: string;
+  /**
+   * Publisher name shown as channel owner when feed author is missing.
+   * Prefer the real YouTube channel title, not a featured guest name.
+   */
+  channelDisplayName?: string;
   channelId: string;
   feedUrl: string;
   category: PerspectiveCategoryId;
-  /** Optional channel avatar (YouTube og:image). */
   avatarUrl: string | null;
-  /** Soft title keywords when set — used to prefer on-theme uploads. */
   preferTitleKeywords?: string[];
+  /** Optional guests who may appear on this channel — never replaces owner. */
+  associatedPeople?: AssociatedPerson[];
+  active?: boolean;
 };
 
 export const PERSPECTIVE_CATEGORY_ORDER: PerspectiveCategoryId[] = [
@@ -43,8 +52,11 @@ function feed(channelId: string): string {
   return `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
 }
 
+/**
+ * Mark Moss podcast channel (Market Disruptors).
+ * Do not invent a different UC… ID — show the real publisher name.
+ */
 export const PERSPECTIVE_CREATORS: PerspectiveCreator[] = [
-  // Macro & Economy
   {
     id: "lyn-alden",
     name: "Lyn Alden",
@@ -99,16 +111,21 @@ export const PERSPECTIVE_CREATORS: PerspectiveCreator[] = [
     avatarUrl:
       "https://yt3.googleusercontent.com/BzyWzth6PsGAZFh0yZV7cO9FLWOjVzOavoOzXsdGr4fvQphkNtJZpMV0EOb-ev1MthJXyGHq2w=s176-c-k-c0x00ffffff-no-rj",
   },
-
-  // Bitcoin & Digital Assets
   {
     id: "mark-moss",
-    name: "Mark Moss",
+    name: "Market Disruptors Podcast",
+    channelDisplayName: "Market Disruptors Podcast",
     channelId: "UCdb3vYKZ60hZM5FtC-WlYPA",
     feedUrl: feed("UCdb3vYKZ60hZM5FtC-WlYPA"),
     category: "bitcoin",
     avatarUrl:
       "https://yt3.googleusercontent.com/BAyTvBguc_Y7SGiaM2ywN0e5X96FbljVAo08ghyicAsakYd4QoUTftnh5gZ7Q5m_2m5jfq4_=s176-c-k-c0x00ffffff-no-rj",
+    associatedPeople: [
+      {
+        name: "Mark Moss",
+        matchKeywords: ["mark moss"],
+      },
+    ],
   },
   {
     id: "preston-pysh",
@@ -155,8 +172,6 @@ export const PERSPECTIVE_CREATORS: PerspectiveCreator[] = [
     avatarUrl:
       "https://yt3.googleusercontent.com/El4X8GExD0pVQ8MtIOFMHjvwvlUBJ2a51SBB383z6eN8Lf3VscqIJPTn4ZlBVXoecKbijQQgdw=s176-c-k-c0x00ffffff-no-rj",
   },
-
-  // Investing & Markets
   {
     id: "aswath-damodaran",
     name: "Aswath Damodaran",
@@ -202,8 +217,6 @@ export const PERSPECTIVE_CREATORS: PerspectiveCreator[] = [
     avatarUrl:
       "https://yt3.googleusercontent.com/ebNpXeB1Jmc66Wr5gqwyykBbJEiGb1RznYP7ELAXaGhgBw89Mm15fqirbemdifjxEAuNSjssMEg=s176-c-k-c0x00ffffff-no-rj",
   },
-
-  // Technology & AI
   {
     id: "all-in",
     name: "All-In Podcast",
@@ -231,7 +244,6 @@ export const PERSPECTIVE_CREATORS: PerspectiveCreator[] = [
     avatarUrl:
       "https://yt3.googleusercontent.com/ytc/AIdro_ljfMy9kUR1PH9VRf-XsTsPqFMgORC_zodOQVEAm4hx36lC=s176-c-k-c0x00ffffff-no-rj",
     preferTitleKeywords: [
-      "ai",
       "agi",
       "llm",
       "gpt",
@@ -242,6 +254,13 @@ export const PERSPECTIVE_CREATORS: PerspectiveCreator[] = [
       "robot",
       "nvidia",
       "anthropic",
+      "artificial intelligence",
+    ],
+    associatedPeople: [
+      {
+        name: "Michael Saylor",
+        matchKeywords: ["michael saylor", "saylor"],
+      },
     ],
   },
   {
@@ -259,4 +278,8 @@ export function getPerspectiveCreatorById(
   id: string,
 ): PerspectiveCreator | undefined {
   return PERSPECTIVE_CREATORS.find((creator) => creator.id === id);
+}
+
+export function getActivePerspectiveCreators(): PerspectiveCreator[] {
+  return PERSPECTIVE_CREATORS.filter((creator) => creator.active !== false);
 }

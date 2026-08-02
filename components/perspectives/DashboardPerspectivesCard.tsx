@@ -141,12 +141,17 @@ export function DashboardPerspectivesCard({
                   <div className="min-w-0 flex-1 pt-0.5">
                     <div className="flex flex-wrap items-center gap-1.5">
                       <MiniAvatar
-                        name={video.creatorName}
+                        name={video.channelOwnerName || video.creatorName}
                         avatarUrl={video.creatorAvatarUrl}
                       />
                       <span className="truncate text-[11px] font-semibold text-slate-500">
-                        {video.creatorName}
+                        {video.channelOwnerName || video.creatorName}
                       </span>
+                      {video.featuredPersonName ? (
+                        <span className="truncate text-[10px] font-medium text-slate-400">
+                          Featuring {video.featuredPersonName}
+                        </span>
+                      ) : null}
                       <span
                         className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] ${perspectiveCategoryChipClass(video.category)}`}
                       >

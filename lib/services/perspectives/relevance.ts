@@ -1,5 +1,6 @@
 import { buildPortfolioExposureAllocation } from "@/lib/services/classification";
 import {
+  applyCreatorDiversity,
   sortPerspectivesByPublishedDesc,
 } from "@/lib/services/perspectives/groupPerspectives";
 import type { PerspectiveVideo } from "@/lib/services/perspectives/types";
@@ -172,8 +173,10 @@ function perspectiveAudienceScore(
   signals: PerspectivePortfolioSignals,
   nowMs: number,
 ): number {
+  const trustedBoost = video.isTrustedSource ? 40 : 0;
   return (
     freshnessScore(video.publishedAt, nowMs) +
+    trustedBoost +
     (signals.hasHoldings ? relevanceBoost(video, signals) : 0)
   );
 }
@@ -249,5 +252,6 @@ export function selectDashboardPerspectivesForAudience(
   limit = 2,
   nowMs: number = Date.now(),
 ): PerspectiveVideo[] {
-  return orderPerspectivesForAudience(videos, signals, nowMs).slice(0, limit);
+  const ordered = orderPerspectivesForAudience(videos, signals, nowMs);
+  return applyCreatorDiversity(ordered, limit);
 }

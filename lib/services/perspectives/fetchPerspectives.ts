@@ -1,23 +1,29 @@
 import { unstable_cache } from "next/cache";
 
-import { PERSPECTIVE_CREATORS } from "@/lib/services/perspectives/creators";
+import {
+  getActivePerspectiveCreators,
+  PERSPECTIVE_CREATORS,
+} from "@/lib/services/perspectives/creators";
 import {
   buildPerspectivesLayout,
   pickCreatorVideos,
 } from "@/lib/services/perspectives/groupPerspectives";
+import { PERSPECTIVES_SCHEMA_VERSION } from "@/lib/services/perspectives/normalizePerspectiveVideo";
 import type {
   PerspectiveVideo,
   PerspectivesPayload,
 } from "@/lib/services/perspectives/types";
 import { parseYouTubeAtomFeed } from "@/lib/services/news/providers/youtubeRssProvider";
 
+/** Cache duration: 45 minutes. Schema version invalidates old creator stamps. */
 const CACHE_SECONDS = 45 * 60;
 const FEED_TIMEOUT_MS = 12_000;
 const PER_CREATOR_LIMIT = 3;
 
-async function fetchCreatorFeed(
-  feedUrl: string,
-): Promise<{ entries: ReturnType<typeof parseYouTubeAtomFeed>; error: string | null }> {
+async function fetchCreatorFeed(feedUrl: string): Promise<{
+  entries: ReturnType<typeof parseYouTubeAtomFeed>;
+  error: string | null;
+}> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), FEED_TIMEOUT_MS);
 
@@ -50,8 +56,9 @@ async function fetchCreatorFeed(
 }
 
 async function fetchPerspectivesUncached(): Promise<PerspectivesPayload> {
+  const creators = getActivePerspectiveCreators();
   const results = await Promise.all(
-    PERSPECTIVE_CREATORS.map(async (creator) => {
+    creators.map(async (creator) => {
       const { entries, error } = await fetchCreatorFeed(creator.feedUrl);
       if (error) {
         console.info("[perspectives] unavailable feed", {
@@ -85,12 +92,13 @@ async function fetchPerspectivesUncached(): Promise<PerspectivesPayload> {
   const state =
     layout.videos.length > 0
       ? "live"
-      : feedErrors === PERSPECTIVE_CREATORS.length
+      : feedErrors === creators.length
         ? "provider_unavailable"
         : "empty";
 
   console.info("[perspectives] fetched", {
-    creators: PERSPECTIVE_CREATORS.length,
+    schemaVersion: PERSPECTIVES_SCHEMA_VERSION,
+    creators: creators.length,
     videos: layout.videos.length,
     feedErrors,
     unavailableCreatorIds,
@@ -101,15 +109,16 @@ async function fetchPerspectivesUncached(): Promise<PerspectivesPayload> {
     ...layout,
     state,
     fetchedAt: new Date().toISOString(),
-    creatorCount: PERSPECTIVE_CREATORS.length,
+    creatorCount: creators.length,
     feedErrors,
     unavailableCreatorIds,
+    schemaVersion: PERSPECTIVES_SCHEMA_VERSION,
   };
 }
 
 const getCachedPerspectives = unstable_cache(
   fetchPerspectivesUncached,
-  ["investment-os-perspectives-youtube-v1"],
+  [`investment-os-perspectives-youtube-${PERSPECTIVES_SCHEMA_VERSION}`],
   { revalidate: CACHE_SECONDS },
 );
 
@@ -120,4 +129,4 @@ export async function fetchPerspectivesPayload(): Promise<PerspectivesPayload> {
   return getCachedPerspectives();
 }
 
-export { fetchPerspectivesUncached };
+export { fetchPerspectivesUncached, PERSPECTIVE_CREATORS };

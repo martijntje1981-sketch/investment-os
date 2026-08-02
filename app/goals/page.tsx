@@ -76,11 +76,9 @@ import { useGoalProgress } from "@/lib/client/useGoalProgress";
 import { useUserGoal } from "@/lib/client/useUserGoal";
 import { usePortfolioDividends } from "@/lib/client/usePortfolioDividends";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
-import { PortfolioScoreDetailSection } from "@/components/portfolio/PortfolioScoreDetailSection";
-import { SECTION_IDS } from "@/lib/navigation/deepLinks";
+import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 import { buildPortfolioExposureAllocation } from "@/lib/services/classification";
 import { buildPortfolioHealthProfile } from "@/lib/services/portfolio/portfolioHealthProfile";
-import { buildGoalScore } from "@/lib/services/portfolio/scorecard";
 import {
   IDENTITY_EUR_FX_SNAPSHOT,
   type BaseCurrencyFxSnapshot,
@@ -230,16 +228,6 @@ export default function GoalsPage() {
     });
   }, [goalEur, hasSavedGoal, portfolioValue, savedGoal]);
 
-  const goalScore = useMemo(
-    () =>
-      buildGoalScore({
-        goal: hasSavedGoal ? savedGoal : null,
-        hasSavedGoal,
-        progress: goalProgress,
-      }),
-    [goalProgress, hasSavedGoal, savedGoal],
-  );
-
   const coachGoal =
     hasSavedGoal && savedGoal ? savedGoal : (goalEur ?? calcGoal);
 
@@ -372,12 +360,29 @@ export default function GoalsPage() {
           }
         />
 
-        <PortfolioScoreDetailSection
-          id={SECTION_IDS.goalScore}
-          score={goalScore}
-          title="Scorecard"
-          methodology="Goal Score measures how the current plan tracks toward the configured target using projected attainment, contribution alignment, and remaining time. It is not a probability of success and does not guarantee outcomes."
-        />
+        <section
+          className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6"
+          aria-labelledby="goals-scorecard-link-heading"
+        >
+          <p className={appSectionLabelClass}>Scorecard</p>
+          <h2
+            id="goals-scorecard-link-heading"
+            className={`mt-1 ${appSectionTitleClass}`}
+          >
+            Goal score
+          </h2>
+          <p className={`mt-2 ${appSectionMetaClass}`}>
+            View goal score evidence and methodology on the Portfolio Scorecard.
+            Edit your target and contributions below.
+          </p>
+          <Link
+            href={DASHBOARD_DEEP_LINKS.scorecardGoal}
+            className="mt-4 inline-flex min-h-[44px] items-center gap-1.5 text-[15px] font-semibold text-sky-700"
+          >
+            Open Goal score
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </Link>
+        </section>
 
         {holdings.length === 0 ? (
           <EmptyPortfolioGuide
@@ -411,10 +416,10 @@ export default function GoalsPage() {
                   {healthAlignmentPreview.goalAlignment.reason}
                 </p>
                 <Link
-                  href="/portfolio-health"
+                  href={DASHBOARD_DEEP_LINKS.scorecardHealth}
                   className="mt-4 inline-flex min-h-[44px] items-center gap-1.5 text-[15px] font-semibold text-sky-300"
                 >
-                  Open Portfolio Health
+                  Open Portfolio Scorecard
                   <ArrowRight className="h-4 w-4" aria-hidden="true" />
                 </Link>
               </div>

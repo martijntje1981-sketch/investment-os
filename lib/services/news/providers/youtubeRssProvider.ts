@@ -16,6 +16,8 @@ type ParsedYouTubeEntry = {
   publishedAt: string;
   description: string | null;
   thumbnailUrl: string | null;
+  channelId: string | null;
+  channelTitle: string | null;
 };
 
 function decodeXmlEntities(value: string): string {
@@ -32,6 +34,12 @@ function extractTag(block: string, tag: string): string | null {
   const match = block.match(regex);
   if (!match?.[1]) return null;
   return decodeXmlEntities(match[1].trim());
+}
+
+function extractAuthorName(block: string): string | null {
+  const authorBlock = block.match(/<author[\s\S]*?<\/author>/i)?.[0];
+  if (!authorBlock) return null;
+  return extractTag(authorBlock, "name");
 }
 
 function extractLinkHref(block: string): string | null {
@@ -51,6 +59,8 @@ export function parseYouTubeAtomFeed(xml: string): ParsedYouTubeEntry[] {
     return [];
   }
 
+  const feedChannelId = extractTag(xml, "yt:channelId");
+  const feedAuthor = extractAuthorName(xml);
   const entries = xml.match(/<entry[\s\S]*?<\/entry>/gi) ?? [];
 
   return entries
@@ -69,6 +79,8 @@ export function parseYouTubeAtomFeed(xml: string): ParsedYouTubeEntry[] {
           ? sanitizeNewsUrl(`https://www.youtube.com/watch?v=${videoId}`)
           : null);
       const thumbnailUrl = sanitizeNewsUrl(extractThumbnailUrl(block));
+      const entryChannelId = extractTag(block, "yt:channelId");
+      const entryAuthor = extractAuthorName(block);
 
       if (!videoId || !title || !canonicalUrl || !publishedAt) {
         return null;
@@ -81,6 +93,8 @@ export function parseYouTubeAtomFeed(xml: string): ParsedYouTubeEntry[] {
         publishedAt,
         description,
         thumbnailUrl,
+        channelId: entryChannelId ?? feedChannelId,
+        channelTitle: entryAuthor ?? feedAuthor,
       };
     })
     .filter((entry): entry is ParsedYouTubeEntry => entry !== null);

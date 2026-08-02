@@ -17,16 +17,27 @@ function video(
   overrides: Partial<PerspectiveVideo> &
     Pick<PerspectiveVideo, "id" | "title" | "publishedAt" | "category">,
 ): PerspectiveVideo {
+  const channelId = overrides.channelId ?? `UC${overrides.id}`;
+  const owner =
+    overrides.channelOwnerName ?? overrides.creatorName ?? "Creator";
   return {
     videoId: overrides.videoId ?? overrides.id,
     url: overrides.url ?? `https://www.youtube.com/watch?v=${overrides.id}`,
     thumbnailUrl: null,
     description: null,
+    channelId,
+    channelTitle: overrides.channelTitle ?? owner,
+    channelOwnerName: owner,
     creatorId: overrides.creatorId ?? "creator",
-    creatorName: overrides.creatorName ?? "Creator",
+    creatorName: overrides.creatorName ?? owner,
     creatorAvatarUrl: null,
+    trustedCreatorId: overrides.trustedCreatorId ?? null,
+    trustedCreatorName: overrides.trustedCreatorName ?? null,
+    featuredPersonName: overrides.featuredPersonName ?? null,
+    isTrustedSource: overrides.isTrustedSource ?? false,
     categoryLabel: overrides.categoryLabel ?? "Macro & Economy",
     source: "youtube-rss",
+    schemaVersion: overrides.schemaVersion ?? "perspectives-identity-v2",
     ...overrides,
   };
 }
@@ -39,9 +50,11 @@ describe("perspectives creators config", () => {
         PERSPECTIVE_CREATORS.some((creator) => creator.category === category),
       ).toBe(true);
     }
-    expect(PERSPECTIVE_CREATORS.every((creator) => creator.channelId.startsWith("UC"))).toBe(
-      true,
-    );
+    expect(
+      PERSPECTIVE_CREATORS.every((creator) =>
+        creator.channelId.startsWith("UC"),
+      ),
+    ).toBe(true);
     expect(
       PERSPECTIVE_CREATORS.every((creator) =>
         creator.feedUrl.includes("feeds/videos.xml?channel_id="),
@@ -122,7 +135,9 @@ describe("perspectives grouping", () => {
   });
 
   it("prefers AI-themed Lex uploads when keywords are configured", () => {
-    const creator = PERSPECTIVE_CREATORS.find((item) => item.id === "lex-fridman");
+    const creator = PERSPECTIVE_CREATORS.find(
+      (item) => item.id === "lex-fridman",
+    );
     expect(creator).toBeTruthy();
     const picked = pickCreatorVideos(creator!, [
       {
@@ -132,6 +147,8 @@ describe("perspectives grouping", () => {
         publishedAt: "2026-08-01T20:00:00.000Z",
         description: null,
         thumbnailUrl: null,
+        channelId: creator!.channelId,
+        channelTitle: creator!.name,
       },
       {
         videoId: "ai",
@@ -140,6 +157,8 @@ describe("perspectives grouping", () => {
         publishedAt: "2026-07-01T00:00:00.000Z",
         description: null,
         thumbnailUrl: null,
+        channelId: creator!.channelId,
+        channelTitle: creator!.name,
       },
       {
         videoId: "llm",
@@ -148,6 +167,8 @@ describe("perspectives grouping", () => {
         publishedAt: "2026-07-15T00:00:00.000Z",
         description: null,
         thumbnailUrl: null,
+        channelId: creator!.channelId,
+        channelTitle: creator!.name,
       },
     ]);
 
@@ -182,9 +203,8 @@ describe("youtube atom reuse", () => {
 
 describe("thumbnail candidates", () => {
   it("prefers high-quality youtube 16:9 thumbnails", async () => {
-    const { perspectiveThumbnailCandidates } = await import(
-      "@/components/perspectives/perspectiveStyles"
-    );
+    const { perspectiveThumbnailCandidates } =
+      await import("@/components/perspectives/perspectiveStyles");
     const candidates = perspectiveThumbnailCandidates({
       videoId: "abc123def45",
       thumbnailUrl: "https://i.ytimg.com/vi/abc123def45/default.jpg",

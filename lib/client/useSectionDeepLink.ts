@@ -38,6 +38,11 @@ export function scrollToSectionHash(options?: {
   const behavior: ScrollBehavior = prefersReducedMotion() ? "auto" : "smooth";
   target.scrollIntoView({ behavior, block: "start" });
 
+  if (!target.hasAttribute("tabindex")) {
+    target.setAttribute("tabindex", "-1");
+  }
+  target.focus({ preventScroll: true });
+
   target.classList.add(SECTION_DEEP_LINK_HIGHLIGHT_CLASS);
   window.setTimeout(() => {
     target.classList.remove(SECTION_DEEP_LINK_HIGHLIGHT_CLASS);

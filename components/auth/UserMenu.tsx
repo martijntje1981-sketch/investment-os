@@ -46,9 +46,13 @@ const exploreLinks: MenuLink[] = [
   { href: "/discover", label: "Discover", icon: Compass },
   { href: "/perspectives", label: "Perspectives", icon: Sparkles },
   { href: "/events", label: "Upcoming Events", icon: CalendarDays },
-  { href: "/portfolio-health", label: "Portfolio Health", icon: Activity },
+  { href: "/portfolio-health", label: "Portfolio Scorecard", icon: Activity },
   { href: "/market-pulse", label: "Market Pulse", icon: Waves },
-  { href: "/supported-instruments", label: "Supported Instruments", icon: ListChecks },
+  {
+    href: "/supported-instruments",
+    label: "Supported Instruments",
+    icon: ListChecks,
+  },
   { href: "/upload", label: "Import holdings", icon: FileUp },
 ];
 
@@ -57,10 +61,18 @@ const guestExploreLinks: MenuLink[] = [
   { href: "/perspectives", label: "Perspectives", icon: Sparkles },
   { href: "/news", label: "Markets / News", icon: Newspaper },
   { href: "/market-pulse", label: "Market Pulse", icon: Waves },
-  { href: "/supported-instruments", label: "Supported Instruments", icon: ListChecks },
+  {
+    href: "/supported-instruments",
+    label: "Supported Instruments",
+    icon: ListChecks,
+  },
 ];
 
-function isMenuLinkActive(pathname: string, href: string, label: string): boolean {
+function isMenuLinkActive(
+  pathname: string,
+  href: string,
+  label: string,
+): boolean {
   if (href === "/settings") {
     if (label === "Profile" || label === "Settings") {
       return pathname === "/settings" || pathname.startsWith("/settings/");
@@ -129,10 +141,7 @@ function GuestHeader({ pathname }: { pathname: string }) {
           <TobaileyLogo size={36} showWordmark className="sm:gap-3" />
         </Link>
 
-        <nav
-          className="hidden items-center gap-1 md:flex"
-          aria-label="Explore"
-        >
+        <nav className="hidden items-center gap-1 md:flex" aria-label="Explore">
           {guestExploreLinks.map((link) => {
             const active = isMenuLinkActive(pathname, link.href, link.label);
             return (
@@ -178,14 +187,8 @@ export default function UserMenu() {
   const [user, setUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
-  const {
-    open,
-    toggle,
-    close,
-    containerRef,
-    triggerRef,
-    menuId,
-  } = useDismissibleMenu({ closeOnChangeKey: pathname });
+  const { open, toggle, close, containerRef, triggerRef, menuId } =
+    useDismissibleMenu({ closeOnChangeKey: pathname });
   const upcomingEventsNavVisible = useUpcomingEventsNavVisible();
   const visibleExploreLinks = useMemo(
     () =>

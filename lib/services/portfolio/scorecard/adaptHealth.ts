@@ -34,7 +34,7 @@ export function adaptHealthScore(
       shortLabel: "Health",
       reason: "Add valued holdings to unlock a Health Score.",
       calculatedAt,
-      href: DASHBOARD_DEEP_LINKS.portfolioHealth,
+      href: DASHBOARD_DEEP_LINKS.scorecardHealth,
       confidence: confidenceFromLevel(
         mapConfidenceLabel(health.confidence.label),
       ),
@@ -64,6 +64,6 @@ export function adaptHealthScore(
     strengths: health.strengths.map((s) => s.title),
     attentionPoints: health.attentionPoints.map((s) => s.title),
     calculatedAt,
-    href: DASHBOARD_DEEP_LINKS.portfolioHealth,
+    href: DASHBOARD_DEEP_LINKS.scorecardHealth,
   });
 }
