@@ -196,6 +196,7 @@ describe("home and dashboard hierarchy", () => {
 
     expect(insightCard).toContain("Main risk");
     expect(insightCard).toContain("Main opportunity");
-    expect(insightCard).toContain("Current conclusion");
+    expect(insightCard).toContain("Lead insight");
+    expect(insightCard).toContain("sections.recommendation");
   });
 });

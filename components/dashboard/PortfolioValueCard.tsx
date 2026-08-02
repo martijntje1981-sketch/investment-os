@@ -147,7 +147,7 @@ function MoversSection({ snapshot }: { snapshot: DashboardPortfolioSnapshot }) {
 
 /**
  * Focused portfolio hero — value, move, movers, quiet refresh.
- * Portfolio Health and Top Story live outside this shell.
+ * Supporting intelligence cards live outside this shell.
  */
 export function PortfolioValueCard({
   snapshot,
@@ -187,11 +187,11 @@ export function PortfolioValueCard({
   return (
     <article
       aria-label="Portfolio value"
-      className={`relative ${appHeroShellClass}`}
+      className={`relative overflow-hidden ${appHeroShellClass}`}
     >
-      <div className={`relative ${appHeroPaddingCompactClass}`}>
+      <div className={`relative min-w-0 ${appHeroPaddingCompactClass}`}>
         <div className="flex items-start justify-between gap-3">
-          <p className="text-[12px] font-medium tracking-[0.01em] text-white/45">
+          <p className="min-w-0 text-[12px] font-medium tracking-[0.01em] text-white/45">
             {welcomeLine}
           </p>
           {refresh ? (
@@ -207,7 +207,7 @@ export function PortfolioValueCard({
 
         <div className="mt-3 min-w-0">
           <p className={appHeroMetricLabelClass}>Portfolio value</p>
-          <p className={`mt-1.5 text-white ${appDisplayClass}`}>
+          <p className={`mt-1.5 break-words text-white ${appDisplayClass}`}>
             {snapshot.portfolioValueAvailable
               ? formatEur(snapshot.portfolioValue)
               : "Unavailable"}
@@ -223,25 +223,27 @@ export function PortfolioValueCard({
         </div>
 
         <div className="mt-3 min-w-0 border-t border-white/10 pt-3">
-          <div className="flex items-center justify-between gap-2">
-            <p className={appHeroMetricLabelClass}>Latest portfolio move</p>
+          <p className={appHeroMetricLabelClass}>Latest portfolio move</p>
+          <div className="mt-1.5 flex min-w-0 flex-wrap items-end justify-between gap-x-3 gap-y-2">
+            <div className="min-w-0 flex-1">
+              <p
+                className={`flex flex-wrap items-baseline gap-x-2.5 gap-y-1 ${appHeroMatchedKpiClass} ${moveTone}`}
+                title={snapshot.dailyMoveAccessibleDescription}
+              >
+                <span>{showMove ? amountLabel : "Change unavailable"}</span>
+                {showMove && percentLabel ? (
+                  <span className="opacity-90">{percentLabel}</span>
+                ) : null}
+              </p>
+              <p className="mt-1 text-[12px] font-medium leading-snug text-white/50">
+                {showMove
+                  ? snapshot.dailyMoveContextLine
+                  : (snapshot.dailyPerformanceCoverageMessage ??
+                    "Movement period unavailable")}
+              </p>
+            </div>
             <HeroTrendMicroVisual direction={trendDirection} />
           </div>
-          <p
-            className={`mt-1.5 flex flex-wrap items-baseline gap-x-2.5 gap-y-1 ${appHeroMatchedKpiClass} ${moveTone}`}
-            title={snapshot.dailyMoveAccessibleDescription}
-          >
-            <span>{showMove ? amountLabel : "Change unavailable"}</span>
-            {showMove && percentLabel ? (
-              <span className="opacity-90">{percentLabel}</span>
-            ) : null}
-          </p>
-          <p className="mt-1 text-[12px] font-medium leading-snug text-white/50">
-            {showMove
-              ? snapshot.dailyMoveContextLine
-              : (snapshot.dailyPerformanceCoverageMessage ??
-                "Movement period unavailable")}
-          </p>
         </div>
 
         <div className="mt-3 border-t border-white/10 pt-3">

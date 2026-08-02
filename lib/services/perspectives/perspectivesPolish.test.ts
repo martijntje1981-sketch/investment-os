@@ -343,7 +343,8 @@ describe("perspectives polish wiring", () => {
     expect(hero).not.toContain("HeroHealthRing");
     expect(hero).not.toContain("HeroTopStoryPreviewCard");
     expect(dashboard).toContain("DashboardPortfolioHealthCard");
-    expect(dashboard).toContain("DashboardTopStoryCard");
+    expect(dashboard).not.toContain("DashboardTopStoryCard");
+    expect(dashboard).toContain("DashboardCashIntelligenceCard");
     expect(page).toContain(
       "External views are presented for informational purposes",
     );
@@ -360,6 +361,6 @@ describe("perspectives polish wiring", () => {
     );
     expect(source).toContain("HeroTrendMicroVisual");
     expect(source).not.toMatch(/fakeHistory|Math\.random/i);
-    expect(source).toContain("no fake sparkline points");
+    expect(source).toContain("no invented sparkline points");
   });
 });

@@ -13,24 +13,25 @@ describe("Phase 1 dashboard UI refinement", () => {
     "components/dashboard/DashboardIntelligencePreview.tsx",
   );
   const decision = read("components/dashboard/DashboardTodaysDecision.tsx");
-  const topStory = read("components/dashboard/DashboardTopStoryCard.tsx");
   const health = read("components/dashboard/DashboardPortfolioHealthCard.tsx");
+  const cash = read("components/dashboard/DashboardCashIntelligenceCard.tsx");
   const refresh = read("components/portfolio/RefreshPricesButton.tsx");
   const globals = read("app/globals.css");
   const surface = read("components/layout/appSurface.ts");
 
-  it("keeps Portfolio Health and Top Story outside the portfolio hero", () => {
+  it("keeps Portfolio Health and Cash Intelligence outside the portfolio hero", () => {
     expect(hero).not.toContain("HeroHealthRing");
     expect(hero).not.toContain("HeroTopStoryPreviewCard");
     expect(hero).not.toContain("buildHeroHealthPreview");
     expect(hero).not.toContain("buildHeroTopStoryPreview");
     expect(dashboard).toContain("DashboardPortfolioHealthCard");
-    expect(dashboard).toContain("DashboardTopStoryCard");
+    expect(dashboard).toContain("DashboardCashIntelligenceCard");
+    expect(dashboard).not.toContain("DashboardTopStoryCard");
     expect(dashboard.indexOf("<DashboardSummary")).toBeLessThan(
       dashboard.indexOf("<DashboardPortfolioHealthCard"),
     );
     expect(dashboard.indexOf("<DashboardSummary")).toBeLessThan(
-      dashboard.indexOf("<DashboardTopStoryCard"),
+      dashboard.indexOf("<DashboardCashIntelligenceCard"),
     );
   });
 
@@ -41,7 +42,7 @@ describe("Phase 1 dashboard UI refinement", () => {
     expect(decision).toContain("appDashboardLightCardClass");
     expect(briefing).toContain("appDashboardLightCardClass");
     expect(decision).toContain("TodaysDecisionBlock");
-    expect(topStory).toContain("Top Story");
+    expect(cash).toContain("Cash intelligence");
     expect(health).toContain("View full analysis");
   });
 

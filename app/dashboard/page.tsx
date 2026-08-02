@@ -10,7 +10,6 @@ import { DashboardGoalProgressCard } from "@/components/dashboard/DashboardGoalP
 import { DashboardContributionsCard } from "@/components/contributions/DashboardContributionsCard";
 import { DashboardIntelligencePreview } from "@/components/dashboard/DashboardIntelligencePreview";
 import { DashboardTodaysDecision } from "@/components/dashboard/DashboardTodaysDecision";
-import { DashboardTopStoryCard } from "@/components/dashboard/DashboardTopStoryCard";
 import { DashboardPortfolioHealthCard } from "@/components/dashboard/DashboardPortfolioHealthCard";
 import { DashboardMarketPulseCard } from "@/components/dashboard/DashboardMarketPulseCard";
 import { DashboardSummary } from "@/components/dashboard/DashboardSummary";
@@ -185,10 +184,14 @@ export default function DashboardPage() {
         <>
           <DashboardZeroHoldingsHero />
           <DashboardPerspectivesWidget />
-          <DashboardMarketPulseCard leadLabel="Browse general market moves while you set up your portfolio." />
+          <DashboardMarketPulseCard
+            holdings={holdings}
+            leadLabel="Browse general market moves while you set up your portfolio."
+          />
         </>
       ) : holdings.length > 0 ? (
         <>
+          {/* 1. Portfolio hero + Goal Progress (via DashboardSummary) */}
           <DashboardSummary
             snapshot={snapshot}
             welcomeFirstName={firstName}
@@ -202,6 +205,7 @@ export default function DashboardPage() {
             }}
           />
 
+          {/* 2. Action and intelligence */}
           <div className="grid min-w-0 gap-4 md:gap-5 lg:grid-cols-2 lg:items-stretch">
             <DashboardTodaysDecision
               intelligence={intelligence}
@@ -218,30 +222,33 @@ export default function DashboardPage() {
             />
           </div>
 
-          <DashboardUpcomingEventsWidget />
+          {/* 3. Today’s Portfolio Insight */}
+          <DashboardInsightCard sections={insightSections} />
 
-          <DashboardPerspectivesWidget />
+          {/* 4. Portfolio Health + Cash Intelligence */}
+          <div className="grid min-w-0 gap-4 md:gap-5 lg:grid-cols-2">
+            <DashboardPortfolioHealthCard profile={portfolioHealthProfile} />
+            <DashboardCashIntelligenceCard holdings={holdings} />
+          </div>
 
+          {/* 5. Market Pulse */}
+          <DashboardMarketPulseCard
+            holdings={holdings}
+            leadLabel={
+              portfolioHealthProfile.classification.cryptoWeight >= 20
+                ? "Bitcoin and linked markets may be moving with your portfolio."
+                : "See commodities, crypto and markets connected to your holdings."
+            }
+          />
+
+          {/* 6. Your Holdings */}
+          <HoldingsToday snapshot={snapshot} />
+
+          {/* 7. Remaining supporting cards */}
           <div className="space-y-6 md:space-y-8">
-            <HoldingsToday snapshot={snapshot} />
-
-            <div className="grid min-w-0 gap-4 md:gap-5 lg:grid-cols-2">
-              <DashboardPortfolioHealthCard profile={portfolioHealthProfile} />
-              <DashboardTopStoryCard
-                intelligence={intelligence}
-                newsPayload={payload}
-              />
-            </div>
-
+            <DashboardUpcomingEventsWidget />
+            <DashboardPerspectivesWidget />
             <DashboardPortfolioExposureCard allocation={exposureAllocation} />
-
-            <DashboardMarketPulseCard
-              leadLabel={
-                portfolioHealthProfile.classification.cryptoWeight >= 20
-                  ? "Bitcoin and linked markets may be moving with your portfolio."
-                  : "See commodities, crypto and markets connected to your holdings."
-              }
-            />
 
             <div className="grid min-w-0 gap-6 lg:grid-cols-2">
               <DashboardGoalProgressCard progress={goalProgress} />
@@ -250,15 +257,12 @@ export default function DashboardPage() {
                 snapshot={dividendSnapshot}
                 isLoading={dividendsLoading}
               />
-              <DashboardCashIntelligenceCard holdings={holdings} />
             </div>
 
             <DashboardAnalystCard
               snapshot={analystSnapshot}
               isLoading={analystLoading}
             />
-
-            <DashboardInsightCard sections={insightSections} />
 
             <DashboardMarketStatus lastUpdatedAt={marketUpdatedAt} />
           </div>

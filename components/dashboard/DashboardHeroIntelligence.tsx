@@ -10,25 +10,39 @@ import type {
   HeroTrendDirection,
 } from "@/lib/client/dashboardHeroIntelligence";
 
-/** Tiny directional trend mark — no fake sparkline points. */
+const TREND_LABEL: Record<HeroTrendDirection, string> = {
+  up: "Portfolio move trending up",
+  down: "Portfolio move trending down",
+  flat: "Portfolio move flat",
+  unavailable: "Portfolio move trend unavailable",
+};
+
+/**
+  * no invented sparkline points — direction only from the real portfolio move.
+  */
 export function HeroTrendMicroVisual({
   direction,
 }: {
   direction: HeroTrendDirection;
 }) {
+  const label = TREND_LABEL[direction];
+
   if (direction === "unavailable") {
     return (
       <svg
-        viewBox="0 0 40 16"
-        className="h-3.5 w-9 text-slate-400/70"
-        aria-hidden
+        viewBox="0 0 72 28"
+        className="h-7 w-[4.5rem] shrink-0 text-slate-400/70 sm:h-8 sm:w-24"
+        role="img"
+        aria-label={label}
       >
+        <title>{label}</title>
         <path
-          d="M2 8 H38"
+          d="M4 14 H68"
           fill="none"
           stroke="currentColor"
-          strokeWidth="1.5"
+          strokeWidth="2"
           strokeLinecap="round"
+          strokeDasharray="3 5"
         />
       </svg>
     );
@@ -37,15 +51,17 @@ export function HeroTrendMicroVisual({
   if (direction === "flat") {
     return (
       <svg
-        viewBox="0 0 40 16"
-        className="h-3.5 w-9 text-slate-300"
-        aria-hidden
+        viewBox="0 0 72 28"
+        className="h-7 w-[4.5rem] shrink-0 text-slate-300 sm:h-8 sm:w-24"
+        role="img"
+        aria-label={label}
       >
+        <title>{label}</title>
         <path
-          d="M2 8 H38"
+          d="M4 14 H68"
           fill="none"
           stroke="currentColor"
-          strokeWidth="1.75"
+          strokeWidth="2.25"
           strokeLinecap="round"
         />
       </svg>
@@ -53,17 +69,35 @@ export function HeroTrendMicroVisual({
   }
 
   const up = direction === "up";
+  const linePath = up
+    ? "M4 20 L18 16 L34 17 L52 10 L68 6"
+    : "M4 8 L18 12 L34 11 L52 18 L68 22";
+  const areaPath = up
+    ? "M4 20 L18 16 L34 17 L52 10 L68 6 V26 H4 Z"
+    : "M4 8 L18 12 L34 11 L52 18 L68 22 V26 H4 Z";
+  const gradId = up ? "heroTrendUpFade" : "heroTrendDownFade";
+  const strokeClass = up ? "text-emerald-300" : "text-red-300";
+
   return (
     <svg
-      viewBox="0 0 40 16"
-      className={`h-3.5 w-9 ${up ? "text-emerald-300" : "text-red-300"}`}
-      aria-hidden
+      viewBox="0 0 72 28"
+      className={`h-7 w-[4.5rem] shrink-0 sm:h-8 sm:w-24 ${strokeClass}`}
+      role="img"
+      aria-label={label}
     >
+      <title>{label}</title>
+      <defs>
+        <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="currentColor" stopOpacity="0.28" />
+          <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={areaPath} fill={`url(#${gradId})`} />
       <path
-        d={up ? "M2 12 L14 9 L24 10 L38 3" : "M2 4 L14 7 L24 6 L38 13"}
+        d={linePath}
         fill="none"
         stroke="currentColor"
-        strokeWidth="1.75"
+        strokeWidth="2.35"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -85,7 +119,12 @@ export function HeroHealthRing({ preview }: { preview: HeroHealthPreview }) {
       className="flex min-w-0 items-center gap-2.5 rounded-xl border border-white/[0.08] bg-white/[0.04] px-2.5 py-2 transition hover:bg-white/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
       aria-label={`${preview.label}: ${preview.detail}`}
     >
-      <svg width={size} height={size} className="shrink-0 -rotate-90" aria-hidden>
+      <svg
+        width={size}
+        height={size}
+        className="shrink-0 -rotate-90"
+        aria-hidden
+      >
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -99,7 +138,9 @@ export function HeroHealthRing({ preview }: { preview: HeroHealthPreview }) {
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke={preview.available ? "rgb(125 211 252)" : "rgba(255,255,255,0.25)"}
+          stroke={
+            preview.available ? "rgb(125 211 252)" : "rgba(255,255,255,0.25)"
+          }
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={circumference}
@@ -169,9 +210,7 @@ export function HeroTopStoryPreviewCard({
   return (
     <a
       href={story.href}
-      {...(external
-        ? { target: "_blank", rel: "noopener noreferrer" }
-        : {})}
+      {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
       className="flex min-w-0 items-center gap-2.5 rounded-xl border border-white/[0.08] bg-white/[0.04] px-2.5 py-2 transition hover:bg-white/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
     >
       <StoryThumb url={story.thumbnailUrl} />

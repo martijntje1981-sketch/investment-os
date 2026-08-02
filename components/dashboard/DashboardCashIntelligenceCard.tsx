@@ -9,6 +9,7 @@ import {
   appCardValueClass,
   appDashboardLightCardClass,
   appSectionBodyClass,
+  appSectionLabelClass,
   appSectionMetaClass,
   appTextLinkClass,
 } from "@/components/layout/appSurface";
@@ -24,6 +25,11 @@ type DashboardCashIntelligenceCardProps = {
 function formatRate(rate: number | null | undefined): string {
   if (rate == null || !Number.isFinite(rate)) return "Unavailable";
   return `${rate.toFixed(2)}%`;
+}
+
+function formatAllocation(value: number | null | undefined): string | null {
+  if (value == null || !Number.isFinite(value)) return null;
+  return `${value.toFixed(1)}%`;
 }
 
 /**
@@ -45,10 +51,28 @@ export function DashboardCashIntelligenceCard({
 
   const benchmark = snapshot?.baseCurrencyBenchmark;
   const primaryRate = formatRate(benchmark?.cashBenchmarkPercent ?? null);
+  const cashAmount =
+    snapshot?.totalCashInBase ??
+    snapshot?.totalCashInEur ??
+    snapshot?.totalCashAmount;
+  const allocation = formatAllocation(snapshot?.portfolioCashWeightPercent);
   const yieldLabel =
     snapshot?.hasCash && snapshot.totalIndicativeAnnualYieldInEur != null
       ? formatEur(snapshot.totalIndicativeAnnualYieldInEur)
       : null;
+  const effectiveDate =
+    benchmark?.overnight?.effectiveDate ??
+    benchmark?.policy?.effectiveDate ??
+    null;
+  const updateStatus = snapshot?.benchmarks.isStale
+    ? "Update pending"
+    : effectiveDate
+      ? `Effective ${effectiveDate}`
+      : benchmark?.status === "available"
+        ? "Live benchmark"
+        : benchmark?.status === "partial"
+          ? "Partial benchmark"
+          : null;
 
   return (
     <section
@@ -78,11 +102,33 @@ export function DashboardCashIntelligenceCard({
               ? ` · ${benchmark.environment} yield environment`
               : ""}
           </p>
+          {updateStatus ? (
+            <p className={`mt-1 ${appSectionMetaClass}`}>{updateStatus}</p>
+          ) : null}
+        </div>
+
+        <div className="grid min-w-0 grid-cols-2 gap-3">
+          <div className="min-w-0">
+            <p className={appSectionLabelClass}>Cash held</p>
+            <p className="mt-1 truncate text-[15px] font-semibold tabular-nums text-slate-950">
+              {isLoading
+                ? "…"
+                : snapshot?.hasCash && cashAmount != null
+                  ? formatEur(cashAmount)
+                  : "None recorded"}
+            </p>
+          </div>
+          <div className="min-w-0">
+            <p className={appSectionLabelClass}>Allocation</p>
+            <p className="mt-1 truncate text-[15px] font-semibold tabular-nums text-slate-950">
+              {isLoading ? "…" : (allocation ?? "—")}
+            </p>
+          </div>
         </div>
 
         {yieldLabel ? (
           <p className={appSectionBodyClass}>
-            Indicative annual cash yield {yieldLabel}
+            Indicative annual benchmark yield {yieldLabel}
             {snapshot?.hasCash ? " based on recorded cash balances." : ""}
           </p>
         ) : (

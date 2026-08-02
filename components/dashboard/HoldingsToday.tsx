@@ -1,3 +1,6 @@
+"use client";
+
+import { useId, useState } from "react";
 import Link from "next/link";
 import { Upload, Wallet } from "lucide-react";
 
@@ -13,6 +16,7 @@ import {
 } from "@/components/layout/appSurface";
 import type { DashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
 import { resolveHoldingsMoveColumnLabel } from "@/lib/client/performancePeriod";
+import { useCollapsedListLimit } from "@/lib/client/useCollapsedListLimit";
 import { PORTFOLIO_PATH } from "@/lib/navigation/appRoutes";
 
 export function HoldingsToday({
@@ -22,6 +26,9 @@ export function HoldingsToday({
   snapshot: DashboardPortfolioSnapshot;
   isLoading?: boolean;
 }) {
+  const listId = useId();
+  const [expanded, setExpanded] = useState(false);
+  const collapsedLimit = useCollapsedListLimit();
   const moveColumnLabel = resolveHoldingsMoveColumnLabel(
     snapshot.marketHoldings.map((row) => ({
       assetType: row.assetType,
@@ -60,9 +67,14 @@ export function HoldingsToday({
     );
   }
 
-  const positionSubtitle = `${snapshot.marketHoldings.length} ${
-    snapshot.marketHoldings.length === 1 ? "position" : "positions"
-  } monitored`;
+  const total = snapshot.marketHoldings.length;
+  const showToggle = total > collapsedLimit;
+  const visibleHoldings =
+    expanded || !showToggle
+      ? snapshot.marketHoldings
+      : snapshot.marketHoldings.slice(0, collapsedLimit);
+  const hiddenCount = Math.max(0, total - collapsedLimit);
+  const positionSubtitle = `${total} ${total === 1 ? "position" : "positions"} monitored`;
 
   return (
     <section className={appDashboardLightCardClass}>
@@ -73,55 +85,83 @@ export function HoldingsToday({
         icon={<Wallet className="h-5 w-5" />}
         trailing={
           <Link href={PORTFOLIO_PATH} className={appTextLinkClass}>
-            View portfolio
+            Open portfolio
           </Link>
         }
       />
 
-      <div className={`md:hidden ${appCardPaddingClass} pt-0`}>
-        {snapshot.marketHoldings.map((row, index) => (
-          <HoldingsTodayRow
-            key={row.id}
-            row={row}
-            layout="mobile"
-            index={index}
-          />
-        ))}
-      </div>
+      <div id={listId}>
+        <div className={`md:hidden ${appCardPaddingClass} pt-0`}>
+          {visibleHoldings.map((row, index) => (
+            <HoldingsTodayRow
+              key={row.id}
+              row={row}
+              layout="mobile"
+              index={index}
+            />
+          ))}
+        </div>
 
-      <div className={`hidden md:block px-4 pb-4 pt-0 md:px-5 md:pb-5`}>
-        <div className="overflow-hidden rounded-[18px] border border-slate-200/80">
-          <table className="w-full min-w-0 table-fixed border-collapse">
-            <thead>
-              <tr className="border-b border-slate-200/80 bg-slate-50/90 text-left">
-                <th className={`px-4 py-3.5 text-left ${appSectionLabelClass}`}>
-                  Holding
-                </th>
-                <th
-                  className={`w-[28%] px-4 py-3.5 text-right ${appSectionLabelClass}`}
-                >
-                  Value
-                </th>
-                <th
-                  className={`w-[32%] px-4 py-3.5 text-right ${appSectionLabelClass}`}
-                >
-                  {moveColumnLabel}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {snapshot.marketHoldings.map((row, index) => (
-                <HoldingsTodayRow
-                  key={row.id}
-                  row={row}
-                  layout="desktop"
-                  index={index}
-                />
-              ))}
-            </tbody>
-          </table>
+        <div className="hidden md:block px-4 pb-4 pt-0 md:px-5 md:pb-5">
+          <div className="overflow-hidden rounded-[18px] border border-slate-200/80">
+            <table className="w-full min-w-0 table-fixed border-collapse">
+              <thead>
+                <tr className="border-b border-slate-200/80 bg-slate-50/90 text-left">
+                  <th
+                    className={`px-4 py-3.5 text-left ${appSectionLabelClass}`}
+                  >
+                    Holding
+                  </th>
+                  <th
+                    className={`w-[28%] px-4 py-3.5 text-right ${appSectionLabelClass}`}
+                  >
+                    Value
+                  </th>
+                  <th
+                    className={`w-[32%] px-4 py-3.5 text-right ${appSectionLabelClass}`}
+                  >
+                    {moveColumnLabel}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {visibleHoldings.map((row, index) => (
+                  <HoldingsTodayRow
+                    key={row.id}
+                    row={row}
+                    layout="desktop"
+                    index={index}
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
+
+      {showToggle ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 px-4 py-3 md:px-5">
+          <button
+            type="button"
+            className="inline-flex min-h-[40px] items-center rounded-lg px-1 text-sm font-semibold text-slate-700 underline-offset-4 transition hover:text-slate-950 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2"
+            aria-expanded={expanded}
+            aria-controls={listId}
+            onClick={() => setExpanded((value) => !value)}
+          >
+            {expanded
+              ? "Show less"
+              : hiddenCount === 1
+                ? "Show 1 more"
+                : `Show ${hiddenCount} more`}
+          </button>
+          <Link
+            href={PORTFOLIO_PATH}
+            className={`text-sm font-semibold ${appTextLinkClass}`}
+          >
+            View all holdings
+          </Link>
+        </div>
+      ) : null}
     </section>
   );
 }
