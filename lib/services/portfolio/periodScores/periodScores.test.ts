@@ -219,7 +219,9 @@ describe("Daily Portfolio Score", () => {
     ];
     const score = buildDailyPortfolioScore({ holdings });
     expect(score.available).toBe(true);
-    expect(score.timingContext.toLowerCase()).toMatch(/crypto|24h|session|mixed/);
+    expect(score.timingContext.toLowerCase()).toMatch(
+      /crypto|24h|session|mixed/,
+    );
   });
 
   it("does not invent a score when prices are missing", () => {
@@ -344,20 +346,38 @@ describe("Portfolio Pulse combined summary", () => {
     );
     expect(summary).not.toMatch(/^Mixed session\. Mixed week\.?$/i);
     expect(summary.toLowerCase()).toContain("vwce");
-    expect(summary.toLowerCase()).toMatch(/while/);
     expect(summary.split(".").filter(Boolean).length).toBe(1);
+    expect(summary.length).toBeLessThan(90);
   });
 
-  it("keeps a single sentence when both scores are available", () => {
+  it("uses a natural broad-participation sentence when evidence supports it", () => {
     const summary = buildCombinedPulseSummary(
       "Strong session: today’s move is broad across holdings.",
       "Positive week: weekly and monthly direction are aligned.",
       true,
       true,
     );
-    expect(summary.toLowerCase()).toMatch(/broad/);
-    expect(summary.toLowerCase()).toMatch(/aligned/);
-    expect(summary).toMatch(/while/i);
+    expect(summary).toBe(
+      "Broad participation supports today’s portfolio move.",
+    );
+  });
+
+  it("uses a mixed-day / positive-week sentence when bands are the only evidence", () => {
+    const summary = buildCombinedPulseSummary(
+      "Mixed session: see evidence for breadth and concentration.",
+      "Positive week: based on verified 1W portfolio history.",
+      true,
+      true,
+    );
+    expect(summary).toBe(
+      "Daily performance is mixed while the weekly trend remains positive.",
+    );
+  });
+
+  it("falls back deterministically when evidence is limited", () => {
+    expect(buildCombinedPulseSummary("", "", false, false)).toBe(
+      "Daily and weekly scores need more verified market data.",
+    );
   });
 });
 
@@ -400,6 +420,7 @@ describe("Dashboard Portfolio Pulse wiring", () => {
       "components/portfolioHealth/PortfolioHealthPage.tsx",
     );
     const pulse = read("components/dashboard/DashboardPortfolioPulseCard.tsx");
+    const ring = read("components/dashboard/DynamicScoreRing.tsx");
     const briefing = read(
       "components/dashboard/DashboardTodaysMarketBriefing.tsx",
     );
@@ -419,11 +440,18 @@ describe("Dashboard Portfolio Pulse wiring", () => {
     expect(pulseIdx).toBeGreaterThan(-1);
     expect(holdingsIdx).toBeGreaterThan(pulseIdx);
     expect(briefingIdx).toBeGreaterThan(holdingsIdx);
+    expect(dashboard).toContain("flex min-w-0 flex-col gap-4 md:gap-5");
 
     expect(scorecardPage).toContain("buildPortfolioScorecard");
     expect(scorecardPage).toContain("ScoreRing");
     expect(pulse).toContain("Open Portfolio Scorecard");
     expect(pulse).toContain("Portfolio pulse");
+    expect(pulse).toContain("DASHBOARD_DEEP_LINKS.scorecard");
+    expect(pulse).toContain("size={88}");
+    expect(pulse).toContain("size={80}");
+    expect(pulse).toContain('emphasis="primary"');
+    expect(ring).toContain('emphasis?: "primary" | "default"');
+    expect(ring).toContain("text-[8px]");
     expect(briefing).toContain("Today’s market briefing");
     expect(pulse).not.toContain("overflow-x-auto");
   });

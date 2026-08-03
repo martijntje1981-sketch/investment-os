@@ -223,14 +223,13 @@ export default function DashboardPage() {
             }}
           />
 
-          {/* 2. Portfolio Pulse: Daily + Weekly */}
-          {portfolioPulse ? (
-            <DashboardPortfolioPulseCard pulse={portfolioPulse} />
-          ) : null}
-
-          {/* 3. Your Holdings */}
-          <HoldingsToday snapshot={snapshot} />
-
+          {/* 2–3. Portfolio Pulse + Your Holdings (tight stack) */}
+          <div className="flex min-w-0 flex-col gap-4 md:gap-5">
+            {portfolioPulse ? (
+              <DashboardPortfolioPulseCard pulse={portfolioPulse} />
+            ) : null}
+            <HoldingsToday snapshot={snapshot} />
+          </div>
           {/* 4. Combined Today’s market briefing */}
           <DashboardTodaysMarketBriefing
             intelligence={intelligence}
