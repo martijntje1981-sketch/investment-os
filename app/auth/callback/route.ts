@@ -96,16 +96,24 @@ export async function GET(request: NextRequest) {
   );
 
   let sessionError: string | null = null;
+  /** User from a successful code/OTP exchange — prefer over any prior cookie session. */
+  let exchangedUser: Awaited<
+    ReturnType<typeof supabase.auth.getUser>
+  >["data"]["user"] = null;
 
   if (code) {
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
     if (error) sessionError = error.message;
+    else if (!data.session?.user) sessionError = "session_not_established";
+    else exchangedUser = data.session.user;
   } else if (tokenHash && type) {
-    const { error } = await supabase.auth.verifyOtp({
+    const { data, error } = await supabase.auth.verifyOtp({
       type,
       token_hash: tokenHash,
     });
     if (error) sessionError = error.message;
+    else if (!data.session?.user) sessionError = "session_not_established";
+    else exchangedUser = data.session.user;
   } else {
     sessionError = "missing_auth_params";
   }
@@ -125,10 +133,9 @@ export async function GET(request: NextRequest) {
         );
   }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+  // Never activate against a pre-existing cookie session when the link exchange
+  // did not establish the email-link user (that miss-looked-up the wrong email).
+  const user = exchangedUser;
   if (!user) {
     return exampleParam === "1"
       ? exploreErrorRedirect(
@@ -144,7 +151,18 @@ export async function GET(request: NextRequest) {
   }
 
   const admin = createAdminClient();
-  const email = user.email ? normalizeExampleEmail(user.email) : "";
+
+  // Canonical email from Auth admin (source of truth), then JWT email.
+  let email = user.email ? normalizeExampleEmail(user.email) : "";
+  if (admin) {
+    try {
+      const { data } = await admin.auth.admin.getUserById(user.id);
+      const adminEmail = data.user?.email;
+      if (adminEmail) email = normalizeExampleEmail(adminEmail);
+    } catch {
+      // Fall back to session email.
+    }
+  }
 
   // Prefer explicit example=1; also activate when a reserved entitlement exists
   // (covers Site URL fallbacks that drop query params).
@@ -152,8 +170,8 @@ export async function GET(request: NextRequest) {
   if (!shouldActivateExample && admin && email) {
     try {
       const entitlement =
-        (await findExampleEntitlementByUserId(admin, user.id)) ??
-        (await findExampleEntitlementByEmail(admin, email));
+        (await findExampleEntitlementByEmail(admin, email)) ??
+        (await findExampleEntitlementByUserId(admin, user.id));
       shouldActivateExample = Boolean(entitlement && !entitlement.converted_at);
     } catch {
       shouldActivateExample = false;
@@ -186,9 +204,16 @@ export async function GET(request: NextRequest) {
       }
 
       if (result.status === "skipped") {
+        // Only this copy when there is genuinely no reserved row for the
+        // authenticated email (or no activation intent on that row).
+        const missingChoice =
+          result.reason === "No reserved example portfolio." ||
+          result.reason === "No example activation intent for this session.";
         return exploreErrorRedirect(
           origin,
-          "Could not find your example portfolio choice. Start again from Explore.",
+          missingChoice
+            ? "Could not find your example portfolio choice. Start again from Explore."
+            : "Could not activate your example portfolio. Try again.",
           cookieBuffer,
         );
       }

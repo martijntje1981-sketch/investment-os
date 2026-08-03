@@ -82,14 +82,25 @@ export async function activateExamplePortfolioForUser(input: {
 }): Promise<ActivateExampleResult> {
   const { admin, userClient, user } = input;
   const forceFromCallback = Boolean(input.forceFromCallback);
-  const email = user.email ? normalizeExampleEmail(user.email) : "";
+
+  // Prefer Auth admin email so entitlement lookup matches the reserved row
+  // even when the JWT user object omits or lags email.
+  let email = user.email ? normalizeExampleEmail(user.email) : "";
+  try {
+    const { data } = await admin.auth.admin.getUserById(user.id);
+    const adminEmail = data.user?.email;
+    if (adminEmail) email = normalizeExampleEmail(adminEmail);
+  } catch {
+    // Keep session email.
+  }
   if (!email) {
     return { status: "error", message: "Verified email is required." };
   }
 
+  // Reserved rows have user_id null until activation — email lookup is required.
   let entitlement =
-    (await findExampleEntitlementByUserId(admin, user.id)) ??
-    (await findExampleEntitlementByEmail(admin, email));
+    (await findExampleEntitlementByEmail(admin, email)) ??
+    (await findExampleEntitlementByUserId(admin, user.id));
 
   if (!entitlement) {
     return { status: "skipped", reason: "No reserved example portfolio." };

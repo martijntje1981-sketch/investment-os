@@ -118,6 +118,9 @@ describe("example auth callback wiring", () => {
     expect(callback).toContain("cookieBuffer");
     expect(callback).toContain("redirectWithCookies");
     expect(callback).toContain('redirectWithCookies("/dashboard"');
+    expect(callback).toContain("session_not_established");
+    expect(callback).toContain("exchangedUser");
+    expect(callback).toContain("getUserById");
     expect(callback).not.toContain('new URL("/",');
   });
 

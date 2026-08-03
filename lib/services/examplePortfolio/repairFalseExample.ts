@@ -132,7 +132,12 @@ export function mayStartExampleClock(input: {
   holdings: Array<Pick<StoredPortfolioHolding, "id" | "assetType">>;
   entitlement: ExamplePortfolioEntitlement;
 }): boolean {
-  if (input.forceFromCallback) return true;
+  // Email-callback path: a reserved row (template locked, clock not started)
+  // is a valid pending choice — do not require user_metadata.
+  if (input.forceFromCallback) {
+    if (input.entitlement.converted_at) return false;
+    return Boolean(input.entitlement.template);
+  }
   if (hasExampleActivationIntent(input.metadata)) return true;
   // Already started previously — idempotent resume only when seeds exist
   // or portfolio is still empty (true example continuation).
@@ -144,5 +149,7 @@ export function mayStartExampleClock(input: {
     if (input.holdings.length === 0) return true;
     return false;
   }
+  // Reserved-only row without email-callback force must not start the clock
+  // on ordinary password sessions.
   return false;
 }

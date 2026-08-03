@@ -341,6 +341,8 @@ describe("example expiry enforcement", () => {
     expect(activate).toContain("forceFromCallback");
     expect(activate).toContain("mayStartExampleClock");
     expect(activate).toContain("hasExampleSeedHoldings");
+    expect(activate).toContain("findExampleEntitlementByEmail");
+    expect(activate).toContain("getUserById");
     expect(activate).toContain(
       "Existing portfolio is not an example seed set.",
     );
@@ -438,6 +440,36 @@ describe("example entitlement resolver source of truth", () => {
         entitlement: { ...entitlement, started_at: null, expires_at: null },
       }),
     ).toBe(true);
+  });
+
+  it("treats a reserved unstarted entitlement as a valid pending choice on callback", async () => {
+    const { mayStartExampleClock } =
+      await import("@/lib/services/examplePortfolio/repairFalseExample");
+    const reserved = {
+      email_normalized: "martijn.valk@springer.com",
+      user_id: null,
+      template: "global" as const,
+      started_at: null,
+      expires_at: null,
+      seeded_at: null,
+      converted_at: null,
+    };
+    expect(
+      mayStartExampleClock({
+        forceFromCallback: true,
+        metadata: {},
+        holdings: [],
+        entitlement: reserved,
+      }),
+    ).toBe(true);
+    expect(
+      mayStartExampleClock({
+        forceFromCallback: false,
+        metadata: {},
+        holdings: [],
+        entitlement: reserved,
+      }),
+    ).toBe(false);
   });
 
   it("shows active banner from entitlement even when metadata is stale", async () => {
