@@ -151,9 +151,7 @@ describe("useDismissibleMenu", () => {
     expect(container.querySelector("[data-testid='menu-panel']")).toBeTruthy();
 
     act(() => {
-      outside.dispatchEvent(
-        new PointerEvent("pointerdown", { bubbles: true }),
-      );
+      outside.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
     });
     expect(container.querySelector("[data-testid='menu-panel']")).toBeNull();
   });
@@ -188,18 +186,20 @@ describe("useDismissibleMenu", () => {
     act(() => {
       trigger.click();
     });
-    expect(container.querySelector("[data-testid='menu-settings']")?.textContent).toBe(
-      "Settings",
-    );
-    expect(container.querySelector("[data-testid='menu-news']")?.textContent).toBe(
-      "News",
-    );
-    expect(container.querySelector("[data-testid='menu-signout']")?.textContent).toBe(
-      "Sign out",
-    );
+    expect(
+      container.querySelector("[data-testid='menu-settings']")?.textContent,
+    ).toBe("Settings");
+    expect(
+      container.querySelector("[data-testid='menu-news']")?.textContent,
+    ).toBe("News");
+    expect(
+      container.querySelector("[data-testid='menu-signout']")?.textContent,
+    ).toBe("Sign out");
 
     act(() => {
-      root!.render(createElement(MenuHarness, { closeOnChangeKey: "/settings" }));
+      root!.render(
+        createElement(MenuHarness, { closeOnChangeKey: "/settings" }),
+      );
     });
     expect(container.querySelector("[data-testid='menu-panel']")).toBeNull();
   });
@@ -246,7 +246,7 @@ describe("UserMenu profile wiring", () => {
     );
 
     expect(source).toContain("useDismissibleMenu");
-    expect(source).toContain('aria-expanded={open}');
+    expect(source).toContain("aria-expanded={open}");
     expect(source).toContain("aria-controls={menuId}");
     expect(source).toContain('aria-label="Profile menu"');
     expect(source).toContain("TobaileyLogo");
@@ -276,9 +276,11 @@ describe("UserMenu profile wiring", () => {
     expect(source).toContain('href: "/events"');
     expect(source).toContain('label: "Upcoming Events"');
     expect(source).toContain('href: "/upload"');
-    expect(source).toContain('title="Explore"');
+    expect(source).toContain('title="Portfolio"');
+    expect(source).toContain('title="Intelligence"');
     expect(source).toContain('title="Account"');
-    expect(source).toContain("aria-current={active ? \"page\" : undefined}");
+    expect(source).toContain('title="Support"');
+    expect(source).toContain('aria-current={active ? "page" : undefined}');
     expect(source).toContain("w-[15.5rem]");
   });
 });

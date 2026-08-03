@@ -11,12 +11,16 @@ import { DashboardTodaysMarketBriefing } from "@/components/dashboard/DashboardT
 import { DashboardMarketPulseCard } from "@/components/dashboard/DashboardMarketPulseCard";
 import { DashboardSummary } from "@/components/dashboard/DashboardSummary";
 import { DashboardPortfolioPulseCard } from "@/components/dashboard/DashboardPortfolioPulseCard";
+import { DashboardExploreTools } from "@/components/dashboard/DashboardExploreTools";
+import { DashboardFirstRunCue } from "@/components/dashboard/DashboardFirstRunCue";
 import { DashboardProductionDebugMarker } from "@/components/dashboard/DashboardProductionDebugMarker";
 import { DashboardUpcomingEventsWidget } from "@/components/dashboard/DashboardUpcomingEventsWidget";
 import { DashboardPerspectivesWidget } from "@/components/dashboard/DashboardPerspectivesWidget";
 import { HoldingsToday } from "@/components/dashboard/HoldingsToday";
 import { DashboardPortfolioExposureCard } from "@/components/dashboard/DashboardPortfolioExposureCard";
 import { DashboardMarketStatus } from "@/components/dashboard/DashboardMarketStatus";
+import { ExamplePortfolioPreparation } from "@/components/examplePortfolio/ExamplePortfolioPreparation";
+import { useExampleActiveStatus } from "@/lib/client/useExampleActiveStatus";
 import {
   AppPageLoading,
   PageContainer,
@@ -149,6 +153,10 @@ export default function DashboardPage() {
     });
   }, [holdings, marketsClosed, monthHistory.data, weekHistory.data]);
 
+  const exampleActive = useExampleActiveStatus(
+    portfolioReady && Boolean(userSub),
+  );
+
   const dashboardSummaryRendered = portfolioReady && holdings.length > 0;
   const dashboardTodaysDecisionRendered = dashboardSummaryRendered;
 
@@ -209,6 +217,19 @@ export default function DashboardPage() {
         </>
       ) : holdings.length > 0 ? (
         <>
+          <ExamplePortfolioPreparation
+            userSub={userSub}
+            portfolioReady={portfolioReady}
+            hasHoldings={holdings.length > 0}
+            isRefreshing={isRefreshing}
+            refreshPrices={refreshPrices}
+          />
+
+          <DashboardFirstRunCue
+            userSub={userSub}
+            exampleActive={exampleActive}
+          />
+
           {/* 1. Portfolio hero */}
           <DashboardSummary
             snapshot={snapshot}
@@ -251,6 +272,8 @@ export default function DashboardPage() {
                 : "See commodities, crypto and markets connected to your holdings."
             }
           />
+
+          <DashboardExploreTools />
 
           {/* 7. Remaining supporting cards */}
           <div className="space-y-6 md:space-y-8">

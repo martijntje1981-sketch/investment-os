@@ -203,9 +203,9 @@ export function PortfolioValueCard({
           ) : null}
         </div>
 
-        <div className="mt-3 min-w-0">
+        <div className="mt-2.5 min-w-0 md:mt-2">
           <p className={appHeroMetricLabelClass}>Portfolio value</p>
-          <p className={`mt-1.5 break-words text-white ${appDisplayClass}`}>
+          <p className={`mt-1 break-words text-white ${appDisplayClass}`}>
             {snapshot.portfolioValueAvailable
               ? formatEur(snapshot.portfolioValue)
               : "Unavailable"}
@@ -220,9 +220,9 @@ export function PortfolioValueCard({
           </div>
         </div>
 
-        <div className="mt-3 min-w-0 border-t border-white/10 pt-3">
+        <div className="mt-2.5 min-w-0 border-t border-white/10 pt-2.5 md:mt-2 md:pt-2.5">
           <p className={appHeroMetricLabelClass}>Latest portfolio move</p>
-          <div className="mt-1.5 flex min-w-0 flex-wrap items-end justify-between gap-x-3 gap-y-2">
+          <div className="mt-1 flex min-w-0 flex-wrap items-end justify-between gap-x-3 gap-y-2 md:mt-1.5">
             <div className="min-w-0 flex-1">
               <p
                 className={`flex flex-wrap items-baseline gap-x-2.5 gap-y-1 ${appHeroMatchedKpiClass} ${moveTone}`}
@@ -244,10 +244,10 @@ export function PortfolioValueCard({
           </div>
         </div>
 
-        <div className="mt-3 border-t border-white/10 pt-3">
+        <div className="mt-2.5 border-t border-white/10 pt-2.5 md:mt-2 md:grid md:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] md:items-start md:gap-4 md:pt-2.5">
           <MoversSection snapshot={snapshot} />
-          <div className="mt-2.5 flex items-center justify-between gap-2">
-            <p className="text-[12px] font-medium text-white/50">
+          <div className="mt-2.5 flex items-center justify-between gap-2 md:mt-0 md:justify-end md:self-end">
+            <p className="text-[12px] font-medium text-white/50 md:text-right">
               {snapshot.isStale && !refresh?.liveRefreshAt
                 ? "Stale prices · "
                 : null}

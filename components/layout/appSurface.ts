@@ -6,7 +6,7 @@
 /** Vertical rhythm between major page sections. */
 export const appPageSectionClass = "space-y-8 md:space-y-10";
 
-/** Default page canvas (PageContainer). */
+/** Default page canvas (PageContainer). Soft cool tint — not flat white. */
 export const appPageCanvasClass =
   "min-h-screen w-full max-w-full overflow-x-clip bg-background px-4 pb-28 pt-[4.5rem] text-foreground sm:px-6 sm:pb-28 sm:pt-[5rem] [[data-example-banner=true]_&]:pt-[6.25rem] sm:[[data-example-banner=true]_&]:pt-[6.75rem]";
 
@@ -27,11 +27,22 @@ export const appCardPaddingCompactClass = "px-4 py-4 md:px-5 md:py-5";
 export const appCardInteractiveClass =
   "transition duration-200 hover:border-slate-300 hover:shadow-[0_2px_8px_rgba(15,23,42,0.06),0_12px_32px_-14px_rgba(15,23,42,0.14)]";
 
+/**
+ * Quiet blue-tinted panel for discoverability / first-run sections.
+ * Use sparingly — not on every card.
+ */
+export const appTintedPanelClass =
+  "min-w-0 overflow-hidden rounded-[24px] border border-brand/20 bg-gradient-to-br from-brand-soft/90 via-white to-slate-50/90 shadow-[var(--shadow-card)] md:rounded-[28px]";
+
+/** Soft section band behind stacked supporting content. */
+export const appSectionBandClass =
+  "rounded-[28px] border border-brand/10 bg-brand-soft/35 p-4 md:p-5";
+
 /* ── Dark navy hierarchy ─────────────────────────────────── */
 
-/** Primary hero — deepest midnight navy. */
+/** Primary hero — midnight navy with a quiet blue tonal lift. */
 export const appHeroShellClass =
-  "min-w-0 overflow-hidden rounded-[28px] border border-white/10 bg-navy-hero text-white shadow-[var(--navy-shadow)] md:rounded-[32px]";
+  "min-w-0 overflow-hidden rounded-[28px] border border-white/10 bg-[linear-gradient(165deg,var(--navy-hero-lift)_0%,var(--navy-hero)_48%,var(--navy-hero-deep)_100%)] text-white shadow-[var(--navy-shadow)] md:rounded-[32px]";
 
 /** Important dark card — slightly lighter navy. */
 export const appDarkCardClass =
@@ -42,7 +53,8 @@ export const appDarkInsetClass =
   "rounded-xl border border-white/10 bg-white/[0.06]";
 
 /** Compact padding for dense dark heroes (dashboard + peers). */
-export const appHeroPaddingCompactClass = "px-4 py-3.5 sm:px-5 sm:py-4";
+export const appHeroPaddingCompactClass =
+  "px-4 py-3 sm:px-5 sm:py-3.5 md:px-5 md:py-3.5";
 
 /** Standard padding for dark cards. */
 export const appDarkCardPaddingClass = "px-4 py-5 md:px-6 md:py-6";

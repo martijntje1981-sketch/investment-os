@@ -60,8 +60,8 @@ export function PageHero({
             : "px-4 py-5 sm:px-6 sm:py-6"
           : cn(
               appHeroShellClass,
-              "px-4 py-5 sm:px-6 sm:py-6",
-              "lg:px-6 lg:py-6",
+              "px-4 py-5 sm:px-6 sm:py-5",
+              "lg:px-6 lg:py-5",
             ),
         hasAside
           ? "lg:grid lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start lg:gap-x-6"

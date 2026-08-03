@@ -105,7 +105,7 @@ describe("example email + period helpers", () => {
         "2026-08-04T08:00:00.000Z",
         new Date("2026-08-03T10:00:00.000Z"),
       ),
-    ).toBe("Example portfolio · 1 day remaining");
+    ).toBe("Example portfolio · Expires tomorrow");
     expect(
       formatExampleBannerLabel(
         "2026-08-07T10:00:00.000Z",

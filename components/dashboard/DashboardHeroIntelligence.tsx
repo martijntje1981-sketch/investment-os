@@ -18,8 +18,8 @@ const TREND_LABEL: Record<HeroTrendDirection, string> = {
 };
 
 /**
-  * no invented sparkline points — direction only from the real portfolio move.
-  */
+ * no invented sparkline points — direction only from the real portfolio move.
+ */
 export function HeroTrendMicroVisual({
   direction,
 }: {
@@ -31,7 +31,7 @@ export function HeroTrendMicroVisual({
     return (
       <svg
         viewBox="0 0 72 28"
-        className="h-7 w-[4.5rem] shrink-0 text-slate-400/70 sm:h-8 sm:w-24"
+        className="h-8 w-[5rem] shrink-0 text-slate-400/70 sm:h-9 sm:w-28"
         role="img"
         aria-label={label}
       >
@@ -52,7 +52,7 @@ export function HeroTrendMicroVisual({
     return (
       <svg
         viewBox="0 0 72 28"
-        className="h-7 w-[4.5rem] shrink-0 text-slate-300 sm:h-8 sm:w-24"
+        className="h-8 w-[5rem] shrink-0 text-slate-300 sm:h-9 sm:w-28"
         role="img"
         aria-label={label}
       >
@@ -81,7 +81,7 @@ export function HeroTrendMicroVisual({
   return (
     <svg
       viewBox="0 0 72 28"
-      className={`h-7 w-[4.5rem] shrink-0 sm:h-8 sm:w-24 ${strokeClass}`}
+      className={`h-8 w-[5rem] shrink-0 sm:h-9 sm:w-28 ${strokeClass}`}
       role="img"
       aria-label={label}
     >

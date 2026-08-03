@@ -21,6 +21,8 @@
    * Slightly softer than pure ink while keeping strong contrast.
    */
   --navy-hero: #0d243f;
+  --navy-hero-lift: #143456;
+  --navy-hero-deep: #0a1c33;
   --navy-card: #16304f;
   --navy-inset: rgba(255, 255, 255, 0.06);
   --navy-border: rgba(255, 255, 255, 0.1);

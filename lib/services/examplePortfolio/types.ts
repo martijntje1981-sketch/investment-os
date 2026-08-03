@@ -103,7 +103,7 @@ export function formatExampleBannerLabel(
 
   const days = getExampleDaysRemaining(expiresAtIso, now);
   if (days === 1) {
-    return "Example portfolio · 1 day remaining";
+    return "Example portfolio · Expires tomorrow";
   }
   return `Example portfolio · ${days} days remaining`;
 }

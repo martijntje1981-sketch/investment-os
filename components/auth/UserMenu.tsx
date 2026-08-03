@@ -4,14 +4,19 @@ import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Activity,
+  BadgeEuro,
+  Briefcase,
   CalendarDays,
+  CircleHelp,
   Compass,
   FileUp,
   ListChecks,
   LogOut,
   Newspaper,
+  ScanLine,
   Settings,
   Sparkles,
+  Target,
   UserRound,
   Waves,
 } from "lucide-react";
@@ -36,24 +41,35 @@ type MenuLink = {
   icon: typeof Settings;
 };
 
+const portfolioLinks: MenuLink[] = [
+  { href: "/portfolio", label: "Portfolio", icon: Briefcase },
+  { href: "/goals", label: "Goals", icon: Target },
+  { href: "/upload", label: "Import holdings", icon: FileUp },
+];
+
+const intelligenceLinks: MenuLink[] = [
+  { href: "/portfolio-health", label: "Portfolio Scorecard", icon: Activity },
+  { href: "/analysis", label: "Analysis", icon: ScanLine },
+  { href: "/market-pulse", label: "Market Pulse", icon: Waves },
+  { href: "/perspectives", label: "Perspectives", icon: Sparkles },
+  { href: "/news", label: "News", icon: Newspaper },
+  { href: "/events", label: "Upcoming Events", icon: CalendarDays },
+  { href: "/discover", label: "Discover", icon: Compass },
+];
+
 const accountLinks: MenuLink[] = [
   { href: "/settings", label: "Profile", icon: UserRound },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
-const exploreLinks: MenuLink[] = [
-  { href: "/news", label: "News", icon: Newspaper },
-  { href: "/discover", label: "Discover", icon: Compass },
-  { href: "/perspectives", label: "Perspectives", icon: Sparkles },
-  { href: "/events", label: "Upcoming Events", icon: CalendarDays },
-  { href: "/portfolio-health", label: "Portfolio Scorecard", icon: Activity },
-  { href: "/market-pulse", label: "Market Pulse", icon: Waves },
+const supportLinks: MenuLink[] = [
   {
     href: "/supported-instruments",
     label: "Supported Instruments",
     icon: ListChecks,
   },
-  { href: "/upload", label: "Import holdings", icon: FileUp },
+  { href: "/faq", label: "FAQ", icon: CircleHelp },
+  { href: "/pricing", label: "Pricing", icon: BadgeEuro },
 ];
 
 const guestExploreLinks: MenuLink[] = [
@@ -190,10 +206,10 @@ export default function UserMenu() {
   const { open, toggle, close, containerRef, triggerRef, menuId } =
     useDismissibleMenu({ closeOnChangeKey: pathname });
   const upcomingEventsNavVisible = useUpcomingEventsNavVisible();
-  const visibleExploreLinks = useMemo(
+  const visibleIntelligenceLinks = useMemo(
     () =>
       filterExploreLinksForEventsAvailability(
-        exploreLinks,
+        intelligenceLinks,
         upcomingEventsNavVisible ? "live" : "configuration_missing",
       ),
     [upcomingEventsNavVisible],
@@ -316,6 +332,24 @@ export default function UserMenu() {
               </div>
 
               <MenuSection
+                title="Portfolio"
+                links={portfolioLinks}
+                pathname={pathname}
+                onNavigate={close}
+              />
+
+              <div className="mx-3 border-t border-white/10" />
+
+              <MenuSection
+                title="Intelligence"
+                links={visibleIntelligenceLinks}
+                pathname={pathname}
+                onNavigate={close}
+              />
+
+              <div className="mx-3 border-t border-white/10" />
+
+              <MenuSection
                 title="Account"
                 links={accountLinks}
                 pathname={pathname}
@@ -325,8 +359,8 @@ export default function UserMenu() {
               <div className="mx-3 border-t border-white/10" />
 
               <MenuSection
-                title="Explore"
-                links={visibleExploreLinks}
+                title="Support"
+                links={supportLinks}
                 pathname={pathname}
                 onNavigate={close}
               />

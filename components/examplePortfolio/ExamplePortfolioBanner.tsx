@@ -78,16 +78,17 @@ export function ExamplePortfolioBanner() {
 
   return (
     <div
-      className="fixed inset-x-0 top-14 z-[55] border-b border-amber-200/80 bg-amber-50/95 px-3 py-2 backdrop-blur sm:top-16 sm:px-4"
+      className="fixed inset-x-0 top-14 z-[55] border-b border-brand/25 bg-brand-soft/95 px-3 py-2 backdrop-blur sm:top-16 sm:px-4"
       role="status"
+      aria-live="polite"
     >
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2">
-        <p className="text-[12px] font-semibold text-amber-950 sm:text-[13px]">
+        <p className="text-[12px] font-semibold text-brand-navy sm:text-[13px]">
           {status.bannerLabel}
         </p>
         <Link
           href={EXAMPLE_KEEP_PORTFOLIO_HREF}
-          className="inline-flex min-h-[36px] items-center rounded-lg bg-navy-hero px-3 py-1.5 text-[12px] font-bold text-white sm:text-[13px]"
+          className="inline-flex min-h-[36px] items-center rounded-lg bg-navy-hero px-3 py-1.5 text-[12px] font-bold text-white transition hover:bg-navy-card sm:text-[13px]"
         >
           Keep my portfolio
         </Link>
