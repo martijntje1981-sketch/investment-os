@@ -142,27 +142,28 @@ describe("home and dashboard hierarchy", () => {
     const preview = readFileSync(
       resolve(
         process.cwd(),
-        "components/dashboard/DashboardIntelligencePreview.tsx",
+        "components/dashboard/DashboardTodaysMarketBriefing.tsx",
       ),
       "utf8",
     );
 
     expect(dashboard.indexOf("<DashboardSummary")).toBeLessThan(
-      dashboard.indexOf("<DashboardTodaysDecision"),
+      dashboard.indexOf("<DashboardPortfolioPulseCard"),
     );
-    expect(dashboard.indexOf("<DashboardTodaysDecision")).toBeLessThan(
-      dashboard.indexOf("<DashboardIntelligencePreview"),
-    );
-    expect(dashboard.indexOf("<DashboardIntelligencePreview")).toBeLessThan(
+    expect(dashboard.indexOf("<DashboardPortfolioPulseCard")).toBeLessThan(
       dashboard.indexOf("<HoldingsToday"),
+    );
+    expect(dashboard.indexOf("<HoldingsToday")).toBeLessThan(
+      dashboard.indexOf("<DashboardTodaysMarketBriefing"),
     );
     expect(dashboard).not.toContain("DashboardQuickActions");
     expect(dashboard).not.toContain("PortfolioIntelligencePanel");
     expect(dashboard).not.toContain("DashboardPortfolioOverview");
     expect(dashboard).not.toContain("BottomNavigation");
-    expect(dashboard).toContain("buildPortfolioHealthScoreV1");
+    expect(dashboard).toContain("buildPortfolioPulse");
     expect(dashboard).not.toContain("DashboardInsightCard");
-    expect(dashboard).toContain("DashboardPortfolioScorecard");
+    expect(dashboard).toContain("DashboardPortfolioPulseCard");
+    expect(dashboard).not.toContain("DashboardPortfolioScorecard");
     expect(summary).toContain("PortfolioValueCard");
     expect(summary).not.toContain("GoalProgressCard");
     expect(summary).not.toContain("TodayCard");
@@ -171,7 +172,7 @@ describe("home and dashboard hierarchy", () => {
     expect(holdingsToday).toContain("md:hidden");
     expect(holdingsToday).toContain("hidden md:block");
     expect(preview).not.toContain("Also worth noting");
-    expect(preview).not.toContain("TodaysDecisionBlock");
+    expect(preview).toContain("Today’s market briefing");
   });
 
   it("redirects authenticated users away from the marketing home route", async () => {

@@ -10,7 +10,7 @@ describe("Phase 1 dashboard UI refinement", () => {
   const dashboard = read("app/dashboard/page.tsx");
   const hero = read("components/dashboard/PortfolioValueCard.tsx");
   const briefing = read(
-    "components/dashboard/DashboardIntelligencePreview.tsx",
+    "components/dashboard/DashboardTodaysMarketBriefing.tsx",
   );
   const decision = read("components/dashboard/DashboardTodaysDecision.tsx");
   const health = read("components/dashboard/DashboardPortfolioHealthCard.tsx");
@@ -19,30 +19,32 @@ describe("Phase 1 dashboard UI refinement", () => {
   const globals = read("app/globals.css");
   const surface = read("components/layout/appSurface.ts");
 
-  it("keeps Portfolio Scorecard and Cash Intelligence outside the portfolio hero", () => {
+  it("keeps Portfolio Pulse and Cash Intelligence outside the portfolio hero", () => {
     expect(hero).not.toContain("HeroHealthRing");
     expect(hero).not.toContain("HeroTopStoryPreviewCard");
     expect(hero).not.toContain("buildHeroHealthPreview");
     expect(hero).not.toContain("buildHeroTopStoryPreview");
-    expect(dashboard).toContain("DashboardPortfolioScorecard");
+    expect(dashboard).toContain("DashboardPortfolioPulseCard");
+    expect(dashboard).not.toContain("DashboardPortfolioScorecard");
     expect(dashboard).not.toContain("DashboardPortfolioHealthCard");
     expect(dashboard).toContain("DashboardCashIntelligenceCard");
     expect(dashboard).not.toContain("DashboardTopStoryCard");
     expect(dashboard.indexOf("<DashboardSummary")).toBeLessThan(
-      dashboard.indexOf("<DashboardPortfolioScorecard"),
+      dashboard.indexOf("<DashboardPortfolioPulseCard"),
     );
     expect(dashboard.indexOf("<DashboardSummary")).toBeLessThan(
       dashboard.indexOf("<DashboardCashIntelligenceCard"),
     );
   });
 
-  it("renders Today’s Decision and Market Briefing as distinct cards", () => {
-    expect(dashboard).toContain("<DashboardTodaysDecision");
-    expect(dashboard).toContain("<DashboardIntelligencePreview");
-    expect(briefing).not.toContain("DashboardTodaysDecision");
+  it("merges Today’s Decision and Market Briefing into one card", () => {
+    expect(dashboard).toContain("<DashboardTodaysMarketBriefing");
+    expect(dashboard).not.toContain("<DashboardTodaysDecision");
+    expect(dashboard).not.toContain("<DashboardIntelligencePreview");
+    expect(briefing).toContain("Today’s market briefing");
+    expect(briefing).toContain("buildTodaysDecision");
     expect(decision).toContain("appDashboardLightCardClass");
     expect(briefing).toContain("appDashboardLightCardClass");
-    expect(decision).toContain("TodaysDecisionBlock");
     expect(cash).toContain("Cash intelligence");
     expect(health).toContain("View full analysis");
   });

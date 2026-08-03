@@ -40,7 +40,7 @@ describe("contributions ledger UI", () => {
   it("places the contributions card with dividend intelligence on the dashboard", () => {
     expect(dashboardSource).toContain("DashboardContributionsCard");
     expect(dashboardSource).not.toContain("DashboardGoalProgressCard");
-    expect(dashboardSource).toContain("DashboardPortfolioScorecard");
+    expect(dashboardSource).toContain("DashboardPortfolioPulseCard");
     expect(dashboardSource).toMatch(
       /DashboardContributionsCard[\s\S]*DashboardDividendCard/,
     );

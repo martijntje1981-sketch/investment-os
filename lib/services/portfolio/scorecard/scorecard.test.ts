@@ -421,10 +421,17 @@ describe("Readiness Score", () => {
   });
 });
 
-describe("Dashboard Scorecard + insight wiring", () => {
-  it("renders Scorecard rings and removes Goal Progress / duplicate Health", () => {
+describe("Dashboard Portfolio Pulse + Scorecard page wiring", () => {
+  it("renders Daily/Weekly pulse on Dashboard; structural Scorecard stays off Dashboard", () => {
     const dashboard = readFileSync(
       path.resolve(process.cwd(), "app/dashboard/page.tsx"),
+      "utf8",
+    );
+    const pulse = readFileSync(
+      path.resolve(
+        process.cwd(),
+        "components/dashboard/DashboardPortfolioPulseCard.tsx",
+      ),
       "utf8",
     );
     const scorecard = readFileSync(
@@ -445,9 +452,12 @@ describe("Dashboard Scorecard + insight wiring", () => {
       ),
       "utf8",
     );
-    expect(dashboard).toContain("DashboardPortfolioScorecard");
+    expect(dashboard).toContain("DashboardPortfolioPulseCard");
+    expect(dashboard).not.toContain("DashboardPortfolioScorecard");
     expect(dashboard).not.toContain("DashboardGoalProgressCard");
     expect(dashboard).not.toContain("DashboardPortfolioHealthCard");
+    expect(pulse).toContain("DynamicScoreRing");
+    expect(pulse).toContain("Open Portfolio Scorecard");
     expect(scorecard).toContain("ScoreRing");
     expect(scorecard).toContain("grid-cols-2");
     expect(scorecard).toContain("lg:grid-cols-4");

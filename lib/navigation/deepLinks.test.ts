@@ -86,6 +86,9 @@ describe("Dashboard deep links", () => {
     ).toContain("DASHBOARD_DEEP_LINKS.portfolioExposure");
     expect(read("components/dashboard/ScoreRing.tsx")).toContain("score.href");
     expect(
+      read("components/dashboard/DashboardTodaysMarketBriefing.tsx"),
+    ).toContain("DASHBOARD_DEEP_LINKS.marketBriefing");
+    expect(
       read("components/dashboard/DashboardIntelligencePreview.tsx"),
     ).toContain("DASHBOARD_DEEP_LINKS.marketBriefing");
     expect(

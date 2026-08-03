@@ -100,12 +100,13 @@ describe("Dashboard UX polish phase", () => {
   const pulse = read("components/dashboard/DashboardMarketPulseCard.tsx");
   const insight = read("components/dashboard/DashboardInsightCard.tsx");
 
-  it("places Cash Intelligence after Scorecard without duplicating Health", () => {
+  it("places Cash Intelligence after Portfolio Pulse without duplicating Health", () => {
     expect(dashboard).not.toContain("DashboardTopStoryCard");
     expect(dashboard).toContain("DashboardCashIntelligenceCard");
-    expect(dashboard).toContain("DashboardPortfolioScorecard");
+    expect(dashboard).toContain("DashboardPortfolioPulseCard");
+    expect(dashboard).not.toContain("DashboardPortfolioScorecard");
     expect(dashboard).not.toContain("DashboardPortfolioHealthCard");
-    const scorecardIdx = dashboard.indexOf("<DashboardPortfolioScorecard");
+    const pulseIdx = dashboard.indexOf("<DashboardPortfolioPulseCard");
     const cashIdx = dashboard.indexOf(
       "<DashboardCashIntelligenceCard holdings={holdings} />",
     );
@@ -113,8 +114,8 @@ describe("Dashboard UX polish phase", () => {
       "<DashboardMarketPulseCard\n            holdings={holdings}",
       cashIdx,
     );
-    expect(scorecardIdx).toBeGreaterThan(-1);
-    expect(cashIdx).toBeGreaterThan(scorecardIdx);
+    expect(pulseIdx).toBeGreaterThan(-1);
+    expect(cashIdx).toBeGreaterThan(pulseIdx);
     expect(pulseAfterCash).toBeGreaterThan(cashIdx);
   });
 
@@ -167,8 +168,8 @@ describe("Dashboard UX polish phase", () => {
     expect(insight).toContain("DASHBOARD_DEEP_LINKS.goalScore");
     expect(dashboard).not.toContain("usePortfolioInsight");
     expect(dashboard).not.toContain("DashboardInsightCard");
-    expect(dashboard).toContain("buildPortfolioHealthScoreV1");
-    expect(dashboard).toContain("buildPortfolioScorecard");
+    expect(dashboard).toContain("buildPortfolioPulse");
+    expect(dashboard).toContain("DashboardPortfolioPulseCard");
   });
 
   it("keeps Cash Intelligence metrics and Analysis deep link", () => {
@@ -180,21 +181,21 @@ describe("Dashboard UX polish phase", () => {
     expect(cash).toContain("Allocation");
   });
 
-  it("orders hero, scorecard, decision/briefing, holdings, then cash", () => {
+  it("orders hero, Portfolio Pulse, holdings, briefing, then cash", () => {
     const summaryIdx = dashboard.indexOf("<DashboardSummary");
-    const scorecardIdx = dashboard.indexOf("<DashboardPortfolioScorecard");
-    const decisionIdx = dashboard.indexOf("<DashboardTodaysDecision");
+    const pulseIdx = dashboard.indexOf("<DashboardPortfolioPulseCard");
     const holdingsIdx = dashboard.indexOf("<HoldingsToday");
+    const briefingIdx = dashboard.indexOf("<DashboardTodaysMarketBriefing");
     const cashIdx = dashboard.indexOf("<DashboardCashIntelligenceCard");
-    const pulseIdx = dashboard.indexOf(
+    const marketPulseIdx = dashboard.indexOf(
       "<DashboardMarketPulseCard",
       holdingsIdx,
     );
-    expect(summaryIdx).toBeLessThan(scorecardIdx);
-    expect(scorecardIdx).toBeLessThan(decisionIdx);
-    expect(decisionIdx).toBeLessThan(holdingsIdx);
-    expect(holdingsIdx).toBeLessThan(cashIdx);
-    expect(cashIdx).toBeLessThan(pulseIdx);
+    expect(summaryIdx).toBeLessThan(pulseIdx);
+    expect(pulseIdx).toBeLessThan(holdingsIdx);
+    expect(holdingsIdx).toBeLessThan(briefingIdx);
+    expect(briefingIdx).toBeLessThan(cashIdx);
+    expect(cashIdx).toBeLessThan(marketPulseIdx);
   });
 });
 

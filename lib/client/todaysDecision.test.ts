@@ -353,26 +353,26 @@ describe("dashboard Today's Decision integration", () => {
     const preview = readFileSync(
       resolve(
         process.cwd(),
-        "components/dashboard/DashboardIntelligencePreview.tsx",
+        "components/dashboard/DashboardTodaysMarketBriefing.tsx",
       ),
       "utf8",
     );
 
     expect(dashboard.indexOf("<DashboardSummary")).toBeLessThan(
-      dashboard.indexOf("<DashboardTodaysDecision"),
+      dashboard.indexOf("<DashboardPortfolioPulseCard"),
     );
-    expect(dashboard.indexOf("<DashboardTodaysDecision")).toBeLessThan(
-      dashboard.indexOf("<DashboardIntelligencePreview"),
+    expect(dashboard.indexOf("<HoldingsToday")).toBeLessThan(
+      dashboard.indexOf("<DashboardTodaysMarketBriefing"),
     );
-    expect(dashboard.indexOf("<DashboardIntelligencePreview")).toBeLessThan(
-      dashboard.indexOf("<HoldingsToday"),
-    );
+    expect(dashboard).toContain("DashboardTodaysMarketBriefing");
+    expect(dashboard).not.toContain("<DashboardTodaysDecision");
+    expect(dashboard).not.toContain("<DashboardIntelligencePreview");
     expect(decisionSection).toContain("TodaysDecisionBlock");
     expect(decisionSection).toContain("buildTodaysDecision");
     expect(decisionSection).toContain("shouldShowTodaysDecisionSubsection");
     expect(preview).toContain("buildIntelligenceDisplayMessage");
     expect(preview).toContain("DASHBOARD_DEEP_LINKS.marketBriefing");
-    expect(preview).not.toContain("DashboardTodaysDecision");
+    expect(preview).toContain("Today’s market briefing");
     expect(preview).not.toContain("DiscoverMissedTeaser");
     expect(dashboard).not.toContain("BottomNavigation");
     expect(dashboard).not.toMatch(/innerWidth|matchMedia|useMediaQuery/);

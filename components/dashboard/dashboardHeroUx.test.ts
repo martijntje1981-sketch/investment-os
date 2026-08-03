@@ -19,7 +19,7 @@ describe("dashboard hero movers integration", () => {
     const intelligenceSource = readFileSync(
       path.resolve(
         process.cwd(),
-        "components/dashboard/DashboardIntelligencePreview.tsx",
+        "components/dashboard/DashboardTodaysMarketBriefing.tsx",
       ),
       "utf8",
     );

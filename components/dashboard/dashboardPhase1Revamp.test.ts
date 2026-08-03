@@ -145,9 +145,11 @@ describe("dashboard phase 1 revamp", () => {
     expect(movers.lowestMover?.changePeriodLabel).toBe("24h");
   });
 
-  it("keeps Market Briefing, Scorecard and Trading Hours without Dashboard insight card", () => {
-    expect(dashboardSource).toContain("DashboardPortfolioScorecard");
-    expect(dashboardSource).toContain("DashboardIntelligencePreview");
+  it("keeps Market Briefing, Portfolio Pulse and Trading Hours without Dashboard insight card", () => {
+    expect(dashboardSource).toContain("DashboardPortfolioPulseCard");
+    expect(dashboardSource).toContain("DashboardTodaysMarketBriefing");
+    expect(dashboardSource).not.toContain("DashboardPortfolioScorecard");
+    expect(dashboardSource).not.toContain("DashboardIntelligencePreview");
     expect(dashboardSource).not.toContain("DashboardInsightCard");
     expect(dashboardSource).toContain("DashboardMarketStatus");
     expect(dashboardSource).toContain("HoldingsToday");

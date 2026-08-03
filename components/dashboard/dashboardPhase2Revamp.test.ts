@@ -25,7 +25,7 @@ describe("dashboard phase 2 compact previews", () => {
   const briefingSource = readFileSync(
     path.resolve(
       process.cwd(),
-      "components/dashboard/DashboardIntelligencePreview.tsx",
+      "components/dashboard/DashboardTodaysMarketBriefing.tsx",
     ),
     "utf8",
   );
@@ -58,23 +58,24 @@ describe("dashboard phase 2 compact previews", () => {
     "utf8",
   );
 
-  it("keeps portfolio hero at the top; Goal Score lives in Scorecard", () => {
+  it("keeps portfolio hero at the top; structural Scorecard is off Dashboard", () => {
     expect(summarySource).not.toContain("GoalProgressCard");
     expect(summarySource).toContain("PortfolioValueCard");
     expect(dashboardSource).toContain("DashboardSummary");
-    expect(dashboardSource).toContain("DashboardPortfolioScorecard");
+    expect(dashboardSource).toContain("DashboardPortfolioPulseCard");
+    expect(dashboardSource).not.toContain("DashboardPortfolioScorecard");
     expect(dashboardSource).not.toContain("DashboardGoalProgressCard");
   });
 
-  it("keeps Today’s Decision present and clickable when a destination exists", () => {
-    expect(dashboardSource).toContain("DashboardTodaysDecision");
+  it("keeps Today’s Decision logic available for the merged briefing card", () => {
+    expect(dashboardSource).toContain("DashboardTodaysMarketBriefing");
     expect(decisionSource).toContain("TodaysDecisionBlock");
     expect(decisionBlockSource).toContain("resolveDestination");
     expect(decisionBlockSource).toContain("INTERACTIVE_STYLES");
     expect(decisionBlockSource).toContain("destinationHref");
   });
 
-  it("renders Market Briefing as a single lead-insight preview with Market Intelligence CTA", () => {
+  it("renders Today’s market briefing with lead insight and portfolio context", () => {
     expect(briefingSource).toContain("mustWatch");
     expect(briefingSource).toContain("buildIntelligenceDisplayMessage");
     expect(briefingSource).toContain("leadTitle");
@@ -82,25 +83,24 @@ describe("dashboard phase 2 compact previews", () => {
     expect(briefingSource).toContain("Open Market Intelligence");
     expect(briefingSource).toContain("line-clamp-3");
     expect(briefingSource).toContain("mustWatch?.title");
+    expect(briefingSource).toContain("Portfolio context");
     expect(briefingSource).not.toContain("DiscoverMissedTeaser");
     expect(briefingSource).not.toContain("Read featured story");
     expect(briefingSource).not.toContain("todayMatters.map");
     expect(briefingSource).not.toContain("macroHighlights");
-    expect(briefingSource).not.toContain("DashboardTodaysDecision");
   });
 
-  it("pairs Today’s Decision and Market Briefing as distinct intelligence cards", () => {
-    const decisionIdx = dashboardSource.indexOf("<DashboardTodaysDecision");
-    const briefingIdx = dashboardSource.indexOf(
-      "<DashboardIntelligencePreview",
-    );
+  it("places Portfolio Pulse above holdings and merged briefing below holdings", () => {
+    const pulseIdx = dashboardSource.indexOf("<DashboardPortfolioPulseCard");
     const holdingsIdx = dashboardSource.indexOf("<HoldingsToday");
-    expect(decisionIdx).toBeGreaterThan(-1);
-    expect(briefingIdx).toBeGreaterThan(decisionIdx);
-    expect(holdingsIdx).toBeGreaterThan(briefingIdx);
-    expect(dashboardSource).toMatch(
-      /grid min-w-0 gap-4 md:gap-5 lg:grid-cols-2[\s\S]*DashboardTodaysDecision[\s\S]*DashboardIntelligencePreview/,
+    const briefingIdx = dashboardSource.indexOf(
+      "<DashboardTodaysMarketBriefing",
     );
+    expect(pulseIdx).toBeGreaterThan(-1);
+    expect(holdingsIdx).toBeGreaterThan(pulseIdx);
+    expect(briefingIdx).toBeGreaterThan(holdingsIdx);
+    expect(dashboardSource).not.toContain("DashboardTodaysDecision");
+    expect(dashboardSource).not.toContain("DashboardIntelligencePreview");
     expect(dashboardSource).not.toMatch(/overflow-x-auto|overflow-x-scroll/);
   });
 
@@ -161,7 +161,7 @@ describe("dashboard phase 2 compact previews", () => {
     expect(dividendIdx).toBeGreaterThan(holdingsIdx);
     expect(contributionsIdx).toBeGreaterThan(holdingsIdx);
     expect(dashboardSource).not.toContain("DashboardGoalProgressCard");
-    expect(dashboardSource).toContain("DashboardPortfolioScorecard");
+    expect(dashboardSource).toContain("DashboardPortfolioPulseCard");
   });
 
   it("uses mobile-first stacked grids without horizontal scroll utilities", () => {

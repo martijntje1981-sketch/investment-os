@@ -74,16 +74,16 @@ describe("discover UI integration", () => {
       "utf8",
     );
     const preview = readFileSync(
-      resolve(process.cwd(), "components/dashboard/DashboardIntelligencePreview.tsx"),
+      resolve(process.cwd(), "components/dashboard/DashboardTodaysMarketBriefing.tsx"),
       "utf8",
     );
 
     expect(discoverPage).toContain("ThingsYouMayHaveMissedSection");
     expect(discoverPage).toContain("BottomNavigation");
     expect(preview).not.toContain("DiscoverMissedTeaser");
-    expect(preview).toContain("NEWS_HUB_PATH");
+    expect(preview).toContain("DASHBOARD_DEEP_LINKS.marketBriefing");
     expect(dashboard).not.toContain("useDiscoverSnapshot");
-    expect(dashboard).toContain("DashboardIntelligencePreview");
+    expect(dashboard).toContain("DashboardTodaysMarketBriefing");
     expect(discoverPage).not.toMatch(/innerWidth|matchMedia|useMediaQuery/);
   });
 });

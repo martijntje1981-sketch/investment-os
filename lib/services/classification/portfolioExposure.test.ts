@@ -346,7 +346,7 @@ describe("dashboard portfolio exposure integration", () => {
     expect(cardSource).not.toContain("overflow-x-auto");
     expect(cardSource).not.toContain("overflow-x-scroll");
     expect(dashboardSource).toContain("DashboardSummary");
-    expect(dashboardSource).toContain("DashboardIntelligencePreview");
+    expect(dashboardSource).toContain("DashboardTodaysMarketBriefing");
     expect(dashboardSource).not.toContain("DashboardInsightCard");
     expect(dashboardSource).toContain("DashboardMarketStatus");
     expect(dashboardSource).not.toContain("DashboardMoverCard");
