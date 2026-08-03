@@ -18,6 +18,10 @@ import {
   reserveExampleEntitlement,
 } from "@/lib/services/examplePortfolio/entitlements";
 import {
+  EXAMPLE_START_MESSAGES,
+  mapExampleOtpError,
+} from "@/lib/services/examplePortfolio/otpErrors";
+import {
   isExamplePortfolioTemplate,
   isValidExampleEmail,
   normalizeExampleEmail,
@@ -25,32 +29,24 @@ import {
 } from "@/lib/services/examplePortfolio/types";
 
 export type StartExamplePortfolioResult =
-  | { ok: true; status: "check_email" }
+  | { ok: true; status: "check_email" | "already_active" }
   | {
       ok: false;
-      status: "invalid" | "expired" | "converted" | "error" | "rate_limited";
+      status:
+        | "invalid"
+        | "expired"
+        | "converted"
+        | "already_used"
+        | "error"
+        | "rate_limited";
       message: string;
     };
 
-function mapOtpError(message: string): {
-  status: "error" | "rate_limited";
-  message: string;
-} {
-  const lower = message.toLowerCase();
-  if (
-    lower.includes("rate") ||
-    lower.includes("security purposes") ||
-    lower.includes("too many")
-  ) {
-    return {
-      status: "rate_limited",
-      message: "Please wait a moment, then try again.",
-    };
-  }
-  return {
-    status: "error",
-    message: message || "Could not send the sign-in email.",
-  };
+function logExampleStartFailure(code: string, detail?: string) {
+  // Safe operational signal only — never log tokens/secrets/raw emails.
+  console.info(
+    `[example-portfolio] start_failed code=${code}${detail ? ` detail=${detail}` : ""}`,
+  );
 }
 
 export async function startExamplePortfolio(input: {
@@ -62,7 +58,7 @@ export async function startExamplePortfolio(input: {
     return {
       ok: false,
       status: "invalid",
-      message: "Enter a valid email address.",
+      message: EXAMPLE_START_MESSAGES.invalid_email,
     };
   }
 
@@ -70,17 +66,18 @@ export async function startExamplePortfolio(input: {
     return {
       ok: false,
       status: "invalid",
-      message: "Choose a portfolio to explore.",
+      message: EXAMPLE_START_MESSAGES.invalid_template,
     };
   }
   const template: ExamplePortfolioTemplate = input.template;
 
   const admin = createAdminClient();
   if (!admin) {
+    logExampleStartFailure("unavailable");
     return {
       ok: false,
       status: "error",
-      message: "Example portfolios are temporarily unavailable.",
+      message: EXAMPLE_START_MESSAGES.unavailable,
     };
   }
 
@@ -88,29 +85,36 @@ export async function startExamplePortfolio(input: {
   try {
     entitlement = await findExampleEntitlementByEmail(admin, email);
   } catch {
+    logExampleStartFailure("eligibility_lookup");
     return {
       ok: false,
       status: "error",
-      message: "Could not check example portfolio eligibility.",
+      message: EXAMPLE_START_MESSAGES.eligibility,
     };
   }
 
   if (entitlement?.converted_at) {
+    logExampleStartFailure("converted");
     return {
       ok: false,
       status: "converted",
-      message:
-        "This email already keeps a Tobailey portfolio. Sign in to continue.",
+      message: EXAMPLE_START_MESSAGES.converted,
     };
   }
 
   if (entitlement && isEntitlementPeriodExpired(entitlement)) {
+    logExampleStartFailure("expired");
     return {
       ok: false,
       status: "expired",
-      message: "Your example portfolio has ended.",
+      message: EXAMPLE_START_MESSAGES.expired,
     };
   }
+
+  const alreadyActive =
+    Boolean(entitlement?.started_at) &&
+    Boolean(entitlement?.expires_at) &&
+    !isEntitlementPeriodExpired(entitlement!);
 
   // Lock template on first request. Later requests keep the reserved template.
   try {
@@ -120,10 +124,11 @@ export async function startExamplePortfolio(input: {
     });
     entitlement = reserved.entitlement;
   } catch {
+    logExampleStartFailure("reserve");
     return {
       ok: false,
       status: "error",
-      message: "Could not reserve your example portfolio.",
+      message: EXAMPLE_START_MESSAGES.reserve,
     };
   }
 
@@ -135,26 +140,36 @@ export async function startExamplePortfolio(input: {
   const supabase = await createClient();
 
   // Magic-link / OTP via existing Supabase Auth — one entitlement per email.
+  // Do not stamp account_mode here — activation owns the example clock/metadata.
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
       shouldCreateUser: true,
       data: {
-        // Informational only — activation reads template from the entitlement row.
         pending_example_template: lockedTemplate,
-        account_mode: "example",
       },
       emailRedirectTo,
     },
   });
 
   if (error) {
-    const mapped = mapOtpError(error.message);
+    const mapped = mapExampleOtpError(error.message, {
+      status: typeof error.status === "number" ? error.status : null,
+      code:
+        "code" in error
+          ? String((error as { code?: string }).code ?? "")
+          : null,
+    });
+    logExampleStartFailure(mapped.status, error.status?.toString());
     return {
       ok: false,
       status: mapped.status,
       message: mapped.message,
     };
+  }
+
+  if (alreadyActive) {
+    return { ok: true, status: "already_active" };
   }
 
   return { ok: true, status: "check_email" };

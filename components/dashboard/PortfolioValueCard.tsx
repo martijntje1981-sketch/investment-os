@@ -69,17 +69,16 @@ function MoverItem({
   const periodLabel = mover.changePeriodLabel.trim();
 
   return (
-    <article className={`min-w-0 ${appDarkInsetClass} px-2.5 py-2`}>
+    <Link
+      href={href}
+      className={`block min-w-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:ring-offset-2 focus-visible:ring-offset-navy-hero ${appDarkInsetClass} px-2.5 py-2`}
+      aria-label={`${label}: ${displayName}, ${signedPercent(mover.changePercent)}`}
+      title={displayName}
+    >
       <p className={appHeroMetricLabelClass}>{label}</p>
-      <Link
-        href={href}
-        className="mt-1 block min-w-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:ring-offset-2 focus-visible:ring-offset-navy-hero"
-        title={displayName}
-      >
-        <p className="truncate text-sm font-semibold leading-tight text-white">
-          {mover.holding.symbol}
-        </p>
-      </Link>
+      <p className="mt-1 truncate text-sm font-semibold leading-tight text-white">
+        {mover.holding.symbol}
+      </p>
       <div className={`mt-1 flex min-w-0 items-center gap-1 ${accentClass}`}>
         <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden />
         <span className="truncate text-sm font-bold leading-none tracking-[-0.02em] tabular-nums">
@@ -90,7 +89,6 @@ function MoverItem({
         <span
           className="mt-0.5 hidden max-w-full truncate text-[11px] font-medium text-white/45 sm:block"
           title={mover.changePeriodAccessibleDescription}
-          aria-label={mover.changePeriodAccessibleDescription}
         >
           {periodLabel}
         </span>
@@ -99,7 +97,7 @@ function MoverItem({
           {mover.changePeriodAccessibleDescription}
         </span>
       )}
-    </article>
+    </Link>
   );
 }
 

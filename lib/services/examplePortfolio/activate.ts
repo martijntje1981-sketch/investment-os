@@ -30,8 +30,16 @@ import { createPortfolioRepository } from "@/lib/services/portfolio/repository";
 import { syncPortfolioSnapshot } from "@/lib/services/portfolio/syncService";
 
 export type ActivateExampleResult =
-  | { status: "activated"; template: ExamplePortfolioTemplate; expiresAt: string }
-  | { status: "already_active"; template: ExamplePortfolioTemplate; expiresAt: string }
+  | {
+      status: "activated";
+      template: ExamplePortfolioTemplate;
+      expiresAt: string;
+    }
+  | {
+      status: "already_active";
+      template: ExamplePortfolioTemplate;
+      expiresAt: string;
+    }
   | { status: "expired"; expiresAt: string }
   | { status: "converted" }
   | { status: "skipped"; reason: string }
@@ -150,10 +158,7 @@ export async function activateExamplePortfolioForUser(input: {
 
   if (alreadySeeded) {
     if (!entitlement.seeded_at) {
-      await markExampleEntitlementSeeded(
-        admin,
-        entitlement.email_normalized,
-      );
+      await markExampleEntitlementSeeded(admin, entitlement.email_normalized);
     }
     return {
       status: "already_active",

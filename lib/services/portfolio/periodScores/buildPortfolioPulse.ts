@@ -15,6 +15,91 @@ export type BuildPortfolioPulseInput = {
   calculatedAt?: string;
 };
 
+function splitBandAndEvidence(summary: string): {
+  band: string;
+  evidence: string;
+} {
+  const idx = summary.indexOf(":");
+  if (idx === -1) {
+    return { band: summary.trim(), evidence: "" };
+  }
+  return {
+    band: summary.slice(0, idx).trim(),
+    evidence: summary.slice(idx + 1).trim(),
+  };
+}
+
+function softenBand(band: string): string {
+  return band
+    .replace(/\s+session$/i, "")
+    .replace(/\s+week$/i, "")
+    .trim()
+    .toLowerCase();
+}
+
+function isGenericEvidence(evidence: string): boolean {
+  const lower = evidence.toLowerCase();
+  return (
+    !evidence ||
+    lower.includes("see evidence") ||
+    lower.includes("based on verified")
+  );
+}
+
+function stripTrailingPunctuation(value: string): string {
+  return value.replace(/[.]+$/g, "").trim();
+}
+
+function dailyClause(summary: string): string {
+  const { band, evidence } = splitBandAndEvidence(summary);
+  const feel = softenBand(band) || "mixed";
+  const cleanEvidence = stripTrailingPunctuation(evidence);
+  if (isGenericEvidence(cleanEvidence)) {
+    return `today looks ${feel}`;
+  }
+  const detail = cleanEvidence
+    .replace(/^today’s move is /i, "")
+    .replace(/^the move is /i, "")
+    .replace(/^weakness is /i, "weakness is ");
+  if (/^driven mainly by /i.test(detail) || /^fully concentrated/i.test(detail)) {
+    return `today’s ${feel} move is ${detail}`;
+  }
+  if (/^broad across holdings/i.test(detail)) {
+    return `today’s ${feel} move is broad across holdings`;
+  }
+  if (/^weakness is broad/i.test(detail)) {
+    return `today’s ${feel} session shows broad weakness`;
+  }
+  return `today looks ${feel} — ${detail}`;
+}
+
+function weeklyClause(summary: string): string {
+  const { band, evidence } = splitBandAndEvidence(summary);
+  const feel = softenBand(band) || "mixed";
+  const cleanEvidence = stripTrailingPunctuation(evidence);
+  if (isGenericEvidence(cleanEvidence)) {
+    return `the week looks ${feel}`;
+  }
+  if (/concentrated/i.test(cleanEvidence)) {
+    return `the week looks ${feel} and concentrated in few holdings`;
+  }
+  if (/direction are aligned/i.test(cleanEvidence)) {
+    return `the week looks ${feel} with weekly and monthly direction aligned`;
+  }
+  if (/direction differ/i.test(cleanEvidence)) {
+    return `the week looks ${feel} as weekly and monthly direction differ`;
+  }
+  return `the week looks ${feel} — ${cleanEvidence}`;
+}
+
+function capitalizeSentence(value: string): string {
+  if (!value) return value;
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+/**
+ * One concise Dashboard sentence from Daily + Weekly evidence (not bare band labels).
+ */
 export function buildCombinedPulseSummary(
   dailySummary: string,
   weeklySummary: string,
@@ -22,18 +107,13 @@ export function buildCombinedPulseSummary(
   weeklyAvailable: boolean,
 ): string {
   if (dailyAvailable && weeklyAvailable) {
-    const dailyShort = dailySummary.split(":")[0]?.trim() || dailySummary;
-    const weeklyShort = weeklySummary.split(":")[0]?.trim() || weeklySummary;
-    if (dailySummary.toLowerCase().includes("broad") && weeklyAvailable) {
-      return `Today’s move reads as ${dailyShort.toLowerCase()}, while the week is ${weeklyShort.toLowerCase()}.`;
-    }
-    return `${dailyShort}. ${weeklyShort}.`;
+    return `${capitalizeSentence(dailyClause(dailySummary))}, while ${weeklyClause(weeklySummary)}.`;
   }
   if (dailyAvailable) {
-    return dailySummary;
+    return capitalizeSentence(dailyClause(dailySummary)) + ".";
   }
   if (weeklyAvailable) {
-    return weeklySummary;
+    return capitalizeSentence(weeklyClause(weeklySummary)) + ".";
   }
   return "Daily and weekly portfolio scores need more price or history data.";
 }

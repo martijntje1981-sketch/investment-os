@@ -3,7 +3,10 @@
  * Seed structure only — live quotes come from existing price providers.
  */
 
-import type { GoalSettings, StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
+import type {
+  GoalSettings,
+  StoredPortfolioHolding,
+} from "@/lib/types/portfolioStorage";
 import type { ExamplePortfolioTemplate } from "@/lib/services/examplePortfolio/types";
 
 export const EXAMPLE_HOLDING_ID_PREFIX = "example-";

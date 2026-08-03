@@ -20,7 +20,11 @@ import {
 
 export type ConvertExampleResult =
   | { status: "converted"; emailNormalized: string; convertedAt: string }
-  | { status: "already_converted"; emailNormalized: string; convertedAt: string }
+  | {
+      status: "already_converted";
+      emailNormalized: string;
+      convertedAt: string;
+    }
   | { status: "not_found" }
   | { status: "error"; message: string };
 
@@ -61,7 +65,9 @@ export async function convertExampleEntitlementForUser(input: {
     convertedAt,
   );
 
-  const { data, error: readError } = await admin.auth.admin.getUserById(user.id);
+  const { data, error: readError } = await admin.auth.admin.getUserById(
+    user.id,
+  );
   if (readError) {
     return { status: "error", message: readError.message };
   }
@@ -94,9 +100,9 @@ export async function convertExampleEntitlementForUser(input: {
   };
 }
 
-/** Marketing pricing anchor until Stripe Checkout exists. */
+/** Dedicated pricing page until Stripe Checkout exists. */
 export const EXAMPLE_CONVERSION_STATUS = {
   automated: false,
-  ctaHref: "/#pricing",
-  note: "Stripe Checkout and subscription webhooks are not implemented; CTA routes to marketing pricing.",
+  ctaHref: "/pricing",
+  note: "Stripe Checkout and subscription webhooks are not implemented; CTA routes to /pricing.",
 } as const;

@@ -106,5 +106,8 @@ export function formatExampleBannerLabel(
   return `Example portfolio · ${days} days remaining`;
 }
 
-/** Pricing destination until Stripe Checkout + webhooks exist. */
-export const EXAMPLE_KEEP_PORTFOLIO_HREF = "/#pricing";
+/**
+ * Dedicated pricing destination until Stripe Checkout + webhooks exist.
+ * Must not use `/#pricing` — authenticated `/` redirects to `/dashboard`.
+ */
+export const EXAMPLE_KEEP_PORTFOLIO_HREF = "/pricing";

@@ -6,6 +6,10 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { buildSignupUserMetadata } from "@/lib/types/portfolioBaseCurrency";
 import { safeAuthRedirectPath } from "@/lib/auth/routeAccess";
+import {
+  buildAuthCallbackUrl,
+  getPublicSiteUrl,
+} from "@/lib/auth/siteUrl";
 
 function redirectWithError(path: string, message: string): never {
   redirect(`${path}?error=${encodeURIComponent(message)}`);
@@ -55,7 +59,7 @@ export async function signup(formData: FormData) {
   }
 
   const requestHeaders = await headers();
-  const origin = requestHeaders.get("origin") ?? "http://localhost:3000";
+  const siteUrl = getPublicSiteUrl(requestHeaders);
   const nextRaw = String(formData.get("next") ?? "").trim();
   const safeNext = safeAuthRedirectPath(nextRaw, "/dashboard");
   const supabase = await createClient();
@@ -68,7 +72,7 @@ export async function signup(formData: FormData) {
     password,
     options: {
       data: userMetadata,
-      emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(safeNext)}`,
+      emailRedirectTo: buildAuthCallbackUrl(siteUrl, safeNext),
     },
   });
 
@@ -97,10 +101,10 @@ export async function requestPasswordReset(formData: FormData) {
   }
 
   const requestHeaders = await headers();
-  const origin = requestHeaders.get("origin") ?? "http://localhost:3000";
+  const siteUrl = getPublicSiteUrl(requestHeaders);
   const supabase = await createClient();
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${origin}/auth/callback?next=/reset-password`,
+    redirectTo: buildAuthCallbackUrl(siteUrl, "/reset-password"),
   });
 
   if (error) {
@@ -149,4 +153,3 @@ export async function updatePassword(formData: FormData) {
       encodeURIComponent("Your password has been updated. You can now sign in."),
   );
 }
-

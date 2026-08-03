@@ -60,7 +60,7 @@ describe("example portfolio entry surface", () => {
 
   it("keeps the entry form mobile-first without horizontal scroll utilities", () => {
     expect(explore).toContain("w-full min-w-0");
-    expect(explore).toContain('text-[16px]');
+    expect(explore).toContain("text-[16px]");
     expect(explore).not.toContain("overflow-x-auto");
     expect(explore).not.toContain("whitespace-nowrap");
   });
@@ -82,12 +82,12 @@ describe("example email + period helpers", () => {
       account_mode: "example" as const,
       example_expires_at: "2026-08-08T10:00:00.000Z",
     };
-    expect(
-      isExampleActive(meta, new Date("2026-08-03T10:00:00.000Z")),
-    ).toBe(true);
-    expect(
-      isExampleExpired(meta, new Date("2026-08-09T10:00:00.000Z")),
-    ).toBe(true);
+    expect(isExampleActive(meta, new Date("2026-08-03T10:00:00.000Z"))).toBe(
+      true,
+    );
+    expect(isExampleExpired(meta, new Date("2026-08-09T10:00:00.000Z"))).toBe(
+      true,
+    );
     expect(
       getExampleDaysRemaining(
         "2026-08-08T10:00:00.000Z",
@@ -183,9 +183,9 @@ describe("example portfolio templates", () => {
     expect(
       holdings.find((h) => h.symbol === "VHYL")?.distributionPolicyUserOverride,
     ).toBe("distributing");
-    expect(
-      holdings.find((h) => h.symbol === "STRC")?.providerSymbol,
-    ).toBe("STRC.AS");
+    expect(holdings.find((h) => h.symbol === "STRC")?.providerSymbol).toBe(
+      "STRC.AS",
+    );
     const goal = buildExampleGoal("income");
     expect(goal.passiveIncomeTarget).toBe(6000);
   });
@@ -333,7 +333,9 @@ describe("example expiry enforcement", () => {
     expect(migration).toContain("email_normalized text PRIMARY KEY");
     expect(migration).toContain("ENABLE ROW LEVEL SECURITY");
     expect(migration).toContain("example_portfolio_entitlements_select_own");
-    expect(migration).toContain("GRANT ALL ON public.example_portfolio_entitlements TO service_role");
+    expect(migration).toContain(
+      "GRANT ALL ON public.example_portfolio_entitlements TO service_role",
+    );
   });
 });
 
@@ -347,12 +349,153 @@ describe("example activation idempotency + conversion boundary", () => {
   });
 
   it("documents conversion as pricing CTA until Stripe exists", () => {
-    expect(EXAMPLE_KEEP_PORTFOLIO_HREF).toBe("/#pricing");
+    expect(EXAMPLE_KEEP_PORTFOLIO_HREF).toBe("/pricing");
     expect(EXAMPLE_CONVERSION_STATUS.automated).toBe(false);
-    expect(EXAMPLE_CONVERSION_STATUS.ctaHref).toBe("/#pricing");
+    expect(EXAMPLE_CONVERSION_STATUS.ctaHref).toBe("/pricing");
     const conversion = read("lib/services/examplePortfolio/conversion.ts");
     expect(conversion).toContain("convertExampleEntitlementForUser");
     expect(conversion).toContain("markExampleEntitlementConverted");
     expect(conversion).toContain("already_converted");
+    const pricing = read("app/pricing/page.tsx");
+    expect(pricing).toContain('id="pricing"');
+    expect(pricing).toContain("Contact us to keep your portfolio");
+  });
+});
+
+describe("example entitlement resolver source of truth", () => {
+  it("ignores stale metadata for normal users without an entitlement row", async () => {
+    const { resolveExampleStatus, shouldShowExampleBanner } =
+      await import("@/lib/services/examplePortfolio/resolveExampleStatus");
+    const status = resolveExampleStatus({
+      entitlement: null,
+      metadata: {
+        account_mode: "example",
+        example_expires_at: "2099-01-01T00:00:00.000Z",
+      },
+      now: new Date("2026-08-03T12:00:00.000Z"),
+    });
+    expect(status.kind).toBe("none");
+    expect(status.staleMetadata).toBe(true);
+    expect(shouldShowExampleBanner(status)).toBe(false);
+  });
+
+  it("shows active banner from entitlement even when metadata is stale", async () => {
+    const { resolveExampleStatus, shouldShowExampleBanner } =
+      await import("@/lib/services/examplePortfolio/resolveExampleStatus");
+    const status = resolveExampleStatus({
+      entitlement: {
+        email_normalized: "a@example.com",
+        user_id: "user-1",
+        template: "global",
+        started_at: "2026-08-01T00:00:00.000Z",
+        expires_at: "2026-08-08T00:00:00.000Z",
+        seeded_at: "2026-08-01T00:00:00.000Z",
+        converted_at: null,
+      },
+      metadata: { account_mode: "standard" },
+      now: new Date("2026-08-03T12:00:00.000Z"),
+    });
+    expect(status.kind).toBe("active");
+    expect(status.daysRemaining).toBe(5);
+    expect(status.staleMetadata).toBe(true);
+    expect(shouldShowExampleBanner(status)).toBe(true);
+  });
+
+  it("marks expired and converted entitlements correctly", async () => {
+    const { resolveExampleStatus, shouldShowExampleBanner } =
+      await import("@/lib/services/examplePortfolio/resolveExampleStatus");
+    const expired = resolveExampleStatus({
+      entitlement: {
+        email_normalized: "a@example.com",
+        user_id: "user-1",
+        template: "income",
+        started_at: "2026-07-01T00:00:00.000Z",
+        expires_at: "2026-07-08T00:00:00.000Z",
+        seeded_at: "2026-07-01T00:00:00.000Z",
+        converted_at: null,
+      },
+      now: new Date("2026-08-03T12:00:00.000Z"),
+    });
+    expect(expired.kind).toBe("expired");
+    expect(shouldShowExampleBanner(expired)).toBe(false);
+
+    const converted = resolveExampleStatus({
+      entitlement: {
+        email_normalized: "a@example.com",
+        user_id: "user-1",
+        template: "global",
+        started_at: "2026-08-01T00:00:00.000Z",
+        expires_at: "2026-08-08T00:00:00.000Z",
+        seeded_at: "2026-08-01T00:00:00.000Z",
+        converted_at: "2026-08-02T00:00:00.000Z",
+      },
+      metadata: {
+        account_mode: "example",
+        example_expires_at: "2026-08-08T00:00:00.000Z",
+      },
+      now: new Date("2026-08-03T12:00:00.000Z"),
+    });
+    expect(converted.kind).toBe("converted");
+    expect(shouldShowExampleBanner(converted)).toBe(false);
+  });
+
+  it("uses the same resolver for independent session metadata copies", async () => {
+    const { resolveExampleStatus } =
+      await import("@/lib/services/examplePortfolio/resolveExampleStatus");
+    const entitlement = {
+      email_normalized: "a@example.com",
+      user_id: "user-1",
+      template: "global" as const,
+      started_at: "2026-08-01T00:00:00.000Z",
+      expires_at: "2026-08-08T00:00:00.000Z",
+      seeded_at: "2026-08-01T00:00:00.000Z",
+      converted_at: null,
+    };
+    const mobile = resolveExampleStatus({
+      entitlement,
+      metadata: {
+        account_mode: "example",
+        example_expires_at: "2026-08-08T00:00:00.000Z",
+      },
+      now: new Date("2026-08-03T12:00:00.000Z"),
+    });
+    const laptop = resolveExampleStatus({
+      entitlement,
+      metadata: { account_mode: "standard" },
+      now: new Date("2026-08-03T12:00:00.000Z"),
+    });
+    expect(mobile.kind).toBe(laptop.kind);
+    expect(mobile.bannerLabel).toBe(laptop.bannerLabel);
+    expect(mobile.daysRemaining).toBe(laptop.daysRemaining);
+  });
+});
+
+describe("example OTP error categories", () => {
+  it("maps rate limits separately from eligibility failures", async () => {
+    const { mapExampleOtpError, EXAMPLE_START_MESSAGES } =
+      await import("@/lib/services/examplePortfolio/otpErrors");
+    expect(
+      mapExampleOtpError(
+        "For security purposes, you can only request this after 60 seconds.",
+      ),
+    ).toEqual({
+      status: "rate_limited",
+      message:
+        "Too many sign-in emails were requested. Please wait and try again.",
+    });
+    expect(
+      mapExampleOtpError("rate limit exceeded", { status: 429 }),
+    ).toMatchObject({ status: "rate_limited" });
+    expect(EXAMPLE_START_MESSAGES.expired).toContain("already used");
+    expect(EXAMPLE_START_MESSAGES.already_active).toContain(
+      "active Example Portfolio",
+    );
+    expect(EXAMPLE_START_MESSAGES.converted).toContain("Sign in");
+    const start = read(
+      "lib/services/examplePortfolio/startExamplePortfolio.ts",
+    );
+    expect(start).toContain("mapExampleOtpError");
+    expect(start).toContain("alreadyActive");
+    expect(start).not.toContain('account_mode: "example"');
   });
 });

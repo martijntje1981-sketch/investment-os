@@ -1,59 +1,67 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 
-import {
-  EXAMPLE_KEEP_PORTFOLIO_HREF,
-  formatExampleBannerLabel,
-  isExampleActive,
-  type ExamplePortfolioUserMetadata,
-} from "@/lib/services/examplePortfolio/types";
-import { createClient } from "@/lib/supabase/client";
+import { EXAMPLE_KEEP_PORTFOLIO_HREF } from "@/lib/services/examplePortfolio/types";
 import {
   isAuthRequiredPath,
   isMarketingPath,
+  isPublicAppPath,
 } from "@/lib/auth/routeAccess";
+
+type BannerStatus = {
+  showBanner: boolean;
+  bannerLabel: string | null;
+  kind: string;
+};
 
 /**
  * Compact fixed bar under the header for active example portfolios.
- * Does not cover bottom navigation.
+ * Status comes from the server entitlement resolver — not stale metadata alone.
  */
 export function ExamplePortfolioBanner() {
   const pathname = usePathname();
-  const [meta, setMeta] = useState<ExamplePortfolioUserMetadata | null>(null);
+  const [status, setStatus] = useState<BannerStatus | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    const supabase = createClient();
-
-    async function load() {
-      const { data } = await supabase.auth.getUser();
-      if (cancelled) return;
-      const next = (data.user?.user_metadata ??
-        null) as ExamplePortfolioUserMetadata | null;
-      setMeta(next);
+  const load = useCallback(async () => {
+    try {
+      const response = await fetch("/api/example-portfolio/status", {
+        method: "GET",
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+      if (!response.ok) {
+        setStatus({ showBanner: false, bannerLabel: null, kind: "none" });
+        return;
+      }
+      const payload = (await response.json()) as {
+        success?: boolean;
+        status?: BannerStatus;
+      };
+      if (!payload.success || !payload.status) {
+        setStatus({ showBanner: false, bannerLabel: null, kind: "none" });
+        return;
+      }
+      setStatus(payload.status);
+    } catch {
+      setStatus({ showBanner: false, bannerLabel: null, kind: "none" });
     }
-
-    void load();
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(() => {
-      void load();
-    });
-
-    return () => {
-      cancelled = true;
-      subscription.unsubscribe();
-    };
   }, []);
 
-  const show =
-    Boolean(meta) &&
-    isExampleActive(meta) &&
+  useEffect(() => {
+    void load();
+  }, [load, pathname]);
+
+  const routeAllowsBanner =
     !isMarketingPath(pathname) &&
-    (isAuthRequiredPath(pathname) || pathname === "/explore");
+    (isAuthRequiredPath(pathname) || isPublicAppPath(pathname));
+
+  const show =
+    Boolean(status?.showBanner) &&
+    Boolean(status?.bannerLabel) &&
+    routeAllowsBanner;
 
   useEffect(() => {
     if (!show) {
@@ -66,9 +74,7 @@ export function ExamplePortfolioBanner() {
     };
   }, [show]);
 
-  if (!show || !meta?.example_expires_at) return null;
-
-  const label = formatExampleBannerLabel(meta.example_expires_at);
+  if (!show || !status?.bannerLabel) return null;
 
   return (
     <div
@@ -77,7 +83,7 @@ export function ExamplePortfolioBanner() {
     >
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2">
         <p className="text-[12px] font-semibold text-amber-950 sm:text-[13px]">
-          {label}
+          {status.bannerLabel}
         </p>
         <Link
           href={EXAMPLE_KEEP_PORTFOLIO_HREF}

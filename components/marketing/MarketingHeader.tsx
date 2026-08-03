@@ -23,7 +23,7 @@ const navigationItems = [
   },
   {
     label: "Pricing",
-    href: "#pricing",
+    href: "/pricing",
   },
   {
     label: "FAQ",

@@ -7,11 +7,11 @@ import {
   appDashboardDarkMetaClass,
   appHeroMetricLabelClass,
 } from "@/components/layout/appSurface";
-import {
-  formatPortfolioPercent,
-} from "@/lib/client/portfolioAnalysis";
+import { formatPortfolioPercent } from "@/lib/client/portfolioAnalysis";
 import type { HeroMover } from "@/lib/client/dailyPerformance";
 import { RANKING_AFTER_CLOSE } from "@/lib/client/investorOverviewCopy";
+
+import { holdingDetailPath } from "@/lib/navigation/appRoutes";
 
 function signedPercent(value: number) {
   const formatted = formatPortfolioPercent(Math.abs(value));
@@ -19,7 +19,7 @@ function signedPercent(value: number) {
 }
 
 function resolveHoldingHref(mover: HeroMover): string {
-  return `/portfolio/${mover.holding.symbol.toLowerCase()}`;
+  return holdingDetailPath(mover.holding.symbol);
 }
 
 function MoverTile({
@@ -33,7 +33,9 @@ function MoverTile({
 }) {
   const isPositive = tone === "positive";
   const accentClass = isPositive ? "text-emerald-300" : "text-red-300";
-  const borderClass = isPositive ? "border-emerald-400/20" : "border-red-400/20";
+  const borderClass = isPositive
+    ? "border-emerald-400/20"
+    : "border-red-400/20";
   const Icon = isPositive
     ? TrendingUp
     : mover.changePercent < 0
@@ -61,7 +63,9 @@ function MoverTile({
             </p>
           ) : null}
         </Link>
-        <div className={`flex shrink-0 flex-col items-end gap-0.5 ${accentClass}`}>
+        <div
+          className={`flex shrink-0 flex-col items-end gap-0.5 ${accentClass}`}
+        >
           <div className="flex items-center gap-1">
             <Icon className="h-4 w-4 shrink-0" aria-hidden />
             <span className="text-sm font-bold tabular-nums">
@@ -96,9 +100,7 @@ export function DashboardHeroMovers({
 }) {
   if (!hasReliableHeroMoverData) {
     const unavailableCopy =
-      hasDailyData && coverageMessage
-        ? coverageMessage
-        : RANKING_AFTER_CLOSE;
+      hasDailyData && coverageMessage ? coverageMessage : RANKING_AFTER_CLOSE;
 
     return (
       <div className="border-t border-white/[0.08] px-5 py-3 sm:px-7 sm:py-4 md:px-8">

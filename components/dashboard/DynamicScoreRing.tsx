@@ -19,14 +19,17 @@ function cn(...parts: Array<string | false | null | undefined>) {
  */
 export function DynamicScoreRing({
   score,
-  size = 112,
+  size = 96,
+  emphasis = "default",
   className,
 }: {
   score: DynamicPortfolioScore;
   size?: number;
+  /** Daily gets slightly stronger visual weight than Weekly. */
+  emphasis?: "primary" | "default";
   className?: string;
 }) {
-  const stroke = Math.max(7, Math.round(size * 0.08));
+  const stroke = Math.max(6, Math.round(size * 0.078));
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
   const fill =
@@ -44,6 +47,7 @@ export function DynamicScoreRing({
   const status = score.available
     ? (score.band?.label ?? score.summary)
     : (score.unavailableReason ?? "Unavailable");
+  const isPrimary = emphasis === "primary";
 
   const aria = score.available
     ? `${title} Portfolio Score ${score.value} out of 100, ${status}. ${score.summary}`
@@ -53,7 +57,7 @@ export function DynamicScoreRing({
     <Link
       href={score.href}
       className={cn(
-        "group flex min-w-0 flex-1 flex-col items-center rounded-2xl px-2 py-3 text-center transition hover:bg-slate-50/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40",
+        "group flex min-w-0 flex-1 flex-col items-center rounded-xl px-1.5 py-1.5 text-center transition hover:bg-slate-50/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 sm:px-2 sm:py-2",
         className,
       )}
       aria-label={aria}
@@ -88,24 +92,44 @@ export function DynamicScoreRing({
             strokeDashoffset={offset}
           />
         </svg>
-        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-[1.65rem] font-bold tabular-nums tracking-[-0.04em] text-slate-950 sm:text-[1.85rem]">
+        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-0">
+          <span
+            className={cn(
+              "tabular-nums tracking-[-0.045em] text-slate-950",
+              isPrimary
+                ? "text-[1.55rem] font-extrabold sm:text-[1.7rem]"
+                : "text-[1.4rem] font-bold sm:text-[1.55rem]",
+            )}
+          >
             {display}
           </span>
           {score.available ? (
-            <span className="text-[10px] font-semibold text-slate-500">
+            <span
+              className={cn(
+                "font-medium leading-none text-slate-400",
+                isPrimary ? "text-[9px]" : "text-[8px]",
+              )}
+            >
               /100
             </span>
           ) : null}
         </div>
       </div>
-      <p className="mt-2.5 text-[13px] font-bold tracking-[-0.02em] text-slate-950">
+      <p
+        className={cn(
+          "mt-1.5 tracking-[-0.02em]",
+          isPrimary
+            ? "text-[13px] font-bold text-slate-950"
+            : "text-[12px] font-semibold text-slate-700",
+        )}
+      >
         {title}
       </p>
       <p
         className={cn(
-          "mt-1 line-clamp-2 min-h-[2.4em] text-[11px] font-semibold leading-snug",
+          "mt-0.5 line-clamp-2 text-[10px] font-semibold leading-snug sm:text-[11px]",
           score.available ? SCORE_TONE_LABEL_CLASS[tone] : "text-slate-500",
+          !isPrimary && "opacity-90",
         )}
       >
         {status}

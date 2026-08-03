@@ -15,8 +15,7 @@ import { SYNC_ERROR_CODES } from "@/lib/services/portfolio/types";
 export const EXAMPLE_EXPIRED_API_CODE = "EXAMPLE_EXPIRED" as const;
 
 export type ExampleAccessDecision =
-  | { ok: true; user: User }
-  | { ok: false; response: NextResponse };
+  { ok: true; user: User } | { ok: false; response: NextResponse };
 
 /**
  * Block expired example accounts from reading/mutating protected portfolio APIs.

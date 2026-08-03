@@ -4,7 +4,6 @@ import { Activity, ArrowUpRight } from "lucide-react";
 import { DynamicScoreRing } from "@/components/dashboard/DynamicScoreRing";
 import { DashboardSectionHeader } from "@/components/dashboard/DashboardSectionHeader";
 import {
-  appCardPaddingClass,
   appDashboardLightCardClass,
   appSectionMetaClass,
   appTextLinkClass,
@@ -26,28 +25,31 @@ export function DashboardPortfolioPulseCard({
         titleId="portfolio-pulse-heading"
         title="Portfolio pulse"
         subtitle="How your portfolio is doing now"
-        icon={<Activity className="h-5 w-5" />}
+        icon={<Activity className="h-4 w-4" />}
         iconToneClassName="bg-slate-100 text-slate-700"
         bordered={false}
+        variant="compact"
+        className="!px-4 !py-3 md:!px-5 md:!py-3.5"
       />
 
-      <div className={`${appCardPaddingClass} pt-0`}>
-        <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-4">
-          <DynamicScoreRing score={pulse.daily} />
-          <DynamicScoreRing score={pulse.weekly} />
+      <div className="px-4 pb-3.5 pt-0 md:px-5 md:pb-4">
+        <div className="mx-auto grid min-w-0 max-w-md grid-cols-2 gap-0.5 sm:max-w-none sm:gap-1.5">
+          <DynamicScoreRing score={pulse.daily} size={100} emphasis="primary" />
+          <DynamicScoreRing score={pulse.weekly} size={92} emphasis="default" />
         </div>
 
-        <p className={`mt-3 ${appSectionMetaClass}`}>{pulse.combinedSummary}</p>
-
-        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+        <div className="mt-2 space-y-1.5">
+          <p className={`${appSectionMetaClass} text-[12.5px] leading-snug text-slate-600`}>
+            {pulse.combinedSummary}
+          </p>
           <Link
             href={DASHBOARD_DEEP_LINKS.scorecard}
-            className={appTextLinkClass}
+            className={`${appTextLinkClass} text-[12.5px]`}
           >
             Open Portfolio Scorecard
-            <ArrowUpRight className="h-4 w-4" aria-hidden />
+            <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
           </Link>
-          <p className="text-[11px] font-medium text-slate-500">
+          <p className="text-[10px] font-medium leading-snug text-slate-400">
             Scores describe recent movement — not expected returns or advice.
           </p>
         </div>

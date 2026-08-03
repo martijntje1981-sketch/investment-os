@@ -41,8 +41,7 @@ const TEMPLATES: Array<{
 
 export default function ExplorePage() {
   const [email, setEmail] = useState("");
-  const [template, setTemplate] =
-    useState<ExamplePortfolioTemplate>("global");
+  const [template, setTemplate] = useState<ExamplePortfolioTemplate>("global");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [checkEmail, setCheckEmail] = useState(false);
@@ -78,7 +77,11 @@ export default function ExplorePage() {
       const result = await startExamplePortfolio({ email, template });
       if (result.ok) {
         setCheckEmail(true);
-        setMessage("Check your email to continue.");
+        setMessage(
+          result.status === "already_active"
+            ? "Your active Example Portfolio already exists. Check your email to sign in."
+            : "Check your email to continue.",
+        );
         return;
       }
       if (result.status === "expired") {
@@ -204,7 +207,10 @@ export default function ExplorePage() {
               </fieldset>
 
               {error ? (
-                <p className="text-[14px] font-medium text-rose-700" role="alert">
+                <p
+                  className="text-[14px] font-medium text-rose-700"
+                  role="alert"
+                >
                   {error}
                 </p>
               ) : null}
@@ -256,8 +262,8 @@ export default function ExplorePage() {
             Browse without signing in
           </h2>
           <p className={`mt-1 ${appSectionSubtitleClass}`}>
-            Perspectives, Market Pulse, News and Supported Instruments stay
-            open to everyone.
+            Perspectives, Market Pulse, News and Supported Instruments stay open
+            to everyone.
           </p>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             {PUBLIC_EXPLORE_DESTINATIONS.map((destination) => (

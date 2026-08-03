@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Banknote,
   BarChart3,
@@ -116,6 +117,7 @@ import { usePortfolioAnalyst } from "@/lib/client/usePortfolioAnalyst";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 import { formatPortfolioHeroRefreshLabel } from "@/lib/client/marketSnapshotSync";
 import { useMarketSnapshotMetadata } from "@/lib/client/useMarketSnapshotMetadata";
+import { holdingDetailPath } from "@/lib/navigation/appRoutes";
 
 type AssetType = "investment" | "cash";
 type Holding = StoredPortfolioHolding;
@@ -140,6 +142,7 @@ function costOf(holding: Holding) {
 }
 
 export default function PortfolioPage() {
+  const router = useRouter();
   const { formatEur, snapshot, baseCurrency, canPersistMonetary, refreshFx } =
     useBaseCurrencyDisplay();
   const editorSessionRef = useRef<BaseCurrencyFxSnapshot | null>(null);
@@ -733,10 +736,38 @@ export default function PortfolioPage() {
                           analystQuote.averagePriceTarget,
                         )
                       : null;
+                  const detailHref =
+                    holding.assetType === "cash"
+                      ? null
+                      : holdingDetailPath(holding.symbol);
                   return (
                     <article
                       key={holding.id}
-                      className="space-y-3 px-5 py-5 lg:px-7"
+                      className={`space-y-3 px-5 py-5 lg:px-7 ${detailHref ? "cursor-pointer rounded-2xl transition-colors hover:bg-slate-50/80 focus-within:bg-slate-50/80" : ""}`}
+                      onClick={
+                        detailHref
+                          ? () => {
+                              router.push(detailHref);
+                            }
+                          : undefined
+                      }
+                      onKeyDown={
+                        detailHref
+                          ? (event) => {
+                              if (event.key === "Enter" || event.key === " ") {
+                                event.preventDefault();
+                                router.push(detailHref);
+                              }
+                            }
+                          : undefined
+                      }
+                      tabIndex={detailHref ? 0 : undefined}
+                      role={detailHref ? "link" : undefined}
+                      aria-label={
+                        detailHref
+                          ? `Open ${holding.name} holding details`
+                          : undefined
+                      }
                     >
                       <div className="grid gap-4 lg:grid-cols-[0.65fr_1.5fr_1fr_0.8fr_1fr_auto] lg:items-start">
                         <div className="flex items-start">
@@ -830,24 +861,29 @@ export default function PortfolioPage() {
                                 : `${holdingReturn >= 0 ? "+" : ""}${formatEur(holdingReturn)}`}
                           </p>
                         </div>
-                        <div className="flex items-center justify-end gap-1">
-                          {holding.assetType === "investment" ? (
+                        <div
+                          className="flex items-center justify-end gap-1"
+                          onClick={(event) => event.stopPropagation()}
+                          onKeyDown={(event) => event.stopPropagation()}
+                        >
+                          {detailHref ? (
                             <Link
-                              href={`/holding/${holding.symbol}`}
+                              href={detailHref}
                               aria-label={`View ${holding.name}`}
-                              className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"
+                              className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
                             >
                               <ChevronRight className="h-5 w-5" />
                             </Link>
                           ) : (
                             <span
-                              className="rounded-lg p-2 opacity-0 pointer-events-none"
+                              className="pointer-events-none rounded-lg p-2 opacity-0"
                               aria-hidden="true"
                             >
                               <ChevronRight className="h-5 w-5" />
                             </span>
                           )}
                           <button
+                            type="button"
                             onClick={() => openEdit(holding)}
                             aria-label={`Edit ${holding.name}`}
                             className="rounded-lg p-2 text-slate-500 hover:bg-slate-100"
@@ -855,6 +891,7 @@ export default function PortfolioPage() {
                             <Pencil className="h-4 w-4" />
                           </button>
                           <button
+                            type="button"
                             onClick={() => removeHolding(holding)}
                             aria-label={`Remove ${holding.name}`}
                             className="rounded-lg p-2 text-red-600 hover:bg-red-50"

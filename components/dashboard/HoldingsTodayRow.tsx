@@ -1,5 +1,9 @@
 "use client";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import type { KeyboardEvent } from "react";
+
 import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 import { holdingValueUnavailableLabel } from "@/lib/client/holdingDisplayPrice";
 import { formatHoldingTodayChange } from "@/lib/client/portfolioMovementFormat";
@@ -11,6 +15,7 @@ import {
   appTickerClass,
 } from "@/components/layout/appSurface";
 import type { DashboardHoldingRow } from "@/lib/client/dashboardPortfolioSnapshot";
+import { holdingDetailPath } from "@/lib/navigation/appRoutes";
 
 function changeToneClass(row: DashboardHoldingRow): string {
   if (row.assetType === "cash") {
@@ -139,18 +144,42 @@ export function HoldingsTodayRow({
   layout: "mobile" | "desktop";
   index?: number;
 }) {
+  const router = useRouter();
   const { formatEur } = useBaseCurrencyDisplay();
   const changeLabel = holdingTodayLabel(row, formatEur);
   const periodMeta = holdingPeriodMeta(row);
   const surfaceClass = rowSurfaceClass(index, layout);
+  const canOpenDetail = row.assetType !== "cash";
+  const href = canOpenDetail ? holdingDetailPath(row.symbol) : null;
+
+  function openDetail() {
+    if (href) router.push(href);
+  }
+
+  function onRowKeyDown(event: KeyboardEvent<HTMLElement>) {
+    if (!href) return;
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      openDetail();
+    }
+  }
 
   if (layout === "desktop") {
     return (
-      <tr className={`border-b border-slate-100/90 last:border-b-0 ${surfaceClass}`}>
+      <tr
+        className={`border-b border-slate-100/90 last:border-b-0 ${surfaceClass} ${href ? "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand/40" : ""}`}
+        onClick={href ? openDetail : undefined}
+        onKeyDown={href ? onRowKeyDown : undefined}
+        tabIndex={href ? 0 : undefined}
+        role={href ? "link" : undefined}
+        aria-label={href ? `Open ${row.name} holding details` : undefined}
+      >
         <td className="px-4 py-4 align-middle">
           <div className="min-w-0">
             <p className={`truncate ${appTableNameClass}`}>{row.name}</p>
-            <p className={`mt-0.5 ${appTickerClass}`}>{holdingSecondaryLabel(row)}</p>
+            <p className={`mt-0.5 ${appTickerClass}`}>
+              {holdingSecondaryLabel(row)}
+            </p>
           </div>
         </td>
         <td
@@ -173,13 +202,48 @@ export function HoldingsTodayRow({
     );
   }
 
+  if (href) {
+    return (
+      <Link
+        href={href}
+        className={`flex min-w-0 items-start justify-between gap-4 border-b border-slate-100/90 py-4 last:border-b-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 ${surfaceClass}`}
+        aria-label={`Open ${row.name} holding details`}
+      >
+        <div className="min-w-0 flex-1 pr-2">
+          <p className={`truncate ${appTableNameClass}`}>{row.name}</p>
+          <p className={`mt-0.5 ${appTickerClass}`}>
+            {holdingSecondaryLabel(row)}
+          </p>
+        </div>
+        <div
+          className="shrink-0 text-right"
+          title={row.changePeriodAccessibleDescription || undefined}
+        >
+          <p className={appTableValueClass}>
+            <HoldingValueLabel row={row} formatEur={formatEur} />
+          </p>
+          <p className={`mt-1 ${appTableChangeClass} ${changeToneClass(row)}`}>
+            {changeLabel}
+          </p>
+          {periodMeta ? (
+            <p className="mt-0.5 text-[11px] font-medium text-slate-500">
+              {periodMeta}
+            </p>
+          ) : null}
+        </div>
+      </Link>
+    );
+  }
+
   return (
     <div
       className={`flex min-w-0 items-start justify-between gap-4 border-b border-slate-100/90 py-4 last:border-b-0 ${surfaceClass}`}
     >
       <div className="min-w-0 flex-1 pr-2">
         <p className={`truncate ${appTableNameClass}`}>{row.name}</p>
-        <p className={`mt-0.5 ${appTickerClass}`}>{holdingSecondaryLabel(row)}</p>
+        <p className={`mt-0.5 ${appTickerClass}`}>
+          {holdingSecondaryLabel(row)}
+        </p>
       </div>
       <div
         className="shrink-0 text-right"

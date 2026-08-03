@@ -7,6 +7,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 
 import {
+  buildCombinedPulseSummary,
   buildDailyPortfolioScore,
   buildPortfolioPulse,
   buildPortfolioPulseSnapshots,
@@ -333,6 +334,33 @@ describe("Weekly Portfolio Score", () => {
   });
 });
 
+describe("Portfolio Pulse combined summary", () => {
+  it("writes one evidence-based sentence instead of bare band labels", () => {
+    const summary = buildCombinedPulseSummary(
+      "Mixed session: the move is driven mainly by VWCE.",
+      "Mixed week: weekly and monthly direction differ.",
+      true,
+      true,
+    );
+    expect(summary).not.toMatch(/^Mixed session\. Mixed week\.?$/i);
+    expect(summary.toLowerCase()).toContain("vwce");
+    expect(summary.toLowerCase()).toMatch(/while/);
+    expect(summary.split(".").filter(Boolean).length).toBe(1);
+  });
+
+  it("keeps a single sentence when both scores are available", () => {
+    const summary = buildCombinedPulseSummary(
+      "Strong session: today’s move is broad across holdings.",
+      "Positive week: weekly and monthly direction are aligned.",
+      true,
+      true,
+    );
+    expect(summary.toLowerCase()).toMatch(/broad/);
+    expect(summary.toLowerCase()).toMatch(/aligned/);
+    expect(summary).toMatch(/while/i);
+  });
+});
+
 describe("Portfolio Pulse snapshot contract", () => {
   it("exposes serializable snapshots with null previous/delta", () => {
     const pulse = buildPortfolioPulse({
@@ -359,6 +387,9 @@ describe("Portfolio Pulse snapshot contract", () => {
     expect(snapshots.daily.delta).toBeNull();
     expect(snapshots.weekly.evidenceIds.length).toBeGreaterThan(0);
     expect(snapshots.combinedSummary.length).toBeGreaterThan(0);
+    expect(snapshots.combinedSummary).not.toMatch(
+      /^Mixed session\. Mixed week\.?$/i,
+    );
   });
 });
 

@@ -37,6 +37,10 @@ describe("canonical Portfolio navigation", () => {
       path.resolve(process.cwd(), "components/dashboard/HoldingsToday.tsx"),
       "utf8",
     );
+    const holdingsRow = readFileSync(
+      path.resolve(process.cwd(), "components/dashboard/HoldingsTodayRow.tsx"),
+      "utf8",
+    );
     const movers = readFileSync(
       path.resolve(
         process.cwd(),
@@ -44,11 +48,28 @@ describe("canonical Portfolio navigation", () => {
       ),
       "utf8",
     );
+    const portfolio = readFileSync(
+      path.resolve(process.cwd(), "app/portfolio/page.tsx"),
+      "utf8",
+    );
+    const deadMovers = readFileSync(
+      path.resolve(
+        process.cwd(),
+        "components/dashboard/DashboardHeroMovers.tsx",
+      ),
+      "utf8",
+    );
 
     expect(bottomNav).toContain("PORTFOLIO_PATH");
     expect(bottomNav).toContain("href: PORTFOLIO_PATH");
     expect(holdings).toContain("PORTFOLIO_PATH");
+    expect(holdingsRow).toContain("holdingDetailPath");
+    expect(holdingsRow).toContain('row.assetType !== "cash"');
     expect(movers).toContain("holdingDetailPath");
     expect(movers).not.toContain("`/portfolio/${");
+    expect(portfolio).toContain("holdingDetailPath");
+    expect(portfolio).not.toContain("`/holding/${holding.symbol}`");
+    expect(deadMovers).toContain("holdingDetailPath");
+    expect(deadMovers).not.toContain("`/portfolio/${");
   });
 });

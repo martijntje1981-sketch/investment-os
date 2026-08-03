@@ -9,7 +9,9 @@ import path from "node:path";
 import {
   buildAuthCallbackUrl,
   buildExampleAuthCallbackUrl,
+  CANONICAL_PUBLIC_SITE_URL,
   getPublicSiteUrl,
+  normalizePublicSiteUrl,
 } from "@/lib/auth/siteUrl";
 import { safeAuthRedirectPath } from "@/lib/auth/routeAccess";
 
@@ -25,6 +27,21 @@ describe("public site URL helpers", () => {
     expect(buildAuthCallbackUrl("https://www.tobailey.nl/", "/dashboard")).toBe(
       "https://www.tobailey.nl/auth/callback?next=%2Fdashboard",
     );
+  });
+
+  it("normalizes apex, alt TLDs, and preview hosts to www.tobailey.nl", () => {
+    expect(normalizePublicSiteUrl("https://tobailey.nl")).toBe(
+      CANONICAL_PUBLIC_SITE_URL,
+    );
+    expect(normalizePublicSiteUrl("https://www.tobailey.eu")).toBe(
+      CANONICAL_PUBLIC_SITE_URL,
+    );
+    expect(
+      normalizePublicSiteUrl(
+        "https://investment-os-git-master-martijntje1981-2378s-projects.vercel.app",
+      ),
+    ).toBe(CANONICAL_PUBLIC_SITE_URL);
+    expect(CANONICAL_PUBLIC_SITE_URL).toBe("https://www.tobailey.nl");
   });
 
   it("prefers NEXT_PUBLIC_SITE_URL over Origin", () => {
@@ -52,6 +69,25 @@ describe("public site URL helpers", () => {
       if (previous === undefined) delete process.env.NEXT_PUBLIC_SITE_URL;
       else process.env.NEXT_PUBLIC_SITE_URL = previous;
     }
+  });
+
+  it("normalizes apex Origin when site URL is unset", () => {
+    const previous = process.env.NEXT_PUBLIC_SITE_URL;
+    delete process.env.NEXT_PUBLIC_SITE_URL;
+    try {
+      const headers = new Headers({ origin: "https://tobailey.nl" });
+      expect(getPublicSiteUrl(headers)).toBe("https://www.tobailey.nl");
+    } finally {
+      if (previous === undefined) delete process.env.NEXT_PUBLIC_SITE_URL;
+      else process.env.NEXT_PUBLIC_SITE_URL = previous;
+    }
+  });
+
+  it("wires signup and password-reset emails through canonical site URL helpers", () => {
+    const actions = read("app/auth/actions.ts");
+    expect(actions).toContain("getPublicSiteUrl");
+    expect(actions).toContain("buildAuthCallbackUrl");
+    expect(actions).not.toContain('requestHeaders.get("origin")');
   });
 });
 

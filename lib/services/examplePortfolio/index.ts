@@ -1,3 +1,15 @@
+export {
+  resolveExampleStatus,
+  resolveExampleStatusForUser,
+  shouldShowExampleBanner,
+  type ExampleStatusKind,
+  type ResolvedExampleStatus,
+} from "@/lib/services/examplePortfolio/resolveExampleStatus";
+export {
+  EXAMPLE_START_MESSAGES,
+  mapExampleOtpError,
+  type ExampleStartErrorStatus,
+} from "@/lib/services/examplePortfolio/otpErrors";
 export * from "@/lib/services/examplePortfolio/types";
 export * from "@/lib/services/examplePortfolio/templates";
 export * from "@/lib/services/examplePortfolio/entitlements";

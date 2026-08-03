@@ -32,6 +32,7 @@ export const PUBLIC_APP_PREFIXES = [
   "/market-pulse",
   "/supported-instruments",
   "/example-expired",
+  "/pricing",
 ] as const;
 
 export const MARKETING_EXACT_PATHS = [
@@ -51,6 +52,7 @@ export const EXAMPLE_EXPIRED_ALLOWED_PREFIXES = [
   "/example-expired",
   "/explore",
   "/settings",
+  "/pricing",
 ] as const;
 
 export function pathMatchesPrefix(
@@ -122,9 +124,7 @@ export function safeAuthRedirectPath(
 }
 
 export type AudienceState =
-  | "guest"
-  | "authenticated_empty"
-  | "authenticated_holdings";
+  "guest" | "authenticated_empty" | "authenticated_holdings";
 
 export function resolveAudienceState(input: {
   authenticated: boolean;
