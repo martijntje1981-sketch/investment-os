@@ -4,7 +4,9 @@ import { NextResponse, type NextRequest } from "next/server";
 import {
   isAuthRequiredPath,
   safeAuthRedirectPath,
+  shouldBlockExpiredExampleUser,
 } from "@/lib/auth/routeAccess";
+import type { ExamplePortfolioUserMetadata } from "@/lib/services/examplePortfolio/types";
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -40,10 +42,24 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (
-    data.user &&
-    (pathname === "/login" || pathname === "/signup")
-  ) {
+  if (data.user) {
+    const meta = (data.user.user_metadata ??
+      {}) as ExamplePortfolioUserMetadata;
+
+    if (
+      shouldBlockExpiredExampleUser({
+        pathname,
+        userMetadata: meta,
+      })
+    ) {
+      const expiredUrl = request.nextUrl.clone();
+      expiredUrl.pathname = "/example-expired";
+      expiredUrl.search = "";
+      return NextResponse.redirect(expiredUrl);
+    }
+  }
+
+  if (data.user && (pathname === "/login" || pathname === "/signup")) {
     const nextParam = request.nextUrl.searchParams.get("next");
     const destination = safeAuthRedirectPath(nextParam, "/dashboard");
     const redirectUrl = request.nextUrl.clone();

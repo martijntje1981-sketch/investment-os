@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import BottomNav from "../components/home/BottomNav";
 import UserMenu from "../components/auth/UserMenu";
+import { ExamplePortfolioBanner } from "@/components/examplePortfolio/ExamplePortfolioBanner";
+import { ExamplePortfolioActivator } from "@/components/examplePortfolio/ExamplePortfolioActivator";
 import { AppProviders } from "@/components/providers/AppProviders";
 import { BRAND, BRAND_META } from "@/lib/brand";
 import "./globals.css";
@@ -66,7 +68,9 @@ export default function RootLayout({
       >
         <AppProviders>
           {children}
+          <ExamplePortfolioActivator />
           <UserMenu />
+          <ExamplePortfolioBanner />
           <BottomNav />
         </AppProviders>
       </body>

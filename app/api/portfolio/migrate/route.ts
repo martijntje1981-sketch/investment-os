@@ -13,6 +13,7 @@ import type { PortfolioMigrateRequest } from "@/lib/services/portfolio/types";
 import { SYNC_ERROR_CODES } from "@/lib/services/portfolio/types";
 import type { GoalSettings } from "@/lib/types/portfolioStorage";
 import type { SavedImportMapping } from "@/lib/services/import/mappingMemory";
+import { assertExamplePortfolioApiAccess } from "@/lib/services/examplePortfolio/accessGuard";
 
 export const dynamic = "force-dynamic";
 
@@ -23,12 +24,8 @@ export async function POST(request: Request) {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user) {
-      return NextResponse.json(
-        { success: false, code: SYNC_ERROR_CODES.UNAUTHORIZED, error: "Unauthorized" },
-        { status: 401 },
-      );
-    }
+    const access = assertExamplePortfolioApiAccess(user);
+    if (!access.ok) return access.response;
 
     const body = (await request.json()) as PortfolioMigrateRequest & {
       goal?: GoalSettings | null;
@@ -37,7 +34,7 @@ export async function POST(request: Request) {
 
     const holdings = sanitizeLocalHoldings(body.holdings);
     const localFingerprint =
-      body.localFingerprint || portfolioFingerprint(holdings, user.id);
+      body.localFingerprint || portfolioFingerprint(holdings, access.user.id);
 
     if (!body.idempotencyKey) {
       return NextResponse.json(
@@ -54,13 +51,13 @@ export async function POST(request: Request) {
       holdings,
       body.goal ?? null,
       body.importMappings ?? [],
-      user.id,
+      access.user.id,
     );
 
     const repo = createPortfolioRepository(supabase);
     const snapshot = await migrateLocalPortfolio(
       repo,
-      user.id,
+      access.user.id,
       {
         ...body,
         holdings,

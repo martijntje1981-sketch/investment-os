@@ -73,6 +73,7 @@ describe("middleware and private API wiring", () => {
     const source = readProjectFile("lib/supabase/middleware.ts");
     expect(source).toContain("isAuthRequiredPath");
     expect(source).toContain("safeAuthRedirectPath");
+    expect(source).toContain("shouldBlockExpiredExampleUser");
     expect(source).not.toContain('"/perspectives"');
     expect(source).not.toContain('"/news"');
   });
@@ -80,7 +81,8 @@ describe("middleware and private API wiring", () => {
   it("keeps portfolio API authenticated", () => {
     const source = readProjectFile("app/api/portfolio/route.ts");
     expect(source).toContain("getUser");
-    expect(source).toMatch(/401|Unauthorized|not authenticated|UNAUTH/i);
+    expect(source).toContain("assertExamplePortfolioApiAccess");
+    expect(source).toContain("accessGuard");
   });
 
   it("login honors next redirect destination", () => {
@@ -123,8 +125,9 @@ describe("middleware and private API wiring", () => {
     expect(perspectives).toContain("MakeTobaileyYoursCard");
     expect(news).toContain("MakeTobaileyYoursCard");
     expect(pulse).toContain("MakeTobaileyYoursCard");
-    expect(explore).toContain("MakeTobaileyYoursCard");
+    expect(explore).toContain("startExamplePortfolio");
     expect(explore).toContain("PUBLIC_EXPLORE_DESTINATIONS");
+    expect(explore).toContain("Start exploring");
     expect(marketingHeader).toContain("Explore");
     expect(marketingHeader).toContain("PUBLIC_EXPLORE_DESTINATIONS");
     expect(landing).toContain("Explore Tobailey");

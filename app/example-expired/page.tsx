@@ -1,0 +1,62 @@
+"use client";
+
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
+
+import BottomNavigation from "@/components/home/BottomNav";
+import { PageContainer } from "@/components/layout/PageContainer";
+import {
+  appBrandSoftButtonClass,
+  appCardClass,
+  appCardPaddingClass,
+  appSectionSubtitleClass,
+  appSolidButtonClass,
+} from "@/components/layout/appSurface";
+import { EXAMPLE_KEEP_PORTFOLIO_HREF } from "@/lib/services/examplePortfolio/types";
+import { PUBLIC_EXPLORE_PATH } from "@/lib/content/publicExplore";
+import { logout } from "@/app/auth/actions";
+
+export default function ExampleExpiredPage() {
+  return (
+    <>
+      <PageContainer>
+        <section
+          className={`${appCardClass} ${appCardPaddingClass} max-w-xl`}
+          aria-labelledby="example-expired-heading"
+        >
+          <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
+            Example portfolio
+          </p>
+          <h1
+            id="example-expired-heading"
+            className="mt-2 text-2xl font-bold tracking-[-0.03em] text-slate-950"
+          >
+            Your example portfolio has ended.
+          </h1>
+          <p className={`mt-3 ${appSectionSubtitleClass}`}>
+            Your holdings, goals and settings are still saved. Subscribe to keep
+            using them. A second example period is not available for this email.
+          </p>
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <Link href={EXAMPLE_KEEP_PORTFOLIO_HREF} className={appSolidButtonClass}>
+              Keep my portfolio
+              <ArrowRight className="h-4 w-4" aria-hidden />
+            </Link>
+            <Link href={PUBLIC_EXPLORE_PATH} className={appBrandSoftButtonClass}>
+              Browse without signing in
+            </Link>
+            <form action={logout}>
+              <button
+                type="submit"
+                className="inline-flex min-h-[44px] w-full items-center justify-center rounded-xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700 sm:w-auto"
+              >
+                Sign out
+              </button>
+            </form>
+          </div>
+        </section>
+      </PageContainer>
+      <BottomNavigation />
+    </>
+  );
+}

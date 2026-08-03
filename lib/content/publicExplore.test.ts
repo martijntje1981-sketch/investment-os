@@ -34,10 +34,9 @@ describe("public explore discovery", () => {
     expect(header).toContain("Explore");
     expect(header).toContain("PUBLIC_EXPLORE_PATH");
     expect(header).toContain("PUBLIC_EXPLORE_DESTINATIONS");
-    expect(explorePage).toContain("Perspectives");
-    expect(explorePage).toContain("Market Pulse");
-    expect(explorePage).toContain("News");
-    expect(explorePage).toContain("Supported Instruments");
+    expect(explorePage).toContain("PUBLIC_EXPLORE_DESTINATIONS");
+    expect(explorePage).toContain("Browse without signing in");
+    expect(explorePage).toContain("Start exploring");
   });
 
   it("keeps guest bottom navigation on public app routes only", () => {

@@ -3,6 +3,9 @@
  * Private user data APIs are gated separately in route handlers.
  */
 
+import type { ExamplePortfolioUserMetadata } from "@/lib/services/examplePortfolio/types";
+import { isExampleExpired } from "@/lib/services/examplePortfolio/types";
+
 /** Authenticated-only app surfaces (middleware redirects guests to login). */
 export const AUTH_REQUIRED_PREFIXES = [
   "/dashboard",
@@ -28,6 +31,7 @@ export const PUBLIC_APP_PREFIXES = [
   "/perspectives",
   "/market-pulse",
   "/supported-instruments",
+  "/example-expired",
 ] as const;
 
 export const MARKETING_EXACT_PATHS = [
@@ -40,6 +44,13 @@ export const MARKETING_EXACT_PATHS = [
   "/signup",
   "/forgot-password",
   "/reset-password",
+] as const;
+
+/** Paths an expired example user may still open. */
+export const EXAMPLE_EXPIRED_ALLOWED_PREFIXES = [
+  "/example-expired",
+  "/explore",
+  "/settings",
 ] as const;
 
 export function pathMatchesPrefix(
@@ -60,10 +71,39 @@ export function isPublicAppPath(pathname: string): boolean {
 }
 
 export function isMarketingPath(pathname: string): boolean {
-  if (MARKETING_EXACT_PATHS.includes(pathname as (typeof MARKETING_EXACT_PATHS)[number])) {
+  if (
+    MARKETING_EXACT_PATHS.includes(
+      pathname as (typeof MARKETING_EXACT_PATHS)[number],
+    )
+  ) {
     return true;
   }
   return false;
+}
+
+export function isExampleExpiredAllowedPath(pathname: string): boolean {
+  return pathMatchesPrefix(pathname, EXAMPLE_EXPIRED_ALLOWED_PREFIXES);
+}
+
+/**
+ * Expired example users are blocked from normal app surfaces until they
+ * subscribe/convert. Enforced in middleware (server-side).
+ */
+export function shouldBlockExpiredExampleUser(input: {
+  pathname: string;
+  userMetadata: ExamplePortfolioUserMetadata | null | undefined;
+  now?: Date;
+}): boolean {
+  if (!isExampleExpired(input.userMetadata, input.now)) return false;
+  if (isExampleExpiredAllowedPath(input.pathname)) return false;
+  if (isMarketingPath(input.pathname)) return false;
+  if (
+    isPublicAppPath(input.pathname) &&
+    input.pathname !== "/example-expired"
+  ) {
+    return false;
+  }
+  return isAuthRequiredPath(input.pathname);
 }
 
 /** Safe post-login destination — prevents open redirects and auth loops. */
@@ -81,7 +121,10 @@ export function safeAuthRedirectPath(
   return trimmed;
 }
 
-export type AudienceState = "guest" | "authenticated_empty" | "authenticated_holdings";
+export type AudienceState =
+  | "guest"
+  | "authenticated_empty"
+  | "authenticated_holdings";
 
 export function resolveAudienceState(input: {
   authenticated: boolean;

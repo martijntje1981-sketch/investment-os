@@ -8,7 +8,7 @@ export const appPageSectionClass = "space-y-8 md:space-y-10";
 
 /** Default page canvas (PageContainer). */
 export const appPageCanvasClass =
-  "min-h-screen w-full max-w-full overflow-x-clip bg-background px-4 pb-28 pt-[4.5rem] text-foreground sm:px-6 sm:pb-28 sm:pt-[5rem]";
+  "min-h-screen w-full max-w-full overflow-x-clip bg-background px-4 pb-28 pt-[4.5rem] text-foreground sm:px-6 sm:pb-28 sm:pt-[5rem] [[data-example-banner=true]_&]:pt-[6.25rem] sm:[[data-example-banner=true]_&]:pt-[6.75rem]";
 
 /** Inner content column. */
 export const appPageStackClass =

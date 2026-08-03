@@ -15,6 +15,7 @@ import type { PortfolioSyncRequest } from "@/lib/services/portfolio/types";
 import { SYNC_ERROR_CODES } from "@/lib/services/portfolio/types";
 import type { GoalSettings } from "@/lib/types/portfolioStorage";
 import type { SavedImportMapping } from "@/lib/services/import/mappingMemory";
+import { assertExamplePortfolioApiAccess } from "@/lib/services/examplePortfolio/accessGuard";
 
 export const dynamic = "force-dynamic";
 
@@ -25,19 +26,11 @@ export async function GET() {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user) {
-      return NextResponse.json(
-        {
-          success: false,
-          code: SYNC_ERROR_CODES.UNAUTHORIZED,
-          error: "Unauthorized",
-        },
-        { status: 401 },
-      );
-    }
+    const access = assertExamplePortfolioApiAccess(user);
+    if (!access.ok) return access.response;
 
     const repo = createPortfolioRepository(supabase);
-    const snapshot = await repo.fetchSnapshot(user.id);
+    const snapshot = await repo.fetchSnapshot(access.user.id);
 
     return NextResponse.json({ success: true, snapshot });
   } catch (error) {
@@ -60,16 +53,8 @@ export async function PUT(request: Request) {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user) {
-      return NextResponse.json(
-        {
-          success: false,
-          code: SYNC_ERROR_CODES.UNAUTHORIZED,
-          error: "Unauthorized",
-        },
-        { status: 401 },
-      );
-    }
+    const access = assertExamplePortfolioApiAccess(user);
+    if (!access.ok) return access.response;
 
     const body = (await request.json()) as PortfolioSyncRequest & {
       goal?: GoalSettings | null;
@@ -90,7 +75,7 @@ export async function PUT(request: Request) {
     const repo = createPortfolioRepository(supabase);
     const snapshot = await syncPortfolioSnapshot(
       repo,
-      user.id,
+      access.user.id,
       {
         idempotencyKey: body.idempotencyKey,
         holdings: sanitizeLocalHoldings(body.holdings),
@@ -104,17 +89,22 @@ export async function PUT(request: Request) {
     return NextResponse.json({ success: true, snapshot });
   } catch (error) {
     if (error instanceof PortfolioSyncError) {
+      const status =
+        error.code === SYNC_ERROR_CODES.CONFLICT
+          ? 409
+          : error.code === SYNC_ERROR_CODES.VALIDATION
+            ? 400
+            : error.code === SYNC_ERROR_CODES.UNAUTHORIZED
+              ? 401
+              : 500;
+
       return NextResponse.json(
-        { success: false, code: error.code, error: error.message },
         {
-          status:
-            error.code === SYNC_ERROR_CODES.CONFLICT ||
-            error.code === SYNC_ERROR_CODES.PARTIAL_SAVE
-              ? 409
-              : error.code === SYNC_ERROR_CODES.SYNC_VERIFICATION_FAILED
-                ? 400
-                : 400,
+          success: false,
+          code: error.code,
+          error: error.message,
         },
+        { status },
       );
     }
 
@@ -123,7 +113,7 @@ export async function PUT(request: Request) {
       {
         success: false,
         code: supabaseErrorCode(error) ?? SYNC_ERROR_CODES.PROVIDER_FAILURE,
-        error: formatSupabaseError(error),
+        error: formatSupabaseError(error) || "Failed to sync portfolio.",
       },
       { status: 500 },
     );
