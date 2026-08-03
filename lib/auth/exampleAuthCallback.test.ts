@@ -97,7 +97,10 @@ describe("public site URL helpers", () => {
     const vercel = read("vercel.json");
     expect(vercel).toContain("www.tobailey.nl");
     expect(vercel).toContain("tobailey.nl");
-    expect(vercel).toContain("https://www.tobailey.com/:path*");
+    expect(vercel).toContain('"source": "/"');
+    expect(vercel).toContain('"source": "/:path+"');
+    expect(vercel).toContain("https://www.tobailey.com/");
+    expect(vercel).toContain("https://www.tobailey.com/:path+");
   });
 });
 
