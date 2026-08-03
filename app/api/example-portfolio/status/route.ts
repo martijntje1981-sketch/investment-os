@@ -8,11 +8,22 @@ import {
   resolveExampleStatusForUser,
   shouldShowExampleBanner,
 } from "@/lib/services/examplePortfolio/resolveExampleStatus";
+import { repairFalseExampleActivation } from "@/lib/services/examplePortfolio/repairFalseExample";
 import { normalizeExampleEmail } from "@/lib/services/examplePortfolio/types";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+function noStoreJson(body: unknown, init?: { status?: number }) {
+  return NextResponse.json(body, {
+    status: init?.status ?? 200,
+    headers: {
+      "Cache-Control": "private, no-store, max-age=0, must-revalidate",
+    },
+  });
+}
 
 /**
  * Canonical Example Portfolio status for the banner / clients.
@@ -25,7 +36,7 @@ export async function GET() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return NextResponse.json({
+    return noStoreJson({
       success: true,
       status: {
         kind: "none",
@@ -42,7 +53,7 @@ export async function GET() {
 
   const admin = createAdminClient();
   if (!admin) {
-    return NextResponse.json({
+    return noStoreJson({
       success: true,
       status: {
         kind: "none",
@@ -58,9 +69,25 @@ export async function GET() {
   }
 
   const email = user.email ? normalizeExampleEmail(user.email) : "";
-  const entitlement =
+  let entitlement =
     (await findExampleEntitlementByUserId(admin, user.id)) ??
     (email ? await findExampleEntitlementByEmail(admin, email) : null);
+
+  if (entitlement) {
+    try {
+      const repair = await repairFalseExampleActivation({
+        admin,
+        userClient: supabase,
+        user,
+        entitlement,
+      });
+      if (repair.repaired) {
+        entitlement = null;
+      }
+    } catch {
+      // Banner still resolves from current entitlement when repair fails.
+    }
+  }
 
   const resolved = resolveExampleStatusForUser({ user, entitlement });
 
@@ -75,12 +102,13 @@ export async function GET() {
         ...existing,
         ...resolved.metadataPatch,
       };
-      // Clear keys explicitly set to undefined so stale expiry cannot linger.
-      for (const key of Object.keys(resolved.metadataPatch)) {
-        const value =
-          resolved.metadataPatch[key as keyof typeof resolved.metadataPatch];
+      // Explicit nulls clear stale keys under Supabase metadata merge.
+      for (const key of Object.keys(resolved.metadataPatch) as Array<
+        keyof typeof resolved.metadataPatch
+      >) {
+        const value = resolved.metadataPatch[key];
         if (value === undefined) {
-          delete nextMeta[key];
+          nextMeta[key as string] = null;
         }
       }
       await admin.auth.admin.updateUserById(user.id, {
@@ -91,7 +119,7 @@ export async function GET() {
     }
   }
 
-  return NextResponse.json({
+  return noStoreJson({
     success: true,
     status: {
       kind: resolved.kind,

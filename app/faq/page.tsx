@@ -14,9 +14,7 @@ import {
 } from "lucide-react";
 
 import { TobaileyLogo } from "@/components/brand/TobaileyLogo";
-import {
-  SUPPORTED_INSTRUMENTS_PATH,
-} from "@/lib/content/supportedInstrumentsContent";
+import { SUPPORTED_INSTRUMENTS_PATH } from "@/lib/content/supportedInstrumentsContent";
 import {
   unsupportedInvestmentFaq,
   whichInvestmentsSupportedFaq,
@@ -165,7 +163,7 @@ const faqSections: Array<{
       {
         question: "How much does Tobailey cost?",
         answer:
-          "Tobailey costs €7.99 per month after a 24-hour free trial. The applicable price and payment terms are shown before checkout.",
+          "Tobailey costs €7.99 per month after a 7-day Example Portfolio. The applicable price and payment terms are shown before checkout.",
       },
       {
         question: "What is included in the subscription?",
@@ -217,8 +215,8 @@ export default function FAQPage() {
           </h1>
 
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-slate-600">
-            Learn how Tobailey handles portfolios, market data,
-            goals, privacy and your subscription.
+            Learn how Tobailey handles portfolios, market data, goals, privacy
+            and your subscription.
           </p>
         </div>
       </section>
@@ -282,14 +280,12 @@ export default function FAQPage() {
               <ShieldCheck className="h-6 w-6" />
             </div>
 
-            <h2 className="mt-6 text-2xl font-black">
-              Important information
-            </h2>
+            <h2 className="mt-6 text-2xl font-black">Important information</h2>
 
             <p className="mt-4 text-sm leading-7 text-slate-300">
-              Tobailey is a decision-support and portfolio-monitoring
-              tool. It does not provide personal financial advice and cannot
-              guarantee investment results.
+              Tobailey is a decision-support and portfolio-monitoring tool. It
+              does not provide personal financial advice and cannot guarantee
+              investment results.
             </p>
           </article>
 
@@ -298,9 +294,7 @@ export default function FAQPage() {
               <Mail className="h-6 w-6" />
             </div>
 
-            <h2 className="mt-6 text-2xl font-black">
-              Still have a question?
-            </h2>
+            <h2 className="mt-6 text-2xl font-black">Still have a question?</h2>
 
             <p className="mt-4 text-sm leading-7 text-slate-600">
               Contact the Tobailey team about account access, support,

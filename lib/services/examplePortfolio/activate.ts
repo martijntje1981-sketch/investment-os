@@ -3,6 +3,9 @@
  *
  * Template is taken only from the reserved entitlement row — never from a
  * client-supplied hint after authentication.
+ *
+ * Important: do not start the example clock on ordinary password sessions
+ * just because a reserved entitlement row exists.
  */
 
 import type { SupabaseClient, User } from "@supabase/supabase-js";
@@ -15,6 +18,7 @@ import {
   markExampleEntitlementSeeded,
   startExampleEntitlementClock,
 } from "@/lib/services/examplePortfolio/entitlements";
+import { mayStartExampleClock } from "@/lib/services/examplePortfolio/repairFalseExample";
 import {
   buildExampleGoal,
   buildExampleHoldings,
@@ -48,7 +52,9 @@ export type ActivateExampleResult =
 async function stampUserMetadata(
   admin: SupabaseClient,
   userId: string,
-  patch: ExamplePortfolioUserMetadata,
+  patch: ExamplePortfolioUserMetadata & {
+    example_activated_via_email?: boolean | null;
+  },
 ): Promise<void> {
   const { data, error: readError } = await admin.auth.admin.getUserById(userId);
   if (readError) throw readError;
@@ -71,8 +77,11 @@ export async function activateExamplePortfolioForUser(input: {
   admin: SupabaseClient;
   userClient: SupabaseClient;
   user: User;
+  /** True only from /auth/callback after a verified example email link. */
+  forceFromCallback?: boolean;
 }): Promise<ActivateExampleResult> {
   const { admin, userClient, user } = input;
+  const forceFromCallback = Boolean(input.forceFromCallback);
   const email = user.email ? normalizeExampleEmail(user.email) : "";
   if (!email) {
     return { status: "error", message: "Verified email is required." };
@@ -93,6 +102,7 @@ export async function activateExamplePortfolioForUser(input: {
       example_started_at: entitlement.started_at ?? undefined,
       example_expires_at: entitlement.expires_at ?? undefined,
       example_converted_at: entitlement.converted_at,
+      example_activated_via_email: null,
     });
     return { status: "converted" };
   }
@@ -108,6 +118,24 @@ export async function activateExamplePortfolioForUser(input: {
     return {
       status: "expired",
       expiresAt: entitlement.expires_at as string,
+    };
+  }
+
+  const repo = createPortfolioRepository(userClient);
+  const snapshot = await repo.fetchSnapshot(user.id);
+  const metadata = (user.user_metadata ?? {}) as Record<string, unknown>;
+
+  if (
+    !mayStartExampleClock({
+      forceFromCallback,
+      metadata,
+      holdings: snapshot.holdings,
+      entitlement,
+    })
+  ) {
+    return {
+      status: "skipped",
+      reason: "No example activation intent for this session.",
     };
   }
 
@@ -147,14 +175,11 @@ export async function activateExamplePortfolioForUser(input: {
     example_started_at: startedAt,
     example_expires_at: expiresAt,
     example_converted_at: null,
+    example_activated_via_email: true,
   });
 
-  const repo = createPortfolioRepository(userClient);
-  const snapshot = await repo.fetchSnapshot(user.id);
   const alreadySeeded =
-    Boolean(entitlement.seeded_at) ||
-    hasExampleSeedHoldings(snapshot.holdings) ||
-    snapshot.holdings.length > 0;
+    Boolean(entitlement.seeded_at) || hasExampleSeedHoldings(snapshot.holdings);
 
   if (alreadySeeded) {
     if (!entitlement.seeded_at) {
@@ -164,6 +189,14 @@ export async function activateExamplePortfolioForUser(input: {
       status: "already_active",
       template,
       expiresAt,
+    };
+  }
+
+  // Do not overwrite an existing real portfolio.
+  if (snapshot.holdings.length > 0) {
+    return {
+      status: "skipped",
+      reason: "Existing portfolio is not an example seed set.",
     };
   }
 

@@ -21,16 +21,19 @@ function read(relativePath: string) {
 
 describe("public site URL helpers", () => {
   it("builds the Example Portfolio callback on the live domain shape", () => {
-    expect(buildExampleAuthCallbackUrl("https://www.tobailey.nl")).toBe(
-      "https://www.tobailey.nl/auth/callback?next=%2Fdashboard&example=1",
+    expect(buildExampleAuthCallbackUrl("https://www.tobailey.com")).toBe(
+      "https://www.tobailey.com/auth/callback?next=%2Fdashboard&example=1",
     );
-    expect(buildAuthCallbackUrl("https://www.tobailey.nl/", "/dashboard")).toBe(
-      "https://www.tobailey.nl/auth/callback?next=%2Fdashboard",
-    );
+    expect(
+      buildAuthCallbackUrl("https://www.tobailey.com/", "/dashboard"),
+    ).toBe("https://www.tobailey.com/auth/callback?next=%2Fdashboard");
   });
 
-  it("normalizes apex, alt TLDs, and preview hosts to www.tobailey.nl", () => {
+  it("normalizes apex, alt TLDs, and preview hosts to www.tobailey.com", () => {
     expect(normalizePublicSiteUrl("https://tobailey.nl")).toBe(
+      CANONICAL_PUBLIC_SITE_URL,
+    );
+    expect(normalizePublicSiteUrl("https://www.tobailey.nl")).toBe(
       CANONICAL_PUBLIC_SITE_URL,
     );
     expect(normalizePublicSiteUrl("https://www.tobailey.eu")).toBe(
@@ -41,15 +44,15 @@ describe("public site URL helpers", () => {
         "https://investment-os-git-master-martijntje1981-2378s-projects.vercel.app",
       ),
     ).toBe(CANONICAL_PUBLIC_SITE_URL);
-    expect(CANONICAL_PUBLIC_SITE_URL).toBe("https://www.tobailey.nl");
+    expect(CANONICAL_PUBLIC_SITE_URL).toBe("https://www.tobailey.com");
   });
 
   it("prefers NEXT_PUBLIC_SITE_URL over Origin", () => {
     const previous = process.env.NEXT_PUBLIC_SITE_URL;
-    process.env.NEXT_PUBLIC_SITE_URL = "https://www.tobailey.nl/";
+    process.env.NEXT_PUBLIC_SITE_URL = "https://www.tobailey.com/";
     try {
       const headers = new Headers({ origin: "http://localhost:3000" });
-      expect(getPublicSiteUrl(headers)).toBe("https://www.tobailey.nl");
+      expect(getPublicSiteUrl(headers)).toBe("https://www.tobailey.com");
     } finally {
       if (previous === undefined) delete process.env.NEXT_PUBLIC_SITE_URL;
       else process.env.NEXT_PUBLIC_SITE_URL = previous;
@@ -64,7 +67,7 @@ describe("public site URL helpers", () => {
         "x-forwarded-host": "www.tobailey.nl",
         "x-forwarded-proto": "https",
       });
-      expect(getPublicSiteUrl(headers)).toBe("https://www.tobailey.nl");
+      expect(getPublicSiteUrl(headers)).toBe("https://www.tobailey.com");
     } finally {
       if (previous === undefined) delete process.env.NEXT_PUBLIC_SITE_URL;
       else process.env.NEXT_PUBLIC_SITE_URL = previous;
@@ -75,8 +78,8 @@ describe("public site URL helpers", () => {
     const previous = process.env.NEXT_PUBLIC_SITE_URL;
     delete process.env.NEXT_PUBLIC_SITE_URL;
     try {
-      const headers = new Headers({ origin: "https://tobailey.nl" });
-      expect(getPublicSiteUrl(headers)).toBe("https://www.tobailey.nl");
+      const headers = new Headers({ origin: "https://tobailey.com" });
+      expect(getPublicSiteUrl(headers)).toBe("https://www.tobailey.com");
     } finally {
       if (previous === undefined) delete process.env.NEXT_PUBLIC_SITE_URL;
       else process.env.NEXT_PUBLIC_SITE_URL = previous;
@@ -89,13 +92,18 @@ describe("public site URL helpers", () => {
     expect(actions).toContain("buildAuthCallbackUrl");
     expect(actions).not.toContain('requestHeaders.get("origin")');
   });
+
+  it("configures Vercel redirects from .nl/.eu apex hosts to www.tobailey.com", () => {
+    const vercel = read("vercel.json");
+    expect(vercel).toContain("www.tobailey.nl");
+    expect(vercel).toContain("tobailey.nl");
+    expect(vercel).toContain("https://www.tobailey.com/:path*");
+  });
 });
 
 describe("example auth callback wiring", () => {
   const callback = read("app/auth/callback/route.ts");
-  const start = read(
-    "lib/services/examplePortfolio/startExamplePortfolio.ts",
-  );
+  const start = read("lib/services/examplePortfolio/startExamplePortfolio.ts");
   const home = read("app/page.tsx");
   const explore = read("app/explore/page.tsx");
   const activate = read("lib/services/examplePortfolio/activate.ts");
@@ -131,7 +139,7 @@ describe("example auth callback wiring", () => {
   });
 
   it("forwards homepage auth codes to /auth/callback", () => {
-    expect(home).toContain('redirect(`/auth/callback?${forward.toString()}`)');
+    expect(home).toContain("redirect(`/auth/callback?${forward.toString()}`)");
     expect(home).toContain("token_hash");
     expect(home).toContain("params.code");
   });

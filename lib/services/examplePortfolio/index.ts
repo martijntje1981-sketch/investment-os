@@ -10,6 +10,13 @@ export {
   mapExampleOtpError,
   type ExampleStartErrorStatus,
 } from "@/lib/services/examplePortfolio/otpErrors";
+export {
+  hasExampleActivationIntent,
+  hasNonExampleMarketHoldings,
+  isFalseExampleActivation,
+  mayStartExampleClock,
+  repairFalseExampleActivation,
+} from "@/lib/services/examplePortfolio/repairFalseExample";
 export * from "@/lib/services/examplePortfolio/types";
 export * from "@/lib/services/examplePortfolio/templates";
 export * from "@/lib/services/examplePortfolio/entitlements";

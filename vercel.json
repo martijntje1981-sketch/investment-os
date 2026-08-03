@@ -1,4 +1,36 @@
 {
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "tobailey.nl" }],
+      "destination": "https://www.tobailey.com/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "www.tobailey.nl" }],
+      "destination": "https://www.tobailey.com/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "tobailey.com" }],
+      "destination": "https://www.tobailey.com/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "tobailey.eu" }],
+      "destination": "https://www.tobailey.com/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "www.tobailey.eu" }],
+      "destination": "https://www.tobailey.com/:path*",
+      "permanent": true
+    }
+  ],
   "crons": [
     {
       "path": "/api/cron/market-snapshot?window=eu",

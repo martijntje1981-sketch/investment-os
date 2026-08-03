@@ -11,12 +11,7 @@ import { normalizeExampleEmail } from "@/lib/services/examplePortfolio/types";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 type EmailOtpType =
-  | "signup"
-  | "invite"
-  | "magiclink"
-  | "recovery"
-  | "email_change"
-  | "email";
+  "signup" | "invite" | "magiclink" | "recovery" | "email_change" | "email";
 
 type BufferedCookie = {
   name: string;
@@ -33,7 +28,11 @@ function exploreErrorRedirect(
     new URL(`/explore?error=${encodeURIComponent(message)}`, origin),
   );
   cookies.forEach(({ name, value, options }) => {
-    response.cookies.set(name, value, options as Parameters<typeof response.cookies.set>[2]);
+    response.cookies.set(
+      name,
+      value,
+      options as Parameters<typeof response.cookies.set>[2],
+    );
   });
   return response;
 }
@@ -45,7 +44,11 @@ function redirectWithCookies(
 ) {
   const response = NextResponse.redirect(new URL(path, origin));
   cookies.forEach(({ name, value, options }) => {
-    response.cookies.set(name, value, options as Parameters<typeof response.cookies.set>[2]);
+    response.cookies.set(
+      name,
+      value,
+      options as Parameters<typeof response.cookies.set>[2],
+    );
   });
   return response;
 }
@@ -151,9 +154,7 @@ export async function GET(request: NextRequest) {
       const entitlement =
         (await findExampleEntitlementByUserId(admin, user.id)) ??
         (await findExampleEntitlementByEmail(admin, email));
-      shouldActivateExample = Boolean(
-        entitlement && !entitlement.converted_at,
-      );
+      shouldActivateExample = Boolean(entitlement && !entitlement.converted_at);
     } catch {
       shouldActivateExample = false;
     }
@@ -173,6 +174,7 @@ export async function GET(request: NextRequest) {
         admin,
         userClient: supabase,
         user,
+        forceFromCallback: true,
       });
 
       if (result.status === "expired") {

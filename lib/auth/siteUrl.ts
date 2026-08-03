@@ -4,16 +4,16 @@
  * or an unlisted Vercel preview host when Origin is missing.
  */
 
-/** Production marketing + auth host. Apex redirects here at the CDN. */
-export const CANONICAL_PUBLIC_SITE_URL = "https://www.tobailey.nl";
+/** Production marketing + auth host. Apex and .nl redirect here. */
+export const CANONICAL_PUBLIC_SITE_URL = "https://www.tobailey.com";
 
 const TOBAILEY_HOSTS = new Set([
+  "www.tobailey.com",
+  "tobailey.com",
   "www.tobailey.nl",
   "tobailey.nl",
   "www.tobailey.eu",
   "tobailey.eu",
-  "www.tobailey.com",
-  "tobailey.com",
 ]);
 
 function stripTrailingSlash(value: string): string {
@@ -25,7 +25,7 @@ function isVercelPreviewHost(host: string): boolean {
 }
 
 /**
- * Normalize known Tobailey apex / alt hosts to the canonical www.nl origin.
+ * Normalize known Tobailey apex / alt hosts to the canonical www.com origin.
  * Leaves localhost and unknown hosts unchanged for local/dev tooling.
  */
 export function normalizePublicSiteUrl(raw: string): string {
@@ -33,7 +33,9 @@ export function normalizePublicSiteUrl(raw: string): string {
   if (!trimmed) return CANONICAL_PUBLIC_SITE_URL;
 
   try {
-    const url = new URL(trimmed.includes("://") ? trimmed : `https://${trimmed}`);
+    const url = new URL(
+      trimmed.includes("://") ? trimmed : `https://${trimmed}`,
+    );
     const host = url.hostname.toLowerCase();
 
     if (isVercelPreviewHost(host)) {
@@ -72,14 +74,12 @@ export function getPublicSiteUrl(requestHeaders?: Headers | null): string {
     const host = requestHeaders.get("host");
     if (host) {
       if (host.includes("localhost") || host.startsWith("127.0.0.1")) {
-        const proto = "http";
-        return `${proto}://${host}`.replace(/\/+$/, "");
+        return `http://${host}`.replace(/\/+$/, "");
       }
       return normalizePublicSiteUrl(`https://${host}`);
     }
   }
 
-  // Last resort for local tooling only.
   return "http://localhost:3000";
 }
 

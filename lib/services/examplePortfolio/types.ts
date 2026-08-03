@@ -11,11 +11,13 @@ export type ExampleAccountMode = "example" | "standard";
 /** Persisted on auth.users.user_metadata for middleware + banner. */
 export type ExamplePortfolioUserMetadata = {
   account_mode?: ExampleAccountMode;
-  example_portfolio_type?: ExamplePortfolioTemplate;
-  example_started_at?: string;
-  example_expires_at?: string;
+  example_portfolio_type?: ExamplePortfolioTemplate | null;
+  example_started_at?: string | null;
+  example_expires_at?: string | null;
   example_converted_at?: string | null;
   pending_example_template?: ExamplePortfolioTemplate | null;
+  /** Set only after a verified example email callback/activation. */
+  example_activated_via_email?: boolean | null;
 };
 
 export type ExamplePortfolioEntitlement = {

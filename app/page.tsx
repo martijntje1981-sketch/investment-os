@@ -104,32 +104,27 @@ const benefits = [
 
 const faqItems = [
   {
-    question:
-      "Does Tobailey provide financial advice?",
+    question: "Does Tobailey provide financial advice?",
     answer:
       "No. Tobailey is a monitoring and decision-support tool. It organises portfolio information, market context and scenarios, but it does not provide regulated personal financial advice.",
   },
   {
-    question:
-      "How does Tobailey receive my portfolio?",
+    question: "How does Tobailey receive my portfolio?",
     answer:
       "Tobailey supports manual entry and CSV or Excel import, followed by a review step. You remain in control of which holdings are saved.",
   },
   {
-    question:
-      "Are market prices always real time?",
+    question: "Are market prices always real time?",
     answer:
       "Market-data availability and update frequency depend on the selected data provider, exchange and subscription level. The product clearly shows whether data is live, cached or using a fallback price.",
   },
   {
-    question:
-      "Can I use Tobailey with any broker?",
+    question: "Can I use Tobailey with any broker?",
     answer:
       "Yes. Tobailey is independent and supports portfolio information through manual entry and supported CSV or Excel imports — no broker login required.",
   },
   {
-    question:
-      "Is my portfolio stored securely?",
+    question: "Is my portfolio stored securely?",
     answer:
       "Tobailey uses appropriate technical and organisational safeguards to protect account and portfolio information. You remain in control of the information you upload.",
   },
@@ -206,16 +201,12 @@ export default async function MarketingHomePage({
 
               <h1 className="mt-7 max-w-4xl text-5xl font-black leading-[0.98] tracking-[-0.065em] text-brand-navy sm:text-7xl">
                 Take control of your
-                <span className="block text-brand">
-                  investment journey
-                </span>
+                <span className="block text-brand">investment journey</span>
               </h1>
 
               <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-600 sm:text-xl">
-                Tobailey brings your portfolio,
-                market context and long-term financial
-                goal together in one clear control
-                centre.
+                Tobailey brings your portfolio, market context and long-term
+                financial goal together in one clear control centre.
               </p>
 
               <div className="mt-9 flex flex-col gap-3 sm:flex-row">
@@ -251,7 +242,8 @@ export default async function MarketingHomePage({
                       Illustrative product preview
                     </p>
                     <p className="mt-1 text-xs leading-5 text-slate-300">
-                      Fixed example data — this is not your portfolio and does not change with your account.
+                      Fixed example data — this is not your portfolio and does
+                      not change with your account.
                     </p>
                   </div>
 
@@ -276,25 +268,13 @@ export default async function MarketingHomePage({
                   </div>
 
                   <div className="mt-7 grid grid-cols-2 gap-3">
-                    <PreviewMetric
-                      label="Goal progress"
-                      value="10.0%"
-                    />
+                    <PreviewMetric label="Goal progress" value="10.0%" />
 
-                    <PreviewMetric
-                      label="Portfolio health"
-                      value="70/100"
-                    />
+                    <PreviewMetric label="Portfolio health" value="70/100" />
 
-                    <PreviewMetric
-                      label="Active holdings"
-                      value="8"
-                    />
+                    <PreviewMetric label="Active holdings" value="8" />
 
-                    <PreviewMetric
-                      label="Main risk"
-                      value="Concentration"
-                    />
+                    <PreviewMetric label="Main risk" value="Concentration" />
                   </div>
 
                   <div className="mt-6 rounded-2xl bg-white/10 p-5">
@@ -339,22 +319,22 @@ export default async function MarketingHomePage({
                 </div>
 
                 <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
-                    <BellRing className="h-5 w-5" />
-                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
+                      <BellRing className="h-5 w-5" />
+                    </div>
 
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">
-                      Daily intelligence
-                    </p>
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">
+                        Daily intelligence
+                      </p>
 
-                    <p className="mt-1 text-sm font-bold">
-                      Today&apos;s portfolio analysis is ready
-                    </p>
+                      <p className="mt-1 text-sm font-bold">
+                        Today&apos;s portfolio analysis is ready
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
               </div>
             </div>
           </div>
@@ -410,15 +390,12 @@ export default async function MarketingHomePage({
                 </p>
 
                 <h2 className="mt-4 text-4xl font-black tracking-[-0.045em] sm:text-5xl">
-                  From portfolio setup to daily
-                  decision support
+                  From portfolio setup to daily decision support
                 </h2>
 
                 <p className="mt-5 text-lg leading-8 text-slate-300">
-                  Tobailey is designed to remove
-                  friction. Start with what you already
-                  have and build a clearer investment
-                  process around it.
+                  Tobailey is designed to remove friction. Start with what you
+                  already have and build a clearer investment process around it.
                 </p>
               </div>
 
@@ -436,9 +413,7 @@ export default async function MarketingHomePage({
                       </span>
 
                       <div>
-                        <h3 className="text-xl font-bold">
-                          {step.title}
-                        </h3>
+                        <h3 className="text-xl font-bold">{step.title}</h3>
 
                         <p className="mt-2 text-sm leading-6 text-slate-300">
                           {step.description}
@@ -468,14 +443,12 @@ export default async function MarketingHomePage({
               </p>
 
               <h2 className="mt-3 text-3xl font-black tracking-[-0.04em] sm:text-4xl">
-                Understand what today&apos;s market means for
-                your portfolio
+                Understand what today&apos;s market means for your portfolio
               </h2>
 
               <p className="mt-5 leading-8 text-blue-100">
-                AI combines macro developments, analyst consensus,
-                company news and portfolio exposure into one
-                clear daily analysis.
+                AI combines macro developments, analyst consensus, company news
+                and portfolio exposure into one clear daily analysis.
               </p>
 
               <div className="mt-8 grid gap-3 sm:grid-cols-2">
@@ -496,9 +469,8 @@ export default async function MarketingHomePage({
               </h2>
 
               <p className="mt-5 text-lg leading-8 text-slate-600">
-                Generic financial news leaves the most
-                important question unanswered: what does
-                this mean for your investments?
+                Generic financial news leaves the most important question
+                unanswered: what does this mean for your investments?
               </p>
 
               <div className="mt-8 space-y-4">
@@ -538,25 +510,18 @@ export default async function MarketingHomePage({
                       Complete access
                     </p>
 
-                    <h3 className="mt-3 text-3xl font-black">
-                      Tobailey
-                    </h3>
+                    <h3 className="mt-3 text-3xl font-black">Tobailey</h3>
 
                     <p className="mt-3 max-w-lg leading-7 text-slate-300">
-                      Portfolio monitoring, personalised
-                      analysis and goal tracking in one
-                      clear platform.
+                      Portfolio monitoring, personalised analysis and goal
+                      tracking in one clear platform.
                     </p>
                   </div>
 
                   <div className="text-left sm:text-right">
-                    <p className="text-4xl font-black">
-                      €7.99
-                    </p>
+                    <p className="text-4xl font-black">€7.99</p>
 
-                    <p className="mt-1 text-sm text-slate-400">
-                      per month
-                    </p>
+                    <p className="mt-1 text-sm text-slate-400">per month</p>
                   </div>
                 </div>
               </div>
@@ -564,10 +529,7 @@ export default async function MarketingHomePage({
               <div className="p-8 sm:p-10">
                 <div className="grid gap-4 sm:grid-cols-2">
                   {benefits.map((benefit) => (
-                    <BenefitRow
-                      key={benefit}
-                      text={benefit}
-                    />
+                    <BenefitRow key={benefit} text={benefit} />
                   ))}
                 </div>
 
@@ -582,10 +544,10 @@ export default async function MarketingHomePage({
                 </p>
 
                 <Link
-                  href="/upload"
+                  href="/explore"
                   className="mt-9 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand px-6 py-4 text-sm font-bold text-brand-navy transition hover:bg-brand-hover"
                 >
-                  Start your 24-hour free trial
+                  Explore free for 7 days
                   <ArrowRight className="h-4 w-4" />
                 </Link>
 
@@ -597,10 +559,7 @@ export default async function MarketingHomePage({
           </div>
         </section>
 
-        <section
-          id="faq"
-          className="scroll-mt-24 px-5 py-20 sm:px-8 sm:py-28"
-        >
+        <section id="faq" className="scroll-mt-24 px-5 py-20 sm:px-8 sm:py-28">
           <div className="mx-auto max-w-5xl">
             <SectionHeading
               eyebrow="Frequently asked questions"
@@ -646,9 +605,7 @@ export default async function MarketingHomePage({
                       <Icon className="h-6 w-6" />
                     </div>
 
-                    <h3 className="mt-6 text-xl font-bold">
-                      {item.title}
-                    </h3>
+                    <h3 className="mt-6 text-xl font-bold">{item.title}</h3>
 
                     <p className="mt-3 text-sm leading-7 text-slate-300">
                       {item.description}
@@ -672,23 +629,22 @@ export default async function MarketingHomePage({
                 </p>
 
                 <h2 className="mt-4 max-w-3xl text-4xl font-black tracking-[-0.05em] sm:text-5xl">
-                  Your investments deserve more than a
-                  collection of disconnected tools
+                  Your investments deserve more than a collection of
+                  disconnected tools
                 </h2>
 
                 <p className="mt-5 max-w-2xl text-lg leading-8 text-blue-100">
-                  Bring your portfolio, market context
-                  and financial goal together in one
-                  Your investments. Understood.
+                  Bring your portfolio, market context and financial goal
+                  together in one Your investments. Understood.
                 </p>
               </div>
 
               <div className="flex shrink-0 flex-col gap-3">
                 <Link
-                  href="/upload"
+                  href="/explore"
                   className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-6 py-4 text-sm font-bold text-slate-950 shadow-lg"
                 >
-                  Start your 24-hour free trial
+                  Explore free for 7 days
                   <ArrowRight className="h-4 w-4" />
                 </Link>
 
@@ -723,10 +679,8 @@ export default async function MarketingHomePage({
           </nav>
 
           <p className="max-w-md text-xs leading-5 text-slate-500 lg:text-right">
-            Tobailey is a decision-support and
-            monitoring tool. It does not provide personal
-            financial advice or guarantee investment
-            results.
+            Tobailey is a decision-support and monitoring tool. It does not
+            provide personal financial advice or guarantee investment results.
           </p>
         </div>
       </footer>
@@ -753,18 +707,12 @@ function SectionHeading({
         {title}
       </h2>
 
-      <p className="mt-5 text-lg leading-8 text-slate-600">
-        {description}
-      </p>
+      <p className="mt-5 text-lg leading-8 text-slate-600">{description}</p>
     </div>
   );
 }
 
-function TrustPoint({
-  text,
-}: {
-  text: string;
-}) {
+function TrustPoint({ text }: { text: string }) {
   return (
     <div className="flex items-center gap-2 text-sm font-semibold text-slate-600">
       <Check className="h-4 w-4 text-emerald-600" />
@@ -773,22 +721,12 @@ function TrustPoint({
   );
 }
 
-function PreviewMetric({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
+function PreviewMetric({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl bg-white/5 p-4">
-      <p className="text-xs font-semibold text-slate-400">
-        {label}
-      </p>
+      <p className="text-xs font-semibold text-slate-400">{label}</p>
 
-      <p className="mt-2 font-bold text-white">
-        {value}
-      </p>
+      <p className="mt-2 font-bold text-white">{value}</p>
     </div>
   );
 }
@@ -806,29 +744,19 @@ function MiniPreviewCard({
     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
       <Icon className="h-5 w-5 text-slate-700" />
 
-      <p className="mt-3 text-sm font-bold text-slate-950">
-        {title}
-      </p>
+      <p className="mt-3 text-sm font-bold text-slate-950">{title}</p>
 
-      <p className="mt-1 text-xs leading-5 text-slate-500">
-        {text}
-      </p>
+      <p className="mt-1 text-xs leading-5 text-slate-500">{text}</p>
     </div>
   );
 }
 
-function BriefingPoint({
-  text,
-}: {
-  text: string;
-}) {
+function BriefingPoint({ text }: { text: string }) {
   return (
     <div className="flex items-center gap-3 rounded-2xl bg-white/10 p-4">
       <CheckCircleIcon />
 
-      <span className="text-sm font-semibold">
-        {text}
-      </span>
+      <span className="text-sm font-semibold">{text}</span>
     </div>
   );
 }
@@ -841,20 +769,14 @@ function CheckCircleIcon() {
   );
 }
 
-function BenefitRow({
-  text,
-}: {
-  text: string;
-}) {
+function BenefitRow({ text }: { text: string }) {
   return (
     <div className="flex items-start gap-3">
       <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
         <Check className="h-3.5 w-3.5" />
       </div>
 
-      <p className="text-sm font-semibold leading-6 text-slate-700">
-        {text}
-      </p>
+      <p className="text-sm font-semibold leading-6 text-slate-700">{text}</p>
     </div>
   );
 }

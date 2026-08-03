@@ -34,10 +34,7 @@ export default async function SignupPage({
       <div className="grid min-h-screen lg:grid-cols-[0.9fr_1.1fr]">
         <section className="flex min-h-screen flex-col px-5 py-6 sm:px-10 lg:px-14">
           <div className="flex items-center justify-between">
-            <Link
-              href="/"
-              className="flex items-center"
-            >
+            <Link href="/" className="flex items-center">
               <TobaileyLogo size={44} showWordmark showTagline />
             </Link>
 
@@ -58,23 +55,17 @@ export default async function SignupPage({
 
               <h1 className="mt-3 text-4xl font-black tracking-[-0.045em] text-brand-navy sm:text-5xl">
                 Build your personal
-                <span className="block text-slate-400">
-                  {BRAND.name}
-                </span>
+                <span className="block text-slate-400">{BRAND.name}</span>
               </h1>
 
               <p className="mt-5 text-base leading-7 text-slate-600">
                 {BRAND.tagline} Bring your portfolio, market context and
-                long-term financial goal together in one
-                clear investment control centre.
+                long-term financial goal together in one clear investment
+                control centre.
               </p>
             </div>
 
-            <form
-              className="mt-8 space-y-4"
-              action={signup}
-              noValidate
-            >
+            <form className="mt-8 space-y-4" action={signup} noValidate>
               <input type="hidden" name="next" value={safeNext} />
               {error && (
                 <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">
@@ -262,7 +253,8 @@ export default async function SignupPage({
             </Link>
 
             <p className="mt-6 text-center text-xs leading-5 text-slate-500">
-              Start with a 24-hour free trial. Then €7.99 per month.
+              Start with an Example Portfolio. Explore free for 7 days. Then
+              €7.99 per month.
             </p>
           </div>
         </section>
@@ -279,14 +271,12 @@ export default async function SignupPage({
             </div>
 
             <h2 className="mt-8 max-w-2xl text-5xl font-black leading-[1.02] tracking-[-0.055em]">
-              Start with your portfolio. Build towards
-              your financial goal.
+              Start with your portfolio. Build towards your financial goal.
             </h2>
 
             <p className="mt-6 max-w-xl text-lg leading-8 text-slate-300">
-              Tobailey helps you understand what you
-              own, what is influencing it and what is
-              required to reach your long-term target.
+              Tobailey helps you understand what you own, what is influencing it
+              and what is required to reach your long-term target.
             </p>
 
             <div className="mt-10 space-y-4">
@@ -299,9 +289,7 @@ export default async function SignupPage({
                     <Check className="h-4 w-4" />
                   </div>
 
-                  <p className="font-semibold text-slate-100">
-                    {benefit}
-                  </p>
+                  <p className="font-semibold text-slate-100">{benefit}</p>
                 </div>
               ))}
             </div>
@@ -312,14 +300,11 @@ export default async function SignupPage({
               Complete access
             </p>
 
-            <p className="mt-3 text-xl font-bold">
-              Start with Tobailey
-            </p>
+            <p className="mt-3 text-xl font-bold">Start with Tobailey</p>
 
             <p className="mt-3 text-sm leading-6 text-slate-300">
-              Monitor your portfolio, receive personalised
-              briefings and track progress towards your
-              long-term financial goal.
+              Monitor your portfolio, receive personalised briefings and track
+              progress towards your long-term financial goal.
             </p>
           </div>
         </section>

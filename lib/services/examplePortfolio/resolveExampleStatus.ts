@@ -79,8 +79,10 @@ export function resolveExampleStatus(input: {
           account_mode: "standard",
           example_converted_at: null,
           pending_example_template: null,
-          example_started_at: undefined,
-          example_expires_at: undefined,
+          example_portfolio_type: null,
+          example_started_at: null,
+          example_expires_at: null,
+          example_activated_via_email: null,
         },
       });
     }
@@ -185,9 +187,10 @@ export function resolveExampleStatus(input: {
             account_mode: "standard",
             example_portfolio_type: entitlement.template,
             pending_example_template: entitlement.template,
-            example_expires_at: undefined,
-            example_started_at: undefined,
+            example_expires_at: null,
+            example_started_at: null,
             example_converted_at: null,
+            example_activated_via_email: null,
           }
         : null,
   };

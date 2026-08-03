@@ -301,6 +301,8 @@ describe("example expiry enforcement", () => {
     const banner = read(
       "components/examplePortfolio/ExamplePortfolioBanner.tsx",
     );
+    const header = read("components/marketing/MarketingHeader.tsx");
+    const home = read("app/page.tsx");
     const expired = read("app/example-expired/page.tsx");
     const start = read(
       "lib/services/examplePortfolio/startExamplePortfolio.ts",
@@ -312,12 +314,20 @@ describe("example expiry enforcement", () => {
 
     expect(middleware).toContain("shouldBlockExpiredExampleUser");
     expect(callback).toContain("activateExamplePortfolioForUser");
+    expect(callback).toContain("forceFromCallback: true");
     expect(callback).toContain('exampleParam === "1"');
     expect(callback).toContain("cookieBuffer");
     expect(callback).toContain('redirectWithCookies("/dashboard"');
     expect(callback).toContain("/example-expired");
     expect(callback).not.toContain("templateHint");
     expect(banner).toContain("Keep my portfolio");
+    expect(banner).toContain("/api/example-portfolio/status");
+    expect(banner).toContain('cache: "no-store"');
+    expect(header).toContain("Explore free for 7 days");
+    expect(header).toContain('href="/explore"');
+    expect(header).not.toMatch(/24-?hour|24h trial/i);
+    expect(home).toContain("Explore free for 7 days");
+    expect(home).not.toMatch(/24-?hour free trial/i);
     expect(expired).toContain("Your example portfolio has ended.");
     expect(expired).toContain(
       "Your holdings, goals and settings are still saved.",
@@ -328,6 +338,12 @@ describe("example expiry enforcement", () => {
     expect(start).toContain("reserveExampleEntitlement");
     expect(start).toContain("one entitlement per email");
     expect(activate).toContain("entitlement.template");
+    expect(activate).toContain("forceFromCallback");
+    expect(activate).toContain("mayStartExampleClock");
+    expect(activate).toContain("hasExampleSeedHoldings");
+    expect(activate).toContain(
+      "Existing portfolio is not an example seed set.",
+    );
     expect(activate).not.toContain("templateHint");
     expect(activate).toContain("startExampleEntitlementClock");
     expect(migration).toContain("email_normalized text PRIMARY KEY");
@@ -377,6 +393,51 @@ describe("example entitlement resolver source of truth", () => {
     expect(status.kind).toBe("none");
     expect(status.staleMetadata).toBe(true);
     expect(shouldShowExampleBanner(status)).toBe(false);
+  });
+
+  it("detects false activation when a real portfolio was stamped as example", async () => {
+    const { isFalseExampleActivation, mayStartExampleClock } =
+      await import("@/lib/services/examplePortfolio/repairFalseExample");
+    const entitlement = {
+      email_normalized: "user@example.com",
+      user_id: "user-1",
+      template: "global" as const,
+      started_at: "2026-08-01T00:00:00.000Z",
+      expires_at: "2026-08-08T00:00:00.000Z",
+      seeded_at: "2026-08-01T00:00:00.000Z",
+      converted_at: null,
+    };
+    expect(
+      isFalseExampleActivation({
+        entitlement,
+        holdings: [
+          { id: "real-vwce", assetType: "investment" },
+          { id: "cash-1", assetType: "cash" },
+        ],
+      }),
+    ).toBe(true);
+    expect(
+      isFalseExampleActivation({
+        entitlement,
+        holdings: [{ id: "example-global-vwce", assetType: "investment" }],
+      }),
+    ).toBe(false);
+    expect(
+      mayStartExampleClock({
+        forceFromCallback: false,
+        metadata: {},
+        holdings: [{ id: "real-vwce", assetType: "investment" }],
+        entitlement: { ...entitlement, started_at: null, expires_at: null },
+      }),
+    ).toBe(false);
+    expect(
+      mayStartExampleClock({
+        forceFromCallback: true,
+        metadata: {},
+        holdings: [{ id: "real-vwce", assetType: "investment" }],
+        entitlement: { ...entitlement, started_at: null, expires_at: null },
+      }),
+    ).toBe(true);
   });
 
   it("shows active banner from entitlement even when metadata is stale", async () => {

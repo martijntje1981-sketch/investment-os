@@ -137,10 +137,10 @@ export default function MarketingHeader() {
           </Link>
 
           <Link
-            href="/signup"
+            href="/explore"
             className="inline-flex items-center gap-2 rounded-xl bg-brand px-5 py-3 text-sm font-bold text-brand-navy shadow-sm transition hover:bg-brand-hover"
           >
-            Start 24-hour trial
+            Explore free for 7 days
             <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
@@ -154,7 +154,11 @@ export default function MarketingHeader() {
           }
           aria-expanded={isMenuOpen}
         >
-          {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          {isMenuOpen ? (
+            <X className="h-5 w-5" />
+          ) : (
+            <Menu className="h-5 w-5" />
+          )}
         </button>
       </div>
 
@@ -208,11 +212,11 @@ export default function MarketingHeader() {
               </Link>
 
               <Link
-                href="/signup"
+                href="/explore"
                 onClick={closeMenu}
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand px-4 py-3 text-sm font-bold text-brand-navy"
               >
-                Start 24-hour trial
+                Explore free for 7 days
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
