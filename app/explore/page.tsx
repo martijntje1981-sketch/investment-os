@@ -109,8 +109,8 @@ export default function ExplorePage() {
                 Explore Tobailey
               </h1>
               <p className={`mt-2 ${appSectionSubtitleClass}`}>
-                Example portfolio with full access for 7 days. Edit holdings,
-                explore the platform, and keep your changes saved.
+                Start with a personal Example Portfolio. Edit everything and
+                explore the full platform for 7 days.
               </p>
             </div>
           </div>
@@ -125,7 +125,7 @@ export default function ExplorePage() {
               </p>
               <p className={`mt-1 ${appSectionMetaClass}`}>
                 We sent a sign-in link to {email.trim()}. Open it on this device
-                to activate your example portfolio.
+                to activate your Example Portfolio.
               </p>
             </div>
           ) : (
@@ -224,7 +224,7 @@ export default function ExplorePage() {
                 disabled={pending}
                 className={`w-full ${appSolidButtonClass}`}
               >
-                {pending ? "Sending link…" : "Start exploring"}
+                {pending ? "Sending link…" : "Explore free for 7 days"}
               </button>
 
               <ul className="space-y-1.5 text-[13px] font-medium text-slate-600">

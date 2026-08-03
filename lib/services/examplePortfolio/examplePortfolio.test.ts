@@ -40,18 +40,22 @@ describe("example portfolio entry surface", () => {
 
   it("shows two portfolio choices with Global Investor recommended", () => {
     expect(explore).toContain("Explore Tobailey");
-    expect(explore).toContain("Example portfolio");
+    expect(explore).toContain("Example Portfolio");
     expect(explore).toContain("Global Investor");
     expect(explore).toContain("Income Investor");
     expect(explore).toContain("Recommended");
     expect(explore).toContain('id: "global"');
-    expect(explore).toContain("Start exploring");
+    expect(explore).toContain("Explore free for 7 days");
     expect(explore).toContain("Add my own portfolio");
     expect(explore).toContain("Full access for 7 days");
     expect(explore).toContain("No credit card required");
     expect(explore).toContain("Your changes are saved");
     expect(explore).toContain("Check your email to continue.");
+    expect(explore).toContain(
+      "Start with a personal Example Portfolio. Edit everything and",
+    );
     expect(explore).not.toMatch(/demo account/i);
+    expect(explore).not.toMatch(/24-?hour|24h trial/i);
   });
 
   it("keeps the entry form mobile-first without horizontal scroll utilities", () => {
@@ -308,7 +312,9 @@ describe("example expiry enforcement", () => {
 
     expect(middleware).toContain("shouldBlockExpiredExampleUser");
     expect(callback).toContain("activateExamplePortfolioForUser");
-    expect(callback).toContain('example === "1"');
+    expect(callback).toContain('exampleParam === "1"');
+    expect(callback).toContain("cookieBuffer");
+    expect(callback).toContain('redirectWithCookies("/dashboard"');
     expect(callback).toContain("/example-expired");
     expect(callback).not.toContain("templateHint");
     expect(banner).toContain("Keep my portfolio");

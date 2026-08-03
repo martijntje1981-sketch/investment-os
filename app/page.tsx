@@ -156,7 +156,32 @@ const trustItems = [
   },
 ];
 
-export default async function MarketingHomePage() {
+export default async function MarketingHomePage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = await searchParams;
+  const code = typeof params.code === "string" ? params.code : null;
+  const tokenHash =
+    typeof params.token_hash === "string" ? params.token_hash : null;
+  const type = typeof params.type === "string" ? params.type : null;
+  const next = typeof params.next === "string" ? params.next : null;
+  const example = typeof params.example === "string" ? params.example : null;
+
+  // Defensive: Supabase Site URL fallbacks can land auth codes on `/`.
+  // Forward them to the real callback so sessions and example activation run.
+  if (code || tokenHash) {
+    const forward = new URLSearchParams();
+    if (code) forward.set("code", code);
+    if (tokenHash) forward.set("token_hash", tokenHash);
+    if (type) forward.set("type", type);
+    if (next) forward.set("next", next);
+    else forward.set("next", "/dashboard");
+    if (example) forward.set("example", example);
+    redirect(`/auth/callback?${forward.toString()}`);
+  }
+
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();
 

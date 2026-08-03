@@ -127,7 +127,7 @@ describe("middleware and private API wiring", () => {
     expect(pulse).toContain("MakeTobaileyYoursCard");
     expect(explore).toContain("startExamplePortfolio");
     expect(explore).toContain("PUBLIC_EXPLORE_DESTINATIONS");
-    expect(explore).toContain("Start exploring");
+    expect(explore).toContain("Explore free for 7 days");
     expect(marketingHeader).toContain("Explore");
     expect(marketingHeader).toContain("PUBLIC_EXPLORE_DESTINATIONS");
     expect(landing).toContain("Explore Tobailey");

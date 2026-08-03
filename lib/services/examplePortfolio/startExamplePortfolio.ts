@@ -9,6 +9,10 @@ import { headers } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import {
+  buildExampleAuthCallbackUrl,
+  getPublicSiteUrl,
+} from "@/lib/auth/siteUrl";
+import {
   findExampleEntitlementByEmail,
   isEntitlementPeriodExpired,
   reserveExampleEntitlement,
@@ -126,7 +130,8 @@ export async function startExamplePortfolio(input: {
   const lockedTemplate = entitlement.template;
 
   const requestHeaders = await headers();
-  const origin = requestHeaders.get("origin") ?? "http://localhost:3000";
+  const siteUrl = getPublicSiteUrl(requestHeaders);
+  const emailRedirectTo = buildExampleAuthCallbackUrl(siteUrl);
   const supabase = await createClient();
 
   // Magic-link / OTP via existing Supabase Auth — one entitlement per email.
@@ -139,7 +144,7 @@ export async function startExamplePortfolio(input: {
         pending_example_template: lockedTemplate,
         account_mode: "example",
       },
-      emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent("/dashboard")}&example=1`,
+      emailRedirectTo,
     },
   });
 
