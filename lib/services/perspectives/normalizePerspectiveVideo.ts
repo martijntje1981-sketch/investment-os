@@ -47,6 +47,20 @@ function hasWholeWordMatch(text: string, keyword: string): boolean {
 }
 
 /**
+ * YouTube Atom feed-level `<yt:channelId>` often omits the `UC` prefix;
+ * entry-level IDs usually include it. Normalize before identity compares.
+ */
+export function canonicalizeYouTubeChannelId(
+  channelId: string | null | undefined,
+): string | null {
+  if (!channelId) return null;
+  const trimmed = channelId.trim();
+  if (!trimmed) return null;
+  if (trimmed.startsWith("UC")) return trimmed;
+  return `UC${trimmed}`;
+}
+
+/**
  * Detect a featured person only with strong title/description evidence.
  * Never changes channel ownership.
  */
@@ -80,20 +94,24 @@ export function normalizePerspectiveVideo(input: {
     return null;
   }
 
+  const entryChannelId = canonicalizeYouTubeChannelId(entry.channelId);
+  const creatorChannelId = canonicalizeYouTubeChannelId(creator.channelId);
+
   if (
-    entry.channelId &&
-    entry.channelId.trim() !== "" &&
-    entry.channelId !== creator.channelId
+    entryChannelId &&
+    creatorChannelId &&
+    entryChannelId !== creatorChannelId
   ) {
     return null;
   }
 
-  const channelId = entry.channelId ?? creator.channelId;
+  const channelId = entryChannelId ?? creatorChannelId ?? creator.channelId;
   const channelTitle =
     entry.channelTitle?.trim() ||
     creator.channelDisplayName?.trim() ||
     creator.name;
-  const trustedMatch = channelId === creator.channelId;
+  const trustedMatch =
+    channelId === creator.channelId || channelId === creatorChannelId;
   const featuredPersonName = resolveFeaturedPerson(
     entry,
     input.associatedPeople ?? creator.associatedPeople,

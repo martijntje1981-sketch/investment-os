@@ -317,8 +317,13 @@ describe("dashboard portfolio exposure integration", () => {
     "utf8",
   );
 
-  it("places Portfolio exposure directly after Your Holdings", () => {
+  it("places Portfolio exposure after Your Holdings in the remaining section", () => {
     const holdingsIdx = dashboardSource.indexOf("<HoldingsToday");
+    const cashIdx = dashboardSource.indexOf("<DashboardCashIntelligenceCard");
+    const pulseIdx = dashboardSource.indexOf(
+      "<DashboardMarketPulseCard",
+      holdingsIdx,
+    );
     const exposureIdx = dashboardSource.indexOf(
       "<DashboardPortfolioExposureCard",
     );
@@ -326,7 +331,9 @@ describe("dashboard portfolio exposure integration", () => {
       "<DashboardContributionsCard",
     );
     expect(holdingsIdx).toBeGreaterThan(-1);
-    expect(exposureIdx).toBeGreaterThan(holdingsIdx);
+    expect(cashIdx).toBeGreaterThan(holdingsIdx);
+    expect(pulseIdx).toBeGreaterThan(cashIdx);
+    expect(exposureIdx).toBeGreaterThan(pulseIdx);
     expect(contributionsIdx).toBeGreaterThan(exposureIdx);
   });
 
@@ -340,7 +347,7 @@ describe("dashboard portfolio exposure integration", () => {
     expect(cardSource).not.toContain("overflow-x-scroll");
     expect(dashboardSource).toContain("DashboardSummary");
     expect(dashboardSource).toContain("DashboardIntelligencePreview");
-    expect(dashboardSource).toContain("DashboardInsightCard");
+    expect(dashboardSource).not.toContain("DashboardInsightCard");
     expect(dashboardSource).toContain("DashboardMarketStatus");
     expect(dashboardSource).not.toContain("DashboardMoverCard");
     expect(dashboardSource).not.toContain("groupBySector");

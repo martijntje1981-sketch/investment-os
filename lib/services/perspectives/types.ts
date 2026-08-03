@@ -50,4 +50,6 @@ export type PerspectivesPayload = {
   feedErrors: number;
   unavailableCreatorIds: string[];
   schemaVersion: string;
+  /** True when live YouTube fetch failed and prior successful payload was reused. */
+  servedFromLastSuccess?: boolean;
 };

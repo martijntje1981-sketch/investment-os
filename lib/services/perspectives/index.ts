@@ -7,3 +7,9 @@ export * from "@/lib/services/perspectives/relativeTime";
 export * from "@/lib/services/perspectives/relevance";
 export * from "@/lib/services/perspectives/whyItMatters";
 export { fetchPerspectivesPayload } from "@/lib/services/perspectives/fetchPerspectives";
+export {
+  fetchPerspectivesUncached,
+  fetchPerspectivesLive,
+  getLastSuccessfulPerspectivesPayload,
+  resetPerspectivesLastSuccessForTests,
+} from "@/lib/services/perspectives/fetchPerspectives";

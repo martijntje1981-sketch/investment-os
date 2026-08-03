@@ -17,7 +17,6 @@ import { DashboardUpcomingEventsWidget } from "@/components/dashboard/DashboardU
 import { DashboardPerspectivesWidget } from "@/components/dashboard/DashboardPerspectivesWidget";
 import { HoldingsToday } from "@/components/dashboard/HoldingsToday";
 import { DashboardPortfolioExposureCard } from "@/components/dashboard/DashboardPortfolioExposureCard";
-import { DashboardInsightCard } from "@/components/dashboard/DashboardInsightCard";
 import { DashboardMarketStatus } from "@/components/dashboard/DashboardMarketStatus";
 import {
   AppPageLoading,
@@ -37,7 +36,6 @@ import { useUserGoal } from "@/lib/client/useUserGoal";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 import { useMarketSnapshotMetadata } from "@/lib/client/useMarketSnapshotMetadata";
 import { useLivePortfolioPriceRefresh } from "@/lib/client/useLivePortfolioPriceRefresh";
-import { usePortfolioInsight } from "@/lib/client/usePortfolioInsight";
 import { usePortfolioPerformanceHistory } from "@/lib/client/usePortfolioPerformanceHistory";
 import { needsPortfolioSetup } from "@/lib/client/portfolioSetup";
 import { buildPortfolioHealthProfile } from "@/lib/services/portfolio/portfolioHealthProfile";
@@ -196,11 +194,6 @@ export default function DashboardPage() {
     weekHistory.data,
   ]);
 
-  const { insight, source: insightSource } = usePortfolioInsight(
-    portfolioScorecard,
-    holdings.length > 0 && portfolioScorecard != null,
-  );
-
   const marketsClosed = useMemo(() => areMajorMarketsClosed(), []);
 
   const dashboardSummaryRendered = portfolioReady && holdings.length > 0;
@@ -299,8 +292,8 @@ export default function DashboardPage() {
             />
           </div>
 
-          {/* 4. Today’s Portfolio Insight */}
-          <DashboardInsightCard insight={insight} source={insightSource} />
+          {/* 4. Your Holdings */}
+          <HoldingsToday snapshot={snapshot} />
 
           {/* 5. Cash Intelligence (Health lives in Scorecard) */}
           <DashboardCashIntelligenceCard holdings={holdings} />
@@ -315,10 +308,7 @@ export default function DashboardPage() {
             }
           />
 
-          {/* 7. Your Holdings */}
-          <HoldingsToday snapshot={snapshot} />
-
-          {/* 8. Remaining supporting cards */}
+          {/* 7. Remaining supporting cards */}
           <div className="space-y-6 md:space-y-8">
             <DashboardUpcomingEventsWidget />
             <DashboardPerspectivesWidget />

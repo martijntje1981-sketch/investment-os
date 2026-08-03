@@ -209,6 +209,12 @@ export default function PerspectivesPage() {
                   Official creator feeds could not be reached right now. Try
                   again shortly.
                 </p>
+                {payload.unavailableCreatorIds.length > 0 ? (
+                  <p className={`mt-2 ${appSectionMetaClass}`}>
+                    Failed feeds: {payload.unavailableCreatorIds.length} of{" "}
+                    {payload.creatorCount}.
+                  </p>
+                ) : null}
               </div>
             </div>
           </div>
@@ -221,6 +227,12 @@ export default function PerspectivesPage() {
           </div>
         ) : (
           <div className="space-y-8 md:space-y-10">
+            {payload.servedFromLastSuccess ? (
+              <p className={appSectionMetaClass}>
+                Showing the last successful Perspectives snapshot while live
+                creator feeds refresh.
+              </p>
+            ) : null}
             {payload.feedErrors > 0 ? (
               <p className={appSectionMetaClass}>
                 Showing available creators

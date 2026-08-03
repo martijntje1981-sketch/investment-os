@@ -32,6 +32,7 @@ export async function GET() {
         feedErrors: 0,
         unavailableCreatorIds: [],
         schemaVersion: "perspectives-identity-v2",
+        servedFromLastSuccess: false,
       },
       { status: 500 },
     );

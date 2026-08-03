@@ -159,21 +159,16 @@ describe("Dashboard UX polish phase", () => {
     expect(health).toContain("DASHBOARD_DEEP_LINKS.portfolioHealth");
   });
 
-  it("elevates AI insight presentation while preserving evidence and routes", () => {
+  it("keeps Portfolio Insight card implementation available without rendering it on Dashboard", () => {
     expect(insight).toContain("Today’s portfolio insight");
     expect(insight).toContain("insight.headline");
     expect(insight).toContain("insight.scoreLines");
     expect(insight).toContain("DASHBOARD_DEEP_LINKS.portfolioHealth");
     expect(insight).toContain("DASHBOARD_DEEP_LINKS.goalScore");
-    expect(dashboard).toContain("usePortfolioInsight");
+    expect(dashboard).not.toContain("usePortfolioInsight");
+    expect(dashboard).not.toContain("DashboardInsightCard");
     expect(dashboard).toContain("buildPortfolioHealthScoreV1");
     expect(dashboard).toContain("buildPortfolioScorecard");
-    expect(dashboard.indexOf("<DashboardPortfolioScorecard")).toBeLessThan(
-      dashboard.indexOf("<DashboardInsightCard"),
-    );
-    expect(dashboard.indexOf("<DashboardInsightCard")).toBeLessThan(
-      dashboard.indexOf("<HoldingsToday"),
-    );
   });
 
   it("keeps Cash Intelligence metrics and Analysis deep link", () => {
@@ -185,16 +180,21 @@ describe("Dashboard UX polish phase", () => {
     expect(cash).toContain("Allocation");
   });
 
-  it("orders hero, scorecard, decision, insight, then holdings", () => {
+  it("orders hero, scorecard, decision/briefing, holdings, then cash", () => {
     const summaryIdx = dashboard.indexOf("<DashboardSummary");
     const scorecardIdx = dashboard.indexOf("<DashboardPortfolioScorecard");
     const decisionIdx = dashboard.indexOf("<DashboardTodaysDecision");
-    const insightIdx = dashboard.indexOf("<DashboardInsightCard");
     const holdingsIdx = dashboard.indexOf("<HoldingsToday");
+    const cashIdx = dashboard.indexOf("<DashboardCashIntelligenceCard");
+    const pulseIdx = dashboard.indexOf(
+      "<DashboardMarketPulseCard",
+      holdingsIdx,
+    );
     expect(summaryIdx).toBeLessThan(scorecardIdx);
     expect(scorecardIdx).toBeLessThan(decisionIdx);
-    expect(decisionIdx).toBeLessThan(insightIdx);
-    expect(insightIdx).toBeLessThan(holdingsIdx);
+    expect(decisionIdx).toBeLessThan(holdingsIdx);
+    expect(holdingsIdx).toBeLessThan(cashIdx);
+    expect(cashIdx).toBeLessThan(pulseIdx);
   });
 });
 

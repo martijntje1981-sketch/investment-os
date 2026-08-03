@@ -139,8 +139,8 @@ describe("dashboard phase 2 compact previews", () => {
     expect(dividendSource).not.toContain('href="/goals"');
   });
 
-  it("keeps AI Portfolio Insight and Trading Hours; omits duplicate movers and sectors", () => {
-    expect(dashboardSource).toContain("DashboardInsightCard");
+  it("keeps Trading Hours and insight module files; omits Dashboard insight card and duplicate movers", () => {
+    expect(dashboardSource).not.toContain("DashboardInsightCard");
     expect(dashboardSource).toContain("DashboardMarketStatus");
     expect(insightSource.length).toBeGreaterThan(0);
     expect(marketStatusSource.length).toBeGreaterThan(0);

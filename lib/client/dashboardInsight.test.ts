@@ -161,7 +161,7 @@ describe("home and dashboard hierarchy", () => {
     expect(dashboard).not.toContain("DashboardPortfolioOverview");
     expect(dashboard).not.toContain("BottomNavigation");
     expect(dashboard).toContain("buildPortfolioHealthScoreV1");
-    expect(dashboard).toContain("usePortfolioInsight");
+    expect(dashboard).not.toContain("DashboardInsightCard");
     expect(dashboard).toContain("DashboardPortfolioScorecard");
     expect(summary).toContain("PortfolioValueCard");
     expect(summary).not.toContain("GoalProgressCard");
@@ -187,7 +187,7 @@ describe("home and dashboard hierarchy", () => {
     expect(homePage).not.toContain("AuthenticatedHomePage");
   });
 
-  it("uses evidence-based portfolio insight on the dashboard", async () => {
+  it("keeps evidence-based portfolio insight available for future use", async () => {
     const { readFileSync } = await import("node:fs");
     const { resolve } = await import("node:path");
 

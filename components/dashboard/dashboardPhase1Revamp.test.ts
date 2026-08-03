@@ -145,10 +145,10 @@ describe("dashboard phase 1 revamp", () => {
     expect(movers.lowestMover?.changePeriodLabel).toBe("24h");
   });
 
-  it("keeps Market Briefing, AI insight, Scorecard and Trading Hours", () => {
+  it("keeps Market Briefing, Scorecard and Trading Hours without Dashboard insight card", () => {
     expect(dashboardSource).toContain("DashboardPortfolioScorecard");
     expect(dashboardSource).toContain("DashboardIntelligencePreview");
-    expect(dashboardSource).toContain("DashboardInsightCard");
+    expect(dashboardSource).not.toContain("DashboardInsightCard");
     expect(dashboardSource).toContain("DashboardMarketStatus");
     expect(dashboardSource).toContain("HoldingsToday");
     expect(dashboardSource).not.toContain("DashboardGoalProgressCard");
