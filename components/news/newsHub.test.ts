@@ -100,7 +100,7 @@ describe("news hub UI structure", () => {
     expect(source).toContain("resolveLegacyBriefingRedirect");
   });
 
-  it("keeps News in authenticated Explore menu and guest Markets nav", () => {
+  it("keeps News in authenticated primary nav and guest Markets nav", () => {
     const bottomNav = readFileSync(
       path.resolve(process.cwd(), "components/home/BottomNav.tsx"),
       "utf8",
@@ -111,11 +111,13 @@ describe("news hub UI structure", () => {
     );
 
     expect(bottomNav).toContain("guestItems");
+    expect(bottomNav).toContain("authenticatedItems");
     expect(bottomNav).toContain('href: "/news"');
     expect(bottomNav).toContain('label: "Markets"');
-    expect(bottomNav).not.toContain('label: "News"');
+    expect(bottomNav).toContain('label: "News"');
     expect(userMenu).toContain('href: "/news"');
     expect(userMenu).toContain('label: "News"');
+    expect(userMenu).toContain("desktop-primary-nav");
   });
 });
 

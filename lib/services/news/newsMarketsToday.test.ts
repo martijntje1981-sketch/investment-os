@@ -14,8 +14,12 @@ import {
 } from "@/lib/services/news/marketsTodayRegionalClassification";
 import {
   aggregateMarketsTodaySentiment,
+  buildMarketsTodayPulse,
   buildMarketsTodayRegions,
+  clampMarketsTodayText,
+  compareMarketsTodayStoriesByImpact,
   MARKETS_TODAY_EMPTY_STATE_COPY,
+  MARKETS_TODAY_PULSE_TITLE,
   MARKETS_TODAY_STORIES_LABEL,
 } from "@/lib/services/news/newsMarketsToday";
 import type { NewsContentItem } from "@/lib/types/newsContent";
@@ -61,17 +65,28 @@ describe("Markets Today regional foundation", () => {
     expect(regions.map((region) => region.label)).toEqual([
       "Global",
       "Europe",
-      "US",
+      "United States",
       "Asia",
       "Crypto",
+    ]);
+    expect(regions.map((region) => region.emoji)).toEqual([
+      "🌍",
+      "🇪🇺",
+      "🇺🇸",
+      "🌏",
+      "₿",
     ]);
   });
 
   it("keeps empty regions visible with the honest empty-state copy", () => {
     const regions = buildMarketsTodayRegions({ items: [] });
     expect(regions.every((region) => region.stories.length === 0)).toBe(true);
+    expect(regions.every((region) => region.summary === null)).toBe(true);
+    expect(regions.every((region) => region.highestImpactStory === null)).toBe(
+      true,
+    );
     expect(MARKETS_TODAY_EMPTY_STATE_COPY).toBe(
-      "No major verified developments available.",
+      "No major market-moving developments.",
     );
   });
 
@@ -247,15 +262,103 @@ describe("Markets Today regional foundation", () => {
     );
 
     expect(MARKETS_TODAY_STORIES_LABEL).toBe("Key developments");
+    expect(MARKETS_TODAY_PULSE_TITLE).toBe("Today's Global Market Pulse");
     expect(sectionSource).toContain("MARKETS_TODAY_STORIES_LABEL");
+    expect(sectionSource).toContain("MARKETS_TODAY_PULSE_TITLE");
     expect(sectionSource).not.toContain("Largest movers");
     expect(sectionSource).toContain("MARKETS_TODAY_SENTIMENT_STYLES");
+    expect(sectionSource).toContain("MARKETS_TODAY_IMPACT_STYLES");
+    expect(sectionSource).toContain("Why it matters");
 
     expect(
       aggregateMarketsTodaySentiment([
         newsItem({ id: "s1", title: "Nasdaq edges higher in mixed session" }),
       ]),
     ).toBe("unavailable");
+  });
+
+  it("ranks stories by impact and exposes summary fields for regional cards", () => {
+    const regions = buildMarketsTodayRegions({
+      items: [
+        newsItem({
+          id: "us-low",
+          title: "Wall Street closes mixed in quiet session",
+          impactLevel: "Low Impact",
+          summary: "Quiet trading afternoon across US equities.",
+          interpretation: "Low relevance for broader risk assets.",
+          publishedAt: "2026-07-18T12:00:00.000Z",
+        }),
+        newsItem({
+          id: "us-high",
+          title: "Federal Reserve CPI surprise reshapes rate path",
+          impactLevel: "High Impact",
+          summary: "Inflation surprise lifts US rate expectations.",
+          interpretation:
+            "This macro development could influence rate expectations and index direction.",
+          publishedAt: "2026-07-18T09:00:00.000Z",
+        }),
+        newsItem({
+          id: "us-med",
+          title: "Nasdaq futures mixed ahead of earnings",
+          impactLevel: "Medium Impact",
+          summary: "Equities mixed before earnings season.",
+          publishedAt: "2026-07-18T11:00:00.000Z",
+        }),
+      ],
+    });
+
+    const us = regions.find((region) => region.id === "us");
+    expect(us?.stories.map((story) => story.id)).toEqual([
+      "us-high",
+      "us-med",
+      "us-low",
+    ]);
+    expect(us?.highestImpactStory?.id).toBe("us-high");
+    expect(us?.highestImpactStory?.impactLevel).toBe("High Impact");
+    expect(us?.summary).toContain("Inflation surprise");
+    expect(us?.stories[0]?.whyItMatters).toContain("rate expectations");
+    expect(us?.updatedAt).toBe("2026-07-18T12:00:00.000Z");
+  });
+
+  it("builds a compact global pulse summary from regional stories", () => {
+    const regions = buildMarketsTodayRegions({
+      items: [
+        newsItem({
+          id: "g-high",
+          title: "Worldwide growth outlook softens",
+          impactLevel: "High Impact",
+          summary: "Global growth estimates are revised lower.",
+          interpretation: "Cross-asset risk appetite may stay cautious.",
+        }),
+        newsItem({
+          id: "e1",
+          title: "ECB keeps rates unchanged in Frankfurt",
+          impactLevel: "Medium Impact",
+          summary: "Euro-area policy remains on hold.",
+        }),
+      ],
+    });
+
+    const pulse = buildMarketsTodayPulse(regions);
+    expect(pulse.biggestTheme).toContain("Worldwide growth");
+    expect(pulse.highestImpactEvent).toContain("Worldwide growth");
+    expect(pulse.summary).toContain("Global growth");
+    expect(pulse.overallSentiment).toBe("unavailable");
+    expect(clampMarketsTodayText("a".repeat(200), 20).endsWith("…")).toBe(true);
+    expect(
+      compareMarketsTodayStoriesByImpact(
+        { impactLevel: "Low Impact", publishedAt: "2026-07-18T12:00:00.000Z" },
+        { impactLevel: "High Impact", publishedAt: "2026-07-18T08:00:00.000Z" },
+      ),
+    ).toBeGreaterThan(0);
+  });
+
+  it("renders professional empty pulse copy when regions have no stories", () => {
+    const pulse = buildMarketsTodayPulse(buildMarketsTodayRegions({ items: [] }));
+    expect(pulse.biggestTheme).toContain("quiet");
+    expect(pulse.highestImpactEvent).toContain("No high-impact");
+    expect(pulse.summary).toContain("No major market-moving");
+    expect(pulse.updatedAt).toBeNull();
   });
 
   it("exposes classification evidence internally", () => {

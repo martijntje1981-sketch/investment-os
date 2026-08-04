@@ -19,10 +19,18 @@ export const MARKETS_TODAY_REGION_LABELS: Record<MarketsTodayRegionId, string> =
   {
     global: "Global",
     europe: "Europe",
-    us: "US",
+    us: "United States",
     asia: "Asia",
     crypto: "Crypto",
   };
+
+export const MARKETS_TODAY_REGION_EMOJI: Record<MarketsTodayRegionId, string> = {
+  global: "🌍",
+  europe: "🇪🇺",
+  us: "🇺🇸",
+  asia: "🌏",
+  crypto: "₿",
+};
 
 export type MarketsTodayClassificationResult = {
   region: MarketsTodayRegionId;

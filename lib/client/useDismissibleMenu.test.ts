@@ -342,7 +342,7 @@ describe("UserMenu profile wiring", () => {
     expect(source).toContain('label: "Upcoming Events"');
     expect(source).toContain('href: "/upload"');
     expect(source).toContain('title="Portfolio"');
-    expect(source).toContain('title="Intelligence"');
+    expect(source).toContain('title="Discover"');
     expect(source).toContain('title="Account"');
     expect(source).toContain('title="Support"');
     expect(source).toContain('aria-current={active ? "page" : undefined}');

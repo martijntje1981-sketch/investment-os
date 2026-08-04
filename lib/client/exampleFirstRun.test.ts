@@ -106,7 +106,7 @@ describe("first-run dashboard wiring", () => {
     );
     expect(tools).toContain("Track progress toward your financial targets.");
     expect(menu).toContain('title="Portfolio"');
-    expect(menu).toContain('title="Intelligence"');
+    expect(menu).toContain('title="Discover"');
     expect(menu).toContain('title="Account"');
     expect(menu).toContain('title="Support"');
     expect(menu).toContain("/portfolio-health");

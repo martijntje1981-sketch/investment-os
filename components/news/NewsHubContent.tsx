@@ -19,6 +19,7 @@ import { NewsForPortfolioSection } from "@/components/news/NewsForPortfolioSecti
 import { NewsMacroGroupsSection } from "@/components/news/NewsMacroGroupsSection";
 import { NewsMarketBriefSection } from "@/components/news/NewsMarketBriefSection";
 import { NewsMarketsTodaySection } from "@/components/news/NewsMarketsTodaySection";
+import { NewsMarketsTodaySkeleton } from "@/components/news/NewsMarketsTodaySkeleton";
 import { NewsSearchBar } from "@/components/news/NewsSearchBar";
 import { formatNewsRefreshedAt } from "@/components/news/newsFormatting";
 import {
@@ -162,6 +163,8 @@ export function NewsHubContent({
         onRefresh={onRefresh}
         isRefreshing={isRefreshing}
       />
+
+      {!isSearchActive && isRefreshing ? <NewsMarketsTodaySkeleton /> : null}
 
       {!isSearchActive && hasBriefingContent && !isRefreshing ? (
         <NewsMarketsTodaySection regions={briefing.marketsToday} />

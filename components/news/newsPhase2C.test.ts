@@ -3,11 +3,15 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
+  MARKETS_TODAY_IMPACT_STYLES,
   MARKETS_TODAY_REGION_VISUALS,
   MARKETS_TODAY_SENTIMENT_STYLES,
 } from "@/components/news/marketsTodayVisuals";
 import { MARKETS_TODAY_REGION_ORDER } from "@/lib/services/news/marketsTodayRegionalClassification";
-import { buildMarketsTodayRegions } from "@/lib/services/news/newsMarketsToday";
+import {
+  buildMarketsTodayPulse,
+  buildMarketsTodayRegions,
+} from "@/lib/services/news/newsMarketsToday";
 import {
   isTrustedNewsThumbnailUrl,
   selectTrustedNewsThumbnail,
@@ -117,6 +121,60 @@ describe("Markets Today Phase 2C visuals", () => {
     expect(sectionSource).not.toContain("Show more");
     expect(sectionSource).toContain("MARKETS_TODAY_REGION_VISUALS");
     expect(sectionSource).toContain("MARKETS_TODAY_SENTIMENT_STYLES");
+  });
+
+  it("separates high, medium and lower impact story styling", () => {
+    expect(MARKETS_TODAY_IMPACT_STYLES["High Impact"].label).toBe("High impact");
+    expect(MARKETS_TODAY_IMPACT_STYLES["Medium Impact"].label).toBe(
+      "Medium impact",
+    );
+    expect(MARKETS_TODAY_IMPACT_STYLES["Low Impact"].label).toBe("Lower impact");
+    expect(MARKETS_TODAY_IMPACT_STYLES["High Impact"].rowClass).toContain(
+      "rose",
+    );
+  });
+
+  it("builds pulse and region summary fields for Markets Today 2.0 cards", () => {
+    const regions = buildMarketsTodayRegions({
+      items: [
+        item({
+          id: "fed",
+          title: "Federal Reserve holds rates steady",
+          impactLevel: "High Impact",
+          summary: "Policy stays on hold as inflation cools.",
+          interpretation: "Rate path expectations may stay anchored.",
+        }),
+      ],
+    });
+    const pulse = buildMarketsTodayPulse(regions);
+    const us = regions.find((region) => region.id === "us");
+
+    expect(us?.summary).toContain("Policy stays on hold");
+    expect(us?.highestImpactStory?.whyItMatters).toContain("Rate path");
+    expect(pulse.summary.length).toBeGreaterThan(0);
+    expect(pulse.summary.split("\n").length).toBeLessThanOrEqual(2);
+  });
+
+  it("wires Markets Today skeleton loading and decorative region icons", () => {
+    const hubSource = readFileSync(
+      path.resolve(process.cwd(), "components/news/NewsHubContent.tsx"),
+      "utf8",
+    );
+    const sectionSource = readFileSync(
+      path.resolve(process.cwd(), "components/news/NewsMarketsTodaySection.tsx"),
+      "utf8",
+    );
+    const skeletonSource = readFileSync(
+      path.resolve(process.cwd(), "components/news/NewsMarketsTodaySkeleton.tsx"),
+      "utf8",
+    );
+
+    expect(hubSource).toContain("NewsMarketsTodaySkeleton");
+    expect(skeletonSource).toContain('aria-busy="true"');
+    expect(skeletonSource).toContain("min-h-[196px]");
+    expect(sectionSource).toContain("aria-hidden");
+    expect(sectionSource).toContain("markets-today-pulse-heading");
+    expect(sectionSource).toContain("MARKETS_TODAY_EMPTY_STATE_COPY");
   });
 });
 

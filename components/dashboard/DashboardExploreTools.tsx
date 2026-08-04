@@ -4,6 +4,8 @@ import Link from "next/link";
 import {
   Activity,
   History,
+  ListChecks,
+  Newspaper,
   ScanLine,
   Sparkles,
   Target,
@@ -24,8 +26,18 @@ import {
   PORTFOLIO_HEALTH_PATH,
   PORTFOLIO_HISTORY_PATH,
 } from "@/lib/navigation/appRoutes";
+import {
+  NEWS_MARKETS_TODAY_HREF,
+  SUPPORTED_INSTRUMENTS_PATH,
+} from "@/lib/navigation/discoverDestinations";
 
 const TOOLS = [
+  {
+    href: NEWS_MARKETS_TODAY_HREF,
+    title: "Markets Today",
+    benefit: "Global market briefing across five regions.",
+    icon: Newspaper,
+  },
   {
     href: PORTFOLIO_HEALTH_PATH,
     title: "Portfolio Scorecard",
@@ -62,6 +74,12 @@ const TOOLS = [
     title: "Goals",
     benefit: "Track progress toward your financial targets.",
     icon: Target,
+  },
+  {
+    href: SUPPORTED_INSTRUMENTS_PATH,
+    title: "Supported Instruments",
+    benefit: "Check what Tobailey supports before you add holdings.",
+    icon: ListChecks,
   },
 ] as const;
 /**

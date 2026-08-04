@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 
 import { isBottomNavItemActive } from "@/components/home/bottomNavActive";
+import { isMoreNavPathActive } from "@/lib/navigation/discoverDestinations";
 
 describe("bottom navigation active state", () => {
   const source = readFileSync(
@@ -15,15 +16,17 @@ describe("bottom navigation active state", () => {
     expect(source).toContain("DASHBOARD_PATH");
     expect(source).toContain("PORTFOLIO_PATH");
     expect(source).toContain("ANALYSIS_PATH");
-    expect(source).toContain("GOALS_PATH");
+    expect(source).toContain('label: "News"');
+    expect(source).toContain("bottom-nav-more-trigger");
     expect(source).toContain("href: PORTFOLIO_PATH");
     expect(source).toContain("guestItems");
     expect(source).toContain('href: "/perspectives"');
     expect(source).toContain('href: "/news"');
     expect(source).toContain('href: "/supported-instruments"');
     expect(source).toContain('href: "/login"');
-    expect(source).not.toContain('href: "/market-pulse"');
-    expect(source).not.toContain('href: "/portfolio-health"');
+    expect(source).toContain("moreWorkspaceLinks");
+    expect(source).toContain("DISCOVER_DESTINATIONS");
+    expect(source).toContain("grid-cols-5");
     expect(source).toContain("grid-cols-4");
   });
 
@@ -33,7 +36,9 @@ describe("bottom navigation active state", () => {
     expect(isBottomNavItemActive("/portfolio", "/portfolio")).toBe(true);
     expect(isBottomNavItemActive("/portfolio/vwce", "/portfolio")).toBe(true);
     expect(isBottomNavItemActive("/analysis", "/analysis")).toBe(true);
-    expect(isBottomNavItemActive("/goals", "/goals")).toBe(true);
+    expect(isBottomNavItemActive("/news", "/news")).toBe(true);
+    expect(isMoreNavPathActive("/goals")).toBe(true);
+    expect(isMoreNavPathActive("/news")).toBe(false);
   });
 
   it("uses shared active styling tokens", () => {

@@ -40,14 +40,17 @@ describe("premium navigation and visual discovery", () => {
 
     expect(dashboard).toContain("DashboardExploreTools");
     expect(tools).toContain("Explore Tobailey");
+    expect(tools).toContain("Markets Today");
     expect(tools).toContain("Portfolio Scorecard");
     expect(tools).toContain("Portfolio History");
     expect(tools).toContain("Analysis");
     expect(tools).toContain("Market Pulse");
     expect(tools).toContain("Perspectives");
     expect(tools).toContain("Goals");
+    expect(tools).toContain("Supported Instruments");
     expect(tools).toContain("GOALS_PATH");
     expect(tools).toContain("PORTFOLIO_HISTORY_PATH");
+    expect(tools).toContain("NEWS_MARKETS_TODAY_HREF");
     expect(tools).toContain("min-[390px]:grid-cols-2");
     expect(tools).toContain("lg:grid-cols-3");
   });
