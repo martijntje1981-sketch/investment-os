@@ -31,7 +31,7 @@ export function HeroTrendMicroVisual({
     return (
       <svg
         viewBox="0 0 72 28"
-        className="h-8 w-[5rem] shrink-0 text-slate-400/70 sm:h-9 sm:w-28"
+        className="h-9 w-[5.5rem] shrink-0 text-slate-400/70 sm:h-10 sm:w-[7.25rem]"
         role="img"
         aria-label={label}
       >
@@ -52,7 +52,7 @@ export function HeroTrendMicroVisual({
     return (
       <svg
         viewBox="0 0 72 28"
-        className="h-8 w-[5rem] shrink-0 text-slate-300 sm:h-9 sm:w-28"
+        className="h-9 w-[5.5rem] shrink-0 text-slate-300 sm:h-10 sm:w-[7.25rem]"
         role="img"
         aria-label={label}
       >
@@ -81,7 +81,7 @@ export function HeroTrendMicroVisual({
   return (
     <svg
       viewBox="0 0 72 28"
-      className={`h-8 w-[5rem] shrink-0 sm:h-9 sm:w-28 ${strokeClass}`}
+      className={`h-9 w-[5.5rem] shrink-0 sm:h-10 sm:w-[7.25rem] ${strokeClass}`}
       role="img"
       aria-label={label}
     >
@@ -97,7 +97,7 @@ export function HeroTrendMicroVisual({
         d={linePath}
         fill="none"
         stroke="currentColor"
-        strokeWidth="2.35"
+        strokeWidth="2.6"
         strokeLinecap="round"
         strokeLinejoin="round"
       />

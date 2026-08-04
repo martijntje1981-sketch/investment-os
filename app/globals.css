@@ -2,17 +2,17 @@
 
 :root {
   /* App canvas */
-  --background: #f4f6f9;
+  --background: #eef3f8;
   --foreground: #0b1f3a;
   --muted: #64748b;
-  --border: #e2e8f0;
+  --border: #d9e3ef;
   --card: #ffffff;
   --surface-elevated: #ffffff;
 
   /* Tobailey brand */
   --brand-primary: #5db7ff;
   --brand-primary-hover: #3aa3f5;
-  --brand-primary-soft: #e8f5ff;
+  --brand-primary-soft: #e4f2fc;
   --brand-navy: #0b1f3a;
   --brand-text: #0b1f3a;
 
@@ -20,13 +20,13 @@
    * Midnight-navy surface hierarchy (authenticated UI).
    * Slightly softer than pure ink while keeping strong contrast.
    */
-  --navy-hero: #0d243f;
-  --navy-hero-lift: #143456;
-  --navy-hero-deep: #0a1c33;
-  --navy-card: #16304f;
+  --navy-hero: #12304f;
+  --navy-hero-lift: #1a3d62;
+  --navy-hero-deep: #0c243c;
+  --navy-card: #183555;
   --navy-inset: rgba(255, 255, 255, 0.06);
   --navy-border: rgba(255, 255, 255, 0.1);
-  --navy-shadow: 0 16px 40px rgba(11, 31, 58, 0.22);
+  --navy-shadow: 0 16px 40px rgba(11, 31, 58, 0.2);
 
   /* Semantic finance colors — do not replace with brand blue */
   --accent-green: #16a34a;
@@ -47,7 +47,7 @@
   --radius-card: 1.5rem;
   --radius-card-lg: 1.75rem;
   --shadow-card:
-    0 1px 2px rgba(15, 23, 42, 0.04), 0 10px 28px -14px rgba(15, 23, 42, 0.12);
+    0 1px 2px rgba(15, 40, 70, 0.045), 0 12px 30px -14px rgba(15, 45, 80, 0.14);
 }
 
 @theme inline {

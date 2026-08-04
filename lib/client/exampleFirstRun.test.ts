@@ -92,17 +92,25 @@ describe("first-run dashboard wiring", () => {
     const menu = read("components/auth/UserMenu.tsx");
     expect(routes).toContain('PORTFOLIO_HEALTH_PATH = "/portfolio-health"');
     expect(routes).toContain('ANALYSIS_PATH = "/analysis"');
+    expect(routes).toContain('GOALS_PATH = "/goals"');
     expect(tools).toContain("PORTFOLIO_HEALTH_PATH");
     expect(tools).toContain("ANALYSIS_PATH");
+    expect(tools).toContain("GOALS_PATH");
     expect(tools).toContain("/market-pulse");
     expect(tools).toContain("/perspectives");
-    expect(tools).toContain("View all tools");
+    expect(tools).toContain("Explore Tobailey");
+    expect(tools).toContain(
+      "Understand the structure and resilience of your portfolio.",
+    );
+    expect(tools).toContain("Track progress toward your financial targets.");
     expect(menu).toContain('title="Portfolio"');
     expect(menu).toContain('title="Intelligence"');
     expect(menu).toContain('title="Account"');
     expect(menu).toContain('title="Support"');
     expect(menu).toContain("/portfolio-health");
     expect(menu).toContain("/analysis");
+    expect(menu).toContain("Log out");
+    expect(menu).toContain("profile-menu-footer");
   });
 
   it("styles the example banner as premium brand soft, not an error warning", () => {

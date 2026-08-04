@@ -17,7 +17,7 @@ export const appPageStackClass =
 /* ── Light cards ─────────────────────────────────────────── */
 
 export const appCardClass =
-  "min-w-0 overflow-hidden rounded-[24px] border border-slate-200/90 bg-card shadow-[var(--shadow-card)] md:rounded-[28px]";
+  "min-w-0 overflow-hidden rounded-[24px] border border-slate-200/80 bg-card shadow-[var(--shadow-card)] md:rounded-[28px]";
 
 export const appCardPaddingClass = "px-4 py-5 md:px-6 md:py-6";
 
@@ -25,24 +25,24 @@ export const appCardPaddingCompactClass = "px-4 py-4 md:px-5 md:py-5";
 
 /** Interactive light card hover. */
 export const appCardInteractiveClass =
-  "transition duration-200 hover:border-slate-300 hover:shadow-[0_2px_8px_rgba(15,23,42,0.06),0_12px_32px_-14px_rgba(15,23,42,0.14)]";
+  "transition duration-200 hover:border-brand/25 hover:shadow-[0_2px_8px_rgba(15,40,70,0.06),0_14px_34px_-14px_rgba(15,45,80,0.16)]";
 
 /**
  * Quiet blue-tinted panel for discoverability / first-run sections.
  * Use sparingly — not on every card.
  */
 export const appTintedPanelClass =
-  "min-w-0 overflow-hidden rounded-[24px] border border-brand/20 bg-gradient-to-br from-brand-soft/90 via-white to-slate-50/90 shadow-[var(--shadow-card)] md:rounded-[28px]";
+  "min-w-0 overflow-hidden rounded-[24px] border border-brand/20 bg-gradient-to-br from-brand-soft via-white to-[#f3f7fb] shadow-[var(--shadow-card)] md:rounded-[28px]";
 
 /** Soft section band behind stacked supporting content. */
 export const appSectionBandClass =
-  "rounded-[28px] border border-brand/10 bg-brand-soft/35 p-4 md:p-5";
+  "rounded-[28px] border border-brand/12 bg-brand-soft/45 p-4 md:p-5";
 
 /* ── Dark navy hierarchy ─────────────────────────────────── */
 
 /** Primary hero — midnight navy with a quiet blue tonal lift. */
 export const appHeroShellClass =
-  "min-w-0 overflow-hidden rounded-[28px] border border-white/10 bg-[linear-gradient(165deg,var(--navy-hero-lift)_0%,var(--navy-hero)_48%,var(--navy-hero-deep)_100%)] text-white shadow-[var(--navy-shadow)] md:rounded-[32px]";
+  "min-w-0 overflow-hidden rounded-[28px] border border-white/10 bg-[linear-gradient(155deg,var(--navy-hero-lift)_0%,var(--navy-hero)_52%,var(--navy-hero-deep)_100%)] text-white shadow-[var(--navy-shadow)] md:rounded-[32px]";
 
 /** Important dark card — slightly lighter navy. */
 export const appDarkCardClass =
@@ -50,7 +50,7 @@ export const appDarkCardClass =
 
 /** Subtle inset surface inside dark cards. */
 export const appDarkInsetClass =
-  "rounded-xl border border-white/10 bg-white/[0.06]";
+  "rounded-xl border border-white/10 bg-white/[0.07]";
 
 /** Compact padding for dense dark heroes (dashboard + peers). */
 export const appHeroPaddingCompactClass =
@@ -101,10 +101,10 @@ export const appPageTitleClass =
   "text-xl font-bold tracking-[-0.02em] text-slate-950";
 
 export const appPageHeroTitleClass =
-  "break-words text-2xl font-bold tracking-[-0.03em] sm:text-[1.75rem] md:text-3xl";
+  "break-words text-[1.625rem] font-bold tracking-[-0.03em] sm:text-[1.75rem] md:text-[1.875rem]";
 
 export const appPageHeroSubtitleClass =
-  "mt-2 max-w-2xl break-words text-[15px] font-medium leading-relaxed tracking-[-0.01em] text-white/70 sm:text-base";
+  "mt-1.5 max-w-2xl break-words text-[14px] font-medium leading-relaxed tracking-[-0.01em] text-white/70 sm:text-[15px]";
 
 export const appSectionTitleClass =
   "text-lg font-bold tracking-[-0.02em] text-slate-950 md:text-xl";

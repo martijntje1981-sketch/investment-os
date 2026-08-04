@@ -1,13 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import {
-  Activity,
-  ChevronRight,
-  ScanLine,
-  Sparkles,
-  Waves,
-} from "lucide-react";
+import { Activity, ScanLine, Sparkles, Target, Waves } from "lucide-react";
 
 import {
   appCardClass,
@@ -19,6 +13,7 @@ import {
 } from "@/components/layout/appSurface";
 import {
   ANALYSIS_PATH,
+  GOALS_PATH,
   PORTFOLIO_HEALTH_PATH,
 } from "@/lib/navigation/appRoutes";
 
@@ -26,26 +21,32 @@ const TOOLS = [
   {
     href: PORTFOLIO_HEALTH_PATH,
     title: "Portfolio Scorecard",
-    benefit: "See concentration, balance and risk in one view.",
+    benefit: "Understand the structure and resilience of your portfolio.",
     icon: Activity,
   },
   {
     href: ANALYSIS_PATH,
     title: "Analysis",
-    benefit: "Dig into performance, dividends and holdings detail.",
+    benefit: "Explore performance, risk and portfolio drivers.",
     icon: ScanLine,
   },
   {
     href: "/market-pulse",
     title: "Market Pulse",
-    benefit: "Track markets connected to your holdings today.",
+    benefit: "Follow the markets and assets shaping your portfolio.",
     icon: Waves,
   },
   {
     href: "/perspectives",
     title: "Perspectives",
-    benefit: "Read calm context from trusted market voices.",
+    benefit: "Watch trusted investing and macro perspectives.",
     icon: Sparkles,
+  },
+  {
+    href: GOALS_PATH,
+    title: "Goals",
+    benefit: "Track progress toward your financial targets.",
+    icon: Target,
   },
 ] as const;
 
@@ -58,36 +59,30 @@ export function DashboardExploreTools() {
       aria-labelledby="dashboard-explore-tools-heading"
       className={`${appTintedPanelClass} ${appCardPaddingCompactClass}`}
     >
-      <div className="flex flex-wrap items-end justify-between gap-2">
-        <div className="min-w-0">
-          <h2
-            id="dashboard-explore-tools-heading"
-            className={appSectionTitleClass}
-          >
-            Explore Tobailey
-          </h2>
-          <p className={`mt-1 ${appSectionSubtitleClass}`}>
-            Intelligence tools for your portfolio — always one tap away.
-          </p>
-        </div>
-        <Link
-          href="/discover"
-          className="inline-flex min-h-[40px] items-center gap-1 text-[13px] font-semibold text-brand-navy transition hover:text-brand"
+      <div className="min-w-0">
+        <h2
+          id="dashboard-explore-tools-heading"
+          className={appSectionTitleClass}
         >
-          View all tools
-          <ChevronRight className="h-4 w-4" aria-hidden />
-        </Link>
+          Explore Tobailey
+        </h2>
+        <p className={`mt-1 ${appSectionSubtitleClass}`}>
+          The strongest tools for understanding your portfolio.
+        </p>
       </div>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+      <div className="mt-4 grid grid-cols-1 gap-3 min-[390px]:grid-cols-2 lg:grid-cols-3">
         {TOOLS.map(({ href, title, benefit, icon: Icon }) => (
           <Link
             key={href}
             href={href}
-            className={`${appCardClass} ${appCardInteractiveClass} ${appCardPaddingCompactClass} flex min-h-[88px] items-start gap-3`}
+            className={`${appCardClass} ${appCardInteractiveClass} ${appCardPaddingCompactClass} flex min-h-[92px] items-start gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2`}
           >
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand-navy">
-              <Icon className="h-4 w-4" aria-hidden />
+            <span
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand-navy"
+              aria-hidden
+            >
+              <Icon className="h-4 w-4" />
             </span>
             <span className="min-w-0">
               <span className="block text-[15px] font-bold text-slate-950">

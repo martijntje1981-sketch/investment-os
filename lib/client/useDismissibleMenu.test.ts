@@ -129,6 +129,28 @@ describe("useDismissibleMenu", () => {
     expect(container.querySelector("[data-testid='menu-panel']")).toBeNull();
   });
 
+  it("locks page scroll while open and restores it on close", () => {
+    mount();
+    const trigger = container.querySelector(
+      "[data-testid='menu-trigger']",
+    ) as HTMLButtonElement;
+
+    act(() => {
+      trigger.click();
+    });
+    expect(document.body.style.overflow).toBe("hidden");
+    expect(document.body.style.position).toBe("fixed");
+    expect(document.documentElement.style.overflow).toBe("hidden");
+    expect(document.documentElement.style.overscrollBehavior).toBe("none");
+
+    act(() => {
+      trigger.click();
+    });
+    expect(document.body.style.overflow).toBe("");
+    expect(document.body.style.position).toBe("");
+    expect(document.documentElement.style.overflow).toBe("");
+  });
+
   it("closes on outside pointerdown without closing on inside interaction", () => {
     mount();
     const trigger = container.querySelector(
@@ -251,7 +273,12 @@ describe("UserMenu profile wiring", () => {
     expect(source).toContain('aria-label="Profile menu"');
     expect(source).toContain("TobaileyLogo");
     expect(source).toContain('href="/dashboard"');
-    expect(source).toContain("Sign out");
+    expect(source).toContain("Log out");
+    expect(source).toContain("Signed in as");
+    expect(source).toContain("profile-menu-footer");
+    expect(source).toContain("profile-menu-scroll");
+    expect(source).toContain("overscroll-contain");
+    expect(source).toContain("[-webkit-overflow-scrolling:touch]");
     expect(source).not.toContain("<details");
   });
 
@@ -281,6 +308,9 @@ describe("UserMenu profile wiring", () => {
     expect(source).toContain('title="Account"');
     expect(source).toContain('title="Support"');
     expect(source).toContain('aria-current={active ? "page" : undefined}');
-    expect(source).toContain("w-[15.5rem]");
+    expect(source).toContain("w-[min(100vw-1.5rem,16.5rem)]");
+    expect(source).toContain(
+      "max-h-[min(32rem,calc(100dvh-4.25rem-var(--bottom-nav-height)",
+    );
   });
 });

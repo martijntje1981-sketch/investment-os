@@ -313,9 +313,9 @@ export default function UserMenu() {
               id={menuId}
               role="menu"
               aria-label="Profile"
-              className="absolute right-0 mt-2 w-[15.5rem] overflow-hidden rounded-xl border border-white/10 bg-brand-navy shadow-[0_18px_40px_rgba(11,31,58,0.45)] sm:w-64"
+              className="absolute right-0 z-[70] mt-2 flex w-[min(100vw-1.5rem,16.5rem)] max-h-[min(32rem,calc(100dvh-4.25rem-var(--bottom-nav-height)-env(safe-area-inset-bottom,0px)-0.75rem))] flex-col overflow-hidden overscroll-none rounded-xl border border-white/10 bg-brand-navy shadow-[0_18px_40px_rgba(11,31,58,0.45)] sm:w-64 sm:max-h-[min(36rem,calc(100dvh-5rem-0.75rem))]"
             >
-              <div className="border-b border-white/10 px-3 py-2.5">
+              <div className="shrink-0 border-b border-white/10 px-3 py-2.5">
                 <div className="flex items-center gap-2.5">
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand/20 text-[11px] font-black text-brand">
                     {initials}
@@ -324,59 +324,68 @@ export default function UserMenu() {
                     <p className="truncate text-[13px] font-bold text-white">
                       {fullName}
                     </p>
-                    <p className="mt-0.5 truncate text-[11px] font-medium text-white/45">
-                      {email}
-                    </p>
                   </div>
                 </div>
               </div>
 
-              <MenuSection
-                title="Portfolio"
-                links={portfolioLinks}
-                pathname={pathname}
-                onNavigate={close}
-              />
+              <div
+                className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]"
+                data-testid="profile-menu-scroll"
+              >
+                <MenuSection
+                  title="Portfolio"
+                  links={portfolioLinks}
+                  pathname={pathname}
+                  onNavigate={close}
+                />
 
-              <div className="mx-3 border-t border-white/10" />
+                <div className="mx-3 border-t border-white/10" />
 
-              <MenuSection
-                title="Intelligence"
-                links={visibleIntelligenceLinks}
-                pathname={pathname}
-                onNavigate={close}
-              />
+                <MenuSection
+                  title="Intelligence"
+                  links={visibleIntelligenceLinks}
+                  pathname={pathname}
+                  onNavigate={close}
+                />
 
-              <div className="mx-3 border-t border-white/10" />
+                <div className="mx-3 border-t border-white/10" />
 
-              <MenuSection
-                title="Account"
-                links={accountLinks}
-                pathname={pathname}
-                onNavigate={close}
-              />
+                <MenuSection
+                  title="Account"
+                  links={accountLinks}
+                  pathname={pathname}
+                  onNavigate={close}
+                />
 
-              <div className="mx-3 border-t border-white/10" />
+                <div className="mx-3 border-t border-white/10" />
 
-              <MenuSection
-                title="Support"
-                links={supportLinks}
-                pathname={pathname}
-                onNavigate={close}
-              />
+                <MenuSection
+                  title="Support"
+                  links={supportLinks}
+                  pathname={pathname}
+                  onNavigate={close}
+                />
+              </div>
 
-              <div className="mx-3 border-t border-white/10" />
-
-              <div className="px-1.5 py-1.5">
+              <div
+                className="shrink-0 border-t border-white/15 bg-[#0a1a30] px-3 py-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom,0px))]"
+                data-testid="profile-menu-footer"
+              >
+                <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/40">
+                  Signed in as
+                </p>
+                <p className="mt-0.5 truncate text-[12px] font-medium text-white/70">
+                  {email || "Account"}
+                </p>
                 <button
                   type="button"
                   role="menuitem"
                   onClick={() => void handleSignOut()}
                   disabled={isSigningOut}
-                  className="flex min-h-[40px] w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-[13px] font-semibold text-rose-300 transition hover:bg-rose-500/10 disabled:cursor-wait disabled:opacity-60"
+                  className="mt-2 flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg border border-rose-400/25 bg-rose-500/10 px-2.5 text-[13px] font-semibold text-rose-200 transition hover:bg-rose-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-navy disabled:cursor-wait disabled:opacity-60"
                 >
                   <LogOut className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                  {isSigningOut ? "Signing out…" : "Sign out"}
+                  {isSigningOut ? "Signing out…" : "Log out"}
                 </button>
               </div>
             </div>
