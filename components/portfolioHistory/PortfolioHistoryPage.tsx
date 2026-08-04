@@ -43,14 +43,14 @@ import {
   activityTypeLabel,
   downloadPortfolioHistoryWorkbook,
   mapHoldingsForHistoryExport,
+  PORTFOLIO_HISTORY_EMPTY_MESSAGE,
+  PORTFOLIO_HISTORY_EXPORT_FAILURE_MESSAGE,
+  PORTFOLIO_HISTORY_EXPORT_SUCCESS_MESSAGE,
 } from "@/lib/client/portfolioHistoryExport";
 import { buildPortfolioPerformance } from "@/lib/client/portfolioPerformance";
 import { usePortfolioContributions } from "@/lib/client/usePortfolioContributions";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
-import {
-  holdingDetailPath,
-  PORTFOLIO_PATH,
-} from "@/lib/navigation/appRoutes";
+import { holdingDetailPath, PORTFOLIO_PATH } from "@/lib/navigation/appRoutes";
 import { formatContributionDestinationLines } from "@/lib/services/contributions/destination";
 import type { PortfolioContributionEntry } from "@/lib/services/contributions/types";
 
@@ -101,6 +101,8 @@ export default function PortfolioHistoryPage() {
   const { holdings, portfolioReady } = useUserPortfolio();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
+  const [exportSuccess, setExportSuccess] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   const performance = useMemo(
     () => buildPortfolioPerformance(holdings),
@@ -160,7 +162,18 @@ export default function PortfolioHistoryPage() {
   }
 
   function handleExport() {
+    if (isExporting) {
+      return;
+    }
     setExportError(null);
+    setExportSuccess(null);
+
+    if (!hasEntries || entries.length === 0) {
+      setExportError(PORTFOLIO_HISTORY_EMPTY_MESSAGE);
+      return;
+    }
+
+    setIsExporting(true);
     try {
       downloadPortfolioHistoryWorkbook({
         summary,
@@ -169,12 +182,17 @@ export default function PortfolioHistoryPage() {
         portfolioBaseCurrency: baseCurrency,
         portfolioValueAvailable: performance.totalValueAvailable,
       });
+      setExportSuccess(PORTFOLIO_HISTORY_EXPORT_SUCCESS_MESSAGE);
     } catch (err) {
+      const message =
+        err instanceof Error ? err.message : PORTFOLIO_HISTORY_EXPORT_FAILURE_MESSAGE;
       setExportError(
-        err instanceof Error
-          ? err.message
-          : "Could not export portfolio history.",
+        message === PORTFOLIO_HISTORY_EMPTY_MESSAGE
+          ? message
+          : PORTFOLIO_HISTORY_EXPORT_FAILURE_MESSAGE,
       );
+    } finally {
+      setIsExporting(false);
     }
   }
 
@@ -203,18 +221,31 @@ export default function PortfolioHistoryPage() {
               <button
                 type="button"
                 onClick={handleExport}
-                className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-navy-hero"
+                disabled={isExporting}
+                aria-busy={isExporting}
+                data-testid="portfolio-history-export"
+                className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-navy-hero disabled:cursor-wait disabled:opacity-70"
               >
                 <Download className="h-4 w-4" aria-hidden />
-                Export Excel
+                {isExporting ? "Preparing Excel…" : "Export Excel"}
               </button>
             </div>
           }
         />
 
+        <p className={`${appSectionMetaClass} text-slate-600`}>
+          Your portfolio data is yours. You can export your complete Portfolio
+          History to Excel, including when your trial ends.
+        </p>
+
         {exportError ? (
           <p className={appSectionBodyClass} role="alert">
             {exportError}
+          </p>
+        ) : null}
+        {exportSuccess ? (
+          <p className={appSectionBodyClass} role="status">
+            {exportSuccess}
           </p>
         ) : null}
 

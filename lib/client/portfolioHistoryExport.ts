@@ -1,5 +1,5 @@
 /**
- * Portfolio History Excel export — Overview, Activity, Current Holdings, Notes.
+ * Portfolio History Excel export — Overview, Portfolio History, Current Holdings, Notes.
  * Cash-flow ledger only (contributions / withdrawals / opening balance).
  */
 
@@ -8,7 +8,6 @@ import * as XLSX from "xlsx";
 import {
   formatContributionEntryDate,
 } from "@/lib/client/contributionsFormat";
-import { contributionDestinationLabel } from "@/lib/services/contributions/destination";
 import type {
   ContributionSummary,
   PortfolioContributionEntry,
@@ -33,6 +32,33 @@ export type PortfolioHistoryExportInput = {
   portfolioValueAvailable: boolean;
   exportedAt?: Date;
 };
+
+export const PORTFOLIO_HISTORY_SHEET_NAME = "Portfolio History";
+
+export const PORTFOLIO_HISTORY_EXPORT_HEADERS = [
+  "Date",
+  "Type",
+  "Amount",
+  "Currency",
+  "Destination",
+  "Holding symbol",
+  "Holding name",
+  "Quantity",
+  "Price per unit",
+  "Fee",
+  "Cash interest rate",
+  "Note",
+  "Created date",
+] as const;
+
+export const PORTFOLIO_HISTORY_EMPTY_MESSAGE =
+  "There is no Portfolio History to export yet.";
+
+export const PORTFOLIO_HISTORY_EXPORT_FAILURE_MESSAGE =
+  "We couldn't create your Excel export. Please try again.";
+
+export const PORTFOLIO_HISTORY_EXPORT_SUCCESS_MESSAGE =
+  "Portfolio History downloaded.";
 
 export function activityTypeLabel(
   entry: PortfolioContributionEntry,
@@ -104,6 +130,38 @@ function setColumnWidths(
   sheet["!cols"] = widths.map((wch) => ({ wch }));
 }
 
+function freezeHeaderRow(sheet: XLSX.WorkSheet): void {
+  sheet["!views"] = [
+    {
+      state: "frozen",
+      ySplit: 1,
+      topLeftCell: "A2",
+      activeCell: "A2",
+    },
+  ];
+}
+
+function sortEntriesChronologically(
+  entries: PortfolioContributionEntry[],
+): PortfolioContributionEntry[] {
+  return [...entries].sort((left, right) => {
+    const byDate = left.entryDate.localeCompare(right.entryDate);
+    if (byDate !== 0) return byDate;
+    return left.createdAt.localeCompare(right.createdAt);
+  });
+}
+
+function resolveHoldingName(
+  symbol: string | null,
+  holdings: PortfolioHistoryHoldingRow[],
+): string {
+  if (!symbol) return "";
+  const match = holdings.find(
+    (row) => row.symbol.toUpperCase() === symbol.toUpperCase(),
+  );
+  return match?.name ?? "";
+}
+
 export function buildPortfolioHistoryWorkbook(
   input: PortfolioHistoryExportInput,
 ): XLSX.WorkBook {
@@ -144,44 +202,41 @@ export function buildPortfolioHistoryWorkbook(
   setColumnWidths(overviewSheet, [28, 18]);
   XLSX.utils.book_append_sheet(workbook, overviewSheet, "Overview");
 
-  const activityHeader = [
-    "Date",
-    "Type",
-    "Source",
-    "Amount",
-    "Currency",
-    `Amount (${currency})`,
-    "Destination type",
-    "Holding",
-    "Quantity",
-    "Price per unit",
-    "Fee",
-    "Note",
-  ];
-  const activityRows = input.entries.map((entry) => [
-    entry.entryDate,
-    activityTypeLabel(entry),
-    activitySourceLabel(entry),
-    Math.round(entry.amount * 100) / 100,
-    entry.currency,
-    Math.round(entry.baseAmount * 100) / 100,
-    entry.destinationType === "holding" ? "Holding" : "Cash",
-    entry.destinationType === "holding"
-      ? contributionDestinationLabel(entry)
-      : "",
-    entry.destinationQuantity ?? "",
-    entry.destinationPricePerUnit ?? "",
-    entry.destinationFee ?? "",
-    entry.note ?? "",
-  ].map((cell) => sanitizeExcelCellValue(cell)));
-  const activitySheet = XLSX.utils.aoa_to_sheet([
-    activityHeader,
-    ...activityRows,
+  const historyRows = sortEntriesChronologically(input.entries).map((entry) => {
+    const symbol =
+      entry.destinationType === "holding"
+        ? entry.destinationHoldingSymbol ?? ""
+        : "";
+    return [
+      entry.entryDate,
+      activityTypeLabel(entry),
+      Math.round(entry.amount * 100) / 100,
+      entry.currency,
+      entry.destinationType === "holding" ? "Holding" : "Cash",
+      symbol,
+      resolveHoldingName(symbol || null, input.holdings),
+      entry.destinationQuantity ?? "",
+      entry.destinationPricePerUnit ?? "",
+      entry.destinationFee ?? "",
+      "", // Cash interest rate — not on contribution schema
+      entry.note ?? "",
+      entry.createdAt.slice(0, 10),
+    ].map((cell) => sanitizeExcelCellValue(cell));
+  });
+
+  const historySheet = XLSX.utils.aoa_to_sheet([
+    [...PORTFOLIO_HISTORY_EXPORT_HEADERS],
+    ...historyRows,
   ]);
-  setColumnWidths(activitySheet, [
-    12, 22, 16, 12, 10, 14, 14, 12, 12, 14, 10, 40,
+  setColumnWidths(historySheet, [
+    12, 22, 12, 10, 12, 14, 28, 12, 14, 10, 16, 36, 12,
   ]);
-  XLSX.utils.book_append_sheet(workbook, activitySheet, "Activity");
+  freezeHeaderRow(historySheet);
+  XLSX.utils.book_append_sheet(
+    workbook,
+    historySheet,
+    PORTFOLIO_HISTORY_SHEET_NAME,
+  );
 
   const holdingsHeader = [
     "Symbol",
@@ -208,6 +263,7 @@ export function buildPortfolioHistoryWorkbook(
     ...holdingsRows,
   ]);
   setColumnWidths(holdingsSheet, [12, 28, 12, 12, 18, 10]);
+  freezeHeaderRow(holdingsSheet);
   XLSX.utils.book_append_sheet(workbook, holdingsSheet, "Current Holdings");
 
   const notesRows: Array<Array<string>> = [
@@ -229,6 +285,7 @@ export function buildPortfolioHistoryWorkbook(
     ["• FIFO / lot tracking or tax reports"],
     ["• Broker transaction import"],
     ["• Historical performance charts"],
+    ["• Cash interest rate (column reserved; not stored on contribution rows)"],
     [],
     ["Interpretation"],
     [
@@ -242,6 +299,11 @@ export function buildPortfolioHistoryWorkbook(
     ],
     [
       `Activity dates are shown as recorded (YYYY-MM-DD). Display dates in the app use en-GB formatting (e.g. ${formatContributionEntryDate("2026-01-15")}).`,
+    ],
+    [],
+    ["Your portfolio data is yours"],
+    [
+      "You can export your complete Portfolio History to Excel, including when your trial ends.",
     ],
     [],
     ["Tobailey explains portfolio characteristics. It does not provide personal investment advice."],
@@ -258,12 +320,51 @@ export function buildPortfolioHistoryExportFilename(exportedAt = new Date()): st
   return `tobailey-portfolio-history-${stamp}.xlsx`;
 }
 
+/**
+ * Browser-safe .xlsx download via Blob + object URL.
+ * Avoids fragile writeFile synthetic-click paths in some WebViews.
+ */
 export function downloadPortfolioHistoryWorkbook(
   input: PortfolioHistoryExportInput,
-): void {
+): string {
+  if (input.entries.length === 0) {
+    throw new Error(PORTFOLIO_HISTORY_EMPTY_MESSAGE);
+  }
+
   const workbook = buildPortfolioHistoryWorkbook(input);
   const filename = buildPortfolioHistoryExportFilename(input.exportedAt);
-  XLSX.writeFile(workbook, filename);
+  const bytes = XLSX.write(workbook, {
+    bookType: "xlsx",
+    type: "array",
+  }) as ArrayBuffer | Uint8Array;
+
+  if (typeof document === "undefined") {
+    throw new Error(PORTFOLIO_HISTORY_EXPORT_FAILURE_MESSAGE);
+  }
+
+  const payload =
+    bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes as ArrayBuffer);
+  const blob = new Blob([payload], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+  const objectUrl = URL.createObjectURL(blob);
+
+  try {
+    const anchor = document.createElement("a");
+    anchor.href = objectUrl;
+    anchor.download = filename;
+    anchor.rel = "noopener";
+    anchor.style.display = "none";
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+  } finally {
+    window.setTimeout(() => {
+      URL.revokeObjectURL(objectUrl);
+    }, 1_500);
+  }
+
+  return filename;
 }
 
 export function mapHoldingsForHistoryExport(

@@ -61,19 +61,19 @@ describe("example first-run markers", () => {
 });
 
 describe("example banner labels for remaining days", () => {
-  it("uses Expires tomorrow and multi-day remaining labels", () => {
+  it("uses Premium trial day-remaining labels", () => {
     expect(
       formatExampleBannerLabel(
         "2026-08-10T10:00:00.000Z",
         new Date("2026-08-03T10:00:00.000Z"),
       ),
-    ).toBe("Example portfolio · 7 days remaining");
+    ).toBe("Premium trial · 7 days remaining");
     expect(
       formatExampleBannerLabel(
         "2026-08-06T10:00:00.000Z",
         new Date("2026-08-03T10:00:00.000Z"),
       ),
-    ).toBe("Example portfolio · 3 days remaining");
+    ).toBe("Premium trial · 3 days remaining");
   });
 });
 
@@ -82,6 +82,8 @@ describe("first-run dashboard wiring", () => {
     const dashboard = read("app/dashboard/page.tsx");
     expect(dashboard).toContain("ExamplePortfolioPreparation");
     expect(dashboard).toContain("DashboardFirstRunCue");
+    expect(dashboard).toContain("DemoHoldingsCallout");
+    expect(dashboard).toContain("TrialStepsCard");
     expect(dashboard).toContain("DashboardExploreTools");
     expect(dashboard).toContain("useExampleActiveStatus");
   });
@@ -116,14 +118,16 @@ describe("first-run dashboard wiring", () => {
     expect(menu).toContain("profile-menu-footer");
   });
 
-  it("styles the example banner as premium brand soft, not an error warning", () => {
+  it("styles the example banner as premium brand soft, with calm final-48h emphasis", () => {
     const banner = read(
       "components/examplePortfolio/ExamplePortfolioBanner.tsx",
     );
     expect(banner).toContain("bg-brand-soft/95");
-    expect(banner).toContain("Keep my portfolio");
+    expect(banner).toContain("Upgrade");
     expect(banner).toContain('cache: "no-store"');
-    expect(banner).not.toContain("bg-amber-50");
+    expect(banner).toContain("isFinal48Hours");
+    expect(banner).not.toContain("animate-pulse");
+    expect(banner).not.toContain("bg-rose");
   });
 
   it("keeps shared tinted surfaces and denser hero tokens", () => {

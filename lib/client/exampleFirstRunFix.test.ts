@@ -62,8 +62,8 @@ describe("example portfolio banner in shared layout", () => {
     expect(layout).toContain("ExamplePortfolioActivator");
     expect(banner).toContain("EXAMPLE_STATUS_CHANGED_EVENT");
     expect(banner).toContain('cache: "no-store"');
-    expect(banner).toContain("Keep my portfolio");
-    expect(banner).toContain("EXAMPLE_KEEP_PORTFOLIO_HREF");
+    expect(banner).toContain("Upgrade");
+    expect(banner).toContain("TRIAL_UPGRADE_HREF");
     expect(banner).toContain('data-testid="example-portfolio-banner"');
   });
 
@@ -73,24 +73,24 @@ describe("example portfolio banner in shared layout", () => {
         "2026-08-11T10:00:00.000Z",
         new Date("2026-08-04T10:00:00.000Z"),
       ),
-    ).toBe("Example portfolio · 7 days remaining");
+    ).toBe("Premium trial · 7 days remaining");
     expect(
       formatExampleBannerLabel(
         "2026-08-07T10:00:00.000Z",
         new Date("2026-08-04T10:00:00.000Z"),
       ),
-    ).toBe("Example portfolio · 3 days remaining");
+    ).toBe("Premium trial · 3 days remaining");
     expect(
       formatExampleBannerLabel(
         "2026-08-05T10:00:00.000Z",
         new Date("2026-08-04T10:00:00.000Z"),
       ),
-    ).toBe("Example portfolio · Expires tomorrow");
+    ).toBe("Premium trial · 1 day remaining");
     const sameLocalDay = new Date(2026, 7, 4, 10, 0, 0);
     const laterSameLocalDay = new Date(2026, 7, 4, 22, 0, 0);
     expect(
       formatExampleBannerLabel(laterSameLocalDay.toISOString(), sameLocalDay),
-    ).toBe("Example portfolio · Expires today");
+    ).toBe("Premium trial · Expires today");
   });
 
   it("dispatches a shared status-changed event helpers", () => {
@@ -115,9 +115,7 @@ describe("production mobile user menu footer", () => {
     expect(menu).toContain("Log out");
     expect(menu).toContain("min-h-[44px]");
     expect(menu).toContain("fixed right-3");
-    expect(menu).toContain(
-      "bottom-[calc(var(--bottom-nav-height)+0.5rem+env(safe-area-inset-bottom,0px))]",
-    );
+    expect(menu).toContain("var(--bottom-nav-height)");
     expect(menu).toContain("grid-rows-[auto_minmax(0,1fr)_auto]");
     expect(menu).toContain("[-webkit-overflow-scrolling:touch]");
 

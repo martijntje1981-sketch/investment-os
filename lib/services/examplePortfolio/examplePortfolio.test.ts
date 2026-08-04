@@ -99,25 +99,25 @@ describe("example email + period helpers", () => {
         "2026-08-03T20:00:00.000Z",
         new Date("2026-08-03T10:00:00.000Z"),
       ),
-    ).toBe("Example portfolio · Expires today");
+    ).toBe("Premium trial · Expires today");
     expect(
       formatExampleBannerLabel(
         "2026-08-04T08:00:00.000Z",
         new Date("2026-08-03T10:00:00.000Z"),
       ),
-    ).toBe("Example portfolio · Expires tomorrow");
+    ).toBe("Premium trial · 1 day remaining");
     expect(
       formatExampleBannerLabel(
         "2026-08-07T10:00:00.000Z",
         new Date("2026-08-03T10:00:00.000Z"),
       ),
-    ).toBe("Example portfolio · 4 days remaining");
+    ).toBe("Premium trial · 4 days remaining");
     expect(
       formatExampleBannerLabel(
         "2026-08-01T10:00:00.000Z",
         new Date("2026-08-03T10:00:00.000Z"),
       ),
-    ).toContain("Expired");
+    ).toContain("ended");
   });
 
   it("treats reserved entitlements without a clock as not expired", () => {
@@ -320,7 +320,8 @@ describe("example expiry enforcement", () => {
     expect(callback).toContain('redirectWithCookies("/dashboard"');
     expect(callback).toContain("/example-expired");
     expect(callback).not.toContain("templateHint");
-    expect(banner).toContain("Keep my portfolio");
+    expect(banner).toContain("Upgrade");
+    expect(banner).toContain("TRIAL_UPGRADE_HREF");
     expect(banner).toContain("/api/example-portfolio/status");
     expect(banner).toContain('cache: "no-store"');
     expect(header).toContain("Explore free for 7 days");
@@ -328,10 +329,8 @@ describe("example expiry enforcement", () => {
     expect(header).not.toMatch(/24-?hour|24h trial/i);
     expect(home).toContain("Explore free for 7 days");
     expect(home).not.toMatch(/24-?hour free trial/i);
-    expect(expired).toContain("Your example portfolio has ended.");
-    expect(expired).toContain(
-      "Your holdings, goals and settings are still saved.",
-    );
+    expect(expired).toContain("Your Premium trial has ended");
+    expect(expired).toContain("Export Portfolio History");
     expect(expired).toContain("EXAMPLE_KEEP_PORTFOLIO_HREF");
     expect(expired).toContain("Browse without signing in");
     expect(start).toContain("signInWithOtp");

@@ -79,7 +79,7 @@ describe("example banner root cause: sync remaps ids then repair deleted entitle
     });
     expect(status.kind).toBe("active");
     expect(shouldShowExampleBanner(status)).toBe(true);
-    expect(status.bannerLabel).toMatch(/Example portfolio ·/);
+    expect(status.bannerLabel).toMatch(/Premium trial ·/);
   });
 
   it("still repairs unseeded false stamps on real portfolios", () => {
@@ -104,7 +104,7 @@ describe("example banner root cause: sync remaps ids then repair deleted entitle
       "components/examplePortfolio/ExamplePortfolioBanner.tsx",
     );
     expect(banner).toContain(
-      "Boolean(status?.showBanner) && Boolean(status?.bannerLabel)",
+      "Boolean(status?.showBanner) && Boolean(trialView.indicatorLabel)",
     );
     expect(banner).not.toContain("routeAllowsBanner");
     expect(banner).not.toContain("isAuthRequiredPath");

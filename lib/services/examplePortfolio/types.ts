@@ -91,21 +91,27 @@ export function formatExampleBannerLabel(
   expiresAtIso: string | null | undefined,
   now = new Date(),
 ): string {
-  if (!expiresAtIso) return "Example portfolio";
+  // Shared Premium-trial wording — keep countdown math in getExampleDaysRemaining.
+  if (!expiresAtIso) return "Premium trial";
   const expires = Date.parse(expiresAtIso);
-  if (!Number.isFinite(expires)) return "Example portfolio";
-  if (expires <= now.getTime()) return "Example portfolio · Expired";
+  if (!Number.isFinite(expires)) return "Premium trial";
+  if (expires <= now.getTime()) {
+    return "Premium trial ended · Upgrade to continue";
+  }
 
   const expiresLocal = new Date(expires);
   if (expiresLocal.toDateString() === now.toDateString()) {
-    return "Example portfolio · Expires today";
+    return "Premium trial · Expires today";
   }
 
   const days = getExampleDaysRemaining(expiresAtIso, now);
-  if (days === 1) {
-    return "Example portfolio · Expires tomorrow";
+  if (days <= 0) {
+    return "Premium trial ended · Upgrade to continue";
   }
-  return `Example portfolio · ${days} days remaining`;
+  if (days === 1) {
+    return "Premium trial · 1 day remaining";
+  }
+  return `Premium trial · ${days} days remaining`;
 }
 
 /**

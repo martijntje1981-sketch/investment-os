@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { ArrowRight, Check, Sparkles } from "lucide-react";
 
+import { TrialStepsCard } from "@/components/example/TrialStepsCard";
 import BottomNavigation from "@/components/home/BottomNav";
 import { PageContainer } from "@/components/layout/PageContainer";
 import {
@@ -468,6 +469,26 @@ export default function ExplorePage() {
             </p>
           ) : null}
         </section>
+
+        <section
+          className={`${appCardClass} ${appCardPaddingClass}`}
+          aria-labelledby="ready-make-yours-heading"
+          data-testid="demo-to-personal-cta"
+        >
+          <h2 id="ready-make-yours-heading" className={appSectionTitleClass}>
+            Ready to make it yours?
+          </h2>
+          <p className={`mt-2 ${appSectionSubtitleClass}`}>
+            Start your 7-day trial and replace the demo with your own
+            investments.
+          </p>
+          <Link href="/signup" className={`mt-4 ${appSolidButtonClass}`}>
+            Create your own portfolio
+            <ArrowRight className="h-4 w-4" aria-hidden />
+          </Link>
+        </section>
+
+        <TrialStepsCard showCreateCta />
 
         <section aria-labelledby="browse-without-account-heading">
           <h2

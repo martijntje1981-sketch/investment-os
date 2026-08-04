@@ -5,7 +5,11 @@ import { useCallback, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 
 import { EXAMPLE_STATUS_CHANGED_EVENT } from "@/lib/client/exampleFirstRun";
-import { EXAMPLE_KEEP_PORTFOLIO_HREF } from "@/lib/services/examplePortfolio/types";
+import {
+  buildTrialExperienceView,
+  TRIAL_UPGRADE_HREF,
+} from "@/lib/client/trialExperience";
+import type { ExampleStatusKind } from "@/lib/services/examplePortfolio/resolveExampleStatus";
 
 type BannerStatus = {
   showBanner: boolean;
@@ -17,9 +21,8 @@ type BannerStatus = {
 };
 
 /**
- * Compact fixed bar under the header for active example portfolios.
+ * Compact fixed bar under the header for active Premium trials (example portfolios).
  * Status comes from the server entitlement resolver — not stale metadata alone.
- * Render decision is exclusively API showBanner + bannerLabel (no pathname gate).
  */
 export function ExamplePortfolioBanner() {
   const pathname = usePathname();
@@ -70,7 +73,14 @@ export function ExamplePortfolioBanner() {
     };
   }, [load, pathname]);
 
-  const show = Boolean(status?.showBanner) && Boolean(status?.bannerLabel);
+  const trialView = buildTrialExperienceView({
+    kind: (status?.kind as ExampleStatusKind | "none") ?? "none",
+    expiresAt: status?.expiresAt ?? null,
+    daysRemaining: status?.daysRemaining ?? 0,
+  });
+
+  const show =
+    Boolean(status?.showBanner) && Boolean(trialView.indicatorLabel);
 
   useEffect(() => {
     if (!show) {
@@ -83,24 +93,40 @@ export function ExamplePortfolioBanner() {
     };
   }, [show]);
 
-  if (!show || !status?.bannerLabel) return null;
+  if (!show || !trialView.indicatorLabel) return null;
+
+  const urgent = trialView.isFinal48Hours;
 
   return (
     <div
-      className="fixed inset-x-0 top-14 z-[55] border-b border-brand/25 bg-brand-soft/95 px-3 py-2 backdrop-blur sm:top-16 sm:px-4"
+      className={`fixed inset-x-0 top-14 z-[55] border-b px-3 py-2 backdrop-blur sm:top-16 sm:px-4 ${
+        urgent
+          ? "border-amber-300/80 bg-amber-50/95"
+          : "border-brand/25 bg-brand-soft/95"
+      }`}
       role="status"
       aria-live="polite"
       data-testid="example-portfolio-banner"
+      data-trial-phase={trialView.phase}
     >
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2">
-        <p className="text-[12px] font-semibold text-brand-navy sm:text-[13px]">
-          {status.bannerLabel}
-        </p>
         <Link
-          href={EXAMPLE_KEEP_PORTFOLIO_HREF}
-          className="inline-flex min-h-[36px] items-center rounded-lg bg-navy-hero px-3 py-1.5 text-[12px] font-bold text-white transition hover:bg-navy-card sm:text-[13px]"
+          href={TRIAL_UPGRADE_HREF}
+          className={`min-w-0 text-[12px] font-semibold underline-offset-2 hover:underline sm:text-[13px] ${
+            urgent ? "text-amber-950" : "text-brand-navy"
+          }`}
         >
-          Keep my portfolio
+          {trialView.indicatorLabel}
+        </Link>
+        <Link
+          href={TRIAL_UPGRADE_HREF}
+          className={`inline-flex min-h-[36px] items-center rounded-lg px-3 py-1.5 text-[12px] font-bold text-white transition sm:text-[13px] ${
+            urgent
+              ? "bg-amber-800 hover:bg-amber-900"
+              : "bg-navy-hero hover:bg-navy-card"
+          }`}
+        >
+          Upgrade
         </Link>
       </div>
     </div>

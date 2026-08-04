@@ -54,6 +54,8 @@ export const EXAMPLE_EXPIRED_ALLOWED_PREFIXES = [
   "/explore",
   "/settings",
   "/pricing",
+  /** Export exception — history page only; other Premium surfaces stay blocked. */
+  "/portfolio-history",
 ] as const;
 
 export function pathMatchesPrefix(

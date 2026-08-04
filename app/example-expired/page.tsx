@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Download } from "lucide-react";
 
 import BottomNavigation from "@/components/home/BottomNav";
 import { PageContainer } from "@/components/layout/PageContainer";
@@ -14,6 +14,7 @@ import {
 } from "@/components/layout/appSurface";
 import { EXAMPLE_KEEP_PORTFOLIO_HREF } from "@/lib/services/examplePortfolio/types";
 import { PUBLIC_EXPLORE_PATH } from "@/lib/content/publicExplore";
+import { PORTFOLIO_HISTORY_PATH } from "@/lib/navigation/appRoutes";
 import { logout } from "@/app/auth/actions";
 
 export default function ExampleExpiredPage() {
@@ -23,24 +24,34 @@ export default function ExampleExpiredPage() {
         <section
           className={`${appCardClass} ${appCardPaddingClass} max-w-xl`}
           aria-labelledby="example-expired-heading"
+          data-testid="example-expired-panel"
         >
           <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
-            Example portfolio
+            Premium trial
           </p>
           <h1
             id="example-expired-heading"
             className="mt-2 text-2xl font-bold tracking-[-0.03em] text-slate-950"
           >
-            Your example portfolio has ended.
+            Your Premium trial has ended
           </h1>
           <p className={`mt-3 ${appSectionSubtitleClass}`}>
-            Your holdings, goals and settings are still saved. Subscribe to keep
-            using them. A second example period is not available for this email.
+            Upgrade to continue using Tobailey&apos;s Premium features. Your
+            portfolio data remains yours, and you can still export your Portfolio
+            History to Excel.
           </p>
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             <Link href={EXAMPLE_KEEP_PORTFOLIO_HREF} className={appSolidButtonClass}>
-              Keep my portfolio
+              Upgrade
               <ArrowRight className="h-4 w-4" aria-hidden />
+            </Link>
+            <Link
+              href={PORTFOLIO_HISTORY_PATH}
+              className={appBrandSoftButtonClass}
+              data-testid="expired-export-history"
+            >
+              <Download className="h-4 w-4" aria-hidden />
+              Export Portfolio History
             </Link>
             <Link href={PUBLIC_EXPLORE_PATH} className={appBrandSoftButtonClass}>
               Browse without signing in

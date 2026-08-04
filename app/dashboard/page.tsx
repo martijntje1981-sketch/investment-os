@@ -14,6 +14,8 @@ import { DashboardPortfolioPulseCard } from "@/components/dashboard/DashboardPor
 import { DashboardExploreTools } from "@/components/dashboard/DashboardExploreTools";
 import { PortfolioHistoryNavCard } from "@/components/portfolioHistory/PortfolioHistoryNavCard";
 import { DashboardFirstRunCue } from "@/components/dashboard/DashboardFirstRunCue";
+import { DemoHoldingsCallout } from "@/components/example/DemoHoldingsCallout";
+import { TrialStepsCard } from "@/components/example/TrialStepsCard";
 import { DashboardProductionDebugMarker } from "@/components/dashboard/DashboardProductionDebugMarker";
 import { DashboardUpcomingEventsWidget } from "@/components/dashboard/DashboardUpcomingEventsWidget";
 import { DashboardPerspectivesWidget } from "@/components/dashboard/DashboardPerspectivesWidget";
@@ -230,6 +232,16 @@ export default function DashboardPage() {
             userSub={userSub}
             exampleActive={exampleActive}
           />
+
+          {exampleActive ? (
+            <>
+              <DemoHoldingsCallout
+                exampleActive={exampleActive}
+                holdings={holdings}
+              />
+              <TrialStepsCard />
+            </>
+          ) : null}
 
           {/* 1. Portfolio hero */}
           <DashboardSummary
