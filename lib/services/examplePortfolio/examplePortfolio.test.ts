@@ -406,7 +406,7 @@ describe("example entitlement resolver source of truth", () => {
       template: "global" as const,
       started_at: "2026-08-01T00:00:00.000Z",
       expires_at: "2026-08-08T00:00:00.000Z",
-      seeded_at: "2026-08-01T00:00:00.000Z",
+      seeded_at: null,
       converted_at: null,
     };
     expect(
@@ -422,6 +422,21 @@ describe("example entitlement resolver source of truth", () => {
       isFalseExampleActivation({
         entitlement,
         holdings: [{ id: "example-global-vwce", assetType: "investment" }],
+      }),
+    ).toBe(false);
+    // After sync, example-* ids become UUIDs — seeded_at must protect the row.
+    expect(
+      isFalseExampleActivation({
+        entitlement: {
+          ...entitlement,
+          seeded_at: "2026-08-01T00:00:05.000Z",
+        },
+        holdings: [
+          {
+            id: "a1b2c3d4-e5f6-4789-a012-3456789abcde",
+            assetType: "investment",
+          },
+        ],
       }),
     ).toBe(false);
     expect(

@@ -27,6 +27,11 @@ export function hasNonExampleMarketHoldings(
 /**
  * True when an entitlement clock was started but example seeds were never
  * applied — the user kept their own portfolio while metadata was stamped.
+ *
+ * IMPORTANT: After cloud sync, example holding ids are remapped from
+ * `example-*` local ids to deterministic UUIDs. Never treat a row with
+ * `seeded_at` as a false activation based on id prefix alone — that deletes
+ * real Example entitlements and hides the days-remaining banner.
  */
 export function isFalseExampleActivation(input: {
   entitlement: ExamplePortfolioEntitlement | null;
@@ -36,6 +41,8 @@ export function isFalseExampleActivation(input: {
   const { entitlement, holdings } = input;
   if (!entitlement?.started_at || !entitlement.expires_at) return false;
   if (entitlement.converted_at) return false;
+  // Seeded Example portfolios remain canonical even after sync remaps ids.
+  if (entitlement.seeded_at) return false;
   if (
     isEntitlementPeriodExpired(entitlement, (input.now ?? new Date()).getTime())
   ) {
@@ -45,7 +52,7 @@ export function isFalseExampleActivation(input: {
   const hasExampleSeed = holdings.some((holding) =>
     holding.id.startsWith(EXAMPLE_HOLDING_ID_PREFIX),
   );
-  // Stamped active without example seeds = false activation on a real portfolio.
+  // Stamped active without seeding = false activation on a real portfolio.
   return !hasExampleSeed && hasNonExampleMarketHoldings(holdings);
 }
 

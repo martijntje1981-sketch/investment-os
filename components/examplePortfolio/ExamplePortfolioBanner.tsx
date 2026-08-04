@@ -6,22 +6,20 @@ import { usePathname } from "next/navigation";
 
 import { EXAMPLE_STATUS_CHANGED_EVENT } from "@/lib/client/exampleFirstRun";
 import { EXAMPLE_KEEP_PORTFOLIO_HREF } from "@/lib/services/examplePortfolio/types";
-import {
-  isAuthRequiredPath,
-  isMarketingPath,
-  isPublicAppPath,
-} from "@/lib/auth/routeAccess";
 
 type BannerStatus = {
   showBanner: boolean;
   bannerLabel: string | null;
   kind: string;
+  daysRemaining?: number;
+  startedAt?: string | null;
+  expiresAt?: string | null;
 };
 
 /**
  * Compact fixed bar under the header for active example portfolios.
  * Status comes from the server entitlement resolver — not stale metadata alone.
- * Refetches after ExamplePortfolioActivator finishes (status-changed event).
+ * Render decision is exclusively API showBanner + bannerLabel (no pathname gate).
  */
 export function ExamplePortfolioBanner() {
   const pathname = usePathname();
@@ -60,7 +58,6 @@ export function ExamplePortfolioBanner() {
     };
     window.addEventListener(EXAMPLE_STATUS_CHANGED_EVENT, onStatusChanged);
 
-    // Activation often finishes after the first status fetch — brief retries.
     const retryIds = [600, 1_500, 3_000].map((ms) =>
       window.setTimeout(() => {
         void load();
@@ -73,14 +70,7 @@ export function ExamplePortfolioBanner() {
     };
   }, [load, pathname]);
 
-  const routeAllowsBanner =
-    !isMarketingPath(pathname) &&
-    (isAuthRequiredPath(pathname) || isPublicAppPath(pathname));
-
-  const show =
-    Boolean(status?.showBanner) &&
-    Boolean(status?.bannerLabel) &&
-    routeAllowsBanner;
+  const show = Boolean(status?.showBanner) && Boolean(status?.bannerLabel);
 
   useEffect(() => {
     if (!show) {

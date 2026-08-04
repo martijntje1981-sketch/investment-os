@@ -82,6 +82,13 @@ export async function GET() {
         entitlement,
       });
       if (repair.repaired) {
+        console.info("[example-status]", {
+          reason: "repaired_false_activation",
+          repairReason: repair.reason,
+          email,
+          kind: "none",
+          showBanner: false,
+        });
         entitlement = null;
       }
     } catch {
@@ -90,6 +97,20 @@ export async function GET() {
   }
 
   const resolved = resolveExampleStatusForUser({ user, entitlement });
+  const showBanner = shouldShowExampleBanner(resolved);
+
+  console.info("[example-status]", {
+    reason: "resolved",
+    kind: resolved.kind,
+    showBanner,
+    daysRemaining: resolved.daysRemaining,
+    started_at: resolved.startedAt,
+    expires_at: resolved.expiresAt,
+    seeded_at: entitlement?.seeded_at ?? null,
+    converted_at: entitlement?.converted_at ?? null,
+    entitlementPresent: Boolean(entitlement),
+    bannerLabel: resolved.bannerLabel,
+  });
 
   if (resolved.metadataPatch) {
     try {
@@ -128,7 +149,7 @@ export async function GET() {
       startedAt: resolved.startedAt,
       daysRemaining: resolved.daysRemaining,
       bannerLabel: resolved.bannerLabel,
-      showBanner: shouldShowExampleBanner(resolved),
+      showBanner,
       staleMetadata: resolved.staleMetadata,
     },
   });
