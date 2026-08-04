@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   EXAMPLE_PREP_STAGE_LABELS,
   EXAMPLE_PREP_TIMEOUT_MS,
+  EXAMPLE_STATUS_CHANGED_EVENT,
   isExamplePrepComplete,
   markExamplePrepComplete,
   resolveExamplePrepStage,
@@ -16,9 +17,13 @@ type PrepStatusPayload = {
   status?: { kind?: string; showBanner?: boolean };
 };
 
+type RefreshPricesFn = () => Promise<unknown> | unknown;
+
 /**
  * One-time post-activation preparation for Example Portfolio users.
  * Reuses the caller's refreshPrices — does not invent a second refresh path.
+ *
+ * Waits until entitlement is `active` (Activator may finish after Dashboard mount).
  */
 export function ExamplePortfolioPreparation({
   userSub,
@@ -31,7 +36,7 @@ export function ExamplePortfolioPreparation({
   portfolioReady: boolean;
   hasHoldings: boolean;
   isRefreshing: boolean;
-  refreshPrices: () => Promise<void> | void;
+  refreshPrices: RefreshPricesFn;
 }) {
   const [active, setActive] = useState(false);
   const [stage, setStage] = useState<ExamplePrepStage>("holdings");
@@ -39,6 +44,8 @@ export function ExamplePortfolioPreparation({
   const startedRef = useRef(false);
   const refreshStartedRef = useRef(false);
   const startMsRef = useRef(0);
+  const refreshFnRef = useRef(refreshPrices);
+  refreshFnRef.current = refreshPrices;
 
   useEffect(() => {
     if (!userSub || !portfolioReady || !hasHoldings) return;
@@ -46,8 +53,14 @@ export function ExamplePortfolioPreparation({
     if (startedRef.current) return;
 
     let cancelled = false;
+    let attempts = 0;
+    const maxAttempts = 24;
+    let pollTimer: number | null = null;
 
     async function decide() {
+      if (cancelled || startedRef.current) return;
+      if (isExamplePrepComplete(userSub)) return;
+
       try {
         const response = await fetch("/api/example-portfolio/status", {
           method: "GET",
@@ -56,22 +69,48 @@ export function ExamplePortfolioPreparation({
         });
         if (!response.ok || cancelled) return;
         const payload = (await response.json()) as PrepStatusPayload;
-        if (payload.status?.kind !== "active") {
-          // Not an example account — never show prep or mark complete.
+        const kind = payload.status?.kind;
+
+        if (kind === "active") {
+          if (cancelled || startedRef.current) return;
+          startedRef.current = true;
+          startMsRef.current = Date.now();
+          setActive(true);
           return;
         }
-        if (cancelled) return;
-        startedRef.current = true;
-        startMsRef.current = Date.now();
-        setActive(true);
+
+        // Terminal non-example states — do not keep polling.
+        if (
+          kind === "none" ||
+          kind === "converted" ||
+          kind === "expired" ||
+          kind === "blocked"
+        ) {
+          return;
+        }
+
+        // reserved / unknown — Activator may still be starting the clock.
+        attempts += 1;
+        if (!cancelled && attempts < maxAttempts) {
+          pollTimer = window.setTimeout(() => {
+            void decide();
+          }, 400);
+        }
       } catch {
         /* leave dashboard usable */
       }
     }
 
+    const onStatusChanged = () => {
+      void decide();
+    };
+    window.addEventListener(EXAMPLE_STATUS_CHANGED_EVENT, onStatusChanged);
     void decide();
+
     return () => {
       cancelled = true;
+      window.removeEventListener(EXAMPLE_STATUS_CHANGED_EVENT, onStatusChanged);
+      if (pollTimer !== null) window.clearTimeout(pollTimer);
     };
   }, [hasHoldings, portfolioReady, userSub]);
 
@@ -80,9 +119,10 @@ export function ExamplePortfolioPreparation({
     if (refreshStartedRef.current) return;
     refreshStartedRef.current = true;
 
-    let cancelled = false;
+    let unfinished = true;
     const timeoutId = window.setTimeout(() => {
-      if (cancelled) return;
+      if (!unfinished) return;
+      unfinished = false;
       setPartialNote(
         "Some market data is still updating. Your portfolio is ready to explore.",
       );
@@ -93,31 +133,28 @@ export function ExamplePortfolioPreparation({
 
     void (async () => {
       try {
-        await refreshPrices();
+        // Stable ref — avoid effect re-entry when refreshPrices identity changes.
+        await refreshFnRef.current();
       } catch {
-        if (!cancelled) {
+        if (unfinished) {
           setPartialNote(
             "Prices could not be fully refreshed. Showing the latest available data.",
           );
         }
       } finally {
-        if (cancelled) return;
-        const finish = () => {
+        if (!unfinished) return;
+        // Brief settle so stage labels can reach insights before dismiss.
+        window.setTimeout(() => {
+          if (!unfinished) return;
+          unfinished = false;
           markExamplePrepComplete(userSub);
           setStage("done");
           setActive(false);
           window.clearTimeout(timeoutId);
-        };
-        // Brief settle so stage labels can reach insights before dismiss.
-        window.setTimeout(finish, 900);
+        }, 900);
       }
     })();
-
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timeoutId);
-    };
-  }, [active, refreshPrices, userSub]);
+  }, [active, userSub]);
 
   useEffect(() => {
     if (!active) return;
@@ -152,6 +189,7 @@ export function ExamplePortfolioPreparation({
       role="status"
       aria-live="polite"
       aria-busy="true"
+      data-testid="example-portfolio-preparation"
     >
       <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-brand-navy/70">
         Preparing your portfolio

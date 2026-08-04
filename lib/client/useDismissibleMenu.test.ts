@@ -309,8 +309,10 @@ describe("UserMenu profile wiring", () => {
     expect(source).toContain('title="Support"');
     expect(source).toContain('aria-current={active ? "page" : undefined}');
     expect(source).toContain("w-[min(100vw-1.5rem,16.5rem)]");
+    expect(source).toContain("fixed right-3");
     expect(source).toContain(
-      "max-h-[min(32rem,calc(100dvh-4.25rem-var(--bottom-nav-height)",
+      "bottom-[calc(var(--bottom-nav-height)+0.5rem+env(safe-area-inset-bottom,0px))]",
     );
+    expect(source).toContain("grid-rows-[auto_minmax(0,1fr)_auto]");
   });
 });

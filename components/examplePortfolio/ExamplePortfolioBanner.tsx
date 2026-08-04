@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 
+import { EXAMPLE_STATUS_CHANGED_EVENT } from "@/lib/client/exampleFirstRun";
 import { EXAMPLE_KEEP_PORTFOLIO_HREF } from "@/lib/services/examplePortfolio/types";
 import {
   isAuthRequiredPath,
@@ -20,6 +21,7 @@ type BannerStatus = {
 /**
  * Compact fixed bar under the header for active example portfolios.
  * Status comes from the server entitlement resolver — not stale metadata alone.
+ * Refetches after ExamplePortfolioActivator finishes (status-changed event).
  */
 export function ExamplePortfolioBanner() {
   const pathname = usePathname();
@@ -52,6 +54,23 @@ export function ExamplePortfolioBanner() {
 
   useEffect(() => {
     void load();
+
+    const onStatusChanged = () => {
+      void load();
+    };
+    window.addEventListener(EXAMPLE_STATUS_CHANGED_EVENT, onStatusChanged);
+
+    // Activation often finishes after the first status fetch — brief retries.
+    const retryIds = [600, 1_500, 3_000].map((ms) =>
+      window.setTimeout(() => {
+        void load();
+      }, ms),
+    );
+
+    return () => {
+      window.removeEventListener(EXAMPLE_STATUS_CHANGED_EVENT, onStatusChanged);
+      for (const id of retryIds) window.clearTimeout(id);
+    };
   }, [load, pathname]);
 
   const routeAllowsBanner =
@@ -81,6 +100,7 @@ export function ExamplePortfolioBanner() {
       className="fixed inset-x-0 top-14 z-[55] border-b border-brand/25 bg-brand-soft/95 px-3 py-2 backdrop-blur sm:top-16 sm:px-4"
       role="status"
       aria-live="polite"
+      data-testid="example-portfolio-banner"
     >
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2">
         <p className="text-[12px] font-semibold text-brand-navy sm:text-[13px]">

@@ -7,6 +7,9 @@ import { isValidUserSub } from "@/lib/client/portfolioStorageKeys";
 
 export const EXAMPLE_PREP_TIMEOUT_MS = 25_000;
 
+/** Fired after example activate/status changes so layout UI can refetch. */
+export const EXAMPLE_STATUS_CHANGED_EVENT = "tobailey:example-status-changed";
+
 export type ExamplePrepStage =
   "holdings" | "prices" | "scores" | "insights" | "done";
 
@@ -59,6 +62,16 @@ export function dismissExampleFirstRunCue(userSub: string): void {
   if (!isValidUserSub(userSub) || typeof window === "undefined") return;
   try {
     window.localStorage.setItem(firstRunCueKey(userSub), "1");
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Notify layout listeners (banner, prep, active-status) after activation. */
+export function notifyExampleStatusChanged(): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.dispatchEvent(new CustomEvent(EXAMPLE_STATUS_CHANGED_EVENT));
   } catch {
     /* ignore */
   }

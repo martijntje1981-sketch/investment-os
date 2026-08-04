@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 
+import { notifyExampleStatusChanged } from "@/lib/client/exampleFirstRun";
 import { createClient } from "@/lib/supabase/client";
 
 /**
@@ -22,14 +23,25 @@ export function ExamplePortfolioActivator() {
         });
         if (cancelled) return;
 
-        await fetch("/api/example-portfolio/activate", {
-          method: "POST",
-          credentials: "same-origin",
-        });
+        const activateResponse = await fetch(
+          "/api/example-portfolio/activate",
+          {
+            method: "POST",
+            credentials: "same-origin",
+          },
+        );
         if (cancelled) return;
+
+        // Always notify after activate attempt so banner/prep refetch the
+        // canonical entitlement — including already-active / reserved→active.
+        if (activateResponse.ok) {
+          notifyExampleStatusChanged();
+        }
 
         const supabase = createClient();
         await supabase.auth.refreshSession();
+        if (cancelled) return;
+        notifyExampleStatusChanged();
       } catch {
         /* ignore — banner still resolves via status API */
       }

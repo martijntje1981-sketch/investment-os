@@ -3,6 +3,8 @@
  * Callers must pass the same useUserPortfolio holdings/saveHoldings instance.
  */
 
+import { useCallback, useEffect, useRef, useState } from "react";
+
 import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 import type { CryptoRefreshDiagnosticRecord } from "@/lib/client/cryptoRefreshDiagnostics";
 import { readLastLivePriceRefreshAt } from "@/lib/client/livePortfolioPriceRefresh";
@@ -12,7 +14,6 @@ import {
   type RefreshPricesUiStatus,
 } from "@/lib/client/livePortfolioPriceRefreshAction";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
-import { useCallback, useEffect, useState } from "react";
 
 export type { RefreshPricesUiStatus } from "@/lib/client/livePortfolioPriceRefreshAction";
 export {
@@ -43,6 +44,7 @@ export function useLivePortfolioPriceRefresh({
     CryptoRefreshDiagnosticRecord[] | null
   >(null);
   const [showRefreshDiagnostics, setShowRefreshDiagnostics] = useState(false);
+  const isRefreshingRef = useRef(false);
 
   useEffect(() => {
     if (!userSub) {
@@ -53,7 +55,7 @@ export function useLivePortfolioPriceRefresh({
   }, [ready, userSub]);
 
   const refreshPrices = useCallback(async () => {
-    if (!userSub || isRefreshing) return;
+    if (!userSub || isRefreshingRef.current) return;
 
     const preview = buildRefreshPreviewMessageForHoldings(holdings, userSub);
     if (preview) {
@@ -61,6 +63,7 @@ export function useLivePortfolioPriceRefresh({
     }
     setShowRefreshDiagnostics(false);
     setRefreshDiagnostics(null);
+    isRefreshingRef.current = true;
     setIsRefreshing(true);
     setStatus("loading");
 
@@ -79,13 +82,17 @@ export function useLivePortfolioPriceRefresh({
       if (outcome.liveRefreshAt) {
         setLiveRefreshAt(outcome.liveRefreshAt);
       }
-      if (outcome.showCryptoRefreshDiagnostics && outcome.cryptoRefreshDiagnostics) {
+      if (
+        outcome.showCryptoRefreshDiagnostics &&
+        outcome.cryptoRefreshDiagnostics
+      ) {
         setRefreshDiagnostics(outcome.cryptoRefreshDiagnostics);
         setShowRefreshDiagnostics(true);
       } else {
         setRefreshDiagnostics(null);
         setShowRefreshDiagnostics(false);
       }
+      return outcome;
     } catch (error) {
       setStatus("error");
       setMessage(
@@ -95,13 +102,14 @@ export function useLivePortfolioPriceRefresh({
       );
       setRefreshDiagnostics(null);
       setShowRefreshDiagnostics(false);
+      throw error;
     } finally {
+      isRefreshingRef.current = false;
       setIsRefreshing(false);
     }
   }, [
     baseCurrency,
     holdings,
-    isRefreshing,
     refreshFx,
     saveHoldings,
     snapshot.status,

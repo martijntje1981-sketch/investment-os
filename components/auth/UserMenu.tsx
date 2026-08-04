@@ -313,9 +313,10 @@ export default function UserMenu() {
               id={menuId}
               role="menu"
               aria-label="Profile"
-              className="absolute right-0 z-[70] mt-2 flex w-[min(100vw-1.5rem,16.5rem)] max-h-[min(32rem,calc(100dvh-4.25rem-var(--bottom-nav-height)-env(safe-area-inset-bottom,0px)-0.75rem))] flex-col overflow-hidden overscroll-none rounded-xl border border-white/10 bg-brand-navy shadow-[0_18px_40px_rgba(11,31,58,0.45)] sm:w-64 sm:max-h-[min(36rem,calc(100dvh-5rem-0.75rem))]"
+              className="fixed right-3 top-[calc(3.5rem+0.5rem)] bottom-[calc(var(--bottom-nav-height)+0.5rem+env(safe-area-inset-bottom,0px))] z-[70] grid w-[min(100vw-1.5rem,16.5rem)] grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden overscroll-none rounded-xl border border-white/10 bg-brand-navy shadow-[0_18px_40px_rgba(11,31,58,0.45)] sm:absolute sm:bottom-auto sm:right-0 sm:top-auto sm:mt-2 sm:max-h-[min(36rem,calc(100dvh-5rem))] sm:w-64"
+              data-testid="profile-menu-panel"
             >
-              <div className="shrink-0 border-b border-white/10 px-3 py-2.5">
+              <div className="border-b border-white/10 px-3 py-2.5">
                 <div className="flex items-center gap-2.5">
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand/20 text-[11px] font-black text-brand">
                     {initials}
@@ -329,7 +330,7 @@ export default function UserMenu() {
               </div>
 
               <div
-                className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]"
+                className="min-h-0 overflow-x-hidden overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]"
                 data-testid="profile-menu-scroll"
               >
                 <MenuSection
@@ -368,7 +369,7 @@ export default function UserMenu() {
               </div>
 
               <div
-                className="shrink-0 border-t border-white/15 bg-[#0a1a30] px-3 py-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom,0px))]"
+                className="border-t border-white/15 bg-[#0a1a30] px-3 py-2.5"
                 data-testid="profile-menu-footer"
               >
                 <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/40">
