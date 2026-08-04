@@ -342,9 +342,11 @@ export function downloadPortfolioHistoryWorkbook(
     throw new Error(PORTFOLIO_HISTORY_EXPORT_FAILURE_MESSAGE);
   }
 
-  const payload =
-    bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes as ArrayBuffer);
-  const blob = new Blob([payload], {
+  const workbookBytes =
+    bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+  const safeBytes = new Uint8Array(workbookBytes.byteLength);
+  safeBytes.set(workbookBytes);
+  const blob = new Blob([safeBytes.buffer], {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   });
   const objectUrl = URL.createObjectURL(blob);
