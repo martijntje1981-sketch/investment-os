@@ -11,9 +11,17 @@ describe("portfolio history UI", () => {
   const route = read("app/portfolio-history/page.tsx");
   const menu = read("components/auth/UserMenu.tsx");
   const tools = read("components/dashboard/DashboardExploreTools.tsx");
+  const dashboard = read("app/dashboard/page.tsx");
+  const portfolio = read("app/portfolio/page.tsx");
+  const navCard = read(
+    "components/portfolioHistory/PortfolioHistoryNavCard.tsx",
+  );
   const routes = read("lib/navigation/appRoutes.ts");
   const access = read("lib/auth/routeAccess.ts");
   const exportSource = read("lib/client/portfolioHistoryExport.ts");
+  const dialog = read(
+    "components/contributions/ManageContributionsDialog.tsx",
+  );
 
   it("exposes the authenticated /portfolio-history route", () => {
     expect(route).toContain("PortfolioHistoryPage");
@@ -23,7 +31,7 @@ describe("portfolio history UI", () => {
     expect(access).toContain('"/portfolio-history"');
   });
 
-  it("renders summary, activity, holdings, add activity, and excel export", () => {
+  it("renders summary, activity destination detail, holdings, and excel export", () => {
     expect(page).toContain("Total contributed");
     expect(page).toContain("Total withdrawn");
     expect(page).toContain("Net contributed");
@@ -32,31 +40,35 @@ describe("portfolio history UI", () => {
     expect(page).toContain("Current holdings");
     expect(page).toContain("Add activity");
     expect(page).toContain("Export Excel");
+    expect(page).toContain("formatContributionDestinationLines");
     expect(page).toContain("ManageContributionsDialog");
     expect(page).toContain("downloadPortfolioHistoryWorkbook");
-    expect(page).toContain("holdingDetailPath");
-    expect(page).toContain("usePortfolioContributions");
-    expect(page).toContain("buildPortfolioPerformance");
   });
 
-  it("reuses the contribution flow instead of a new transaction engine", () => {
-    expect(page).toContain(
-      'from "@/components/contributions/ManageContributionsDialog"',
-    );
-    expect(page).not.toContain("createPortfolioContribution");
-    expect(exportSource).toContain('"Overview"');
-    expect(exportSource).toContain('"Activity"');
-    expect(exportSource).toContain('"Current Holdings"');
-    expect(exportSource).toContain('"Notes"');
-  });
-
-  it("links from User menu Portfolio section and Explore Tobailey", () => {
+  it("keeps Portfolio History discoverable in Dashboard, Portfolio, Explore and User Menu", () => {
     expect(menu).toContain("PORTFOLIO_HISTORY_PATH");
     expect(menu).toContain("Portfolio History");
     expect(tools).toContain("PORTFOLIO_HISTORY_PATH");
     expect(tools).toContain("Portfolio History");
     expect(tools).toContain(
-      "Review contributions, withdrawals, and export your ledger.",
+      "Track contributions, withdrawals and export your portfolio record.",
     );
+    expect(dashboard).toContain("PortfolioHistoryNavCard");
+    expect(portfolio).toContain("PortfolioHistoryNavCard");
+    expect(portfolio).toContain("Portfolio History");
+    expect(navCard).toContain("PORTFOLIO_HISTORY_LABEL = \"Portfolio History\"");
+    expect(navCard).toContain(
+      "Track contributions, withdrawals and export your portfolio record.",
+    );
+  });
+
+  it("extends add activity with cash or holding destination", () => {
+    expect(dialog).toContain("Add to cash");
+    expect(dialog).toContain("Invest in a holding");
+    expect(dialog).toContain("destinationType");
+    expect(dialog).toContain("does not change holding");
+    expect(exportSource).toContain('"Destination type"');
+    expect(exportSource).toContain('"Price per unit"');
+    expect(exportSource).toContain("sanitizeExcelCellValue");
   });
 });

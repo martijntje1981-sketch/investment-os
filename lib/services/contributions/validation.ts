@@ -2,9 +2,11 @@ import {
   normalizePortfolioBaseCurrency,
   type PortfolioBaseCurrency,
 } from "@/lib/types/portfolioBaseCurrency";
+import { normalizeDestinationType } from "@/lib/services/contributions/destination";
 import type {
   ContributionEntryDraft,
   ContributionEntryType,
+  ContributionHoldingOption,
   ContributionSource,
 } from "@/lib/services/contributions/types";
 
@@ -31,9 +33,24 @@ function isValidIsoDate(value: string): boolean {
   );
 }
 
+function roundMoney(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+export function deriveHoldingContributionAmount(
+  quantity: number,
+  pricePerUnit: number,
+  fee: number | null,
+): number {
+  return roundMoney(quantity * pricePerUnit + (fee ?? 0));
+}
+
 export function validateContributionDraft(
   input: Partial<ContributionEntryDraft>,
   portfolioBaseCurrency: PortfolioBaseCurrency,
+  options?: {
+    allowedHoldings?: ContributionHoldingOption[];
+  },
 ): ContributionValidationResult {
   const entryType = input.entryType;
   if (!entryType || !ENTRY_TYPES.includes(entryType)) {
@@ -41,15 +58,6 @@ export function validateContributionDraft(
       ok: false,
       field: "entryType",
       message: "Select contribution or withdrawal.",
-    };
-  }
-
-  const amount = Number(input.amount);
-  if (!Number.isFinite(amount) || amount <= 0) {
-    return {
-      ok: false,
-      field: "amount",
-      message: "Amount must be greater than zero.",
     };
   }
 
@@ -62,7 +70,8 @@ export function validateContributionDraft(
     };
   }
 
-  const entryDate = typeof input.entryDate === "string" ? input.entryDate.trim() : "";
+  const entryDate =
+    typeof input.entryDate === "string" ? input.entryDate.trim() : "";
   if (!isValidIsoDate(entryDate)) {
     return {
       ok: false,
@@ -92,6 +101,122 @@ export function validateContributionDraft(
     };
   }
 
+  let destinationType = normalizeDestinationType(input.destinationType);
+  if (entryType === "withdrawal") {
+    destinationType = "cash";
+  }
+
+  if (destinationType === "holding") {
+    const holdingId =
+      typeof input.destinationHoldingId === "string"
+        ? input.destinationHoldingId.trim()
+        : "";
+    if (!holdingId) {
+      return {
+        ok: false,
+        field: "destinationHoldingId",
+        message: "Select a holding for this contribution.",
+      };
+    }
+
+    const allowed = options?.allowedHoldings;
+    const matched = allowed?.find((holding) => holding.id === holdingId);
+    if (allowed && !matched) {
+      return {
+        ok: false,
+        field: "destinationHoldingId",
+        message: "Selected holding is not in your portfolio.",
+      };
+    }
+    if (matched?.assetType === "cash") {
+      return {
+        ok: false,
+        field: "destinationHoldingId",
+        message: "Choose an investment holding, or use Add to cash.",
+      };
+    }
+
+    const quantity = Number(input.destinationQuantity);
+    if (!Number.isFinite(quantity) || quantity <= 0) {
+      return {
+        ok: false,
+        field: "destinationQuantity",
+        message: "Quantity must be greater than zero.",
+      };
+    }
+
+    const pricePerUnit = Number(input.destinationPricePerUnit);
+    if (!Number.isFinite(pricePerUnit) || pricePerUnit <= 0) {
+      return {
+        ok: false,
+        field: "destinationPricePerUnit",
+        message: "Price per unit must be greater than zero.",
+      };
+    }
+
+    let fee: number | null = null;
+    if (input.destinationFee != null) {
+      const parsedFee = Number(input.destinationFee);
+      if (!Number.isFinite(parsedFee) || parsedFee < 0) {
+        return {
+          ok: false,
+          field: "destinationFee",
+          message: "Fee cannot be negative.",
+        };
+      }
+      fee = parsedFee === 0 ? null : parsedFee;
+    }
+
+    const amount = deriveHoldingContributionAmount(quantity, pricePerUnit, fee);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return {
+        ok: false,
+        field: "amount",
+        message: "Contribution amount must be greater than zero.",
+      };
+    }
+
+    const symbol =
+      matched?.symbol.trim() ||
+      (typeof input.destinationHoldingSymbol === "string"
+        ? input.destinationHoldingSymbol.trim()
+        : "");
+    if (!symbol) {
+      return {
+        ok: false,
+        field: "destinationHoldingSymbol",
+        message: "Holding symbol is required.",
+      };
+    }
+
+    return {
+      ok: true,
+      draft: {
+        entryType,
+        amount,
+        currency,
+        entryDate,
+        note,
+        source,
+        destinationType: "holding",
+        destinationHoldingId: holdingId,
+        destinationHoldingSymbol: symbol,
+        destinationQuantity: quantity,
+        destinationPricePerUnit: pricePerUnit,
+        destinationFee: fee,
+      },
+    };
+  }
+
+  const amount = Number(input.amount);
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return {
+      ok: false,
+      field: "amount",
+      message: "Amount must be greater than zero.",
+    };
+  }
+
   return {
     ok: true,
     draft: {
@@ -101,6 +226,12 @@ export function validateContributionDraft(
       entryDate,
       note,
       source,
+      destinationType: "cash",
+      destinationHoldingId: null,
+      destinationHoldingSymbol: null,
+      destinationQuantity: null,
+      destinationPricePerUnit: null,
+      destinationFee: null,
     },
   };
 }

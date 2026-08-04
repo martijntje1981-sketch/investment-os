@@ -4,6 +4,8 @@ export type ContributionEntryType = "contribution" | "withdrawal";
 
 export type ContributionSource = "manual" | "opening_balance" | "import";
 
+export type ContributionDestinationType = "cash" | "holding";
+
 export type PortfolioContributionEntry = {
   id: string;
   portfolioId: string;
@@ -17,6 +19,12 @@ export type PortfolioContributionEntry = {
   entryDate: string;
   note: string | null;
   source: ContributionSource;
+  destinationType: ContributionDestinationType;
+  destinationHoldingId: string | null;
+  destinationHoldingSymbol: string | null;
+  destinationQuantity: number | null;
+  destinationPricePerUnit: number | null;
+  destinationFee: number | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -40,6 +48,19 @@ export type ContributionEntryDraft = {
   entryDate: string;
   note: string | null;
   source: ContributionSource;
+  destinationType: ContributionDestinationType;
+  destinationHoldingId: string | null;
+  destinationHoldingSymbol: string | null;
+  destinationQuantity: number | null;
+  destinationPricePerUnit: number | null;
+  destinationFee: number | null;
+};
+
+export type ContributionHoldingOption = {
+  id: string;
+  symbol: string;
+  name: string;
+  assetType?: "investment" | "cash" | "crypto";
 };
 
 export type DbPortfolioContributionRow = {
@@ -55,6 +76,12 @@ export type DbPortfolioContributionRow = {
   entry_date: string;
   note: string | null;
   source: ContributionSource;
+  destination_type?: ContributionDestinationType | null;
+  destination_holding_id?: string | null;
+  destination_holding_symbol?: string | null;
+  destination_quantity?: number | string | null;
+  destination_price_per_unit?: number | string | null;
+  destination_fee?: number | string | null;
   created_at: string;
   updated_at: string;
 };

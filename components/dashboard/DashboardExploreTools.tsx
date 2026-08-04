@@ -35,7 +35,8 @@ const TOOLS = [
   {
     href: PORTFOLIO_HISTORY_PATH,
     title: "Portfolio History",
-    benefit: "Review contributions, withdrawals, and export your ledger.",
+    benefit:
+      "Track contributions, withdrawals and export your portfolio record.",
     icon: History,
   },
   {

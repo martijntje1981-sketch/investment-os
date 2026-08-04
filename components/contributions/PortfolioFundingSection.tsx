@@ -27,13 +27,17 @@ import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 import { usePortfolioContributions } from "@/lib/client/usePortfolioContributions";
 import { formatPortfolioPercent } from "@/lib/client/portfolioAnalysis";
 import { formatSignedPortfolioCurrency } from "@/lib/client/portfolioMovementFormat";
-import type { PortfolioContributionEntry } from "@/lib/services/contributions/types";
+import type {
+  ContributionHoldingOption,
+  PortfolioContributionEntry,
+} from "@/lib/services/contributions/types";
 
 const RECENT_ENTRY_LIMIT = 3;
 
 type PortfolioFundingSectionProps = {
   portfolioValueEur: number;
   portfolioValueAvailable: boolean;
+  holdings?: ContributionHoldingOption[];
 };
 
 function FundingSkeleton() {
@@ -65,6 +69,7 @@ function formatOriginalAmount(entry: PortfolioContributionEntry): string {
 export function PortfolioFundingSection({
   portfolioValueEur,
   portfolioValueAvailable,
+  holdings = [],
 }: PortfolioFundingSectionProps) {
   const { formatEur, convertToEur } = useBaseCurrencyDisplay();
   const formatContributionAmount = (amount: number) =>
@@ -84,6 +89,7 @@ export function PortfolioFundingSection({
     portfolioValueEur,
     portfolioValueAvailable,
     true,
+    holdings,
   );
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -288,6 +294,7 @@ export function PortfolioFundingSection({
         <ManageContributionsDialog
           entries={entries}
           summary={summary}
+          holdings={holdings}
           isMutating={isMutating}
           mutationError={mutationError}
           portfolioValueAvailable={portfolioValueAvailable}

@@ -24,11 +24,14 @@ import { usePortfolioContributions } from "@/lib/client/usePortfolioContribution
 import { formatSignedPortfolioCurrency } from "@/lib/client/portfolioMovementFormat";
 import { formatPortfolioPercent } from "@/lib/client/portfolioAnalysis";
 import type { DashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
+import type { ContributionHoldingOption } from "@/lib/services/contributions/types";
 
 export function DashboardContributionsCard({
   snapshot,
+  holdings = [],
 }: {
   snapshot: DashboardPortfolioSnapshot;
+  holdings?: ContributionHoldingOption[];
 }) {
   const { formatEur, convertToEur } = useBaseCurrencyDisplay();
   const formatContributionAmount = (amount: number) =>
@@ -49,6 +52,7 @@ export function DashboardContributionsCard({
     snapshot.portfolioValue,
     snapshot.portfolioValueAvailable,
     true,
+    holdings,
   );
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -162,6 +166,7 @@ export function DashboardContributionsCard({
         <ManageContributionsDialog
           entries={entries}
           summary={summary}
+          holdings={holdings}
           isMutating={isMutating}
           mutationError={mutationError}
           portfolioValueAvailable={portfolioValueAvailable}

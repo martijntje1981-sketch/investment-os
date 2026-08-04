@@ -12,6 +12,7 @@ import { DashboardMarketPulseCard } from "@/components/dashboard/DashboardMarket
 import { DashboardSummary } from "@/components/dashboard/DashboardSummary";
 import { DashboardPortfolioPulseCard } from "@/components/dashboard/DashboardPortfolioPulseCard";
 import { DashboardExploreTools } from "@/components/dashboard/DashboardExploreTools";
+import { PortfolioHistoryNavCard } from "@/components/portfolioHistory/PortfolioHistoryNavCard";
 import { DashboardFirstRunCue } from "@/components/dashboard/DashboardFirstRunCue";
 import { DashboardProductionDebugMarker } from "@/components/dashboard/DashboardProductionDebugMarker";
 import { DashboardUpcomingEventsWidget } from "@/components/dashboard/DashboardUpcomingEventsWidget";
@@ -273,6 +274,8 @@ export default function DashboardPage() {
             }
           />
 
+          <PortfolioHistoryNavCard />
+
           <DashboardExploreTools />
 
           {/* 7. Remaining supporting cards */}
@@ -282,7 +285,15 @@ export default function DashboardPage() {
             <DashboardPortfolioExposureCard allocation={exposureAllocation} />
 
             <div className="grid min-w-0 gap-6 lg:grid-cols-2">
-              <DashboardContributionsCard snapshot={snapshot} />
+              <DashboardContributionsCard
+                snapshot={snapshot}
+                holdings={holdings.map((holding) => ({
+                  id: holding.id,
+                  symbol: holding.symbol,
+                  name: holding.name,
+                  assetType: holding.assetType,
+                }))}
+              />
               <DashboardDividendCard
                 snapshot={dividendSnapshot}
                 isLoading={dividendsLoading}

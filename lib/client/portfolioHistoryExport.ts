@@ -8,6 +8,7 @@ import * as XLSX from "xlsx";
 import {
   formatContributionEntryDate,
 } from "@/lib/client/contributionsFormat";
+import { contributionDestinationLabel } from "@/lib/services/contributions/destination";
 import type {
   ContributionSummary,
   PortfolioContributionEntry,
@@ -59,6 +60,24 @@ export function activitySourceLabel(
     default:
       return "Manual";
   }
+}
+
+/** Prevent formula injection when Excel opens exported cells. */
+export function sanitizeExcelCellValue(
+  value: string | number | null | undefined,
+): string | number {
+  if (value == null) {
+    return "";
+  }
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : "";
+  }
+
+  const text = String(value);
+  if (/^[=+\-@]/.test(text) || text.startsWith("\t")) {
+    return `'${text}`;
+  }
+  return text;
 }
 
 function formatExportTimestamp(date: Date): string {
@@ -119,7 +138,7 @@ export function buildPortfolioHistoryWorkbook(
     [],
     ["Activity entries", input.entries.length],
     ["Holdings listed", input.holdings.length],
-  ];
+  ].map((row) => row.map((cell) => sanitizeExcelCellValue(cell)));
 
   const overviewSheet = XLSX.utils.aoa_to_sheet(overviewRows);
   setColumnWidths(overviewSheet, [28, 18]);
@@ -132,6 +151,11 @@ export function buildPortfolioHistoryWorkbook(
     "Amount",
     "Currency",
     `Amount (${currency})`,
+    "Destination type",
+    "Holding",
+    "Quantity",
+    "Price per unit",
+    "Fee",
     "Note",
   ];
   const activityRows = input.entries.map((entry) => [
@@ -141,13 +165,22 @@ export function buildPortfolioHistoryWorkbook(
     Math.round(entry.amount * 100) / 100,
     entry.currency,
     Math.round(entry.baseAmount * 100) / 100,
+    entry.destinationType === "holding" ? "Holding" : "Cash",
+    entry.destinationType === "holding"
+      ? contributionDestinationLabel(entry)
+      : "",
+    entry.destinationQuantity ?? "",
+    entry.destinationPricePerUnit ?? "",
+    entry.destinationFee ?? "",
     entry.note ?? "",
-  ]);
+  ].map((cell) => sanitizeExcelCellValue(cell)));
   const activitySheet = XLSX.utils.aoa_to_sheet([
     activityHeader,
     ...activityRows,
   ]);
-  setColumnWidths(activitySheet, [12, 22, 16, 12, 10, 14, 40]);
+  setColumnWidths(activitySheet, [
+    12, 22, 16, 12, 10, 14, 14, 12, 12, 14, 10, 40,
+  ]);
   XLSX.utils.book_append_sheet(workbook, activitySheet, "Activity");
 
   const holdingsHeader = [
@@ -158,16 +191,18 @@ export function buildPortfolioHistoryWorkbook(
     `Market value (${currency})`,
     "Weight %",
   ];
-  const holdingsRows = input.holdings.map((row) => [
-    row.symbol,
-    row.name,
-    row.assetType,
-    row.quantity,
-    formatOptionalNumber(row.marketValue),
-    row.weightPercent == null || !Number.isFinite(row.weightPercent)
-      ? "Unavailable"
-      : Math.round(row.weightPercent * 10) / 10,
-  ]);
+  const holdingsRows = input.holdings.map((row) =>
+    [
+      row.symbol,
+      row.name,
+      row.assetType,
+      row.quantity,
+      formatOptionalNumber(row.marketValue),
+      row.weightPercent == null || !Number.isFinite(row.weightPercent)
+        ? "Unavailable"
+        : Math.round(row.weightPercent * 10) / 10,
+    ].map((cell) => sanitizeExcelCellValue(cell)),
+  );
   const holdingsSheet = XLSX.utils.aoa_to_sheet([
     holdingsHeader,
     ...holdingsRows,
@@ -185,6 +220,7 @@ export function buildPortfolioHistoryWorkbook(
     ["Included"],
     ["• Manual contributions and withdrawals"],
     ["• Opening balance entries"],
+    ["• Optional destination detail (cash or one holding allocation)"],
     ["• Imported contribution entries (when present)"],
     ["• Current holdings with validated market values where available"],
     [],
@@ -199,6 +235,9 @@ export function buildPortfolioHistoryWorkbook(
       "Net contributed equals total contributed minus total withdrawn. It does not account for the timing of cash flows.",
     ],
     [
+      "Destination holding quantity, price and fee are allocation notes only. They do not change holdings or double-count portfolio value.",
+    ],
+    [
       "Current portfolio value uses validated holding prices. Unpriced positions are omitted from the total and shown as Unavailable in holdings.",
     ],
     [
@@ -206,7 +245,7 @@ export function buildPortfolioHistoryWorkbook(
     ],
     [],
     ["Tobailey explains portfolio characteristics. It does not provide personal investment advice."],
-  ];
+  ].map((row) => row.map((cell) => String(sanitizeExcelCellValue(cell))));
   const notesSheet = XLSX.utils.aoa_to_sheet(notesRows);
   setColumnWidths(notesSheet, [100]);
   XLSX.utils.book_append_sheet(workbook, notesSheet, "Notes");
@@ -254,8 +293,6 @@ export function mapHoldingsForHistoryExport(
     weightPercent: null,
   }));
 
-  // Prefer valued first (already sorted by value), then unvalued.
-  // Keep all holdings from the portfolio list without inventing prices.
   void holdings;
   return [...valuedRows, ...unvaluedRows];
 }

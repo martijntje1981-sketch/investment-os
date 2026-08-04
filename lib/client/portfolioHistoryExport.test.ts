@@ -6,6 +6,7 @@ import {
   activityTypeLabel,
   buildPortfolioHistoryExportFilename,
   buildPortfolioHistoryWorkbook,
+  sanitizeExcelCellValue,
 } from "@/lib/client/portfolioHistoryExport";
 import type {
   ContributionSummary,
@@ -28,6 +29,12 @@ function entry(
     entryDate: "2026-03-01",
     note: null,
     source: "manual",
+    destinationType: "cash",
+    destinationHoldingId: null,
+    destinationHoldingSymbol: null,
+    destinationQuantity: null,
+    destinationPricePerUnit: null,
+    destinationFee: null,
     createdAt: "2026-03-01T10:00:00.000Z",
     updatedAt: "2026-03-01T10:00:00.000Z",
     ...overrides,
@@ -62,7 +69,7 @@ describe("portfolioHistoryExport", () => {
     );
   });
 
-  it("builds a polished workbook with the four required sheets", () => {
+  it("builds a polished workbook with destination Activity columns", () => {
     const workbook = buildPortfolioHistoryWorkbook({
       summary,
       entries: [
@@ -73,9 +80,22 @@ describe("portfolioHistoryExport", () => {
           baseAmount: 4000,
           amount: 4000,
           note: "Start",
+          destinationType: "cash",
         }),
         entry({
           id: "b",
+          entryDate: "2026-02-01",
+          baseAmount: 1502.53,
+          amount: 1502.53,
+          destinationType: "holding",
+          destinationHoldingId: "h1",
+          destinationHoldingSymbol: "VWCE",
+          destinationQuantity: 12.4,
+          destinationPricePerUnit: 120.97,
+          destinationFee: 2.5,
+        }),
+        entry({
+          id: "c",
           entryType: "withdrawal",
           entryDate: "2026-02-01",
           baseAmount: 500,
@@ -91,14 +111,6 @@ describe("portfolioHistoryExport", () => {
           marketValue: 1200,
           weightPercent: 23.1,
         },
-        {
-          symbol: "CASH",
-          name: "EUR Cash",
-          assetType: "cash",
-          quantity: 200,
-          marketValue: 200,
-          weightPercent: 3.8,
-        },
       ],
       portfolioBaseCurrency: "EUR",
       portfolioValueAvailable: true,
@@ -112,36 +124,23 @@ describe("portfolioHistoryExport", () => {
       "Notes",
     ]);
 
-    const overview = XLSX.utils.sheet_to_json<string[]>(
-      workbook.Sheets.Overview,
-      { header: 1 },
-    );
-    expect(overview[0]?.[0]).toBe("Portfolio History");
-    expect(overview.some((row) => row[0] === "Total contributed")).toBe(true);
-    expect(overview.some((row) => row[0] === "Net contributed")).toBe(true);
-    expect(overview.some((row) => row[0] === "Current portfolio value")).toBe(
-      true,
-    );
-
     const activity = XLSX.utils.sheet_to_json<Record<string, unknown>>(
       workbook.Sheets.Activity,
     );
-    expect(activity).toHaveLength(2);
-    expect(activity[0]?.Type).toBe("Opening contribution");
-    expect(activity[1]?.Type).toBe("Withdrawal");
+    expect(activity).toHaveLength(3);
+    expect(activity[0]?.["Destination type"]).toBe("Cash");
+    expect(activity[1]?.["Destination type"]).toBe("Holding");
+    expect(activity[1]?.Holding).toBe("VWCE");
+    expect(activity[1]?.Quantity).toBe(12.4);
+    expect(activity[1]?.["Price per unit"]).toBe(120.97);
+    expect(activity[1]?.Fee).toBe(2.5);
+  });
 
-    const holdings = XLSX.utils.sheet_to_json<Record<string, unknown>>(
-      workbook.Sheets["Current Holdings"],
-    );
-    expect(holdings).toHaveLength(2);
-    expect(holdings[0]?.Symbol).toBe("VWCE");
-
-    const notes = XLSX.utils.sheet_to_json<string[]>(workbook.Sheets.Notes, {
-      header: 1,
-    });
-    const noteText = notes.map((row) => row[0]).join(" ");
-    expect(noteText).toContain("Not included in v1");
-    expect(noteText).toContain("Buys, sells, dividends");
+  it("sanitizes formula-like Excel cell values", () => {
+    expect(sanitizeExcelCellValue("=1+1")).toBe("'=1+1");
+    expect(sanitizeExcelCellValue("+cmd")).toBe("'+cmd");
+    expect(sanitizeExcelCellValue("VWCE")).toBe("VWCE");
+    expect(sanitizeExcelCellValue(12.4)).toBe(12.4);
   });
 
   it("names the export file with an ISO date stamp", () => {

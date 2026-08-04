@@ -51,6 +51,7 @@ import {
   holdingDetailPath,
   PORTFOLIO_PATH,
 } from "@/lib/navigation/appRoutes";
+import { formatContributionDestinationLines } from "@/lib/services/contributions/destination";
 import type { PortfolioContributionEntry } from "@/lib/services/contributions/types";
 
 function formatOriginalAmount(entry: PortfolioContributionEntry): string {
@@ -109,6 +110,16 @@ export default function PortfolioHistoryPage() {
     () => buildValuedPositions(holdings),
     [holdings],
   );
+  const contributionHoldings = useMemo(
+    () =>
+      holdings.map((holding) => ({
+        id: holding.id,
+        symbol: holding.symbol,
+        name: holding.name,
+        assetType: holding.assetType,
+      })),
+    [holdings],
+  );
 
   const {
     entries,
@@ -125,6 +136,7 @@ export default function PortfolioHistoryPage() {
     performance.totalValue,
     performance.totalValueAvailable,
     true,
+    contributionHoldings,
   );
 
   const formatContributionAmount = (amount: number) =>
@@ -341,6 +353,17 @@ export default function PortfolioHistoryPage() {
                               ? ` · ${formatContributionAmount(entry.baseAmount)}`
                               : null}
                           </p>
+                          {formatContributionDestinationLines(
+                            entry,
+                            formatContributionAmount,
+                          ).map((line) => (
+                            <p
+                              key={line}
+                              className={`mt-1 ${appSectionMetaClass}`}
+                            >
+                              {line}
+                            </p>
+                          ))}
                           {entry.note ? (
                             <p className={`mt-1 ${appSectionBodyClass}`}>
                               {entry.note}
@@ -515,6 +538,7 @@ export default function PortfolioHistoryPage() {
         <ManageContributionsDialog
           entries={entries}
           summary={summary}
+          holdings={contributionHoldings}
           isMutating={isMutating}
           mutationError={mutationError}
           portfolioValueAvailable={performance.totalValueAvailable}

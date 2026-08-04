@@ -20,12 +20,15 @@ import { formatContributionBaseAmount } from "@/lib/client/contributionsFormat";
 import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 import { formatSignedPortfolioCurrency } from "@/lib/client/portfolioMovementFormat";
 import { formatPortfolioPercent } from "@/lib/client/portfolioAnalysis";
+import { formatContributionDestinationLines } from "@/lib/services/contributions/destination";
 import type {
   ContributionEntryDraft,
+  ContributionHoldingOption,
   ContributionSummary,
   PortfolioContributionEntry,
 } from "@/lib/services/contributions/types";
 import {
+  deriveHoldingContributionAmount,
   todayIsoDate,
   validateContributionDraft,
 } from "@/lib/services/contributions/validation";
@@ -37,6 +40,7 @@ import {
 type ManageContributionsDialogProps = {
   entries: PortfolioContributionEntry[];
   summary: ContributionSummary;
+  holdings?: ContributionHoldingOption[];
   isMutating: boolean;
   mutationError: string | null;
   portfolioValueAvailable: boolean;
@@ -61,6 +65,12 @@ function buildEmptyDraft(
     entryDate: todayIsoDate(),
     note: null,
     source,
+    destinationType: "cash",
+    destinationHoldingId: null,
+    destinationHoldingSymbol: null,
+    destinationQuantity: null,
+    destinationPricePerUnit: null,
+    destinationFee: null,
   };
 }
 
@@ -72,6 +82,12 @@ function entryToDraft(entry: PortfolioContributionEntry): ContributionEntryDraft
     entryDate: entry.entryDate,
     note: entry.note,
     source: entry.source,
+    destinationType: entry.destinationType,
+    destinationHoldingId: entry.destinationHoldingId,
+    destinationHoldingSymbol: entry.destinationHoldingSymbol,
+    destinationQuantity: entry.destinationQuantity,
+    destinationPricePerUnit: entry.destinationPricePerUnit,
+    destinationFee: entry.destinationFee,
   };
 }
 
@@ -91,6 +107,7 @@ function formatEntryDate(value: string): string {
 export function ManageContributionsDialog({
   entries,
   summary,
+  holdings = [],
   isMutating,
   mutationError,
   portfolioValueAvailable,
@@ -101,6 +118,13 @@ export function ManageContributionsDialog({
   const { formatEur, convertToEur, baseCurrency } = useBaseCurrencyDisplay();
   const formatContributionAmount = (amount: number) =>
     formatContributionBaseAmount(amount, formatEur, convertToEur);
+  const investableHoldings = useMemo(
+    () =>
+      holdings.filter(
+        (holding) => holding.assetType !== "cash" && holding.id && holding.symbol,
+      ),
+    [holdings],
+  );
   const [mode, setMode] = useState<FormMode>("create");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<ContributionEntryDraft>(() =>
@@ -114,6 +138,21 @@ export function ManageContributionsDialog({
 
   const currencySymbol = portfolioBaseCurrencySymbol(baseCurrency);
   const showOpeningBalance = entries.length === 0 && mode === "create";
+  const showDestination =
+    draft.entryType === "contribution" || mode === "edit";
+  const investDestination = draft.destinationType === "holding";
+  const derivedInvestAmount =
+    investDestination &&
+    draft.destinationQuantity != null &&
+    draft.destinationPricePerUnit != null &&
+    draft.destinationQuantity > 0 &&
+    draft.destinationPricePerUnit > 0
+      ? deriveHoldingContributionAmount(
+          draft.destinationQuantity,
+          draft.destinationPricePerUnit,
+          draft.destinationFee,
+        )
+      : null;
 
   const valueAbovePercent =
     summary.valueAboveContributionsPercent != null &&
@@ -157,7 +196,9 @@ export function ManageContributionsDialog({
       return;
     }
 
-    const validation = validateContributionDraft(draft, baseCurrency);
+    const validation = validateContributionDraft(draft, baseCurrency, {
+      allowedHoldings: investableHoldings,
+    });
     if (!validation.ok) {
       setFormError(validation.message);
       return;
@@ -289,12 +330,38 @@ export function ManageContributionsDialog({
                 <span className={appSectionLabelClass}>Type</span>
                 <select
                   value={draft.entryType}
-                  onChange={(event) =>
+                  onChange={(event) => {
+                    const entryType =
+                      event.target.value as ContributionEntryDraft["entryType"];
                     setDraft((current) => ({
                       ...current,
-                      entryType: event.target.value as ContributionEntryDraft["entryType"],
-                    }))
-                  }
+                      entryType,
+                      destinationType:
+                        entryType === "withdrawal"
+                          ? "cash"
+                          : current.destinationType,
+                      destinationHoldingId:
+                        entryType === "withdrawal"
+                          ? null
+                          : current.destinationHoldingId,
+                      destinationHoldingSymbol:
+                        entryType === "withdrawal"
+                          ? null
+                          : current.destinationHoldingSymbol,
+                      destinationQuantity:
+                        entryType === "withdrawal"
+                          ? null
+                          : current.destinationQuantity,
+                      destinationPricePerUnit:
+                        entryType === "withdrawal"
+                          ? null
+                          : current.destinationPricePerUnit,
+                      destinationFee:
+                        entryType === "withdrawal"
+                          ? null
+                          : current.destinationFee,
+                    }));
+                  }}
                   className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm"
                 >
                   <option value="contribution">Contribution</option>
@@ -318,29 +385,201 @@ export function ManageContributionsDialog({
                 />
               </label>
 
-              <label className="block space-y-2 sm:col-span-2">
-                <span className={appSectionLabelClass}>
-                  Amount ({baseCurrency})
-                </span>
-                <span className="flex min-h-[44px] items-center rounded-xl border border-slate-200 bg-white px-3 focus-within:border-blue-400">
-                  <span className="font-semibold text-slate-400">{currencySymbol}</span>
-                  <NumericInput
-                    value={draft.amount}
-                    onChange={(value) =>
-                      setDraft((current) => ({
-                        ...current,
-                        amount: value,
-                        currency: baseCurrency,
-                      }))
-                    }
-                    placeholder="0"
-                    className="min-w-0 flex-1 bg-transparent py-2.5 text-sm outline-none"
-                  />
-                </span>
-                <span className={appSectionMetaClass}>
-                  Entries are stored in your portfolio base currency ({baseCurrency}).
-                </span>
-              </label>
+              {showDestination ? (
+                <fieldset className="space-y-2 sm:col-span-2">
+                  <legend className={appSectionLabelClass}>Destination</legend>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <label className="flex min-h-[44px] items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-800">
+                      <input
+                        type="radio"
+                        name="contribution-destination"
+                        checked={draft.destinationType === "cash"}
+                        disabled={draft.entryType === "withdrawal"}
+                        onChange={() =>
+                          setDraft((current) => ({
+                            ...current,
+                            destinationType: "cash",
+                            destinationHoldingId: null,
+                            destinationHoldingSymbol: null,
+                            destinationQuantity: null,
+                            destinationPricePerUnit: null,
+                            destinationFee: null,
+                          }))
+                        }
+                      />
+                      Add to cash
+                    </label>
+                    <label className="flex min-h-[44px] items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-800">
+                      <input
+                        type="radio"
+                        name="contribution-destination"
+                        checked={draft.destinationType === "holding"}
+                        disabled={
+                          draft.entryType === "withdrawal" ||
+                          investableHoldings.length === 0
+                        }
+                        onChange={() =>
+                          setDraft((current) => ({
+                            ...current,
+                            destinationType: "holding",
+                            destinationHoldingId:
+                              current.destinationHoldingId ??
+                              investableHoldings[0]?.id ??
+                              null,
+                            destinationHoldingSymbol:
+                              current.destinationHoldingSymbol ??
+                              investableHoldings[0]?.symbol ??
+                              null,
+                            destinationQuantity:
+                              current.destinationQuantity ?? 0,
+                            destinationPricePerUnit:
+                              current.destinationPricePerUnit ?? 0,
+                          }))
+                        }
+                      />
+                      Invest in a holding
+                    </label>
+                  </div>
+                  {draft.entryType === "contribution" &&
+                  investableHoldings.length === 0 ? (
+                    <p className={appSectionMetaClass}>
+                      Add an investment holding first to record an invested
+                      contribution.
+                    </p>
+                  ) : null}
+                </fieldset>
+              ) : null}
+
+              {investDestination ? (
+                <>
+                  <label className="block space-y-2 sm:col-span-2">
+                    <span className={appSectionLabelClass}>Holding</span>
+                    <select
+                      value={draft.destinationHoldingId ?? ""}
+                      onChange={(event) => {
+                        const selected = investableHoldings.find(
+                          (holding) => holding.id === event.target.value,
+                        );
+                        setDraft((current) => ({
+                          ...current,
+                          destinationHoldingId: selected?.id ?? null,
+                          destinationHoldingSymbol: selected?.symbol ?? null,
+                        }));
+                      }}
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm"
+                      required
+                    >
+                      <option value="" disabled>
+                        Select a holding
+                      </option>
+                      {investableHoldings.map((holding) => (
+                        <option key={holding.id} value={holding.id}>
+                          {holding.symbol} — {holding.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="block space-y-2">
+                    <span className={appSectionLabelClass}>Quantity</span>
+                    <NumericInput
+                      value={draft.destinationQuantity ?? 0}
+                      onChange={(value) =>
+                        setDraft((current) => ({
+                          ...current,
+                          destinationQuantity: value,
+                        }))
+                      }
+                      placeholder="0"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none"
+                    />
+                  </label>
+
+                  <label className="block space-y-2">
+                    <span className={appSectionLabelClass}>
+                      Price per unit ({baseCurrency})
+                    </span>
+                    <span className="flex min-h-[44px] items-center rounded-xl border border-slate-200 bg-white px-3 focus-within:border-blue-400">
+                      <span className="font-semibold text-slate-400">
+                        {currencySymbol}
+                      </span>
+                      <NumericInput
+                        value={draft.destinationPricePerUnit ?? 0}
+                        onChange={(value) =>
+                          setDraft((current) => ({
+                            ...current,
+                            destinationPricePerUnit: value,
+                          }))
+                        }
+                        placeholder="0"
+                        className="min-w-0 flex-1 bg-transparent py-2.5 text-sm outline-none"
+                      />
+                    </span>
+                  </label>
+
+                  <label className="block space-y-2 sm:col-span-2">
+                    <span className={appSectionLabelClass}>
+                      Fee (optional, {baseCurrency})
+                    </span>
+                    <span className="flex min-h-[44px] items-center rounded-xl border border-slate-200 bg-white px-3 focus-within:border-blue-400">
+                      <span className="font-semibold text-slate-400">
+                        {currencySymbol}
+                      </span>
+                      <NumericInput
+                        value={draft.destinationFee ?? 0}
+                        onChange={(value) =>
+                          setDraft((current) => ({
+                            ...current,
+                            destinationFee: value,
+                          }))
+                        }
+                        placeholder="0"
+                        className="min-w-0 flex-1 bg-transparent py-2.5 text-sm outline-none"
+                      />
+                    </span>
+                  </label>
+
+                  <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 sm:col-span-2">
+                    <p className={appSectionLabelClass}>Contribution amount</p>
+                    <p className="mt-1 text-base font-semibold text-slate-900">
+                      {derivedInvestAmount != null
+                        ? formatContributionAmount(derivedInvestAmount)
+                        : "Enter quantity and price"}
+                    </p>
+                    <p className={`mt-1 ${appSectionMetaClass}`}>
+                      Recorded as cash inflow only. This does not change holding
+                      quantities or create a buy.
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <label className="block space-y-2 sm:col-span-2">
+                  <span className={appSectionLabelClass}>
+                    Amount ({baseCurrency})
+                  </span>
+                  <span className="flex min-h-[44px] items-center rounded-xl border border-slate-200 bg-white px-3 focus-within:border-blue-400">
+                    <span className="font-semibold text-slate-400">
+                      {currencySymbol}
+                    </span>
+                    <NumericInput
+                      value={draft.amount}
+                      onChange={(value) =>
+                        setDraft((current) => ({
+                          ...current,
+                          amount: value,
+                          currency: baseCurrency,
+                        }))
+                      }
+                      placeholder="0"
+                      className="min-w-0 flex-1 bg-transparent py-2.5 text-sm outline-none"
+                    />
+                  </span>
+                  <span className={appSectionMetaClass}>
+                    Entries are stored in your portfolio base currency (
+                    {baseCurrency}).
+                  </span>
+                </label>
+              )}
 
               <label className="block space-y-2 sm:col-span-2">
                 <span className={appSectionLabelClass}>Note (optional)</span>
@@ -397,6 +636,10 @@ export function ManageContributionsDialog({
                 {entries.map((entry) => {
                   const isOpening = entry.source === "opening_balance";
                   const isDeleting = deleteConfirmId === entry.id;
+                  const destinationLines = formatContributionDestinationLines(
+                    entry,
+                    formatContributionAmount,
+                  );
 
                   return (
                     <li
@@ -416,8 +659,18 @@ export function ManageContributionsDialog({
                             {entry.entryType === "withdrawal" ? "−" : ""}
                             {formatContributionAmount(entry.baseAmount)}
                           </p>
+                          {destinationLines.map((line) => (
+                            <p
+                              key={line}
+                              className={`mt-1 ${appSectionMetaClass}`}
+                            >
+                              {line}
+                            </p>
+                          ))}
                           {entry.note ? (
-                            <p className={`mt-1 ${appSectionBodyClass}`}>{entry.note}</p>
+                            <p className={`mt-1 ${appSectionBodyClass}`}>
+                              {entry.note}
+                            </p>
                           ) : null}
                         </div>
 

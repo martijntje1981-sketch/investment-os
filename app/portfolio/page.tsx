@@ -9,6 +9,7 @@ import {
   ChevronRight,
   CircleDollarSign,
   Coins,
+  History,
   Loader2,
   Pencil,
   PieChart,
@@ -21,6 +22,7 @@ import {
 } from "lucide-react";
 import { ConversionDetailsDisclosure } from "@/components/currency/ConversionDetailsDisclosure";
 import { PortfolioFundingSection } from "@/components/contributions/PortfolioFundingSection";
+import { PortfolioHistoryNavCard } from "@/components/portfolioHistory/PortfolioHistoryNavCard";
 import { formatListingLookupGuidance } from "@/lib/client/listingLookupGuidance";
 import { needsManualPricingSelection } from "@/lib/client/holdingVenuePresentation";
 import {
@@ -530,6 +532,13 @@ export default function PortfolioPage() {
           actions={
             <>
               <Link
+                href="/portfolio-history"
+                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-bold text-brand-navy hover:bg-brand-hover"
+              >
+                <History className="h-4 w-4" aria-hidden="true" />
+                Portfolio History
+              </Link>
+              <Link
                 href="/portfolio-health"
                 className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-bold text-white hover:bg-white/15"
               >
@@ -662,9 +671,17 @@ export default function PortfolioPage() {
         </section>
         <ConversionDetailsDisclosure compactTrigger />
 
+        <PortfolioHistoryNavCard variant="card" />
+
         <PortfolioFundingSection
           portfolioValueEur={totalValue}
           portfolioValueAvailable={performance.totalValueAvailable}
+          holdings={holdings.map((holding) => ({
+            id: holding.id,
+            symbol: holding.symbol,
+            name: holding.name,
+            assetType: holding.assetType,
+          }))}
         />
 
         <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">

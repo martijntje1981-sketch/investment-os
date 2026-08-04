@@ -20,6 +20,12 @@ function entry(
     fxRateUsed: partial.fxRateUsed ?? 1,
     note: partial.note ?? null,
     source: partial.source ?? "manual",
+    destinationType: "cash",
+    destinationHoldingId: null,
+    destinationHoldingSymbol: null,
+    destinationQuantity: null,
+    destinationPricePerUnit: null,
+    destinationFee: null,
     createdAt: partial.createdAt ?? "2026-01-01T00:00:00.000Z",
     updatedAt: partial.updatedAt ?? "2026-01-01T00:00:00.000Z",
     ...partial,
@@ -217,5 +223,29 @@ describe("calculateContributionSummary", () => {
     expect(summary.currentValue).toBeNull();
     expect(summary.valueAboveContributions).toBeNull();
     expect(summary.valueAboveContributionsPercent).toBeNull();
+  });
+
+  it("does not double-count holding allocation quantity or price into cash-flow totals", () => {
+    const summary = calculateContributionSummary(
+      [
+        entry({
+          entryType: "contribution",
+          baseAmount: 1502.53,
+          entryDate: "2026-08-04",
+          destinationType: "holding",
+          destinationHoldingId: "holding-1",
+          destinationHoldingSymbol: "VWCE",
+          destinationQuantity: 12.4,
+          destinationPricePerUnit: 120.97,
+          destinationFee: 2.5,
+        }),
+      ],
+      2000,
+      "EUR",
+    );
+
+    expect(summary.totalContributed).toBe(1502.53);
+    expect(summary.netContributed).toBe(1502.53);
+    expect(summary.contributionCount).toBe(1);
   });
 });

@@ -12,6 +12,7 @@ import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 import { calculateContributionSummary } from "@/lib/services/contributions/calculateContributionSummary";
 import type {
   ContributionEntryDraft,
+  ContributionHoldingOption,
   ContributionSummary,
   PortfolioContributionEntry,
 } from "@/lib/services/contributions/types";
@@ -33,6 +34,7 @@ export function usePortfolioContributions(
   portfolioValueEur: number | null,
   portfolioValueAvailable: boolean,
   enabled = true,
+  allowedHoldings: ContributionHoldingOption[] = [],
 ) {
   const supabase = useMemo(() => createClient(), []);
   const { userSub, baseCurrency, convertEur } = useBaseCurrencyDisplay();
@@ -100,6 +102,7 @@ export function usePortfolioContributions(
       setMutationError(null);
 
       try {
+        const saveOptions = { allowedHoldings };
         const saved = entryId
           ? await updatePortfolioContribution(
               supabase,
@@ -107,12 +110,14 @@ export function usePortfolioContributions(
               entryId,
               draft,
               baseCurrency,
+              saveOptions,
             )
           : await createPortfolioContribution(
               supabase,
               userSub,
               draft,
               baseCurrency,
+              saveOptions,
             );
 
         setEntries((current) => {
@@ -138,7 +143,7 @@ export function usePortfolioContributions(
         setIsMutating(false);
       }
     },
-    [baseCurrency, supabase, userSub],
+    [allowedHoldings, baseCurrency, supabase, userSub],
   );
 
   const removeEntry = useCallback(
