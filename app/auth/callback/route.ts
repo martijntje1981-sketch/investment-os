@@ -1,6 +1,10 @@
 ﻿import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+import {
+  buildExploreMagicLinkRecoveryPath,
+  classifyMagicLinkCallbackError,
+} from "@/lib/auth/magicLinkErrors";
 import { safeAuthRedirectPath } from "@/lib/auth/routeAccess";
 import { activateExamplePortfolioForUser } from "@/lib/services/examplePortfolio/activate";
 import {
@@ -119,15 +123,20 @@ export async function GET(request: NextRequest) {
   }
 
   if (sessionError) {
+    const kind = classifyMagicLinkCallbackError(sessionError);
     const wantsExample = exampleParam === "1";
     return wantsExample
-      ? exploreErrorRedirect(
+      ? redirectWithCookies(
+          buildExploreMagicLinkRecoveryPath(kind),
           origin,
-          "The sign-in link is invalid or expired. Request a new one.",
           cookieBuffer,
         )
       : redirectWithCookies(
-          "/login?error=The confirmation link is invalid or expired.",
+          `/login?auth_error=${encodeURIComponent(kind)}&error=${encodeURIComponent(
+            kind === "expired"
+              ? "This confirmation link has expired. Request a new sign-in link from Explore or sign up again."
+              : "This confirmation link is invalid or was already used. Request a new one if you still need access.",
+          )}&next=${encodeURIComponent(safeNext)}`,
           origin,
           cookieBuffer,
         );
@@ -137,14 +146,17 @@ export async function GET(request: NextRequest) {
   // did not establish the email-link user (that miss-looked-up the wrong email).
   const user = exchangedUser;
   if (!user) {
+    const kind = classifyMagicLinkCallbackError("session_not_established");
     return exampleParam === "1"
-      ? exploreErrorRedirect(
+      ? redirectWithCookies(
+          buildExploreMagicLinkRecoveryPath(kind),
           origin,
-          "Could not verify your email. Try again.",
           cookieBuffer,
         )
       : redirectWithCookies(
-          "/login?error=Could not verify your email. Try again.",
+          `/login?auth_error=${encodeURIComponent(kind)}&error=${encodeURIComponent(
+            "Could not verify your email. Request a new link if you still need access.",
+          )}&next=${encodeURIComponent(safeNext)}`,
           origin,
           cookieBuffer,
         );

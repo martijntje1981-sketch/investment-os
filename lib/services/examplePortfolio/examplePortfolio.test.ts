@@ -589,7 +589,7 @@ describe("example OTP error categories", () => {
     ).toEqual({
       status: "rate_limited",
       message:
-        "Too many sign-in emails were requested. Please wait and try again.",
+        "Too many login links were requested. Please wait a few minutes before trying again.",
     });
     expect(
       mapExampleOtpError("rate limit exceeded", { status: 429 }),

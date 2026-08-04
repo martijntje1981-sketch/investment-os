@@ -130,7 +130,8 @@ describe("example auth callback wiring", () => {
     expect(callback).toContain("activateExamplePortfolioForUser");
     expect(callback).toContain("expired");
     expect(callback).toContain("/example-expired");
-    expect(callback).toContain("/explore?error=");
+    expect(callback).toContain("buildExploreMagicLinkRecoveryPath");
+    expect(callback).toContain("auth_error");
   });
 
   it("locks template via entitlement reservation before OTP", () => {

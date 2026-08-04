@@ -1,6 +1,9 @@
 /**
  * Pure OTP / eligibility error mapping for Example Portfolio start flow.
+ * Send-error classification is shared with auth magic-link recovery helpers.
  */
+
+import { classifyMagicLinkSendError } from "@/lib/auth/magicLinkErrors";
 
 export type ExampleStartErrorStatus =
   | "invalid"
@@ -15,41 +18,14 @@ export function mapExampleOtpError(
   message: string,
   options?: { status?: number | null; code?: string | null },
 ): { status: "error" | "rate_limited"; message: string } {
-  const lower = (message || "").toLowerCase();
-  const code = (options?.code || "").toLowerCase();
-  const httpStatus = options?.status ?? null;
-
-  const isRateLimited =
-    httpStatus === 429 ||
-    code.includes("over_email_send_rate_limit") ||
-    code.includes("rate_limit") ||
-    lower.includes("security purposes") ||
-    lower.includes("only request this after") ||
-    lower.includes("too many") ||
-    lower.includes("rate limit");
-
-  if (isRateLimited) {
-    return {
-      status: "rate_limited",
-      message:
-        "Too many sign-in emails were requested. Please wait and try again.",
-    };
+  const mapped = classifyMagicLinkSendError(message, options);
+  if (mapped.kind === "rate_limited") {
+    return { status: "rate_limited", message: mapped.message };
   }
-
-  if (
-    lower.includes("invalid") &&
-    (lower.includes("email") || lower.includes("address"))
-  ) {
-    return {
-      status: "error",
-      message: "Enter a valid email address.",
-    };
+  if (mapped.kind === "invalid_email") {
+    return { status: "error", message: mapped.message };
   }
-
-  return {
-    status: "error",
-    message: message?.trim() || "Could not send the sign-in email.",
-  };
+  return { status: "error", message: mapped.message };
 }
 
 export const EXAMPLE_START_MESSAGES = {

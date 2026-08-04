@@ -15,6 +15,17 @@ import {
   appSectionTitleClass,
   appSolidButtonClass,
 } from "@/components/layout/appSurface";
+import {
+  MAGIC_LINK_CROSS_BROWSER_COPY,
+  MAGIC_LINK_NEWEST_ONLY_WARNING,
+  MAGIC_LINK_RATE_LIMIT_COOLDOWN_SECONDS,
+  MAGIC_LINK_RATE_LIMIT_MESSAGE,
+  MAGIC_LINK_RESEND_COOLDOWN_SECONDS,
+  formatMagicLinkCooldownMessage,
+  magicLinkCallbackUserMessage,
+  parseMagicLinkAuthErrorParam,
+  type MagicLinkCallbackFailureKind,
+} from "@/lib/auth/magicLinkErrors";
 import { startExamplePortfolio } from "@/lib/services/examplePortfolio/startExamplePortfolio";
 import type { ExamplePortfolioTemplate } from "@/lib/services/examplePortfolio/types";
 import { EXAMPLE_KEEP_PORTFOLIO_HREF } from "@/lib/services/examplePortfolio/types";
@@ -39,31 +50,68 @@ const TEMPLATES: Array<{
   },
 ];
 
+type ExploreView = "form" | "check_email" | "recovery";
+
 export default function ExplorePage() {
   const [email, setEmail] = useState("");
   const [template, setTemplate] = useState<ExamplePortfolioTemplate>("global");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [checkEmail, setCheckEmail] = useState(false);
+  const [view, setView] = useState<ExploreView>("form");
+  const [recoveryKind, setRecoveryKind] =
+    useState<MagicLinkCallbackFailureKind | null>(null);
   const [expired, setExpired] = useState(false);
+  const [cooldownSeconds, setCooldownSeconds] = useState(0);
   const [pending, startTransition] = useTransition();
 
   const emailValid = useMemo(
     () => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()),
     [email],
   );
+  const requestDisabled = pending || cooldownSeconds > 0;
 
   useEffect(() => {
-    const callbackError = new URLSearchParams(window.location.search).get(
-      "error",
-    );
-    if (callbackError) {
-      setError(callbackError);
+    const params = new URLSearchParams(window.location.search);
+    const authError = parseMagicLinkAuthErrorParam(params.get("auth_error"));
+    const legacyError = params.get("error");
+
+    if (authError) {
+      setRecoveryKind(authError);
+      setView("recovery");
+      setError(magicLinkCallbackUserMessage(authError));
+      if (authError === "rate_limited") {
+        setCooldownSeconds(MAGIC_LINK_RATE_LIMIT_COOLDOWN_SECONDS);
+      }
+      return;
+    }
+
+    if (legacyError) {
+      setRecoveryKind("failed");
+      setView("recovery");
+      setError(legacyError);
     }
   }, []);
 
-  function onSubmit(event: React.FormEvent) {
-    event.preventDefault();
+  useEffect(() => {
+    if (cooldownSeconds <= 0) return;
+    const timer = window.setInterval(() => {
+      setCooldownSeconds((current) => Math.max(0, current - 1));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [cooldownSeconds]);
+
+  function clearUrlAuthParams() {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has("auth_error") && !url.searchParams.has("error")) {
+      return;
+    }
+    url.searchParams.delete("auth_error");
+    url.searchParams.delete("error");
+    window.history.replaceState({}, "", `${url.pathname}${url.search}`);
+  }
+
+  function requestLink() {
     setError(null);
     setMessage(null);
     setExpired(false);
@@ -73,24 +121,59 @@ export default function ExplorePage() {
       return;
     }
 
+    if (requestDisabled) {
+      return;
+    }
+
     startTransition(async () => {
       const result = await startExamplePortfolio({ email, template });
       if (result.ok) {
-        setCheckEmail(true);
+        setView("check_email");
+        setRecoveryKind(null);
+        setCooldownSeconds(MAGIC_LINK_RESEND_COOLDOWN_SECONDS);
         setMessage(
           result.status === "already_active"
             ? "Your active Example Portfolio already exists. Check your email to sign in."
             : "Check your email to continue.",
         );
+        clearUrlAuthParams();
         return;
       }
+
       if (result.status === "expired") {
         setExpired(true);
+        setView("form");
         setError(result.message);
         return;
       }
+
+      if (result.status === "rate_limited") {
+        setView("recovery");
+        setRecoveryKind("rate_limited");
+        setError(MAGIC_LINK_RATE_LIMIT_MESSAGE);
+        setCooldownSeconds(MAGIC_LINK_RATE_LIMIT_COOLDOWN_SECONDS);
+        return;
+      }
+
       setError(result.message);
+      if (view === "recovery") {
+        setView("recovery");
+      }
     });
+  }
+
+  function onSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    requestLink();
+  }
+
+  function backToSignIn() {
+    setView("form");
+    setRecoveryKind(null);
+    setError(null);
+    setMessage(null);
+    setExpired(false);
+    clearUrlAuthParams();
   }
 
   return (
@@ -118,17 +201,139 @@ export default function ExplorePage() {
             </div>
           </div>
 
-          {checkEmail ? (
-            <div
-              className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4"
-              role="status"
-            >
-              <p className="text-[15px] font-semibold text-emerald-950">
-                Check your email to continue.
-              </p>
-              <p className={`mt-1 ${appSectionMetaClass}`}>
-                We sent a sign-in link to {email.trim()}. Open it on this device
-                to activate your Example Portfolio.
+          {view === "check_email" ? (
+            <div className="mt-6 space-y-4">
+              <div
+                className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4"
+                role="status"
+              >
+                <p className="text-[15px] font-semibold text-emerald-950">
+                  Check your email to continue.
+                </p>
+                <p className={`mt-1 ${appSectionMetaClass}`}>
+                  We sent a sign-in link to{" "}
+                  <span className="font-semibold text-slate-800">
+                    {email.trim()}
+                  </span>
+                  .
+                </p>
+                <p className={`mt-3 ${appSectionMetaClass}`}>
+                  {MAGIC_LINK_CROSS_BROWSER_COPY}
+                </p>
+                <p className={`mt-2 ${appSectionMetaClass}`}>
+                  {MAGIC_LINK_NEWEST_ONLY_WARNING}
+                </p>
+              </div>
+
+              {cooldownSeconds > 0 ? (
+                <p className={appSectionMetaClass} role="status">
+                  {formatMagicLinkCooldownMessage(cooldownSeconds)}
+                </p>
+              ) : null}
+
+              <button
+                type="button"
+                disabled={requestDisabled}
+                onClick={requestLink}
+                className={`w-full ${appSolidButtonClass}`}
+              >
+                {pending
+                  ? "Sending link…"
+                  : cooldownSeconds > 0
+                    ? "Wait to request another link"
+                    : "Send a new login link"}
+              </button>
+
+              <button
+                type="button"
+                onClick={backToSignIn}
+                className={`w-full ${appBrandSoftButtonClass}`}
+              >
+                Back to sign in
+              </button>
+            </div>
+          ) : view === "recovery" ? (
+            <div className="mt-6 space-y-4">
+              <div
+                className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4"
+                role="alert"
+              >
+                <p className="text-[15px] font-semibold text-amber-950">
+                  Sign-in link could not be completed
+                </p>
+                <p className={`mt-2 ${appSectionMetaClass}`}>
+                  {error ??
+                    magicLinkCallbackUserMessage(recoveryKind ?? "failed")}
+                </p>
+                {email.trim() ? (
+                  <p className={`mt-2 ${appSectionMetaClass}`}>
+                    Email:{" "}
+                    <span className="font-semibold text-slate-800">
+                      {email.trim()}
+                    </span>
+                  </p>
+                ) : null}
+                <p className={`mt-3 ${appSectionMetaClass}`}>
+                  {MAGIC_LINK_NEWEST_ONLY_WARNING}
+                </p>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="example-email-recovery"
+                  className="text-[13px] font-semibold text-slate-700"
+                >
+                  Email
+                </label>
+                <input
+                  id="example-email-recovery"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  inputMode="email"
+                  required
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  className="mt-2 w-full min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-3 text-[16px] text-slate-950 outline-none ring-brand/30 placeholder:text-slate-400 focus:border-brand focus:ring-2"
+                  placeholder="you@email.com"
+                />
+              </div>
+
+              {cooldownSeconds > 0 ? (
+                <p className={appSectionMetaClass} role="status">
+                  {formatMagicLinkCooldownMessage(cooldownSeconds)}
+                </p>
+              ) : null}
+
+              <button
+                type="button"
+                disabled={requestDisabled || !emailValid}
+                onClick={requestLink}
+                className={`w-full ${appSolidButtonClass}`}
+              >
+                {pending
+                  ? "Sending link…"
+                  : cooldownSeconds > 0
+                    ? "Wait to request another link"
+                    : "Send a new login link"}
+              </button>
+
+              <button
+                type="button"
+                onClick={backToSignIn}
+                className={`w-full ${appBrandSoftButtonClass}`}
+              >
+                Back to sign in
+              </button>
+
+              <p className={`text-center ${appSectionMetaClass}`}>
+                Prefer a password account?{" "}
+                <Link
+                  href="/login"
+                  className="font-semibold text-blue-700 hover:text-blue-900"
+                >
+                  Go to sign in
+                </Link>
               </p>
             </div>
           ) : (
@@ -215,6 +420,12 @@ export default function ExplorePage() {
                 </p>
               ) : null}
 
+              {cooldownSeconds > 0 ? (
+                <p className={appSectionMetaClass} role="status">
+                  {formatMagicLinkCooldownMessage(cooldownSeconds)}
+                </p>
+              ) : null}
+
               {expired ? (
                 <Link
                   href={EXAMPLE_KEEP_PORTFOLIO_HREF}
@@ -227,10 +438,14 @@ export default function ExplorePage() {
 
               <button
                 type="submit"
-                disabled={pending}
+                disabled={requestDisabled}
                 className={`w-full ${appSolidButtonClass}`}
               >
-                {pending ? "Sending link…" : "Explore free for 7 days"}
+                {pending
+                  ? "Sending link…"
+                  : cooldownSeconds > 0
+                    ? "Wait to request another link"
+                    : "Explore free for 7 days"}
               </button>
 
               <ul className="space-y-1.5 text-[13px] font-medium text-slate-600">
@@ -247,7 +462,7 @@ export default function ExplorePage() {
             </form>
           )}
 
-          {message && !checkEmail ? (
+          {message && view === "form" ? (
             <p className={`mt-4 ${appSectionMetaClass}`} role="status">
               {message}
             </p>
