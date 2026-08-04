@@ -11,6 +11,7 @@ import {
   CircleHelp,
   Compass,
   FileUp,
+  History,
   ListChecks,
   LogOut,
   Newspaper,
@@ -34,6 +35,11 @@ import {
   isMarketingPath,
   isPublicAppPath,
 } from "@/lib/auth/routeAccess";
+import {
+  GOALS_PATH,
+  PORTFOLIO_HISTORY_PATH,
+  PORTFOLIO_PATH,
+} from "@/lib/navigation/appRoutes";
 import { createClient } from "@/lib/supabase/client";
 
 type MenuLink = {
@@ -43,8 +49,9 @@ type MenuLink = {
 };
 
 const portfolioLinks: MenuLink[] = [
-  { href: "/portfolio", label: "Portfolio", icon: Briefcase },
-  { href: "/goals", label: "Goals", icon: Target },
+  { href: PORTFOLIO_PATH, label: "Portfolio", icon: Briefcase },
+  { href: PORTFOLIO_HISTORY_PATH, label: "Portfolio History", icon: History },
+  { href: GOALS_PATH, label: "Goals", icon: Target },
   { href: "/upload", label: "Import holdings", icon: FileUp },
 ];
 

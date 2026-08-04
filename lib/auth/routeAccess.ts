@@ -19,6 +19,7 @@ export const AUTH_REQUIRED_PREFIXES = [
   "/events",
   "/settings",
   "/portfolio-health",
+  "/portfolio-history",
 ] as const;
 
 /**

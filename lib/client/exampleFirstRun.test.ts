@@ -91,9 +91,11 @@ describe("first-run dashboard wiring", () => {
     const routes = read("lib/navigation/appRoutes.ts");
     const menu = read("components/auth/UserMenu.tsx");
     expect(routes).toContain('PORTFOLIO_HEALTH_PATH = "/portfolio-health"');
+    expect(routes).toContain('PORTFOLIO_HISTORY_PATH = "/portfolio-history"');
     expect(routes).toContain('ANALYSIS_PATH = "/analysis"');
     expect(routes).toContain('GOALS_PATH = "/goals"');
     expect(tools).toContain("PORTFOLIO_HEALTH_PATH");
+    expect(tools).toContain("PORTFOLIO_HISTORY_PATH");
     expect(tools).toContain("ANALYSIS_PATH");
     expect(tools).toContain("GOALS_PATH");
     expect(tools).toContain("/market-pulse");
@@ -108,6 +110,7 @@ describe("first-run dashboard wiring", () => {
     expect(menu).toContain('title="Account"');
     expect(menu).toContain('title="Support"');
     expect(menu).toContain("/portfolio-health");
+    expect(menu).toContain("PORTFOLIO_HISTORY_PATH");
     expect(menu).toContain("/analysis");
     expect(menu).toContain("Log out");
     expect(menu).toContain("profile-menu-footer");

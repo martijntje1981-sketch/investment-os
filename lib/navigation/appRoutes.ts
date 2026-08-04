@@ -8,6 +8,7 @@ export const PORTFOLIO_PATH = "/portfolio";
 export const ANALYSIS_PATH = "/analysis";
 export const GOALS_PATH = "/goals";
 export const PORTFOLIO_HEALTH_PATH = "/portfolio-health";
+export const PORTFOLIO_HISTORY_PATH = "/portfolio-history";
 
 /** Holding detail — shared by Portfolio list and Dashboard movers. */
 export function holdingDetailPath(symbol: string): string {

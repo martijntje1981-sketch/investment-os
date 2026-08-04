@@ -1,7 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { Activity, ScanLine, Sparkles, Target, Waves } from "lucide-react";
+import {
+  Activity,
+  History,
+  ScanLine,
+  Sparkles,
+  Target,
+  Waves,
+} from "lucide-react";
 
 import {
   appCardClass,
@@ -15,6 +22,7 @@ import {
   ANALYSIS_PATH,
   GOALS_PATH,
   PORTFOLIO_HEALTH_PATH,
+  PORTFOLIO_HISTORY_PATH,
 } from "@/lib/navigation/appRoutes";
 
 const TOOLS = [
@@ -23,6 +31,12 @@ const TOOLS = [
     title: "Portfolio Scorecard",
     benefit: "Understand the structure and resilience of your portfolio.",
     icon: Activity,
+  },
+  {
+    href: PORTFOLIO_HISTORY_PATH,
+    title: "Portfolio History",
+    benefit: "Review contributions, withdrawals, and export your ledger.",
+    icon: History,
   },
   {
     href: ANALYSIS_PATH,
@@ -49,7 +63,6 @@ const TOOLS = [
     icon: Target,
   },
 ] as const;
-
 /**
  * Compact Dashboard discoverability for high-value authenticated tools.
  */

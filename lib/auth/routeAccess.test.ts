@@ -25,6 +25,7 @@ describe("route access matrix", () => {
       "/goals",
       "/holding/AAPL",
       "/portfolio-health",
+      "/portfolio-history",
       "/events",
       "/settings",
     ]) {
