@@ -78,21 +78,22 @@ describe("trial experience", () => {
   });
 });
 
-describe("demo holdings clarity and start fresh safety", () => {
-  it("shows clear sample-data messaging and correct routes", () => {
+describe("demo holdings clarity without Start fresh", () => {
+  it("shows clear Demo Portfolio messaging and correct routes", () => {
     const callout = read("components/example/DemoHoldingsCallout.tsx");
     expect(callout).toContain("You are viewing demo holdings.");
+    expect(callout).toContain("Demo Portfolio");
     expect(callout).toContain("demo-import-action");
     expect(callout).toContain("demo-manual-add-action");
     expect(callout).toContain("PORTFOLIO_SETUP_ROUTES.import");
     expect(callout).toContain("portfolioAddPath");
     expect(PORTFOLIO_SETUP_ROUTES.import).toBe("/upload");
     expect(portfolioAddPath("investment")).toBe("/portfolio?add=investment");
-    expect(callout).toContain("demo-start-fresh-dialog");
-    expect(callout).toContain("Replace the demo portfolio?");
+    expect(callout).not.toContain("Start fresh");
+    expect(callout).not.toContain("demo-start-fresh-dialog");
   });
 
-  it("blocks unsafe demo deletion and preserves genuine data by design", () => {
+  it("keeps unsafe demo deletion blocked at the safety helper layer", () => {
     const result = canSafelyReplaceDemoPortfolio({
       holdings: [
         { id: "example-global-vwce" },
@@ -105,13 +106,6 @@ describe("demo holdings clarity and start fresh safety", () => {
       expect(result.reason).toMatch(/cannot be distinguished/i);
       expect(result.schemaNote).toMatch(/holdings\.origin/);
     }
-  });
-
-  it("requires confirmation before attempting Start fresh", () => {
-    const callout = read("components/example/DemoHoldingsCallout.tsx");
-    expect(callout).toContain("setConfirmOpen(true)");
-    expect(callout).toContain("demo-replace-confirm");
-    expect(callout).toContain("canSafelyReplaceDemoPortfolio");
   });
 });
 

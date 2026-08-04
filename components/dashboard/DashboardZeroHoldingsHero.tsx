@@ -39,7 +39,7 @@ export function DashboardZeroHoldingsHero() {
           {CONVERSION_COPY.zeroHoldingsPrimaryCta}
         </Link>
         <Link
-          href={CONVERSION_COPY.exploreHref}
+          href={CONVERSION_COPY.manualAddHref}
           className={`${appBrandSoftButtonClass} border-white/20 bg-white/10 text-white hover:bg-white/15`}
         >
           <Sparkles className="h-4 w-4" aria-hidden />

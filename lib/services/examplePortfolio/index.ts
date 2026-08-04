@@ -25,6 +25,12 @@ export {
   type ActivateExampleResult,
 } from "@/lib/services/examplePortfolio/activate";
 export {
+  demoAndPersonalStatesConflict,
+  EXISTING_SEEDED_USER_MIGRATION_NOTES,
+  resolveExampleTrialKind,
+  resolveSeedHoldingsPreference,
+} from "@/lib/services/examplePortfolio/demoTrialSeparation";
+export {
   startExamplePortfolio,
   type StartExamplePortfolioResult,
 } from "@/lib/services/examplePortfolio/startExamplePortfolio";

@@ -15,9 +15,9 @@ export const CONVERSION_COPY = {
     "Add your holdings to unlock portfolio analysis, relevance and tailored insights.",
   zeroHoldingsHeroTitle: "Welcome to Tobailey",
   zeroHoldingsHeroCopy:
-    "You can already explore market intelligence. Add your holdings to unlock your personal investment command centre.",
-  zeroHoldingsPrimaryCta: "Add my holdings",
-  zeroHoldingsSecondaryCta: "Explore the market",
+    "Import your portfolio or add holdings manually to unlock your personal investment command centre.",
+  zeroHoldingsPrimaryCta: "Import my portfolio",
+  zeroHoldingsSecondaryCta: "Add holdings manually",
   primaryHref: "/upload",
   secondaryGuestHref: "/login",
   exploreHref: "/explore",

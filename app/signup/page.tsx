@@ -23,11 +23,12 @@ const benefits = [
 export default async function SignupPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; next?: string }>;
+  searchParams: Promise<{ error?: string; next?: string; intent?: string }>;
 }) {
-  const { error, next } = await searchParams;
+  const { error, next, intent } = await searchParams;
   const { safeAuthRedirectPath } = await import("@/lib/auth/routeAccess");
   const safeNext = safeAuthRedirectPath(next, "/dashboard");
+  const isPersonalTrial = intent === "trial";
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
@@ -67,6 +68,9 @@ export default async function SignupPage({
 
             <form className="mt-8 space-y-4" action={signup} noValidate>
               <input type="hidden" name="next" value={safeNext} />
+              {isPersonalTrial ? (
+                <input type="hidden" name="intent" value="trial" />
+              ) : null}
               {error && (
                 <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">
                   {error}
@@ -253,8 +257,9 @@ export default async function SignupPage({
             </Link>
 
             <p className="mt-6 text-center text-xs leading-5 text-slate-500">
-              Start with an Example Portfolio. Explore free for 7 days. Then
-              €7.99 per month.
+              {isPersonalTrial
+                ? "Start a clean 7-day Premium trial with your own portfolio. Then €7.99 per month."
+                : "Create your personal account. Preview the Demo Portfolio on Explore anytime. Then €7.99 per month."}
             </p>
           </div>
         </section>

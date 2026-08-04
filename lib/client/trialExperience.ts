@@ -80,10 +80,13 @@ export function buildTrialExperienceView(input: {
   kind: ExampleStatusKind | "none";
   expiresAt: string | null;
   daysRemaining: number;
+  /** True only when the account still carries seeded demo holdings. */
+  hasDemoHoldings?: boolean;
   now?: Date;
 }): TrialExperienceView {
   const now = input.now ?? new Date();
   const upgradeHref = TRIAL_UPGRADE_HREF;
+  const hasDemoHoldings = Boolean(input.hasDemoHoldings);
 
   if (input.kind === "converted") {
     return {
@@ -121,7 +124,7 @@ export function buildTrialExperienceView(input: {
       indicatorLabel: formatPremiumTrialIndicatorLabel(input.expiresAt, now),
       isFinal48Hours: final48,
       showTrialMessaging: true,
-      showDemoHoldingsMessaging: true,
+      showDemoHoldingsMessaging: hasDemoHoldings,
       upgradeHref,
     };
   }

@@ -7,11 +7,6 @@ import {
 } from "@/lib/auth/magicLinkErrors";
 import { safeAuthRedirectPath } from "@/lib/auth/routeAccess";
 import { activateExamplePortfolioForUser } from "@/lib/services/examplePortfolio/activate";
-import {
-  findExampleEntitlementByEmail,
-  findExampleEntitlementByUserId,
-} from "@/lib/services/examplePortfolio/entitlements";
-import { normalizeExampleEmail } from "@/lib/services/examplePortfolio/types";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 type EmailOtpType =
@@ -72,6 +67,7 @@ export async function GET(request: NextRequest) {
   const type = url.searchParams.get("type") as EmailOtpType | null;
   const next = url.searchParams.get("next");
   const exampleParam = url.searchParams.get("example");
+  const trialParam = url.searchParams.get("trial");
   const safeNext = safeAuthRedirectPath(next, "/dashboard");
 
   const cookieBuffer: BufferedCookie[] = [];
@@ -164,37 +160,20 @@ export async function GET(request: NextRequest) {
 
   const admin = createAdminClient();
 
-  // Canonical email from Auth admin (source of truth), then JWT email.
-  let email = user.email ? normalizeExampleEmail(user.email) : "";
-  if (admin) {
-    try {
-      const { data } = await admin.auth.admin.getUserById(user.id);
-      const adminEmail = data.user?.email;
-      if (adminEmail) email = normalizeExampleEmail(adminEmail);
-    } catch {
-      // Fall back to session email.
-    }
-  }
+  // Explicit intents only — never auto-activate solely because a reserved
+  // entitlement row exists (that previously seeded demo data onto trial signups).
+  const wantsDemoPortfolio = exampleParam === "1";
+  const metadata = (user.user_metadata ?? {}) as Record<string, unknown>;
+  const wantsPersonalTrial =
+    trialParam === "1" || metadata.pending_personal_trial === true;
 
-  // Prefer explicit example=1; also activate when a reserved entitlement exists
-  // (covers Site URL fallbacks that drop query params).
-  let shouldActivateExample = exampleParam === "1";
-  if (!shouldActivateExample && admin && email) {
-    try {
-      const entitlement =
-        (await findExampleEntitlementByEmail(admin, email)) ??
-        (await findExampleEntitlementByUserId(admin, user.id));
-      shouldActivateExample = Boolean(entitlement && !entitlement.converted_at);
-    } catch {
-      shouldActivateExample = false;
-    }
-  }
-
-  if (shouldActivateExample) {
+  if (wantsDemoPortfolio || wantsPersonalTrial) {
     if (!admin) {
       return exploreErrorRedirect(
         origin,
-        "Example portfolios are temporarily unavailable.",
+        wantsDemoPortfolio
+          ? "Example portfolios are temporarily unavailable."
+          : "Trial signup is temporarily unavailable.",
         cookieBuffer,
       );
     }
@@ -205,6 +184,7 @@ export async function GET(request: NextRequest) {
         userClient: supabase,
         user,
         forceFromCallback: true,
+        seedHoldings: wantsDemoPortfolio,
       });
 
       if (result.status === "expired") {
@@ -221,13 +201,18 @@ export async function GET(request: NextRequest) {
         const missingChoice =
           result.reason === "No reserved example portfolio." ||
           result.reason === "No example activation intent for this session.";
-        return exploreErrorRedirect(
-          origin,
-          missingChoice
-            ? "Could not find your example portfolio choice. Start again from Explore."
-            : "Could not activate your example portfolio. Try again.",
-          cookieBuffer,
-        );
+        if (wantsDemoPortfolio) {
+          return exploreErrorRedirect(
+            origin,
+            missingChoice
+              ? "Could not find your example portfolio choice. Start again from Explore."
+              : "Could not activate your example portfolio. Try again.",
+            cookieBuffer,
+          );
+        }
+        // Personal trial without a reserved row still reaches onboarding empty.
+        const destination = safeNext === "/" ? "/dashboard" : safeNext;
+        return redirectWithCookies(destination, origin, cookieBuffer);
       }
 
       // activated | already_active | converted → always Dashboard (never `/`).
@@ -235,7 +220,9 @@ export async function GET(request: NextRequest) {
     } catch {
       return exploreErrorRedirect(
         origin,
-        "Could not activate your example portfolio. Try again.",
+        wantsDemoPortfolio
+          ? "Could not activate your example portfolio. Try again."
+          : "Could not start your trial. Try again.",
         cookieBuffer,
       );
     }

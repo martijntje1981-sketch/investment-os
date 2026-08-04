@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import { usePathname } from "next/navigation";
-import { DashboardZeroHoldingsHero } from "@/components/dashboard/DashboardZeroHoldingsHero";
+import { DashboardEmptyState } from "@/components/dashboard/DashboardEmptyState";
 import { DashboardDividendCard } from "@/components/dashboard/DashboardDividendCard";
 import { DashboardCashIntelligenceCard } from "@/components/dashboard/DashboardCashIntelligenceCard";
 import { DashboardAnalystCard } from "@/components/dashboard/DashboardAnalystCard";
@@ -210,14 +210,7 @@ export default function DashboardPage() {
         portfolioReady,
         syncLoading: syncState.status === "loading",
       }) ? (
-        <>
-          <DashboardZeroHoldingsHero />
-          <DashboardPerspectivesWidget />
-          <DashboardMarketPulseCard
-            holdings={holdings}
-            leadLabel="Browse general market moves while you set up your portfolio."
-          />
-        </>
+        <DashboardEmptyState userSub={userSub} />
       ) : holdings.length > 0 ? (
         <>
           <ExamplePortfolioPreparation

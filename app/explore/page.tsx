@@ -27,10 +27,11 @@ import {
   parseMagicLinkAuthErrorParam,
   type MagicLinkCallbackFailureKind,
 } from "@/lib/auth/magicLinkErrors";
+import { PUBLIC_EXPLORE_DESTINATIONS } from "@/lib/content/publicExplore";
 import { startExamplePortfolio } from "@/lib/services/examplePortfolio/startExamplePortfolio";
+import { buildExampleHoldings } from "@/lib/services/examplePortfolio/templates";
 import type { ExamplePortfolioTemplate } from "@/lib/services/examplePortfolio/types";
 import { EXAMPLE_KEEP_PORTFOLIO_HREF } from "@/lib/services/examplePortfolio/types";
-import { PUBLIC_EXPLORE_DESTINATIONS } from "@/lib/content/publicExplore";
 
 const TEMPLATES: Array<{
   id: ExamplePortfolioTemplate;
@@ -51,7 +52,18 @@ const TEMPLATES: Array<{
   },
 ];
 
+const PERSONAL_TRIAL_SIGNUP_HREF = "/signup?intent=trial";
+
 type ExploreView = "form" | "check_email" | "recovery";
+
+function formatHoldingValue(quantity: number, price: number): string {
+  const value = quantity * price;
+  return new Intl.NumberFormat("en-EU", {
+    style: "currency",
+    currency: "EUR",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
 
 export default function ExplorePage() {
   const [email, setEmail] = useState("");
@@ -63,6 +75,7 @@ export default function ExplorePage() {
     useState<MagicLinkCallbackFailureKind | null>(null);
   const [expired, setExpired] = useState(false);
   const [cooldownSeconds, setCooldownSeconds] = useState(0);
+  const [showInteractiveDemo, setShowInteractiveDemo] = useState(false);
   const [pending, startTransition] = useTransition();
 
   const emailValid = useMemo(
@@ -70,6 +83,11 @@ export default function ExplorePage() {
     [email],
   );
   const requestDisabled = pending || cooldownSeconds > 0;
+
+  const demoHoldings = useMemo(
+    () => buildExampleHoldings(template, "2026-08-01T00:00:00.000Z"),
+    [template],
+  );
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -79,6 +97,7 @@ export default function ExplorePage() {
     if (authError) {
       setRecoveryKind(authError);
       setView("recovery");
+      setShowInteractiveDemo(true);
       setError(magicLinkCallbackUserMessage(authError));
       if (authError === "rate_limited") {
         setCooldownSeconds(MAGIC_LINK_RATE_LIMIT_COOLDOWN_SECONDS);
@@ -89,6 +108,7 @@ export default function ExplorePage() {
     if (legacyError) {
       setRecoveryKind("failed");
       setView("recovery");
+      setShowInteractiveDemo(true);
       setError(legacyError);
     }
   }, []);
@@ -134,7 +154,7 @@ export default function ExplorePage() {
         setCooldownSeconds(MAGIC_LINK_RESEND_COOLDOWN_SECONDS);
         setMessage(
           result.status === "already_active"
-            ? "Your active Example Portfolio already exists. Check your email to sign in."
+            ? "Your active Demo Portfolio already exists. Check your email to sign in."
             : "Check your email to continue.",
         );
         clearUrlAuthParams();
@@ -182,292 +202,130 @@ export default function ExplorePage() {
       <PageContainer stackClassName="gap-5 md:gap-6">
         <section
           className={`${appCardClass} ${appCardPaddingClass}`}
-          aria-labelledby="explore-example-heading"
+          aria-labelledby="explore-demo-heading"
+          data-testid="demo-portfolio-showroom"
         >
           <div className="flex items-start gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-brand-soft text-brand">
               <Sparkles className="h-5 w-5" aria-hidden />
             </div>
             <div className="min-w-0">
+              <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-brand">
+                Demo Portfolio
+              </p>
               <h1
-                id="explore-example-heading"
-                className="text-2xl font-bold tracking-[-0.03em] text-slate-950 sm:text-[1.75rem]"
+                id="explore-demo-heading"
+                className="mt-1 text-2xl font-bold tracking-[-0.03em] text-slate-950 sm:text-[1.75rem]"
               >
-                Explore Tobailey
+                Explore the showroom
               </h1>
               <p className={`mt-2 ${appSectionSubtitleClass}`}>
-                Start with a personal Example Portfolio. Edit everything and
-                explore the full platform for 7 days.
+                Browse sample holdings below. Demo data stays read-only here and
+                never mixes into a personal trial account.
               </p>
             </div>
           </div>
 
-          {view === "check_email" ? (
-            <div className="mt-6 space-y-4">
-              <div
-                className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4"
-                role="status"
-              >
-                <p className="text-[15px] font-semibold text-emerald-950">
-                  Check your email to continue.
-                </p>
-                <p className={`mt-1 ${appSectionMetaClass}`}>
-                  We sent a sign-in link to{" "}
-                  <span className="font-semibold text-slate-800">
-                    {email.trim()}
-                  </span>
-                  .
-                </p>
-                <p className={`mt-3 ${appSectionMetaClass}`}>
-                  {MAGIC_LINK_CROSS_BROWSER_COPY}
-                </p>
-                <p className={`mt-2 ${appSectionMetaClass}`}>
-                  {MAGIC_LINK_NEWEST_ONLY_WARNING}
-                </p>
-              </div>
-
-              {cooldownSeconds > 0 ? (
-                <p className={appSectionMetaClass} role="status">
-                  {formatMagicLinkCooldownMessage(cooldownSeconds)}
-                </p>
-              ) : null}
-
-              <button
-                type="button"
-                disabled={requestDisabled}
-                onClick={requestLink}
-                className={`w-full ${appSolidButtonClass}`}
-              >
-                {pending
-                  ? "Sending link…"
-                  : cooldownSeconds > 0
-                    ? "Wait to request another link"
-                    : "Send a new login link"}
-              </button>
-
-              <button
-                type="button"
-                onClick={backToSignIn}
-                className={`w-full ${appBrandSoftButtonClass}`}
-              >
-                Back to sign in
-              </button>
-            </div>
-          ) : view === "recovery" ? (
-            <div className="mt-6 space-y-4">
-              <div
-                className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4"
-                role="alert"
-              >
-                <p className="text-[15px] font-semibold text-amber-950">
-                  Sign-in link could not be completed
-                </p>
-                <p className={`mt-2 ${appSectionMetaClass}`}>
-                  {error ??
-                    magicLinkCallbackUserMessage(recoveryKind ?? "failed")}
-                </p>
-                {email.trim() ? (
-                  <p className={`mt-2 ${appSectionMetaClass}`}>
-                    Email:{" "}
-                    <span className="font-semibold text-slate-800">
-                      {email.trim()}
+          <fieldset className="mt-6">
+            <legend className="text-[13px] font-semibold text-slate-700">
+              Choose a Demo Portfolio
+            </legend>
+            <div className="mt-3 grid gap-3">
+              {TEMPLATES.map((item) => {
+                const selected = template === item.id;
+                return (
+                  <label
+                    key={item.id}
+                    className={`flex min-h-[44px] cursor-pointer items-start gap-3 rounded-2xl border px-4 py-3 transition focus-within:ring-2 focus-within:ring-brand/40 ${
+                      selected
+                        ? "border-brand bg-brand-soft/60"
+                        : "border-slate-200 bg-white hover:border-slate-300"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="template"
+                      value={item.id}
+                      checked={selected}
+                      onChange={() => setTemplate(item.id)}
+                      className="mt-1 h-4 w-4 accent-[var(--brand)]"
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="flex flex-wrap items-center gap-2">
+                        <span className="text-[15px] font-bold text-slate-950">
+                          {item.title}
+                        </span>
+                        {item.recommended ? (
+                          <span className="rounded-full bg-navy-hero px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-white">
+                            Recommended
+                          </span>
+                        ) : null}
+                      </span>
+                      <span className={`mt-1 block ${appSectionMetaClass}`}>
+                        {item.description}
+                      </span>
                     </span>
-                  </p>
-                ) : null}
-                <p className={`mt-3 ${appSectionMetaClass}`}>
-                  {MAGIC_LINK_NEWEST_ONLY_WARNING}
-                </p>
-              </div>
+                    {selected ? (
+                      <Check
+                        className="mt-0.5 h-4 w-4 shrink-0 text-brand"
+                        aria-hidden
+                      />
+                    ) : null}
+                  </label>
+                );
+              })}
+            </div>
+          </fieldset>
 
-              <div>
-                <label
-                  htmlFor="example-email-recovery"
-                  className="text-[13px] font-semibold text-slate-700"
-                >
-                  Email
-                </label>
-                <input
-                  id="example-email-recovery"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  inputMode="email"
-                  required
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  className="mt-2 w-full min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-3 text-[16px] text-slate-950 outline-none ring-brand/30 placeholder:text-slate-400 focus:border-brand focus:ring-2"
-                  placeholder="you@email.com"
-                />
-              </div>
-
-              {cooldownSeconds > 0 ? (
-                <p className={appSectionMetaClass} role="status">
-                  {formatMagicLinkCooldownMessage(cooldownSeconds)}
-                </p>
-              ) : null}
-
-              <button
-                type="button"
-                disabled={requestDisabled || !emailValid}
-                onClick={requestLink}
-                className={`w-full ${appSolidButtonClass}`}
-              >
-                {pending
-                  ? "Sending link…"
-                  : cooldownSeconds > 0
-                    ? "Wait to request another link"
-                    : "Send a new login link"}
-              </button>
-
-              <button
-                type="button"
-                onClick={backToSignIn}
-                className={`w-full ${appBrandSoftButtonClass}`}
-              >
-                Back to sign in
-              </button>
-
-              <p className={`text-center ${appSectionMetaClass}`}>
-                Prefer a password account?{" "}
-                <Link
-                  href="/login"
-                  className="font-semibold text-blue-700 hover:text-blue-900"
-                >
-                  Go to sign in
-                </Link>
+          <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200">
+            <div className="border-b border-slate-200 bg-slate-50 px-4 py-2.5">
+              <p className="text-[12px] font-bold uppercase tracking-[0.08em] text-slate-500">
+                Sample holdings · read-only
               </p>
             </div>
-          ) : (
-            <form className="mt-6 space-y-5" onSubmit={onSubmit} noValidate>
-              <div>
-                <label
-                  htmlFor="example-email"
-                  className="text-[13px] font-semibold text-slate-700"
+            <ul className="divide-y divide-slate-100" data-testid="demo-holdings-preview">
+              {demoHoldings.map((holding) => (
+                <li
+                  key={holding.id}
+                  className="flex items-start justify-between gap-3 px-4 py-3"
                 >
-                  Email
-                </label>
-                <input
-                  id="example-email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  inputMode="email"
-                  required
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  className="mt-2 w-full min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-3 text-[16px] text-slate-950 outline-none ring-brand/30 placeholder:text-slate-400 focus:border-brand focus:ring-2"
-                  placeholder="you@email.com"
-                  aria-invalid={Boolean(error) && !emailValid}
-                />
-              </div>
+                  <span className="min-w-0">
+                    <span className="block text-[14px] font-bold text-slate-950">
+                      {holding.symbol}
+                    </span>
+                    <span className={`mt-0.5 block ${appSectionMetaClass}`}>
+                      {holding.name}
+                    </span>
+                  </span>
+                  <span className="shrink-0 text-right text-[13px] font-semibold tabular-nums text-slate-700">
+                    {formatHoldingValue(holding.quantity, holding.currentPrice)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
 
-              <fieldset>
-                <legend className="text-[13px] font-semibold text-slate-700">
-                  Choose a portfolio
-                </legend>
-                <div className="mt-3 grid gap-3">
-                  {TEMPLATES.map((item) => {
-                    const selected = template === item.id;
-                    return (
-                      <label
-                        key={item.id}
-                        className={`flex min-h-[44px] cursor-pointer items-start gap-3 rounded-2xl border px-4 py-3 transition focus-within:ring-2 focus-within:ring-brand/40 ${
-                          selected
-                            ? "border-brand bg-brand-soft/60"
-                            : "border-slate-200 bg-white hover:border-slate-300"
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="template"
-                          value={item.id}
-                          checked={selected}
-                          onChange={() => setTemplate(item.id)}
-                          className="mt-1 h-4 w-4 accent-[var(--brand)]"
-                        />
-                        <span className="min-w-0 flex-1">
-                          <span className="flex flex-wrap items-center gap-2">
-                            <span className="text-[15px] font-bold text-slate-950">
-                              {item.title}
-                            </span>
-                            {item.recommended ? (
-                              <span className="rounded-full bg-navy-hero px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-white">
-                                Recommended
-                              </span>
-                            ) : null}
-                          </span>
-                          <span className={`mt-1 block ${appSectionMetaClass}`}>
-                            {item.description}
-                          </span>
-                        </span>
-                        {selected ? (
-                          <Check
-                            className="mt-0.5 h-4 w-4 shrink-0 text-brand"
-                            aria-hidden
-                          />
-                        ) : null}
-                      </label>
-                    );
-                  })}
-                </div>
-              </fieldset>
-
-              {error ? (
-                <p
-                  className="text-[14px] font-medium text-rose-700"
-                  role="alert"
-                >
-                  {error}
-                </p>
-              ) : null}
-
-              {cooldownSeconds > 0 ? (
-                <p className={appSectionMetaClass} role="status">
-                  {formatMagicLinkCooldownMessage(cooldownSeconds)}
-                </p>
-              ) : null}
-
-              {expired ? (
-                <Link
-                  href={EXAMPLE_KEEP_PORTFOLIO_HREF}
-                  className={appSolidButtonClass}
-                >
-                  Keep my portfolio
-                  <ArrowRight className="h-4 w-4" aria-hidden />
-                </Link>
-              ) : null}
-
-              <button
-                type="submit"
-                disabled={requestDisabled}
-                className={`w-full ${appSolidButtonClass}`}
-              >
-                {pending
-                  ? "Sending link…"
-                  : cooldownSeconds > 0
-                    ? "Wait to request another link"
-                    : "Explore free for 7 days"}
-              </button>
-
-              <ul className="space-y-1.5 text-[13px] font-medium text-slate-600">
-                <li>Full access for 7 days</li>
-                <li>No credit card required</li>
-                <li>Your changes are saved</li>
-              </ul>
-
-              <div className="pt-1">
-                <Link href="/signup" className={appBrandSoftButtonClass}>
-                  Add my own portfolio
-                </Link>
-              </div>
-            </form>
-          )}
-
-          {message && view === "form" ? (
-            <p className={`mt-4 ${appSectionMetaClass}`} role="status">
-              {message}
-            </p>
-          ) : null}
+          <div className="mt-5 flex flex-col gap-3">
+            <Link
+              href={PERSONAL_TRIAL_SIGNUP_HREF}
+              className={appSolidButtonClass}
+              data-testid="create-own-portfolio-cta"
+            >
+              Create your own portfolio
+              <ArrowRight className="h-4 w-4" aria-hidden />
+            </Link>
+            <Link
+              href={PERSONAL_TRIAL_SIGNUP_HREF}
+              className={appBrandSoftButtonClass}
+              data-testid="start-trial-cta"
+            >
+              Start 7-day trial
+            </Link>
+          </div>
+          <p className={`mt-3 ${appSectionMetaClass}`}>
+            A personal trial starts empty — no demo holdings, goals, history or
+            cash.
+          </p>
         </section>
 
         <section
@@ -479,16 +337,259 @@ export default function ExplorePage() {
             Ready to make it yours?
           </h2>
           <p className={`mt-2 ${appSectionSubtitleClass}`}>
-            Start your 7-day trial and replace the demo with your own
-            investments.
+            Start your 7-day trial with a clean personal account, then import or
+            add your own investments.
           </p>
-          <Link href="/signup" className={`mt-4 ${appSolidButtonClass}`}>
+          <Link
+            href={PERSONAL_TRIAL_SIGNUP_HREF}
+            className={`mt-4 ${appSolidButtonClass}`}
+          >
             Create your own portfolio
             <ArrowRight className="h-4 w-4" aria-hidden />
           </Link>
         </section>
 
         <TrialStepsCard showCreateCta />
+
+        <section
+          className={`${appCardClass} ${appCardPaddingClass}`}
+          aria-labelledby="interactive-demo-heading"
+        >
+          <button
+            type="button"
+            className="flex w-full items-center justify-between gap-3 text-left"
+            onClick={() => setShowInteractiveDemo((open) => !open)}
+            aria-expanded={showInteractiveDemo}
+          >
+            <span>
+              <span
+                id="interactive-demo-heading"
+                className="block text-[15px] font-bold text-slate-950"
+              >
+                Open interactive Demo Portfolio
+              </span>
+              <span className={`mt-1 block ${appSectionMetaClass}`}>
+                Optional magic-link access to the sample book inside the app.
+                This is not the personal trial path.
+              </span>
+            </span>
+            <span className="text-[13px] font-semibold text-brand">
+              {showInteractiveDemo ? "Hide" : "Show"}
+            </span>
+          </button>
+
+          {showInteractiveDemo ? (
+            view === "check_email" ? (
+              <div className="mt-6 space-y-4">
+                <div
+                  className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4"
+                  role="status"
+                >
+                  <p className="text-[15px] font-semibold text-emerald-950">
+                    Check your email to continue.
+                  </p>
+                  <p className={`mt-1 ${appSectionMetaClass}`}>
+                    We sent a sign-in link to{" "}
+                    <span className="font-semibold text-slate-800">
+                      {email.trim()}
+                    </span>
+                    .
+                  </p>
+                  <p className={`mt-3 ${appSectionMetaClass}`}>
+                    {MAGIC_LINK_CROSS_BROWSER_COPY}
+                  </p>
+                  <p className={`mt-2 ${appSectionMetaClass}`}>
+                    {MAGIC_LINK_NEWEST_ONLY_WARNING}
+                  </p>
+                </div>
+
+                {cooldownSeconds > 0 ? (
+                  <p className={appSectionMetaClass} role="status">
+                    {formatMagicLinkCooldownMessage(cooldownSeconds)}
+                  </p>
+                ) : null}
+
+                <button
+                  type="button"
+                  disabled={requestDisabled}
+                  onClick={requestLink}
+                  className={`w-full ${appSolidButtonClass}`}
+                >
+                  {pending
+                    ? "Sending link…"
+                    : cooldownSeconds > 0
+                      ? "Wait to request another link"
+                      : "Send a new login link"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={backToSignIn}
+                  className={`w-full ${appBrandSoftButtonClass}`}
+                >
+                  Back
+                </button>
+              </div>
+            ) : view === "recovery" ? (
+              <div className="mt-6 space-y-4">
+                <div
+                  className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4"
+                  role="alert"
+                >
+                  <p className="text-[15px] font-semibold text-amber-950">
+                    Sign-in link could not be completed
+                  </p>
+                  <p className={`mt-2 ${appSectionMetaClass}`}>
+                    {error ??
+                      magicLinkCallbackUserMessage(recoveryKind ?? "failed")}
+                  </p>
+                  {email.trim() ? (
+                    <p className={`mt-2 ${appSectionMetaClass}`}>
+                      Email:{" "}
+                      <span className="font-semibold text-slate-800">
+                        {email.trim()}
+                      </span>
+                    </p>
+                  ) : null}
+                  <p className={`mt-3 ${appSectionMetaClass}`}>
+                    {MAGIC_LINK_NEWEST_ONLY_WARNING}
+                  </p>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="example-email-recovery"
+                    className="text-[13px] font-semibold text-slate-700"
+                  >
+                    Email
+                  </label>
+                  <input
+                    id="example-email-recovery"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    inputMode="email"
+                    required
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    className="mt-2 w-full min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-3 text-[16px] text-slate-950 outline-none ring-brand/30 placeholder:text-slate-400 focus:border-brand focus:ring-2"
+                    placeholder="you@email.com"
+                  />
+                </div>
+
+                {cooldownSeconds > 0 ? (
+                  <p className={appSectionMetaClass} role="status">
+                    {formatMagicLinkCooldownMessage(cooldownSeconds)}
+                  </p>
+                ) : null}
+
+                <button
+                  type="button"
+                  disabled={requestDisabled || !emailValid}
+                  onClick={requestLink}
+                  className={`w-full ${appSolidButtonClass}`}
+                >
+                  {pending
+                    ? "Sending link…"
+                    : cooldownSeconds > 0
+                      ? "Wait to request another link"
+                      : "Send a new login link"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={backToSignIn}
+                  className={`w-full ${appBrandSoftButtonClass}`}
+                >
+                  Back
+                </button>
+
+                <p className={`text-center ${appSectionMetaClass}`}>
+                  Prefer a password account?{" "}
+                  <Link
+                    href={PERSONAL_TRIAL_SIGNUP_HREF}
+                    className="font-semibold text-blue-700 hover:text-blue-900"
+                  >
+                    Start 7-day trial
+                  </Link>
+                </p>
+              </div>
+            ) : (
+              <form className="mt-6 space-y-5" onSubmit={onSubmit} noValidate>
+                <div>
+                  <label
+                    htmlFor="example-email"
+                    className="text-[13px] font-semibold text-slate-700"
+                  >
+                    Email
+                  </label>
+                  <input
+                    id="example-email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    inputMode="email"
+                    required
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    className="mt-2 w-full min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-3 text-[16px] text-slate-950 outline-none ring-brand/30 placeholder:text-slate-400 focus:border-brand focus:ring-2"
+                    placeholder="you@email.com"
+                    aria-invalid={Boolean(error) && !emailValid}
+                  />
+                </div>
+
+                {error ? (
+                  <p
+                    className="text-[14px] font-medium text-rose-700"
+                    role="alert"
+                  >
+                    {error}
+                  </p>
+                ) : null}
+
+                {cooldownSeconds > 0 ? (
+                  <p className={appSectionMetaClass} role="status">
+                    {formatMagicLinkCooldownMessage(cooldownSeconds)}
+                  </p>
+                ) : null}
+
+                {expired ? (
+                  <Link
+                    href={EXAMPLE_KEEP_PORTFOLIO_HREF}
+                    className={appSolidButtonClass}
+                  >
+                    Keep my portfolio
+                    <ArrowRight className="h-4 w-4" aria-hidden />
+                  </Link>
+                ) : null}
+
+                <button
+                  type="submit"
+                  disabled={requestDisabled}
+                  className={`w-full ${appSolidButtonClass}`}
+                >
+                  {pending
+                    ? "Sending link…"
+                    : cooldownSeconds > 0
+                      ? "Wait to request another link"
+                      : "Open Demo Portfolio"}
+                </button>
+
+                <ul className="space-y-1.5 text-[13px] font-medium text-slate-600">
+                  <li>Interactive sample book inside the app</li>
+                  <li>Separate from your personal trial</li>
+                  <li>No credit card required</li>
+                </ul>
+              </form>
+            )
+          ) : null}
+
+          {message && view === "form" && showInteractiveDemo ? (
+            <p className={`mt-4 ${appSectionMetaClass}`} role="status">
+              {message}
+            </p>
+          ) : null}
+        </section>
 
         <section aria-labelledby="browse-without-account-heading">
           <h2

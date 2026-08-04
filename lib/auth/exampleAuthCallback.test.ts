@@ -120,18 +120,22 @@ describe("example auth callback wiring", () => {
     expect(callback).toContain('redirectWithCookies("/dashboard"');
     expect(callback).toContain("session_not_established");
     expect(callback).toContain("exchangedUser");
-    expect(callback).toContain("getUserById");
     expect(callback).not.toContain('new URL("/",');
   });
 
-  it("activates when example=1 or a reserved entitlement exists", () => {
+  it("activates only for explicit demo (example=1) or personal trial intent", () => {
     expect(callback).toContain('exampleParam === "1"');
-    expect(callback).toContain("findExampleEntitlementByEmail");
+    expect(callback).toContain("wantsDemoPortfolio");
+    expect(callback).toContain("wantsPersonalTrial");
+    expect(callback).toContain("seedHoldings: wantsDemoPortfolio");
     expect(callback).toContain("activateExamplePortfolioForUser");
     expect(callback).toContain("expired");
     expect(callback).toContain("/example-expired");
     expect(callback).toContain("buildExploreMagicLinkRecoveryPath");
     expect(callback).toContain("auth_error");
+    expect(callback).not.toContain(
+      "also activate when a reserved entitlement exists",
+    );
   });
 
   it("locks template via entitlement reservation before OTP", () => {
@@ -151,14 +155,13 @@ describe("example auth callback wiring", () => {
     expect(home).toContain("params.code");
   });
 
-  it("uses 7-day Example Portfolio copy without demo-account wording", () => {
-    expect(explore).toContain("Explore free for 7 days");
-    expect(explore).toContain(
-      "Start with a personal Example Portfolio. Edit everything and",
-    );
-    expect(explore).toContain("Full access for 7 days");
+  it("uses Demo Portfolio showroom copy without demo-account wording", () => {
+    expect(explore).toContain("Demo Portfolio");
+    expect(explore).toContain("Create your own portfolio");
+    expect(explore).toContain("Start 7-day trial");
+    expect(explore).toContain("/signup?intent=trial");
+    expect(explore).toContain("Open Demo Portfolio");
     expect(explore).toContain("No credit card required");
-    expect(explore).toContain("Your changes are saved");
     expect(explore).not.toMatch(/demo account/i);
     expect(explore).not.toMatch(/24-?hour|24h trial/i);
   });

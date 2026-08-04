@@ -135,7 +135,7 @@ describe("supported portfolio input messaging", () => {
   it("routes primary actions to import and manual-add flows", () => {
     expect(PORTFOLIO_SETUP_ROUTES.import).toBe("/upload");
     expect(PORTFOLIO_SETUP_ROUTES.manualAdd).toBe("/portfolio?add=investment");
-    expect(PORTFOLIO_SETUP_COPY.importPrimary).toBe("Import portfolio");
+    expect(PORTFOLIO_SETUP_COPY.importPrimary).toBe("Import my portfolio");
     expect(PORTFOLIO_SETUP_COPY.manualSecondary).toBe("Add holdings manually");
 
     const onboarding = readProjectFile(

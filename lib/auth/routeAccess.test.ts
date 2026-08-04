@@ -92,10 +92,10 @@ describe("middleware and private API wiring", () => {
     expect(source).toContain('formData.get("next")');
   });
 
-  it("dashboard zero-holdings path uses the setup hero instead of blocking onboarding only", () => {
+  it("dashboard zero-holdings path uses portfolio setup onboarding", () => {
     const source = readProjectFile("app/dashboard/page.tsx");
-    expect(source).toContain("DashboardZeroHoldingsHero");
-    expect(source).toContain("DashboardPerspectivesWidget");
+    expect(source).toContain("DashboardEmptyState");
+    expect(source).toContain("needsPortfolioSetup");
   });
 
   it("holdings-required empty guide points users to add holdings and explore", () => {
@@ -128,7 +128,9 @@ describe("middleware and private API wiring", () => {
     expect(pulse).toContain("MakeTobaileyYoursCard");
     expect(explore).toContain("startExamplePortfolio");
     expect(explore).toContain("PUBLIC_EXPLORE_DESTINATIONS");
-    expect(explore).toContain("Explore free for 7 days");
+    expect(explore).toContain("Demo Portfolio");
+    expect(explore).toContain("Create your own portfolio");
+    expect(explore).toContain("/signup?intent=trial");
     expect(marketingHeader).toContain("Explore");
     expect(marketingHeader).toContain("PUBLIC_EXPLORE_DESTINATIONS");
     expect(landing).toContain("Explore Tobailey");

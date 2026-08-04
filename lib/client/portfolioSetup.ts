@@ -60,10 +60,10 @@ export const PORTFOLIO_SETUP_COPY = {
     "Your investments. Understood. Add your holdings so Tobailey can analyse your performance, exposure, market drivers and goals.",
   returningSupporting:
     "Your portfolio has no positions yet. Import a spreadsheet or add holdings to restore analysis and goals.",
-  importPrimary: "Import portfolio",
+  importPrimary: "Import my portfolio",
   importHint: "Recommended · usually takes only a few minutes",
   manualSecondary: "Add holdings manually",
-  demoTertiary: "Explore with a demo portfolio",
+  demoTertiary: "Explore the Demo Portfolio",
   compactTitle: "Set up your portfolio",
   compactBody:
     "Import a CSV or Excel file, or add holdings manually, to unlock personalised insights.",

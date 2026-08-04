@@ -11,6 +11,10 @@
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 
 import {
+  resolveExampleTrialKind,
+  resolveSeedHoldingsPreference,
+} from "@/lib/services/examplePortfolio/demoTrialSeparation";
+import {
   findExampleEntitlementByEmail,
   findExampleEntitlementByUserId,
   isEntitlementPeriodExpired,
@@ -77,8 +81,13 @@ export async function activateExamplePortfolioForUser(input: {
   admin: SupabaseClient;
   userClient: SupabaseClient;
   user: User;
-  /** True only from /auth/callback after a verified example email link. */
+  /** True only from /auth/callback after a verified example/trial email link. */
   forceFromCallback?: boolean;
+  /**
+   * When false, start the Premium trial clock without seeding demo holdings.
+   * Defaults from user_metadata (pending_personal_trial / example_trial_kind).
+   */
+  seedHoldings?: boolean;
 }): Promise<ActivateExampleResult> {
   const { admin, userClient, user } = input;
   const forceFromCallback = Boolean(input.forceFromCallback);
@@ -179,6 +188,11 @@ export async function activateExamplePortfolioForUser(input: {
 
   const expiresAt = entitlement.expires_at as string;
   const startedAt = entitlement.started_at as string;
+  const seedHoldings = resolveSeedHoldingsPreference({
+    seedHoldings: input.seedHoldings,
+    metadata,
+  });
+  const trialKind = resolveExampleTrialKind({ seedHoldings, metadata });
 
   await stampUserMetadata(admin, user.id, {
     account_mode: "example",
@@ -187,6 +201,8 @@ export async function activateExamplePortfolioForUser(input: {
     example_expires_at: expiresAt,
     example_converted_at: null,
     example_activated_via_email: true,
+    example_trial_kind: trialKind,
+    pending_personal_trial: null,
   });
 
   const alreadySeeded =
@@ -198,6 +214,15 @@ export async function activateExamplePortfolioForUser(input: {
     }
     return {
       status: "already_active",
+      template,
+      expiresAt,
+    };
+  }
+
+  // Clean personal trial: clock + metadata only — never seed demo data.
+  if (!seedHoldings) {
+    return {
+      status: "activated",
       template,
       expiresAt,
     };

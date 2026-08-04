@@ -3,13 +3,17 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { buildSignupUserMetadata } from "@/lib/types/portfolioBaseCurrency";
 import { safeAuthRedirectPath } from "@/lib/auth/routeAccess";
 import {
   buildAuthCallbackUrl,
+  buildPersonalTrialAuthCallbackUrl,
   getPublicSiteUrl,
 } from "@/lib/auth/siteUrl";
+import { reserveExampleEntitlement } from "@/lib/services/examplePortfolio/entitlements";
+import { normalizeExampleEmail } from "@/lib/services/examplePortfolio/types";
 
 function redirectWithError(path: string, message: string): never {
   redirect(`${path}?error=${encodeURIComponent(message)}`);
@@ -61,18 +65,41 @@ export async function signup(formData: FormData) {
   const requestHeaders = await headers();
   const siteUrl = getPublicSiteUrl(requestHeaders);
   const nextRaw = String(formData.get("next") ?? "").trim();
+  const intent = String(formData.get("intent") ?? "").trim();
+  const isPersonalTrial = intent === "trial";
   const safeNext = safeAuthRedirectPath(nextRaw, "/dashboard");
   const supabase = await createClient();
-  const userMetadata = buildSignupUserMetadata({
-    fullName: name,
-    baseCurrency: baseCurrencyRaw,
-  });
+  const userMetadata = {
+    ...buildSignupUserMetadata({
+      fullName: name,
+      baseCurrency: baseCurrencyRaw,
+    }),
+    ...(isPersonalTrial ? { pending_personal_trial: true } : {}),
+  };
+
+  // Reserve trial entitlement without seeding — activation starts the clock only.
+  if (isPersonalTrial) {
+    const admin = createAdminClient();
+    if (admin) {
+      try {
+        await reserveExampleEntitlement(admin, {
+          email: normalizeExampleEmail(email),
+          template: "global",
+        });
+      } catch {
+        // Signup still proceeds; Activator / callback can retry reservation later.
+      }
+    }
+  }
+
   const { error } = await supabase.auth.signUp({
     email,
     password,
     options: {
       data: userMetadata,
-      emailRedirectTo: buildAuthCallbackUrl(siteUrl, safeNext),
+      emailRedirectTo: isPersonalTrial
+        ? buildPersonalTrialAuthCallbackUrl(siteUrl, safeNext)
+        : buildAuthCallbackUrl(siteUrl, safeNext),
     },
   });
 

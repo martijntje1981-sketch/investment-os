@@ -66,7 +66,7 @@ export function TrialStepsCard({
       </p>
       <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
         {showCreateCta ? (
-          <Link href="/signup" className={appSolidButtonClass}>
+          <Link href="/signup?intent=trial" className={appSolidButtonClass}>
             Create your own portfolio
           </Link>
         ) : (

@@ -8,6 +8,9 @@ export type ExamplePortfolioTemplate = "global" | "income";
 
 export type ExampleAccountMode = "example" | "standard";
 
+/** Demo showroom (seeded sample book) vs clean personal Premium trial. */
+export type ExampleTrialKind = "demo" | "personal";
+
 /** Persisted on auth.users.user_metadata for middleware + banner. */
 export type ExamplePortfolioUserMetadata = {
   account_mode?: ExampleAccountMode;
@@ -16,6 +19,13 @@ export type ExamplePortfolioUserMetadata = {
   example_expires_at?: string | null;
   example_converted_at?: string | null;
   pending_example_template?: ExamplePortfolioTemplate | null;
+  /** Set on signup when starting a clean 7-day trial (no demo seed). */
+  pending_personal_trial?: boolean | null;
+  /**
+   * demo = seeded showroom holdings; personal = trial clock without demo seed.
+   * Existing seeded users may omit this until they next activate.
+   */
+  example_trial_kind?: ExampleTrialKind | null;
   /** Set only after a verified example email callback/activation. */
   example_activated_via_email?: boolean | null;
 };

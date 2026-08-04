@@ -36,6 +36,7 @@ export function hasNonExampleMarketHoldings(
 export function isFalseExampleActivation(input: {
   entitlement: ExamplePortfolioEntitlement | null;
   holdings: Array<Pick<StoredPortfolioHolding, "id" | "assetType">>;
+  metadata?: Record<string, unknown> | null;
   now?: Date;
 }): boolean {
   const { entitlement, holdings } = input;
@@ -43,6 +44,9 @@ export function isFalseExampleActivation(input: {
   if (entitlement.converted_at) return false;
   // Seeded Example portfolios remain canonical even after sync remaps ids.
   if (entitlement.seeded_at) return false;
+  // Clean personal trials intentionally have no demo seed — never wipe them.
+  if (input.metadata?.example_trial_kind === "personal") return false;
+  if (input.metadata?.pending_personal_trial === true) return false;
   if (
     isEntitlementPeriodExpired(entitlement, (input.now ?? new Date()).getTime())
   ) {
@@ -62,6 +66,8 @@ export function hasExampleActivationIntent(
   if (!metadata) return false;
   if (metadata.pending_example_template === "global") return true;
   if (metadata.pending_example_template === "income") return true;
+  if (metadata.pending_personal_trial === true) return true;
+  if (metadata.example_trial_kind === "personal") return true;
   if (metadata.example_activated_via_email === true) return true;
   return false;
 }
@@ -78,6 +84,8 @@ async function clearExampleMetadata(
     account_mode: "standard",
     example_converted_at: null,
     pending_example_template: null,
+    pending_personal_trial: null,
+    example_trial_kind: null,
     example_activated_via_email: null,
     example_portfolio_type: null,
     example_started_at: null,
@@ -118,6 +126,7 @@ export async function repairFalseExampleActivation(input: {
     !isFalseExampleActivation({
       entitlement,
       holdings: snapshot.holdings,
+      metadata: (user.user_metadata ?? {}) as Record<string, unknown>,
     })
   ) {
     return { repaired: false, reason: "not_false_activation" };

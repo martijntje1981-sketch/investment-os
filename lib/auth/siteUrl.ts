@@ -101,3 +101,15 @@ export function buildAuthCallbackUrl(
   );
   return `${base}/auth/callback?next=${next}`;
 }
+
+/** Auth callback for clean personal Premium trial signup (no demo seed). */
+export function buildPersonalTrialAuthCallbackUrl(
+  siteUrl: string,
+  nextPath = "/dashboard",
+): string {
+  const base = normalizePublicSiteUrl(siteUrl);
+  const next = encodeURIComponent(
+    nextPath.startsWith("/") ? nextPath : "/dashboard",
+  );
+  return `${base}/auth/callback?next=${next}&trial=1`;
+}

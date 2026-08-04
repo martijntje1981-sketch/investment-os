@@ -38,22 +38,20 @@ function read(relativePath: string) {
 describe("example portfolio entry surface", () => {
   const explore = read("app/explore/page.tsx");
 
-  it("shows two portfolio choices with Global Investor recommended", () => {
-    expect(explore).toContain("Explore Tobailey");
-    expect(explore).toContain("Example Portfolio");
+  it("shows Demo Portfolio showroom with Global Investor recommended", () => {
+    expect(explore).toContain("Demo Portfolio");
+    expect(explore).toContain("Explore the showroom");
     expect(explore).toContain("Global Investor");
     expect(explore).toContain("Income Investor");
     expect(explore).toContain("Recommended");
     expect(explore).toContain('id: "global"');
-    expect(explore).toContain("Explore free for 7 days");
-    expect(explore).toContain("Add my own portfolio");
-    expect(explore).toContain("Full access for 7 days");
+    expect(explore).toContain("Create your own portfolio");
+    expect(explore).toContain("Start 7-day trial");
+    expect(explore).toContain("/signup?intent=trial");
+    expect(explore).toContain("Open Demo Portfolio");
     expect(explore).toContain("No credit card required");
-    expect(explore).toContain("Your changes are saved");
     expect(explore).toContain("Check your email to continue.");
-    expect(explore).toContain(
-      "Start with a personal Example Portfolio. Edit everything and",
-    );
+    expect(explore).toContain("buildExampleHoldings");
     expect(explore).not.toMatch(/demo account/i);
     expect(explore).not.toMatch(/24-?hour|24h trial/i);
   });
@@ -417,6 +415,15 @@ describe("example entitlement resolver source of truth", () => {
         ],
       }),
     ).toBe(true);
+    expect(
+      isFalseExampleActivation({
+        entitlement,
+        holdings: [
+          { id: "real-vwce", assetType: "investment" },
+        ],
+        metadata: { example_trial_kind: "personal" },
+      }),
+    ).toBe(false);
     expect(
       isFalseExampleActivation({
         entitlement,
