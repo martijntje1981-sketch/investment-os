@@ -19,12 +19,13 @@ describe("premium navigation and visual discovery", () => {
     expect(dismissible).toContain(
       'documentElement.style.overscrollBehavior = "none"',
     );
-    expect(menu).toContain("profile-menu-scroll");
+    expect(menu).toContain("createPortal");
     expect(menu).toContain("profile-menu-footer");
     expect(menu).toContain("Signed in as");
     expect(menu).toContain("Log out");
     expect(menu).toContain("overscroll-contain");
     expect(menu).toContain("var(--bottom-nav-height)");
+    expect(menu).toContain("z-[80]");
     const scrollIdx = menu.indexOf('data-testid="profile-menu-scroll"');
     const footerIdx = menu.indexOf('data-testid="profile-menu-footer"');
     const logoutIdx = menu.indexOf("Log out");

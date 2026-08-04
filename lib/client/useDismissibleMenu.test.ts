@@ -129,7 +129,15 @@ describe("useDismissibleMenu", () => {
     expect(container.querySelector("[data-testid='menu-panel']")).toBeNull();
   });
 
-  it("locks page scroll while open and restores it on close", () => {
+  it("locks page scroll while open and restores scroll position on close", () => {
+    const scrollToSpy = vi
+      .spyOn(window, "scrollTo")
+      .mockImplementation(() => undefined);
+    Object.defineProperty(window, "scrollY", {
+      configurable: true,
+      get: () => 240,
+    });
+
     mount();
     const trigger = container.querySelector(
       "[data-testid='menu-trigger']",
@@ -140,6 +148,7 @@ describe("useDismissibleMenu", () => {
     });
     expect(document.body.style.overflow).toBe("hidden");
     expect(document.body.style.position).toBe("fixed");
+    expect(document.body.style.top).toBe("-240px");
     expect(document.documentElement.style.overflow).toBe("hidden");
     expect(document.documentElement.style.overscrollBehavior).toBe("none");
 
@@ -149,9 +158,11 @@ describe("useDismissibleMenu", () => {
     expect(document.body.style.overflow).toBe("");
     expect(document.body.style.position).toBe("");
     expect(document.documentElement.style.overflow).toBe("");
+    expect(scrollToSpy).toHaveBeenCalledWith(0, 240);
   });
 
   it("closes on outside pointerdown without closing on inside interaction", () => {
+    vi.useFakeTimers();
     mount();
     const trigger = container.querySelector(
       "[data-testid='menu-trigger']",
@@ -161,6 +172,11 @@ describe("useDismissibleMenu", () => {
       trigger.click();
     });
     expect(container.querySelector("[data-testid='menu-panel']")).toBeTruthy();
+
+    // Outside-close is deferred so the opening tap cannot dismiss immediately.
+    act(() => {
+      vi.runAllTimers();
+    });
 
     const settings = container.querySelector(
       "[data-testid='menu-settings']",
@@ -176,6 +192,28 @@ describe("useDismissibleMenu", () => {
       outside.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
     });
     expect(container.querySelector("[data-testid='menu-panel']")).toBeNull();
+    vi.useRealTimers();
+  });
+
+  it("does not instantly close from the opening interaction", () => {
+    vi.useFakeTimers();
+    mount();
+    const trigger = container.querySelector(
+      "[data-testid='menu-trigger']",
+    ) as HTMLButtonElement;
+
+    act(() => {
+      trigger.click();
+      // Same-tick outside pointerdown must be ignored until deferred attach.
+      outside.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+    });
+    expect(container.querySelector("[data-testid='menu-panel']")).toBeTruthy();
+
+    act(() => {
+      vi.runAllTimers();
+    });
+    expect(container.querySelector("[data-testid='menu-panel']")).toBeTruthy();
+    vi.useRealTimers();
   });
 
   it("closes on Escape and returns focus to the trigger", () => {
@@ -309,10 +347,9 @@ describe("UserMenu profile wiring", () => {
     expect(source).toContain('title="Support"');
     expect(source).toContain('aria-current={active ? "page" : undefined}');
     expect(source).toContain("w-[min(100vw-1.5rem,16.5rem)]");
+    expect(source).toContain("createPortal");
     expect(source).toContain("fixed right-3");
-    expect(source).toContain(
-      "bottom-[calc(var(--bottom-nav-height)+0.5rem+env(safe-area-inset-bottom,0px))]",
-    );
     expect(source).toContain("grid-rows-[auto_minmax(0,1fr)_auto]");
+    expect(source).toContain("z-[80]");
   });
 });

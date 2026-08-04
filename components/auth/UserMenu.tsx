@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Activity,
@@ -203,7 +204,7 @@ export default function UserMenu() {
   const [user, setUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
-  const { open, toggle, close, containerRef, triggerRef, menuId } =
+  const { open, toggle, close, containerRef, panelRef, triggerRef, menuId } =
     useDismissibleMenu({ closeOnChangeKey: pathname });
   const upcomingEventsNavVisible = useUpcomingEventsNavVisible();
   const visibleIntelligenceLinks = useMemo(
@@ -308,89 +309,93 @@ export default function UserMenu() {
             </span>
           </button>
 
-          {open ? (
-            <div
-              id={menuId}
-              role="menu"
-              aria-label="Profile"
-              className="fixed right-3 top-[calc(3.5rem+0.5rem)] bottom-[calc(var(--bottom-nav-height)+0.5rem+env(safe-area-inset-bottom,0px))] z-[70] grid w-[min(100vw-1.5rem,16.5rem)] grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden overscroll-none rounded-xl border border-white/10 bg-brand-navy shadow-[0_18px_40px_rgba(11,31,58,0.45)] sm:absolute sm:bottom-auto sm:right-0 sm:top-auto sm:mt-2 sm:max-h-[min(36rem,calc(100dvh-5rem))] sm:w-64"
-              data-testid="profile-menu-panel"
-            >
-              <div className="border-b border-white/10 px-3 py-2.5">
-                <div className="flex items-center gap-2.5">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand/20 text-[11px] font-black text-brand">
-                    {initials}
-                  </span>
-                  <div className="min-w-0">
-                    <p className="truncate text-[13px] font-bold text-white">
-                      {fullName}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div
-                className="min-h-0 overflow-x-hidden overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]"
-                data-testid="profile-menu-scroll"
-              >
-                <MenuSection
-                  title="Portfolio"
-                  links={portfolioLinks}
-                  pathname={pathname}
-                  onNavigate={close}
-                />
-
-                <div className="mx-3 border-t border-white/10" />
-
-                <MenuSection
-                  title="Intelligence"
-                  links={visibleIntelligenceLinks}
-                  pathname={pathname}
-                  onNavigate={close}
-                />
-
-                <div className="mx-3 border-t border-white/10" />
-
-                <MenuSection
-                  title="Account"
-                  links={accountLinks}
-                  pathname={pathname}
-                  onNavigate={close}
-                />
-
-                <div className="mx-3 border-t border-white/10" />
-
-                <MenuSection
-                  title="Support"
-                  links={supportLinks}
-                  pathname={pathname}
-                  onNavigate={close}
-                />
-              </div>
-
-              <div
-                className="border-t border-white/15 bg-[#0a1a30] px-3 py-2.5"
-                data-testid="profile-menu-footer"
-              >
-                <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/40">
-                  Signed in as
-                </p>
-                <p className="mt-0.5 truncate text-[12px] font-medium text-white/70">
-                  {email || "Account"}
-                </p>
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={() => void handleSignOut()}
-                  disabled={isSigningOut}
-                  className="mt-2 flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg border border-rose-400/25 bg-rose-500/10 px-2.5 text-[13px] font-semibold text-rose-200 transition hover:bg-rose-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-navy disabled:cursor-wait disabled:opacity-60"
+          {open
+            ? createPortal(
+                <div
+                  ref={panelRef}
+                  id={menuId}
+                  role="menu"
+                  aria-label="Profile"
+                  className="fixed right-3 top-[calc(3.5rem+0.5rem)] z-[80] grid max-h-[min(32rem,calc(100dvh-3.5rem-var(--bottom-nav-height)-env(safe-area-inset-bottom,0px)-1rem))] w-[min(100vw-1.5rem,16.5rem)] grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden overscroll-none rounded-xl border border-white/10 bg-brand-navy shadow-[0_18px_40px_rgba(11,31,58,0.45)] sm:right-[max(0.75rem,calc((100vw-72rem)/2+1.5rem))] sm:top-[calc(4rem+0.5rem)] sm:max-h-[min(36rem,calc(100dvh-5rem))] sm:w-64"
+                  data-testid="profile-menu-panel"
                 >
-                  <LogOut className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                  {isSigningOut ? "Signing out…" : "Log out"}
-                </button>
-              </div>
-            </div>
-          ) : null}
+                  <div className="border-b border-white/10 px-3 py-2.5">
+                    <div className="flex items-center gap-2.5">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand/20 text-[11px] font-black text-brand">
+                        {initials}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate text-[13px] font-bold text-white">
+                          {fullName}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    className="min-h-0 overflow-x-hidden overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]"
+                    data-testid="profile-menu-scroll"
+                  >
+                    <MenuSection
+                      title="Portfolio"
+                      links={portfolioLinks}
+                      pathname={pathname}
+                      onNavigate={close}
+                    />
+
+                    <div className="mx-3 border-t border-white/10" />
+
+                    <MenuSection
+                      title="Intelligence"
+                      links={visibleIntelligenceLinks}
+                      pathname={pathname}
+                      onNavigate={close}
+                    />
+
+                    <div className="mx-3 border-t border-white/10" />
+
+                    <MenuSection
+                      title="Account"
+                      links={accountLinks}
+                      pathname={pathname}
+                      onNavigate={close}
+                    />
+
+                    <div className="mx-3 border-t border-white/10" />
+
+                    <MenuSection
+                      title="Support"
+                      links={supportLinks}
+                      pathname={pathname}
+                      onNavigate={close}
+                    />
+                  </div>
+
+                  <div
+                    className="border-t border-white/15 bg-[#0a1a30] px-3 py-2.5"
+                    data-testid="profile-menu-footer"
+                  >
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/40">
+                      Signed in as
+                    </p>
+                    <p className="mt-0.5 truncate text-[12px] font-medium text-white/70">
+                      {email || "Account"}
+                    </p>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => void handleSignOut()}
+                      disabled={isSigningOut}
+                      className="mt-2 flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg border border-rose-400/25 bg-rose-500/10 px-2.5 text-[13px] font-semibold text-rose-200 transition hover:bg-rose-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-navy disabled:cursor-wait disabled:opacity-60"
+                    >
+                      <LogOut className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                      {isSigningOut ? "Signing out…" : "Log out"}
+                    </button>
+                  </div>
+                </div>,
+                document.body,
+              )
+            : null}
         </div>
       </div>
     </header>

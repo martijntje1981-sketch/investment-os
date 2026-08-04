@@ -9,7 +9,9 @@ import {
   shouldShowExampleBanner,
 } from "@/lib/services/examplePortfolio/resolveExampleStatus";
 import { repairFalseExampleActivation } from "@/lib/services/examplePortfolio/repairFalseExample";
+import { restoreWipedExampleEntitlement } from "@/lib/services/examplePortfolio/restoreWipedExampleEntitlement";
 import { normalizeExampleEmail } from "@/lib/services/examplePortfolio/types";
+import { createPortfolioRepository } from "@/lib/services/portfolio/repository";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -85,7 +87,6 @@ export async function GET() {
         console.info("[example-status]", {
           reason: "repaired_false_activation",
           repairReason: repair.reason,
-          email,
           kind: "none",
           showBanner: false,
         });
@@ -93,6 +94,28 @@ export async function GET() {
       }
     } catch {
       // Banner still resolves from current entitlement when repair fails.
+    }
+  }
+
+  if (!entitlement) {
+    try {
+      const repo = createPortfolioRepository(supabase);
+      const snapshot = await repo.fetchSnapshot(user.id);
+      const restore = await restoreWipedExampleEntitlement({
+        admin,
+        user,
+        holdings: snapshot.holdings,
+      });
+      if (restore.restored && restore.entitlement) {
+        console.info("[example-status]", {
+          reason: "restored_wiped_entitlement",
+          restoreReason: restore.reason,
+          template: restore.entitlement.template,
+        });
+        entitlement = restore.entitlement;
+      }
+    } catch {
+      // Leave status as none when restore is unavailable.
     }
   }
 

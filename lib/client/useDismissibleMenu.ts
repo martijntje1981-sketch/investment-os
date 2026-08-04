@@ -17,11 +17,14 @@ type UseDismissibleMenuOptions = {
 /**
  * Shared open/close behaviour for the profile (and similar) menus.
  * Registers document listeners only while open; cleans them up on close/unmount.
+ *
+ * `panelRef` is optional for portaled panels that live outside `containerRef`.
  */
 export function useDismissibleMenu(options: UseDismissibleMenuOptions = {}) {
   const { closeOnChangeKey = null } = options;
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const menuId = useId();
 
@@ -56,6 +59,9 @@ export function useDismissibleMenu(options: UseDismissibleMenuOptions = {}) {
       if (containerRef.current?.contains(target)) {
         return;
       }
+      if (panelRef.current?.contains(target)) {
+        return;
+      }
 
       setOpen(false);
     };
@@ -70,11 +76,20 @@ export function useDismissibleMenu(options: UseDismissibleMenuOptions = {}) {
       triggerRef.current?.focus();
     };
 
-    document.addEventListener("pointerdown", handlePointerDown);
+    // Defer outside-close so the opening tap/pointer cannot immediately dismiss.
+    let removePointer: (() => void) | null = null;
+    const deferId = window.setTimeout(() => {
+      document.addEventListener("pointerdown", handlePointerDown);
+      removePointer = () => {
+        document.removeEventListener("pointerdown", handlePointerDown);
+      };
+    }, 0);
+
     document.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      document.removeEventListener("pointerdown", handlePointerDown);
+      window.clearTimeout(deferId);
+      removePointer?.();
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [open]);
@@ -130,6 +145,7 @@ export function useDismissibleMenu(options: UseDismissibleMenuOptions = {}) {
     close,
     closeAndFocusTrigger,
     containerRef: containerRef as RefObject<HTMLDivElement | null>,
+    panelRef: panelRef as RefObject<HTMLDivElement | null>,
     triggerRef: triggerRef as RefObject<HTMLButtonElement | null>,
     menuId,
   };
