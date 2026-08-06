@@ -18,6 +18,7 @@ import {
   buildTodaysDecision,
   type TodaysDecisionContext,
 } from "@/lib/client/todaysDecision";
+import { heroAndMarketShareDuplicateSentence } from "@/lib/client/smartDashboardIntelligence";
 
 const STATUS_STYLES: Record<string, string> = {
   Stable: "border-slate-200 bg-slate-50 text-slate-700",
@@ -26,13 +27,26 @@ const STATUS_STYLES: Record<string, string> = {
   "High Attention": "border-violet-300 bg-violet-100 text-violet-900",
 };
 
+const PERSONAL_LEAD_PATTERN =
+  /on track toward|investment goal|portfolio remains on track/i;
+
 /**
  * Always-compact Today’s Market Briefing — one lead story.
  * Personal portfolio conclusion lives in the hero Daily Portfolio Briefing.
  */
-export function DashboardTodaysMarketBriefing(context: TodaysDecisionContext) {
-  const { intelligence, intelligenceFromCache, goalProgress, marketsClosed } =
-    context;
+export function DashboardTodaysMarketBriefing(
+  context: TodaysDecisionContext & {
+    /** Hero briefing text — used only to suppress duplicate wording. */
+    heroBriefingText?: string | null;
+  },
+) {
+  const {
+    intelligence,
+    intelligenceFromCache,
+    goalProgress,
+    marketsClosed,
+    heroBriefingText,
+  } = context;
 
   if (!intelligence) return null;
 
@@ -44,8 +58,24 @@ export function DashboardTodaysMarketBriefing(context: TodaysDecisionContext) {
     marketsClosed,
   });
   const mustWatch = intelligence.mustWatch;
-  const leadTitle = mustWatch?.title?.trim() || summaryMessage;
-  const supportingLine = mustWatch?.reason?.trim() || null;
+  const rawLead = mustWatch?.title?.trim() || summaryMessage;
+  // Market surface stays market-context — never reuse personal hero goal copy.
+  const leadTitle = PERSONAL_LEAD_PATTERN.test(rawLead)
+    ? "No standout market development in the latest briefing."
+    : rawLead;
+  let supportingLine = mustWatch?.reason?.trim() || null;
+  if (
+    supportingLine &&
+    (supportingLine === leadTitle ||
+      (heroBriefingText &&
+        heroAndMarketShareDuplicateSentence(
+          heroBriefingText,
+          null,
+          supportingLine,
+        )))
+  ) {
+    supportingLine = null;
+  }
 
   return (
     <section
@@ -57,7 +87,6 @@ export function DashboardTodaysMarketBriefing(context: TodaysDecisionContext) {
         titleId="todays-market-briefing-heading"
         variant="compact"
         title="Today’s market briefing"
-        subtitle="The most important broader market development"
         icon={<Radio className="h-5 w-5" />}
         iconToneClassName="bg-violet-50 text-violet-700 ring-1 ring-violet-100"
       />
@@ -81,7 +110,7 @@ export function DashboardTodaysMarketBriefing(context: TodaysDecisionContext) {
           >
             {leadTitle}
           </p>
-          {supportingLine && supportingLine !== leadTitle ? (
+          {supportingLine ? (
             <p
               className={`mt-1.5 line-clamp-2 ${appSectionMetaClass}`}
               title={supportingLine}

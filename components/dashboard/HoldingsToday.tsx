@@ -92,14 +92,17 @@ export function HoldingsToday({
         subtitle={positionSubtitle}
         icon={<Wallet className="h-5 w-5" />}
         trailing={
-          <Link href={PORTFOLIO_PATH} className={appTextLinkClass}>
+          <Link
+            href={PORTFOLIO_PATH}
+            className={`min-h-[44px] items-center ${appTextLinkClass}`}
+          >
             View all holdings
           </Link>
         }
       />
 
       <div id={listId}>
-        <div className={`md:hidden ${appCardPaddingClass} pt-0`}>
+        <div className={`md:hidden ${appCardPaddingClass} space-y-0.5 pt-0`}>
           {visibleHoldings.map((row, index) => (
             <HoldingsTodayRow
               key={row.id}
@@ -111,22 +114,22 @@ export function HoldingsToday({
         </div>
 
         <div className="hidden md:block px-4 pb-4 pt-0 md:px-5 md:pb-5">
-          <div className="overflow-hidden rounded-[18px] border border-slate-200/80">
+          <div className="overflow-hidden rounded-2xl border border-slate-200/80">
             <table className="w-full min-w-0 table-fixed border-collapse">
               <thead>
                 <tr className="border-b border-slate-200/80 bg-slate-50/90 text-left">
                   <th
-                    className={`px-4 py-3.5 text-left ${appSectionLabelClass}`}
+                    className={`px-4 py-3 text-left ${appSectionLabelClass}`}
                   >
                     Holding
                   </th>
                   <th
-                    className={`w-[28%] px-4 py-3.5 text-right ${appSectionLabelClass}`}
+                    className={`w-[28%] px-4 py-3 text-right ${appSectionLabelClass}`}
                   >
                     Value
                   </th>
                   <th
-                    className={`w-[32%] px-4 py-3.5 text-right ${appSectionLabelClass}`}
+                    className={`w-[32%] px-4 py-3 text-right ${appSectionLabelClass}`}
                   >
                     {moveColumnLabel}
                   </th>
@@ -148,10 +151,10 @@ export function HoldingsToday({
       </div>
 
       {showToggle ? (
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 px-4 py-3 md:px-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 px-4 py-3.5 md:px-5">
           <button
             type="button"
-            className="inline-flex min-h-[40px] items-center rounded-lg px-1 text-sm font-semibold text-slate-700 underline-offset-4 transition hover:text-slate-950 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2"
+            className="inline-flex min-h-[44px] items-center rounded-lg px-1 text-sm font-semibold text-slate-700 underline-offset-4 transition hover:text-slate-950 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2"
             aria-expanded={expanded}
             aria-controls={listId}
             onClick={() => setExpanded(!expanded)}

@@ -102,3 +102,13 @@ body {
     transition: none;
   }
 }
+
+/* Subtle Dashboard intelligence entrance — disabled via prefers-reduced-motion above */
+@keyframes tobailey-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

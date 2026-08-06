@@ -28,6 +28,8 @@ type PortfolioHistoryNavCardProps = {
   keyStatisticValue?: string | null;
   onExportPortfolio?: () => void;
   isExporting?: boolean;
+  /** Optional quiet emphasis line (Phase 3C) — not a second statistic. */
+  emphasisNote?: string | null;
 };
 
 /**
@@ -42,17 +44,19 @@ export function PortfolioHistoryNavCard({
   keyStatisticValue = null,
   onExportPortfolio,
   isExporting = false,
+  emphasisNote = null,
 }: PortfolioHistoryNavCardProps) {
   void _variant;
   const points = chartPoints ?? [];
   const showChart = hasSeries && points.length >= 2;
+  const quietNote = emphasisNote?.trim() || null;
 
   return (
     <ExpandableDashboardSection
       sectionKey="portfolio-history"
       title={PORTFOLIO_HISTORY_LABEL}
       titleId="portfolio-history-preview-heading"
-      subtitle="Development over time"
+      subtitle={quietNote ?? "Development over time"}
       icon={<History className="h-5 w-5" />}
       iconToneClassName="bg-slate-100 text-slate-700 ring-1 ring-slate-200"
       deepLink={{

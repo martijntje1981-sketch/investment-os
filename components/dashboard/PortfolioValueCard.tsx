@@ -10,11 +10,7 @@ import { HeroPortfolioPulse } from "@/components/dashboard/HeroPortfolioPulse";
 import { RefreshPricesButton } from "@/components/portfolio/RefreshPricesButton";
 import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 import type { HeroMover } from "@/lib/client/dailyPerformance";
-import {
-  buildDailyPortfolioBriefing,
-  deriveBriefingMarketTopic,
-  previousClosePhraseFromContextLine,
-} from "@/lib/client/dailyPortfolioBriefing";
+import { previousClosePhraseFromContextLine } from "@/lib/client/dailyPortfolioBriefing";
 import { resolveHeroTrendDirection } from "@/lib/client/dashboardHeroIntelligence";
 import { RANKING_AFTER_CLOSE } from "@/lib/client/investorOverviewCopy";
 import type { RefreshPricesUiStatus } from "@/lib/client/livePortfolioPriceRefreshAction";
@@ -25,6 +21,7 @@ import {
   formatSignedPortfolioCurrency,
   formatSignedPortfolioPercent,
 } from "@/lib/client/portfolioMovementFormat";
+import type { SmartDashboardIntelligence } from "@/lib/client/smartDashboardIntelligence";
 import {
   appDarkInsetClass,
   appDisplayClass,
@@ -35,7 +32,6 @@ import {
 } from "@/components/layout/appSurface";
 import type { DashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
 import { holdingDetailPath } from "@/lib/navigation/appRoutes";
-import type { InvestmentIntelligence } from "@/lib/services/news/investmentIntelligence";
 import type { PortfolioPulseResult } from "@/lib/services/portfolio/periodScores";
 
 function signedPercent(value: number) {
@@ -155,19 +151,18 @@ function MoversSection({ snapshot }: { snapshot: DashboardPortfolioSnapshot }) {
 
 /**
  * Premium black portfolio hero — value, move, movers, compact pulse.
+ * Smart Hero 2.0 copy arrives via `smart` (built once on the Dashboard page).
  */
 export function PortfolioValueCard({
   snapshot,
   refresh,
-  welcomeFirstName = null,
   pulse = null,
-  intelligence = null,
+  smart,
 }: {
   snapshot: DashboardPortfolioSnapshot;
-  welcomeFirstName?: string | null;
   pulse?: PortfolioPulseResult | null;
-  /** Existing intelligence only — never fetched solely for the briefing. */
-  intelligence?: InvestmentIntelligence | null;
+  /** Precomputed Smart Hero + Today's Focus — never rebuild network state here. */
+  smart: SmartDashboardIntelligence;
   refresh?: {
     onRefresh: () => void;
     isRefreshing: boolean;
@@ -186,37 +181,9 @@ export function PortfolioValueCard({
     /previous|market close|latest available/i.test(
       snapshot.dailyMoveContextLine,
     );
-  const ledByName =
-    snapshot.heroTopMover?.holding.name ||
-    snapshot.heroTopMover?.holding.symbol ||
-    snapshot.topDailyDriver?.name ||
-    snapshot.topDailyDriver?.symbol ||
-    null;
-  const marketTopic = deriveBriefingMarketTopic({
-    title: intelligence?.mustWatch?.title,
-    reason: intelligence?.mustWatch?.reason,
-    sourceName: intelligence?.mustWatch?.sourceName,
-  });
-  // Avoid repeating the Market Briefing lead title word-for-word.
-  const safeMarketTopic =
-    marketTopic &&
-    intelligence?.mustWatch?.title &&
-    marketTopic.trim().toLowerCase() ===
-      intelligence.mustWatch.title.trim().toLowerCase()
-      ? null
-      : marketTopic;
-  const briefing = buildDailyPortfolioBriefing({
-    firstName: welcomeFirstName,
-    holdingCount: snapshot.holdingCount,
-    hasDailyData: snapshot.hasDailyData,
-    todayPercent: snapshot.todayPercent,
-    usesPreviousClose,
-    previousClosePhrase: previousClosePhraseFromContextLine(
-      snapshot.dailyMoveContextLine,
-    ),
-    ledByName: snapshot.hasReliableHeroMoverData ? ledByName : null,
-    marketTopic: safeMarketTopic,
-  });
+  const previousClosePhrase = previousClosePhraseFromContextLine(
+    snapshot.dailyMoveContextLine,
+  );
 
   const amountLabel = showMove
     ? formatSignedPortfolioCurrency(snapshot.todayChange, formatEur)
@@ -229,18 +196,30 @@ export function PortfolioValueCard({
     ? `Updated ${formatAmsterdamPriceRefreshTime(refresh.liveRefreshAt)}`
     : `Updated ${formatMarketUpdateTime(snapshot.lastUpdatedAt)}`;
 
+  // Single price-basis line — avoid repeating previous-close three times.
   const priceBasisLabel = showMove
-    ? snapshot.dailyMoveContextLine
+    ? usesPreviousClose
+      ? previousClosePhrase
+        ? `Based on ${previousClosePhrase}`
+        : "Based on the previous market close"
+      : snapshot.dailyMoveContextLine
     : (snapshot.dailyPerformanceCoverageMessage ??
       "Movement period unavailable");
 
   const isStaleDisplay = Boolean(snapshot.isStale && !refresh?.liveRefreshAt);
+  const heroElevated = smart.emphasis.heroElevated;
 
   return (
     <article
       aria-label="Portfolio value"
-      className={`relative overflow-hidden ${appHeroShellClass}`}
+      className={`relative overflow-hidden ${appHeroShellClass} ${
+        heroElevated
+          ? "ring-1 ring-white/20 motion-safe:shadow-[0_16px_40px_rgba(0,0,0,0.35)]"
+          : ""
+      }`}
       data-testid="dashboard-portfolio-hero"
+      data-hero-emphasis={heroElevated ? "elevated" : "default"}
+      data-hero-scenario={smart.scenario}
     >
       <div className={`relative min-w-0 ${appHeroPaddingCompactClass}`}>
         <div className="flex items-start justify-end gap-3">
@@ -258,7 +237,11 @@ export function PortfolioValueCard({
         <div className="mt-1 min-w-0 lg:grid lg:grid-cols-[minmax(0,1.35fr)_minmax(11rem,0.65fr)] lg:items-start lg:gap-5">
           <div className="min-w-0">
             <p className={appHeroMetricLabelClass}>Portfolio value</p>
-            <p className={`mt-1 break-words text-white ${appDisplayClass}`}>
+            <p
+              className={`mt-1 break-words text-white ${appDisplayClass} ${
+                heroElevated ? "tracking-[-0.04em]" : ""
+              }`}
+            >
               {snapshot.portfolioValueAvailable
                 ? formatEur(snapshot.portfolioValue)
                 : "Unavailable"}
@@ -303,18 +286,13 @@ export function PortfolioValueCard({
 
         <div className="mt-3 border-t border-white/10 pt-3">
           <MoversSection snapshot={snapshot} />
-          <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2">
+          <div className="mt-2.5 flex flex-wrap items-center gap-2">
             <p className="text-[12px] font-medium text-white/50">
               {isStaleDisplay ? (
                 <span className="text-amber-200/90">Previous close · </span>
               ) : null}
               {updatedLabel}
             </p>
-            {isStaleDisplay ? (
-              <p className="text-[11px] font-medium text-white/40">
-                Not a live quote
-              </p>
-            ) : null}
           </div>
         </div>
 
@@ -334,7 +312,10 @@ export function PortfolioValueCard({
           </p>
         ) : null}
 
-        <DailyPortfolioBriefing briefing={briefing} />
+        <DailyPortfolioBriefing
+          briefing={smart.briefing}
+          todaysFocus={smart.todaysFocus}
+        />
       </div>
     </article>
   );

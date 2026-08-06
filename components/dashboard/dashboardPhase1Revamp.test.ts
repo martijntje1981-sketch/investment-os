@@ -62,11 +62,11 @@ describe("dashboard phase 1 revamp", () => {
   });
 
   it("places the personal greeting inside the Portfolio Value hero briefing", () => {
-    expect(valueSource).toContain("welcomeFirstName");
-    expect(valueSource).toContain("buildDailyPortfolioBriefing");
     expect(valueSource).toContain("DailyPortfolioBriefing");
-    expect(summarySource).toContain("welcomeFirstName");
-    expect(dashboardSource).toContain("welcomeFirstName={firstName}");
+    expect(valueSource).toContain("smart.briefing");
+    expect(summarySource).toContain("smart");
+    expect(dashboardSource).toContain("buildSmartDashboardIntelligence");
+    expect(dashboardSource).toContain("firstName");
   });
 
   it("uses an existing first name prop only when already available", () => {

@@ -42,7 +42,12 @@ const TOOLS = [
 /**
  * Compact Dashboard discoverability for high-value authenticated tools.
  */
-export function DashboardExploreTools() {
+export function DashboardExploreTools({
+  emphasizeGoals = false,
+}: {
+  /** Subtle Goals emphasis when Smart Dashboard detects a milestone. */
+  emphasizeGoals?: boolean;
+}) {
   return (
     <section
       aria-labelledby="dashboard-explore-tools-heading"
@@ -62,28 +67,41 @@ export function DashboardExploreTools() {
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-3 min-[390px]:grid-cols-3">
-        {TOOLS.map(({ href, title, benefit, icon: Icon }) => (
-          <Link
-            key={href}
-            href={href}
-            className={`${appCardClass} ${appCardInteractiveClass} ${appCardPaddingCompactClass} flex min-h-[80px] items-start gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2`}
-          >
-            <span
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand-navy"
-              aria-hidden
+        {TOOLS.map(({ href, title, benefit, icon: Icon }) => {
+          const isGoals = href === GOALS_PATH;
+          const highlight = emphasizeGoals && isGoals;
+          return (
+            <Link
+              key={href}
+              href={href}
+              data-emphasize={highlight ? "true" : undefined}
+              className={`${appCardClass} ${appCardInteractiveClass} ${appCardPaddingCompactClass} flex min-h-[88px] items-start gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 ${
+                highlight
+                  ? "ring-1 ring-brand/35 motion-safe:transition-shadow"
+                  : ""
+              }`}
             >
-              <Icon className="h-4 w-4" />
-            </span>
-            <span className="min-w-0">
-              <span className="block text-[14px] font-bold text-slate-950">
-                {title}
+              <span
+                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
+                  highlight
+                    ? "bg-brand text-white"
+                    : "bg-brand-soft text-brand-navy"
+                }`}
+                aria-hidden
+              >
+                <Icon className="h-4 w-4" />
               </span>
-              <span className="mt-0.5 block text-[12px] font-medium leading-snug text-slate-500">
-                {benefit}
+              <span className="min-w-0">
+                <span className="block text-[14px] font-bold text-slate-950">
+                  {title}
+                </span>
+                <span className="mt-0.5 block text-[12px] font-medium leading-snug text-slate-500">
+                  {highlight ? "Progress milestone available." : benefit}
+                </span>
               </span>
-            </span>
-          </Link>
-        ))}
+            </Link>
+          );
+        })}
       </div>
     </section>
   );

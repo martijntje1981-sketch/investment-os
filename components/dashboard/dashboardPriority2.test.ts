@@ -46,7 +46,8 @@ describe("Priority 2 Dashboard progressive disclosure", () => {
 
   it("integrates the Daily Portfolio Briefing inside the hero", () => {
     expect(hero).toContain("DailyPortfolioBriefing");
-    expect(hero).toContain("buildDailyPortfolioBriefing");
+    expect(hero).toContain("smart.briefing");
+    expect(dashboard).toContain("buildSmartDashboardIntelligence");
     expect(briefingUi).toContain('data-testid="daily-portfolio-briefing"');
     expect(dashboard).not.toContain("<DailyPortfolioBriefing");
     expect(dashboard).not.toContain("DashboardPortfolioPulseCard");

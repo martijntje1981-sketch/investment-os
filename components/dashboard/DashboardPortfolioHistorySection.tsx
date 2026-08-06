@@ -30,11 +30,14 @@ export function DashboardPortfolioHistorySection({
   history,
   portfolioValue,
   portfolioValueAvailable,
+  emphasisNote = null,
 }: {
   holdings: StoredPortfolioHolding[];
   history: PortfolioPerformanceHistoryApiResponse | null;
   portfolioValue: number;
   portfolioValueAvailable: boolean;
+  /** Quiet adaptive note from Smart Dashboard emphasis — never a new card. */
+  emphasisNote?: string | null;
 }) {
   const { formatEur, convertToEur, convertEur, baseCurrency } =
     useBaseCurrencyDisplay();
@@ -146,6 +149,7 @@ export function DashboardPortfolioHistorySection({
       keyStatisticValue={keyStatisticValue}
       onExportPortfolio={handleExport}
       isExporting={isExporting}
+      emphasisNote={emphasisNote}
     />
   );
 }

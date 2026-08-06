@@ -28,6 +28,7 @@ import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
 import PortfolioSyncBanner from "@/components/PortfolioSyncBanner";
 import { buildPortfolioAnalysis } from "@/lib/client/portfolioAnalysis";
 import { buildDashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
+import { previousClosePhraseFromContextLine } from "@/lib/client/dailyPortfolioBriefing";
 import { areMajorMarketsClosed } from "@/lib/client/todaysDecision";
 import { useAuthenticatedFirstName } from "@/lib/client/useAuthenticatedFirstName";
 import { useInvestmentIntelligence } from "@/lib/client/useInvestmentIntelligence";
@@ -38,6 +39,7 @@ import { useMarketSnapshotMetadata } from "@/lib/client/useMarketSnapshotMetadat
 import { useLivePortfolioPriceRefresh } from "@/lib/client/useLivePortfolioPriceRefresh";
 import { usePortfolioPerformanceHistory } from "@/lib/client/usePortfolioPerformanceHistory";
 import { needsPortfolioSetup } from "@/lib/client/portfolioSetup";
+import { buildSmartDashboardIntelligence } from "@/lib/client/smartDashboardIntelligence";
 import { buildPortfolioHealthProfile } from "@/lib/services/portfolio/portfolioHealthProfile";
 import { buildPortfolioExposureAllocation } from "@/lib/services/classification";
 import { buildPortfolioPulse } from "@/lib/services/portfolio/periodScores";
@@ -144,6 +146,52 @@ export default function DashboardPage() {
     });
   }, [holdings, marketsClosed, monthHistory.data, weekHistory.data]);
 
+  const smartDashboard = useMemo(() => {
+    const usesPreviousClose =
+      Boolean(snapshot.isStale) ||
+      /previous|market close|latest available/i.test(
+        snapshot.dailyMoveContextLine,
+      );
+    const ledByName = snapshot.hasReliableHeroMoverData
+      ? snapshot.heroTopMover?.holding.name ||
+        snapshot.heroTopMover?.holding.symbol ||
+        snapshot.topDailyDriver?.name ||
+        snapshot.topDailyDriver?.symbol ||
+        null
+      : null;
+
+    return buildSmartDashboardIntelligence({
+      firstName,
+      holdingCount: snapshot.holdingCount,
+      hasDailyData: snapshot.hasDailyData,
+      todayPercent: snapshot.todayPercent,
+      usesPreviousClose,
+      previousClosePhrase: previousClosePhraseFromContextLine(
+        snapshot.dailyMoveContextLine,
+      ),
+      ledByName,
+      goalProgressPercent: goalProgress.hasGoal
+        ? goalProgress.currentProgressPercent
+        : snapshot.goalProgress,
+      goalReached: goalProgress.goalReached || snapshot.goalCompleted,
+      hasSavedGoal,
+      goalStatus: goalProgress.status,
+      concentrationWeightPercent: snapshot.concentrationWeightPercent,
+      upcomingEvents: payload.upcomingEvents,
+      intelligence,
+    });
+  }, [
+    firstName,
+    goalProgress.currentProgressPercent,
+    goalProgress.goalReached,
+    goalProgress.hasGoal,
+    goalProgress.status,
+    hasSavedGoal,
+    intelligence,
+    payload.upcomingEvents,
+    snapshot,
+  ]);
+
   const exampleActive = useExampleActiveStatus(
     portfolioReady && Boolean(userSub),
   );
@@ -224,12 +272,11 @@ export default function DashboardPage() {
             </>
           ) : null}
 
-          {/* 1. Dashboard Hero (+ Daily Portfolio Briefing) */}
+          {/* 1. Dashboard Hero (+ Smart Hero 2.0 / Daily Portfolio Briefing) */}
           <DashboardSummary
             snapshot={snapshot}
-            welcomeFirstName={firstName}
             pulse={portfolioPulse}
-            intelligence={intelligence}
+            smart={smartDashboard}
             refresh={{
               onRefresh: () => void refreshPrices(),
               isRefreshing,
@@ -250,6 +297,7 @@ export default function DashboardPage() {
             goalProgress={goalProgress}
             upcomingEvents={payload.upcomingEvents}
             marketsClosed={marketsClosed}
+            heroBriefingText={smartDashboard.briefing.text}
           />
 
           {/* 4. Market Pulse */}
@@ -274,6 +322,7 @@ export default function DashboardPage() {
             history={monthHistory.data}
             portfolioValue={snapshot.portfolioValue}
             portfolioValueAvailable={snapshot.portfolioValueAvailable}
+            emphasisNote={smartDashboard.emphasis.historyNote}
           />
 
           {/* 8. Portfolio Exposure */}
@@ -291,7 +340,9 @@ export default function DashboardPage() {
           />
 
           {/* 10. Explore Tobailey */}
-          <DashboardExploreTools />
+          <DashboardExploreTools
+            emphasizeGoals={smartDashboard.emphasis.exploreGoalsHighlight}
+          />
 
           {/* 11. Trading Hours */}
           <DashboardMarketStatus lastUpdatedAt={marketUpdatedAt} />

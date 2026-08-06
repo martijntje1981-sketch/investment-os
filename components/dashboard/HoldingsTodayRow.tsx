@@ -38,15 +38,15 @@ function changeToneClass(row: DashboardHoldingRow): string {
 }
 
 function rowSurfaceClass(index: number, layout: "mobile" | "desktop"): string {
-  const zebra = index % 2 === 1 ? "bg-slate-50/80" : "bg-white";
+  const zebra = index % 2 === 1 ? "bg-slate-50/70" : "bg-white";
   const hover =
-    "transition-colors hover:bg-violet-50/45 focus-within:bg-violet-50/45";
+    "transition-colors hover:bg-slate-50 focus-within:bg-slate-50";
 
   if (layout === "desktop") {
     return `${zebra} ${hover} group`;
   }
 
-  return `${zebra} ${hover} rounded-[14px] px-3 -mx-3`;
+  return `${zebra} ${hover} rounded-2xl px-3.5 -mx-1`;
 }
 
 function HoldingPriceQualityBadge({ row }: { row: DashboardHoldingRow }) {
@@ -206,7 +206,7 @@ export function HoldingsTodayRow({
     return (
       <Link
         href={href}
-        className={`flex min-w-0 items-start justify-between gap-4 border-b border-slate-100/90 py-4 last:border-b-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 ${surfaceClass}`}
+        className={`flex min-h-[56px] min-w-0 items-center justify-between gap-4 border-b border-slate-100/90 py-3.5 last:border-b-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 ${surfaceClass}`}
         aria-label={`Open ${row.name} holding details`}
       >
         <div className="min-w-0 flex-1 pr-2">
@@ -237,7 +237,7 @@ export function HoldingsTodayRow({
 
   return (
     <div
-      className={`flex min-w-0 items-start justify-between gap-4 border-b border-slate-100/90 py-4 last:border-b-0 ${surfaceClass}`}
+      className={`flex min-h-[56px] min-w-0 items-center justify-between gap-4 border-b border-slate-100/90 py-3.5 last:border-b-0 ${surfaceClass}`}
     >
       <div className="min-w-0 flex-1 pr-2">
         <p className={`truncate ${appTableNameClass}`}>{row.name}</p>

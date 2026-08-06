@@ -2,7 +2,7 @@ import { PortfolioValueCard } from "@/components/dashboard/PortfolioValueCard";
 import { DashboardSummarySkeleton } from "@/components/dashboard/DashboardSummarySkeleton";
 import type { DashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
 import type { RefreshPricesUiStatus } from "@/lib/client/livePortfolioPriceRefreshAction";
-import type { InvestmentIntelligence } from "@/lib/services/news/investmentIntelligence";
+import type { SmartDashboardIntelligence } from "@/lib/client/smartDashboardIntelligence";
 import type { PortfolioPulseResult } from "@/lib/services/portfolio/periodScores";
 
 export type DashboardRefreshControl = {
@@ -16,33 +16,29 @@ export type DashboardRefreshControl = {
 
 export function DashboardSummary({
   snapshot,
-  welcomeFirstName = null,
   isLoading = false,
   refresh,
   pulse = null,
-  intelligence = null,
+  smart,
 }: {
   snapshot: DashboardPortfolioSnapshot;
-  /** Existing first name only — never fetch solely for this greeting. */
-  welcomeFirstName?: string | null;
   isLoading?: boolean;
   refresh?: DashboardRefreshControl;
   pulse?: PortfolioPulseResult | null;
-  /** Existing intelligence only — never fetched solely for the hero briefing. */
-  intelligence?: InvestmentIntelligence | null;
+  /** Phase 3C Smart Hero + Today's Focus — built once on the Dashboard page. */
+  smart: SmartDashboardIntelligence;
 }) {
   if (isLoading) {
     return <DashboardSummarySkeleton />;
   }
 
   return (
-    <section aria-label="Portfolio summary" className="space-y-6 md:space-y-7">
+    <section aria-label="Portfolio summary" className="space-y-5 md:space-y-6">
       <PortfolioValueCard
         snapshot={snapshot}
         refresh={refresh}
-        welcomeFirstName={welcomeFirstName}
         pulse={pulse}
-        intelligence={intelligence}
+        smart={smart}
       />
     </section>
   );
