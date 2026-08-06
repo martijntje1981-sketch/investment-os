@@ -26,13 +26,11 @@ export async function GET() {
       optIn,
       emailConfigured: isMonthlyReviewEmailConfigured(),
       defaultOff: true,
+      preferenceKey: "monthly_review_email_opt_in",
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : "Could not load preference.",
-      },
+      { error: "Could not load preference." },
       { status: 500 },
     );
   }
@@ -55,19 +53,14 @@ export async function PUT(request: Request) {
   }
 
   if (typeof body.optIn !== "boolean") {
-    return NextResponse.json({ error: "optIn must be a boolean." }, { status: 400 });
-  }
-
-  if (body.optIn && !isMonthlyReviewEmailConfigured()) {
     return NextResponse.json(
-      {
-        error:
-          "Monthly review email is not available yet. Your reviews remain available in the app.",
-        emailConfigured: false,
-      },
-      { status: 503 },
+      { error: "optIn must be a boolean." },
+      { status: 400 },
     );
   }
+
+  // Preference may be saved even when Resend is not configured.
+  // Cron / send path still gates delivery on emailConfigured.
 
   try {
     const optIn = await updateMonthlyReviewEmailOptIn(
@@ -75,17 +68,19 @@ export async function PUT(request: Request) {
       user.id,
       body.optIn,
     );
+    const emailConfigured = isMonthlyReviewEmailConfigured();
     return NextResponse.json({
       success: true,
       optIn,
-      emailConfigured: isMonthlyReviewEmailConfigured(),
+      emailConfigured,
+      preferenceKey: "monthly_review_email_opt_in",
+      deliveryNote: emailConfigured
+        ? null
+        : "Preference saved. Delivery starts once email is configured.",
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : "Could not save preference.",
-      },
+      { error: "Could not save preference." },
       { status: 500 },
     );
   }

@@ -26,12 +26,15 @@ import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 import { buildDashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
 import { useUserGoal } from "@/lib/client/useUserGoal";
 import { runPortfolioExport } from "@/lib/client/runPortfolioExport";
+import { useExampleActiveStatus } from "@/lib/client/useExampleActiveStatus";
+import { TRUST_EMAIL_PRIVACY } from "@/lib/content/productTrust";
 
 export default function SettingsPage() {
   const supabase = useMemo(() => createClient(), []);
   const [user, setUser] = useState<User | null>(null);
   const [ready, setReady] = useState(false);
   const { holdings } = useUserPortfolio();
+  const exampleActive = useExampleActiveStatus();
   const { goal, hasSavedGoal } = useUserGoal();
   const { baseCurrency, convertEur } = useBaseCurrencyDisplay();
   const snapshot = useMemo(
@@ -102,11 +105,11 @@ export default function SettingsPage() {
             Reports &amp; email
           </h2>
           <p className={`mt-2 ${appSectionMetaClass}`}>
-            Your portfolio data is always yours. Export it anytime. Monthly
-            review emails contain no portfolio values or holdings.
+            Your portfolio data is always yours. Export it anytime.{" "}
+            {TRUST_EMAIL_PRIVACY}
           </p>
           <div className="mt-4 space-y-4">
-            <MonthlyReviewEmailToggle />
+            <MonthlyReviewEmailToggle disabledForDemo={Boolean(exampleActive)} />
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <Link
                 href={`${REVIEW_PATH}?period=monthly`}

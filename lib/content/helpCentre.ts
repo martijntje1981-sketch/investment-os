@@ -1,24 +1,31 @@
 /**
  * Help Centre content — short, scannable answers for /faq.
- * Keep entries easy to scan; avoid walls of text.
+ * Categories match the current product architecture (Phase X / X.1).
  */
 
 import {
   unsupportedInvestmentFaq,
   whichInvestmentsSupportedFaq,
 } from "@/lib/content/supportedInstrumentsFaq";
-import { SUPPORTED_INSTRUMENTS_PATH } from "@/lib/content/supportedInstrumentsContent";
+import {
+  TRUST_EMAIL_PRIVACY,
+  TRUST_ESTIMATE_SHORT,
+  TRUST_GOALS_ESTIMATE,
+  TRUST_NOT_ADVICE_MEDIUM,
+} from "@/lib/content/productTrust";
 import {
   ANALYSIS_PATH,
   GOALS_PATH,
+  MARKET_PULSE_PATH,
+  NEWS_PATH,
+  PERSPECTIVES_PATH,
   PORTFOLIO_HEALTH_PATH,
   PORTFOLIO_HISTORY_PATH,
   PORTFOLIO_PATH,
+  REVIEW_PATH,
+  SETTINGS_PATH,
+  UPLOAD_PATH,
 } from "@/lib/navigation/appRoutes";
-
-const NEWS_PATH = "/news";
-const PERSPECTIVES_PATH = "/perspectives";
-const UPLOAD_PATH = "/upload";
 
 export type HelpCentreLink = {
   href: string;
@@ -29,6 +36,8 @@ export type HelpCentreQuestion = {
   question: string;
   answer: string;
   link?: HelpCentreLink;
+  /** Extra terms for client search (product + user language). */
+  keywords?: string[];
 };
 
 export type HelpCentreSection = {
@@ -45,256 +54,273 @@ export const HELP_CENTRE_SECTIONS: HelpCentreSection[] = [
       {
         question: "What is Tobailey?",
         answer:
-          "Tobailey is a portfolio monitoring app for private investors. It brings holdings, market context, goals and analysis together so you can see the conclusion first — and open detail only when you want it.",
+          "Tobailey is a portfolio intelligence platform for private investors. It helps you understand your portfolio, track progress and stay informed — without broker login or trade execution.",
+        keywords: ["monitoring", "intelligence", "overview"],
       },
       {
-        question: "Who is Tobailey for?",
+        question: "Demo vs personal trial",
         answer:
-          "Private investors who want a calm overview of their portfolio, progress toward goals, and clearer market context — without broker login or trade execution.",
+          "Demo is a ready-made, read-only experience with sample holdings. Personal trial is your own empty, editable account — import or add holdings yourself. Demo data never becomes your personal portfolio.",
+        link: { href: "/explore", label: "Explore Demo Portfolio" },
+        keywords: ["demo", "trial", "7-day", "example"],
       },
       {
-        question: "Does Tobailey give financial advice?",
+        question: "How do I add holdings manually?",
         answer:
-          "No. Tobailey is informational and analytical only. It does not provide regulated personal advice, buy or sell recommendations, or performance guarantees.",
-      },
-      {
-        question: "Where should I start after signing in?",
-        answer:
-          "Open the Dashboard. It shows your portfolio value, what changed, and anything worth noticing today. From there you can open Holdings, Goals, History or Analysis when you need more detail.",
-        link: { href: "/dashboard", label: "Open Dashboard" },
-      },
-    ],
-  },
-  {
-    id: "holdings",
-    title: "Adding holdings",
-    questions: [
-      {
-        question: "How do I add holdings?",
-        answer:
-          "Add investments manually on Portfolio, or import a CSV or Excel file. You review matches before anything is saved.",
+          "Open Portfolio and add an investment, cash or crypto. You can edit symbols, quantities and purchase details anytime.",
         link: { href: PORTFOLIO_PATH, label: "Open Portfolio" },
       },
       {
-        question: "Which brokers are supported?",
+        question: "How do I import a portfolio?",
         answer:
-          "Tobailey is broker-independent. You never connect a broker login. Import a file or enter holdings yourself.",
+          "Upload a CSV or Excel broker export. Review matches, then confirm. Nothing is saved until you approve. Tobailey never asks for broker passwords.",
+        link: { href: UPLOAD_PATH, label: "Import holdings" },
+        keywords: ["csv", "excel", "upload", "broker"],
       },
       {
-        question: "Can I edit holdings after import?",
+        question: "How do I add cash?",
         answer:
-          "Yes. Review and correct symbols, quantities and purchase details before saving — and edit any holding later from Portfolio.",
-      },
-      {
-        question: "Which asset classes can I monitor?",
-        answer:
-          "Listed shares, ETFs, ETCs, ETPs and selected digital assets. Broader support may grow over time.",
+          "On Portfolio, use Add cash. Cash appears in holdings and feeds Cash intelligence on Analysis.",
+        link: { href: PORTFOLIO_PATH, label: "Open Portfolio" },
       },
       whichInvestmentsSupportedFaq,
       unsupportedInvestmentFaq,
     ],
   },
   {
-    id: "import",
-    title: "Import portfolio",
+    id: "understand",
+    title: "Understand your portfolio",
     questions: [
       {
-        question: "How does import work?",
+        question: "What does the Dashboard show?",
         answer:
-          "Upload a CSV or Excel broker export. Tobailey detects holdings, you review matches, then import. Nothing is added until you confirm.",
-        link: { href: UPLOAD_PATH, label: "Import portfolio" },
-      },
-      {
-        question: "What files can I upload?",
-        answer:
-          "CSV and Excel (.csv, .xlsx, .xls). Export a positions or portfolio overview from your broker — Tobailey never asks for broker login.",
-      },
-      {
-        question: "What if a holding needs review?",
-        answer:
-          "Uncertain matches stay out until you confirm the instrument, exclude the row, or add it manually.",
-      },
-      {
-        question: "What about duplicates?",
-        answer:
-          "Holdings that already match by provider symbol, ISIN or ticker+exchange are skipped on merge — never silently doubled.",
-      },
-      {
-        question: "Where can I see supported instruments?",
-        answer:
-          "The supported instruments list explains what Tobailey can price and classify today.",
-        link: {
-          href: SUPPORTED_INSTRUMENTS_PATH,
-          label: "View supported instruments",
-        },
-      },
-    ],
-  },
-  {
-    id: "goals",
-    title: "Goals",
-    questions: [
-      {
-        question: "How do Goals work?",
-        answer:
-          "Set a target amount, optional target year and optional monthly contribution. Tobailey estimates progress and completion from your portfolio and history — you do not need to calculate anything.",
-        link: { href: GOALS_PATH, label: "Open Goals" },
-      },
-      {
-        question: "Are goal estimates guaranteed?",
-        answer:
-          "No. Completion dates and pace are estimates from available history and your plan. Markets, fees and contributions can change the outcome.",
-      },
-      {
-        question: "What inputs do I need?",
-        answer:
-          "Goal name, target amount, and usually a target year. Monthly contribution is optional. Expected return stays a calm default unless you change it elsewhere.",
-      },
-    ],
-  },
-  {
-    id: "history-export",
-    title: "Portfolio History & export",
-    questions: [
-      {
-        question: "What is Portfolio History?",
-        answer:
-          "A calm record of portfolio development, contributions and withdrawals — with a shared timeline used across Dashboard, Goals and History.",
-        link: { href: PORTFOLIO_HISTORY_PATH, label: "Open Portfolio History" },
-      },
-      {
-        question: "How do I export my portfolio?",
-        answer:
-          "Use Export Portfolio on Dashboard, History or Goals. One workbook covers holdings, contributions, timeline summary and goals when available.",
-      },
-      {
-        question: "Why does History say insufficient data?",
-        answer:
-          "Some estimates need enough contribution or performance history. Tobailey says so clearly instead of inventing a series.",
-      },
-    ],
-  },
-  {
-    id: "health-analysis",
-    title: "Portfolio Health & Analysis",
-    questions: [
-      {
-        question: "What is Portfolio Health?",
-        answer:
-          "A scorecard for structure and resilience — concentration, diversification and goal readiness. It is indicative, not a credit rating.",
-        link: { href: PORTFOLIO_HEALTH_PATH, label: "Open Portfolio Health" },
+          "How your portfolio is doing today — value, latest move, holdings and calm links to deeper pages. Detail lives on History, Analysis and Your Review.",
+        link: { href: "/dashboard", label: "Open Dashboard" },
       },
       {
         question: "What is Analysis for?",
         answer:
-          "Deep-dive detail: performance, exposure, income and structure. Use it when you want more than the Dashboard conclusion.",
+          "Why your portfolio is performing this way — performance, structure, income and exposure when you want more than the Dashboard conclusion.",
         link: { href: ANALYSIS_PATH, label: "Open Analysis" },
       },
       {
-        question: "How is Analysis different from the Dashboard?",
+        question: "What is Portfolio Scorecard?",
         answer:
-          "Dashboard shows what matters now. Analysis reveals supporting detail when you ask for it.",
+          "A calm view of strengths, structure and resilience from available data. It is indicative — not a credit rating or performance prediction.",
+        link: { href: PORTFOLIO_HEALTH_PATH, label: "Open Portfolio Scorecard" },
+        keywords: ["health", "score", "structure", "resilience"],
+      },
+      {
+        question: "How do Goals work?",
+        answer: `Set a target and optional timeline. Tobailey estimates progress from your portfolio and history. ${TRUST_GOALS_ESTIMATE}`,
+        link: { href: GOALS_PATH, label: "Open Goals" },
+        keywords: ["on track", "target", "progress"],
+      },
+      {
+        question: "What is Portfolio History?",
+        answer:
+          "How your portfolio developed over time — contributions, withdrawals and development — with Export Portfolio when you want the full workbook.",
+        link: { href: PORTFOLIO_HISTORY_PATH, label: "Open Portfolio History" },
+      },
+      {
+        question: "What is Your Review?",
+        answer:
+          "A short summary of what happened today, this week and this month. Monthly reviews can be saved in the app and optionally downloaded as PDF.",
+        link: { href: REVIEW_PATH, label: "Open Your Review" },
+        keywords: ["weekly", "monthly", "companion"],
+      },
+      {
+        question: "What is Market Pulse?",
+        answer:
+          "Available market signals linked to your holdings. The Dashboard shows a compact glance; the full page explores signals in more detail.",
+        link: { href: MARKET_PULSE_PATH, label: "Open Market Pulse" },
+      },
+    ],
+  },
+  {
+    id: "reviews-notifications",
+    title: "Reviews and notifications",
+    questions: [
+      {
+        question: "Daily, weekly and monthly reviews",
+        answer:
+          "Today is compact. Weekly and Monthly are richer summaries using your history, contributions and goals. They summarise — they do not replace Analysis.",
+        link: { href: REVIEW_PATH, label: "Open Your Review" },
+      },
+      {
+        question: "Monthly review archive",
+        answer:
+          "Completed monthly reviews can be saved so history stays stable even if your portfolio changes later.",
+        link: { href: `${REVIEW_PATH}?period=monthly`, label: "Open Monthly Review" },
+      },
+      {
+        question: "Review emails",
+        answer:
+          "You can opt in to a short email when your monthly review is ready. Opt-in is off by default. Demo accounts do not receive personal emails.",
+        link: { href: `${SETTINGS_PATH}#reports-email`, label: "Email preferences" },
+        keywords: ["notification", "opt-in", "monthly_review_email"],
+      },
+      {
+        question: "Email privacy",
+        answer: TRUST_EMAIL_PRIVACY,
+        keywords: ["values", "holdings", "privacy"],
+      },
+      {
+        question: "PDF review",
+        answer:
+          "Optional PDF download for a saved monthly review. The web review remains the primary reading experience.",
+      },
+    ],
+  },
+  {
+    id: "your-data",
+    title: "Your data",
+    questions: [
+      {
+        question: "Export Portfolio",
+        answer:
+          "One click downloads one Excel workbook with organised sheets for holdings, contributions, history and more when available.",
+        keywords: ["excel", "workbook", "download"],
+      },
+      {
+        question: "What does the Excel workbook contain?",
+        answer:
+          "Holdings, contributions and timeline summaries, plus a Portfolio Review sheet when a saved monthly review exists. Existing sheets stay intact.",
+      },
+      {
+        question: "Contributions and withdrawals",
+        answer:
+          "Record activity in Portfolio History. Net contributions are kept separate from investment return.",
+        link: { href: PORTFOLIO_HISTORY_PATH, label: "Open Portfolio History" },
+      },
+      {
+        question: "Currencies and conversion",
+        answer:
+          "Choose a portfolio base currency in Settings. Values convert for display; your broker remains the source of truth for execution.",
+        link: { href: SETTINGS_PATH, label: "Open Settings" },
+      },
+      {
+        question: "Data ownership",
+        answer:
+          "Your portfolio data is always yours. Export it anytime. Contact support to request account deletion where needed.",
+        link: { href: "/contact", label: "Contact support" },
+      },
+    ],
+  },
+  {
+    id: "market-data",
+    title: "Market data",
+    questions: [
+      {
+        question: "Live vs delayed data",
+        answer:
+          "Some prices are live, others delayed or previous-close. Tobailey labels freshness instead of pretending every quote is live.",
+        keywords: ["stale", "fresh", "eodhd"],
+      },
+      {
+        question: "Previous market close",
+        answer:
+          "The last official exchange close used when a live session price is not available.",
+      },
+      {
+        question: "Crypto pricing differences",
+        answer:
+          "Crypto venues and update times can differ from brokers. Treat displayed crypto values as monitoring estimates.",
+      },
+      {
+        question: "Refresh behaviour",
+        answer:
+          "Refresh from Dashboard or Portfolio. Refresh is rate-limited; cached values stay visible if a refresh cannot complete.",
+      },
+      {
+        question: "Third-party sources",
+        answer:
+          "Market prices and news come from third-party providers and may be incomplete or unavailable.",
+      },
+    ],
+  },
+  {
+    id: "account-access",
+    title: "Account and access",
+    questions: [
+      {
+        question: "Demo access",
+        answer:
+          "Demo lets you explore with sample data. It is read-oriented and clearly marked so it never mixes with a personal portfolio.",
+      },
+      {
+        question: "Personal trial",
+        answer:
+          "A 7-day editable trial of your own account. Starts empty — add or import holdings yourself.",
+        link: { href: "/signup?intent=trial", label: "Start 7-day trial" },
+      },
+      {
+        question: "Subscription and expired access",
+        answer:
+          "Pricing and renewal terms are shown before checkout. Expired accounts follow product access rules; your data remains yours to export when policy allows.",
+        link: { href: "/pricing", label: "View pricing" },
+      },
+      {
+        question: "Settings and email preferences",
+        answer:
+          "Manage base currency, reports and monthly review email opt-in in Settings. Preference saving does not require email delivery to be live yet.",
+        link: { href: SETTINGS_PATH, label: "Open Settings" },
       },
     ],
   },
   {
     id: "news-perspectives",
-    title: "News & Perspectives",
+    title: "News and Perspectives",
     questions: [
       {
         question: "What does News show?",
         answer:
-          "Market briefing and stories relevant to your holdings. It is context — not trading instructions.",
+          "Markets Today and stories relevant to your holdings. Context only — not trading instructions.",
         link: { href: NEWS_PATH, label: "Open News" },
       },
       {
         question: "What are Perspectives?",
         answer:
-          "Curated creator viewpoints on macro, investing, bitcoin and technology. Use them as optional context, not advice.",
+          "Curated viewpoints on macro, investing and technology. Optional context, not advice.",
         link: { href: PERSPECTIVES_PATH, label: "Open Perspectives" },
       },
       {
-        question: "Is news always reliable?",
+        question: "What are Ideas?",
         answer:
-          "No automated feed is perfect. Read critically and never treat headlines as buy or sell instructions.",
+          "Themes and opportunities tailored to your portfolio when holdings are available.",
+        link: { href: "/discover", label: "Open Ideas" },
+        keywords: ["discover"],
       },
     ],
   },
   {
-    id: "demo-trial",
-    title: "Demo vs personal trial",
+    id: "safety",
+    title: "Safety and limitations",
     questions: [
       {
-        question: "What is the Demo Portfolio?",
-        answer:
-          "A ready-made, read-only example so you can explore Tobailey. It uses sample holdings only and does not become your personal portfolio.",
-        link: { href: "/explore", label: "Explore Demo Portfolio" },
+        question: "Does Tobailey give financial advice?",
+        answer: TRUST_NOT_ADVICE_MEDIUM,
+        keywords: ["advice", "adviser", "advisor", "recommendation"],
       },
       {
-        question: "What is the 7-day Personal Trial?",
-        answer:
-          "Your own editable account. It starts empty — no demo holdings, cash, goals or contribution history. Import or add holdings yourself.",
-        link: { href: "/signup?intent=trial", label: "Start 7-day Personal Trial" },
+        question: "Are estimates and projections guaranteed?",
+        answer: `No. ${TRUST_ESTIMATE_SHORT} Goals, scores and projections use your inputs and available history and may be inaccurate.`,
+        keywords: ["guaranteed", "projection", "expected return"],
       },
       {
-        question: "Can Demo and Personal Trial mix?",
+        question: "Data accuracy",
         answer:
-          "No. Demo data stays in the demo experience. A Personal Trial never receives demo seeding.",
-      },
-    ],
-  },
-  {
-    id: "currencies-prices",
-    title: "Currencies & prices",
-    questions: [
-      {
-        question: "How do base currencies work?",
-        answer:
-          "Choose a portfolio base currency in Settings. Values convert for display; your broker remains the source of truth for execution.",
-        link: { href: "/settings", label: "Open Settings" },
+          "Prices, FX and news may be delayed or incomplete. Always verify critical figures with your broker before acting.",
       },
       {
-        question: "Why can Tobailey differ from my broker?",
+        question: "User responsibility",
         answer:
-          "Exchanges, update times, FX rates and delayed feeds can differ. Your broker is authoritative for account value and trades.",
+          "You decide what to do with the information. Seek a qualified professional when you need personal advice.",
       },
-      {
-        question: "What does delayed market data mean?",
-        answer:
-          "Some prices reflect a previous close or delayed feed. Tobailey labels previous-close and stale quotes instead of pretending they are live.",
-      },
-      {
-        question: "How does refresh work?",
-        answer:
-          "You can refresh prices from Dashboard or Portfolio. Refresh is rate-limited so the app stays calm and respects provider limits. Cached values remain visible if a refresh cannot complete.",
-      },
-    ],
-  },
-  {
-    id: "faq",
-    title: "Frequently asked questions",
-    questions: [
       {
         question: "Will Tobailey execute trades?",
         answer:
           "No. Tobailey is not a broker and never places, changes or cancels orders.",
-      },
-      {
-        question: "Does Tobailey need my broker password?",
-        answer:
-          "No. Never share broker credentials with Tobailey.",
-      },
-      {
-        question: "Can I delete my account?",
-        answer:
-          "Yes. Contact Support to request deletion. Limited records may be retained where legally required.",
-        link: { href: "/contact", label: "Contact support" },
-      },
-      {
-        question: "How much does Tobailey cost?",
-        answer:
-          "Pricing and trial terms are shown before checkout. Cancel before renewal to stop future billing.",
-        link: { href: "/pricing", label: "View pricing" },
       },
     ],
   },
@@ -303,24 +329,39 @@ export const HELP_CENTRE_SECTIONS: HelpCentreSection[] = [
     title: "Glossary",
     questions: [
       {
-        question: "What is concentration?",
+        question: "Portfolio value",
         answer:
-          "How much of the portfolio sits in a few positions. Higher concentration means a larger share in one or a few holdings.",
+          "The sum of valued holdings in your portfolio base currency, using available prices.",
       },
       {
-        question: "What is net contributions?",
+        question: "Investment return",
         answer:
-          "Money you added minus money you withdrew. It is separate from investment return.",
+          "Change in portfolio value after accounting for contributions and withdrawals where data allows.",
       },
       {
-        question: "What is previous close?",
+        question: "Net contributions",
+        answer:
+          "Money you added minus money you withdrew — separate from investment return.",
+      },
+      {
+        question: "Concentration",
+        answer:
+          "How much of the portfolio sits in a few positions.",
+      },
+      {
+        question: "Daily / Weekly Pulse",
+        answer:
+          "Compact period scores on the Dashboard that summarise available daily and weekly signals. They are not financial advice.",
+      },
+      {
+        question: "Portfolio Scorecard",
+        answer:
+          "Structural scores for concentration, diversification and related resilience signals from available data.",
+      },
+      {
+        question: "Previous close",
         answer:
           "The last official exchange close used when a live session price is not available.",
-      },
-      {
-        question: "What is Portfolio Timeline?",
-        answer:
-          "The shared history foundation used by Dashboard, Goals and Portfolio History so progress stays consistent.",
       },
     ],
   },
@@ -330,8 +371,7 @@ export const HELP_CENTRE_SECTIONS: HelpCentreSection[] = [
     questions: [
       {
         question: "Important information",
-        answer:
-          "Tobailey is a decision-support and portfolio-monitoring tool. It does not provide personal financial advice and cannot guarantee investment results. Always verify critical figures with your broker and professional advisers where needed.",
+        answer: `${TRUST_NOT_ADVICE_MEDIUM} Always verify critical figures with your broker and a qualified professional where needed.`,
       },
       {
         question: "Market data disclaimer",
@@ -341,3 +381,35 @@ export const HELP_CENTRE_SECTIONS: HelpCentreSection[] = [
     ],
   },
 ];
+
+export function flattenHelpCentreQuestions(): Array<
+  HelpCentreQuestion & { sectionId: string; sectionTitle: string }
+> {
+  return HELP_CENTRE_SECTIONS.flatMap((section) =>
+    section.questions.map((question) => ({
+      ...question,
+      sectionId: section.id,
+      sectionTitle: section.title,
+    })),
+  );
+}
+
+export function searchHelpCentre(query: string) {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return HELP_CENTRE_SECTIONS;
+
+  return HELP_CENTRE_SECTIONS.map((section) => ({
+    ...section,
+    questions: section.questions.filter((item) => {
+      const haystack = [
+        item.question,
+        item.answer,
+        ...(item.keywords ?? []),
+        section.title,
+      ]
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(needle);
+    }),
+  })).filter((section) => section.questions.length > 0);
+}

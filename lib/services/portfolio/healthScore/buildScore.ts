@@ -130,7 +130,7 @@ function buildExplanation(
     ? `Attention: ${attentionPoints[0].title.toLowerCase()}.`
     : "";
   return [
-    `Portfolio Health Score is ${score}/100 (${band.label}).`,
+    `Portfolio Scorecard is ${score}/100 (${band.label}).`,
     band.explanation,
     strengthText,
     attentionText,
@@ -161,11 +161,11 @@ export function buildPortfolioHealthScoreV1(
       strengths: [],
       attentionPoints: [],
       improvementDrivers: [
-        "Add valued holdings to calculate a structural Portfolio Health Score.",
+        "Add valued holdings to calculate a structural Portfolio Scorecard.",
       ],
       confidence,
       explanation:
-        "Portfolio Health Score requires valued holdings. Add positions with reliable prices to unlock structural scoring.",
+        "Portfolio Scorecard requires valued holdings. Add positions with reliable prices to unlock structural scoring.",
       calculatedAt,
       fingerprint,
       hasValuedPortfolio: false,

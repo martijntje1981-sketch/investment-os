@@ -32,7 +32,7 @@ export function buildHeroHealthPreview(
     return {
       available: false,
       ringProgress: null,
-      label: "Portfolio Health",
+      label: "Portfolio Scorecard",
       detail: "Add holdings to unlock",
     };
   }
@@ -40,7 +40,7 @@ export function buildHeroHealthPreview(
   return {
     available: true,
     ringProgress: Math.min(1, Math.max(0, profile.expectedVolatility.index)),
-    label: "Portfolio Health",
+    label: "Portfolio Scorecard",
     detail: profile.hero.identity,
   };
 }

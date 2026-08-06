@@ -127,7 +127,7 @@ function DecisionContent({
             id="todays-decision-heading"
             className={`text-[11px] font-semibold uppercase tracking-[0.1em] ${recommendationLabelClass(variant, decision.tone)}`}
           >
-            Recommendation
+            Why it matters
           </h3>
           <span
             className={`rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${statusBadgeClass(variant, decision.tone)}`}

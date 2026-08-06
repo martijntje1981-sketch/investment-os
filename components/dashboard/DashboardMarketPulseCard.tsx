@@ -145,7 +145,7 @@ export function DashboardMarketPulseCard({
       sectionKey="market-pulse"
       title="Market Pulse"
       titleId="market-pulse-preview-heading"
-      subtitle="Broader market context"
+      subtitle="Broader market state in one glance"
       icon={<Waves className="h-5 w-5" />}
       iconToneClassName="bg-amber-50 text-amber-700"
       loading={isLoading}

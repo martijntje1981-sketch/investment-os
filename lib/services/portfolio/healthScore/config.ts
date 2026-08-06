@@ -191,4 +191,4 @@ export const CONFIDENCE_THRESHOLDS = {
 } as const;
 
 export const HEALTH_SCORE_DISCLAIMER =
-  "Portfolio Health Score describes structure and alignment from available data. It does not predict returns, guarantee outcomes, or provide financial advice.";
+  "Portfolio Scorecard describes structure and alignment from available data. It does not predict returns, guarantee outcomes, or provide financial advice.";

@@ -8,16 +8,16 @@ import {
 } from "lucide-react";
 
 import { TobaileyLogo } from "@/components/brand/TobaileyLogo";
+import { HelpCentreClient } from "@/components/help/HelpCentreClient";
 import {
   appCardClass,
   appCardPaddingClass,
-  appSectionBodyClass,
   appSectionMetaClass,
   appSectionTitleClass,
   appSolidButtonClass,
   appTextLinkClass,
 } from "@/components/layout/appSurface";
-import { HELP_CENTRE_SECTIONS } from "@/lib/content/helpCentre";
+import { TRUST_NOT_ADVICE_SHORT } from "@/lib/content/productTrust";
 import { SUPPORTED_INSTRUMENTS_PATH } from "@/lib/content/supportedInstrumentsContent";
 
 export default function FAQPage() {
@@ -41,8 +41,8 @@ export default function FAQPage() {
 
       <section className="border-b border-slate-200/80 bg-navy-hero text-white">
         <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10">
-            <CircleHelp className="h-6 w-6" aria-hidden />
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-brand/40">
+            <CircleHelp className="h-6 w-6 text-brand" aria-hidden />
           </div>
           <p className="mt-5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/55">
             Help Centre
@@ -51,85 +51,21 @@ export default function FAQPage() {
             Answers, calmly organised
           </h1>
           <p className="mt-3 max-w-xl text-[15px] font-medium leading-relaxed text-white/70">
-            Getting started, holdings, goals, history, prices and more — short
-            answers without the noise.
+            Getting started, reviews, Scorecard, export, market data and trust —
+            short answers without the noise.
+          </p>
+          <p className="mt-3 text-[13px] font-medium text-white/55">
+            {TRUST_NOT_ADVICE_SHORT}
           </p>
         </div>
       </section>
 
-      <nav
-        aria-label="Help Centre sections"
-        className="border-b border-slate-200/80 bg-white"
-      >
-        <div className="mx-auto flex max-w-3xl gap-2 overflow-x-auto overscroll-x-contain px-4 py-3 sm:px-6">
-          {HELP_CENTRE_SECTIONS.map((section) => (
-            <a
-              key={section.id}
-              href={`#${section.id}`}
-              className="inline-flex min-h-[40px] shrink-0 items-center rounded-full border border-slate-200 bg-slate-50 px-3.5 text-[13px] font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
-            >
-              {section.title}
-            </a>
-          ))}
-        </div>
-      </nav>
-
-      <section className="px-4 py-10 sm:px-6 sm:py-14">
-        <div className="mx-auto max-w-3xl space-y-10">
-          {HELP_CENTRE_SECTIONS.map((section) => (
-            <section
-              key={section.id}
-              id={section.id}
-              className="scroll-mt-24"
-              aria-labelledby={`${section.id}-heading`}
-            >
-              <h2
-                id={`${section.id}-heading`}
-                className={appSectionTitleClass}
-              >
-                {section.title}
-              </h2>
-
-              <div className="mt-4 space-y-3">
-                {section.questions.map((item) => (
-                  <details
-                    key={item.question}
-                    className={`group ${appCardClass} ${appCardPaddingClass} transition open:shadow-[0_8px_24px_-16px_rgba(15,45,80,0.2)] motion-reduce:transition-none`}
-                  >
-                    <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-[15px] font-semibold text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">
-                      <span className="min-w-0">{item.question}</span>
-                      <span
-                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-lg text-slate-600 transition group-open:rotate-45 group-open:bg-navy-hero group-open:text-white motion-reduce:transition-none"
-                        aria-hidden
-                      >
-                        +
-                      </span>
-                    </summary>
-                    <div
-                      className={`mt-4 border-t border-slate-100 pt-4 ${appSectionBodyClass}`}
-                    >
-                      <p>{item.answer}</p>
-                      {item.link ? (
-                        <Link
-                          href={item.link.href}
-                          className={`mt-3 ${appTextLinkClass}`}
-                        >
-                          {item.link.label}
-                          <ArrowRight className="h-4 w-4" aria-hidden />
-                        </Link>
-                      ) : null}
-                    </div>
-                  </details>
-                ))}
-              </div>
-            </section>
-          ))}
-        </div>
-      </section>
+      <HelpCentreClient />
 
       <section className="px-4 pb-16 sm:px-6 sm:pb-20">
         <div className="mx-auto grid max-w-3xl gap-4 sm:grid-cols-2">
           <article
+            id="disclaimers-spotlight"
             className={`${appCardClass} ${appCardPaddingClass} bg-navy-hero text-white`}
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10">
@@ -142,6 +78,12 @@ export default function FAQPage() {
               Tobailey helps you monitor and understand your portfolio. It is
               not personal financial advice and cannot guarantee results.
             </p>
+            <a
+              href="#disclaimers"
+              className="mt-3 inline-flex min-h-[44px] items-center text-sm font-semibold text-brand underline-offset-2 hover:underline"
+            >
+              Read full disclaimers
+            </a>
           </article>
 
           <article className={`${appCardClass} ${appCardPaddingClass}`}>

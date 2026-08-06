@@ -13,7 +13,7 @@ const benefits = [
   "Daily and weekly portfolio pulse",
   "Personalised market briefing",
   "Goal tracking and planning",
-  "Portfolio health and scorecard",
+  "Portfolio Scorecard",
   "Holdings, news and perspectives",
 ];
 

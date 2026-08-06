@@ -2,14 +2,20 @@ import Link from "next/link";
 
 import type { CompanionReview } from "@/lib/services/portfolio/companion";
 import {
+  ReviewAtAGlance,
+  type ReviewGlancePulse,
+} from "@/components/companion/ReviewAtAGlance";
+import {
   appCardClass,
   appCardPaddingClass,
   appSectionMetaClass,
   appSolidButtonClass,
 } from "@/components/layout/appSurface";
+import { TRUST_NOT_ADVICE_SHORT } from "@/lib/content/productTrust";
 
 type CompanionReviewPanelProps = {
   review: CompanionReview;
+  weeklyPulse?: ReviewGlancePulse;
 };
 
 function toneClass(tone: CompanionReview["supportingFacts"][number]["tone"]): string {
@@ -19,7 +25,10 @@ function toneClass(tone: CompanionReview["supportingFacts"][number]["tone"]): st
   return "text-slate-950";
 }
 
-export function CompanionReviewPanel({ review }: CompanionReviewPanelProps) {
+export function CompanionReviewPanel({
+  review,
+  weeklyPulse = null,
+}: CompanionReviewPanelProps) {
   if (!review.ready) {
     return (
       <section
@@ -70,6 +79,10 @@ export function CompanionReviewPanel({ review }: CompanionReviewPanelProps) {
           </p>
         ) : null}
       </header>
+
+      <div className="mt-5">
+        <ReviewAtAGlance review={review} weeklyPulse={weeklyPulse} />
+      </div>
 
       {review.supportingFacts.length > 0 ? (
         <dl className="mt-5 divide-y divide-slate-100">
@@ -150,6 +163,8 @@ export function CompanionReviewPanel({ review }: CompanionReviewPanelProps) {
           </Link>
         ))}
       </nav>
+
+      <p className={`mt-5 ${appSectionMetaClass}`}>{TRUST_NOT_ADVICE_SHORT}</p>
     </section>
   );
 }

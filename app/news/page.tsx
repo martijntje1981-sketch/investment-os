@@ -42,10 +42,19 @@ export default function NewsPage() {
           title="News"
           subtitle={
             audience === "authenticated_holdings"
-              ? "Markets and portfolio-relevant intelligence."
+              ? "What happened in the market today — and what may matter for your portfolio."
               : "General market news. Add holdings to personalise."
           }
           backToDashboard={Boolean(userSub)}
+          stats={
+            <p className="mt-2 inline-flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.12em] text-brand">
+              <span
+                className="h-2 w-2 rounded-full bg-brand"
+                aria-hidden
+              />
+              Markets &amp; portfolio context
+            </p>
+          }
         />
 
         {audience !== "authenticated_holdings" ? (

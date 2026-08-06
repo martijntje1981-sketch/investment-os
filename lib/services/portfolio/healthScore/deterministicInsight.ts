@@ -165,14 +165,14 @@ export function buildDeterministicPortfolioInsight(
     scoreVersion: string;
     attentionPoints?: Array<{ title: string; detail: string }>;
   };
-  const text = `Portfolio Health Score is ${ctx.score}/100 (${ctx.bandLabel}).`;
+  const text = `Portfolio Scorecard is ${ctx.score}/100 (${ctx.bandLabel}).`;
   return {
     headline: `Health ${ctx.score} — ${ctx.bandLabel}`,
     leadInsight: text,
     whyItMatters:
       "Structural balance and concentration explain sensitivity to a few drivers.",
     supportingEvidence: [
-      `Portfolio Health Score: ${ctx.score}/100 (${ctx.bandLabel})`,
+      `Portfolio Scorecard: ${ctx.score}/100 (${ctx.bandLabel})`,
     ],
     scoreLines: [
       {
@@ -185,7 +185,7 @@ export function buildDeterministicPortfolioInsight(
     ],
     watchItem:
       ctx.attentionPoints?.[0]?.detail ??
-      "Review Portfolio Health for the evidence behind this score.",
+      "Review Portfolio Scorecard for the evidence behind this score.",
     resilienceNote: null,
     source: "rules",
     confidenceLabel: ctx.confidenceLabel,

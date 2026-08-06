@@ -1,5 +1,9 @@
 export const newsCompactCardClass =
-  "min-w-0 rounded-[20px] border border-slate-200/80 bg-white px-3.5 py-3 transition hover:border-slate-300 motion-reduce:transition-none min-[480px]:px-4 min-[480px]:py-3.5";
+  "min-w-0 rounded-[20px] border border-slate-200/80 border-l-[3px] border-l-brand/70 bg-white px-3.5 py-3 shadow-[0_1px_0_rgba(15,45,80,0.03)] transition hover:border-slate-300 hover:border-l-brand motion-reduce:transition-none min-[480px]:px-4 min-[480px]:py-3.5";
+
+/** Compact category cue — restrained, not rainbow. */
+export const newsCategoryBadgeClass =
+  "inline-flex min-h-[28px] items-center rounded-md bg-brand-soft px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.06em] text-brand-navy";
 
 export const newsEditorialCardClass =
   "min-w-0 rounded-[20px] border border-slate-200/80 bg-white transition hover:border-slate-300 motion-reduce:transition-none";

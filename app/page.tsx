@@ -33,39 +33,39 @@ import { createClient } from "@/lib/supabase/server";
 const features = [
   {
     icon: BriefcaseBusiness,
-    title: "One complete portfolio overview",
+    title: "Understand your portfolio at a glance",
     description:
-      "Track holdings, allocation, purchase prices, market value and total returns from one clear dashboard.",
+      "See value, movements and holdings on a calm Dashboard — then open History, Analysis or Your Review when you want more.",
   },
   {
     icon: Newspaper,
-    title: "Portfolio analysis powered by AI",
+    title: "Relevant market intelligence",
     description:
-      "Receive personalised analysis, market context, analyst consensus and portfolio insights based on your holdings.",
+      "Markets Today, Market Pulse and Perspectives connect broader context to your holdings — without trading instructions.",
   },
   {
     icon: Target,
-    title: "Turn investing into a measurable plan",
+    title: "Track goals with clear estimates",
     description:
-      "Define a financial goal, test contribution scenarios and monitor the return required to stay on track.",
+      "Set a target and monitor progress from your portfolio and history. Estimates are informational — not guarantees.",
   },
   {
     icon: BrainCircuit,
-    title: "Investment intelligence, not noise",
+    title: "Weekly and monthly reviews",
     description:
-      "Translate market information into clear portfolio impact, risks and decision-support insights.",
+      "Short summaries of performance, contributions and progress. Save monthly reviews in the app; optionally get a notification when ready.",
   },
   {
     icon: PieChart,
-    title: "Understand concentration and balance",
+    title: "Portfolio Scorecard and structure",
     description:
-      "Monitor portfolio weights, diversification and the positions driving most of your risk.",
+      "See concentration, diversification and resilience signals from available data — calmly, without advice.",
   },
   {
     icon: FileUp,
-    title: "Update your portfolio quickly",
+    title: "Import, history and Export Portfolio",
     description:
-      "Add holdings manually or import a supported CSV or Excel file, then review everything before saving.",
+      "Add holdings manually or import a file. Track contributions over time. Export one Excel workbook with organised sheets anytime.",
   },
 ];
 
@@ -88,25 +88,25 @@ const workflowSteps = [
     number: "03",
     title: "Monitor what matters",
     description:
-      "Review your dashboard, AI analysis and portfolio insights every day.",
+      "Use Dashboard, Your Review and Analysis to stay informed — on your terms.",
     icon: Gauge,
   },
 ];
 
 const benefits = [
-  "Portfolio overview and allocation monitoring",
-  "Holding-level performance and risk analysis",
-  "AI-powered portfolio analysis and market intelligence",
-  "Goal tracking and scenario calculations",
-  "Manual and spreadsheet import workflow",
-  "Clear decision-support insights",
+  "Smart Dashboard for today’s portfolio conclusion",
+  "Your Review for today, this week and this month",
+  "Portfolio History, Goals and Portfolio Scorecard",
+  "Export Portfolio — one Excel workbook, organised sheets",
+  "Relevant News, Market Pulse and Perspectives",
+  "Demo to explore; personal trial starts empty and editable",
 ];
 
 const faqItems = [
   {
     question: "Does Tobailey provide financial advice?",
     answer:
-      "No. Tobailey is a monitoring and decision-support tool. It organises portfolio information, market context and scenarios, but it does not provide regulated personal financial advice.",
+      "No. Tobailey provides portfolio tracking, analysis and educational information. It does not provide personalised financial advice or recommend buying, selling or holding investments.",
   },
   {
     question: "How does Tobailey receive my portfolio?",
@@ -205,8 +205,9 @@ export default async function MarketingHomePage({
               </h1>
 
               <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-600 sm:text-xl">
-                Tobailey brings your portfolio, market context and long-term
-                financial goal together in one clear control centre.
+                Tobailey is a portfolio intelligence platform that helps
+                investors understand their portfolio, track progress and stay
+                informed — not a broker, trading platform or financial adviser.
               </p>
 
               <div className="mt-9 flex flex-col gap-3 sm:flex-row">
@@ -232,9 +233,28 @@ export default async function MarketingHomePage({
               </p>
 
               <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3">
-                <TrustPoint text="No financial advice" />
+                <TrustPoint text="Information only — not financial advice" />
                 <TrustPoint text="Portfolio-first intelligence" />
                 <TrustPoint text="Built for private investors" />
+              </div>
+
+              <div className="mt-10 grid max-w-xl gap-3 sm:grid-cols-2">
+                <CadenceCard
+                  title="Every day"
+                  body="Understand your portfolio at a glance."
+                />
+                <CadenceCard
+                  title="Every week"
+                  body="Review performance, contributors and progress."
+                />
+                <CadenceCard
+                  title="Every month"
+                  body="Save a structured review. Optionally get a notification when it is ready."
+                />
+                <CadenceCard
+                  title="Anytime"
+                  body="History, goals, market context and Export Portfolio in one Excel workbook."
+                />
               </div>
             </div>
 
@@ -274,7 +294,7 @@ export default async function MarketingHomePage({
                   <div className="mt-7 grid grid-cols-2 gap-3">
                     <PreviewMetric label="Goal progress" value="10.0%" />
 
-                    <PreviewMetric label="Portfolio health" value="70/100" />
+                    <PreviewMetric label="Portfolio Scorecard" value="70/100" />
 
                     <PreviewMetric label="Active holdings" value="8" />
 
@@ -459,7 +479,7 @@ export default async function MarketingHomePage({
                 <BriefingPoint text="Executive Summary" />
                 <BriefingPoint text="Portfolio Risks" />
                 <BriefingPoint text="Analyst Consensus" />
-                <BriefingPoint text="AI Recommendations" />
+                <BriefingPoint text="Portfolio context" />
               </div>
             </div>
 
@@ -469,7 +489,7 @@ export default async function MarketingHomePage({
               </p>
 
               <h2 className="mt-4 text-4xl font-black tracking-[-0.045em] sm:text-5xl">
-                Actionable investment intelligence.
+                Clear portfolio intelligence.
               </h2>
 
               <p className="mt-5 text-lg leading-8 text-slate-600">
@@ -725,6 +745,19 @@ function SectionHeading({
       </h2>
 
       <p className="mt-5 text-lg leading-8 text-slate-600">{description}</p>
+    </div>
+  );
+}
+
+function CadenceCard({ title, body }: { title: string; body: string }) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 shadow-sm">
+      <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-brand-navy">
+        {title}
+      </p>
+      <p className="mt-1 text-[13px] font-medium leading-snug text-slate-600">
+        {body}
+      </p>
     </div>
   );
 }

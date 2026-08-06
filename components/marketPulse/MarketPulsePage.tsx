@@ -17,8 +17,17 @@ import {
 import { MarketPulseFeaturedChart } from "@/components/marketPulse/MarketPulseFeaturedChart";
 import { MarketPulseSparkline } from "@/components/marketPulse/MarketPulseSparkline";
 import { MakeTobaileyYoursCard } from "@/components/conversion/MakeTobaileyYoursCard";
+import { PageRelatedLinks } from "@/components/layout/PageRelatedLinks";
 import { resolveAudienceState } from "@/lib/auth/routeAccess";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
+import {
+  ANALYSIS_PATH,
+  NEWS_PATH,
+  PERSPECTIVES_PATH,
+} from "@/lib/navigation/appRoutes";
+import { NEWS_MARKETS_TODAY_HREF } from "@/lib/navigation/discoverDestinations";
+import { PAGE_PURPOSE } from "@/lib/navigation/productArchitecture";
+import { TRUST_NOT_ADVICE_SHORT } from "@/lib/content/productTrust";
 import { formatQuotePeriodLabel } from "@/lib/services/marketPulse/quoteModel";
 import type {
   MarketPulseAsset,
@@ -410,8 +419,8 @@ export default function MarketPulsePage() {
               className="mt-2 text-[28px] font-black tracking-[-0.04em] text-white sm:text-4xl"
             >
               {holdings.length === 0
-                ? "Markets at a glance"
-                : "Markets shaping your portfolio"}
+                ? "Explore available market signals in detail"
+                : "Explore market signals linked to your portfolio"}
             </h1>
 
             {holdings.length === 0 ? (
@@ -749,6 +758,18 @@ export default function MarketPulsePage() {
           <p className={appSectionMetaClass}>{snapshot.dataNotes.join(" ")}</p>
         ) : null}
 
+        <p className={`px-1 ${appSectionMetaClass}`}>{TRUST_NOT_ADVICE_SHORT}</p>
+
+        <PageRelatedLinks
+          purpose={PAGE_PURPOSE.marketPulse}
+          links={[
+            { href: NEWS_MARKETS_TODAY_HREF, label: "Markets Today" },
+            { href: PERSPECTIVES_PATH, label: "Perspectives" },
+            { href: ANALYSIS_PATH, label: "Open Analysis" },
+            { href: NEWS_PATH, label: "Open News" },
+          ]}
+        />
+
         <div className="flex flex-wrap gap-4 px-1 pb-2">
           <Link
             href="/dashboard"
@@ -757,7 +778,7 @@ export default function MarketPulsePage() {
             ← Dashboard
           </Link>
           <Link
-            href="/analysis"
+            href={ANALYSIS_PATH}
             className="inline-flex min-h-[44px] items-center gap-1.5 text-[15px] font-semibold text-slate-600"
           >
             Analysis

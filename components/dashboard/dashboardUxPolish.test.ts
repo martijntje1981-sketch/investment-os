@@ -145,7 +145,7 @@ describe("Dashboard UX polish phase", () => {
     expect(pulse).not.toMatch(/setInterval|poll/i);
   });
 
-  it("presents Portfolio Health with a real structural score, not volatility intensity", () => {
+  it("presents Portfolio Scorecard with a real structural score, not volatility intensity", () => {
     expect(health).toContain("ScoreRing");
     expect(health).toContain("scoreResult.score");
     expect(health).toContain("scoreResult.band.label");

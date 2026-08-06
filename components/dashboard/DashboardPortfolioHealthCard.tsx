@@ -28,7 +28,7 @@ function ScoreRing({ score, label }: { score: number; label: string }) {
         height={size}
         className="-rotate-90"
         role="img"
-        aria-label={`Portfolio Health Score ${score} out of 100, ${label}`}
+        aria-label={`Portfolio Scorecard ${score} out of 100, ${label}`}
       >
         <circle
           cx={size / 2}
@@ -76,7 +76,7 @@ export function DashboardPortfolioHealthCard({
       >
         <DashboardSectionHeader
           titleId="portfolio-health-heading"
-          title="Portfolio Health"
+          title="Portfolio Scorecard"
           subtitle="Structural score and alignment"
           icon={<Activity className="h-5 w-5" />}
           iconToneClassName="bg-slate-100 text-slate-700"
@@ -84,7 +84,7 @@ export function DashboardPortfolioHealthCard({
         />
         <div className={appCardPaddingClass}>
           <p className={`${appSectionBodyClass} text-slate-600`}>
-            Add valued holdings to unlock a Portfolio Health Score.
+            Add valued holdings to unlock a Portfolio Scorecard.
           </p>
           <Link
             href={DASHBOARD_DEEP_LINKS.portfolioHealth}
@@ -108,7 +108,7 @@ export function DashboardPortfolioHealthCard({
     >
       <DashboardSectionHeader
         titleId="portfolio-health-heading"
-        title="Portfolio Health"
+        title="Portfolio Scorecard"
         subtitle="Structural score and alignment"
         icon={<Activity className="h-5 w-5" />}
         iconToneClassName="bg-slate-100 text-slate-700"
@@ -119,7 +119,7 @@ export function DashboardPortfolioHealthCard({
         <div className="flex min-w-0 items-center gap-3.5">
           <ScoreRing score={scoreResult.score} label={scoreResult.band.label} />
           <div className="min-w-0 flex-1">
-            <p className={appSectionLabelClass}>Portfolio Health Score</p>
+            <p className={appSectionLabelClass}>Portfolio Scorecard</p>
             <p className="mt-1 text-[15px] font-bold tracking-[-0.02em] text-slate-950">
               {scoreResult.band.label}
             </p>
@@ -131,7 +131,7 @@ export function DashboardPortfolioHealthCard({
         </div>
 
         <p className="sr-only">
-          Portfolio Health Score {scoreResult.score} out of 100. Band:{" "}
+          Portfolio Scorecard {scoreResult.score} out of 100. Band:{" "}
           {scoreResult.band.label}. Confidence: {scoreResult.confidence.label}.
         </p>
 

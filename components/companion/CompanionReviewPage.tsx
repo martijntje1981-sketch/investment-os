@@ -36,6 +36,9 @@ import { useExampleActiveStatus } from "@/lib/client/useExampleActiveStatus";
 import type { MonthlyReviewArchiveItem } from "@/lib/services/portfolio/companion/snapshotTypes";
 import { runPortfolioExport } from "@/lib/client/runPortfolioExport";
 import { appGhostButtonClass } from "@/components/layout/appSurface";
+import { areMajorMarketsClosed } from "@/lib/client/todaysDecision";
+import { buildPortfolioPulse } from "@/lib/services/portfolio/periodScores";
+import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 
 function parsePeriodParam(value: string | null): CompanionPeriod | null {
   if (value === "daily" || value === "weekly" || value === "monthly") {
@@ -140,6 +143,27 @@ function CompanionReviewContent() {
     snapshot,
     weekHistory.data,
   ]);
+
+  const weeklyPulse = useMemo(() => {
+    if (holdings.length === 0) return null;
+    const pulse = buildPortfolioPulse({
+      daily: {
+        holdings,
+        marketsClosed: areMajorMarketsClosed(),
+        href: "/market-pulse",
+      },
+      weekly: {
+        week: weekHistory.data,
+        month: monthHistory.data,
+        href: DASHBOARD_DEEP_LINKS.portfolioPerformance,
+      },
+    });
+    if (!pulse?.weekly?.available || pulse.weekly.value == null) return null;
+    return {
+      score: pulse.weekly.value,
+      bandLabel: pulse.weekly.band?.label ?? "Pulse",
+    };
+  }, [holdings, monthHistory.data, weekHistory.data]);
 
   const requested = parsePeriodParam(searchParams.get("period"));
   const monthParam = searchParams.get("month");
@@ -349,7 +373,14 @@ function CompanionReviewContent() {
               id={`companion-panel-${activePeriod}`}
               aria-labelledby={`companion-tab-${activePeriod}`}
             >
-              <CompanionReviewPanel review={review} />
+              <CompanionReviewPanel
+                review={review}
+                weeklyPulse={
+                  activePeriod === "weekly" && !savedReview
+                    ? weeklyPulse
+                    : null
+                }
+              />
             </div>
 
             {activePeriod === "weekly" || activePeriod === "monthly" ? (

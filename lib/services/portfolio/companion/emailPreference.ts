@@ -1,6 +1,7 @@
 /**
  * Monthly review email preference — default OFF.
  * Stored in user_settings.preferences without overwriting unrelated keys.
+ * Delivery is gated by Resend config in the cron job — not by saving this preference.
  */
 
 import { MONTHLY_REVIEW_EMAIL_PREF_KEY } from "@/lib/services/portfolio/companion/snapshotTypes";
@@ -38,6 +39,7 @@ export async function fetchMonthlyReviewEmailOptIn(
 
 /**
  * Merge-update preferences JSON so unrelated keys stay intact.
+ * Creates a settings row when missing so opt-in is never blocked by orphan accounts.
  */
 export async function updateMonthlyReviewEmailOptIn(
   client: PreferencesClient,
@@ -54,20 +56,25 @@ export async function updateMonthlyReviewEmailOptIn(
     throw new Error(readError.message || "Could not load settings.");
   }
 
-  if (!existing) {
-    throw new Error(
-      "Your account settings were not found. Please refresh and try again.",
-    );
-  }
-
   const current =
-    existing.preferences && typeof existing.preferences === "object"
+    existing?.preferences && typeof existing.preferences === "object"
       ? { ...(existing.preferences as Record<string, unknown>) }
       : {};
 
   current[MONTHLY_REVIEW_EMAIL_PREF_KEY] = optIn;
   current[`${MONTHLY_REVIEW_EMAIL_PREF_KEY}_updated_at`] =
     new Date().toISOString();
+
+  if (!existing) {
+    const { error: insertError } = await client.from("user_settings").insert({
+      user_id: userId,
+      preferences: current,
+    });
+    if (insertError) {
+      throw new Error(insertError.message || "Could not save email preference.");
+    }
+    return optIn;
+  }
 
   const { error: writeError } = await client
     .from("user_settings")
@@ -81,6 +88,7 @@ export async function updateMonthlyReviewEmailOptIn(
   return optIn;
 }
 
+/** Whether Resend can send today. Preference saving does not depend on this. */
 export function isMonthlyReviewEmailConfigured(): boolean {
   return Boolean(
     process.env.RESEND_API_KEY?.trim() && process.env.EMAIL_FROM?.trim(),

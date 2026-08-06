@@ -70,7 +70,8 @@ describe("supported instruments public experience", () => {
 
     expect(helpCentre).toContain("whichInvestmentsSupportedFaq");
     expect(helpCentre).toContain("unsupportedInvestmentFaq");
-    expect(faqPage).toContain("HELP_CENTRE_SECTIONS");
+    expect(faqPage).toContain("HelpCentreClient");
+    expect(helpCentre).toContain("HELP_CENTRE_SECTIONS");
     expect(faqContent).toContain("Which investments are supported?");
     expect(faqContent).toContain("What happens if my investment is not supported?");
     expect(faqContent).toContain("View the current supported instruments");
