@@ -31,29 +31,32 @@ describe("portfolio history UI", () => {
     expect(access).toContain('"/portfolio-history"');
   });
 
-  it("renders summary, activity destination detail, holdings, and excel export", () => {
-    expect(page).toContain("Total contributed");
-    expect(page).toContain("Total withdrawn");
-    expect(page).toContain("Net contributed");
+  it("renders chart, summary metrics, timeline, holdings, and Export Portfolio", () => {
+    expect(page).toContain("Portfolio growth");
+    expect(page).toContain("Investment return");
+    expect(page).toContain("Net contributions");
     expect(page).toContain("Current portfolio value");
-    expect(page).toContain("Activity");
+    expect(page).toContain("Timeline");
     expect(page).toContain("Current holdings");
     expect(page).toContain("Add activity");
-    expect(page).toContain("Export Excel");
-    expect(page).toContain("formatContributionDestinationLines");
+    expect(page).toContain("Export Portfolio");
+    expect(page).toContain("PortfolioPerformanceChart");
+    expect(page).toContain("PortfolioTimelineList");
     expect(page).toContain("ManageContributionsDialog");
-    expect(page).toContain("downloadPortfolioHistoryWorkbook");
+    expect(page).toContain("downloadPortfolioWorkbook");
+    expect(page).toContain("buildPortfolioTimeline");
   });
 
   it("keeps Portfolio History discoverable in Dashboard, Portfolio and User Menu", () => {
     expect(menu).toContain("PORTFOLIO_HISTORY_PATH");
     expect(menu).toContain("Portfolio History");
-    expect(dashboard).toContain("PortfolioHistoryNavCard");
+    expect(dashboard).toContain("DashboardPortfolioHistorySection");
     expect(portfolio).toContain("PortfolioHistoryNavCard");
     expect(portfolio).toContain("Portfolio History");
     expect(navCard).toContain('PORTFOLIO_HISTORY_LABEL = "Portfolio History"');
     expect(navCard).toContain("PORTFOLIO_HISTORY_PATH");
-    expect(navCard).toContain("Open Portfolio History");
+    expect(navCard).toContain("View full history");
+    expect(navCard).toContain("Export Portfolio");
     expect(tools).toContain("Explore Tobailey");
   });
 

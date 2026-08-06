@@ -2,15 +2,9 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import {
-  ArrowDownCircle,
-  ArrowUpCircle,
-  Download,
-  History,
-  Plus,
-  Wallet,
-} from "lucide-react";
+import { Download, History, Plus, Wallet } from "lucide-react";
 
+import { PortfolioPerformanceChart } from "@/components/analysis/performance/PortfolioPerformanceChart";
 import { ManageContributionsDialog } from "@/components/contributions/ManageContributionsDialog";
 import BottomNavigation from "@/components/home/BottomNav";
 import {
@@ -26,57 +20,36 @@ import {
   appSectionTitleClass,
 } from "@/components/layout/appSurface";
 import { EmptyPortfolioGuide } from "@/components/onboarding/EmptyPortfolioGuide";
+import { PortfolioTimelineList } from "@/components/portfolioHistory/PortfolioTimelineList";
 import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
+import { CONTRIBUTIONS_ADD_LABEL } from "@/lib/client/contributionsCopy";
+import { formatContributionBaseAmount } from "@/lib/client/contributionsFormat";
 import {
-  CONTRIBUTIONS_ADD_LABEL,
-  CONTRIBUTIONS_EXPLANATORY_COPY,
-} from "@/lib/client/contributionsCopy";
-import {
-  formatContributionBaseAmount,
-  formatContributionEntryDate,
-} from "@/lib/client/contributionsFormat";
+  canExportPortfolio,
+  downloadPortfolioWorkbook,
+  mapHoldingsForHistoryExport,
+  PORTFOLIO_EXPORT_EMPTY_MESSAGE,
+  PORTFOLIO_EXPORT_FAILURE_MESSAGE,
+  PORTFOLIO_EXPORT_SUCCESS_MESSAGE,
+} from "@/lib/client/portfolioExport";
 import {
   buildValuedPositions,
   formatPortfolioPercent,
 } from "@/lib/client/portfolioAnalysis";
-import {
-  activityTypeLabel,
-  downloadPortfolioHistoryWorkbook,
-  mapHoldingsForHistoryExport,
-  PORTFOLIO_HISTORY_EMPTY_MESSAGE,
-  PORTFOLIO_HISTORY_EXPORT_FAILURE_MESSAGE,
-  PORTFOLIO_HISTORY_EXPORT_SUCCESS_MESSAGE,
-} from "@/lib/client/portfolioHistoryExport";
 import { buildPortfolioPerformance } from "@/lib/client/portfolioPerformance";
+import { useCashIntelligence } from "@/lib/client/useCashIntelligence";
+import { useGoalProgress } from "@/lib/client/useGoalProgress";
 import { usePortfolioContributions } from "@/lib/client/usePortfolioContributions";
+import { usePortfolioDividends } from "@/lib/client/usePortfolioDividends";
+import { usePortfolioPerformanceHistory } from "@/lib/client/usePortfolioPerformanceHistory";
+import { useUserGoal } from "@/lib/client/useUserGoal";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 import { holdingDetailPath, PORTFOLIO_PATH } from "@/lib/navigation/appRoutes";
-import { formatContributionDestinationLines } from "@/lib/services/contributions/destination";
-import type { PortfolioContributionEntry } from "@/lib/services/contributions/types";
-
-function formatOriginalAmount(entry: PortfolioContributionEntry): string {
-  return new Intl.NumberFormat("en-GB", {
-    style: "currency",
-    currency: entry.currency,
-    currencyDisplay: "narrowSymbol",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(entry.amount);
-}
-
-function HistorySkeleton() {
-  return (
-    <div className="space-y-4" aria-hidden>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="h-20 animate-pulse rounded-2xl bg-slate-100" />
-        <div className="h-20 animate-pulse rounded-2xl bg-slate-100" />
-        <div className="h-20 animate-pulse rounded-2xl bg-slate-100" />
-        <div className="h-20 animate-pulse rounded-2xl bg-slate-100" />
-      </div>
-      <div className="h-40 animate-pulse rounded-2xl bg-slate-100" />
-    </div>
-  );
-}
+import { buildPortfolioExposureAllocation } from "@/lib/services/classification";
+import {
+  buildPortfolioTimeline,
+  timelineToGoalHistoryPoints,
+} from "@/lib/services/portfolio/timeline";
 
 function SummaryMetric({
   label,
@@ -86,9 +59,9 @@ function SummaryMetric({
   value: string;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+    <div className="min-w-0 border-t border-slate-200/80 pt-3 first:border-t-0 first:pt-0 sm:border-t-0 sm:border-l sm:border-slate-200/80 sm:px-4 sm:pt-0 sm:first:border-l-0 sm:first:pl-0">
       <p className={appSectionLabelClass}>{label}</p>
-      <p className={`mt-1 truncate ${appCardValueClass} text-slate-900`}>
+      <p className={`mt-1 truncate ${appCardValueClass} text-slate-950`}>
         {value}
       </p>
     </div>
@@ -98,7 +71,8 @@ function SummaryMetric({
 export default function PortfolioHistoryPage() {
   const { formatEur, convertToEur, convertEur, baseCurrency } =
     useBaseCurrencyDisplay();
-  const { holdings, portfolioReady } = useUserPortfolio();
+  const { holdings, portfolioReady, userSub } = useUserPortfolio();
+  const { goal, hasSavedGoal } = useUserGoal();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
   const [exportSuccess, setExportSuccess] = useState<string | null>(null);
@@ -122,6 +96,10 @@ export default function PortfolioHistoryPage() {
       })),
     [holdings],
   );
+  const exposure = useMemo(
+    () => buildPortfolioExposureAllocation(holdings),
+    [holdings],
+  );
 
   const {
     entries,
@@ -140,6 +118,65 @@ export default function PortfolioHistoryPage() {
     true,
     contributionHoldings,
   );
+
+  const history = usePortfolioPerformanceHistory(holdings, "1Y");
+  const { snapshot: cashSnapshot } = useCashIntelligence(
+    holdings,
+    holdings.length > 0,
+  );
+  const { snapshot: dividendSnapshot } = usePortfolioDividends(
+    holdings,
+    userSub,
+    holdings.length > 0,
+  );
+
+  const dividendPayments = useMemo(() => {
+    const next = dividendSnapshot?.nextPayment;
+    if (!next?.paymentDate) return [];
+    return [
+      {
+        id: `next-${next.symbol}-${next.paymentDate}`,
+        paymentDate: next.paymentDate,
+        holdingSymbol: next.symbol,
+        amountBase: next.amountEur,
+        title: `Upcoming dividend · ${next.symbol}`,
+      },
+    ];
+  }, [dividendSnapshot]);
+
+  const timeline = useMemo(
+    () =>
+      buildPortfolioTimeline({
+        entries,
+        contributionSummary: summary,
+        chartPoints: history.data?.chartPoints ?? null,
+        currentPortfolioValue: performance.totalValueAvailable
+          ? performance.totalValue
+          : null,
+        portfolioValueAvailable: performance.totalValueAvailable,
+        startingPortfolioValue: history.data?.startingValue ?? null,
+        endingPortfolioValue: history.data?.endingValue ?? null,
+        investmentReturn: history.data?.investmentReturn ?? null,
+        investmentReturnPercent: history.data?.investmentReturnPercent ?? null,
+        periodLabel: history.data ? "1 year" : null,
+        dividendPayments,
+      }),
+    [
+      dividendPayments,
+      entries,
+      history.data,
+      performance.totalValue,
+      performance.totalValueAvailable,
+      summary,
+    ],
+  );
+
+  const goalProgress = useGoalProgress({
+    holdings,
+    goal,
+    hasSavedGoal,
+    portfolioHistory: timelineToGoalHistoryPoints(timeline),
+  });
 
   const formatContributionAmount = (amount: number) =>
     formatContributionBaseAmount(amount, formatEur, convertToEur);
@@ -162,51 +199,73 @@ export default function PortfolioHistoryPage() {
   }
 
   function handleExport() {
-    if (isExporting) {
-      return;
-    }
+    if (isExporting) return;
     setExportError(null);
     setExportSuccess(null);
 
-    if (!hasEntries || entries.length === 0) {
-      setExportError(PORTFOLIO_HISTORY_EMPTY_MESSAGE);
+    const exportInput = {
+      summary,
+      entries,
+      holdings: exportHoldings,
+      portfolioBaseCurrency: baseCurrency,
+      portfolioValueAvailable: performance.totalValueAvailable,
+      timelineSummary: timeline.summary,
+      exposure,
+      cash: cashSnapshot,
+      goals: hasSavedGoal && goal
+        ? {
+            goal,
+            hasSavedGoal,
+            currentProgressPercent: goalProgress.currentProgressPercent,
+            remainingAmount: goalProgress.remainingAmount,
+            statusLabel: goalProgress.status,
+          }
+        : null,
+    };
+
+    if (!canExportPortfolio(exportInput)) {
+      setExportError(PORTFOLIO_EXPORT_EMPTY_MESSAGE);
       return;
     }
 
     setIsExporting(true);
     try {
-      downloadPortfolioHistoryWorkbook({
-        summary,
-        entries,
-        holdings: exportHoldings,
-        portfolioBaseCurrency: baseCurrency,
-        portfolioValueAvailable: performance.totalValueAvailable,
-      });
-      setExportSuccess(PORTFOLIO_HISTORY_EXPORT_SUCCESS_MESSAGE);
+      downloadPortfolioWorkbook(exportInput);
+      setExportSuccess(PORTFOLIO_EXPORT_SUCCESS_MESSAGE);
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : PORTFOLIO_HISTORY_EXPORT_FAILURE_MESSAGE;
+        err instanceof Error ? err.message : PORTFOLIO_EXPORT_FAILURE_MESSAGE;
       setExportError(
-        message === PORTFOLIO_HISTORY_EMPTY_MESSAGE
+        message === PORTFOLIO_EXPORT_EMPTY_MESSAGE
           ? message
-          : PORTFOLIO_HISTORY_EXPORT_FAILURE_MESSAGE,
+          : PORTFOLIO_EXPORT_FAILURE_MESSAGE,
       );
     } finally {
       setIsExporting(false);
     }
   }
 
+  const growthLabel =
+    timeline.summary.portfolioGrowth != null
+      ? formatEur(timeline.summary.portfolioGrowth)
+      : "—";
+  const returnLabel =
+    timeline.summary.investmentReturn != null
+      ? formatContributionAmount(timeline.summary.investmentReturn)
+      : "—";
+  const netLabel = formatContributionAmount(timeline.summary.netContributions);
   const currentValueLabel =
-    performance.totalValueAvailable && summary.currentValue != null
-      ? formatEur(summary.currentValue)
+    timeline.summary.portfolioValueAvailable &&
+    timeline.summary.currentPortfolioValue != null
+      ? formatEur(timeline.summary.currentPortfolioValue)
       : "Unavailable";
 
   return (
     <>
-      <PageContainer>
+      <PageContainer stackClassName="gap-5 md:gap-7">
         <PageHero
           title="Portfolio History"
-          subtitle="Cash contributions, withdrawals, and your current holdings snapshot."
+          subtitle="How your portfolio developed, what you invested, and what changed."
           backToDashboard
           actions={
             <div className="flex flex-wrap gap-2">
@@ -227,16 +286,11 @@ export default function PortfolioHistoryPage() {
                 className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-navy-hero disabled:cursor-wait disabled:opacity-70"
               >
                 <Download className="h-4 w-4" aria-hidden />
-                {isExporting ? "Preparing Excel…" : "Export Excel"}
+                {isExporting ? "Preparing export…" : "Export Portfolio"}
               </button>
             </div>
           }
         />
-
-        <p className={`${appSectionMetaClass} text-slate-600`}>
-          Your portfolio data is yours. You can export your complete Portfolio
-          History to Excel, including when your trial ends.
-        </p>
 
         {exportError ? (
           <p className={appSectionBodyClass} role="alert">
@@ -250,27 +304,82 @@ export default function PortfolioHistoryPage() {
         ) : null}
 
         <section
-          aria-labelledby="portfolio-history-summary-title"
-          className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm"
+          aria-labelledby="portfolio-history-chart-title"
+          className="min-w-0 overflow-hidden rounded-[28px] border border-slate-200/80 bg-white"
         >
-          <div className="border-b border-slate-200 px-5 py-5 sm:px-7">
-            <div className="flex items-center gap-2">
-              <History className="h-5 w-5 text-slate-700" aria-hidden />
+          <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-4 py-4 sm:px-6">
+            <div className="min-w-0">
               <h2
-                id="portfolio-history-summary-title"
+                id="portfolio-history-chart-title"
                 className={appSectionTitleClass}
               >
-                Summary
+                Portfolio development
               </h2>
+              <p className={`mt-1 ${appSectionMetaClass}`}>
+                {timeline.summary.periodLabel
+                  ? `${timeline.summary.periodLabel} · verified market history`
+                  : "Verified market history when available"}
+              </p>
             </div>
-            <p className={`mt-1.5 ${appSectionMetaClass}`}>
-              {CONTRIBUTIONS_EXPLANATORY_COPY}
-            </p>
+            <History className="mt-0.5 h-5 w-5 shrink-0 text-slate-500" aria-hidden />
+          </div>
+          <div className="px-3 py-4 sm:px-5 sm:py-5">
+            {history.isLoading ? (
+              <div
+                className="h-[190px] animate-pulse rounded-2xl bg-slate-100 sm:h-[210px]"
+                aria-hidden
+              />
+            ) : (
+              <PortfolioPerformanceChart
+                points={timeline.chartPoints}
+                hasSeries={timeline.hasValueSeries}
+                emptyMessage="Portfolio development appears here once daily market history is available for your holdings."
+              />
+            )}
           </div>
 
-          <div className="px-5 py-5 sm:px-7">
+          <div className="grid min-w-0 gap-4 border-t border-slate-100 px-4 py-4 sm:grid-cols-2 sm:gap-0 lg:grid-cols-4 sm:px-6">
+            <SummaryMetric label="Portfolio growth" value={growthLabel} />
+            <SummaryMetric label="Investment return" value={returnLabel} />
+            <SummaryMetric label="Net contributions" value={netLabel} />
+            <SummaryMetric
+              label="Current portfolio value"
+              value={currentValueLabel}
+            />
+          </div>
+        </section>
+
+        <section
+          aria-labelledby="portfolio-history-timeline-title"
+          className="min-w-0 overflow-hidden rounded-[28px] border border-slate-200/80 bg-white"
+        >
+          <div className="flex flex-col gap-3 border-b border-slate-100 px-4 py-4 sm:flex-row sm:items-start sm:justify-between sm:px-6">
+            <div className="min-w-0">
+              <h2
+                id="portfolio-history-timeline-title"
+                className={appSectionTitleClass}
+              >
+                Timeline
+              </h2>
+              <p className={`mt-1 ${appSectionMetaClass}`}>
+                Contributions, withdrawals, and milestones
+              </p>
+            </div>
+            {status === "ready" ? (
+              <button
+                type="button"
+                onClick={() => setDialogOpen(true)}
+                className="inline-flex min-h-[44px] shrink-0 items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+              >
+                <Plus className="h-4 w-4" aria-hidden />
+                {hasEntries ? "Add activity" : CONTRIBUTIONS_ADD_LABEL}
+              </button>
+            ) : null}
+          </div>
+
+          <div className="px-4 py-5 sm:px-6">
             {status === "loading" ? (
-              <HistorySkeleton />
+              <div className="h-32 animate-pulse rounded-2xl bg-slate-100" />
             ) : status === "error" ? (
               <div className="space-y-3">
                 <p className={appSectionBodyClass} role="alert">
@@ -279,146 +388,25 @@ export default function PortfolioHistoryPage() {
                 <button
                   type="button"
                   onClick={() => void reload()}
-                  className="inline-flex min-h-[40px] items-center text-sm font-semibold text-blue-700 transition hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                  className="inline-flex min-h-[40px] items-center text-sm font-semibold text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                 >
                   Retry
                 </button>
               </div>
             ) : (
-              <div className="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <SummaryMetric
-                  label="Total contributed"
-                  value={formatContributionAmount(summary.totalContributed)}
-                />
-                <SummaryMetric
-                  label="Total withdrawn"
-                  value={formatContributionAmount(summary.totalWithdrawn)}
-                />
-                <SummaryMetric
-                  label="Net contributed"
-                  value={formatContributionAmount(summary.netContributed)}
-                />
-                <SummaryMetric
-                  label="Current portfolio value"
-                  value={currentValueLabel}
-                />
-              </div>
-            )}
-          </div>
-        </section>
-
-        <section
-          aria-labelledby="portfolio-history-activity-title"
-          className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm"
-        >
-          <div className="flex flex-col gap-4 border-b border-slate-200 px-5 py-5 sm:flex-row sm:items-start sm:justify-between sm:px-7">
-            <div className="min-w-0">
-              <h2
-                id="portfolio-history-activity-title"
-                className={appSectionTitleClass}
-              >
-                Activity
-              </h2>
-              <p className={`mt-1.5 ${appSectionMetaClass}`}>
-                Contributions, withdrawals, and opening balance — newest first.
-              </p>
-            </div>
-            {status === "ready" ? (
-              <button
-                type="button"
-                onClick={() => setDialogOpen(true)}
-                className="inline-flex min-h-[44px] shrink-0 items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-              >
-                <Plus className="h-4 w-4" aria-hidden />
-                {hasEntries ? "Add activity" : CONTRIBUTIONS_ADD_LABEL}
-              </button>
-            ) : null}
-          </div>
-
-          <div className="px-5 py-5 sm:px-7">
-            {status === "loading" ? (
-              <div className="h-32 animate-pulse rounded-2xl bg-slate-100" />
-            ) : status === "error" ? null : !hasEntries ? (
-              <div className="space-y-4">
-                <p className={appSectionBodyClass}>
-                  No contribution activity yet. Add an opening contribution to
-                  establish your starting point.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setDialogOpen(true)}
-                  className="inline-flex min-h-[44px] items-center rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-                >
-                  {CONTRIBUTIONS_ADD_LABEL}
-                </button>
-              </div>
-            ) : (
-              <ul className="space-y-2">
-                {entries.map((entry) => {
-                  const isContribution = entry.entryType === "contribution";
-                  return (
-                    <li
-                      key={entry.id}
-                      className="rounded-2xl border border-slate-200 px-4 py-3"
-                    >
-                      <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-                            {isContribution ? (
-                              <ArrowUpCircle
-                                className="h-4 w-4 shrink-0 text-emerald-700"
-                                aria-hidden
-                              />
-                            ) : (
-                              <ArrowDownCircle
-                                className="h-4 w-4 shrink-0 text-amber-800"
-                                aria-hidden
-                              />
-                            )}
-                            <span>{activityTypeLabel(entry)}</span>
-                          </p>
-                          <p className={`mt-1 ${appSectionMetaClass}`}>
-                            {formatContributionEntryDate(entry.entryDate)} ·{" "}
-                            {formatOriginalAmount(entry)}
-                            {entry.currency !== entry.baseCurrency
-                              ? ` · ${formatContributionAmount(entry.baseAmount)}`
-                              : null}
-                          </p>
-                          {formatContributionDestinationLines(
-                            entry,
-                            formatContributionAmount,
-                          ).map((line) => (
-                            <p
-                              key={line}
-                              className={`mt-1 ${appSectionMetaClass}`}
-                            >
-                              {line}
-                            </p>
-                          ))}
-                          {entry.note ? (
-                            <p className={`mt-1 ${appSectionBodyClass}`}>
-                              {entry.note}
-                            </p>
-                          ) : null}
-                        </div>
-                        <p className="text-sm font-semibold text-slate-900">
-                          {isContribution ? "+" : "−"}
-                          {formatContributionAmount(entry.baseAmount)}
-                        </p>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
+              <PortfolioTimelineList
+                events={timeline.events}
+                formatAmount={formatContributionAmount}
+              />
             )}
           </div>
         </section>
 
         <section
           aria-labelledby="portfolio-history-holdings-title"
-          className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm"
+          className="min-w-0 overflow-hidden rounded-[28px] border border-slate-200/80 bg-white"
         >
-          <div className="flex flex-col gap-4 border-b border-slate-200 px-5 py-5 sm:flex-row sm:items-start sm:justify-between sm:px-7">
+          <div className="flex flex-col gap-3 border-b border-slate-100 px-4 py-4 sm:flex-row sm:items-start sm:justify-between sm:px-6">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <Wallet className="h-5 w-5 text-slate-700" aria-hidden />
@@ -429,20 +417,16 @@ export default function PortfolioHistoryPage() {
                   Current holdings
                 </h2>
               </div>
-              <p className={`mt-1.5 ${appSectionMetaClass}`}>
-                Validated market values where available. Open a holding for
-                detail.
-              </p>
             </div>
             <Link
               href={PORTFOLIO_PATH}
-              className="inline-flex min-h-[44px] shrink-0 items-center text-sm font-semibold text-blue-700 transition hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+              className="inline-flex min-h-[44px] shrink-0 items-center text-sm font-semibold text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
             >
               Manage portfolio
             </Link>
           </div>
 
-          <div className="px-5 py-5 sm:px-7">
+          <div className="px-4 py-5 sm:px-6">
             {holdings.length === 0 ? (
               <EmptyPortfolioGuide
                 density="compact"
@@ -468,9 +452,7 @@ export default function PortfolioHistoryPage() {
                         </p>
                         <p className={`mt-1 ${appSectionMetaClass}`}>
                           {holding.quantity.toLocaleString("en-GB")}
-                          {holding.assetType === "cash"
-                            ? " cash"
-                            : " units"}
+                          {holding.assetType === "cash" ? " cash" : " units"}
                           {` · ${formatPortfolioPercent(weightPercent)}`}
                         </p>
                       </div>
@@ -502,63 +484,26 @@ export default function PortfolioHistoryPage() {
                     </li>
                   );
                 })}
-                {unvaluedHoldings.map((holding) => {
-                  const detailHref =
-                    holding.assetType === "cash"
-                      ? null
-                      : holdingDetailPath(holding.symbol);
-                  const content = (
-                    <>
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-slate-900">
-                          {holding.symbol}
-                          <span className="ml-2 font-medium text-slate-600">
-                            {holding.name}
-                          </span>
-                        </p>
-                        <p className={`mt-1 ${appSectionMetaClass}`}>
-                          {holding.quantity.toLocaleString("en-GB")}
-                          {holding.assetType === "cash"
-                            ? " cash"
-                            : " units"}
-                        </p>
-                      </div>
-                      <p className="shrink-0 text-sm font-semibold text-slate-500">
-                        Unavailable
+                {unvaluedHoldings.map((holding) => (
+                  <li
+                    key={holding.id}
+                    className="flex items-start justify-between gap-3 px-1 py-3"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-slate-900">
+                        {holding.symbol}
+                        <span className="ml-2 font-medium text-slate-600">
+                          {holding.name}
+                        </span>
                       </p>
-                    </>
-                  );
-
-                  if (detailHref) {
-                    return (
-                      <li key={holding.id}>
-                        <Link
-                          href={detailHref}
-                          className="flex items-start justify-between gap-3 rounded-xl px-1 py-3 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-                        >
-                          {content}
-                        </Link>
-                      </li>
-                    );
-                  }
-
-                  return (
-                    <li
-                      key={holding.id}
-                      className="flex items-start justify-between gap-3 px-1 py-3"
-                    >
-                      {content}
-                    </li>
-                  );
-                })}
+                    </div>
+                    <p className="shrink-0 text-sm font-semibold text-slate-500">
+                      Unavailable
+                    </p>
+                  </li>
+                ))}
               </ul>
             )}
-            {performance.totalValuePartial &&
-            performance.totalValueCoverageMessage ? (
-              <p className={`mt-4 ${appSectionMetaClass}`}>
-                {performance.totalValueCoverageMessage}
-              </p>
-            ) : null}
           </div>
         </section>
       </PageContainer>

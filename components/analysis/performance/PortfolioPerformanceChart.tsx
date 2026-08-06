@@ -214,10 +214,13 @@ export function PortfolioPerformanceChart({
   points,
   hasSeries,
   emptyMessage = PORTFOLIO_PERFORMANCE_CHART_EMPTY_MESSAGE,
+  shellClassName = PERFORMANCE_CHART_SHELL_HEIGHT_CLASS,
 }: {
   points: PortfolioPerformancePoint[];
   hasSeries: boolean;
   emptyMessage?: string;
+  /** Override responsive shell height classes (e.g. compact Dashboard preview). */
+  shellClassName?: string;
 }) {
   const { formatEur, formatEurCompact } = useBaseCurrencyDisplay();
   const compact = useCompactChartLayout();
@@ -312,7 +315,7 @@ export function PortfolioPerformanceChart({
         role="group"
         aria-label="Portfolio value chart. Use arrow keys to inspect points."
         onKeyDown={handleKeyDown}
-        className={`relative min-w-0 overflow-hidden rounded-[18px] bg-gradient-to-b from-slate-50/95 to-white px-1 py-1.5 ring-1 ring-slate-200/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70 sm:px-2 sm:py-2 ${PERFORMANCE_CHART_SHELL_HEIGHT_CLASS}`}
+        className={`relative min-w-0 overflow-hidden rounded-[18px] bg-gradient-to-b from-slate-50/95 to-white px-1 py-1.5 ring-1 ring-slate-200/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70 sm:px-2 sm:py-2 ${shellClassName}`}
       >
         {activePoint && tooltipStyle ? (
           <ChartTooltip

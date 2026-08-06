@@ -29,7 +29,7 @@ describe("Priority 2 Dashboard progressive disclosure", () => {
       "<DashboardMarketPulseCard",
       "<DashboardPerspectivesWidget",
       "<DashboardCashIntelligenceCard",
-      "<PortfolioHistoryNavCard",
+      "<DashboardPortfolioHistorySection",
       "<DashboardPortfolioExposureCard",
       "<DashboardContributionsCard",
       "<DashboardExploreTools",

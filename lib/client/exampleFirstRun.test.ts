@@ -103,7 +103,7 @@ describe("first-run dashboard wiring", () => {
     expect(tools).toContain("Explore Tobailey");
     expect(tools).toContain("Structure and resilience scorecard.");
     expect(tools).toContain("Track progress toward your targets.");
-    expect(dashboard).toContain("PortfolioHistoryNavCard");
+    expect(dashboard).toContain("DashboardPortfolioHistorySection");
     expect(dashboard).toContain("DashboardMarketPulseCard");
     expect(dashboard).toContain("DashboardPerspectivesWidget");
     expect(menu).toContain('title="Portfolio"');

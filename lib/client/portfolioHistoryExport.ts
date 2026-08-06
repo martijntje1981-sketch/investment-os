@@ -8,12 +8,18 @@ import * as XLSX from "xlsx";
 import {
   formatContributionEntryDate,
 } from "@/lib/client/contributionsFormat";
+import {
+  activitySourceLabel,
+  activityTypeLabel,
+} from "@/lib/services/contributions/activityLabels";
 import type {
   ContributionSummary,
   PortfolioContributionEntry,
 } from "@/lib/services/contributions/types";
 import type { PortfolioBaseCurrency } from "@/lib/types/portfolioBaseCurrency";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
+
+export { activitySourceLabel, activityTypeLabel };
 
 export type PortfolioHistoryHoldingRow = {
   symbol: string;
@@ -59,34 +65,6 @@ export const PORTFOLIO_HISTORY_EXPORT_FAILURE_MESSAGE =
 
 export const PORTFOLIO_HISTORY_EXPORT_SUCCESS_MESSAGE =
   "Portfolio History downloaded.";
-
-export function activityTypeLabel(
-  entry: PortfolioContributionEntry,
-): string {
-  if (entry.source === "opening_balance") {
-    return "Opening contribution";
-  }
-  if (entry.entryType === "withdrawal") {
-    return "Withdrawal";
-  }
-  if (entry.source === "import") {
-    return "Contribution (imported)";
-  }
-  return "Contribution";
-}
-
-export function activitySourceLabel(
-  entry: PortfolioContributionEntry,
-): string {
-  switch (entry.source) {
-    case "opening_balance":
-      return "Opening balance";
-    case "import":
-      return "Import";
-    default:
-      return "Manual";
-  }
-}
 
 /** Prevent formula injection when Excel opens exported cells. */
 export function sanitizeExcelCellValue(

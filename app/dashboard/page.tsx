@@ -9,7 +9,7 @@ import { DashboardTodaysMarketBriefing } from "@/components/dashboard/DashboardT
 import { DashboardMarketPulseCard } from "@/components/dashboard/DashboardMarketPulseCard";
 import { DashboardSummary } from "@/components/dashboard/DashboardSummary";
 import { DashboardExploreTools } from "@/components/dashboard/DashboardExploreTools";
-import { PortfolioHistoryNavCard } from "@/components/portfolioHistory/PortfolioHistoryNavCard";
+import { DashboardPortfolioHistorySection } from "@/components/dashboard/DashboardPortfolioHistorySection";
 import { DashboardFirstRunCue } from "@/components/dashboard/DashboardFirstRunCue";
 import { DemoHoldingsCallout } from "@/components/example/DemoHoldingsCallout";
 import { TrialStepsCard } from "@/components/example/TrialStepsCard";
@@ -269,7 +269,12 @@ export default function DashboardPage() {
           <DashboardCashIntelligenceCard holdings={holdings} />
 
           {/* 7. Portfolio History */}
-          <PortfolioHistoryNavCard />
+          <DashboardPortfolioHistorySection
+            holdings={holdings}
+            history={monthHistory.data}
+            portfolioValue={snapshot.portfolioValue}
+            portfolioValueAvailable={snapshot.portfolioValueAvailable}
+          />
 
           {/* 8. Portfolio Exposure */}
           <DashboardPortfolioExposureCard allocation={exposureAllocation} />
