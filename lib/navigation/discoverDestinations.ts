@@ -5,6 +5,7 @@
 
 import type { LucideIcon } from "lucide-react";
 import {
+  BookOpen,
   Compass,
   History,
   ListChecks,
@@ -13,7 +14,10 @@ import {
   Waves,
 } from "lucide-react";
 
-import { PORTFOLIO_HISTORY_PATH } from "@/lib/navigation/appRoutes";
+import {
+  PORTFOLIO_HISTORY_PATH,
+  REVIEW_PATH,
+} from "@/lib/navigation/appRoutes";
 
 export const NEWS_PATH = "/news";
 export const NEWS_MARKETS_TODAY_HREF = "/news#markets-today";
@@ -31,6 +35,12 @@ export type DiscoverDestination = {
 
 /** High-value secondary pages — shown in Discover / More. */
 export const DISCOVER_DESTINATIONS: readonly DiscoverDestination[] = [
+  {
+    href: REVIEW_PATH,
+    label: "Your Review",
+    description: "Today, this week and this month",
+    icon: BookOpen,
+  },
   {
     href: NEWS_MARKETS_TODAY_HREF,
     label: "Markets Today",
@@ -71,6 +81,7 @@ export const DISCOVER_DESTINATIONS: readonly DiscoverDestination[] = [
 
 /** Paths that belong under the mobile More tab (active-state matching). */
 export const MORE_NAV_PATH_PREFIXES: readonly string[] = [
+  REVIEW_PATH,
   PORTFOLIO_HISTORY_PATH,
   MARKET_PULSE_PATH,
   PERSPECTIVES_PATH,

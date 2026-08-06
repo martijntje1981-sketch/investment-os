@@ -23,10 +23,11 @@ import type {
 import type { PortfolioExposureAllocation } from "@/lib/services/classification";
 import type { CashIntelligenceSnapshot } from "@/lib/services/cashIntelligence/types";
 import type { PortfolioTimelineSummary } from "@/lib/services/portfolio/timeline";
+import type { CompanionReview } from "@/lib/services/portfolio/companion";
 import type { PortfolioBaseCurrency } from "@/lib/types/portfolioBaseCurrency";
 import type { GoalSettings } from "@/lib/types/portfolioStorage";
 
-export const PORTFOLIO_EXPORT_VERSION = "3A.1";
+export const PORTFOLIO_EXPORT_VERSION = "3A.2";
 
 export const PORTFOLIO_EXPORT_EMPTY_MESSAGE =
   "There is nothing to export yet. Add holdings or contribution activity first.";
@@ -59,6 +60,8 @@ export type PortfolioExportInput = {
   exposure?: PortfolioExposureAllocation | null;
   cash?: CashIntelligenceSnapshot | null;
   goals?: PortfolioExportGoalSheet | null;
+  /** Optional companion review snapshot (weekly preferred). */
+  review?: CompanionReview | null;
 };
 
 function formatExportTimestamp(date: Date): string {
@@ -338,6 +341,30 @@ function appendGoalsSheet(
   XLSX.utils.book_append_sheet(workbook, sheet, "Goals");
 }
 
+function appendReviewSheet(
+  workbook: XLSX.WorkBook,
+  review: CompanionReview,
+): void {
+  if (!review.ready) return;
+
+  const rows: Array<Array<string | number>> = [
+    ["Portfolio Review"],
+    ["Period", review.periodLabel],
+    ["Date range", review.dateRangeLabel],
+    ["Lead", review.lead],
+    ...review.supportingFacts.map((fact) => [fact.label, fact.value]),
+    ["Goal status", review.goalStatusLabel ?? ""],
+    ["Milestone", review.milestone?.label ?? ""],
+    ["One thing to know", review.focus?.label ?? ""],
+    ["Closing", review.closingStatement ?? ""],
+  ].map((row) => row.map((cell) => sanitizeExcelCellValue(cell)));
+
+  const sheet = XLSX.utils.aoa_to_sheet(rows);
+  setColumnWidths(sheet, [28, 48]);
+  freezeHeaderRow(sheet);
+  XLSX.utils.book_append_sheet(workbook, sheet, "Portfolio Review");
+}
+
 /**
  * Build the unified Portfolio workbook.
  * Omits Exposure / Cash / Goals sheets when data is unavailable.
@@ -363,6 +390,9 @@ export function buildPortfolioWorkbook(input: PortfolioExportInput): XLSX.WorkBo
   }
   if (input.goals?.hasSavedGoal) {
     appendGoalsSheet(workbook, input.goals);
+  }
+  if (input.review?.ready) {
+    appendReviewSheet(workbook, input.review);
   }
 
   return workbook;

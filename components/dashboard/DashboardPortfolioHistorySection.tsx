@@ -19,6 +19,7 @@ import { useUserGoal } from "@/lib/client/useUserGoal";
 import type { PortfolioPerformanceHistoryApiResponse } from "@/lib/services/performance/types";
 import { buildPortfolioExposureAllocation } from "@/lib/services/classification";
 import { buildPortfolioTimeline } from "@/lib/services/portfolio/timeline";
+import { buildCompanionReview } from "@/lib/services/portfolio/companion";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
 /**
@@ -118,6 +119,13 @@ export function DashboardPortfolioHistorySection({
         })),
         unvaluedHoldings,
       );
+      const weeklyReview = buildCompanionReview("weekly", {
+        holdingCount: holdings.length,
+        formatMoney: formatEur,
+        weekSeries: history?.chartPoints ?? timeline.chartPoints,
+        contributionEntries: entries,
+        hasSavedGoal,
+      });
       const input = {
         summary,
         entries,
@@ -131,6 +139,7 @@ export function DashboardPortfolioHistorySection({
           hasSavedGoal && goal
             ? { goal, hasSavedGoal }
             : null,
+        review: weeklyReview.ready ? weeklyReview : null,
       };
       if (!canExportPortfolio(input)) {
         return;

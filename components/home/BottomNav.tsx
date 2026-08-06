@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Activity,
+  BookOpen,
   ChartNoAxesColumnIncreasing,
   Ellipsis,
   FileUp,
@@ -33,6 +34,7 @@ import {
   DASHBOARD_PATH,
   GOALS_PATH,
   PORTFOLIO_PATH,
+  REVIEW_PATH,
 } from "@/lib/navigation/appRoutes";
 import {
   DISCOVER_DESTINATIONS,
@@ -87,6 +89,7 @@ const guestItems = [
 ] as const;
 
 const moreWorkspaceLinks = [
+  { href: REVIEW_PATH, label: "Your Review", icon: BookOpen },
   { href: GOALS_PATH, label: "Goals", icon: Target },
   { href: "/portfolio-health", label: "Portfolio Scorecard", icon: Activity },
   { href: "/upload", label: "Import holdings", icon: FileUp },

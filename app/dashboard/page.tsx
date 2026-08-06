@@ -9,6 +9,7 @@ import { DashboardTodaysMarketBriefing } from "@/components/dashboard/DashboardT
 import { DashboardMarketPulseCard } from "@/components/dashboard/DashboardMarketPulseCard";
 import { DashboardSummary } from "@/components/dashboard/DashboardSummary";
 import { DashboardExploreTools } from "@/components/dashboard/DashboardExploreTools";
+import { DashboardReviewTeaser } from "@/components/companion/DashboardReviewTeaser";
 import { DashboardPortfolioHistorySection } from "@/components/dashboard/DashboardPortfolioHistorySection";
 import { DashboardFirstRunCue } from "@/components/dashboard/DashboardFirstRunCue";
 import { DemoHoldingsCallout } from "@/components/example/DemoHoldingsCallout";
@@ -43,6 +44,7 @@ import { buildSmartDashboardIntelligence } from "@/lib/client/smartDashboardInte
 import { buildPortfolioHealthProfile } from "@/lib/services/portfolio/portfolioHealthProfile";
 import { buildPortfolioExposureAllocation } from "@/lib/services/classification";
 import { buildPortfolioPulse } from "@/lib/services/portfolio/periodScores";
+import { buildCompanionBundle } from "@/lib/services/portfolio/companion";
 import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 import { logDashboardProductionDiagnostics } from "@/lib/client/investmentOsProductionDebug";
 
@@ -192,6 +194,36 @@ export default function DashboardPage() {
     snapshot,
   ]);
 
+  /** Lightweight readiness for the Review teaser — reuses week/month history already loaded. */
+  const companionBundle = useMemo(
+    () =>
+      buildCompanionBundle({
+        holdingCount: holdings.length,
+        hasDailyData: snapshot.hasDailyData,
+        todayPercent: snapshot.todayPercent,
+        weekSeries: weekHistory.data?.chartPoints ?? null,
+        monthSeries: monthHistory.data?.chartPoints ?? null,
+        hasSavedGoal,
+        goalStatus: goalProgress.status,
+        goalProgressPercent: goalProgress.hasGoal
+          ? goalProgress.currentProgressPercent
+          : null,
+        goalReached: goalProgress.goalReached,
+      }),
+    [
+      goalProgress.currentProgressPercent,
+      goalProgress.goalReached,
+      goalProgress.hasGoal,
+      goalProgress.status,
+      hasSavedGoal,
+      holdings.length,
+      monthHistory.data?.chartPoints,
+      snapshot.hasDailyData,
+      snapshot.todayPercent,
+      weekHistory.data?.chartPoints,
+    ],
+  );
+
   const exampleActive = useExampleActiveStatus(
     portfolioReady && Boolean(userSub),
   );
@@ -286,6 +318,8 @@ export default function DashboardPage() {
               liveRefreshAt,
             }}
           />
+
+          <DashboardReviewTeaser bundle={companionBundle} />
 
           {/* 2. Your Holdings */}
           <HoldingsToday snapshot={snapshot} />
