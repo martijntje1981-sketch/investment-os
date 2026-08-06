@@ -21,7 +21,7 @@ function read(relativePath: string) {
 }
 
 describe("navigation discovery", () => {
-  it("desktop Discover menu renders the expected destinations once", () => {
+  it("desktop Explore menu renders the expected destinations once", () => {
     const menu = read("components/auth/UserMenu.tsx");
     const config = read("lib/navigation/discoverDestinations.ts");
 
@@ -34,6 +34,7 @@ describe("navigation discovery", () => {
     expect(menu).toContain("Analysis");
     expect(menu).toContain('label: "News"');
     expect(menu).toContain("Goals");
+    expect(menu).toContain("Explore");
 
     const hrefs = DISCOVER_DESTINATIONS.map((item) => item.href);
     expect(hrefs).toContain(NEWS_MARKETS_TODAY_HREF);
@@ -45,21 +46,24 @@ describe("navigation discovery", () => {
     expect(config).toContain("Global market briefing");
   });
 
-  it("mobile More menu groups Discover destinations without dropping primary access", () => {
+  it("mobile More menu groups architecture destinations without dropping primary access", () => {
     const bottom = read("components/home/BottomNav.tsx");
 
     expect(bottom).toContain("bottom-nav-more-trigger");
     expect(bottom).toContain("bottom-nav-more-panel");
-    expect(bottom).toContain("DISCOVER_DESTINATIONS");
+    expect(bottom).toContain("APP_ARCHITECTURE_GROUPS");
     expect(bottom).toContain("grid-cols-5");
     expect(bottom).toContain('label: "News"');
     expect(bottom).toContain("Dashboard");
     expect(bottom).toContain("Portfolio");
     expect(bottom).toContain("Analysis");
     expect(bottom).toContain("More");
-    expect(bottom).toContain("Discover");
-    expect(bottom).toContain("Workspace");
-    expect(bottom).toContain(GOALS_IN_MORE);
+    const architecture = read("lib/navigation/productArchitecture.ts");
+    expect(architecture).toContain('title: "Today"');
+    expect(architecture).toContain('title: "My portfolio"');
+    expect(architecture).toContain('title: "Understand"');
+    expect(architecture).toContain("GOALS_PATH");
+    expect(architecture).toContain('label: "Goals"');
   });
 
   it("indicates active routes for primary, discover and more destinations", () => {
@@ -138,5 +142,3 @@ describe("navigation discovery", () => {
     expect(hrefs.filter((href) => href === PERSPECTIVES_PATH)).toHaveLength(1);
   });
 });
-
-const GOALS_IN_MORE = 'href: GOALS_PATH';

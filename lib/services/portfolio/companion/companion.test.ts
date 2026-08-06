@@ -257,7 +257,7 @@ describe("weekly review", () => {
       weekSeries: [],
     });
     expect(review.ready).toBe(false);
-    expect(resolveCompanionDashboardTeaser({
+    const teaser = resolveCompanionDashboardTeaser({
       daily: buildCompanionReview("daily", {
         holdingCount: 2,
         hasDailyData: true,
@@ -266,7 +266,9 @@ describe("weekly review", () => {
       weekly: review,
       monthly: buildCompanionReview("monthly", { holdingCount: 2 }),
       defaultPeriod: "daily",
-    })).toBeNull();
+    });
+    expect(teaser.period).toBe("daily");
+    expect(teaser.label).toMatch(/review/i);
   });
 });
 

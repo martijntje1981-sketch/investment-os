@@ -117,7 +117,7 @@ describe("middleware and private API wiring", () => {
 
     expect(bottomNav).toContain("guestItems");
     expect(bottomNav).toContain('href: "/perspectives"');
-    expect(bottomNav).toContain('href: "/news"');
+    expect(bottomNav).toContain("NEWS_PATH");
     expect(bottomNav).toContain('href: "/supported-instruments"');
     expect(bottomNav).toContain('href: "/login"');
     expect(bottomNav).not.toMatch(/guestItems[\s\S]*href: "\/dashboard"/);

@@ -615,7 +615,7 @@ export function resolveCompanionDashboardTeaser(bundle: CompanionBundle): {
   label: string;
   href: string;
   period: CompanionPeriod;
-} | null {
+} {
   if (bundle.weekly.ready) {
     return {
       label: "View your weekly review",
@@ -630,5 +630,16 @@ export function resolveCompanionDashboardTeaser(bundle: CompanionBundle): {
       period: "monthly",
     };
   }
-  return null;
+  if (bundle.daily.ready) {
+    return {
+      label: "Open Your Review",
+      href: "/review?period=daily",
+      period: "daily",
+    };
+  }
+  return {
+    label: "Your Review",
+    href: "/review",
+    period: bundle.defaultPeriod,
+  };
 }

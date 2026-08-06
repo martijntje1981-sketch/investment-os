@@ -285,7 +285,7 @@ export function NewsBriefingDiscoverLink() {
         href="/discover"
         className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
       >
-        Open Discover
+        Open Ideas
         <ArrowUpRight className="h-4 w-4" aria-hidden />
       </Link>
     </div>

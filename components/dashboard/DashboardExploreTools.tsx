@@ -33,8 +33,8 @@ const TOOLS = [
   },
   {
     href: PORTFOLIO_HEALTH_PATH,
-    title: "Portfolio Health",
-    benefit: "Structure and resilience scorecard.",
+    title: "Portfolio Scorecard",
+    benefit: "Strengths, structure and resilience.",
     icon: Activity,
   },
 ] as const;
@@ -59,10 +59,10 @@ export function DashboardExploreTools({
           id="dashboard-explore-tools-heading"
           className={appSectionTitleClass}
         >
-          Explore Tobailey
+          Understand your portfolio
         </h2>
         <p className={`mt-1 ${appSectionSubtitleClass}`}>
-          Useful features beyond this Dashboard.
+          Go deeper when you want the full story.
         </p>
       </div>
 

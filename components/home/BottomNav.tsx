@@ -5,19 +5,14 @@ import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Activity,
-  BookOpen,
   ChartNoAxesColumnIncreasing,
   Ellipsis,
-  FileUp,
   LayoutDashboard,
   ListChecks,
   LogIn,
   Newspaper,
   ScanLine,
-  Settings,
   Sparkles,
-  Target,
 } from "lucide-react";
 
 import { appBottomNavLabelClass } from "@/components/layout/appSurface";
@@ -32,15 +27,14 @@ import {
 import {
   ANALYSIS_PATH,
   DASHBOARD_PATH,
-  GOALS_PATH,
+  NEWS_PATH,
   PORTFOLIO_PATH,
-  REVIEW_PATH,
 } from "@/lib/navigation/appRoutes";
 import {
-  DISCOVER_DESTINATIONS,
   isDiscoverHrefActive,
   isMoreNavPathActive,
 } from "@/lib/navigation/discoverDestinations";
+import { APP_ARCHITECTURE_GROUPS } from "@/lib/navigation/productArchitecture";
 
 const authenticatedItems = [
   {
@@ -55,7 +49,7 @@ const authenticatedItems = [
   },
   {
     label: "News",
-    href: "/news",
+    href: NEWS_PATH,
     icon: Newspaper,
   },
   {
@@ -72,8 +66,8 @@ const guestItems = [
     icon: Sparkles,
   },
   {
-    label: "Markets",
-    href: "/news",
+    label: "News",
+    href: NEWS_PATH,
     icon: Newspaper,
   },
   {
@@ -86,14 +80,6 @@ const guestItems = [
     href: "/login",
     icon: LogIn,
   },
-] as const;
-
-const moreWorkspaceLinks = [
-  { href: REVIEW_PATH, label: "Your Review", icon: BookOpen },
-  { href: GOALS_PATH, label: "Goals", icon: Target },
-  { href: "/portfolio-health", label: "Portfolio Scorecard", icon: Activity },
-  { href: "/upload", label: "Import holdings", icon: FileUp },
-  { href: "/settings", label: "Settings", icon: Settings },
 ] as const;
 
 function shouldShowNav(pathname: string, authenticated: boolean): boolean {
@@ -136,68 +122,54 @@ function MoreMenuPanel({
           More
         </p>
         <p className="mt-0.5 text-sm font-semibold text-slate-800">
-          Discover tools and account
+          Find the right place in Tobailey
         </p>
       </div>
       <div className="max-h-[min(60dvh,28rem)] overflow-y-auto overscroll-contain px-2 py-2 pb-4">
-        <p className="px-2 pb-1 pt-1 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
-          Discover
-        </p>
-        <div className="space-y-0.5">
-          {DISCOVER_DESTINATIONS.map((item) => {
-            const Icon = item.icon;
-            const active = isDiscoverHrefActive(pathname, item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={onNavigate}
-                aria-current={active ? "page" : undefined}
-                className={`flex min-h-[52px] items-start gap-3 rounded-xl px-3 py-2.5 transition ${
-                  active
-                    ? "bg-brand-soft text-brand-navy"
-                    : "text-slate-700 hover:bg-slate-50"
-                }`}
-              >
-                <Icon className="mt-0.5 h-4 w-4 shrink-0 opacity-80" aria-hidden />
-                <span className="min-w-0">
-                  <span className="block text-[14px] font-bold">{item.label}</span>
-                  <span className="mt-0.5 block text-[12px] font-medium text-slate-500">
-                    {item.description}
-                  </span>
-                </span>
-              </Link>
-            );
-          })}
-        </div>
-
-        <div className="mx-2 my-2 border-t border-slate-100" />
-
-        <p className="px-2 pb-1 pt-1 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
-          Workspace
-        </p>
-        <div className="space-y-0.5">
-          {moreWorkspaceLinks.map((item) => {
-            const Icon = item.icon;
-            const active = isBottomNavItemActive(pathname, item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={onNavigate}
-                aria-current={active ? "page" : undefined}
-                className={`flex min-h-[48px] items-center gap-3 rounded-xl px-3 py-2.5 text-[14px] font-bold transition ${
-                  active
-                    ? "bg-brand-soft text-brand-navy"
-                    : "text-slate-700 hover:bg-slate-50"
-                }`}
-              >
-                <Icon className="h-4 w-4 shrink-0 opacity-80" aria-hidden />
-                {item.label}
-              </Link>
-            );
-          })}
-        </div>
+        {APP_ARCHITECTURE_GROUPS.map((group, index) => (
+          <div key={group.id}>
+            {index > 0 ? (
+              <div className="mx-2 my-2 border-t border-slate-100" />
+            ) : null}
+            <p className="px-2 pb-1 pt-1 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
+              {group.title}
+            </p>
+            <div className="space-y-0.5">
+              {group.links.map((item) => {
+                const Icon = item.icon;
+                const active = isDiscoverHrefActive(pathname, item.href);
+                return (
+                  <Link
+                    key={`${group.id}-${item.href}`}
+                    href={item.href}
+                    onClick={onNavigate}
+                    aria-current={active ? "page" : undefined}
+                    className={`flex min-h-[52px] items-start gap-3 rounded-xl px-3 py-2.5 transition ${
+                      active
+                        ? "bg-brand-soft text-brand-navy"
+                        : "text-slate-700 hover:bg-slate-50"
+                    }`}
+                  >
+                    <Icon
+                      className="mt-0.5 h-4 w-4 shrink-0 opacity-80"
+                      aria-hidden
+                    />
+                    <span className="min-w-0">
+                      <span className="block text-[14px] font-bold">
+                        {item.label}
+                      </span>
+                      {item.description ? (
+                        <span className="mt-0.5 block text-[12px] font-medium text-slate-500">
+                          {item.description}
+                        </span>
+                      ) : null}
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </div>
     </div>,
     document.body,

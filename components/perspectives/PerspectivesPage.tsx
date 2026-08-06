@@ -6,6 +6,12 @@ import { Sparkles } from "lucide-react";
 import BottomNavigation from "@/components/home/BottomNav";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHero } from "@/components/layout/PageHero";
+import { PageRelatedLinks } from "@/components/layout/PageRelatedLinks";
+import {
+  MARKET_PULSE_PATH,
+  NEWS_PATH,
+} from "@/lib/navigation/appRoutes";
+import { PAGE_PURPOSE } from "@/lib/navigation/productArchitecture";
 import {
   appCardClass,
   appCardPaddingClass,
@@ -162,7 +168,7 @@ export default function PerspectivesPage() {
       <PageContainer stackClassName="gap-5 md:gap-6">
         <PageHero
           title="Perspectives"
-          subtitle="Curated viewpoints on macro, investing, bitcoin and technology."
+          subtitle="Why today’s news matters — curated viewpoints on macro, investing and technology."
           backToDashboard={Boolean(userSub)}
           stats={
             payload?.fetchedAt ? (
@@ -171,6 +177,14 @@ export default function PerspectivesPage() {
               </p>
             ) : null
           }
+        />
+
+        <PageRelatedLinks
+          purpose={PAGE_PURPOSE.perspectives}
+          links={[
+            { href: NEWS_PATH, label: "Open News" },
+            { href: MARKET_PULSE_PATH, label: "Market Pulse" },
+          ]}
         />
 
         {audience !== "authenticated_holdings" ? (

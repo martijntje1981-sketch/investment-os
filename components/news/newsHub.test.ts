@@ -112,10 +112,9 @@ describe("news hub UI structure", () => {
 
     expect(bottomNav).toContain("guestItems");
     expect(bottomNav).toContain("authenticatedItems");
-    expect(bottomNav).toContain('href: "/news"');
-    expect(bottomNav).toContain('label: "Markets"');
+    expect(bottomNav).toContain("NEWS_PATH");
     expect(bottomNav).toContain('label: "News"');
-    expect(userMenu).toContain('href: "/news"');
+    expect(userMenu).toContain("NEWS_PATH");
     expect(userMenu).toContain('label: "News"');
     expect(userMenu).toContain("desktop-primary-nav");
   });

@@ -175,10 +175,10 @@ describe("empty portfolio surfaces", () => {
     expect(analysis).not.toMatch(/totalValue|allocation.*0%|concentration.*0/i);
   });
 
-  it("keeps Import holdings in the profile Explore menu", () => {
+  it("keeps Import holdings in the profile menu", () => {
     const menu = readProjectFile("components/auth/UserMenu.tsx");
     expect(menu).toMatch(/Import holdings/);
-    expect(menu).toMatch(/href:\s*"\/upload"/);
+    expect(menu).toMatch(/UPLOAD_PATH/);
   });
 
   it("keeps mobile-friendly CTA sizing on the onboarding screen", () => {

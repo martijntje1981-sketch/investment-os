@@ -199,6 +199,6 @@ describe("home and dashboard hierarchy", () => {
 
     expect(insightCard).toContain("insight.headline");
     expect(insightCard).toContain("insight.scoreLines");
-    expect(insightCard).toContain("Open Portfolio Health");
+    expect(insightCard).toContain("Open Portfolio Scorecard");
   });
 });

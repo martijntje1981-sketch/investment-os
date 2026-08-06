@@ -46,7 +46,7 @@ describe("public explore discovery", () => {
 
     expect(bottomNav).toContain("guestItems");
     expect(bottomNav).toContain('label: "Perspectives"');
-    expect(bottomNav).toContain('label: "Markets"');
+    expect(bottomNav).toContain('label: "News"');
     expect(bottomNav).toContain('label: "Instruments"');
     expect(bottomNav).toContain('label: "Sign in"');
     expect(bottomNav).toContain("isPublicAppPath(pathname)");

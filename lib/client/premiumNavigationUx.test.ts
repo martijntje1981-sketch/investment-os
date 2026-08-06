@@ -34,15 +34,15 @@ describe("premium navigation and visual discovery", () => {
     expect(logoutIdx).toBeGreaterThan(footerIdx);
   });
 
-  it("surfaces Explore Tobailey destinations on the Dashboard", () => {
+  it("surfaces Understand destinations on the Dashboard", () => {
     const tools = read("components/dashboard/DashboardExploreTools.tsx");
     const dashboard = read("app/dashboard/page.tsx");
 
     expect(dashboard).toContain("DashboardExploreTools");
-    expect(tools).toContain("Explore Tobailey");
+    expect(tools).toContain("Understand your portfolio");
     expect(tools).toContain("Analysis");
     expect(tools).toContain("Goals");
-    expect(tools).toContain("Portfolio Health");
+    expect(tools).toContain("Portfolio Scorecard");
     expect(tools).toContain("GOALS_PATH");
     expect(tools).toContain("ANALYSIS_PATH");
     expect(tools).toContain("PORTFOLIO_HEALTH_PATH");

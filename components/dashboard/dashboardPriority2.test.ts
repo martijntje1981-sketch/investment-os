@@ -94,10 +94,10 @@ describe("Priority 2 Dashboard progressive disclosure", () => {
     expect(expandPref).toContain("useEffect");
   });
 
-  it("keeps Explore Tobailey quiet with at most three destinations", () => {
+  it("keeps Understand strip quiet with at most three destinations", () => {
     expect(explore).toContain("Analysis");
     expect(explore).toContain("Goals");
-    expect(explore).toContain("Portfolio Health");
+    expect(explore).toContain("Portfolio Scorecard");
     expect(explore).not.toContain("Explore Demo Portfolio");
     const toolCount = (explore.match(/title: "/g) ?? []).length;
     expect(toolCount).toBeLessThanOrEqual(3);

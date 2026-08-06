@@ -29,6 +29,7 @@ import {
   PageContainer,
 } from "@/components/layout/PageContainer";
 import { PageHero } from "@/components/layout/PageHero";
+import { PageRelatedLinks } from "@/components/layout/PageRelatedLinks";
 import { GoalHeroProgressVisual } from "@/components/goals/GoalHeroProgressVisual";
 import { EmptyPortfolioGuide } from "@/components/onboarding/EmptyPortfolioGuide";
 import NumericInput from "@/components/NumericInput";
@@ -60,7 +61,12 @@ import { usePortfolioPerformanceHistory } from "@/lib/client/usePortfolioPerform
 import { useUserGoal } from "@/lib/client/useUserGoal";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
-import { PORTFOLIO_HISTORY_PATH } from "@/lib/navigation/appRoutes";
+import {
+  ANALYSIS_PATH,
+  PORTFOLIO_HISTORY_PATH,
+  REVIEW_PATH,
+} from "@/lib/navigation/appRoutes";
+import { PAGE_PURPOSE } from "@/lib/navigation/productArchitecture";
 import { buildPortfolioExposureAllocation } from "@/lib/services/classification";
 import {
   buildGoalsIntelligence,
@@ -598,21 +604,18 @@ export default function GoalsPage() {
           </div>
         </form>
 
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-1">
-          <Link
-            href={PORTFOLIO_HISTORY_PATH}
-            className={`inline-flex min-h-[40px] items-center ${appTextLinkClass}`}
-          >
-            View Portfolio History
-          </Link>
-          <Link
-            href={DASHBOARD_DEEP_LINKS.scorecardGoal}
-            className={`inline-flex min-h-[40px] items-center gap-1.5 ${appTextLinkClass}`}
-          >
-            Open Goal score
-            <ArrowRight className="h-4 w-4" aria-hidden />
-          </Link>
-        </div>
+        <PageRelatedLinks
+          purpose={PAGE_PURPOSE.goals}
+          links={[
+            { href: REVIEW_PATH, label: "Your Review" },
+            { href: ANALYSIS_PATH, label: "Open Analysis" },
+            { href: PORTFOLIO_HISTORY_PATH, label: "Portfolio History" },
+            {
+              href: DASHBOARD_DEEP_LINKS.scorecardGoal,
+              label: "Open Goal score",
+            },
+          ]}
+        />
       </PageContainer>
       <BottomNavigation />
     </>

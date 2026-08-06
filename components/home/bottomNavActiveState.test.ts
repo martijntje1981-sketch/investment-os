@@ -21,11 +21,10 @@ describe("bottom navigation active state", () => {
     expect(source).toContain("href: PORTFOLIO_PATH");
     expect(source).toContain("guestItems");
     expect(source).toContain('href: "/perspectives"');
-    expect(source).toContain('href: "/news"');
+    expect(source).toContain("NEWS_PATH");
     expect(source).toContain('href: "/supported-instruments"');
     expect(source).toContain('href: "/login"');
-    expect(source).toContain("moreWorkspaceLinks");
-    expect(source).toContain("DISCOVER_DESTINATIONS");
+    expect(source).toContain("APP_ARCHITECTURE_GROUPS");
     expect(source).toContain("grid-cols-5");
     expect(source).toContain("grid-cols-4");
   });

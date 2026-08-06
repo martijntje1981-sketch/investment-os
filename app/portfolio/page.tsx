@@ -30,8 +30,16 @@ import {
   PageContainer,
 } from "@/components/layout/PageContainer";
 import { PageHero } from "@/components/layout/PageHero";
+import { PageRelatedLinks } from "@/components/layout/PageRelatedLinks";
 import { EmptyPortfolioGuide } from "@/components/onboarding/EmptyPortfolioGuide";
 import { ExportPortfolioButton } from "@/components/export/ExportPortfolioButton";
+import {
+  ANALYSIS_PATH,
+  MARKET_PULSE_PATH,
+  PORTFOLIO_HISTORY_PATH,
+  PORTFOLIO_HEALTH_PATH,
+} from "@/lib/navigation/appRoutes";
+import { PAGE_PURPOSE } from "@/lib/navigation/productArchitecture";
 import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 import { runPortfolioExport } from "@/lib/client/runPortfolioExport";
 import {
@@ -553,25 +561,18 @@ export default function PortfolioPage() {
                 className="border border-white/20 bg-white/10 text-white hover:bg-white/15"
               />
               <Link
-                href="/portfolio-history"
+                href={PORTFOLIO_HISTORY_PATH}
                 className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-bold text-brand-navy hover:bg-brand-hover"
               >
                 <History className="h-4 w-4" aria-hidden="true" />
                 Portfolio History
               </Link>
               <Link
-                href="/portfolio-health"
+                href={PORTFOLIO_HEALTH_PATH}
                 className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-bold text-white hover:bg-white/15"
               >
                 <PieChart className="h-4 w-4" aria-hidden="true" />
-                Portfolio Health
-              </Link>
-              <Link
-                href="/market-pulse"
-                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-bold text-white hover:bg-white/15"
-              >
-                <BarChart3 className="h-4 w-4" aria-hidden="true" />
-                Market Pulse
+                Portfolio Scorecard
               </Link>
               <RefreshPricesButton
                 onClick={() => void refreshPrices()}
@@ -599,6 +600,16 @@ export default function PortfolioPage() {
               </button>
             </>
           }
+        />
+
+        <PageRelatedLinks
+          purpose={PAGE_PURPOSE.portfolio}
+          links={[
+            { href: PORTFOLIO_HISTORY_PATH, label: "Portfolio History" },
+            { href: PORTFOLIO_HEALTH_PATH, label: "Portfolio Scorecard" },
+            { href: ANALYSIS_PATH, label: "Open Analysis" },
+            { href: MARKET_PULSE_PATH, label: "Market Pulse" },
+          ]}
         />
 
         <PortfolioSyncBanner

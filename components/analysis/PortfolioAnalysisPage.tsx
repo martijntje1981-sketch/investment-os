@@ -22,8 +22,15 @@ import {
   PageContainer,
 } from "@/components/layout/PageContainer";
 import { PageHero } from "@/components/layout/PageHero";
+import { PageRelatedLinks } from "@/components/layout/PageRelatedLinks";
 import { ExportPortfolioButton } from "@/components/export/ExportPortfolioButton";
 import { runPortfolioExport } from "@/lib/client/runPortfolioExport";
+import {
+  PORTFOLIO_HISTORY_PATH,
+  PORTFOLIO_PATH,
+  REVIEW_PATH,
+} from "@/lib/navigation/appRoutes";
+import { PAGE_PURPOSE } from "@/lib/navigation/productArchitecture";
 import {
   appAnalysisDarkBodyClass,
   appAnalysisDarkDisclaimerClass,
@@ -128,7 +135,7 @@ export default function PortfolioAnalysisPage() {
       <PageContainer>
         <PageHero
           title="Analysis"
-          subtitle="Deep dive — performance, structure and income."
+          subtitle="Why your portfolio is performing this way — performance, structure and income."
           backToDashboard
           stats={
             <p className={`${appDashboardDarkMetaClass} mt-0`}>
@@ -162,12 +169,17 @@ export default function PortfolioAnalysisPage() {
                 Portfolio Scorecard
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
-              <Link href="/market-pulse" className={appHeroGhostButtonClass}>
-                Market Pulse
-                <ArrowRight className="h-4 w-4" aria-hidden="true" />
-              </Link>
             </div>
           }
+        />
+
+        <PageRelatedLinks
+          purpose={PAGE_PURPOSE.analysis}
+          links={[
+            { href: PORTFOLIO_HISTORY_PATH, label: "Portfolio History" },
+            { href: PORTFOLIO_PATH, label: "Open Holdings" },
+            { href: REVIEW_PATH, label: "Your Review" },
+          ]}
         />
 
         <PortfolioRecoveryBanner

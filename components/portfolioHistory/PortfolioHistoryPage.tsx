@@ -12,6 +12,7 @@ import {
   PageContainer,
 } from "@/components/layout/PageContainer";
 import { PageHero } from "@/components/layout/PageHero";
+import { PageRelatedLinks } from "@/components/layout/PageRelatedLinks";
 import {
   appCardValueClass,
   appSectionBodyClass,
@@ -44,7 +45,13 @@ import { usePortfolioDividends } from "@/lib/client/usePortfolioDividends";
 import { usePortfolioPerformanceHistory } from "@/lib/client/usePortfolioPerformanceHistory";
 import { useUserGoal } from "@/lib/client/useUserGoal";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
-import { holdingDetailPath, PORTFOLIO_PATH } from "@/lib/navigation/appRoutes";
+import {
+  ANALYSIS_PATH,
+  holdingDetailPath,
+  PORTFOLIO_PATH,
+  REVIEW_PATH,
+} from "@/lib/navigation/appRoutes";
+import { PAGE_PURPOSE } from "@/lib/navigation/productArchitecture";
 import { buildPortfolioExposureAllocation } from "@/lib/services/classification";
 import {
   buildPortfolioTimeline,
@@ -292,6 +299,14 @@ export default function PortfolioHistoryPage() {
               </button>
             </div>
           }
+        />
+
+        <PageRelatedLinks
+          purpose={PAGE_PURPOSE.history}
+          links={[
+            { href: REVIEW_PATH, label: "Your Review" },
+            { href: ANALYSIS_PATH, label: "Open Analysis" },
+          ]}
         />
 
         {exportError ? (

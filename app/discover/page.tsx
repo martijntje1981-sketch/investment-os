@@ -34,8 +34,8 @@ export default function DiscoverPage() {
       <>
         <PageContainer>
           <PageHero
-            title="Discover"
-            subtitle="Explore investment ideas, themes and opportunities."
+            title="Ideas"
+            subtitle="Where can I learn more — themes and opportunities for your portfolio."
             backToDashboard
           />
           <section className="rounded-[24px] border border-slate-200 bg-white px-5 py-6">
@@ -61,8 +61,8 @@ export default function DiscoverPage() {
     <>
       <PageContainer>
         <PageHero
-          title="Discover"
-          subtitle="Explore investment ideas, themes and opportunities."
+          title="Ideas"
+          subtitle="Where can I learn more — themes and opportunities for your portfolio."
           backToDashboard
           stats={
             snapshot?.sourceStatus.briefingGeneratedAt ? (

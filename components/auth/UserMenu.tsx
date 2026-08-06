@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   Activity,
   BadgeEuro,
+  BookOpen,
   Briefcase,
   CalendarDays,
   ChevronDown,
@@ -21,7 +22,6 @@ import {
   Settings,
   Sparkles,
   Target,
-  UserRound,
   Waves,
 } from "lucide-react";
 import Link from "next/link";
@@ -40,9 +40,19 @@ import {
 import {
   ANALYSIS_PATH,
   DASHBOARD_PATH,
+  DISCOVER_HUB_PATH,
   GOALS_PATH,
+  HELP_CENTRE_PATH,
+  MARKET_PULSE_PATH,
+  NEWS_PATH,
+  PERSPECTIVES_PATH,
+  PORTFOLIO_HEALTH_PATH,
   PORTFOLIO_HISTORY_PATH,
   PORTFOLIO_PATH,
+  REVIEW_PATH,
+  SETTINGS_PATH,
+  SUPPORTED_INSTRUMENTS_PATH,
+  UPLOAD_PATH,
 } from "@/lib/navigation/appRoutes";
 import {
   DISCOVER_DESTINATIONS,
@@ -60,49 +70,55 @@ const primaryNavLinks: MenuLink[] = [
   { href: DASHBOARD_PATH, label: "Dashboard", icon: LayoutDashboard },
   { href: PORTFOLIO_PATH, label: "Portfolio", icon: Briefcase },
   { href: ANALYSIS_PATH, label: "Analysis", icon: ScanLine },
-  { href: "/news", label: "News", icon: Newspaper },
+  { href: NEWS_PATH, label: "News", icon: Newspaper },
   { href: GOALS_PATH, label: "Goals", icon: Target },
+];
+
+const todayLinks: MenuLink[] = [
+  { href: REVIEW_PATH, label: "Your Review", icon: BookOpen },
 ];
 
 const portfolioLinks: MenuLink[] = [
   { href: PORTFOLIO_PATH, label: "Portfolio", icon: Briefcase },
   { href: PORTFOLIO_HISTORY_PATH, label: "Portfolio History", icon: History },
   { href: GOALS_PATH, label: "Goals", icon: Target },
-  { href: "/upload", label: "Import holdings", icon: FileUp },
+  { href: UPLOAD_PATH, label: "Import holdings", icon: FileUp },
 ];
 
-const intelligenceLinks: MenuLink[] = [
-  { href: "/portfolio-health", label: "Portfolio Scorecard", icon: Activity },
-  { href: "/analysis", label: "Analysis", icon: ScanLine },
-  { href: "/market-pulse", label: "Market Pulse", icon: Waves },
-  { href: "/perspectives", label: "Perspectives", icon: Sparkles },
-  { href: "/news", label: "News", icon: Newspaper },
+const understandLinks: MenuLink[] = [
+  { href: PORTFOLIO_HEALTH_PATH, label: "Portfolio Scorecard", icon: Activity },
+  { href: ANALYSIS_PATH, label: "Analysis", icon: ScanLine },
+];
+
+const marketsLinks: MenuLink[] = [
+  { href: MARKET_PULSE_PATH, label: "Market Pulse", icon: Waves },
+  { href: PERSPECTIVES_PATH, label: "Perspectives", icon: Sparkles },
+  { href: NEWS_PATH, label: "News", icon: Newspaper },
   { href: "/events", label: "Upcoming Events", icon: CalendarDays },
-  { href: "/discover", label: "Discover", icon: Compass },
 ];
 
-const accountLinks: MenuLink[] = [
-  { href: "/settings", label: "Profile", icon: UserRound },
-  { href: "/settings", label: "Settings", icon: Settings },
-];
-
-const supportLinks: MenuLink[] = [
+const resourceLinks: MenuLink[] = [
+  { href: DISCOVER_HUB_PATH, label: "Ideas", icon: Compass },
   {
-    href: "/supported-instruments",
+    href: SUPPORTED_INSTRUMENTS_PATH,
     label: "Supported Instruments",
     icon: ListChecks,
   },
-  { href: "/faq", label: "Help Centre", icon: CircleHelp },
+  { href: HELP_CENTRE_PATH, label: "Help Centre", icon: CircleHelp },
   { href: "/pricing", label: "Pricing", icon: BadgeEuro },
+];
+
+const accountLinks: MenuLink[] = [
+  { href: SETTINGS_PATH, label: "Settings", icon: Settings },
 ];
 
 const guestExploreLinks: MenuLink[] = [
   { href: "/explore", label: "Explore", icon: Compass },
-  { href: "/perspectives", label: "Perspectives", icon: Sparkles },
-  { href: "/news", label: "Markets / News", icon: Newspaper },
-  { href: "/market-pulse", label: "Market Pulse", icon: Waves },
+  { href: PERSPECTIVES_PATH, label: "Perspectives", icon: Sparkles },
+  { href: NEWS_PATH, label: "News", icon: Newspaper },
+  { href: MARKET_PULSE_PATH, label: "Market Pulse", icon: Waves },
   {
-    href: "/supported-instruments",
+    href: SUPPORTED_INSTRUMENTS_PATH,
     label: "Supported Instruments",
     icon: ListChecks,
   },
@@ -113,11 +129,10 @@ function isMenuLinkActive(
   href: string,
   label: string,
 ): boolean {
-  if (href === "/settings") {
-    if (label === "Profile" || label === "Settings") {
-      return pathname === "/settings" || pathname.startsWith("/settings/");
-    }
+  if (href === SETTINGS_PATH) {
+    return pathname === SETTINGS_PATH || pathname.startsWith(`${SETTINGS_PATH}/`);
   }
+  void label;
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
@@ -253,7 +268,7 @@ function AuthenticatedDiscoverMenu({
         }`}
         data-testid="desktop-discover-trigger"
       >
-        Discover
+        Explore
         <ChevronDown
           className={`h-3.5 w-3.5 transition ${open ? "rotate-180" : ""}`}
           aria-hidden
@@ -264,7 +279,7 @@ function AuthenticatedDiscoverMenu({
         <div
           id={menuId}
           role="menu"
-          aria-label="Discover"
+          aria-label="Explore"
           className="absolute left-0 top-[calc(100%+0.5rem)] z-50 w-80 overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-xl shadow-slate-300/40"
           data-testid="desktop-discover-menu"
         >
@@ -314,10 +329,10 @@ export default function UserMenu() {
   const { open, toggle, close, containerRef, panelRef, triggerRef, menuId } =
     useDismissibleMenu({ closeOnChangeKey: pathname });
   const upcomingEventsNavVisible = useUpcomingEventsNavVisible();
-  const visibleIntelligenceLinks = useMemo(
+  const visibleMarketsLinks = useMemo(
     () =>
       filterExploreLinksForEventsAvailability(
-        intelligenceLinks,
+        marketsLinks,
         upcomingEventsNavVisible ? "live" : "configuration_missing",
       ),
     [upcomingEventsNavVisible],
@@ -471,7 +486,16 @@ export default function UserMenu() {
                     data-testid="profile-menu-scroll"
                   >
                     <MenuSection
-                      title="Portfolio"
+                      title="Today"
+                      links={todayLinks}
+                      pathname={pathname}
+                      onNavigate={close}
+                    />
+
+                    <div className="mx-3 border-t border-white/10" />
+
+                    <MenuSection
+                      title="My portfolio"
                       links={portfolioLinks}
                       pathname={pathname}
                       onNavigate={close}
@@ -480,8 +504,26 @@ export default function UserMenu() {
                     <div className="mx-3 border-t border-white/10" />
 
                     <MenuSection
-                      title="Discover"
-                      links={visibleIntelligenceLinks}
+                      title="Understand"
+                      links={understandLinks}
+                      pathname={pathname}
+                      onNavigate={close}
+                    />
+
+                    <div className="mx-3 border-t border-white/10" />
+
+                    <MenuSection
+                      title="Markets"
+                      links={visibleMarketsLinks}
+                      pathname={pathname}
+                      onNavigate={close}
+                    />
+
+                    <div className="mx-3 border-t border-white/10" />
+
+                    <MenuSection
+                      title="Resources"
+                      links={resourceLinks}
                       pathname={pathname}
                       onNavigate={close}
                     />
@@ -491,15 +533,6 @@ export default function UserMenu() {
                     <MenuSection
                       title="Account"
                       links={accountLinks}
-                      pathname={pathname}
-                      onNavigate={close}
-                    />
-
-                    <div className="mx-3 border-t border-white/10" />
-
-                    <MenuSection
-                      title="Support"
-                      links={supportLinks}
                       pathname={pathname}
                       onNavigate={close}
                     />

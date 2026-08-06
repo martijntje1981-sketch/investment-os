@@ -101,7 +101,7 @@ export function DashboardInsightCard({
             href={DASHBOARD_DEEP_LINKS.portfolioHealth}
             className={`inline-flex min-h-[40px] items-center gap-1.5 ${appTextLinkClass}`}
           >
-            Open Portfolio Health
+            Open Portfolio Scorecard
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </Link>
           <Link

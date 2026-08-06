@@ -328,23 +328,23 @@ describe("UserMenu profile wiring", () => {
       "utf8",
     );
 
-    expect(source).toContain('href: "/settings"');
-    expect(source).toContain('label: "Profile"');
+    expect(source).toContain("SETTINGS_PATH");
     expect(source).toContain('label: "Settings"');
-    expect(source).toContain('href: "/news"');
-    expect(source).toContain('href: "/discover"');
-    expect(source).toContain('href: "/perspectives"');
+    expect(source).toContain("NEWS_PATH");
+    expect(source).toContain("DISCOVER_HUB_PATH");
+    expect(source).toContain("PERSPECTIVES_PATH");
     expect(source).toContain('label: "Perspectives"');
-    expect(source).toContain('href: "/portfolio-health"');
-    expect(source).toContain('href: "/market-pulse"');
-    expect(source).toContain('href: "/supported-instruments"');
+    expect(source).toContain("PORTFOLIO_HEALTH_PATH");
+    expect(source).toContain("MARKET_PULSE_PATH");
+    expect(source).toContain("SUPPORTED_INSTRUMENTS_PATH");
     expect(source).toContain('href: "/events"');
     expect(source).toContain('label: "Upcoming Events"');
-    expect(source).toContain('href: "/upload"');
-    expect(source).toContain('title="Portfolio"');
-    expect(source).toContain('title="Discover"');
+    expect(source).toContain("UPLOAD_PATH");
+    expect(source).toContain('title="My portfolio"');
+    expect(source).toContain('title="Understand"');
     expect(source).toContain('title="Account"');
-    expect(source).toContain('title="Support"');
+    expect(source).toContain('title="Resources"');
+    expect(source).toContain('label: "Ideas"');
     expect(source).toContain('aria-current={active ? "page" : undefined}');
     expect(source).toContain("w-[min(100vw-1.5rem,16.5rem)]");
     expect(source).toContain("createPortal");

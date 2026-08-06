@@ -34,7 +34,8 @@ type PortfolioHistoryNavCardProps = {
 
 /**
  * Compact Dashboard Portfolio History preview.
- * Chart + one statistic + Export Portfolio + View full history.
+ * One statistic + Export + deep link by default; chart only on expand.
+ * Full chart experience lives on Portfolio History (and Analysis).
  */
 export function PortfolioHistoryNavCard({
   variant: _variant = "tinted",
@@ -56,31 +57,16 @@ export function PortfolioHistoryNavCard({
       sectionKey="portfolio-history"
       title={PORTFOLIO_HISTORY_LABEL}
       titleId="portfolio-history-preview-heading"
-      subtitle={quietNote ?? "Development over time"}
+      subtitle={quietNote ?? "How your portfolio developed"}
       icon={<History className="h-5 w-5" />}
       iconToneClassName="bg-slate-100 text-slate-700 ring-1 ring-slate-200"
       deepLink={{
         href: PORTFOLIO_HISTORY_PATH,
-        label: "View full history",
+        label: "View Portfolio History",
       }}
+      expandable={showChart}
       preview={
         <div className="space-y-3">
-          {showChart ? (
-            <div className="min-w-0 overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-50/50 px-1 py-1">
-              <PortfolioPerformanceChart
-                points={points}
-                hasSeries
-                emptyMessage=""
-                shellClassName="h-[120px] sm:h-[132px]"
-              />
-            </div>
-          ) : (
-            <p className={appSectionBodyClass}>
-              Review portfolio development, contributions and withdrawals in one
-              place.
-            </p>
-          )}
-
           {keyStatisticValue ? (
             <div className="min-w-0">
               <p className={appSectionLabelClass}>
@@ -91,8 +77,9 @@ export function PortfolioHistoryNavCard({
               </p>
             </div>
           ) : (
-            <p className={appSectionMetaClass}>
-              Export your full portfolio workbook when you are ready.
+            <p className={appSectionBodyClass}>
+              Contributions, withdrawals and development over time — open
+              Portfolio History for the full record.
             </p>
           )}
 
@@ -104,24 +91,45 @@ export function PortfolioHistoryNavCard({
                 disabled={isExporting}
                 aria-busy={isExporting}
                 data-testid="dashboard-export-portfolio"
+                aria-label="Export Portfolio as Excel workbook"
                 className="inline-flex min-h-[40px] items-center gap-1.5 text-sm font-semibold text-blue-700 transition hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:opacity-70"
               >
                 <Download className="h-4 w-4" aria-hidden />
-                {isExporting ? "Preparing export…" : "Export Portfolio"}
+                {isExporting ? "Exporting…" : "Export Portfolio"}
               </button>
             ) : null}
             <Link href={PORTFOLIO_HISTORY_PATH} className={appTextLinkClass}>
-              View full history
+              View Portfolio History
             </Link>
           </div>
+
+          {!showChart && !keyStatisticValue ? (
+            <p className={appSectionMetaClass}>
+              Export your full portfolio workbook when you are ready.
+            </p>
+          ) : null}
         </div>
       }
       expandedContent={
-        <ul className={`list-disc space-y-1.5 pl-5 ${appSectionMetaClass}`}>
-          <li>Portfolio development over selected timeframes</li>
-          <li>Contributions and withdrawals summary</li>
-          <li>One-click Export Portfolio workbook</li>
-        </ul>
+        showChart ? (
+          <div className="min-w-0 space-y-3 overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-50/50 px-1 py-1">
+            <PortfolioPerformanceChart
+              points={points}
+              hasSeries
+              emptyMessage=""
+              shellClassName="h-[120px] sm:h-[132px]"
+            />
+            <p className={`px-2 pb-1 ${appSectionMetaClass}`}>
+              Full charts and timeline live on Portfolio History.
+            </p>
+          </div>
+        ) : (
+          <ul className={`list-disc space-y-1.5 pl-5 ${appSectionMetaClass}`}>
+            <li>Portfolio development over selected timeframes</li>
+            <li>Contributions and withdrawals summary</li>
+            <li>One-click Export Portfolio workbook</li>
+          </ul>
+        )
       }
     />
   );

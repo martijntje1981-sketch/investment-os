@@ -11,6 +11,7 @@ import { DashboardSummary } from "@/components/dashboard/DashboardSummary";
 import { DashboardExploreTools } from "@/components/dashboard/DashboardExploreTools";
 import { DashboardReviewTeaser } from "@/components/companion/DashboardReviewTeaser";
 import { DashboardPortfolioHistorySection } from "@/components/dashboard/DashboardPortfolioHistorySection";
+import { PageRelatedLinks } from "@/components/layout/PageRelatedLinks";
 import { DashboardFirstRunCue } from "@/components/dashboard/DashboardFirstRunCue";
 import { DemoHoldingsCallout } from "@/components/example/DemoHoldingsCallout";
 import { TrialStepsCard } from "@/components/example/TrialStepsCard";
@@ -321,6 +322,16 @@ export default function DashboardPage() {
 
           <DashboardReviewTeaser bundle={companionBundle} />
 
+          <PageRelatedLinks
+            purpose="How is my portfolio doing today?"
+            links={[
+              { href: "/analysis", label: "Open Analysis" },
+              { href: "/portfolio-history", label: "Portfolio History" },
+              { href: "/portfolio-health", label: "Portfolio Scorecard" },
+            ]}
+            className="px-1"
+          />
+
           {/* 2. Your Holdings */}
           <HoldingsToday snapshot={snapshot} />
 
@@ -373,7 +384,7 @@ export default function DashboardPage() {
             }))}
           />
 
-          {/* 10. Explore Tobailey */}
+          {/* 10. Understand your portfolio */}
           <DashboardExploreTools
             emphasizeGoals={smartDashboard.emphasis.exploreGoalsHighlight}
           />

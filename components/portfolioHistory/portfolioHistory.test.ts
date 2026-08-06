@@ -55,9 +55,9 @@ describe("portfolio history UI", () => {
     expect(portfolio).toContain("Portfolio History");
     expect(navCard).toContain('PORTFOLIO_HISTORY_LABEL = "Portfolio History"');
     expect(navCard).toContain("PORTFOLIO_HISTORY_PATH");
-    expect(navCard).toContain("View full history");
+    expect(navCard).toContain("View Portfolio History");
     expect(navCard).toContain("Export Portfolio");
-    expect(tools).toContain("Explore Tobailey");
+    expect(tools).toContain("Understand your portfolio");
   });
 
   it("extends add activity with cash or holding destination", () => {
