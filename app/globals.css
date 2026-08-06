@@ -1,19 +1,70 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
+  /* App canvas */
+  --background: #eef3f8;
+  --foreground: #0b1f3a;
   --muted: #64748b;
-  --border: #e2e8f0;
+  --border: #d9e3ef;
   --card: #ffffff;
+  --surface-elevated: #ffffff;
+
+  /* Tobailey brand */
+  --brand-primary: #5db7ff;
+  --brand-primary-hover: #3aa3f5;
+  --brand-primary-soft: #e4f2fc;
+  --brand-navy: #0b1f3a;
+  --brand-text: #0b1f3a;
+
+  /*
+   * Near-black surface hierarchy (authenticated UI).
+   * Premium black/white foundation; brand blue stays an accent only.
+   */
+  --navy-hero: #0a0a0a;
+  --navy-hero-lift: #141414;
+  --navy-hero-deep: #050505;
+  --navy-card: #121212;
+  --navy-inset: rgba(255, 255, 255, 0.06);
+  --navy-border: rgba(255, 255, 255, 0.1);
+  --navy-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+
+  /* Semantic finance colors — do not replace with brand blue */
   --accent-green: #16a34a;
   --accent-green-light: #ecfdf5;
+  --accent-red: #dc2626;
+  --accent-amber: #d97706;
+
+  /* Interaction */
+  --focus-ring: var(--brand-primary);
+  --hover-soft: rgba(15, 23, 42, 0.04);
+
+  /* Layout rhythm */
   --bottom-nav-height: 4.5rem;
+  --page-pad-x: 1rem;
+  --page-pad-top: 4.5rem;
+  --page-pad-bottom: 7rem;
+  --content-max: 72rem;
+  --radius-card: 1.5rem;
+  --radius-card-lg: 1.75rem;
+  --shadow-card:
+    0 1px 2px rgba(15, 40, 70, 0.045), 0 12px 30px -14px rgba(15, 45, 80, 0.14);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-card: var(--card);
+  --color-brand: var(--brand-primary);
+  --color-brand-hover: var(--brand-primary-hover);
+  --color-brand-soft: var(--brand-primary-soft);
+  --color-brand-navy: var(--brand-navy);
+  --color-navy-hero: var(--navy-hero);
+  --color-navy-card: var(--navy-card);
+  --color-positive: var(--accent-green);
+  --color-negative: var(--accent-red);
+  --color-warning: var(--accent-amber);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -24,4 +75,40 @@ body {
   font-family: var(--font-geist-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Brief highlight after Dashboard deep-link navigation */
+.section-deep-link-highlight {
+  box-shadow:
+    0 0 0 2px rgba(93, 183, 255, 0.55),
+    0 0 0 6px rgba(93, 183, 255, 0.16);
+  border-radius: inherit;
+  transition: box-shadow 0.35s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .section-deep-link-highlight {
+    transition: none;
+  }
+}
+
+/* Subtle Dashboard intelligence entrance — disabled via prefers-reduced-motion above */
+@keyframes tobailey-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }

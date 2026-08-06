@@ -1,5 +1,19 @@
+"use client";
+
+import type { ReactNode } from "react";
 import { Card } from "@/components/ui/Card";
-import { formatEuro, formatPercent } from "@/lib/home-data";
+import { ConversionDetailsDisclosure } from "@/components/currency/ConversionDetailsDisclosure";
+import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
+import { formatPercent } from "@/lib/home-data";
+import {
+  formatMarketUpdateTime,
+  getMarketStatuses,
+} from "@/lib/client/marketStatus";
+import {
+  formatTodayMoveDetail,
+  formatTodayMoveValue,
+  RANKING_AFTER_CLOSE,
+} from "@/lib/client/investorOverviewCopy";
 
 type Holding = {
   name: string;
@@ -8,103 +22,284 @@ type Holding = {
 
 type PortfolioSnapshotProps = {
   totalValue: number;
+  totalValueAvailable?: boolean;
+  totalValueCoverageMessage?: string | null;
   todayChange: number;
   todayPercent: number;
+  hasDailyData?: boolean;
+  performanceCoverageComplete?: boolean;
+  dailyPerformanceCoverageMessage?: string | null;
+  dailyMoveHeroLabel?: string;
+  dailyMovePeriodDetail?: string | null;
   bestHolding: Holding;
   worstHolding: Holding;
+  lastUpdatedAt?: string | null;
+  isRefreshing?: boolean;
+  todaysDecision?: ReactNode;
+  intelligenceSummary?: ReactNode;
+  discoverTeaser?: ReactNode;
 };
 
-function SnapshotMetric({
-  label,
-  value,
-  valueClassName = "text-[#0F172A]",
+function getPerformanceColor(value: number) {
+  if (value > 0) {
+    return "text-[#16A34A]";
+  }
+
+  if (value < 0) {
+    return "text-[#DC2626]";
+  }
+
+  return "text-[#64748B]";
+}
+
+function signedCurrency(
+  value: number,
+  formatEur: (n: number) => string,
+  options?: { signed?: boolean },
+) {
+  const formatted = formatEur(Math.abs(value));
+  if (options?.signed && value > 0) return `+${formatted}`;
+  if (options?.signed && value < 0) return `-${formatted}`;
+  return formatted;
+}
+
+
+function MarketStatusCard({
+  lastUpdatedAt,
+  isRefreshing,
 }: {
-  label: string;
-  value: string;
-  valueClassName?: string;
+  lastUpdatedAt?: string | null;
+  isRefreshing: boolean;
 }) {
+  const statuses = getMarketStatuses();
+
   return (
-    <Card className="p-6">
-      <p className="text-[13px] font-medium text-[#64748B]">{label}</p>
-      <p
-        className={`mt-2 text-[26px] font-semibold tracking-[-0.02em] sm:text-[28px] ${valueClassName}`}
-      >
-        {value}
-      </p>
+    <Card className="min-w-0 p-5 sm:p-6">
+      <div className="flex min-w-0 flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="text-base font-semibold text-slate-950">Market status</h3>
+            <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.06em] text-emerald-800">
+              {isRefreshing ? "Updating" : "Live data"}
+            </span>
+          </div>
+          <p className="mt-1 text-sm text-slate-500">Indicative trading hours</p>
+        </div>
+
+        <div className="grid min-w-0 w-full gap-3 sm:grid-cols-3">
+          {statuses.map((market) => {
+            const isOpen =
+              market.status === "open" ||
+              market.status === "always-open";
+
+            return (
+              <div
+                key={market.label}
+                className="flex min-w-0 items-center justify-between rounded-xl border border-slate-200 px-4 py-3"
+              >
+                <div className="min-w-0">
+                  <p className="text-sm text-slate-500">{market.label}</p>
+                  <p className="mt-0.5 text-sm font-semibold text-slate-950">
+                    {market.statusLabel}
+                  </p>
+                </div>
+                <span
+                  className={`h-2.5 w-2.5 shrink-0 rounded-full ${
+                    isOpen ? "bg-emerald-500" : "bg-slate-400"
+                  }`}
+                  aria-hidden="true"
+                />
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="mt-5 border-t border-slate-200 pt-4">
+        <p className="text-sm text-slate-500">
+          Last price update:{" "}
+          <span className="font-medium text-slate-950">
+            {isRefreshing
+              ? "Refreshing…"
+              : formatMarketUpdateTime(lastUpdatedAt)}
+          </span>
+        </p>
+      </div>
     </Card>
   );
 }
 
-function HoldingCard({
+function MoverRow({
   label,
   name,
   change,
-  positive,
+  showMover,
 }: {
   label: string;
   name: string;
   change: number;
-  positive: boolean;
+  showMover: boolean;
 }) {
   return (
-    <Card className="p-6">
-      <p className="text-[13px] font-medium text-[#64748B]">{label}</p>
-      <p className="mt-2 text-[16px] font-semibold tracking-[-0.01em] text-[#0F172A]">
-        {name}
-      </p>
-      <p
-        className={`mt-1 text-[15px] font-medium ${positive ? "text-[#16A34A]" : "text-[#DC2626]"}`}
-      >
-        {formatPercent(change, true)}
-      </p>
-    </Card>
+    <div className="flex min-w-0 items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3">
+      <div className="min-w-0">
+        <p className="text-xs font-semibold uppercase tracking-[0.06em] text-slate-500">
+          {label}
+        </p>
+        <p className="mt-1 truncate text-base font-semibold text-slate-950">
+          {showMover ? name : RANKING_AFTER_CLOSE}
+        </p>
+      </div>
+      {showMover ? (
+        <p className={`shrink-0 text-base font-semibold ${getPerformanceColor(change)}`}>
+          {formatPercent(change, true)}
+        </p>
+      ) : null}
+    </div>
   );
 }
 
 export function PortfolioSnapshot({
   totalValue,
+  totalValueAvailable = true,
+  totalValueCoverageMessage = null,
   todayChange,
   todayPercent,
+  hasDailyData = true,
+  performanceCoverageComplete = true,
+  dailyPerformanceCoverageMessage = null,
+  dailyMoveHeroLabel = "Last session",
+  dailyMovePeriodDetail = null,
   bestHolding,
   worstHolding,
+  lastUpdatedAt,
+  isRefreshing = false,
+  todaysDecision,
+  intelligenceSummary,
+  discoverTeaser,
 }: PortfolioSnapshotProps) {
+  const { formatEur } = useBaseCurrencyDisplay();
+  const showTodayMove = hasDailyData;
+  const showMovers = hasDailyData;
+
+  const todayValue = formatTodayMoveValue({
+    hasDailyData,
+    performanceCoverageComplete,
+    formatValue: () => signedCurrency(todayChange, formatEur, { signed: true }),
+  });
+
+  const todayPercentValue = hasDailyData
+    ? formatPercent(todayPercent, true)
+    : "—";
+
+  const todayDetail = formatTodayMoveDetail({
+    hasDailyData,
+    performanceCoverageComplete,
+    formatPercent: () => formatPercent(todayPercent, true),
+    coverageMessage: dailyPerformanceCoverageMessage,
+    mixedPeriodDetail: dailyMovePeriodDetail,
+  });
+
   return (
-    <section>
-      <h2 className="mb-5 text-[15px] font-semibold tracking-[-0.01em] text-[#0F172A]">
-        Portfolio Snapshot
-      </h2>
-      <div className="flex flex-col gap-4">
-        <div className="grid gap-4 sm:grid-cols-3">
-          <SnapshotMetric
-            label="Total Value"
-            value={formatEuro(totalValue)}
-          />
-          <SnapshotMetric
-            label="Today's Change"
-            value={formatEuro(todayChange, { signed: true })}
-            valueClassName="text-[#16A34A]"
-          />
-          <SnapshotMetric
-            label="Today's %"
-            value={formatPercent(todayPercent, true)}
-            valueClassName="text-[#16A34A]"
-          />
+    <section className="min-w-0 space-y-4">
+      <Card className="min-w-0 overflow-hidden p-0">
+        <div className="border-b border-slate-100 px-5 py-5 sm:px-6 sm:py-6">
+          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+            Total portfolio value
+          </p>
+          <p className="mt-2 text-4xl font-black tracking-[-0.04em] text-slate-950 sm:text-5xl">
+            {totalValueAvailable ? formatEur(totalValue) : "Unavailable"}
+          </p>
+          <div className="mt-2">
+            <ConversionDetailsDisclosure compactTrigger />
+          </div>
+          {totalValueCoverageMessage ? (
+            <p className="mt-2 text-sm text-slate-500">{totalValueCoverageMessage}</p>
+          ) : null}
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <HoldingCard
-            label="Best Performing Holding"
-            name={bestHolding.name}
-            change={bestHolding.change}
-            positive
-          />
-          <HoldingCard
-            label="Worst Performing Holding"
-            name={worstHolding.name}
-            change={worstHolding.change}
-            positive={false}
-          />
+
+        <div className="grid gap-px bg-slate-100 sm:grid-cols-2">
+          <div className="min-w-0 bg-white px-5 py-4 sm:px-6">
+            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+              {dailyMoveHeroLabel}
+            </p>
+            <p
+              className={`mt-1 text-2xl font-black tracking-[-0.03em] ${
+                showTodayMove ? getPerformanceColor(todayChange) : "text-slate-500"
+              }`}
+            >
+              {todayValue}
+            </p>
+            {!showTodayMove ? (
+              <p className="mt-1 text-base text-slate-500">{todayDetail}</p>
+            ) : null}
+          </div>
+          <div className="min-w-0 bg-white px-5 py-4 sm:px-6">
+            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+              Change %
+            </p>
+            <p
+              className={`mt-1 text-2xl font-black tracking-[-0.03em] ${
+                showTodayMove ? getPerformanceColor(todayPercent) : "text-slate-500"
+              }`}
+            >
+              {todayPercentValue}
+            </p>
+            {showTodayMove ? (
+              dailyMovePeriodDetail ? (
+                <p className="mt-1 text-base text-slate-500">
+                  {dailyMovePeriodDetail}
+                </p>
+              ) : null
+            ) : (
+              <p className="mt-1 text-base text-slate-500">{todayDetail}</p>
+            )}
+          </div>
         </div>
-      </div>
+
+        {todaysDecision ? (
+          <div className="border-t border-slate-100 px-5 py-4 sm:px-6">
+            {todaysDecision}
+          </div>
+        ) : null}
+
+        {intelligenceSummary ? (
+          <div className="border-t border-slate-100 px-5 py-4 sm:px-6">
+            {intelligenceSummary}
+          </div>
+        ) : null}
+
+        {discoverTeaser ? (
+          <div className="border-t border-slate-100 px-5 py-4 sm:px-6">
+            {discoverTeaser}
+          </div>
+        ) : null}
+
+        <div className="border-t border-slate-100 px-5 py-4 sm:px-6">
+          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+            Best &amp; worst movers
+          </p>
+          <div className="mt-3 space-y-2">
+            <MoverRow
+              label="Best"
+              name={bestHolding.name}
+              change={bestHolding.change}
+              showMover={showMovers}
+            />
+            <MoverRow
+              label="Worst"
+              name={worstHolding.name}
+              change={worstHolding.change}
+              showMover={showMovers}
+            />
+          </div>
+        </div>
+      </Card>
+
+      <MarketStatusCard
+        lastUpdatedAt={lastUpdatedAt}
+        isRefreshing={isRefreshing}
+      />
     </section>
   );
 }

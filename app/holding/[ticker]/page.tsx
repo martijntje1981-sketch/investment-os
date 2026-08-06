@@ -1,14 +1,31 @@
-import Link from "next/link";
-import { notFound } from "next/navigation";
-import { getHoldingByTicker } from "@/lib/services/portfolio/portfolioService";
+"use client";
 
-const euro = new Intl.NumberFormat("nl-NL", {
+import Link from "next/link";
+import { useMemo } from "react";
+import { useParams, useRouter } from "next/navigation";
+
+import { HoldingPositionHistory } from "@/components/holding/HoldingPositionHistory";
+import { AppPageLoading } from "@/components/layout/PageContainer";
+import {
+  computeHoldingDayMove,
+  resolveHoldingChangePercent,
+} from "@/lib/client/dailyPerformance";
+import { resolveHoldingMovePeriod } from "@/lib/client/performancePeriod";
+import {
+  buildHoldingValuation,
+  getHoldingCostBasis,
+  isEstimatedHoldingPrice,
+  resolveHoldingDisplayPrice,
+} from "@/lib/client/holdingValuation";
+import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
+
+const euro = new Intl.NumberFormat("en-GB", {
   style: "currency",
   currency: "EUR",
   maximumFractionDigits: 0,
 });
 
-const euroTwo = new Intl.NumberFormat("nl-NL", {
+const euroTwo = new Intl.NumberFormat("en-GB", {
   style: "currency",
   currency: "EUR",
   minimumFractionDigits: 2,
@@ -16,149 +33,428 @@ const euroTwo = new Intl.NumberFormat("nl-NL", {
 });
 
 function signedPercent(value: number) {
-  return `${value > 0 ? "+" : ""}${value.toFixed(1)}%`;
+  const sign = value > 0 ? "+" : "";
+  return `${sign}${value.toFixed(2)}%`;
 }
 
-export default async function HoldingPage({
-  params,
-}: {
-  params: Promise<{ ticker: string }>;
-}) {
-  const { ticker } = await params;
-  const holding = getHoldingByTicker(ticker);
+function formatUpdateTime(value: string | null | undefined) {
+  if (!value) {
+    return "Not available";
+  }
 
-  if (!holding) notFound();
+  const date = new Date(value);
 
-  const stanceClass =
-    holding.stance === "Hold"
-      ? "bg-amber-100 text-amber-800"
-      : holding.stance === "Core Holding"
-        ? "bg-emerald-100 text-emerald-800"
-        : holding.stance === "Defensive Holding"
-          ? "bg-yellow-100 text-yellow-800"
-          : "bg-blue-100 text-blue-800";
+  if (Number.isNaN(date.getTime())) {
+    return "Not available";
+  }
+
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Amsterdam",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
+function getPerformanceClass(value: number) {
+  if (value > 0) {
+    return "text-emerald-400";
+  }
+
+  if (value < 0) {
+    return "text-red-400";
+  }
+
+  return "text-slate-300";
+}
+
+function getMetricPerformanceClass(value: number) {
+  if (value > 0) {
+    return "text-emerald-600";
+  }
+
+  if (value < 0) {
+    return "text-red-600";
+  }
+
+  return "text-slate-900";
+}
+
+function priceQualityLabel(
+  source: ReturnType<typeof resolveHoldingDisplayPrice>["source"],
+  isStale: boolean,
+) {
+  if (source === "unavailable") {
+    return "Price unavailable";
+  }
+
+  if (source === "estimated") {
+    return "Estimated price";
+  }
+
+  if (isStale) {
+    return "Stale price";
+  }
+
+  return "Live price";
+}
+
+export default function HoldingPage() {
+  const router = useRouter();
+  const params = useParams<{ ticker: string }>();
+  const { holdings, portfolioReady, syncState } = useUserPortfolio();
+
+  const rawTicker = params.ticker ?? "";
+  const ticker = (() => {
+    try {
+      return decodeURIComponent(rawTicker).trim().toUpperCase();
+    } catch {
+      return String(rawTicker).trim().toUpperCase();
+    }
+  })();
+
+  const holding = useMemo(
+    () => holdings.find((item) => item.symbol.trim().toUpperCase() === ticker),
+    [holdings, ticker],
+  );
+
+  const valuation = useMemo(() => {
+    if (!holding) {
+      return null;
+    }
+
+    return buildHoldingValuation(holding, holdings);
+  }, [holding, holdings]);
+
+  // Wait for hydrate/sync so mover clicks never flash "not found" / bounce to login.
+  if (!portfolioReady || syncState.status === "loading") {
+    return <AppPageLoading />;
+  }
+
+  if (!holding || !valuation) {
+    return (
+      <main className="min-h-screen bg-slate-100 px-6 pb-32 pt-20">
+        <div className="mx-auto max-w-3xl rounded-3xl bg-white p-10 text-center shadow-sm">
+          <h1 className="text-3xl font-bold text-slate-900">
+            Holding not found
+          </h1>
+          <p className="mt-3 text-slate-600">
+            {ticker || "This investment"} is not in your saved portfolio.
+          </p>
+          <div className="mt-8 flex flex-wrap justify-center gap-3">
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="rounded-xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-700"
+            >
+              Go back
+            </button>
+            <Link
+              href="/portfolio"
+              className="rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white"
+            >
+              Open portfolio
+            </Link>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  const displayPrice = valuation.displayPrice;
+  const estimatedPrice = isEstimatedHoldingPrice(holding);
+  const dailyChangePercent = resolveHoldingChangePercent(holding);
+  const dayChangeValue =
+    valuation.marketValue !== null && dailyChangePercent !== null
+      ? computeHoldingDayMove(holding, valuation.marketValue)
+      : null;
+  const priceLabel = priceQualityLabel(
+    displayPrice.source,
+    holding.priceDataStatus === "stale",
+  );
+  const resolvedPrice = displayPrice.price;
+  const marketValueLabel =
+    valuation.marketValue === null
+      ? "Price pending"
+      : euro.format(valuation.marketValue);
+  const weightLabel =
+    valuation.portfolioWeightPercent === null
+      ? "—"
+      : `${valuation.portfolioWeightPercent.toFixed(1)}%`;
+  const returnPercentLabel =
+    valuation.returnPercent === null
+      ? "Price pending"
+      : signedPercent(valuation.returnPercent);
+  const returnValueLabel =
+    valuation.returnValue === null
+      ? "Price pending"
+      : `${valuation.returnValue >= 0 ? "+" : ""}${euro.format(valuation.returnValue)}`;
+  const dayChangeLabel =
+    dailyChangePercent === null
+      ? "Awaiting data"
+      : signedPercent(dailyChangePercent);
+  const dayChangeValueLabel =
+    dayChangeValue === null
+      ? "Awaiting data"
+      : `${dayChangeValue >= 0 ? "+" : ""}${euro.format(dayChangeValue)}`;
+  const movePeriod = resolveHoldingMovePeriod(holding);
 
   return (
-    <main className="min-h-screen bg-slate-100 pb-16">
-      <div className="mx-auto max-w-7xl p-6 md:p-8">
-        <Link href="/portfolio" className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 transition hover:text-slate-900">
-          ← Back to Portfolio
-        </Link>
-
-        <section className="mt-6 overflow-hidden rounded-3xl bg-slate-950 p-7 text-white shadow-xl md:p-10">
-          <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
-            <div>
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-slate-300">
-                  {holding.category}
-                </span>
-                <span className={`rounded-full px-3 py-1 text-xs font-bold ${stanceClass}`}>
-                  {holding.stance}
-                </span>
-              </div>
-              <h1 className="mt-5 text-4xl font-bold tracking-tight md:text-5xl">{holding.ticker}</h1>
-              <p className="mt-2 text-lg text-slate-300">{holding.name}</p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-8 lg:text-right">
+    <>
+      <main className="min-h-screen bg-slate-100 pb-32 pt-20">
+        <div className="mx-auto max-w-7xl p-6 md:p-8">
+          <section className="overflow-hidden rounded-3xl bg-slate-950 p-7 text-white shadow-xl md:p-10">
+            <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
               <div>
-                <p className="text-sm text-slate-400">Current Price</p>
-                <p className="mt-2 text-3xl font-bold">{euroTwo.format(holding.currentPrice)}</p>
-                <p className={`mt-1 font-semibold ${holding.dailyChangePercent >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-                  {signedPercent(holding.dailyChangePercent)} today
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-slate-300">
+                    {holding.assetType === "cash" ? "Cash" : "Investment"}
+                  </span>
+
+                  <span
+                    className={`rounded-full px-3 py-1 text-xs font-bold ${
+                      displayPrice.source === "unavailable"
+                        ? "bg-amber-500/20 text-amber-300"
+                        : estimatedPrice || holding.priceDataStatus === "stale"
+                          ? "bg-amber-500/20 text-amber-300"
+                          : "bg-emerald-500/20 text-emerald-300"
+                    }`}
+                  >
+                    {priceLabel}
+                  </span>
+                </div>
+
+                <h1 className="mt-5 text-4xl font-bold tracking-tight md:text-5xl">
+                  {holding.symbol}
+                </h1>
+
+                <p className="mt-2 text-lg text-slate-300">{holding.name}</p>
+
+                <p className="mt-4 text-sm text-slate-400">
+                  Last market update:{" "}
+                  <span className="font-medium text-slate-200">
+                    {formatUpdateTime(
+                      holding.marketPriceUpdatedAt ?? holding.updatedAt,
+                    )}
+                  </span>
                 </p>
               </div>
-              <div>
-                <p className="text-sm text-slate-400">Investment Score</p>
-                <p className="mt-2 text-3xl font-bold">
-                  {holding.investmentScore}<span className="text-lg text-slate-500">/10</span>
-                </p>
-                <p className="mt-1 font-semibold text-blue-400">Investment OS rating</p>
+
+              <div className="grid grid-cols-2 gap-8 lg:text-right">
+                <div>
+                  <p className="text-sm text-slate-400">Current Price</p>
+
+                  <p className="mt-2 text-3xl font-bold">
+                    {resolvedPrice !== null
+                      ? euroTwo.format(resolvedPrice)
+                      : "Unavailable"}
+                  </p>
+
+                  {estimatedPrice ? (
+                    <p className="mt-1 text-sm font-semibold text-amber-300">
+                      Estimated price
+                    </p>
+                  ) : null}
+
+                  <p
+                    className={`mt-1 font-semibold ${
+                      dailyChangePercent === null
+                        ? "text-slate-400"
+                        : getPerformanceClass(dailyChangePercent)
+                    }`}
+                    title={movePeriod.accessibleDescription}
+                  >
+                    {dailyChangePercent === null
+                      ? dayChangeLabel
+                      : `${dayChangeLabel} · ${movePeriod.primaryLabel}`}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-sm text-slate-400">Units</p>
+
+                  <p className="mt-2 text-3xl font-bold">
+                    {holding.quantity.toLocaleString("en-GB")}
+                  </p>
+
+                  <p className="mt-1 font-semibold text-blue-400">
+                    {holding.currency}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        <section className="mt-6 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-          <MetricCard label="Position Value" value={euro.format(holding.marketValue)} subtitle="Current market value" />
-          <MetricCard label="Portfolio Weight" value={`${holding.weightPercent.toFixed(1)}%`} subtitle="Share of total portfolio" />
-          <MetricCard label="Total Return" value={signedPercent(holding.returnPercent)} subtitle={`${holding.profitLoss >= 0 ? "+" : ""}${euro.format(holding.profitLoss)}`} positive={holding.returnPercent >= 0} />
-          <MetricCard label="Risk Level" value={holding.riskLevel} subtitle={holding.stance} />
-        </section>
+          <section className="mt-6 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+            <MetricCard
+              label="Position Value"
+              value={marketValueLabel}
+              subtitle={
+                estimatedPrice && valuation.marketValue !== null
+                  ? "Estimated market value"
+                  : "Current market value"
+              }
+            />
 
-        <section className="mt-6 grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
-          <div className="rounded-3xl bg-white p-7 shadow-sm md:p-8">
-            <p className="text-sm font-semibold uppercase tracking-wider text-blue-600">Investment OS Analysis</p>
-            <h2 className="mt-2 text-2xl font-bold text-slate-900">Position Summary</h2>
-            <p className="mt-4 text-lg leading-8 text-slate-600">{holding.summary}</p>
+            <MetricCard
+              label="Portfolio Weight"
+              value={weightLabel}
+              subtitle="Share of total portfolio"
+            />
 
-            <div className="mt-8 h-64 overflow-hidden rounded-2xl bg-gradient-to-b from-blue-50 to-white">
-              <svg className="h-full w-full" viewBox="0 0 800 260" preserveAspectRatio="none" aria-label="Placeholder performance chart">
-                <path d="M0,215 C90,200 125,150 190,165 C270,184 300,105 370,120 C450,138 495,78 555,100 C625,126 680,60 735,75 C770,84 790,54 800,58" fill="none" stroke="currentColor" strokeWidth="5" className="text-blue-600" />
-                <path d="M0,215 C90,200 125,150 190,165 C270,184 300,105 370,120 C450,138 495,78 555,100 C625,126 680,60 735,75 C770,84 790,54 800,58 L800,260 L0,260 Z" className="fill-blue-100/60" />
-              </svg>
-            </div>
-          </div>
+            <MetricCard
+              label="Total Return"
+              value={returnPercentLabel}
+              subtitle={returnValueLabel}
+              valueClassName={
+                valuation.returnPercent === null
+                  ? "text-slate-900"
+                  : getMetricPerformanceClass(valuation.returnPercent)
+              }
+            />
 
-          <div className="rounded-3xl bg-white p-7 shadow-sm md:p-8">
-            <p className="text-sm font-semibold uppercase tracking-wider text-slate-400">Position Data</p>
-            <h2 className="mt-2 text-2xl font-bold text-slate-900">Key Metrics</h2>
-            <div className="mt-6 divide-y divide-slate-100">
-              <DataRow label="Units" value={holding.units.toLocaleString("nl-NL")} />
-              <DataRow label="Average price" value={euroTwo.format(holding.averagePrice)} />
-              <DataRow label="Cost basis" value={euro.format(holding.costBasis)} />
-              <DataRow label="Market value" value={euro.format(holding.marketValue)} />
-              <DataRow label="Portfolio weight" value={`${holding.weightPercent.toFixed(1)}%`} />
-            </div>
-          </div>
-        </section>
+            <MetricCard
+              label="Day Change"
+              value={dayChangeLabel}
+              subtitle={dayChangeValueLabel}
+              valueClassName={
+                dailyChangePercent === null
+                  ? "text-slate-900"
+                  : getMetricPerformanceClass(dailyChangePercent)
+              }
+            />
+          </section>
 
-        <section className="mt-6 grid gap-6 lg:grid-cols-3">
-          <InsightCard title="Investment Thesis" label="Why it belongs" items={holding.thesis} />
-          <InsightCard title="Key Catalysts" label="What could drive growth" items={holding.catalysts} />
-          <InsightCard title="Primary Risks" label="What to monitor" items={holding.risks} risk />
-        </section>
-      </div>
-    </main>
+          <section className="mt-6 grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
+            <article className="rounded-3xl bg-white p-7 shadow-sm md:p-8">
+              <p className="text-sm font-semibold uppercase tracking-wider text-blue-600">
+                Tobailey Analysis
+              </p>
+
+              <h2 className="mt-2 text-2xl font-bold text-slate-900">
+                Position Summary
+              </h2>
+
+              <p className="mt-4 text-lg leading-8 text-slate-600">
+                This holding is valued with the same centralized price pipeline
+                as your portfolio overview, dashboard and analysis pages.
+              </p>
+
+              <HoldingPositionHistory
+                symbol={holding.symbol}
+                providerSymbol={holding.providerSymbol}
+              />
+            </article>
+
+            <article className="rounded-3xl bg-white p-7 shadow-sm md:p-8">
+              <p className="text-sm font-semibold uppercase tracking-wider text-slate-400">
+                Position Data
+              </p>
+
+              <h2 className="mt-2 text-2xl font-bold text-slate-900">
+                Key Metrics
+              </h2>
+
+              <div className="mt-6 divide-y divide-slate-100">
+                <DataRow
+                  label="Units"
+                  value={holding.quantity.toLocaleString("en-GB")}
+                />
+
+                <DataRow
+                  label="Average price"
+                  value={euroTwo.format(holding.purchasePrice)}
+                />
+
+                <DataRow
+                  label="Current price"
+                  value={
+                    resolvedPrice !== null
+                      ? `${euroTwo.format(resolvedPrice)}${estimatedPrice ? " (estimated)" : ""}`
+                      : "Unavailable"
+                  }
+                />
+
+                <DataRow
+                  label="Previous close"
+                  value={
+                    holding.previousClose != null && holding.previousClose > 0
+                      ? euroTwo.format(holding.previousClose)
+                      : "Not available"
+                  }
+                />
+
+                <DataRow
+                  label="Cost basis"
+                  value={euro.format(getHoldingCostBasis(holding))}
+                />
+
+                <DataRow label="Market value" value={marketValueLabel} />
+
+                <DataRow label="Portfolio weight" value={weightLabel} />
+
+                {holding.pricingExchange && holding.providerSymbol ? (
+                  <DataRow
+                    label="Pricing source"
+                    value={`${holding.providerSymbol} · ${holding.pricingExchange}`}
+                  />
+                ) : null}
+              </div>
+            </article>
+          </section>
+
+          <section className="mt-6 flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 shadow-sm"
+            >
+              Back
+            </button>
+            <Link
+              href="/portfolio"
+              className="rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white shadow-sm"
+            >
+              Open portfolio
+            </Link>
+          </section>
+        </div>
+      </main>
+    </>
   );
 }
 
-function MetricCard({ label, value, subtitle, positive }: { label: string; value: string; subtitle: string; positive?: boolean }) {
-  const valueClass = positive === undefined ? "text-slate-900" : positive ? "text-emerald-600" : "text-red-600";
+function MetricCard({
+  label,
+  value,
+  subtitle,
+  valueClassName = "text-slate-900",
+}: {
+  label: string;
+  value: string;
+  subtitle: string;
+  valueClassName?: string;
+}) {
   return (
-    <div className="rounded-3xl bg-white p-6 shadow-sm">
+    <article className="rounded-3xl bg-white p-6 shadow-sm">
       <p className="text-sm font-medium text-slate-500">{label}</p>
-      <p className={`mt-3 text-3xl font-bold ${valueClass}`}>{value}</p>
+
+      <p className={`mt-3 text-3xl font-bold ${valueClassName}`}>{value}</p>
+
       <p className="mt-2 text-sm text-slate-500">{subtitle}</p>
-    </div>
+    </article>
   );
 }
 
 function DataRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-4 py-4">
-      <span className="text-slate-500">{label}</span>
-      <span className="font-semibold text-slate-900">{value}</span>
-    </div>
-  );
-}
-
-function InsightCard({ title, label, items, risk = false }: { title: string; label: string; items: string[]; risk?: boolean }) {
-  return (
-    <div className="rounded-3xl bg-white p-7 shadow-sm">
-      <div className={`flex h-11 w-11 items-center justify-center rounded-2xl text-lg font-bold ${risk ? "bg-red-100 text-red-700" : "bg-blue-100 text-blue-700"}`}>
-        {risk ? "!" : "↗"}
-      </div>
-      <p className="mt-5 text-sm font-semibold uppercase tracking-wider text-slate-400">{label}</p>
-      <h2 className="mt-2 text-xl font-bold text-slate-900">{title}</h2>
-      <div className="mt-5 space-y-4">
-        {items.map((item) => (
-          <div key={item} className="flex items-start gap-3">
-            <span className={`mt-2 h-2 w-2 shrink-0 rounded-full ${risk ? "bg-red-500" : "bg-blue-500"}`} />
-            <p className="leading-6 text-slate-600">{item}</p>
-          </div>
-        ))}
-      </div>
+      <span className="text-sm font-medium text-slate-500">{label}</span>
+      <span className="text-right text-sm font-semibold text-slate-900">
+        {value}
+      </span>
     </div>
   );
 }

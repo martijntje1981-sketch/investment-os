@@ -1,5 +1,7 @@
+"use client";
+
 import { Card } from "@/components/ui/Card";
-import { formatEuro } from "@/lib/home-data";
+import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 
 type GoalTrackerProps = {
   target: number;
@@ -14,6 +16,8 @@ export function GoalTracker({
   progress,
   yearsRemaining,
 }: GoalTrackerProps) {
+  const { formatEur } = useBaseCurrencyDisplay();
+
   return (
     <Card className="p-8">
       <h2 className="text-[15px] font-semibold tracking-[-0.01em] text-[#0F172A]">
@@ -23,7 +27,7 @@ export function GoalTracker({
         <div>
           <p className="text-[13px] font-medium text-[#64748B]">Target</p>
           <p className="mt-1.5 text-[22px] font-semibold tracking-[-0.02em] text-[#0F172A]">
-            {formatEuro(target)}
+            {formatEur(target)}
           </p>
         </div>
         <div>
@@ -31,7 +35,7 @@ export function GoalTracker({
             Current Portfolio
           </p>
           <p className="mt-1.5 text-[22px] font-semibold tracking-[-0.02em] text-[#0F172A]">
-            {formatEuro(current)}
+            {formatEur(current)}
           </p>
         </div>
       </div>

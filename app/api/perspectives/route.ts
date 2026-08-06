@@ -1,0 +1,40 @@
+import { NextResponse } from "next/server";
+
+import { fetchPerspectivesPayload } from "@/lib/services/perspectives";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+export async function GET() {
+  try {
+    const payload = await fetchPerspectivesPayload();
+    return NextResponse.json(
+      { success: true, ...payload },
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=2700, stale-while-revalidate=3600",
+        },
+      },
+    );
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Unable to load perspectives.";
+    return NextResponse.json(
+      {
+        success: false,
+        error: message,
+        featured: [],
+        byCategory: [],
+        videos: [],
+        state: "provider_unavailable",
+        fetchedAt: new Date().toISOString(),
+        creatorCount: 0,
+        feedErrors: 0,
+        unavailableCreatorIds: [],
+        schemaVersion: "perspectives-identity-v2",
+        servedFromLastSuccess: false,
+      },
+      { status: 500 },
+    );
+  }
+}

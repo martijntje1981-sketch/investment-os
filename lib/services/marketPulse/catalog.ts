@@ -1,0 +1,215 @@
+/**
+ * Maintainable Market Pulse catalog.
+ * Only include instruments we intend to price via EODHD with explicit source labels.
+ * No fabricated market-cap ranking — crypto list is configured majors.
+ */
+
+import type { MarketPulseCatalogEntry } from "@/lib/services/marketPulse/types";
+
+export const MARKET_PULSE_CRYPTO_MAJORS: MarketPulseCatalogEntry[] = [
+  {
+    id: "bitcoin",
+    name: "Bitcoin",
+    symbol: "BTC",
+    category: "crypto",
+    sourceType: "Crypto spot pair (EODHD .CC)",
+    providerSymbol: "BTC-USD.CC",
+    unit: null,
+    currency: "USD",
+    isProxy: false,
+    dataFrequency: "Realtime / delayed per exchange feed",
+    tradingPair: "BTC/USD",
+    accent: "bitcoin",
+    supportsRealtime: true,
+    supportsHistory: true,
+  },
+  {
+    id: "ethereum",
+    name: "Ethereum",
+    symbol: "ETH",
+    category: "crypto",
+    sourceType: "Crypto spot pair (EODHD .CC)",
+    providerSymbol: "ETH-USD.CC",
+    unit: null,
+    currency: "USD",
+    isProxy: false,
+    dataFrequency: "Realtime / delayed per exchange feed",
+    tradingPair: "ETH/USD",
+    accent: "ethereum",
+    supportsRealtime: true,
+    supportsHistory: true,
+  },
+  {
+    id: "solana",
+    name: "Solana",
+    symbol: "SOL",
+    category: "crypto",
+    sourceType: "Crypto spot pair (EODHD .CC)",
+    providerSymbol: "SOL-USD.CC",
+    unit: null,
+    currency: "USD",
+    isProxy: false,
+    dataFrequency: "Realtime / delayed per exchange feed",
+    tradingPair: "SOL/USD",
+    accent: "ethereum",
+    supportsRealtime: true,
+    supportsHistory: true,
+  },
+  {
+    id: "xrp",
+    name: "XRP",
+    symbol: "XRP",
+    category: "crypto",
+    sourceType: "Crypto spot pair (EODHD .CC)",
+    providerSymbol: "XRP-USD.CC",
+    unit: null,
+    currency: "USD",
+    isProxy: false,
+    dataFrequency: "Realtime / delayed per exchange feed",
+    tradingPair: "XRP/USD",
+    accent: "ethereum",
+    supportsRealtime: true,
+    supportsHistory: true,
+  },
+  {
+    id: "bnb",
+    name: "BNB",
+    symbol: "BNB",
+    category: "crypto",
+    sourceType: "Crypto spot pair (EODHD .CC)",
+    providerSymbol: "BNB-USD.CC",
+    unit: null,
+    currency: "USD",
+    isProxy: false,
+    dataFrequency: "Realtime / delayed per exchange feed",
+    tradingPair: "BNB/USD",
+    accent: "bitcoin",
+    supportsRealtime: true,
+    supportsHistory: true,
+  },
+];
+
+/**
+ * Commodity series — only verified EODHD symbols (live-probed against our API key).
+ *
+ * Verified 2026-07-31:
+ * - GC.COMM / SI.COMM / HG.COMM → "Ticker Not Found" on realtime + EOD (unsupported)
+ * - XAUUSD.FOREX / XAGUSD.FOREX → EOD history OK for 1W–1Y; realtime close often "NA"
+ * - XCUUSD.FOREX → not on FOREX symbol list; EOD stale (last ~2026-06-08) — not used
+ * - CPER.US → realtime + EOD OK as copper ETF proxy (not spot)
+ * - URA.US → realtime + EOD OK as uranium ETF proxy (not spot)
+ */
+export const MARKET_PULSE_COMMODITIES: MarketPulseCatalogEntry[] = [
+  {
+    id: "gold",
+    name: "Gold",
+    symbol: "XAUUSD",
+    category: "commodity",
+    sourceType: "FX spot gold XAU/USD (XAUUSD.FOREX) — EOD",
+    providerSymbol: "XAUUSD.FOREX",
+    unit: "USD / oz",
+    currency: "USD",
+    isProxy: false,
+    dataFrequency: "Previous EOD FX",
+    tradingPair: "XAU/USD",
+    accent: "gold",
+    supportsRealtime: false,
+    supportsHistory: true,
+  },
+  {
+    id: "silver",
+    name: "Silver",
+    symbol: "XAGUSD",
+    category: "commodity",
+    sourceType: "FX spot silver XAG/USD (XAGUSD.FOREX) — EOD",
+    providerSymbol: "XAGUSD.FOREX",
+    unit: "USD / oz",
+    currency: "USD",
+    isProxy: false,
+    dataFrequency: "Previous EOD FX",
+    tradingPair: "XAG/USD",
+    accent: "silver",
+    supportsRealtime: false,
+    supportsHistory: true,
+  },
+  {
+    id: "copper",
+    name: "Copper (ETF Proxy)",
+    symbol: "CPER",
+    category: "commodity",
+    sourceType: "Copper ETF proxy (CPER.US) — not copper spot",
+    providerSymbol: "CPER.US",
+    unit: "USD / share",
+    currency: "USD",
+    isProxy: true,
+    dataFrequency: "Delayed realtime / last session",
+    tradingPair: null,
+    accent: "copper",
+    supportsRealtime: true,
+    supportsHistory: true,
+  },
+  {
+    id: "uranium",
+    name: "Uranium (ETF Proxy)",
+    symbol: "URA",
+    category: "commodity",
+    sourceType: "Uranium ETF proxy (URA.US) — not uranium spot",
+    providerSymbol: "URA.US",
+    unit: "USD / share",
+    currency: "USD",
+    isProxy: true,
+    dataFrequency: "Delayed realtime / last session",
+    tradingPair: null,
+    accent: "uranium",
+    supportsRealtime: true,
+    supportsHistory: true,
+  },
+];
+
+/** Thematic / broad markets used for portfolio linking when no commodity/crypto series applies. */
+export const MARKET_PULSE_THEMATIC: MarketPulseCatalogEntry[] = [
+  {
+    id: "technology_ai",
+    name: "Technology & AI",
+    symbol: "NDX",
+    category: "thematic",
+    sourceType: "Nasdaq 100 index (NDX.INDX)",
+    providerSymbol: "NDX.INDX",
+    unit: "Index points",
+    currency: null,
+    isProxy: true,
+    dataFrequency: "End-of-day / session",
+    tradingPair: null,
+    accent: "ethereum",
+    supportsRealtime: true,
+    supportsHistory: true,
+  },
+  {
+    id: "global_equities",
+    name: "Global equities",
+    symbol: "GSPC",
+    category: "index",
+    sourceType: "S&P 500 index (GSPC.INDX)",
+    providerSymbol: "GSPC.INDX",
+    unit: "Index points",
+    currency: null,
+    isProxy: true,
+    dataFrequency: "End-of-day / session",
+    tradingPair: null,
+    accent: "silver",
+    supportsRealtime: true,
+    supportsHistory: true,
+  },
+];
+
+export const MARKET_PULSE_CATALOG: MarketPulseCatalogEntry[] = [
+  ...MARKET_PULSE_CRYPTO_MAJORS,
+  ...MARKET_PULSE_COMMODITIES,
+  ...MARKET_PULSE_THEMATIC,
+];
+
+export function getMarketPulseCatalogEntry(
+  id: string,
+): MarketPulseCatalogEntry | null {
+  return MARKET_PULSE_CATALOG.find((entry) => entry.id === id) ?? null;
+}

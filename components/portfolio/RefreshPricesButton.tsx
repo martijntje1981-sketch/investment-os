@@ -1,0 +1,73 @@
+"use client";
+
+import { RefreshCw } from "lucide-react";
+
+import type { RefreshPricesUiStatus } from "@/lib/client/livePortfolioPriceRefreshAction";
+
+type RefreshPricesButtonProps = {
+  onClick: () => void;
+  isRefreshing: boolean;
+  disabled?: boolean;
+  status?: RefreshPricesUiStatus;
+  /**
+   * Visual density:
+   * - hero: labeled control for secondary surfaces
+   * - compact: small labeled control
+   * - icon: quiet icon-only control for primary heroes
+   */
+  variant?: "hero" | "compact" | "icon";
+  className?: string;
+};
+
+/**
+ * Shared manual market-price refresh control.
+ * Neutral label: does not imply markets are open.
+ */
+export function RefreshPricesButton({
+  onClick,
+  isRefreshing,
+  disabled = false,
+  status = "idle",
+  variant = "hero",
+  className = "",
+}: RefreshPricesButtonProps) {
+  const isDisabled = disabled || isRefreshing;
+  const base =
+    variant === "icon"
+      ? "inline-flex h-10 w-10 min-h-[40px] min-w-[40px] items-center justify-center rounded-xl border border-white/15 bg-white/[0.06] text-white/80 transition hover:bg-white/12 hover:text-white disabled:cursor-not-allowed disabled:opacity-45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-navy-hero"
+      : variant === "compact"
+        ? "inline-flex min-h-[40px] min-w-[40px] items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/[0.06] px-3 py-2 text-sm font-semibold text-white/85 transition hover:bg-white/12 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60"
+        : "inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-bold text-white hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60";
+
+  const statusLabel =
+    status === "loading"
+      ? "Refreshing prices"
+      : status === "success"
+        ? "Prices updated"
+        : status === "error"
+          ? "Price refresh failed"
+          : "Refresh prices";
+
+  const showLabel = variant !== "icon";
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={isDisabled}
+      aria-busy={isRefreshing}
+      aria-label={statusLabel}
+      title={statusLabel}
+      data-refresh-status={status}
+      className={`${base} ${className}`.trim()}
+    >
+      <RefreshCw
+        className={`h-4 w-4 shrink-0 ${isRefreshing ? "animate-spin" : ""}`}
+        aria-hidden
+      />
+      {showLabel ? (
+        <span>{isRefreshing ? "Refreshing…" : "Refresh prices"}</span>
+      ) : null}
+    </button>
+  );
+}
