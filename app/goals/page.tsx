@@ -348,10 +348,13 @@ export default function GoalsPage() {
               onClick={handleExport}
               disabled={isExporting}
               aria-busy={isExporting}
+              aria-label="Export Portfolio as Excel workbook"
+              title="Excel workbook"
+              data-testid="export-portfolio-button"
               className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-navy-hero disabled:opacity-70"
             >
               <Download className="h-4 w-4" aria-hidden />
-              {isExporting ? "Preparing export…" : "Export Portfolio"}
+              {isExporting ? "Exporting…" : "Export Portfolio"}
             </button>
           }
           visual={

@@ -116,6 +116,7 @@ function emptyReview(
     freshnessNote: null,
     links: defaultLinks(),
     isDemo,
+    metrics: null,
   };
 }
 
@@ -283,6 +284,7 @@ function buildDailyReview(input: CompanionBuildInput): CompanionReview {
     freshnessNote,
     links: defaultLinks(),
     isDemo,
+    metrics: null,
   };
 }
 
@@ -358,6 +360,23 @@ function buildPeriodReview(
 
   const facts: CompanionReviewFact[] = [];
 
+  if (period === "monthly" && startingValue != null) {
+    facts.push({
+      id: "starting-value",
+      label: "Starting portfolio value",
+      value: formatMoney(startingValue),
+      tone: "neutral",
+    });
+  }
+  if (period === "monthly" && endingValue != null) {
+    facts.push({
+      id: "ending-value",
+      label: "Ending portfolio value",
+      value: formatMoney(endingValue),
+      tone: "neutral",
+    });
+  }
+
   if (portfolioMovement != null) {
     facts.push({
       id: "movement",
@@ -387,6 +406,14 @@ function buildPeriodReview(
       value: formatSignedMoney(flows.netContributions, formatMoney),
       tone: movementTone(flows.netContributions),
     });
+    if (flows.withdrawn > 0) {
+      facts.push({
+        id: "withdrawals",
+        label: "Withdrawals",
+        value: formatMoney(flows.withdrawn),
+        tone: "negative",
+      });
+    }
     if (period === "monthly" && flows.contributed > 0) {
       facts.push({
         id: "invested",
@@ -498,14 +525,15 @@ function buildPeriodReview(
     marketContextHref: input.marketContextHref ?? null,
   });
 
+  const periodWord = period === "weekly" ? "week" : "month";
   let closingStatement: string | null = null;
   if (
     investmentReturn != null &&
     flows.hasFlowData &&
-    Math.abs(investmentReturn) > Math.abs(flows.netContributions)
+    Math.abs(investmentReturn) > Math.abs(flows.netContributions) &&
+    investmentReturn > 0
   ) {
-    closingStatement =
-      "Your portfolio grew faster than your net contributions this period.";
+    closingStatement = `Your portfolio grew mainly through investment return this ${periodWord}.`;
   } else if (
     flows.hasFlowData &&
     portfolioMovement != null &&
@@ -513,16 +541,15 @@ function buildPeriodReview(
     flows.netContributions > 0 &&
     flows.netContributions >= portfolioMovement * 0.55
   ) {
-    closingStatement =
-      "Most of this period’s increase came from new contributions.";
+    closingStatement = `Most of this ${periodWord}’s increase came from net contributions.`;
   } else if (goalLabel) {
     closingStatement = `Your main goal remains: ${goalLabel}.`;
   } else if (milestone) {
     closingStatement = milestone.label;
   }
 
-  // Cap facts — omit empty noise; keep ~5–8.
-  const cappedFacts = facts.slice(0, period === "monthly" ? 8 : 7);
+  // Cap facts — weekly ~7–9, monthly ~8–12.
+  const cappedFacts = facts.slice(0, period === "monthly" ? 12 : 9);
 
   return {
     period,
@@ -542,6 +569,19 @@ function buildPeriodReview(
     freshnessNote: null,
     links: defaultLinks(),
     isDemo,
+    metrics: {
+      startingValue,
+      endingValue,
+      portfolioMovement,
+      investmentReturn,
+      netContributions: flows.hasFlowData ? flows.netContributions : null,
+      contributed: flows.hasFlowData ? flows.contributed : null,
+      withdrawn: flows.hasFlowData ? flows.withdrawn : null,
+      dividends,
+      baseCurrency: "EUR",
+      strongestContributor: best,
+      weakestContributor: worst && worst !== best ? worst : null,
+    },
   };
 }
 

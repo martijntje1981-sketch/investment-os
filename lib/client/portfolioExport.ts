@@ -347,16 +347,34 @@ function appendReviewSheet(
 ): void {
   if (!review.ready) return;
 
+  const metrics = review.metrics;
+  const metricRows: Array<Array<string | number>> = [];
+  if (metrics) {
+    metricRows.push(
+      ["Starting value", formatOptionalNumber(metrics.startingValue)],
+      ["Ending value", formatOptionalNumber(metrics.endingValue)],
+      ["Portfolio movement", formatOptionalNumber(metrics.portfolioMovement)],
+      ["Investment return", formatOptionalNumber(metrics.investmentReturn)],
+      ["Net contributions", formatOptionalNumber(metrics.netContributions)],
+      ["Withdrawals", formatOptionalNumber(metrics.withdrawn)],
+      ["Dividends", formatOptionalNumber(metrics.dividends)],
+      ["Strongest contributor", metrics.strongestContributor ?? ""],
+      ["Weakest contributor", metrics.weakestContributor ?? ""],
+    );
+  }
+
   const rows: Array<Array<string | number>> = [
     ["Portfolio Review"],
     ["Period", review.periodLabel],
     ["Date range", review.dateRangeLabel],
     ["Lead", review.lead],
+    ...metricRows,
     ...review.supportingFacts.map((fact) => [fact.label, fact.value]),
     ["Goal status", review.goalStatusLabel ?? ""],
     ["Milestone", review.milestone?.label ?? ""],
     ["One thing to know", review.focus?.label ?? ""],
     ["Closing", review.closingStatement ?? ""],
+    ["Generated", new Date().toISOString().slice(0, 10)],
   ].map((row) => row.map((cell) => sanitizeExcelCellValue(cell)));
 
   const sheet = XLSX.utils.aoa_to_sheet(rows);

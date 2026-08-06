@@ -57,6 +57,8 @@ export const EXAMPLE_EXPIRED_ALLOWED_PREFIXES = [
   "/pricing",
   /** Export exception — history page only; other Premium surfaces stay blocked. */
   "/portfolio-history",
+  /** Saved monthly reviews remain readable; no new generation required. */
+  "/review",
 ] as const;
 
 export function pathMatchesPrefix(

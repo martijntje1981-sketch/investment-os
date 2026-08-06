@@ -37,6 +37,20 @@ export type CompanionDeepLink = {
   label: string;
 };
 
+export type CompanionReviewMetrics = {
+  startingValue: number | null;
+  endingValue: number | null;
+  portfolioMovement: number | null;
+  investmentReturn: number | null;
+  netContributions: number | null;
+  contributed: number | null;
+  withdrawn: number | null;
+  dividends: number | null;
+  baseCurrency: string;
+  strongestContributor: string | null;
+  weakestContributor: string | null;
+};
+
 export type CompanionReview = {
   period: CompanionPeriod;
   ready: boolean;
@@ -60,6 +74,8 @@ export type CompanionReview = {
   links: CompanionDeepLink[];
   /** True when the review uses Demo Portfolio example data. */
   isDemo: boolean;
+  /** Numeric metrics for snapshots / export — omit unavailable values. */
+  metrics?: CompanionReviewMetrics | null;
 };
 
 export type CompanionBundle = {

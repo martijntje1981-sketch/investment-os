@@ -22,6 +22,8 @@ import {
   PageContainer,
 } from "@/components/layout/PageContainer";
 import { PageHero } from "@/components/layout/PageHero";
+import { ExportPortfolioButton } from "@/components/export/ExportPortfolioButton";
+import { runPortfolioExport } from "@/lib/client/runPortfolioExport";
 import {
   appAnalysisDarkBodyClass,
   appAnalysisDarkDisclaimerClass,
@@ -90,7 +92,7 @@ function allocationBarColor(index: number) {
 }
 
 export default function PortfolioAnalysisPage() {
-  const { formatEur } = useBaseCurrencyDisplay();
+  const { formatEur, baseCurrency, convertEur } = useBaseCurrencyDisplay();
   const {
     holdings,
     portfolioReady,
@@ -135,6 +137,24 @@ export default function PortfolioAnalysisPage() {
           }
           actions={
             <div className="flex flex-wrap gap-2">
+              {hasHoldings ? (
+                <ExportPortfolioButton
+                  onExport={() =>
+                    runPortfolioExport({
+                      holdings,
+                      entries: [],
+                      portfolioValueEur: analysis.valuedPositions.reduce(
+                        (sum, position) => sum + position.value,
+                        0,
+                      ),
+                      portfolioValueAvailable: analysis.valuedPositions.length > 0,
+                      baseCurrency,
+                      convertEur,
+                    })
+                  }
+                  className="border border-white/25 bg-white/10 text-white hover:bg-white/15"
+                />
+              ) : null}
               <Link
                 href={DASHBOARD_DEEP_LINKS.scorecard}
                 className={appHeroGhostButtonClass}

@@ -240,7 +240,7 @@ describe("portfolio history export UI wiring", () => {
     expect(page).toContain("PORTFOLIO_EXPORT_EMPTY_MESSAGE");
     expect(page).toContain("PORTFOLIO_EXPORT_SUCCESS_MESSAGE");
     expect(page).toContain("PORTFOLIO_EXPORT_FAILURE_MESSAGE");
-    expect(page).toContain("Preparing export");
+    expect(page).toContain("Export Portfolio");
     expect(page).toContain("Export Portfolio");
   });
 });

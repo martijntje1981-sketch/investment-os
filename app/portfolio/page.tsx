@@ -31,7 +31,9 @@ import {
 } from "@/components/layout/PageContainer";
 import { PageHero } from "@/components/layout/PageHero";
 import { EmptyPortfolioGuide } from "@/components/onboarding/EmptyPortfolioGuide";
+import { ExportPortfolioButton } from "@/components/export/ExportPortfolioButton";
 import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
+import { runPortfolioExport } from "@/lib/client/runPortfolioExport";
 import {
   convertHoldingBaseDraftToEur,
   convertHoldingEurToBaseDraft,
@@ -145,8 +147,14 @@ function costOf(holding: Holding) {
 
 export default function PortfolioPage() {
   const router = useRouter();
-  const { formatEur, snapshot, baseCurrency, canPersistMonetary, refreshFx } =
-    useBaseCurrencyDisplay();
+  const {
+    formatEur,
+    snapshot,
+    baseCurrency,
+    canPersistMonetary,
+    refreshFx,
+    convertEur,
+  } = useBaseCurrencyDisplay();
   const editorSessionRef = useRef<BaseCurrencyFxSnapshot | null>(null);
   const [editorCurrencyLocked, setEditorCurrencyLocked] =
     useState(baseCurrency);
@@ -531,6 +539,19 @@ export default function PortfolioPage() {
           backToDashboard
           actions={
             <>
+              <ExportPortfolioButton
+                onExport={() =>
+                  runPortfolioExport({
+                    holdings,
+                    entries: [],
+                    portfolioValueEur: totalValue,
+                    portfolioValueAvailable: totalValue > 0,
+                    baseCurrency,
+                    convertEur,
+                  })
+                }
+                className="border border-white/20 bg-white/10 text-white hover:bg-white/15"
+              />
               <Link
                 href="/portfolio-history"
                 className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-bold text-brand-navy hover:bg-brand-hover"

@@ -33,3 +33,26 @@ export {
   formatSignedMoney,
   formatSignedPercent,
 } from "@/lib/services/portfolio/companion/format";
+
+export {
+  formatYearMonthLabel,
+  yearMonthFromIsoDate,
+  MONTHLY_REVIEW_EMAIL_PREF_KEY,
+  type MonthlyReviewArchiveItem,
+  type MonthlyReviewSnapshotPayload,
+} from "@/lib/services/portfolio/companion/snapshotTypes";
+
+export {
+  readMonthlyReviewEmailOptIn,
+  isMonthlyReviewEmailConfigured,
+} from "@/lib/services/portfolio/companion/emailPreference";
+
+export {
+  buildMonthlyReviewEmailContent,
+  sendMonthlyReviewReadyEmail,
+} from "@/lib/services/portfolio/companion/monthlyReviewEmail";
+
+export {
+  buildMonthlyReviewPdfBytes,
+  monthlyReviewPdfFilename,
+} from "@/lib/services/portfolio/companion/monthlyReviewPdf";
