@@ -43,7 +43,13 @@ function normalizeGoal(parsed: Partial<GoalSettings>): GoalSettings | null {
     return null;
   }
 
+  const name =
+    typeof parsed.name === "string" && parsed.name.trim().length > 0
+      ? parsed.name.trim().slice(0, 60)
+      : undefined;
+
   return {
+    ...(name ? { name } : {}),
     targetValue,
     targetYear,
     monthlyContribution,

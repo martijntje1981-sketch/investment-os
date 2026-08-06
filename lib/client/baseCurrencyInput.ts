@@ -221,6 +221,7 @@ export function convertGoalBaseDraftToEur(
   return {
     ok: true,
     value: {
+      ...(goal.name?.trim() ? { name: goal.name.trim().slice(0, 60) } : {}),
       targetYear: goal.targetYear,
       expectedAnnualReturn: goal.expectedAnnualReturn,
       targetValue,

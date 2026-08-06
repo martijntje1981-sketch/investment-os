@@ -183,6 +183,8 @@ export type CachedPortfolioPrice = {
 };
 
 export type GoalSettings = {
+  /** Optional display name — local preference; not required for calculations. */
+  name?: string;
   targetValue: number;
   targetYear: number;
   monthlyContribution: number;

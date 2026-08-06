@@ -11,6 +11,7 @@ describe("goals hero integration", () => {
 
     expect(goalsPage).toContain("useGoalProgress");
     expect(goalsPage).toContain("goalProgress.currentValue");
+    expect(goalsPage).toContain("timelineToGoalHistoryPoints");
     expect(goalsPage).not.toContain("calculatePortfolioValue");
   });
 
