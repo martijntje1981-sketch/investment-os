@@ -1,8 +1,8 @@
 export const newsCompactCardClass =
-  "min-w-0 rounded-[16px] border border-slate-200 bg-white px-3.5 py-3 transition hover:border-slate-300 motion-reduce:transition-none min-[480px]:px-4 min-[480px]:py-3.5";
+  "min-w-0 rounded-[20px] border border-slate-200/80 bg-white px-3.5 py-3 transition hover:border-slate-300 motion-reduce:transition-none min-[480px]:px-4 min-[480px]:py-3.5";
 
 export const newsEditorialCardClass =
-  "min-w-0 rounded-[18px] border border-slate-200 bg-white transition hover:border-slate-300 motion-reduce:transition-none";
+  "min-w-0 rounded-[20px] border border-slate-200/80 bg-white transition hover:border-slate-300 motion-reduce:transition-none";
 
 /** Stacks media, body and CTA on narrow screens; horizontal from ~480px when space allows. */
 export const newsCompactCardLayoutClass =
@@ -22,7 +22,7 @@ export const newsCompactMetaClass =
   "mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 break-words text-xs";
 
 export const newsExternalLinkClass =
-  "inline-flex min-h-[44px] w-full shrink-0 items-center justify-center gap-1 rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 motion-reduce:transition-none min-[480px]:w-auto min-[480px]:justify-start";
+  "inline-flex min-h-[44px] w-full shrink-0 items-center justify-center gap-1 rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 motion-reduce:transition-none min-[480px]:w-auto min-[480px]:justify-start";
 
 export const newsShowMoreButtonClass =
-  "inline-flex min-h-[44px] w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 motion-reduce:transition-none sm:w-auto sm:justify-start";
+  "inline-flex min-h-[44px] w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 motion-reduce:transition-none sm:w-auto sm:justify-start";

@@ -55,6 +55,10 @@ describe("supported instruments public experience", () => {
   });
 
   it("includes both support FAQ entries on the public FAQ page", () => {
+    const helpCentre = readFileSync(
+      path.resolve(process.cwd(), "lib/content/helpCentre.ts"),
+      "utf8",
+    );
     const faqPage = readFileSync(
       path.resolve(process.cwd(), "app/faq/page.tsx"),
       "utf8",
@@ -64,8 +68,9 @@ describe("supported instruments public experience", () => {
       "utf8",
     );
 
-    expect(faqPage).toContain("whichInvestmentsSupportedFaq");
-    expect(faqPage).toContain("unsupportedInvestmentFaq");
+    expect(helpCentre).toContain("whichInvestmentsSupportedFaq");
+    expect(helpCentre).toContain("unsupportedInvestmentFaq");
+    expect(faqPage).toContain("HELP_CENTRE_SECTIONS");
     expect(faqContent).toContain("Which investments are supported?");
     expect(faqContent).toContain("What happens if my investment is not supported?");
     expect(faqContent).toContain("View the current supported instruments");

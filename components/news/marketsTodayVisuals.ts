@@ -25,10 +25,10 @@ export const MARKETS_TODAY_REGION_VISUALS: Record<
 > = {
   global: {
     icon: Globe2,
-    accentBorderClass: "border-t-violet-500",
-    iconSurfaceClass: "bg-violet-50",
-    iconClass: "text-violet-700",
-    gradientClass: "from-violet-50/80 to-white",
+    accentBorderClass: "border-t-slate-500",
+    iconSurfaceClass: "bg-slate-100",
+    iconClass: "text-slate-700",
+    gradientClass: "from-slate-50/80 to-white",
   },
   europe: {
     icon: Landmark,

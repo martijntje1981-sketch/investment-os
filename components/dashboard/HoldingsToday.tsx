@@ -12,6 +12,7 @@ import {
   appCardPaddingClass,
   appSectionBodyClass,
   appSectionLabelClass,
+  appSolidButtonClass,
   appTextLinkClass,
 } from "@/components/layout/appSurface";
 import type { DashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
@@ -63,11 +64,8 @@ export function HoldingsToday({
           <p className={appSectionBodyClass}>
             Add market-priced holdings to see live values and latest movement.
           </p>
-          <Link
-            href="/upload"
-            className="mt-6 inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
-          >
-            <Upload className="h-4 w-4" />
+          <Link href="/upload" className={`mt-5 ${appSolidButtonClass}`}>
+            <Upload className="h-4 w-4" aria-hidden />
             Upload portfolio
           </Link>
         </div>

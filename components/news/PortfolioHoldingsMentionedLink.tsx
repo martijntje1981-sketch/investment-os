@@ -8,7 +8,7 @@ import {
 } from "@/lib/services/news/portfolioNewsNav";
 
 const HIGHLIGHT_CLASS =
-  "ring-2 ring-violet-400 ring-offset-2 transition-shadow duration-500 motion-reduce:transition-none";
+  "ring-2 ring-brand ring-offset-2 transition-shadow duration-500 motion-reduce:transition-none";
 
 export type PortfolioNewsNavTarget = {
   count: number;
@@ -46,7 +46,7 @@ export function PortfolioHoldingsMentionedLink({
     <button
       type="button"
       onClick={scrollToPortfolioNews}
-      className={`inline font-semibold text-violet-800 underline decoration-violet-300 underline-offset-2 transition hover:text-violet-950 hover:decoration-violet-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 ${className}`}
+      className={`inline font-semibold text-brand-navy underline decoration-brand/40 underline-offset-2 transition hover:text-brand hover:decoration-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 ${className}`}
     >
       {label}
     </button>

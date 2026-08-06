@@ -80,7 +80,7 @@ export function NewsStoryCard({
         href={canonicalUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className={`${newsCompactCardClass} block no-underline text-inherit focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600`}
+        className={`${newsCompactCardClass} block no-underline text-inherit focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2`}
       >
         {body}
       </a>

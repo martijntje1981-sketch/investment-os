@@ -2,323 +2,170 @@ import Link from "next/link";
 import {
   ArrowLeft,
   ArrowRight,
-  BarChart3,
-  BriefcaseBusiness,
   CircleHelp,
-  Database,
-  LockKeyhole,
   Mail,
-  Newspaper,
   ShieldCheck,
-  Sparkles,
 } from "lucide-react";
 
 import { TobaileyLogo } from "@/components/brand/TobaileyLogo";
-import { SUPPORTED_INSTRUMENTS_PATH } from "@/lib/content/supportedInstrumentsContent";
 import {
-  unsupportedInvestmentFaq,
-  whichInvestmentsSupportedFaq,
-} from "@/lib/content/supportedInstrumentsFaq";
-
-type FaqQuestion = {
-  question: string;
-  answer: string;
-  link?: {
-    href: string;
-    label: string;
-  };
-};
-
-const faqSections: Array<{
-  title: string;
-  icon: typeof Sparkles;
-  questions: FaqQuestion[];
-}> = [
-  {
-    title: "About Tobailey",
-    icon: Sparkles,
-    questions: [
-      {
-        question: "What is Tobailey?",
-        answer:
-          "Tobailey is a portfolio-monitoring and decision-support platform for private investors. It brings portfolio information, market context, holding analysis and financial goals together in one organised system.",
-      },
-      {
-        question: "Who is Tobailey designed for?",
-        answer:
-          "Tobailey is designed primarily for private investors who want a clearer overview of their portfolio and a more structured way to monitor risks, opportunities and long-term progress.",
-      },
-      {
-        question: "Does Tobailey provide financial advice?",
-        answer:
-          "No. Tobailey is an informational, analytical and decision-support tool. It does not provide regulated personal financial advice, investment recommendations or guarantees about future performance.",
-      },
-    ],
-  },
-  {
-    title: "Portfolio and uploads",
-    icon: BriefcaseBusiness,
-    questions: [
-      {
-        question: "How do I add my portfolio?",
-        answer:
-          "You can add your portfolio through manual entry, CSV or Excel import, or by recording cash on the portfolio page. Tobailey helps match holdings to the correct instruments, and you review the details before they are saved.",
-      },
-      {
-        question: "Which brokers are supported?",
-        answer:
-          "Tobailey is broker-independent. Add portfolio information through manual entry or supported CSV or Excel imports — no broker login required. Every imported position is reviewed before it is saved.",
-      },
-      {
-        question: "Can I edit recognised holdings?",
-        answer:
-          "Yes. The review step is intended to let you correct symbols, quantities, average purchase prices and other details before your portfolio is saved.",
-      },
-      {
-        question: "Which asset classes can be monitored?",
-        answer:
-          "The current product focuses on listed shares, ETFs, ETCs, ETPs and selected digital-asset products. Broader asset support may be added later.",
-      },
-      whichInvestmentsSupportedFaq,
-      unsupportedInvestmentFaq,
-    ],
-  },
-  {
-    title: "Market data and briefing",
-    icon: Newspaper,
-    questions: [
-      {
-        question: "How often are market prices updated?",
-        answer:
-          "Update frequency depends on the market-data provider, exchange and subscription level. Tobailey indicates whether a displayed price is live, cached or based on fallback portfolio information.",
-      },
-      {
-        question: "Why can Tobailey differ from my broker?",
-        answer:
-          "Small differences can occur because providers may use different exchanges, update times, currency-conversion rates or delayed market feeds. Your broker remains the authoritative source for execution and account value.",
-      },
-      {
-        question: "What is included in the portfolio briefing?",
-        answer:
-          "The briefing combines macroeconomic developments, important market events and news connected to your holdings. It also explains which positions may be affected and why.",
-      },
-      {
-        question: "Is all news automatically reliable?",
-        answer:
-          "No automated news system is perfect. Articles, sentiment classifications and portfolio-impact assessments should be reviewed critically and should not be treated as investment instructions.",
-      },
-    ],
-  },
-  {
-    title: "Goals and analysis",
-    icon: BarChart3,
-    questions: [
-      {
-        question: "How does the goal engine work?",
-        answer:
-          "The goal engine uses your current portfolio value, target value, target year and expected contributions to estimate the average annual return required to reach your goal.",
-      },
-      {
-        question: "Are projections guaranteed?",
-        answer:
-          "No. Projections are mathematical scenarios based on assumptions. Actual investment returns, inflation, taxes, fees and personal circumstances can differ substantially.",
-      },
-      {
-        question: "What is the portfolio health score?",
-        answer:
-          "The portfolio health score is an indicative Tobailey metric based on factors such as concentration, diversification and the return required to achieve your selected goal. It is not a credit rating or professional suitability assessment.",
-      },
-    ],
-  },
-  {
-    title: "Accounts, privacy and security",
-    icon: LockKeyhole,
-    questions: [
-      {
-        question: "Is my portfolio stored securely?",
-        answer:
-          "Tobailey uses secure authentication and appropriate technical and organisational safeguards. Portfolio information is processed only to provide the requested platform features.",
-      },
-      {
-        question: "Does Tobailey need access to my broker account?",
-        answer:
-          "No. The current workflow does not require your broker password or trading access. Never share broker login credentials with Tobailey.",
-      },
-      {
-        question: "Will Tobailey execute trades?",
-        answer:
-          "No. Tobailey is not a broker and does not place, modify or cancel investment orders.",
-      },
-      {
-        question: "Can I delete my account and portfolio data?",
-        answer:
-          "Yes. You can request deletion of your account and associated personal information through Support. Legal retention obligations may apply to limited records.",
-      },
-    ],
-  },
-  {
-    title: "Plan and subscription",
-    icon: Database,
-    questions: [
-      {
-        question: "How much does Tobailey cost?",
-        answer:
-          "Tobailey costs €7.99 per month after a 7-day Example Portfolio. The applicable price and payment terms are shown before checkout.",
-      },
-      {
-        question: "What is included in the subscription?",
-        answer:
-          "The subscription includes a secure account, portfolio monitoring, market-data updates, personalised briefing content, holding analysis and goal tracking.",
-      },
-      {
-        question: "Can I cancel my subscription?",
-        answer:
-          "Yes. You can cancel your subscription before the next renewal. Cancellation stops future billing, while access continues for any period already paid unless applicable law requires otherwise.",
-      },
-    ],
-  },
-];
+  appCardClass,
+  appCardPaddingClass,
+  appSectionBodyClass,
+  appSectionMetaClass,
+  appSectionTitleClass,
+  appSolidButtonClass,
+  appTextLinkClass,
+} from "@/components/layout/appSurface";
+import { HELP_CENTRE_SECTIONS } from "@/lib/content/helpCentre";
+import { SUPPORTED_INSTRUMENTS_PATH } from "@/lib/content/supportedInstrumentsContent";
 
 export default function FAQPage() {
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-950">
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5 sm:px-8">
-          <Link href="/" className="inline-flex items-center">
-            <TobaileyLogo size={44} showWordmark showTagline />
+    <main className="min-h-screen overflow-x-clip bg-background text-foreground">
+      <header className="border-b border-slate-200/80 bg-white">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
+          <Link href="/" className="inline-flex min-h-[44px] items-center">
+            <TobaileyLogo size={40} showWordmark showTagline />
           </Link>
 
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-sm font-bold text-slate-500 transition hover:text-slate-950"
+            className={`inline-flex ${appTextLinkClass} text-slate-600`}
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="h-4 w-4" aria-hidden />
             Back home
           </Link>
         </div>
       </header>
 
-      <section className="relative overflow-hidden border-b border-slate-200 bg-white">
-        <div className="absolute left-1/2 top-0 h-[420px] w-[760px] -translate-x-1/2 rounded-full bg-gradient-to-br from-blue-200/40 via-violet-200/30 to-transparent blur-3xl" />
-
-        <div className="relative mx-auto max-w-4xl px-5 py-20 text-center sm:px-8 sm:py-28">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-950 text-white shadow-xl">
-            <CircleHelp className="h-7 w-7" />
+      <section className="border-b border-slate-200/80 bg-navy-hero text-white">
+        <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10">
+            <CircleHelp className="h-6 w-6" aria-hidden />
           </div>
-
-          <p className="mt-7 text-sm font-bold uppercase tracking-[0.18em] text-blue-600">
-            Frequently asked questions
+          <p className="mt-5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/55">
+            Help Centre
           </p>
-
-          <h1 className="mt-4 text-5xl font-black tracking-[-0.055em] sm:text-6xl">
-            Everything you need to know
+          <h1 className="mt-2 text-[1.75rem] font-bold tracking-[-0.03em] sm:text-[2rem]">
+            Answers, calmly organised
           </h1>
-
-          <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-slate-600">
-            Learn how Tobailey handles portfolios, market data, goals, privacy
-            and your subscription.
+          <p className="mt-3 max-w-xl text-[15px] font-medium leading-relaxed text-white/70">
+            Getting started, holdings, goals, history, prices and more — short
+            answers without the noise.
           </p>
         </div>
       </section>
 
-      <section className="px-5 py-16 sm:px-8 sm:py-24">
-        <div className="mx-auto max-w-5xl space-y-12">
-          {faqSections.map((section) => {
-            const Icon = section.icon;
+      <nav
+        aria-label="Help Centre sections"
+        className="border-b border-slate-200/80 bg-white"
+      >
+        <div className="mx-auto flex max-w-3xl gap-2 overflow-x-auto overscroll-x-contain px-4 py-3 sm:px-6">
+          {HELP_CENTRE_SECTIONS.map((section) => (
+            <a
+              key={section.id}
+              href={`#${section.id}`}
+              className="inline-flex min-h-[40px] shrink-0 items-center rounded-full border border-slate-200 bg-slate-50 px-3.5 text-[13px] font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+            >
+              {section.title}
+            </a>
+          ))}
+        </div>
+      </nav>
 
-            return (
-              <section key={section.title}>
-                <div className="mb-5 flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-950 text-white">
-                    <Icon className="h-5 w-5" />
-                  </div>
+      <section className="px-4 py-10 sm:px-6 sm:py-14">
+        <div className="mx-auto max-w-3xl space-y-10">
+          {HELP_CENTRE_SECTIONS.map((section) => (
+            <section
+              key={section.id}
+              id={section.id}
+              className="scroll-mt-24"
+              aria-labelledby={`${section.id}-heading`}
+            >
+              <h2
+                id={`${section.id}-heading`}
+                className={appSectionTitleClass}
+              >
+                {section.title}
+              </h2>
 
-                  <h2 className="text-2xl font-black tracking-[-0.03em]">
-                    {section.title}
-                  </h2>
-                </div>
-
-                <div className="space-y-4">
-                  {section.questions.map((item) => (
-                    <details
-                      key={item.question}
-                      className="group rounded-[22px] border border-slate-200 bg-white p-6 shadow-sm transition open:shadow-md"
+              <div className="mt-4 space-y-3">
+                {section.questions.map((item) => (
+                  <details
+                    key={item.question}
+                    className={`group ${appCardClass} ${appCardPaddingClass} transition open:shadow-[0_8px_24px_-16px_rgba(15,45,80,0.2)] motion-reduce:transition-none`}
+                  >
+                    <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-[15px] font-semibold text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">
+                      <span className="min-w-0">{item.question}</span>
+                      <span
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-lg text-slate-600 transition group-open:rotate-45 group-open:bg-navy-hero group-open:text-white motion-reduce:transition-none"
+                        aria-hidden
+                      >
+                        +
+                      </span>
+                    </summary>
+                    <div
+                      className={`mt-4 border-t border-slate-100 pt-4 ${appSectionBodyClass}`}
                     >
-                      <summary className="flex cursor-pointer list-none items-center justify-between gap-5 font-bold text-slate-950">
-                        <span>{item.question}</span>
-
-                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-lg text-slate-600 transition group-open:rotate-45 group-open:bg-slate-950 group-open:text-white">
-                          +
-                        </span>
-                      </summary>
-
-                      <div className="mt-5 max-w-4xl border-t border-slate-100 pt-5 text-sm leading-7 text-slate-600">
-                        <p>{item.answer}</p>
-                        {item.link ? (
-                          <Link
-                            href={item.link.href}
-                            className="mt-4 inline-flex items-center gap-2 font-bold text-blue-700 hover:text-blue-800"
-                          >
-                            {item.link.label}
-                            <ArrowRight className="h-4 w-4" />
-                          </Link>
-                        ) : null}
-                      </div>
-                    </details>
-                  ))}
-                </div>
-              </section>
-            );
-          })}
+                      <p>{item.answer}</p>
+                      {item.link ? (
+                        <Link
+                          href={item.link.href}
+                          className={`mt-3 ${appTextLinkClass}`}
+                        >
+                          {item.link.label}
+                          <ArrowRight className="h-4 w-4" aria-hidden />
+                        </Link>
+                      ) : null}
+                    </div>
+                  </details>
+                ))}
+              </div>
+            </section>
+          ))}
         </div>
       </section>
 
-      <section className="px-5 pb-20 sm:px-8 sm:pb-28">
-        <div className="mx-auto grid max-w-5xl gap-5 md:grid-cols-2">
-          <article className="rounded-[28px] bg-slate-950 p-7 text-white shadow-xl">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10">
-              <ShieldCheck className="h-6 w-6" />
+      <section className="px-4 pb-16 sm:px-6 sm:pb-20">
+        <div className="mx-auto grid max-w-3xl gap-4 sm:grid-cols-2">
+          <article
+            className={`${appCardClass} ${appCardPaddingClass} bg-navy-hero text-white`}
+          >
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10">
+              <ShieldCheck className="h-5 w-5" aria-hidden />
             </div>
-
-            <h2 className="mt-6 text-2xl font-black">Important information</h2>
-
-            <p className="mt-4 text-sm leading-7 text-slate-300">
-              Tobailey is a decision-support and portfolio-monitoring tool. It
-              does not provide personal financial advice and cannot guarantee
-              investment results.
+            <h2 className="mt-4 text-lg font-bold tracking-[-0.02em]">
+              Important information
+            </h2>
+            <p className="mt-2 text-[14px] font-medium leading-relaxed text-white/70">
+              Tobailey helps you monitor and understand your portfolio. It is
+              not personal financial advice and cannot guarantee results.
             </p>
           </article>
 
-          <article className="rounded-[28px] border border-slate-200 bg-white p-7 shadow-sm">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-700">
-              <Mail className="h-6 w-6" />
+          <article className={`${appCardClass} ${appCardPaddingClass}`}>
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-soft text-brand-navy">
+              <Mail className="h-5 w-5" aria-hidden />
             </div>
-
-            <h2 className="mt-6 text-2xl font-black">Still have a question?</h2>
-
-            <p className="mt-4 text-sm leading-7 text-slate-600">
-              Contact the Tobailey team about account access, support,
-              partnerships or product feedback.
+            <h2 className={`mt-4 ${appSectionTitleClass}`}>Still stuck?</h2>
+            <p className={`mt-2 ${appSectionMetaClass}`}>
+              Account access, feedback or partnerships — the team can help.
             </p>
-
-            <Link
-              href="/contact"
-              className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-blue-700"
-            >
+            <Link href="/contact" className={`mt-4 ${appSolidButtonClass}`}>
               Contact us
-              <ArrowRight className="h-4 w-4" />
+              <ArrowRight className="h-4 w-4" aria-hidden />
             </Link>
           </article>
         </div>
       </section>
 
-      <footer className="border-t border-slate-200 bg-white px-5 py-8 sm:px-8">
-        <div className="mx-auto flex max-w-6xl flex-col justify-between gap-5 sm:flex-row sm:items-center">
+      <footer className="border-t border-slate-200/80 bg-white px-4 py-8 sm:px-6">
+        <div className="mx-auto flex max-w-6xl flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <p className="text-xs leading-5 text-slate-500">
             © {new Date().getFullYear()} Tobailey. All rights reserved.
           </p>
-
-          <nav className="flex flex-wrap gap-5 text-xs font-bold text-slate-600">
+          <nav className="flex flex-wrap gap-4 text-xs font-semibold text-slate-600">
             <Link href={SUPPORTED_INSTRUMENTS_PATH}>Supported instruments</Link>
             <Link href="/privacy">Privacy</Link>
             <Link href="/terms">Terms</Link>

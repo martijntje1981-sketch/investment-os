@@ -26,7 +26,7 @@ const navigationItems = [
     href: "/pricing",
   },
   {
-    label: "FAQ",
+    label: "Help",
     href: "/faq",
   },
   {

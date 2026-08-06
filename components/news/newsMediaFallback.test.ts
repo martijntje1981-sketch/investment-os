@@ -43,13 +43,13 @@ describe("newsMediaFallback styles", () => {
     expect(macroStyle.tone).toBe("macro");
     expect(portfolioStyle.tone).toBe("portfolio");
     expect(macroStyle.surfaceClass).toContain("blue");
-    expect(portfolioStyle.surfaceClass).toContain("violet");
+    expect(portfolioStyle.surfaceClass).toContain("brand");
     expect(macroStyle.iconClass).not.toBe(portfolioStyle.iconClass);
   });
 
   it("maps each premium tone to restrained surface, border and icon classes", () => {
     expect(getNewsMediaFallbackStyle("macro").surfaceClass).toContain("bg-blue-50");
-    expect(getNewsMediaFallbackStyle("portfolio").surfaceClass).toContain("bg-violet-50");
+    expect(getNewsMediaFallbackStyle("portfolio").surfaceClass).toContain("bg-brand-soft");
     expect(getNewsMediaFallbackStyle("equities").surfaceClass).toContain("bg-emerald-50");
     expect(getNewsMediaFallbackStyle("crypto").surfaceClass).toContain("bg-amber-50");
     expect(getNewsMediaFallbackStyle("commodities").surfaceClass).toContain("bg-orange-50");

@@ -9,14 +9,14 @@ import {
 
 const VARIANT_STYLES = {
   light: {
-    link: "text-slate-950 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2",
+    link: "text-slate-950 hover:text-brand-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2",
     meta: "text-slate-500",
-    label: "text-violet-700",
+    label: "text-brand-navy",
   },
   dark: {
-    link: "text-white hover:text-violet-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950",
+    link: "text-white hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-navy-hero",
     meta: "text-white/75",
-    label: "text-violet-200",
+    label: "text-brand",
   },
 } as const;
 
@@ -55,7 +55,7 @@ export function IntelligenceArticleLink({
       href={href!.trim()}
       target="_blank"
       rel="noopener noreferrer"
-      className={`group flex min-h-[44px] w-full min-w-0 flex-col justify-center rounded-lg px-1 py-1 transition hover:bg-black/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 ${styles.link} ${className}`}
+      className={`group flex min-h-[44px] w-full min-w-0 flex-col justify-center rounded-lg px-1 py-1 transition hover:bg-black/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 ${styles.link} ${className}`}
     >
       <span className={`${textClass} group-hover:underline`}>
         {children}

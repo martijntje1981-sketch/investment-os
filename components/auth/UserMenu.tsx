@@ -92,7 +92,7 @@ const supportLinks: MenuLink[] = [
     label: "Supported Instruments",
     icon: ListChecks,
   },
-  { href: "/faq", label: "FAQ", icon: CircleHelp },
+  { href: "/faq", label: "Help Centre", icon: CircleHelp },
   { href: "/pricing", label: "Pricing", icon: BadgeEuro },
 ];
 

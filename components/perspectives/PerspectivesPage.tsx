@@ -3,13 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { Sparkles } from "lucide-react";
 
-import { BackButton } from "@/components/layout/BackButton";
 import BottomNavigation from "@/components/home/BottomNav";
 import { PageContainer } from "@/components/layout/PageContainer";
+import { PageHero } from "@/components/layout/PageHero";
 import {
   appCardClass,
-  appHeroMetricLabelClass,
-  appHeroShellClass,
+  appCardPaddingClass,
+  appDashboardDarkMetaClass,
   appSectionMetaClass,
   appSectionSubtitleClass,
   appSectionTitleClass,
@@ -43,7 +43,7 @@ type CategoryFilter = "all" | PerspectiveCategoryId;
 function PerspectivesSkeleton() {
   return (
     <div className="space-y-6" aria-hidden>
-      <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white">
+      <div className={`${appCardClass} overflow-hidden`}>
         <div className="aspect-video animate-pulse bg-slate-100 lg:hidden" />
         <div className="grid lg:grid-cols-2">
           <div className="hidden aspect-video animate-pulse bg-slate-100 lg:block" />
@@ -59,7 +59,7 @@ function PerspectivesSkeleton() {
         {Array.from({ length: 4 }).map((_, index) => (
           <div
             key={index}
-            className="h-28 animate-pulse rounded-2xl border border-slate-200 bg-white"
+            className="h-28 animate-pulse rounded-[20px] border border-slate-200/80 bg-white"
           />
         ))}
       </div>
@@ -145,12 +145,11 @@ export default function PerspectivesPage() {
     return (
       <>
         <PageContainer stackClassName="gap-5 md:gap-6">
-          <section className={`${appHeroShellClass} px-5 py-7 sm:px-8 sm:py-8`}>
-            <p className={appHeroMetricLabelClass}>Investment intelligence</p>
-            <h1 className="mt-2 text-3xl font-bold tracking-[-0.03em] text-white">
-              Perspectives
-            </h1>
-          </section>
+          <PageHero
+            title="Perspectives"
+            subtitle="Curated market viewpoints — open detail when you want it."
+            backToDashboard={Boolean(userSub)}
+          />
           <PerspectivesSkeleton />
         </PageContainer>
         <BottomNavigation />
@@ -161,53 +160,36 @@ export default function PerspectivesPage() {
   return (
     <>
       <PageContainer stackClassName="gap-5 md:gap-6">
-        <section
-          className={`${appHeroShellClass} px-5 py-7 sm:px-8 sm:py-8`}
-          aria-labelledby="perspectives-page-heading"
-        >
-          <div className="mb-4">
-            <BackButton />
-          </div>
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <div className="min-w-0">
-              <p className={appHeroMetricLabelClass}>Investment intelligence</p>
-              <h1
-                id="perspectives-page-heading"
-                className="mt-2 text-3xl font-bold tracking-[-0.03em] text-white"
-              >
-                Perspectives
-              </h1>
-              <p className="mt-2 max-w-2xl text-[15px] font-medium leading-relaxed text-white/75">
-                High-signal market opinions from a curated set of independent
-                creators — macro, bitcoin, investing, and technology.
-              </p>
-            </div>
-            {payload?.fetchedAt ? (
-              <p className="text-[12px] font-medium text-white/55">
+        <PageHero
+          title="Perspectives"
+          subtitle="Curated viewpoints on macro, investing, bitcoin and technology."
+          backToDashboard={Boolean(userSub)}
+          stats={
+            payload?.fetchedAt ? (
+              <p className={`${appDashboardDarkMetaClass} mt-0`}>
                 {formatUpdatedMinutesAgo(payload.fetchedAt)}
               </p>
-            ) : null}
-          </div>
-        </section>
+            ) : null
+          }
+        />
 
         {audience !== "authenticated_holdings" ? (
           <MakeTobaileyYoursCard audience={audience} showSoftLine />
         ) : null}
 
         {error ? (
-          <div className={`${appCardClass} px-5 py-6`}>
+          <div className={`${appCardClass} ${appCardPaddingClass}`}>
             <p className={appSectionTitleClass}>Could not load perspectives</p>
             <p className={`mt-2 ${appSectionSubtitleClass}`}>{error}</p>
           </div>
         ) : payload?.state === "provider_unavailable" ? (
-          <div className={`${appCardClass} px-5 py-6`}>
+          <div className={`${appCardClass} ${appCardPaddingClass}`}>
             <div className="flex items-start gap-3">
               <Sparkles className="mt-0.5 h-5 w-5 text-brand" aria-hidden />
               <div>
                 <p className={appSectionTitleClass}>Perspectives unavailable</p>
                 <p className={`mt-2 ${appSectionSubtitleClass}`}>
-                  Official creator feeds could not be reached right now. Try
-                  again shortly.
+                  Creator feeds could not be reached. Try again shortly.
                 </p>
                 {payload.unavailableCreatorIds.length > 0 ? (
                   <p className={`mt-2 ${appSectionMetaClass}`}>
@@ -219,7 +201,7 @@ export default function PerspectivesPage() {
             </div>
           </div>
         ) : !payload || payload.videos.length === 0 ? (
-          <div className={`${appCardClass} px-5 py-6`}>
+          <div className={`${appCardClass} ${appCardPaddingClass}`}>
             <p className={appSectionTitleClass}>No recent perspectives</p>
             <p className={`mt-2 ${appSectionSubtitleClass}`}>
               No verified uploads matched the current creator window.

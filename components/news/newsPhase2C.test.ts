@@ -50,7 +50,7 @@ describe("Markets Today Phase 2C visuals", () => {
       [...MARKETS_TODAY_REGION_ORDER].sort(),
     );
     expect(MARKETS_TODAY_REGION_VISUALS.global.iconSurfaceClass).toContain(
-      "violet",
+      "slate",
     );
     expect(MARKETS_TODAY_REGION_VISUALS.europe.iconSurfaceClass).toContain(
       "blue",

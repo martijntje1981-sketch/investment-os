@@ -71,7 +71,7 @@ export function PortfolioBaseCurrencySetting() {
           onChange={(event) =>
             setDraft(event.target.value as PortfolioBaseCurrency)
           }
-          className="min-h-[44px] w-full rounded-2xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-950 outline-none transition focus:border-slate-950 focus:ring-4 focus:ring-slate-950/5 disabled:cursor-not-allowed disabled:opacity-60 sm:max-w-xs"
+          className="min-h-[44px] w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-950 outline-none transition focus:border-brand focus:ring-4 focus:ring-brand/15 disabled:cursor-not-allowed disabled:opacity-60 sm:max-w-xs"
         >
           {PORTFOLIO_BASE_CURRENCY_OPTIONS.map((option) => (
             <option key={option.value} value={option.value}>
@@ -86,7 +86,7 @@ export function PortfolioBaseCurrencySetting() {
           onClick={() => {
             void saveBaseCurrency(draft);
           }}
-          className="inline-flex min-h-[44px] items-center justify-center rounded-2xl bg-slate-950 px-5 text-sm font-bold text-white transition hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-950 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-navy-hero px-5 py-3 text-sm font-bold text-white transition hover:bg-navy-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isSavingPreference ? "Saving…" : "Save currency"}
         </button>

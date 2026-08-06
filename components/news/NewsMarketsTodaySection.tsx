@@ -110,7 +110,7 @@ function StoryRow({
             href={story.canonicalUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="line-clamp-3 break-words text-sm font-semibold leading-snug text-slate-900 underline-offset-2 hover:text-blue-700 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 min-[480px]:line-clamp-2"
+            className="line-clamp-3 break-words text-sm font-semibold leading-snug text-slate-900 underline-offset-2 hover:text-brand-navy hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 min-[480px]:line-clamp-2"
           >
             {story.title}
           </a>
@@ -140,7 +140,7 @@ function MarketsTodayPulseCard({
   return (
     <section
       aria-labelledby="markets-today-pulse-heading"
-      className="min-w-0 rounded-[18px] border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-violet-50/40 px-4 py-4 shadow-sm sm:px-5"
+      className="min-w-0 rounded-[20px] border border-slate-200/80 bg-gradient-to-br from-slate-50 via-white to-brand-soft/30 px-4 py-4 sm:px-5"
     >
       <div className="flex flex-wrap items-start justify-between gap-2">
         <h3

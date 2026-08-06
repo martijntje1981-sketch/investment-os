@@ -119,7 +119,7 @@ export function NewsBriefingIntelligence({
       <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 px-4 py-4 sm:px-6 sm:py-5">
         <div className="min-w-0">
           <div className="flex min-w-0 items-start gap-3">
-            <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-violet-100 text-violet-700">
+            <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-brand-soft text-brand-navy">
               <Sparkles className="h-5 w-5" aria-hidden />
             </div>
             <div className="min-w-0">
@@ -156,7 +156,7 @@ export function NewsBriefingIntelligence({
       </div>
 
       <div className="space-y-3 px-4 py-4 sm:space-y-5 sm:px-6 sm:py-5">
-        <div className="rounded-[20px] border border-violet-100 bg-violet-50/70 px-4 py-4 sm:px-5 sm:py-5">
+        <div className="rounded-[20px] border border-brand/20 bg-brand-soft/70 px-4 py-4 sm:px-5 sm:py-5">
           <p className={`${appSectionBodyMediumClass} text-slate-700`}>
             Today&apos;s portfolio summary
           </p>
@@ -175,7 +175,7 @@ export function NewsBriefingIntelligence({
             <ul className={`mt-3 space-y-2.5 ${appSectionBodyClass} text-slate-700`}>
               {topMatters.map((bullet) => (
                 <li key={intelligenceBulletKey(bullet)} className="flex gap-2.5">
-                  <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-violet-500" aria-hidden />
+                  <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-brand" aria-hidden />
                   <span className="min-w-0 flex-1">
                     <IntelligenceBulletRow bullet={bullet} variant="light" />
                   </span>
@@ -190,8 +190,8 @@ export function NewsBriefingIntelligence({
         </div>
 
         {intelligence.mustWatch ? (
-          <div className="overflow-hidden rounded-[18px] border border-violet-200 bg-violet-50 px-4 py-4">
-            <p className={`${appSectionBodyMediumClass} text-violet-900`}>Top story</p>
+          <div className="overflow-hidden rounded-[20px] border border-brand/25 bg-brand-soft px-4 py-4">
+            <p className={`${appSectionBodyMediumClass} text-brand-navy`}>Top story</p>
             <div className="mt-3 flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
               {mustWatchItem && mustWatchPresentation && mustWatchThumbnailUrl ? (
                 <NewsMediaThumbnail
@@ -233,7 +233,7 @@ export function NewsBriefingIntelligence({
                   href={intelligence.mustWatch.canonicalUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-3 inline-flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-xl border border-violet-200 bg-white px-4 py-2 text-sm font-bold text-violet-800 transition hover:bg-violet-100/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 motion-reduce:transition-none sm:mt-4 sm:w-auto sm:justify-start"
+                  className="mt-3 inline-flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-xl border border-brand/25 bg-white px-4 py-2 text-sm font-bold text-brand-navy transition hover:bg-brand-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 motion-reduce:transition-none sm:mt-4 sm:w-auto sm:justify-start"
                 >
                   {getNewsMediaCtaLabel(intelligence.mustWatch.type)}
                   <ArrowUpRight className="h-4 w-4" aria-hidden />

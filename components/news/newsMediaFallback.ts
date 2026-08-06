@@ -56,9 +56,9 @@ export const NEWS_MEDIA_FALLBACK_TONE_STYLES: Record<
     iconClass: "text-blue-700",
   },
   portfolio: {
-    surfaceClass: "bg-violet-50",
-    borderClass: "border border-violet-100",
-    iconClass: "text-violet-700",
+    surfaceClass: "bg-brand-soft",
+    borderClass: "border border-brand/20",
+    iconClass: "text-brand-navy",
   },
   markets: {
     surfaceClass: "bg-emerald-50",

@@ -8,6 +8,13 @@ import type { User } from "@supabase/supabase-js";
 import BottomNavigation from "@/components/home/BottomNav";
 import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer";
 import { PageHero } from "@/components/layout/PageHero";
+import {
+  appCardClass,
+  appCardPaddingClass,
+  appSectionLabelClass,
+  appSectionMetaClass,
+  appSectionTitleClass,
+} from "@/components/layout/appSurface";
 import { PortfolioBaseCurrencySetting } from "@/components/settings/PortfolioBaseCurrencySetting";
 import { createClient } from "@/lib/supabase/client";
 
@@ -45,29 +52,29 @@ export default function SettingsPage() {
       <PageContainer>
         <PageHero
           title="Settings"
-          subtitle="Manage your account, preferences and portfolio configuration."
+          subtitle="Account, currency and portfolio setup."
           backToDashboard
         />
 
-        <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <section className={`${appCardClass} ${appCardPaddingClass}`}>
           <div className="flex items-start gap-3">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-600">
-              <UserRound className="h-5 w-5" />
+              <UserRound className="h-5 w-5" aria-hidden />
             </div>
             <div className="min-w-0">
-              <h2 className="text-lg font-black tracking-[-0.03em] text-slate-950">
-                Account
-              </h2>
-              <p className="mt-1 truncate text-sm font-semibold text-slate-950">
+              <h2 className={appSectionTitleClass}>Account</h2>
+              <p className="mt-1 truncate text-[15px] font-semibold text-slate-950">
                 {fullName}
               </p>
-              <p className="mt-0.5 truncate text-sm text-slate-500">{email}</p>
+              <p className={`mt-0.5 truncate ${appSectionMetaClass}`}>{email}</p>
             </div>
           </div>
         </section>
 
-        <section className="rounded-[24px] border border-slate-200 bg-white shadow-sm">
-          <h2 className="border-b border-slate-100 px-5 py-4 text-sm font-black uppercase tracking-[0.08em] text-slate-500">
+        <section className={appCardClass}>
+          <h2
+            className={`border-b border-slate-100 px-4 py-4 md:px-6 ${appSectionLabelClass}`}
+          >
             Portfolio configuration
           </h2>
           <div className="border-b border-slate-100">
@@ -78,19 +85,19 @@ export default function SettingsPage() {
               href="/portfolio"
               icon={<BriefcaseBusiness className="h-4 w-4" />}
               label="Manage holdings"
-              detail="Edit investments, cash and live prices"
+              detail="Edit investments, cash and prices"
             />
             <SettingsLink
               href="/goals"
               icon={<Goal className="h-4 w-4" />}
               label="Financial goal"
-              detail="Update target, contributions and return assumptions"
+              detail="Target, contributions and progress"
             />
             <SettingsLink
               href="/upload"
               icon={<ArrowRight className="h-4 w-4" />}
               label="Import portfolio"
-              detail="Import a CSV or Excel file or add holdings manually"
+              detail="CSV, Excel or manual entry"
             />
           </nav>
         </section>
@@ -114,16 +121,20 @@ function SettingsLink({
   return (
     <Link
       href={href}
-      className="flex min-h-[64px] items-center justify-between gap-4 px-5 py-4 transition hover:bg-slate-50"
+      className="flex min-h-[64px] items-center justify-between gap-4 px-4 py-4 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand md:px-6"
     >
       <span className="flex min-w-0 items-start gap-3">
-        <span className="mt-0.5 text-slate-500">{icon}</span>
+        <span className="mt-0.5 text-slate-500" aria-hidden>
+          {icon}
+        </span>
         <span className="min-w-0">
-          <span className="block text-sm font-bold text-slate-950">{label}</span>
-          <span className="mt-0.5 block text-sm text-slate-500">{detail}</span>
+          <span className="block text-[15px] font-semibold text-slate-950">
+            {label}
+          </span>
+          <span className={`mt-0.5 block ${appSectionMetaClass}`}>{detail}</span>
         </span>
       </span>
-      <ArrowRight className="h-4 w-4 shrink-0 text-slate-400" />
+      <ArrowRight className="h-4 w-4 shrink-0 text-slate-400" aria-hidden />
     </Link>
   );
 }

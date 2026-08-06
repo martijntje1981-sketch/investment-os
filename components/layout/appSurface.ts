@@ -92,6 +92,10 @@ export const appBrandSoftButtonClass =
 export const appGhostButtonClass =
   "inline-flex min-h-[40px] items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-brand-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2";
 
+/** Ghost CTA on navy/near-black heroes. */
+export const appHeroGhostButtonClass =
+  "inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/5 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-navy-hero";
+
 export const appTextLinkClass =
   "inline-flex min-h-[40px] items-center gap-1.5 text-sm font-semibold text-brand-navy transition hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2";
 

@@ -1,6 +1,7 @@
 import {
   appSectionSubtitleClass,
   appSectionTitleClass,
+  appSolidButtonClass,
 } from "@/components/layout/appSurface";
 import Link from "next/link";
 import { Newspaper } from "lucide-react";
@@ -19,26 +20,19 @@ export function NewsEmptyState({
   onAction?: () => void;
 }) {
   return (
-    <section className="rounded-[28px] border border-dashed border-slate-200 bg-white p-8 text-center shadow-sm sm:p-10">
-      <Newspaper className="mx-auto h-10 w-10 text-slate-300" />
+    <section className="rounded-[24px] border border-dashed border-slate-200 bg-white px-6 py-8 text-center md:rounded-[28px] md:px-8 md:py-10">
+      <Newspaper className="mx-auto h-9 w-9 text-slate-300" aria-hidden />
       <h3 className={`mt-4 ${appSectionTitleClass}`}>{title}</h3>
-      <p className={`mx-auto mt-3 max-w-xl ${appSectionSubtitleClass}`}>
+      <p className={`mx-auto mt-2 max-w-xl ${appSectionSubtitleClass}`}>
         {description}
       </p>
       {actionLabel && onAction ? (
-        <button
-          type="button"
-          onClick={onAction}
-          className="mt-6 inline-flex items-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white"
-        >
+        <button type="button" onClick={onAction} className={`mt-5 ${appSolidButtonClass}`}>
           {actionLabel}
         </button>
       ) : null}
       {actionHref && actionLabel && !onAction ? (
-        <Link
-          href={actionHref}
-          className="mt-6 inline-flex items-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white"
-        >
+        <Link href={actionHref} className={`mt-5 ${appSolidButtonClass}`}>
           {actionLabel}
         </Link>
       ) : null}
