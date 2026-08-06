@@ -16,7 +16,6 @@ import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 import {
   buildIntelligenceDisplayMessage,
   buildTodaysDecision,
-  shouldShowTodaysDecisionSubsection,
   type TodaysDecisionContext,
 } from "@/lib/client/todaysDecision";
 
@@ -28,8 +27,8 @@ const STATUS_STYLES: Record<string, string> = {
 };
 
 /**
- * Combined Today’s Decision + Market Briefing in one Dashboard card.
- * Non-advisory: lead market insight + concise portfolio implication.
+ * Always-compact Today’s Market Briefing — one lead story.
+ * Personal portfolio conclusion lives in the hero Daily Portfolio Briefing.
  */
 export function DashboardTodaysMarketBriefing(context: TodaysDecisionContext) {
   const { intelligence, intelligenceFromCache, goalProgress, marketsClosed } =
@@ -38,10 +37,6 @@ export function DashboardTodaysMarketBriefing(context: TodaysDecisionContext) {
   if (!intelligence) return null;
 
   const decision = buildTodaysDecision(context);
-  const showDecision = shouldShowTodaysDecisionSubsection(
-    decision,
-    intelligence,
-  );
   const summaryMessage = buildIntelligenceDisplayMessage({
     intelligence,
     intelligenceFromCache,
@@ -51,18 +46,18 @@ export function DashboardTodaysMarketBriefing(context: TodaysDecisionContext) {
   const mustWatch = intelligence.mustWatch;
   const leadTitle = mustWatch?.title?.trim() || summaryMessage;
   const supportingLine = mustWatch?.reason?.trim() || null;
-  const implication = showDecision ? decision.decision : null;
 
   return (
     <section
       aria-labelledby="todays-market-briefing-heading"
       className={appDashboardLightCardClass}
+      data-testid="todays-market-briefing"
     >
       <DashboardSectionHeader
         titleId="todays-market-briefing-heading"
         variant="compact"
         title="Today’s market briefing"
-        subtitle="Lead insight and portfolio context"
+        subtitle="The most important broader market development"
         icon={<Radio className="h-5 w-5" />}
         iconToneClassName="bg-violet-50 text-violet-700 ring-1 ring-violet-100"
       />
@@ -96,24 +91,13 @@ export function DashboardTodaysMarketBriefing(context: TodaysDecisionContext) {
           ) : null}
         </div>
 
-        {implication ? (
-          <div className="rounded-2xl border border-slate-200/80 bg-slate-50/80 px-3.5 py-3">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-500">
-              Portfolio context
-            </p>
-            <p className={`mt-1 line-clamp-3 ${appSectionBodyClass}`}>
-              {implication}
-            </p>
-          </div>
-        ) : null}
-
         <Link
           href={
             decision.destinationHref || DASHBOARD_DEEP_LINKS.marketBriefing
           }
           className={appTextLinkClass}
         >
-          {decision.destinationLabel || "Open Market Intelligence"}
+          {decision.destinationLabel || "Open News"}
           <ArrowUpRight className="h-4 w-4" aria-hidden />
         </Link>
       </div>

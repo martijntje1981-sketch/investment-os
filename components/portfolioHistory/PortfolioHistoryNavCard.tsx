@@ -1,15 +1,11 @@
 "use client";
 
-import Link from "next/link";
-import { ArrowRight, History } from "lucide-react";
+import { History } from "lucide-react";
 
+import { ExpandableDashboardSection } from "@/components/dashboard/ExpandableDashboardSection";
 import {
-  appCardClass,
-  appCardInteractiveClass,
-  appCardPaddingCompactClass,
   appSectionBodyClass,
-  appSectionTitleClass,
-  appTintedPanelClass,
+  appSectionMetaClass,
 } from "@/components/layout/appSurface";
 import { PORTFOLIO_HISTORY_PATH } from "@/lib/navigation/appRoutes";
 
@@ -18,44 +14,53 @@ export const PORTFOLIO_HISTORY_SUPPORTING_TEXT =
   "Track contributions, withdrawals and export your portfolio record.";
 
 type PortfolioHistoryNavCardProps = {
+  /** @deprecated Kept for callers; card is always the Dashboard preview shell. */
   variant?: "tinted" | "card";
 };
 
 /**
- * Compact discoverability card for Portfolio History.
+ * Compact Portfolio History preview with progressive disclosure.
+ * Full ledger and charts live on the dedicated page.
  */
-export function PortfolioHistoryNavCard({
-  variant = "tinted",
-}: PortfolioHistoryNavCardProps) {
-  const shellClass =
-    variant === "tinted"
-      ? `${appTintedPanelClass} ${appCardPaddingCompactClass}`
-      : `${appCardClass} ${appCardInteractiveClass} ${appCardPaddingCompactClass}`;
+export function PortfolioHistoryNavCard(
+  props: PortfolioHistoryNavCardProps = {},
+) {
+  // Call sites may still pass `variant`; the progressive-disclosure shell is unified.
+  if (props.variant === "card") {
+    // no-op: preserve API compatibility without branching visual shells
+  }
 
   return (
-    <Link
-      href={PORTFOLIO_HISTORY_PATH}
-      aria-label={PORTFOLIO_HISTORY_LABEL}
-      className={`${shellClass} flex min-h-[88px] items-start gap-3 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2`}
-    >
-      <span
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand-navy"
-        aria-hidden
-      >
-        <History className="h-4 w-4" />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className={`block ${appSectionTitleClass}`}>
-          {PORTFOLIO_HISTORY_LABEL}
-        </span>
-        <span className={`mt-1 block ${appSectionBodyClass}`}>
-          {PORTFOLIO_HISTORY_SUPPORTING_TEXT}
-        </span>
-      </span>
-      <ArrowRight
-        className="mt-1 h-4 w-4 shrink-0 text-slate-400"
-        aria-hidden
-      />
-    </Link>
+    <ExpandableDashboardSection
+      sectionKey="portfolio-history"
+      title={PORTFOLIO_HISTORY_LABEL}
+      titleId="portfolio-history-preview-heading"
+      subtitle="Development over time"
+      icon={<History className="h-5 w-5" />}
+      iconToneClassName="bg-slate-100 text-slate-700 ring-1 ring-slate-200"
+      deepLink={{
+        href: PORTFOLIO_HISTORY_PATH,
+        label: "Open Portfolio History",
+      }}
+      preview={
+        <div className="space-y-2">
+          <p className={appSectionBodyClass}>
+            Review portfolio development, contributions and withdrawals in one
+            place.
+          </p>
+          <p className={appSectionMetaClass}>
+            Compact trend context opens on the History page — no duplicate of
+            today’s portfolio value here.
+          </p>
+        </div>
+      }
+      expandedContent={
+        <ul className={`list-disc space-y-1.5 pl-5 ${appSectionMetaClass}`}>
+          <li>Portfolio development over selected timeframes</li>
+          <li>Contributions and withdrawals summary</li>
+          <li>Downloadable records / Excel export where available</li>
+        </ul>
+      }
+    />
   );
 }

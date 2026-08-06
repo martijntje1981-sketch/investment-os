@@ -103,15 +103,18 @@ describe("navigation discovery", () => {
     const perspectives = read(
       "components/perspectives/DashboardPerspectivesCard.tsx",
     );
+    const history = read(
+      "components/portfolioHistory/PortfolioHistoryNavCard.tsx",
+    );
     const newsLinks = read("components/news/NewsBriefingIntelligence.tsx");
     const marketsToday = read("components/news/NewsMarketsTodaySection.tsx");
 
-    expect(tools).toContain("NEWS_MARKETS_TODAY_HREF");
-    expect(tools).toContain("Markets Today");
-    expect(tools).toContain("SUPPORTED_INSTRUMENTS_PATH");
-    expect(tools).toContain("Portfolio History");
-    expect(pulse).toContain('href="/market-pulse"');
-    expect(perspectives).toContain('href="/perspectives"');
+    expect(tools).toContain("ANALYSIS_PATH");
+    expect(tools).toContain("GOALS_PATH");
+    expect(tools).toContain("PORTFOLIO_HEALTH_PATH");
+    expect(history).toContain("PORTFOLIO_HISTORY_PATH");
+    expect(pulse).toContain('href: "/market-pulse"');
+    expect(perspectives).toContain('href: "/perspectives"');
     expect(newsLinks).toContain('href="/perspectives"');
     expect(newsLinks).toContain('href="/discover"');
     expect(marketsToday).toContain('id="markets-today"');

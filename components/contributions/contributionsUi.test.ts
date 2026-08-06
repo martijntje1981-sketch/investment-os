@@ -37,13 +37,11 @@ describe("contributions ledger UI", () => {
     "utf8",
   );
 
-  it("places the contributions card with dividend intelligence on the dashboard", () => {
+  it("places the contributions card on the dashboard without Dividend duplication", () => {
     expect(dashboardSource).toContain("DashboardContributionsCard");
     expect(dashboardSource).not.toContain("DashboardGoalProgressCard");
     expect(dashboardSource).toContain("pulse={portfolioPulse}");
-    expect(dashboardSource).toMatch(
-      /DashboardContributionsCard[\s\S]*DashboardDividendCard/,
-    );
+    expect(dashboardSource).not.toContain("DashboardDividendCard");
   });
 
   it("renders portfolio funding before the holdings list", () => {
@@ -102,12 +100,14 @@ describe("contributions ledger UI", () => {
     expect(fundingSource).toContain("Retry");
   });
 
-  it("keeps the dashboard card compact without recent activity", () => {
+  it("keeps the dashboard card compact with recent activity only when expanded", () => {
     expect(cardSource).toContain("Net contributed");
     expect(cardSource).toContain("Current value");
     expect(cardSource).toContain("Value above contributions");
+    expect(cardSource).toContain("CONTRIBUTIONS_ADD_LABEL");
     expect(cardSource).toContain("CONTRIBUTIONS_MANAGE_LABEL");
-    expect(cardSource).not.toContain("Recent activity");
+    expect(cardSource).toContain("Recent activity");
+    expect(cardSource).toContain("ExpandableDashboardSection");
     expect(cardSource).not.toContain("summary.totalContributed");
     expect(cardSource).not.toContain("summary.totalWithdrawn");
   });

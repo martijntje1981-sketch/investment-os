@@ -53,7 +53,7 @@ export function DashboardPerspectivesWidget() {
         const selected = selectDashboardPerspectivesForAudience(
           data.videos ?? [],
           nextSignals,
-          2,
+          5,
         );
         setVideos(selected);
         setState(

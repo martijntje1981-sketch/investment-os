@@ -1,23 +1,14 @@
 "use client";
 
-import Link from "next/link";
-import {
-  ArrowRight,
-  Minus,
-  TrendingDown,
-  TrendingUp,
-  Waves,
-} from "lucide-react";
+import { Minus, TrendingDown, TrendingUp, Waves } from "lucide-react";
 
-import { DashboardSectionHeader } from "@/components/dashboard/DashboardSectionHeader";
+import { ExpandableDashboardSection } from "@/components/dashboard/ExpandableDashboardSection";
 import {
-  appCardPaddingClass,
-  appDashboardLightCardClass,
   appSectionBodyClass,
   appSectionMetaClass,
-  appTextLinkClass,
 } from "@/components/layout/appSurface";
 import { selectDashboardMarketPulseItems } from "@/lib/client/selectDashboardMarketPulseItems";
+import { useCollapsedListLimit } from "@/lib/client/useCollapsedListLimit";
 import { useDashboardMarketPulsePreview } from "@/lib/client/useDashboardMarketPulsePreview";
 import { formatQuotePeriodLabel } from "@/lib/services/marketPulse/quoteModel";
 import type { MarketPulseAsset } from "@/lib/services/marketPulse/types";
@@ -115,6 +106,16 @@ function MarketStripItem({ asset }: { asset: MarketPulseAsset }) {
   );
 }
 
+function MarketPulseGrid({ items }: { items: MarketPulseAsset[] }) {
+  return (
+    <div className="grid min-w-0 grid-cols-1 gap-2.5 min-[360px]:grid-cols-2 sm:grid-cols-3">
+      {items.map((asset) => (
+        <MarketStripItem key={asset.id} asset={asset} />
+      ))}
+    </div>
+  );
+}
+
 export function DashboardMarketPulseCard({
   holdings = [],
   leadLabel,
@@ -128,63 +129,60 @@ export function DashboardMarketPulseCard({
     holdings,
     true,
   );
-  const items = selectDashboardMarketPulseItems(snapshot, 3);
+  const previewLimit = useCollapsedListLimit();
+  const previewItems = selectDashboardMarketPulseItems(snapshot, previewLimit);
+  const expandedItems = selectDashboardMarketPulseItems(snapshot, 6);
+  const extraItems = expandedItems.slice(previewItems.length);
+  const canExpand = extraItems.length > 0;
+
+  const emptyMessage = isLoading
+    ? "Loading linked markets…"
+    : (leadLabel ??
+      "Open Market Pulse for commodities, crypto and linked markets.");
 
   return (
-    <section
-      aria-labelledby="market-pulse-preview-heading"
-      className={`min-w-0 overflow-hidden ${appDashboardLightCardClass}`}
-      aria-busy={isLoading}
-    >
-      <DashboardSectionHeader
-        titleId="market-pulse-preview-heading"
-        title="Market Pulse"
-        subtitle="Markets linked to your portfolio"
-        icon={<Waves className="h-5 w-5" />}
-        iconToneClassName="bg-amber-50 text-amber-700"
-        bordered={false}
-      />
-      <div className={`${appCardPaddingClass} space-y-3.5 pt-0`}>
-        {items.length > 0 ? (
-          <div className="grid min-w-0 grid-cols-1 gap-2.5 sm:grid-cols-3">
-            {items.map((asset) => (
-              <MarketStripItem key={asset.id} asset={asset} />
-            ))}
+    <ExpandableDashboardSection
+      sectionKey="market-pulse"
+      title="Market Pulse"
+      titleId="market-pulse-preview-heading"
+      subtitle="Broader market context"
+      icon={<Waves className="h-5 w-5" />}
+      iconToneClassName="bg-amber-50 text-amber-700"
+      loading={isLoading}
+      expandable={canExpand}
+      deepLink={{ href: "/market-pulse", label: "Open Market Pulse" }}
+      preview={
+        previewItems.length > 0 ? (
+          <div className="space-y-3">
+            <MarketPulseGrid items={previewItems} />
+            {snapshot?.leadInsight ? (
+              <p className={`line-clamp-2 ${appSectionMetaClass}`}>
+                {snapshot.leadInsight}
+              </p>
+            ) : null}
           </div>
         ) : (
-          <p className={`text-[15px] font-semibold text-slate-950`}>
-            {isLoading
-              ? "Loading linked markets…"
-              : (leadLabel ??
-                "Open Market Pulse for commodities, crypto and linked markets.")}
-          </p>
-        )}
-
-        {moveLabel && items.length === 0 ? (
-          <p className={`${appSectionBodyClass} text-slate-600`}>{moveLabel}</p>
-        ) : null}
-
-        {error && items.length === 0 ? (
-          <p className={appSectionMetaClass} role="status">
-            Live strip unavailable right now. Open Market Pulse for the full
-            board.
-          </p>
-        ) : null}
-
-        {snapshot?.leadInsight && items.length > 0 ? (
-          <p className={`line-clamp-2 ${appSectionMetaClass}`}>
-            {snapshot.leadInsight}
-          </p>
-        ) : null}
-
-        <Link
-          href="/market-pulse"
-          className={`inline-flex min-h-[40px] items-center gap-1.5 ${appTextLinkClass}`}
-        >
-          Open Market Pulse
-          <ArrowRight className="h-4 w-4" aria-hidden="true" />
-        </Link>
-      </div>
-    </section>
+          <div className="space-y-2">
+            <p className="text-[15px] font-semibold text-slate-950">
+              {emptyMessage}
+            </p>
+            {moveLabel ? (
+              <p className={`${appSectionBodyClass} text-slate-600`}>
+                {moveLabel}
+              </p>
+            ) : null}
+            {error ? (
+              <p className={appSectionMetaClass} role="status">
+                Live strip unavailable right now. Open Market Pulse for the full
+                board.
+              </p>
+            ) : null}
+          </div>
+        )
+      }
+      expandedContent={
+        canExpand ? <MarketPulseGrid items={extraItems} /> : null
+      }
+    />
   );
 }

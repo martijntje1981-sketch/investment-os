@@ -75,15 +75,15 @@ describe("dashboard phase 2 compact previews", () => {
     expect(decisionBlockSource).toContain("destinationHref");
   });
 
-  it("renders Today’s market briefing with lead insight and portfolio context", () => {
+  it("renders Today’s market briefing with one lead insight", () => {
     expect(briefingSource).toContain("mustWatch");
     expect(briefingSource).toContain("buildIntelligenceDisplayMessage");
     expect(briefingSource).toContain("leadTitle");
     expect(briefingSource).toContain("DASHBOARD_DEEP_LINKS.marketBriefing");
-    expect(briefingSource).toContain("Open Market Intelligence");
+    expect(briefingSource).toContain("Open News");
     expect(briefingSource).toContain("line-clamp-3");
     expect(briefingSource).toContain("mustWatch?.title");
-    expect(briefingSource).toContain("Portfolio context");
+    expect(briefingSource).not.toContain("Portfolio context");
     expect(briefingSource).not.toContain("DiscoverMissedTeaser");
     expect(briefingSource).not.toContain("Read featured story");
     expect(briefingSource).not.toContain("todayMatters.map");
@@ -151,24 +151,23 @@ describe("dashboard phase 2 compact previews", () => {
     expect(dashboardSource).not.toContain("groupBySector");
   });
 
-  it("places Dividend and Contributions below holdings without a separate Goal Progress card", () => {
+  it("places Contributions below holdings without Dividend or Goal Progress cards", () => {
     const holdingsIdx = dashboardSource.indexOf("<HoldingsToday");
-    const dividendIdx = dashboardSource.indexOf("<DashboardDividendCard");
     const contributionsIdx = dashboardSource.indexOf(
       "<DashboardContributionsCard",
     );
     expect(holdingsIdx).toBeGreaterThan(-1);
-    expect(dividendIdx).toBeGreaterThan(holdingsIdx);
     expect(contributionsIdx).toBeGreaterThan(holdingsIdx);
+    expect(dashboardSource).not.toContain("DashboardDividendCard");
     expect(dashboardSource).not.toContain("DashboardGoalProgressCard");
     expect(dashboardSource).toContain("pulse={portfolioPulse}");
   });
 
-  it("uses mobile-first stacked grids without horizontal scroll utilities", () => {
-    expect(dashboardSource).toContain("grid min-w-0 gap-6 lg:grid-cols-2");
+  it("uses mobile-first layouts without horizontal scroll utilities", () => {
     expect(briefingSource).toContain("min-w-0");
     expect(goalProgressSource).toContain("min-w-0");
     expect(dividendSource).toContain("min-w-0");
     expect(dashboardSource).not.toContain("whitespace-nowrap overflow-x");
+    expect(dashboardSource).not.toMatch(/overflow-x-auto|overflow-x-scroll/);
   });
 });

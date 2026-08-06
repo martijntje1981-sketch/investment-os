@@ -1,15 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { ChartPie } from "lucide-react";
 
-import { DashboardSectionHeader } from "@/components/dashboard/DashboardSectionHeader";
+import { ExpandableDashboardSection } from "@/components/dashboard/ExpandableDashboardSection";
 import {
-  appCardPaddingClass,
-  appDashboardLightCardClass,
   appSectionBodyClass,
   appSectionMetaClass,
-  appTextLinkClass,
 } from "@/components/layout/appSurface";
 import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
@@ -18,6 +14,8 @@ import {
   EXPOSURE_GROUP_DOT_CLASS,
   type PortfolioExposureAllocation,
 } from "@/lib/services/classification";
+
+const PREVIEW_CATEGORY_COUNT = 3;
 
 /**
  * Compact Dashboard preview of portfolio exposure (whole-instrument classification).
@@ -29,27 +27,32 @@ export function DashboardPortfolioExposureCard({
   allocation: PortfolioExposureAllocation;
 }) {
   const { formatEur } = useBaseCurrencyDisplay();
+  const previewGroups = allocation.groups.slice(0, PREVIEW_CATEGORY_COUNT);
+  const remainingGroups = allocation.groups.slice(PREVIEW_CATEGORY_COUNT);
+  const canExpand = remainingGroups.length > 0;
 
   return (
-    <section className={`min-w-0 ${appDashboardLightCardClass}`}>
-      <DashboardSectionHeader
-        variant="compact"
-        title="Portfolio exposure"
-        subtitle="Based on verified instrument classifications. Broad funds are shown as diversified."
-        icon={<ChartPie className="h-5 w-5" />}
-        iconToneClassName="bg-slate-100 text-slate-700 ring-1 ring-slate-200"
-        bordered={false}
-      />
-
-      <div className={`${appCardPaddingClass} space-y-4 pt-0`}>
-        {!allocation.hasAnyValue ? (
+    <ExpandableDashboardSection
+      sectionKey="portfolio-exposure"
+      title="Portfolio exposure"
+      titleId="portfolio-exposure-preview-heading"
+      subtitle="Largest allocation groups"
+      icon={<ChartPie className="h-5 w-5" />}
+      iconToneClassName="bg-slate-100 text-slate-700 ring-1 ring-slate-200"
+      deepLink={{
+        href: DASHBOARD_DEEP_LINKS.portfolioExposure,
+        label: "View allocation",
+      }}
+      expandable={canExpand}
+      preview={
+        !allocation.hasAnyValue ? (
           <p className={appSectionBodyClass}>
             {allocation.excludedHoldingCount > 0
               ? "Exposure requires available holding values."
               : "Add valued holdings to see portfolio exposure."}
           </p>
         ) : (
-          <>
+          <div className="space-y-4">
             <div
               className="flex h-3 min-w-0 overflow-hidden rounded-full bg-slate-100"
               role="img"
@@ -70,8 +73,8 @@ export function DashboardPortfolioExposureCard({
               ))}
             </div>
 
-            <ul className="grid min-w-0 gap-2.5 sm:grid-cols-2">
-              {allocation.groups.map((group) => (
+            <ul className="grid min-w-0 gap-2.5">
+              {previewGroups.map((group) => (
                 <li
                   key={group.groupId}
                   className="flex min-w-0 items-baseline justify-between gap-3"
@@ -98,24 +101,45 @@ export function DashboardPortfolioExposureCard({
             {allocation.coverageLabel ? (
               <p className={appSectionMetaClass}>{allocation.coverageLabel}</p>
             ) : null}
-          </>
-        )}
-
-        <Link
-          href={DASHBOARD_DEEP_LINKS.portfolioExposure}
-          className={appTextLinkClass}
-        >
-          View allocation
-        </Link>
-      </div>
-    </section>
+          </div>
+        )
+      }
+      expandedContent={
+        canExpand ? (
+          <ul className="grid min-w-0 gap-2.5 sm:grid-cols-2">
+            {remainingGroups.map((group) => (
+              <li
+                key={group.groupId}
+                className="flex min-w-0 items-baseline justify-between gap-3"
+              >
+                <span className="flex min-w-0 items-center gap-2">
+                  <span
+                    className={`h-2.5 w-2.5 shrink-0 rounded-full ${EXPOSURE_GROUP_DOT_CLASS[group.groupId]}`}
+                    aria-hidden
+                  />
+                  <span className="truncate text-sm font-medium text-slate-800">
+                    {group.displayLabel}
+                  </span>
+                </span>
+                <span className="shrink-0 text-sm font-semibold tabular-nums text-slate-950">
+                  {group.displayPercent}%
+                  <span className="sr-only">
+                    {`, ${formatEur(group.value)}`}
+                  </span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : null
+      }
+    />
   );
 }
 
 export function DashboardPortfolioExposureSkeleton() {
   return (
     <div
-      className={`min-w-0 ${appDashboardLightCardClass}`}
+      className="min-w-0 rounded-[28px] border border-slate-200/70 bg-white/95 shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
       aria-busy="true"
       aria-label="Loading portfolio exposure"
       data-skeleton="portfolio-exposure"
@@ -124,7 +148,7 @@ export function DashboardPortfolioExposureSkeleton() {
         <div className="h-5 w-40 animate-pulse rounded bg-slate-100" />
         <div className="mt-2 h-4 w-full max-w-md animate-pulse rounded bg-slate-100" />
       </div>
-      <div className={`${appCardPaddingClass} space-y-3 pt-0`}>
+      <div className="space-y-3 px-4 pb-5 md:px-5">
         <div className="h-3 w-full animate-pulse rounded-full bg-slate-100" />
         <div className="space-y-2">
           <div className="h-4 w-3/4 animate-pulse rounded bg-slate-100" />

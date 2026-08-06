@@ -3,9 +3,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { DashboardEmptyState } from "@/components/dashboard/DashboardEmptyState";
-import { DashboardDividendCard } from "@/components/dashboard/DashboardDividendCard";
 import { DashboardCashIntelligenceCard } from "@/components/dashboard/DashboardCashIntelligenceCard";
-import { DashboardAnalystCard } from "@/components/dashboard/DashboardAnalystCard";
 import { DashboardContributionsCard } from "@/components/contributions/DashboardContributionsCard";
 import { DashboardTodaysMarketBriefing } from "@/components/dashboard/DashboardTodaysMarketBriefing";
 import { DashboardMarketPulseCard } from "@/components/dashboard/DashboardMarketPulseCard";
@@ -16,7 +14,6 @@ import { DashboardFirstRunCue } from "@/components/dashboard/DashboardFirstRunCu
 import { DemoHoldingsCallout } from "@/components/example/DemoHoldingsCallout";
 import { TrialStepsCard } from "@/components/example/TrialStepsCard";
 import { DashboardProductionDebugMarker } from "@/components/dashboard/DashboardProductionDebugMarker";
-import { DashboardUpcomingEventsWidget } from "@/components/dashboard/DashboardUpcomingEventsWidget";
 import { DashboardPerspectivesWidget } from "@/components/dashboard/DashboardPerspectivesWidget";
 import { HoldingsToday } from "@/components/dashboard/HoldingsToday";
 import { DashboardPortfolioExposureCard } from "@/components/dashboard/DashboardPortfolioExposureCard";
@@ -34,8 +31,6 @@ import { buildDashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolio
 import { areMajorMarketsClosed } from "@/lib/client/todaysDecision";
 import { useAuthenticatedFirstName } from "@/lib/client/useAuthenticatedFirstName";
 import { useInvestmentIntelligence } from "@/lib/client/useInvestmentIntelligence";
-import { usePortfolioDividends } from "@/lib/client/usePortfolioDividends";
-import { usePortfolioAnalyst } from "@/lib/client/usePortfolioAnalyst";
 import { useGoalProgress } from "@/lib/client/useGoalProgress";
 import { useUserGoal } from "@/lib/client/useUserGoal";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
@@ -84,10 +79,6 @@ export default function DashboardPage() {
   });
   const { goal, hasSavedGoal } = useUserGoal();
   const goalProgress = useGoalProgress({ holdings, goal, hasSavedGoal });
-  const { snapshot: dividendSnapshot, isLoading: dividendsLoading } =
-    usePortfolioDividends(holdings, userSub, holdings.length > 0);
-  const { snapshot: analystSnapshot, isLoading: analystLoading } =
-    usePortfolioAnalyst(holdings, userSub, holdings.length > 0);
 
   const {
     intelligence,
@@ -123,13 +114,11 @@ export default function DashboardPage() {
       holdings,
       goal,
       hasSavedGoal,
-      dividends: dividendsLoading ? null : dividendSnapshot,
+      dividends: null,
       analysis: portfolioAnalysis,
       exposure: exposureAllocation,
     });
   }, [
-    dividendSnapshot,
-    dividendsLoading,
     exposureAllocation,
     goal,
     hasSavedGoal,
@@ -185,7 +174,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <PageContainer stackClassName="gap-6 md:gap-8">
+    <PageContainer stackClassName="gap-5 md:gap-7">
       <PortfolioSyncBanner
         syncState={syncState}
         migrationPreview={migrationPreview}
@@ -235,11 +224,12 @@ export default function DashboardPage() {
             </>
           ) : null}
 
-          {/* 1. Portfolio hero (value + move + movers + pulse) */}
+          {/* 1. Dashboard Hero (+ Daily Portfolio Briefing) */}
           <DashboardSummary
             snapshot={snapshot}
             welcomeFirstName={firstName}
             pulse={portfolioPulse}
+            intelligence={intelligence}
             refresh={{
               onRefresh: () => void refreshPrices(),
               isRefreshing,
@@ -252,7 +242,8 @@ export default function DashboardPage() {
 
           {/* 2. Your Holdings */}
           <HoldingsToday snapshot={snapshot} />
-          {/* 4. Combined Today’s market briefing */}
+
+          {/* 3. Today’s Market Briefing */}
           <DashboardTodaysMarketBriefing
             intelligence={intelligence}
             intelligenceFromCache={intelligenceFromCache}
@@ -261,10 +252,7 @@ export default function DashboardPage() {
             marketsClosed={marketsClosed}
           />
 
-          {/* 5. Cash Intelligence */}
-          <DashboardCashIntelligenceCard holdings={holdings} />
-
-          {/* 6. Market Pulse */}
+          {/* 4. Market Pulse */}
           <DashboardMarketPulseCard
             holdings={holdings}
             leadLabel={
@@ -274,39 +262,34 @@ export default function DashboardPage() {
             }
           />
 
+          {/* 5. Latest Perspectives */}
+          <DashboardPerspectivesWidget />
+
+          {/* 6. Cash Intelligence */}
+          <DashboardCashIntelligenceCard holdings={holdings} />
+
+          {/* 7. Portfolio History */}
           <PortfolioHistoryNavCard />
 
+          {/* 8. Portfolio Exposure */}
+          <DashboardPortfolioExposureCard allocation={exposureAllocation} />
+
+          {/* 9. Contributions */}
+          <DashboardContributionsCard
+            snapshot={snapshot}
+            holdings={holdings.map((holding) => ({
+              id: holding.id,
+              symbol: holding.symbol,
+              name: holding.name,
+              assetType: holding.assetType,
+            }))}
+          />
+
+          {/* 10. Explore Tobailey */}
           <DashboardExploreTools />
 
-          {/* 7. Remaining supporting cards */}
-          <div className="space-y-6 md:space-y-8">
-            <DashboardUpcomingEventsWidget />
-            <DashboardPerspectivesWidget />
-            <DashboardPortfolioExposureCard allocation={exposureAllocation} />
-
-            <div className="grid min-w-0 gap-6 lg:grid-cols-2">
-              <DashboardContributionsCard
-                snapshot={snapshot}
-                holdings={holdings.map((holding) => ({
-                  id: holding.id,
-                  symbol: holding.symbol,
-                  name: holding.name,
-                  assetType: holding.assetType,
-                }))}
-              />
-              <DashboardDividendCard
-                snapshot={dividendSnapshot}
-                isLoading={dividendsLoading}
-              />
-            </div>
-
-            <DashboardAnalystCard
-              snapshot={analystSnapshot}
-              isLoading={analystLoading}
-            />
-
-            <DashboardMarketStatus lastUpdatedAt={marketUpdatedAt} />
-          </div>
+          {/* 11. Trading Hours */}
+          <DashboardMarketStatus lastUpdatedAt={marketUpdatedAt} />
         </>
       ) : null}
 

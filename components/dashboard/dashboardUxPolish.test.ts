@@ -100,23 +100,20 @@ describe("Dashboard UX polish phase", () => {
   const pulse = read("components/dashboard/DashboardMarketPulseCard.tsx");
   const insight = read("components/dashboard/DashboardInsightCard.tsx");
 
-  it("places Cash Intelligence after Portfolio Pulse without duplicating Health", () => {
+  it("places Cash Intelligence after Market Pulse without duplicating Health", () => {
     expect(dashboard).not.toContain("DashboardTopStoryCard");
     expect(dashboard).toContain("DashboardCashIntelligenceCard");
     expect(dashboard).toContain("pulse={portfolioPulse}");
     expect(dashboard).not.toContain("DashboardPortfolioScorecard");
     expect(dashboard).not.toContain("DashboardPortfolioHealthCard");
     const pulseIdx = dashboard.indexOf("pulse={portfolioPulse}");
+    const marketPulseIdx = dashboard.indexOf("<DashboardMarketPulseCard");
     const cashIdx = dashboard.indexOf(
       "<DashboardCashIntelligenceCard holdings={holdings} />",
     );
-    const pulseAfterCash = dashboard.indexOf(
-      "<DashboardMarketPulseCard\n            holdings={holdings}",
-      cashIdx,
-    );
     expect(pulseIdx).toBeGreaterThan(-1);
-    expect(cashIdx).toBeGreaterThan(pulseIdx);
-    expect(pulseAfterCash).toBeGreaterThan(cashIdx);
+    expect(marketPulseIdx).toBeGreaterThan(pulseIdx);
+    expect(cashIdx).toBeGreaterThan(marketPulseIdx);
   });
 
   it("keeps holdings compact by default with accessible expand controls", () => {
@@ -126,9 +123,8 @@ describe("Dashboard UX polish phase", () => {
     expect(holdings).toContain("Show less");
     expect(holdings).toContain("Show ${hiddenCount} more");
     expect(holdings).toContain("showToggle");
-    expect(holdings).toContain("Open portfolio");
     expect(holdings).toContain("View all holdings");
-    expect(holdings).toContain("slice(0, collapsedLimit)");
+    expect(holdings).toContain("slice(0, visibleLimit)");
   });
 
   it("does not invent sparkline history for the hero trend mark", () => {
@@ -181,21 +177,21 @@ describe("Dashboard UX polish phase", () => {
     expect(cash).toContain("Allocation");
   });
 
-  it("orders hero, Portfolio Pulse, holdings, briefing, then cash", () => {
+  it("orders hero, holdings, market briefing, pulse, then cash", () => {
     const summaryIdx = dashboard.indexOf("<DashboardSummary");
     const pulseIdx = dashboard.indexOf("pulse={portfolioPulse}");
     const holdingsIdx = dashboard.indexOf("<HoldingsToday");
     const briefingIdx = dashboard.indexOf("<DashboardTodaysMarketBriefing");
-    const cashIdx = dashboard.indexOf("<DashboardCashIntelligenceCard");
     const marketPulseIdx = dashboard.indexOf(
       "<DashboardMarketPulseCard",
       holdingsIdx,
     );
+    const cashIdx = dashboard.indexOf("<DashboardCashIntelligenceCard");
     expect(summaryIdx).toBeLessThan(pulseIdx);
     expect(pulseIdx).toBeLessThan(holdingsIdx);
     expect(holdingsIdx).toBeLessThan(briefingIdx);
-    expect(briefingIdx).toBeLessThan(cashIdx);
-    expect(cashIdx).toBeLessThan(marketPulseIdx);
+    expect(briefingIdx).toBeLessThan(marketPulseIdx);
+    expect(marketPulseIdx).toBeLessThan(cashIdx);
   });
 });
 

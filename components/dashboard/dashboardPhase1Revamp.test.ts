@@ -61,10 +61,10 @@ describe("dashboard phase 1 revamp", () => {
     expect(summarySource).not.toContain("PageHero");
   });
 
-  it("places Welcome back inside the Portfolio Value widget", () => {
-    expect(valueSource).toContain("Welcome back");
+  it("places the personal greeting inside the Portfolio Value hero briefing", () => {
     expect(valueSource).toContain("welcomeFirstName");
-    expect(valueSource).toContain("Welcome back, ${welcomeFirstName.trim()}");
+    expect(valueSource).toContain("buildDailyPortfolioBriefing");
+    expect(valueSource).toContain("DailyPortfolioBriefing");
     expect(summarySource).toContain("welcomeFirstName");
     expect(dashboardSource).toContain("welcomeFirstName={firstName}");
   });
@@ -154,7 +154,7 @@ describe("dashboard phase 1 revamp", () => {
     expect(dashboardSource).toContain("DashboardMarketStatus");
     expect(dashboardSource).toContain("HoldingsToday");
     expect(dashboardSource).not.toContain("DashboardGoalProgressCard");
-    expect(dashboardSource).toContain("DashboardDividendCard");
+    expect(dashboardSource).not.toContain("DashboardDividendCard");
   });
 
   it("updates the summary skeleton to a compact navy hero without welcome/movers placeholders", () => {

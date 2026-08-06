@@ -53,7 +53,7 @@ describe("dashboard portfolio value widget", () => {
     expect(valueSource).toContain("Biggest mover");
     expect(valueSource).toContain("Weakest mover");
     expect(valueSource).not.toContain("Lowest mover");
-    expect(valueSource).toContain("Welcome back");
+    expect(valueSource).toContain("DailyPortfolioBriefing");
     expect(valueSource).toContain("RefreshPricesButton");
     expect(valueSource).toContain("formatEur");
     expect(dashboardSource).toContain("DashboardSummary");

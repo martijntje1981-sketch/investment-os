@@ -45,21 +45,16 @@ describe("portfolio history UI", () => {
     expect(page).toContain("downloadPortfolioHistoryWorkbook");
   });
 
-  it("keeps Portfolio History discoverable in Dashboard, Portfolio, Explore and User Menu", () => {
+  it("keeps Portfolio History discoverable in Dashboard, Portfolio and User Menu", () => {
     expect(menu).toContain("PORTFOLIO_HISTORY_PATH");
     expect(menu).toContain("Portfolio History");
-    expect(tools).toContain("PORTFOLIO_HISTORY_PATH");
-    expect(tools).toContain("Portfolio History");
-    expect(tools).toContain(
-      "Track contributions, withdrawals and export your portfolio record.",
-    );
     expect(dashboard).toContain("PortfolioHistoryNavCard");
     expect(portfolio).toContain("PortfolioHistoryNavCard");
     expect(portfolio).toContain("Portfolio History");
-    expect(navCard).toContain("PORTFOLIO_HISTORY_LABEL = \"Portfolio History\"");
-    expect(navCard).toContain(
-      "Track contributions, withdrawals and export your portfolio record.",
-    );
+    expect(navCard).toContain('PORTFOLIO_HISTORY_LABEL = "Portfolio History"');
+    expect(navCard).toContain("PORTFOLIO_HISTORY_PATH");
+    expect(navCard).toContain("Open Portfolio History");
+    expect(tools).toContain("Explore Tobailey");
   });
 
   it("extends add activity with cash or holding destination", () => {

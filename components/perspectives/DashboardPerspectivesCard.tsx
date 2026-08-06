@@ -1,20 +1,17 @@
 "use client";
 
-import Link from "next/link";
-import { useState } from "react";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { Sparkles } from "lucide-react";
 
+import { ExpandableDashboardSection } from "@/components/dashboard/ExpandableDashboardSection";
 import {
   creatorInitials,
   perspectiveCategoryChipClass,
   perspectiveCategoryLabel,
   perspectiveThumbnailCandidates,
 } from "@/components/perspectives/perspectiveStyles";
-import {
-  appCardClass,
-  appSectionMetaClass,
-  appSectionTitleClass,
-} from "@/components/layout/appSurface";
+import { appSectionMetaClass } from "@/components/layout/appSurface";
+import { useCollapsedListLimit } from "@/lib/client/useCollapsedListLimit";
 import { formatRelativePublicationTime } from "@/lib/services/perspectives/relativeTime";
 import { mapPerspectiveTopicTags } from "@/lib/services/perspectives/topicTags";
 import type { PerspectiveRelevance } from "@/lib/services/perspectives/relevance";
@@ -78,6 +75,76 @@ function MiniAvatar({
   );
 }
 
+function PerspectiveRow({
+  video,
+  relevance,
+}: {
+  video: PerspectiveVideo;
+  relevance?: PerspectiveRelevance;
+}) {
+  const tag = mapPerspectiveTopicTags(video.title)[0] ?? null;
+
+  return (
+    <li className="flex min-w-0 items-start gap-3 py-2 first:pt-0 last:pb-0">
+      <a
+        href={video.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="relative w-[4.75rem] shrink-0 sm:w-[5.25rem]"
+        aria-label={`Watch ${video.title} on YouTube`}
+      >
+        <CompactThumb video={video} />
+      </a>
+      <div className="min-w-0 flex-1 pt-0.5">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <MiniAvatar
+            name={video.channelOwnerName || video.creatorName}
+            avatarUrl={video.creatorAvatarUrl}
+          />
+          <span className="truncate text-[11px] font-semibold text-slate-500">
+            {video.channelOwnerName || video.creatorName}
+          </span>
+          {video.featuredPersonName ? (
+            <span className="truncate text-[10px] font-medium text-slate-400">
+              Featuring {video.featuredPersonName}
+            </span>
+          ) : null}
+          <span
+            className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] ${perspectiveCategoryChipClass(video.category)}`}
+          >
+            {perspectiveCategoryLabel(video.category)}
+          </span>
+        </div>
+        <p className="mt-1 line-clamp-2 text-[13px] font-semibold leading-snug text-brand-navy sm:text-[14px]">
+          <a
+            href={video.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="transition hover:text-brand"
+          >
+            {video.title}
+          </a>
+        </p>
+        <div className="mt-1 flex flex-wrap items-center gap-1.5">
+          <span className="text-[11px] text-slate-400">
+            {formatRelativePublicationTime(video.publishedAt)}
+          </span>
+          {tag ? (
+            <span className="rounded-full border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">
+              {tag}
+            </span>
+          ) : null}
+          {relevance?.relevant ? (
+            <span className="text-[10px] font-bold uppercase tracking-[0.06em] text-brand-navy/70">
+              Relevant
+            </span>
+          ) : null}
+        </div>
+      </div>
+    </li>
+  );
+}
+
 export function DashboardPerspectivesCard({
   videos,
   relevanceById = {},
@@ -87,117 +154,66 @@ export function DashboardPerspectivesCard({
   relevanceById?: Record<string, PerspectiveRelevance>;
   state?: "live" | "empty" | "provider_unavailable" | "loading";
 }) {
+  const previewLimit = useCollapsedListLimit();
+  const previewVideos = videos.slice(0, previewLimit);
+  const extraVideos = videos.slice(previewLimit);
+  const canExpand = extraVideos.length > 0;
+
+  let preview: ReactNode;
+  if (state === "loading") {
+    preview = (
+      <div className="space-y-2.5" aria-hidden>
+        <div className="h-14 animate-pulse rounded-xl bg-slate-100" />
+        <div className="h-14 animate-pulse rounded-xl bg-slate-100" />
+      </div>
+    );
+  } else if (videos.length === 0) {
+    preview = (
+      <p className={appSectionMetaClass}>
+        {state === "provider_unavailable"
+          ? "Creator perspectives are temporarily unavailable."
+          : "No recent perspectives from the curated set."}
+      </p>
+    );
+  } else {
+    preview = (
+      <ul className="divide-y divide-slate-100">
+        {previewVideos.map((video) => (
+          <PerspectiveRow
+            key={video.id}
+            video={video}
+            relevance={relevanceById[video.id]}
+          />
+        ))}
+      </ul>
+    );
+  }
+
   return (
-    <section
-      className={appCardClass}
-      aria-labelledby="dashboard-perspectives-heading"
-    >
-      <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-4 py-3.5 sm:px-5">
-        <div className="min-w-0">
-          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-brand-navy/60">
-            Creators
-          </p>
-          <h2
-            id="dashboard-perspectives-heading"
-            className={`mt-1 ${appSectionTitleClass}`}
-          >
-            Latest Perspectives
-          </h2>
-        </div>
-        <Sparkles className="mt-1 h-5 w-5 shrink-0 text-brand" aria-hidden />
-      </div>
-
-      <div className="px-4 py-3 sm:px-5">
-        {state === "loading" ? (
-          <div className="space-y-2.5" aria-hidden>
-            <div className="h-14 animate-pulse rounded-xl bg-slate-100" />
-            <div className="h-14 animate-pulse rounded-xl bg-slate-100" />
-          </div>
-        ) : videos.length === 0 ? (
-          <p className={appSectionMetaClass}>
-            {state === "provider_unavailable"
-              ? "Creator perspectives are temporarily unavailable."
-              : "No recent perspectives from the curated set."}
-          </p>
-        ) : (
-          <ul className="divide-y divide-slate-100">
-            {videos.slice(0, 2).map((video) => {
-              const tag = mapPerspectiveTopicTags(video.title)[0] ?? null;
-              const relevance = relevanceById[video.id];
-              return (
-                <li
-                  key={video.id}
-                  className="flex min-w-0 items-start gap-3 py-2 first:pt-0 last:pb-0"
-                >
-                  <a
-                    href={video.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="relative w-[4.75rem] shrink-0 sm:w-[5.25rem]"
-                    aria-label={`Watch ${video.title} on YouTube`}
-                  >
-                    <CompactThumb video={video} />
-                  </a>
-                  <div className="min-w-0 flex-1 pt-0.5">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <MiniAvatar
-                        name={video.channelOwnerName || video.creatorName}
-                        avatarUrl={video.creatorAvatarUrl}
-                      />
-                      <span className="truncate text-[11px] font-semibold text-slate-500">
-                        {video.channelOwnerName || video.creatorName}
-                      </span>
-                      {video.featuredPersonName ? (
-                        <span className="truncate text-[10px] font-medium text-slate-400">
-                          Featuring {video.featuredPersonName}
-                        </span>
-                      ) : null}
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] ${perspectiveCategoryChipClass(video.category)}`}
-                      >
-                        {perspectiveCategoryLabel(video.category)}
-                      </span>
-                    </div>
-                    <p className="mt-1 line-clamp-2 text-[13px] font-semibold leading-snug text-brand-navy sm:text-[14px]">
-                      <a
-                        href={video.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="transition hover:text-brand"
-                      >
-                        {video.title}
-                      </a>
-                    </p>
-                    <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                      <span className="text-[11px] text-slate-400">
-                        {formatRelativePublicationTime(video.publishedAt)}
-                      </span>
-                      {tag ? (
-                        <span className="rounded-full border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">
-                          {tag}
-                        </span>
-                      ) : null}
-                      {relevance?.relevant ? (
-                        <span className="text-[10px] font-bold uppercase tracking-[0.06em] text-brand-navy/70">
-                          Relevant
-                        </span>
-                      ) : null}
-                    </div>
-                  </div>
-                </li>
-              );
-            })}
+    <ExpandableDashboardSection
+      sectionKey="latest-perspectives"
+      title="Latest Perspectives"
+      titleId="dashboard-perspectives-heading"
+      subtitle="Curated creator perspectives"
+      icon={<Sparkles className="h-5 w-5" />}
+      iconToneClassName="bg-brand-soft text-brand-navy"
+      deepLink={{ href: "/perspectives", label: "View all Perspectives" }}
+      loading={state === "loading"}
+      expandable={canExpand}
+      preview={preview}
+      expandedContent={
+        canExpand ? (
+          <ul className="divide-y divide-slate-100 border-t border-slate-100 pt-2">
+            {extraVideos.map((video) => (
+              <PerspectiveRow
+                key={video.id}
+                video={video}
+                relevance={relevanceById[video.id]}
+              />
+            ))}
           </ul>
-        )}
-
-        <Link
-          href="/perspectives"
-          className="mt-2.5 inline-flex min-h-[36px] items-center gap-1.5 text-[13px] font-semibold text-brand-navy hover:text-brand"
-        >
-          View all Perspectives
-          <ArrowRight className="h-3.5 w-3.5" aria-hidden />
-        </Link>
-      </div>
-    </section>
+        ) : null
+      }
+    />
   );
 }

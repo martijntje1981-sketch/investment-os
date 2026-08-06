@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId } from "react";
 import Link from "next/link";
 import { Upload, Wallet } from "lucide-react";
 
@@ -16,7 +16,11 @@ import {
 } from "@/components/layout/appSurface";
 import type { DashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
 import { resolveHoldingsMoveColumnLabel } from "@/lib/client/performancePeriod";
-import { useCollapsedListLimit } from "@/lib/client/useCollapsedListLimit";
+import {
+  useCollapsedListLimit,
+  useExpandedListLimit,
+} from "@/lib/client/useCollapsedListLimit";
+import { useDashboardSectionExpanded } from "@/lib/client/useDashboardSectionExpanded";
 import { PORTFOLIO_PATH } from "@/lib/navigation/appRoutes";
 
 export function HoldingsToday({
@@ -27,8 +31,12 @@ export function HoldingsToday({
   isLoading?: boolean;
 }) {
   const listId = useId();
-  const [expanded, setExpanded] = useState(false);
+  const { expanded, setExpanded } = useDashboardSectionExpanded(
+    "your-holdings",
+    false,
+  );
   const collapsedLimit = useCollapsedListLimit();
+  const expandedLimit = useExpandedListLimit();
   const moveColumnLabel = resolveHoldingsMoveColumnLabel(
     snapshot.marketHoldings.map((row) => ({
       assetType: row.assetType,
@@ -69,10 +77,10 @@ export function HoldingsToday({
 
   const total = snapshot.marketHoldings.length;
   const showToggle = total > collapsedLimit;
-  const visibleHoldings =
-    expanded || !showToggle
-      ? snapshot.marketHoldings
-      : snapshot.marketHoldings.slice(0, collapsedLimit);
+  const visibleLimit = expanded
+    ? Math.min(total, expandedLimit)
+    : Math.min(total, collapsedLimit);
+  const visibleHoldings = snapshot.marketHoldings.slice(0, visibleLimit);
   const hiddenCount = Math.max(0, total - collapsedLimit);
   const positionSubtitle = `${total} ${total === 1 ? "position" : "positions"} monitored`;
 
@@ -85,7 +93,7 @@ export function HoldingsToday({
         icon={<Wallet className="h-5 w-5" />}
         trailing={
           <Link href={PORTFOLIO_PATH} className={appTextLinkClass}>
-            Open portfolio
+            View all holdings
           </Link>
         }
       />
@@ -146,7 +154,7 @@ export function HoldingsToday({
             className="inline-flex min-h-[40px] items-center rounded-lg px-1 text-sm font-semibold text-slate-700 underline-offset-4 transition hover:text-slate-950 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2"
             aria-expanded={expanded}
             aria-controls={listId}
-            onClick={() => setExpanded((value) => !value)}
+            onClick={() => setExpanded(!expanded)}
           >
             {expanded
               ? "Show less"

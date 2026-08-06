@@ -4,11 +4,17 @@ import Link from "next/link";
 import { Minus, TrendingDown, TrendingUp } from "lucide-react";
 
 import { ConversionDetailsDisclosure } from "@/components/currency/ConversionDetailsDisclosure";
+import { DailyPortfolioBriefing } from "@/components/dashboard/DailyPortfolioBriefing";
 import { HeroTrendMicroVisual } from "@/components/dashboard/DashboardHeroIntelligence";
 import { HeroPortfolioPulse } from "@/components/dashboard/HeroPortfolioPulse";
 import { RefreshPricesButton } from "@/components/portfolio/RefreshPricesButton";
 import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 import type { HeroMover } from "@/lib/client/dailyPerformance";
+import {
+  buildDailyPortfolioBriefing,
+  deriveBriefingMarketTopic,
+  previousClosePhraseFromContextLine,
+} from "@/lib/client/dailyPortfolioBriefing";
 import { resolveHeroTrendDirection } from "@/lib/client/dashboardHeroIntelligence";
 import { RANKING_AFTER_CLOSE } from "@/lib/client/investorOverviewCopy";
 import type { RefreshPricesUiStatus } from "@/lib/client/livePortfolioPriceRefreshAction";
@@ -29,6 +35,7 @@ import {
 } from "@/components/layout/appSurface";
 import type { DashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
 import { holdingDetailPath } from "@/lib/navigation/appRoutes";
+import type { InvestmentIntelligence } from "@/lib/services/news/investmentIntelligence";
 import type { PortfolioPulseResult } from "@/lib/services/portfolio/periodScores";
 
 function signedPercent(value: number) {
@@ -154,10 +161,13 @@ export function PortfolioValueCard({
   refresh,
   welcomeFirstName = null,
   pulse = null,
+  intelligence = null,
 }: {
   snapshot: DashboardPortfolioSnapshot;
   welcomeFirstName?: string | null;
   pulse?: PortfolioPulseResult | null;
+  /** Existing intelligence only — never fetched solely for the briefing. */
+  intelligence?: InvestmentIntelligence | null;
   refresh?: {
     onRefresh: () => void;
     isRefreshing: boolean;
@@ -171,9 +181,42 @@ export function PortfolioValueCard({
   const showMove = snapshot.hasDailyData;
   const moveTone = moveToneClass(snapshot);
   const trendDirection = resolveHeroTrendDirection(snapshot);
-  const welcomeLine = welcomeFirstName?.trim()
-    ? `Welcome back, ${welcomeFirstName.trim()}`
-    : "Welcome back";
+  const usesPreviousClose =
+    Boolean(snapshot.isStale) ||
+    /previous|market close|latest available/i.test(
+      snapshot.dailyMoveContextLine,
+    );
+  const ledByName =
+    snapshot.heroTopMover?.holding.name ||
+    snapshot.heroTopMover?.holding.symbol ||
+    snapshot.topDailyDriver?.name ||
+    snapshot.topDailyDriver?.symbol ||
+    null;
+  const marketTopic = deriveBriefingMarketTopic({
+    title: intelligence?.mustWatch?.title,
+    reason: intelligence?.mustWatch?.reason,
+    sourceName: intelligence?.mustWatch?.sourceName,
+  });
+  // Avoid repeating the Market Briefing lead title word-for-word.
+  const safeMarketTopic =
+    marketTopic &&
+    intelligence?.mustWatch?.title &&
+    marketTopic.trim().toLowerCase() ===
+      intelligence.mustWatch.title.trim().toLowerCase()
+      ? null
+      : marketTopic;
+  const briefing = buildDailyPortfolioBriefing({
+    firstName: welcomeFirstName,
+    holdingCount: snapshot.holdingCount,
+    hasDailyData: snapshot.hasDailyData,
+    todayPercent: snapshot.todayPercent,
+    usesPreviousClose,
+    previousClosePhrase: previousClosePhraseFromContextLine(
+      snapshot.dailyMoveContextLine,
+    ),
+    ledByName: snapshot.hasReliableHeroMoverData ? ledByName : null,
+    marketTopic: safeMarketTopic,
+  });
 
   const amountLabel = showMove
     ? formatSignedPortfolioCurrency(snapshot.todayChange, formatEur)
@@ -200,10 +243,7 @@ export function PortfolioValueCard({
       data-testid="dashboard-portfolio-hero"
     >
       <div className={`relative min-w-0 ${appHeroPaddingCompactClass}`}>
-        <div className="flex items-start justify-between gap-3">
-          <p className="min-w-0 text-[12px] font-medium tracking-[0.01em] text-white/45">
-            {welcomeLine}
-          </p>
+        <div className="flex items-start justify-end gap-3">
           {refresh ? (
             <RefreshPricesButton
               variant="icon"
@@ -215,7 +255,7 @@ export function PortfolioValueCard({
           ) : null}
         </div>
 
-        <div className="mt-3 min-w-0 lg:grid lg:grid-cols-[minmax(0,1.35fr)_minmax(11rem,0.65fr)] lg:items-start lg:gap-5">
+        <div className="mt-1 min-w-0 lg:grid lg:grid-cols-[minmax(0,1.35fr)_minmax(11rem,0.65fr)] lg:items-start lg:gap-5">
           <div className="min-w-0">
             <p className={appHeroMetricLabelClass}>Portfolio value</p>
             <p className={`mt-1 break-words text-white ${appDisplayClass}`}>
@@ -293,6 +333,8 @@ export function PortfolioValueCard({
               : refresh.message}
           </p>
         ) : null}
+
+        <DailyPortfolioBriefing briefing={briefing} />
       </div>
     </article>
   );

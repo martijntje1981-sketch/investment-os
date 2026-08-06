@@ -90,6 +90,7 @@ describe("first-run dashboard wiring", () => {
 
   it("keeps high-value explore routes on Dashboard and in the profile menu", () => {
     const tools = read("components/dashboard/DashboardExploreTools.tsx");
+    const dashboard = read("app/dashboard/page.tsx");
     const routes = read("lib/navigation/appRoutes.ts");
     const menu = read("components/auth/UserMenu.tsx");
     expect(routes).toContain('PORTFOLIO_HEALTH_PATH = "/portfolio-health"');
@@ -97,16 +98,14 @@ describe("first-run dashboard wiring", () => {
     expect(routes).toContain('ANALYSIS_PATH = "/analysis"');
     expect(routes).toContain('GOALS_PATH = "/goals"');
     expect(tools).toContain("PORTFOLIO_HEALTH_PATH");
-    expect(tools).toContain("PORTFOLIO_HISTORY_PATH");
     expect(tools).toContain("ANALYSIS_PATH");
     expect(tools).toContain("GOALS_PATH");
-    expect(tools).toContain("/market-pulse");
-    expect(tools).toContain("/perspectives");
     expect(tools).toContain("Explore Tobailey");
-    expect(tools).toContain(
-      "Understand the structure and resilience of your portfolio.",
-    );
-    expect(tools).toContain("Track progress toward your financial targets.");
+    expect(tools).toContain("Structure and resilience scorecard.");
+    expect(tools).toContain("Track progress toward your targets.");
+    expect(dashboard).toContain("PortfolioHistoryNavCard");
+    expect(dashboard).toContain("DashboardMarketPulseCard");
+    expect(dashboard).toContain("DashboardPerspectivesWidget");
     expect(menu).toContain('title="Portfolio"');
     expect(menu).toContain('title="Discover"');
     expect(menu).toContain('title="Account"');
