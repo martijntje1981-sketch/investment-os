@@ -161,7 +161,7 @@ describe("screenshot import removal", () => {
     const picker = readProjectFile("components/import/ImportMethodPicker.tsx");
     const uploadPage = readProjectFile("app/upload/page.tsx");
 
-    expect(picker).toMatch(/href="\/portfolio"/);
+    expect(picker).toMatch(/href="\/portfolio\?add=/);
     expect(picker).toMatch(/Manual entry/);
     expect(picker).toMatch(/Cash entry/);
     expect(uploadPage).toMatch(/manually|CSV|Excel|cash/i);

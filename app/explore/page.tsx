@@ -218,11 +218,11 @@ export default function ExplorePage() {
                 id="explore-demo-heading"
                 className="mt-1 text-2xl font-bold tracking-[-0.03em] text-slate-950 sm:text-[1.75rem]"
               >
-                Explore the showroom
+                Demo Portfolio
               </h1>
               <p className={`mt-2 ${appSectionSubtitleClass}`}>
-                Browse sample holdings below. Demo data stays read-only here and
-                never mixes into a personal trial account.
+                A ready-made, read-only example. It never becomes your personal
+                portfolio or starts a 7-day Personal Trial.
               </p>
             </div>
           </div>
@@ -315,17 +315,18 @@ export default function ExplorePage() {
               Start your 7-day trial
               <ArrowRight className="h-4 w-4" aria-hidden />
             </Link>
-            <Link
-              href={PERSONAL_TRIAL_SIGNUP_HREF}
+            <button
+              type="button"
               className={appBrandSoftButtonClass}
-              data-testid="create-own-portfolio-cta"
+              data-testid="open-interactive-demo-cta"
+              onClick={() => setShowInteractiveDemo(true)}
             >
-              Create your own portfolio
-            </Link>
+              Open interactive Demo Portfolio
+            </button>
           </div>
           <p className={`mt-3 ${appSectionMetaClass}`}>
-            Demo Portfolio: view an example, read-only experience. Personal trial:
-            create and edit your own portfolio, starting empty.
+            7-day Personal Trial starts empty and editable. Demo Portfolio stays
+            a separate read-only example.
           </p>
         </section>
 
@@ -335,17 +336,18 @@ export default function ExplorePage() {
           data-testid="demo-to-personal-cta"
         >
           <h2 id="ready-make-yours-heading" className={appSectionTitleClass}>
-            Ready to make it yours?
+            Create your own portfolio
           </h2>
           <p className={`mt-2 ${appSectionSubtitleClass}`}>
-            Start your 7-day trial with a clean personal account, then import or
-            add your own investments.
+            Start a 7-day Personal Trial with an empty portfolio, then import or
+            add investments yourself.
           </p>
           <Link
             href={PERSONAL_TRIAL_SIGNUP_HREF}
             className={`mt-4 ${appSolidButtonClass}`}
+            data-testid="create-own-portfolio-cta"
           >
-            Create your own portfolio
+            Start your 7-day trial
             <ArrowRight className="h-4 w-4" aria-hidden />
           </Link>
         </section>

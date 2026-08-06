@@ -12,6 +12,7 @@
  */
 
 import { ChangeEvent, DragEvent, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AlertCircle, Check, Info, RefreshCw, Sparkles } from "lucide-react";
 
@@ -24,6 +25,7 @@ import { ImportDropzone } from "@/components/import/ImportDropzone";
 import { ImportMethodPicker } from "@/components/import/ImportMethodPicker";
 import { ImportProcessingState } from "@/components/import/ImportProcessingState";
 import { ImportReviewList } from "@/components/import/ImportReviewList";
+import { ImportProgressSteps } from "@/components/import/ImportProgressSteps";
 import { ImportTrustBanner } from "@/components/import/ImportTrustBanner";
 import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
 import { matchSingleImportRow, runImportPipeline } from "@/lib/client/importMatchClient";
@@ -32,6 +34,7 @@ import {
 } from "@/lib/services/instruments/listingConfirmation";
 import { parseProviderSymbolInput } from "@/lib/services/instruments/providerSymbolInput";
 import { normalizeExchange } from "@/lib/services/instruments/exchangeNormalizer";
+import { mergeImportedHoldings } from "@/lib/client/importMergeHoldings";
 import { saveImportedPortfolio } from "@/lib/client/importSavePortfolio";
 import {
   clearPendingImportSession,
@@ -39,6 +42,10 @@ import {
   readPendingImportSession,
   writePendingImportSession,
 } from "@/lib/client/importSessionStorage";
+import {
+  appSolidButtonClass,
+  appGhostButtonClass,
+} from "@/components/layout/appSurface";
 import type { ExtractionReviewField } from "@/lib/services/extraction/fieldConfidence";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 import {
@@ -400,8 +407,21 @@ export default function UploadPage() {
     setRows((current) => current.filter((row) => row.id !== id));
   }
 
-  async function importPortfolio(mode: "replace" | "merge") {
-    const validation = canImportRows(rows);
+  async function importPortfolio(
+    mode: "replace" | "merge",
+    options?: { readyOnly?: boolean },
+  ) {
+    if (isSaving) return;
+
+    const rowsToImport = options?.readyOnly
+      ? rows.filter(
+          (row) =>
+            annotateImportRow(row).reviewTier === "auto" ||
+            row.userConfirmed === true,
+        )
+      : rows;
+
+    const validation = canImportRows(rowsToImport);
     if (!validation.ok) {
       setError(validation.message ?? "Complete the review before importing.");
       return;
@@ -417,15 +437,26 @@ export default function UploadPage() {
     setError("");
     setImportNotice("");
     setSyncFailed(false);
-    persistImportSession(rows, mode);
+    persistImportSession(rowsToImport, mode);
 
     try {
-      const prepared = finalizeImportRowsForSave(rows);
-      rememberConfirmedImportMappings(userSub, rows);
+      const prepared = finalizeImportRowsForSave(rowsToImport);
+      rememberConfirmedImportMappings(userSub, rowsToImport);
 
       const existing = storedHoldings as StoredPortfolioHolding[];
-      const next =
-        mode === "replace" ? prepared : [...existing, ...prepared];
+      let next = prepared;
+      let skippedDuplicates = 0;
+      // Partial "ready only" never replaces the whole book — merge into existing.
+      const shouldMerge = mode === "merge" || Boolean(options?.readyOnly);
+      if (shouldMerge) {
+        const merged = mergeImportedHoldings(existing, prepared);
+        next = merged.holdings;
+        skippedDuplicates = merged.skippedDuplicates;
+      }
+
+      if (!importIdempotencyKeyRef.current) {
+        importIdempotencyKeyRef.current = createImportIdempotencyKey(userSub);
+      }
 
       const saved = await saveImportedPortfolio({
         userSub,
@@ -453,12 +484,21 @@ export default function UploadPage() {
       importIdempotencyKeyRef.current = null;
       setSyncFailed(false);
 
-      const messages = [
-        saved.priceWarning ??
-          "Portfolio imported successfully.",
+      const importedCount = Math.max(0, prepared.length - skippedDuplicates);
+      const parts = [
+        "Your portfolio is ready.",
+        `${importedCount} holding${importedCount === 1 ? "" : "s"} imported successfully.`,
       ];
-      setSuccessMessage(messages.join(" "));
-      window.setTimeout(() => router.push("/dashboard"), 900);
+      if (skippedDuplicates > 0) {
+        parts.push(
+          `${skippedDuplicates} duplicate${skippedDuplicates === 1 ? "" : "s"} skipped.`,
+        );
+      }
+      if (saved.priceWarning) {
+        parts.push(saved.priceWarning);
+      }
+      setSuccessMessage(parts.join(" "));
+      window.setTimeout(() => router.push("/dashboard"), 1200);
     } catch (caught) {
       const message =
         caught instanceof Error
@@ -466,7 +506,7 @@ export default function UploadPage() {
           : "Your portfolio could not be saved.";
       setSyncFailed(true);
       setError(message);
-      persistImportSession(rows, mode, message);
+      persistImportSession(rowsToImport, mode, message);
     } finally {
       setIsSaving(false);
     }
@@ -476,14 +516,29 @@ export default function UploadPage() {
     void importPortfolio(importModeRef.current);
   }
 
+  const progressPhase = successMessage
+    ? "success"
+    : phase === "choose"
+      ? "choose"
+      : phase === "processing"
+        ? "processing"
+        : "ready";
+
+  const canImportReadyOnly =
+    plan.autoCount > 0 &&
+    (plan.reviewCount > 0 || plan.blockedCount > 0) &&
+    !plan.readyToImport;
+
   return (
     <>
       <PageContainer>
         <PageHero
           title="Import Portfolio"
-          subtitle="Add holdings manually, import a CSV or Excel file, or record cash on the portfolio page."
+          subtitle="Upload your broker export. Tobailey detects holdings before anything is added."
           backToDashboard
         />
+
+          <ImportProgressSteps phase={progressPhase} />
 
           <PortfolioRecoveryBanner
             offer={recoveryOffer}
@@ -564,41 +619,55 @@ export default function UploadPage() {
                 onRemove={removeRow}
               />
 
-              <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+              <section className="rounded-[24px] border border-slate-200/80 bg-white p-5 md:rounded-[28px] sm:p-6">
                 <div className="flex items-start gap-3">
-                  <div className="rounded-2xl bg-blue-50 p-3 text-blue-700">
-                    <Sparkles className="h-5 w-5" />
+                  <div className="rounded-2xl bg-brand-soft p-3 text-brand-navy">
+                    <Sparkles className="h-5 w-5" aria-hidden />
                   </div>
                   <div>
-                    <h3 className="text-lg font-black tracking-[-0.03em]">
+                    <h3 className="text-lg font-bold tracking-[-0.02em] text-slate-950">
                       {plan.readyToImport
                         ? "Ready to import"
                         : "Almost there"}
                     </h3>
                     <p className="mt-1 text-sm text-slate-500">
                       {plan.readyToImport
-                        ? "Your portfolio will activate your dashboard, news, goals, analytics, and AI insights immediately."
-                        : "Confirm the holdings above, then import your portfolio."}
+                        ? "You review everything before import. Ambiguous rows stay out until confirmed."
+                        : canImportReadyOnly
+                          ? "Fix remaining rows, or import only the holdings that are already ready."
+                          : "Confirm or exclude the holdings that need attention, then import."}
                     </p>
                   </div>
                 </div>
 
-                <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+                <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                   <button
                     type="button"
                     onClick={resetImport}
-                    className="min-h-[48px] rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700"
+                    className={appGhostButtonClass}
                   >
                     Upload another file
                   </button>
-                  {storedHoldings.length > 0 ? (
+                  {storedHoldings.length > 0 && plan.readyToImport ? (
                     <button
                       type="button"
-                      disabled={!plan.readyToImport || isSaving}
+                      disabled={isSaving}
                       onClick={() => void importPortfolio("merge")}
-                      className="min-h-[48px] rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold disabled:opacity-40"
+                      className={`${appGhostButtonClass} disabled:opacity-40`}
                     >
-                      Add to existing portfolio
+                      Merge into my portfolio
+                    </button>
+                  ) : null}
+                  {canImportReadyOnly ? (
+                    <button
+                      type="button"
+                      disabled={isSaving}
+                      onClick={() =>
+                        void importPortfolio("merge", { readyOnly: true })
+                      }
+                      className={`${appGhostButtonClass} disabled:opacity-40`}
+                    >
+                      {`Import ${plan.autoCount} ready holding${plan.autoCount === 1 ? "" : "s"} only`}
                     </button>
                   ) : null}
                   {syncFailed ? (
@@ -606,22 +675,45 @@ export default function UploadPage() {
                       type="button"
                       disabled={!plan.readyToImport || isSaving}
                       onClick={retrySync}
-                      className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl border border-red-300 bg-red-50 px-5 py-3 text-sm font-bold text-red-900 disabled:opacity-40"
+                      className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-red-300 bg-red-50 px-5 py-3 text-sm font-bold text-red-900 disabled:opacity-40"
                     >
-                      <RefreshCw className="h-4 w-4" />
+                      <RefreshCw className="h-4 w-4" aria-hidden />
                       {isSaving ? "Retrying sync…" : "Retry sync"}
                     </button>
                   ) : null}
                   <button
                     type="button"
                     disabled={!plan.readyToImport || isSaving}
-                    onClick={() => void importPortfolio("replace")}
-                    className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white disabled:opacity-40"
+                    onClick={() =>
+                      void importPortfolio(
+                        storedHoldings.length > 0 ? "merge" : "replace",
+                      )
+                    }
+                    className={`${appSolidButtonClass} disabled:opacity-40`}
+                    aria-label={
+                      plan.autoCount > 0
+                        ? `Import ${plan.autoCount} holdings`
+                        : "Import portfolio"
+                    }
                   >
-                    <Check className="h-4 w-4" />
-                    {isSaving ? "Importing…" : syncFailed ? "Import portfolio again" : "Import portfolio"}
+                    <Check className="h-4 w-4" aria-hidden />
+                    {isSaving
+                      ? "Importing…"
+                      : syncFailed
+                        ? "Import portfolio again"
+                        : plan.autoCount > 0
+                          ? `Import ${plan.autoCount} holding${plan.autoCount === 1 ? "" : "s"}`
+                          : "Import portfolio"}
                   </button>
                 </div>
+                {successMessage ? (
+                  <Link
+                    href="/dashboard"
+                    className={`mt-4 ${appSolidButtonClass}`}
+                  >
+                    View my Dashboard
+                  </Link>
+                ) : null}
               </section>
             </div>
           ) : null}

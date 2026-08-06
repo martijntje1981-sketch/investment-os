@@ -8,8 +8,13 @@
 
 import { isValidUserSub } from "@/lib/client/portfolioStorageKeys";
 
-/** Demo portfolio is intentionally unavailable in this phase. */
-export const DEMO_PORTFOLIO_ENABLED = false;
+/**
+ * Tertiary link to the public Demo Portfolio showroom (/explore).
+ * Does not seed or alter the Personal Trial account.
+ */
+export const DEMO_PORTFOLIO_ENABLED = true;
+
+export const DEMO_PORTFOLIO_HREF = "/explore";
 
 export const PORTFOLIO_SETUP_ROUTES = {
   import: "/upload",
@@ -39,34 +44,34 @@ export const SUPPORTED_PORTFOLIO_INPUT_METHODS = [
 export const PORTFOLIO_SETUP_STEPS = [
   {
     step: 1,
-    title: "Upload or enter your holdings",
+    title: "Choose your file",
   },
   {
     step: 2,
-    title: "Review the recognised investments",
+    title: "Review detected holdings",
   },
   {
     step: 3,
-    title: "Open your personalised dashboard",
+    title: "Import complete",
   },
 ] as const;
 
 export const PORTFOLIO_SETUP_COPY = {
-  welcomeEyebrow: "Welcome to Tobailey",
+  welcomeEyebrow: "7-day Personal Trial",
   returningEyebrow: "Portfolio empty",
-  headline: "Build your portfolio",
+  headline: "Your portfolio is ready.",
   returningHeadline: "Add holdings to continue",
   supporting:
-    "Your investments. Understood. Add your holdings so Tobailey can analyse your performance, exposure, market drivers and goals.",
+    "Import your holdings or add them manually. You can change everything later.",
   returningSupporting:
-    "Your portfolio has no positions yet. Import a spreadsheet or add holdings to restore analysis and goals.",
+    "Import a CSV or Excel file, or add holdings manually, to restore your Dashboard.",
   importPrimary: "Import my portfolio",
-  importHint: "Recommended · usually takes only a few minutes",
+  importHint: "Upload a broker export · you review before anything is added",
   manualSecondary: "Add holdings manually",
   demoTertiary: "Explore the Demo Portfolio",
   compactTitle: "Set up your portfolio",
   compactBody:
-    "Import a CSV or Excel file, or add holdings manually, to unlock personalised insights.",
+    "Import a CSV or Excel file, or add holdings manually.",
 } as const;
 
 export function portfolioSetupCompletedKey(userSub: string): string {

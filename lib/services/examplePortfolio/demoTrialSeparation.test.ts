@@ -84,6 +84,22 @@ describe("clean personal trial signup", () => {
         metadata: { pending_personal_trial: true },
       }),
     ).toBe(true);
+    expect(resolveSeedHoldingsPreference({ metadata: {} })).toBe(false);
+    expect(
+      resolveSeedHoldingsPreference({
+        metadata: { example_trial_kind: "demo" },
+      }),
+    ).toBe(true);
+    expect(
+      resolveSeedHoldingsPreference({
+        metadata: { pending_example_template: "global" },
+      }),
+    ).toBe(true);
+    expect(
+      resolveSeedHoldingsPreference({
+        metadata: { example_trial_kind: "personal" },
+      }),
+    ).toBe(false);
     expect(resolveExampleTrialKind({ seedHoldings: false })).toBe("personal");
     expect(resolveExampleTrialKind({ seedHoldings: true })).toBe("demo");
   });
@@ -127,8 +143,13 @@ describe("trial countdown, export, and isolation", () => {
     const now = new Date("2026-08-04T12:00:00.000Z");
     const expiresAt = "2026-08-09T12:00:00.000Z";
     expect(formatPremiumTrialIndicatorLabel(expiresAt, now)).toBe(
-      "Premium trial · 5 days remaining",
+      "7-day Personal Trial · 5 days remaining",
     );
+    expect(
+      formatPremiumTrialIndicatorLabel(expiresAt, now, {
+        hasDemoHoldings: true,
+      }),
+    ).toBe("Demo Portfolio · 5 days remaining");
     const view = buildTrialExperienceView({
       kind: "active",
       expiresAt,

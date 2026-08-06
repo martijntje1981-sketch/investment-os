@@ -49,31 +49,36 @@ export function isTrialFinal48Hours(
 export function formatPremiumTrialIndicatorLabel(
   expiresAtIso: string | null | undefined,
   now = new Date(),
+  options?: { hasDemoHoldings?: boolean },
 ): string {
+  const prefix = options?.hasDemoHoldings
+    ? "Demo Portfolio"
+    : "7-day Personal Trial";
+
   if (!expiresAtIso) {
-    return "Premium trial";
+    return prefix;
   }
   const expires = Date.parse(expiresAtIso);
   if (!Number.isFinite(expires)) {
-    return "Premium trial";
+    return prefix;
   }
   if (expires <= now.getTime()) {
-    return "Premium trial ended · Upgrade to continue";
+    return `${prefix} ended · Upgrade to continue`;
   }
 
   const expiresLocal = new Date(expires);
   if (expiresLocal.toDateString() === now.toDateString()) {
-    return "Premium trial · Expires today";
+    return `${prefix} · Expires today`;
   }
 
   const days = getExampleDaysRemaining(expiresAtIso, now);
   if (days <= 0) {
-    return "Premium trial ended · Upgrade to continue";
+    return `${prefix} ended · Upgrade to continue`;
   }
   if (days === 1) {
-    return "Premium trial · 1 day remaining";
+    return `${prefix} · 1 day remaining`;
   }
-  return `Premium trial · ${days} days remaining`;
+  return `${prefix} · ${days} days remaining`;
 }
 
 export function buildTrialExperienceView(input: {
@@ -104,7 +109,9 @@ export function buildTrialExperienceView(input: {
     return {
       phase: "expired",
       daysRemaining: 0,
-      indicatorLabel: "Premium trial ended · Upgrade to continue",
+      indicatorLabel: hasDemoHoldings
+        ? "Demo Portfolio ended · Upgrade to continue"
+        : "7-day Personal Trial ended · Upgrade to continue",
       isFinal48Hours: false,
       showTrialMessaging: true,
       showDemoHoldingsMessaging: false,
@@ -121,7 +128,9 @@ export function buildTrialExperienceView(input: {
     return {
       phase: final48 ? "final_48h" : "active",
       daysRemaining,
-      indicatorLabel: formatPremiumTrialIndicatorLabel(input.expiresAt, now),
+      indicatorLabel: formatPremiumTrialIndicatorLabel(input.expiresAt, now, {
+        hasDemoHoldings,
+      }),
       isFinal48Hours: final48,
       showTrialMessaging: true,
       showDemoHoldingsMessaging: hasDemoHoldings,

@@ -30,25 +30,25 @@ export function ImportSummaryCard({
           <Sparkles className="h-3.5 w-3.5" />
           Import ready
         </div>
-        <h2 className="mt-4 text-3xl font-black tracking-[-0.05em] sm:text-4xl">
-          We found {plan.total} holding{plan.total === 1 ? "" : "s"}.
+        <h2 className="mt-4 text-2xl font-bold tracking-[-0.03em] sm:text-3xl">
+          {plan.total} holding{plan.total === 1 ? "" : "s"} detected
         </h2>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">
           {allReady
-            ? "Everything looks good. Import your portfolio to activate your dashboard, news, goals, and insights."
-            : "Most holdings matched automatically. Confirm the few uncertain ones below, then import."}
+            ? `${plan.autoCount} ready to import. Nothing is added until you confirm.`
+            : `${plan.autoCount} ready · ${plan.reviewCount + plan.blockedCount} need your attention before import.`}
         </p>
         <div className="mt-5 flex flex-wrap gap-2 text-xs font-bold">
           <SummaryPill label={`${plan.autoCount} ready`} tone="success" />
           {plan.reviewCount > 0 ? (
             <SummaryPill
-              label={`${plan.reviewCount} to confirm`}
+              label={`${plan.reviewCount} needs review`}
               tone="warning"
             />
           ) : null}
           {plan.blockedCount > 0 ? (
             <SummaryPill
-              label={`${plan.blockedCount} need attention`}
+              label={`${plan.blockedCount} unsupported`}
               tone="danger"
             />
           ) : null}

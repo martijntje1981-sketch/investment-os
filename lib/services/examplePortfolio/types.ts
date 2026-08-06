@@ -101,27 +101,27 @@ export function formatExampleBannerLabel(
   expiresAtIso: string | null | undefined,
   now = new Date(),
 ): string {
-  // Shared Premium-trial wording — keep countdown math in getExampleDaysRemaining.
-  if (!expiresAtIso) return "Premium trial";
+  // Shared 7-day Personal Trial wording — keep countdown math in getExampleDaysRemaining.
+  if (!expiresAtIso) return "7-day Personal Trial";
   const expires = Date.parse(expiresAtIso);
-  if (!Number.isFinite(expires)) return "Premium trial";
+  if (!Number.isFinite(expires)) return "7-day Personal Trial";
   if (expires <= now.getTime()) {
-    return "Premium trial ended · Upgrade to continue";
+    return "7-day Personal Trial ended · Upgrade to continue";
   }
 
   const expiresLocal = new Date(expires);
   if (expiresLocal.toDateString() === now.toDateString()) {
-    return "Premium trial · Expires today";
+    return "7-day Personal Trial · Expires today";
   }
 
   const days = getExampleDaysRemaining(expiresAtIso, now);
   if (days <= 0) {
-    return "Premium trial ended · Upgrade to continue";
+    return "7-day Personal Trial ended · Upgrade to continue";
   }
   if (days === 1) {
-    return "Premium trial · 1 day remaining";
+    return "7-day Personal Trial · 1 day remaining";
   }
-  return `Premium trial · ${days} days remaining`;
+  return `7-day Personal Trial · ${days} days remaining`;
 }
 
 /**

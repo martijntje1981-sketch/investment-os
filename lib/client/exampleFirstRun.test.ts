@@ -61,19 +61,19 @@ describe("example first-run markers", () => {
 });
 
 describe("example banner labels for remaining days", () => {
-  it("uses Premium trial day-remaining labels", () => {
+  it("uses 7-day Personal Trial day-remaining labels", () => {
     expect(
       formatExampleBannerLabel(
         "2026-08-10T10:00:00.000Z",
         new Date("2026-08-03T10:00:00.000Z"),
       ),
-    ).toBe("Premium trial · 7 days remaining");
+    ).toBe("7-day Personal Trial · 7 days remaining");
     expect(
       formatExampleBannerLabel(
         "2026-08-06T10:00:00.000Z",
         new Date("2026-08-03T10:00:00.000Z"),
       ),
-    ).toBe("Premium trial · 3 days remaining");
+    ).toBe("7-day Personal Trial · 3 days remaining");
   });
 });
 

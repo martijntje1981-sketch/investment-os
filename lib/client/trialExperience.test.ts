@@ -22,7 +22,7 @@ describe("trial experience", () => {
     const expiresAt = "2026-08-09T12:00:00.000Z";
     expect(getExampleDaysRemaining(expiresAt, now)).toBe(5);
     expect(formatPremiumTrialIndicatorLabel(expiresAt, now)).toBe(
-      "Premium trial · 5 days remaining",
+      "7-day Personal Trial · 5 days remaining",
     );
     const view = buildTrialExperienceView({
       kind: "active",
@@ -74,7 +74,7 @@ describe("trial experience", () => {
     });
     expect(view.daysRemaining).toBe(0);
     expect(view.indicatorLabel).toContain("ended");
-    expect(view.indicatorLabel).not.toMatch(/-/);
+    expect(view.indicatorLabel).not.toMatch(/-\d/);
   });
 });
 
@@ -115,7 +115,7 @@ describe("expired trial export exception", () => {
     expect(access).toContain('"/portfolio-history"');
     expect(access).toContain("EXAMPLE_EXPIRED_ALLOWED_PREFIXES");
     const expired = read("app/example-expired/page.tsx");
-    expect(expired).toContain("Your Premium trial has ended");
+    expect(expired).toContain("Your 7-day Personal Trial has ended");
     expect(expired).toContain("Export Portfolio History");
     expect(expired).toContain("PORTFOLIO_HISTORY_PATH");
     expect(expired).not.toContain('href="/analysis"');

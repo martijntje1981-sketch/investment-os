@@ -5,6 +5,11 @@
 
 import type { ExampleTrialKind } from "@/lib/services/examplePortfolio/types";
 
+/**
+ * Prefer an explicit seedHoldings flag (auth callback).
+ * Otherwise seed only when metadata shows Demo intent.
+ * Bare reserved entitlements / Activator retries must NOT seed.
+ */
 export function resolveSeedHoldingsPreference(input: {
   seedHoldings?: boolean;
   metadata?: Record<string, unknown> | null;
@@ -13,7 +18,12 @@ export function resolveSeedHoldingsPreference(input: {
   const meta = input.metadata ?? {};
   if (meta.pending_personal_trial === true) return false;
   if (meta.example_trial_kind === "personal") return false;
-  return true;
+  if (meta.example_trial_kind === "demo") return true;
+  const pendingTemplate = meta.pending_example_template;
+  if (typeof pendingTemplate === "string" && pendingTemplate.trim().length > 0) {
+    return true;
+  }
+  return false;
 }
 
 export function resolveExampleTrialKind(input: {

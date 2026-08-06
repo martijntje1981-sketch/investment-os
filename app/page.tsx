@@ -227,8 +227,8 @@ export default async function MarketingHomePage({
                 </Link>
               </div>
               <p className="mt-3 max-w-xl text-sm leading-6 text-slate-500">
-                View a ready-made example portfolio, or start your own empty
-                portfolio.
+                Start with your own empty portfolio, or explore a ready-made
+                read-only Demo Portfolio.
               </p>
 
               <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3">

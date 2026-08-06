@@ -40,7 +40,7 @@ describe("example portfolio entry surface", () => {
 
   it("shows Demo Portfolio showroom with Global Investor recommended", () => {
     expect(explore).toContain("Demo Portfolio");
-    expect(explore).toContain("Explore the showroom");
+    expect(explore).toContain("read-only example");
     expect(explore).toContain("Global Investor");
     expect(explore).toContain("Income Investor");
     expect(explore).toContain("Recommended");
@@ -97,19 +97,19 @@ describe("example email + period helpers", () => {
         "2026-08-03T20:00:00.000Z",
         new Date("2026-08-03T10:00:00.000Z"),
       ),
-    ).toBe("Premium trial · Expires today");
+    ).toBe("7-day Personal Trial · Expires today");
     expect(
       formatExampleBannerLabel(
         "2026-08-04T08:00:00.000Z",
         new Date("2026-08-03T10:00:00.000Z"),
       ),
-    ).toBe("Premium trial · 1 day remaining");
+    ).toBe("7-day Personal Trial · 1 day remaining");
     expect(
       formatExampleBannerLabel(
         "2026-08-07T10:00:00.000Z",
         new Date("2026-08-03T10:00:00.000Z"),
       ),
-    ).toBe("Premium trial · 4 days remaining");
+    ).toBe("7-day Personal Trial · 4 days remaining");
     expect(
       formatExampleBannerLabel(
         "2026-08-01T10:00:00.000Z",
@@ -328,7 +328,7 @@ describe("example expiry enforcement", () => {
     expect(home).toContain("Start your 7-day trial");
     expect(home).toContain("Explore Demo Portfolio");
     expect(home).not.toMatch(/24-?hour free trial/i);
-    expect(expired).toContain("Your Premium trial has ended");
+    expect(expired).toContain("Your 7-day Personal Trial has ended");
     expect(expired).toContain("Export Portfolio History");
     expect(expired).toContain("EXAMPLE_KEEP_PORTFOLIO_HREF");
     expect(expired).toContain("Browse without signing in");

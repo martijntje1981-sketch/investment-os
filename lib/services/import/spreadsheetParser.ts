@@ -71,10 +71,16 @@ export function parseSpreadsheetBuffer(buffer: ArrayBuffer): ImportRow[] {
         firstValue(record, ["exchange", "mic", "market", "listing"]),
       ).toUpperCase();
       const rawTicker = stringValue(
-        firstValue(record, ["symbol", "ticker", "code"]),
+        firstValue(record, [
+          "symbol",
+          "ticker",
+          "code",
+          "instrument",
+          "providersymbol",
+        ]),
       ).toUpperCase();
       const rawCurrency = stringValue(
-        firstValue(record, ["currency", "ccy"]),
+        firstValue(record, ["currency", "ccy", "curr"]),
       ).toUpperCase();
 
       const isin = isValidIsin(rawIsin) ? rawIsin : null;
@@ -90,6 +96,8 @@ export function parseSpreadsheetBuffer(buffer: ArrayBuffer): ImportRow[] {
             "investment",
             "holding",
             "security",
+            "securityname",
+            "instrumentname",
             "description",
           ]),
         ) ||
@@ -105,13 +113,35 @@ export function parseSpreadsheetBuffer(buffer: ArrayBuffer): ImportRow[] {
         ["CASH", "EUR", "EURCASH"].includes(symbol.replace(/\s/g, ""));
 
       const amount = numberValue(
-        firstValue(record, ["amount", "cash", "value", "marketvalue"]),
+        firstValue(record, [
+          "amount",
+          "cash",
+          "value",
+          "marketvalue",
+          "positionvalue",
+        ]),
       );
       const quantity = isCash
         ? amount ||
-          numberValue(firstValue(record, ["quantity", "units", "shares", "number"]))
+          numberValue(
+            firstValue(record, [
+              "quantity",
+              "units",
+              "shares",
+              "number",
+              "qty",
+              "position",
+            ]),
+          )
         : numberValue(
-            firstValue(record, ["quantity", "units", "shares", "number"]),
+            firstValue(record, [
+              "quantity",
+              "units",
+              "shares",
+              "number",
+              "qty",
+              "position",
+            ]),
           );
       const purchasePrice = isCash
         ? 1
@@ -120,8 +150,10 @@ export function parseSpreadsheetBuffer(buffer: ArrayBuffer): ImportRow[] {
               "purchaseprice",
               "averageprice",
               "avgprice",
+              "avgpurchaseprice",
               "costprice",
               "buyprice",
+              "costbasis",
             ]),
           );
       const currentPrice = isCash
@@ -132,6 +164,7 @@ export function parseSpreadsheetBuffer(buffer: ArrayBuffer): ImportRow[] {
               "price",
               "marketprice",
               "lastprice",
+              "last",
             ]),
           );
       const purchaseDate = parsePurchaseDate(
@@ -159,6 +192,13 @@ export function parseSpreadsheetBuffer(buffer: ArrayBuffer): ImportRow[] {
     })
     .filter((row) => {
       if (!row.name || row.quantity < 0) return false;
+      const nameLower = row.name.toLowerCase();
+      if (
+        /^(total|totals|sum|subtotal|grand total)\b/i.test(nameLower) ||
+        /^(total|totals|sum|subtotal)$/i.test(row.symbol)
+      ) {
+        return false;
+      }
       if (row.assetType === "cash") return row.quantity > 0;
       return Boolean(row.symbol || row.isin || row.name);
     });
@@ -196,14 +236,24 @@ export function validateSpreadsheetImportFile(
   if (!isSupportedSpreadsheetFileName(file.name)) {
     return {
       ok: false,
-      message: "Choose an Excel (.xlsx or .xls) or CSV file.",
+      message:
+        "This file format isn’t supported yet. Upload a CSV or Excel file, or add holdings manually.",
     };
   }
 
-  if (file.size === 0 || file.size > MAX_IMPORT_FILE_BYTES) {
+  if (file.size === 0) {
     return {
       ok: false,
-      message: "The file must be between 1 byte and 10 MB.",
+      message:
+        "This file is empty. Export your positions or portfolio overview from your broker, then try again.",
+    };
+  }
+
+  if (file.size > MAX_IMPORT_FILE_BYTES) {
+    return {
+      ok: false,
+      message:
+        "This file is too large (max 10 MB). Export a smaller positions file, or add holdings manually.",
     };
   }
 

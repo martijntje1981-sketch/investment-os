@@ -15,14 +15,14 @@ import { PORTFOLIO_HISTORY_PATH } from "@/lib/navigation/appRoutes";
 const STEPS = [
   {
     title: "Create your account",
-    body: "Start your 7-day Premium trial.",
+    body: "Start your 7-day Personal Trial with an empty portfolio.",
   },
   {
     title: "Import or build your portfolio",
     body: "Upload a supported file or add holdings manually. You can edit everything.",
   },
   {
-    title: "Explore all Premium features",
+    title: "Explore Premium features",
     body: "Use Tobailey with your own investments before deciding.",
   },
 ] as const;

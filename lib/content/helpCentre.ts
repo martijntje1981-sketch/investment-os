@@ -101,13 +101,23 @@ export const HELP_CENTRE_SECTIONS: HelpCentreSection[] = [
       {
         question: "How does import work?",
         answer:
-          "Upload CSV or Excel, confirm matches, then save. Unsupported rows are flagged so you can fix or skip them.",
+          "Upload a CSV or Excel broker export. Tobailey detects holdings, you review matches, then import. Nothing is added until you confirm.",
         link: { href: UPLOAD_PATH, label: "Import portfolio" },
       },
       {
-        question: "What if a symbol does not match?",
+        question: "What files can I upload?",
         answer:
-          "Choose a better match in review, or skip the row. Your broker file is never changed.",
+          "CSV and Excel (.csv, .xlsx, .xls). Export a positions or portfolio overview from your broker — Tobailey never asks for broker login.",
+      },
+      {
+        question: "What if a holding needs review?",
+        answer:
+          "Uncertain matches stay out until you confirm the instrument, exclude the row, or add it manually.",
+      },
+      {
+        question: "What about duplicates?",
+        answer:
+          "Holdings that already match by provider symbol, ISIN or ticker+exchange are skipped on merge — never silently doubled.",
       },
       {
         question: "Where can I see supported instruments?",
@@ -215,19 +225,21 @@ export const HELP_CENTRE_SECTIONS: HelpCentreSection[] = [
     title: "Demo vs personal trial",
     questions: [
       {
-        question: "What is the Demo portfolio?",
+        question: "What is the Demo Portfolio?",
         answer:
-          "A showroom example so you can explore Tobailey with sample holdings. It is separate from your personal portfolio.",
+          "A ready-made, read-only example so you can explore Tobailey. It uses sample holdings only and does not become your personal portfolio.",
+        link: { href: "/explore", label: "Explore Demo Portfolio" },
       },
       {
-        question: "What is a personal trial?",
+        question: "What is the 7-day Personal Trial?",
         answer:
-          "Your own account and holdings. Demo data does not mix into a personal trial portfolio.",
+          "Your own editable account. It starts empty — no demo holdings, cash, goals or contribution history. Import or add holdings yourself.",
+        link: { href: "/signup?intent=trial", label: "Start 7-day Personal Trial" },
       },
       {
-        question: "Can I switch from Demo to my own holdings?",
+        question: "Can Demo and Personal Trial mix?",
         answer:
-          "Yes. Import or add your holdings when you are ready. Your personal portfolio stays yours.",
+          "No. Demo data stays in the demo experience. A Personal Trial never receives demo seeding.",
       },
     ],
   },

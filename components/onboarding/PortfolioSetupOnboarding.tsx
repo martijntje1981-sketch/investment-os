@@ -11,6 +11,7 @@ import {
 } from "@/components/layout/appSurface";
 import {
   DEMO_PORTFOLIO_ENABLED,
+  DEMO_PORTFOLIO_HREF,
   PORTFOLIO_SETUP_COPY,
   PORTFOLIO_SETUP_ROUTES,
   PORTFOLIO_SETUP_STEPS,
@@ -112,9 +113,12 @@ export function PortfolioSetupOnboarding({
 
           {DEMO_PORTFOLIO_ENABLED ? (
             <div className="mt-3">
-              <button type="button" className={tertiaryCtaClass} disabled>
+              <Link
+                href={DEMO_PORTFOLIO_HREF}
+                className={tertiaryCtaClass}
+              >
                 {PORTFOLIO_SETUP_COPY.demoTertiary}
-              </button>
+              </Link>
             </div>
           ) : null}
 

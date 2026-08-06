@@ -123,13 +123,16 @@ describe("supported portfolio input messaging", () => {
     expect(setup).not.toMatch(/screenshot upload|DEGIRO|Interactive Brokers/i);
   });
 
-  it("keeps demo portfolio feature-flagged off", () => {
-    expect(DEMO_PORTFOLIO_ENABLED).toBe(false);
+  it("offers Demo Portfolio as a separate tertiary explore link", () => {
+    expect(DEMO_PORTFOLIO_ENABLED).toBe(true);
     const onboarding = readProjectFile(
       "components/onboarding/PortfolioSetupOnboarding.tsx",
     );
+    const setup = readProjectFile("lib/client/portfolioSetup.ts");
     expect(onboarding).toContain("DEMO_PORTFOLIO_ENABLED");
-    expect(onboarding).not.toMatch(/href=.*demo/i);
+    expect(onboarding).toContain("DEMO_PORTFOLIO_HREF");
+    expect(setup).toContain('DEMO_PORTFOLIO_HREF = "/explore"');
+    expect(PORTFOLIO_SETUP_COPY.demoTertiary).toBe("Explore the Demo Portfolio");
   });
 
   it("routes primary actions to import and manual-add flows", () => {

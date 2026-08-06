@@ -62,4 +62,50 @@ describe("spreadsheetParser", () => {
     );
     expect(result.ok).toBe(true);
   });
+
+  it("rejects empty files with a clear next step", () => {
+    const result = validateSpreadsheetImportFile(
+      new File([], "portfolio.csv", { type: "text/csv" }),
+    );
+    expect(result.ok).toBe(false);
+    expect(result.message).toMatch(/empty/i);
+  });
+
+  it("normalises header variants and decimal separators", () => {
+    const buffer = sheetToBuffer([
+      {
+        Instrument: "ASML",
+        "Security Name": "ASML Holding",
+        MIC: "XAMS",
+        Qty: "10,5",
+        "Avg Price": "€620,25",
+        Currency: "EUR",
+      },
+    ]);
+    const rows = parseSpreadsheetBuffer(buffer);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.symbol).toBe("ASML");
+    expect(rows[0]?.name).toBe("ASML Holding");
+    expect(rows[0]?.exchange).toBe("XAMS");
+    expect(rows[0]?.quantity).toBe(10.5);
+    expect(rows[0]?.purchasePrice).toBe(620.25);
+  });
+
+  it("ignores totals and footer rows", () => {
+    const buffer = sheetToBuffer([
+      {
+        Ticker: "VWCE",
+        Name: "Vanguard FTSE All-World",
+        Quantity: "5",
+      },
+      {
+        Ticker: "TOTAL",
+        Name: "Total",
+        Quantity: "5",
+      },
+    ]);
+    const rows = parseSpreadsheetBuffer(buffer);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.symbol).toBe("VWCE");
+  });
 });
