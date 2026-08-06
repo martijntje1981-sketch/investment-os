@@ -67,7 +67,7 @@ describe("portfolio history UI", () => {
     expect(dialog).toContain("Invest in a holding");
     expect(dialog).toContain("destinationType");
     expect(dialog).toContain("does not change holding");
-    expect(exportSource).toContain('"Destination type"');
+    expect(exportSource).toContain('"Destination"');
     expect(exportSource).toContain('"Price per unit"');
     expect(exportSource).toContain("sanitizeExcelCellValue");
   });

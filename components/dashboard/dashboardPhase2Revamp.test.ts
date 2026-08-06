@@ -62,7 +62,7 @@ describe("dashboard phase 2 compact previews", () => {
     expect(summarySource).not.toContain("GoalProgressCard");
     expect(summarySource).toContain("PortfolioValueCard");
     expect(dashboardSource).toContain("DashboardSummary");
-    expect(dashboardSource).toContain("DashboardPortfolioPulseCard");
+    expect(dashboardSource).toContain("pulse={portfolioPulse}");
     expect(dashboardSource).not.toContain("DashboardPortfolioScorecard");
     expect(dashboardSource).not.toContain("DashboardGoalProgressCard");
   });
@@ -91,7 +91,7 @@ describe("dashboard phase 2 compact previews", () => {
   });
 
   it("places Portfolio Pulse above holdings and merged briefing below holdings", () => {
-    const pulseIdx = dashboardSource.indexOf("<DashboardPortfolioPulseCard");
+    const pulseIdx = dashboardSource.indexOf("pulse={portfolioPulse}");
     const holdingsIdx = dashboardSource.indexOf("<HoldingsToday");
     const briefingIdx = dashboardSource.indexOf(
       "<DashboardTodaysMarketBriefing",
@@ -161,7 +161,7 @@ describe("dashboard phase 2 compact previews", () => {
     expect(dividendIdx).toBeGreaterThan(holdingsIdx);
     expect(contributionsIdx).toBeGreaterThan(holdingsIdx);
     expect(dashboardSource).not.toContain("DashboardGoalProgressCard");
-    expect(dashboardSource).toContain("DashboardPortfolioPulseCard");
+    expect(dashboardSource).toContain("pulse={portfolioPulse}");
   });
 
   it("uses mobile-first stacked grids without horizontal scroll utilities", () => {

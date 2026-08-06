@@ -419,7 +419,8 @@ describe("Dashboard Portfolio Pulse wiring", () => {
     const scorecardPage = read(
       "components/portfolioHealth/PortfolioHealthPage.tsx",
     );
-    const pulse = read("components/dashboard/DashboardPortfolioPulseCard.tsx");
+    const pulse = read("components/dashboard/HeroPortfolioPulse.tsx");
+    const hero = read("components/dashboard/PortfolioValueCard.tsx");
     const ring = read("components/dashboard/DynamicScoreRing.tsx");
     const briefing = read(
       "components/dashboard/DashboardTodaysMarketBriefing.tsx",
@@ -427,31 +428,32 @@ describe("Dashboard Portfolio Pulse wiring", () => {
 
     expect(dashboard).not.toContain("DashboardPortfolioScorecard");
     expect(dashboard).not.toContain("buildPortfolioScorecard");
-    expect(dashboard).toContain("DashboardPortfolioPulseCard");
+    expect(dashboard).toContain("pulse={portfolioPulse}");
     expect(dashboard).toContain("buildPortfolioPulse");
     expect(dashboard).toContain("HoldingsToday");
     expect(dashboard).toContain("DashboardTodaysMarketBriefing");
     expect(dashboard).not.toContain("DashboardTodaysDecision");
     expect(dashboard).not.toContain("DashboardIntelligencePreview");
+    expect(dashboard).not.toContain("DashboardPortfolioPulseCard");
 
-    const pulseIdx = dashboard.indexOf("<DashboardPortfolioPulseCard");
+    const pulseIdx = dashboard.indexOf("pulse={portfolioPulse}");
     const holdingsIdx = dashboard.indexOf("<HoldingsToday");
     const briefingIdx = dashboard.indexOf("<DashboardTodaysMarketBriefing");
     expect(pulseIdx).toBeGreaterThan(-1);
     expect(holdingsIdx).toBeGreaterThan(pulseIdx);
     expect(briefingIdx).toBeGreaterThan(holdingsIdx);
-    expect(dashboard).toContain("flex min-w-0 flex-col gap-4 md:gap-5");
 
     expect(scorecardPage).toContain("buildPortfolioScorecard");
     expect(scorecardPage).toContain("ScoreRing");
-    expect(pulse).toContain("Open Portfolio Scorecard");
-    expect(pulse).toContain("Portfolio pulse");
+    expect(hero).toContain("HeroPortfolioPulse");
+    expect(pulse).toContain("Scorecard");
     expect(pulse).toContain("DASHBOARD_DEEP_LINKS.scorecard");
-    expect(pulse).toContain("size={88}");
-    expect(pulse).toContain("size={80}");
+    expect(pulse).toContain("size={64}");
+    expect(pulse).toContain("size={58}");
     expect(pulse).toContain('emphasis="primary"');
+    expect(pulse).toContain('appearance="onDark"');
     expect(ring).toContain('emphasis?: "primary" | "default"');
-    expect(ring).toContain("text-[8px]");
+    expect(ring).toContain('appearance?: "onLight" | "onDark"');
     expect(briefing).toContain("Today’s market briefing");
     expect(pulse).not.toContain("overflow-x-auto");
   });

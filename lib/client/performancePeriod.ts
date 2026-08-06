@@ -37,6 +37,8 @@ export type PortfolioMovePeriod = {
   primaryLabel: string;
   detail: string | null;
   sessionDateLabel: string | null;
+  /** Canonical YYYY-MM-DD session key when the book shares one close date. */
+  providerSessionKey?: string | null;
   accessibleDescription: string;
   hasExchangeTraded: boolean;
   hasNativeCrypto: boolean;
@@ -374,12 +376,14 @@ export function resolvePortfolioMovePeriod(
   // Exchange-traded only
   if (exchangeDateKeys.size === 1) {
     const sessionDateLabel = exchangeDateLabels[0]!;
+    const providerSessionKey = [...exchangeDateKeys][0]!;
     return {
       kind: "last_session",
       primaryLabel: `Last session · ${sessionDateLabel}`,
       detail: null,
       sessionDateLabel,
-      accessibleDescription: `Portfolio change for the last trading session on ${sessionDateLabel}.`,
+      providerSessionKey,
+      accessibleDescription: `Portfolio change versus the previous close for the last trading session on ${sessionDateLabel}.`,
       hasExchangeTraded: true,
       hasNativeCrypto: false,
       isMixed: false,
@@ -434,6 +438,27 @@ export function resolveHoldingsMoveColumnLabel(
 }
 
 /**
+ * Weekday possessive for market-close copy, e.g. "Friday's".
+ * Uses Amsterdam calendar day from a provider session timestamp.
+ */
+export function formatMarketCloseWeekdayPossessive(
+  providerTimestamp: string | null | undefined,
+): string | null {
+  if (!providerTimestamp?.trim()) return null;
+  const trimmed = providerTimestamp.trim();
+  const parsed = /^\d{4}-\d{2}-\d{2}$/.test(trimmed)
+    ? Date.parse(`${trimmed}T12:00:00+02:00`)
+    : Date.parse(trimmed);
+  if (!Number.isFinite(parsed)) return null;
+  const weekday = new Intl.DateTimeFormat("en-GB", {
+    timeZone: AMSTERDAM_TIME_ZONE,
+    weekday: "long",
+  }).format(new Date(parsed));
+  if (!weekday) return null;
+  return `${weekday}'s`;
+}
+
+/**
  * Short contextual line under the portfolio move figure.
  * Reflects actual composition — never invents live/today/session claims.
  */
@@ -441,21 +466,27 @@ export function formatPortfolioMovePeriodContextLine(
   period: PortfolioMovePeriod,
 ): string {
   if (period.kind === "mixed") {
-    return "Exchange-traded: last session · Crypto: 24h";
+    return "Previous close for listed holdings · Crypto: 24h";
   }
   if (period.kind === "rolling_24h") {
-    return "Crypto: 24h";
+    return "Based on the last 24 hours";
   }
   if (period.kind === "last_session") {
+    const weekday = formatMarketCloseWeekdayPossessive(
+      period.providerSessionKey ?? null,
+    );
+    if (weekday) {
+      return `Based on ${weekday} market close`;
+    }
     return period.sessionDateLabel
-      ? `Exchange-traded: last session · ${period.sessionDateLabel}`
-      : "Exchange-traded: last session";
+      ? `Based on ${period.sessionDateLabel} market close`
+      : "Based on the previous market close";
   }
   if (period.kind === "latest_sessions") {
-    return "Exchange-traded: latest sessions";
+    return "Based on the latest available market closes";
   }
   if (period.kind === "latest_available") {
-    return "Latest available";
+    return "Latest available prices — not a live quote";
   }
   return "Movement period unavailable";
 }

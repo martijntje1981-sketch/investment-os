@@ -430,7 +430,7 @@ describe("Dashboard Portfolio Pulse + Scorecard page wiring", () => {
     const pulse = readFileSync(
       path.resolve(
         process.cwd(),
-        "components/dashboard/DashboardPortfolioPulseCard.tsx",
+        "components/dashboard/HeroPortfolioPulse.tsx",
       ),
       "utf8",
     );
@@ -452,12 +452,12 @@ describe("Dashboard Portfolio Pulse + Scorecard page wiring", () => {
       ),
       "utf8",
     );
-    expect(dashboard).toContain("DashboardPortfolioPulseCard");
+    expect(dashboard).toContain("pulse={portfolioPulse}");
     expect(dashboard).not.toContain("DashboardPortfolioScorecard");
     expect(dashboard).not.toContain("DashboardGoalProgressCard");
     expect(dashboard).not.toContain("DashboardPortfolioHealthCard");
     expect(pulse).toContain("DynamicScoreRing");
-    expect(pulse).toContain("Open Portfolio Scorecard");
+    expect(pulse).toContain("Scorecard");
     expect(scorecard).toContain("ScoreRing");
     expect(scorecard).toContain("grid-cols-2");
     expect(scorecard).toContain("lg:grid-cols-4");

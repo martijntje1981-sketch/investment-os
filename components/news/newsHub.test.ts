@@ -44,7 +44,7 @@ describe("news hub UI structure", () => {
     expect(newsPage).toContain("BottomNavigation");
     expect(newsPage).toContain("PageContainer");
     expect(newsPage).toContain("PageHero");
-    expect(newsPage).toContain("Market Intelligence");
+    expect(newsPage).toContain('title="News"');
   });
 
   it("uses a premium light portfolio intelligence card with readable headings", () => {
@@ -133,7 +133,7 @@ describe("news safety boundaries", () => {
     );
 
     expect(newsPage).toContain("NewsHubContent");
-    expect(newsPage).not.toContain("Portfolio Analysis");
-    expect(analysisPage).toContain("Portfolio Analysis");
+    expect(newsPage).not.toContain('title="Analysis"');
+    expect(analysisPage).toContain('title="Analysis"');
   });
 });

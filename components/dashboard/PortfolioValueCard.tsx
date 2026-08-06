@@ -5,6 +5,7 @@ import { Minus, TrendingDown, TrendingUp } from "lucide-react";
 
 import { ConversionDetailsDisclosure } from "@/components/currency/ConversionDetailsDisclosure";
 import { HeroTrendMicroVisual } from "@/components/dashboard/DashboardHeroIntelligence";
+import { HeroPortfolioPulse } from "@/components/dashboard/HeroPortfolioPulse";
 import { RefreshPricesButton } from "@/components/portfolio/RefreshPricesButton";
 import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 import type { HeroMover } from "@/lib/client/dailyPerformance";
@@ -28,6 +29,7 @@ import {
 } from "@/components/layout/appSurface";
 import type { DashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
 import { holdingDetailPath } from "@/lib/navigation/appRoutes";
+import type { PortfolioPulseResult } from "@/lib/services/portfolio/periodScores";
 
 function signedPercent(value: number) {
   const formatted = formatPortfolioPercent(Math.abs(value));
@@ -71,8 +73,9 @@ function MoverItem({
   return (
     <Link
       href={href}
+      prefetch
       className={`block min-w-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:ring-offset-2 focus-visible:ring-offset-navy-hero ${appDarkInsetClass} px-2.5 py-2`}
-      aria-label={`${label}: ${displayName}, ${signedPercent(mover.changePercent)}`}
+      aria-label={`${label}: ${displayName}, ${signedPercent(mover.changePercent)}. ${mover.changePeriodAccessibleDescription}`}
       title={displayName}
     >
       <p className={appHeroMetricLabelClass}>{label}</p>
@@ -123,7 +126,7 @@ function MoversSection({ snapshot }: { snapshot: DashboardPortfolioSnapshot }) {
       aria-label="Portfolio movers"
     >
       <MoverItem
-        label="Top mover"
+        label="Biggest mover"
         mover={snapshot.heroTopMover}
         tone="positive"
       />
@@ -144,16 +147,17 @@ function MoversSection({ snapshot }: { snapshot: DashboardPortfolioSnapshot }) {
 }
 
 /**
- * Focused portfolio hero — value, move, movers, quiet refresh.
- * Supporting intelligence cards live outside this shell.
+ * Premium black portfolio hero — value, move, movers, compact pulse.
  */
 export function PortfolioValueCard({
   snapshot,
   refresh,
   welcomeFirstName = null,
+  pulse = null,
 }: {
   snapshot: DashboardPortfolioSnapshot;
   welcomeFirstName?: string | null;
+  pulse?: PortfolioPulseResult | null;
   refresh?: {
     onRefresh: () => void;
     isRefreshing: boolean;
@@ -182,10 +186,18 @@ export function PortfolioValueCard({
     ? `Updated ${formatAmsterdamPriceRefreshTime(refresh.liveRefreshAt)}`
     : `Updated ${formatMarketUpdateTime(snapshot.lastUpdatedAt)}`;
 
+  const priceBasisLabel = showMove
+    ? snapshot.dailyMoveContextLine
+    : (snapshot.dailyPerformanceCoverageMessage ??
+      "Movement period unavailable");
+
+  const isStaleDisplay = Boolean(snapshot.isStale && !refresh?.liveRefreshAt);
+
   return (
     <article
       aria-label="Portfolio value"
       className={`relative overflow-hidden ${appHeroShellClass}`}
+      data-testid="dashboard-portfolio-hero"
     >
       <div className={`relative min-w-0 ${appHeroPaddingCompactClass}`}>
         <div className="flex items-start justify-between gap-3">
@@ -203,56 +215,66 @@ export function PortfolioValueCard({
           ) : null}
         </div>
 
-        <div className="mt-2.5 min-w-0 md:mt-2">
-          <p className={appHeroMetricLabelClass}>Portfolio value</p>
-          <p className={`mt-1 break-words text-white ${appDisplayClass}`}>
-            {snapshot.portfolioValueAvailable
-              ? formatEur(snapshot.portfolioValue)
-              : "Unavailable"}
-          </p>
-          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
-            <ConversionDetailsDisclosure compactTrigger tone="dark" />
-            {snapshot.portfolioValueCoverageMessage ? (
-              <p className="text-[12px] font-medium text-white/50">
-                {snapshot.portfolioValueCoverageMessage}
-              </p>
-            ) : null}
-          </div>
-        </div>
-
-        <div className="mt-2.5 min-w-0 border-t border-white/10 pt-2.5 md:mt-2 md:pt-2.5">
-          <p className={appHeroMetricLabelClass}>Latest portfolio move</p>
-          <div className="mt-1 flex min-w-0 flex-wrap items-end justify-between gap-x-3 gap-y-2 md:mt-1.5">
-            <div className="min-w-0 flex-1">
-              <p
-                className={`flex flex-wrap items-baseline gap-x-2.5 gap-y-1 ${appHeroMatchedKpiClass} ${moveTone}`}
-                title={snapshot.dailyMoveAccessibleDescription}
-              >
-                <span>{showMove ? amountLabel : "Change unavailable"}</span>
-                {showMove && percentLabel ? (
-                  <span className="opacity-90">{percentLabel}</span>
-                ) : null}
-              </p>
-              <p className="mt-1 text-[12px] font-medium leading-snug text-white/50">
-                {showMove
-                  ? snapshot.dailyMoveContextLine
-                  : (snapshot.dailyPerformanceCoverageMessage ??
-                    "Movement period unavailable")}
-              </p>
+        <div className="mt-3 min-w-0 lg:grid lg:grid-cols-[minmax(0,1.35fr)_minmax(11rem,0.65fr)] lg:items-start lg:gap-5">
+          <div className="min-w-0">
+            <p className={appHeroMetricLabelClass}>Portfolio value</p>
+            <p className={`mt-1 break-words text-white ${appDisplayClass}`}>
+              {snapshot.portfolioValueAvailable
+                ? formatEur(snapshot.portfolioValue)
+                : "Unavailable"}
+            </p>
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+              <ConversionDetailsDisclosure compactTrigger tone="dark" />
+              {snapshot.portfolioValueCoverageMessage ? (
+                <p className="text-[12px] font-medium text-white/50">
+                  {snapshot.portfolioValueCoverageMessage}
+                </p>
+              ) : null}
             </div>
-            <HeroTrendMicroVisual direction={trendDirection} />
+
+            <div className="mt-3 min-w-0 border-t border-white/10 pt-3">
+              <p className={appHeroMetricLabelClass}>Latest move</p>
+              <div className="mt-1 flex min-w-0 flex-wrap items-end justify-between gap-x-3 gap-y-2">
+                <div className="min-w-0 flex-1">
+                  <p
+                    className={`flex flex-wrap items-baseline gap-x-2.5 gap-y-1 ${appHeroMatchedKpiClass} ${moveTone}`}
+                    title={snapshot.dailyMoveAccessibleDescription}
+                  >
+                    <span>{showMove ? amountLabel : "Change unavailable"}</span>
+                    {showMove && percentLabel ? (
+                      <span className="opacity-90">{percentLabel}</span>
+                    ) : null}
+                  </p>
+                  <p className="mt-1 text-[12px] font-medium leading-snug text-white/50">
+                    {priceBasisLabel}
+                  </p>
+                </div>
+                <HeroTrendMicroVisual direction={trendDirection} />
+              </div>
+            </div>
           </div>
+
+          {pulse ? (
+            <div className="mt-3 border-t border-white/10 pt-3 lg:mt-0 lg:border-t-0 lg:border-l lg:border-white/10 lg:pl-5 lg:pt-0">
+              <HeroPortfolioPulse pulse={pulse} />
+            </div>
+          ) : null}
         </div>
 
-        <div className="mt-2.5 border-t border-white/10 pt-2.5 md:mt-2 md:grid md:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] md:items-start md:gap-4 md:pt-2.5">
+        <div className="mt-3 border-t border-white/10 pt-3">
           <MoversSection snapshot={snapshot} />
-          <div className="mt-2.5 flex items-center justify-between gap-2 md:mt-0 md:justify-end md:self-end">
-            <p className="text-[12px] font-medium text-white/50 md:text-right">
-              {snapshot.isStale && !refresh?.liveRefreshAt
-                ? "Stale prices · "
-                : null}
+          <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2">
+            <p className="text-[12px] font-medium text-white/50">
+              {isStaleDisplay ? (
+                <span className="text-amber-200/90">Previous close · </span>
+              ) : null}
               {updatedLabel}
             </p>
+            {isStaleDisplay ? (
+              <p className="text-[11px] font-medium text-white/40">
+                Not a live quote
+              </p>
+            ) : null}
           </div>
         </div>
 
@@ -266,7 +288,9 @@ export function PortfolioValueCard({
             aria-live="polite"
             data-refresh-feedback={refresh.status}
           >
-            {refresh.message}
+            {refresh.status === "error"
+              ? "Prices could not be refreshed. Your last available figures remain visible."
+              : refresh.message}
           </p>
         ) : null}
       </div>

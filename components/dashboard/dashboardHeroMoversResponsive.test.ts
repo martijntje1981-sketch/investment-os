@@ -34,7 +34,7 @@ describe("Dashboard hero movers responsive layout", () => {
     );
 
     expect(source).toContain("grid-cols-2");
-    expect(source).toContain("Top mover");
+    expect(source).toContain("Biggest mover");
     expect(source).toContain("Weakest mover");
   });
 

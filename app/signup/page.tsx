@@ -258,9 +258,16 @@ export default async function SignupPage({
 
             <p className="mt-6 text-center text-xs leading-5 text-slate-500">
               {isPersonalTrial
-                ? "Start a clean 7-day Premium trial with your own portfolio. Then €7.99 per month."
-                : "Create your personal account. Preview the Demo Portfolio on Explore anytime. Then €7.99 per month."}
+                ? "Personal trial starts empty — import or add holdings yourself. Then €7.99 per month."
+                : "Prefer a read-only example first? Explore Demo Portfolio. Personal trial starts empty."}
             </p>
+            {!isPersonalTrial ? (
+              <p className="mt-3 text-center text-xs font-semibold text-slate-600">
+                <Link href="/explore" className="text-blue-700 hover:text-blue-900">
+                  Explore Demo Portfolio
+                </Link>
+              </p>
+            ) : null}
           </div>
         </section>
 

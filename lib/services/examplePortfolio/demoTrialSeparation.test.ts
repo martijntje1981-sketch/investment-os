@@ -42,11 +42,12 @@ describe("Explore Demo showroom", () => {
     expect(explore).toContain('"/signup?intent=trial"');
     expect(explore).toContain("Create your own portfolio");
     expect(explore).toContain("create-own-portfolio-cta");
-    expect(explore).toContain("Start 7-day trial");
+    expect(explore).toContain("Start your 7-day trial");
     expect(explore).toContain("start-trial-cta");
 
     const steps = read("components/example/TrialStepsCard.tsx");
     expect(steps).toContain("/signup?intent=trial");
+    expect(steps).toContain("Start your 7-day trial");
   });
 });
 

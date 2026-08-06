@@ -48,9 +48,9 @@ describe("dashboard portfolio value widget", () => {
     expect(summarySource).not.toContain("TodayCard");
     expect(summarySource).not.toContain("DashboardHeroMovers");
     expect(summarySource).not.toContain("welcome ?");
-    expect(valueSource).toContain("Latest portfolio move");
+    expect(valueSource).toContain("Latest move");
     expect(valueSource).toContain("dailyMoveContextLine");
-    expect(valueSource).toContain("Top mover");
+    expect(valueSource).toContain("Biggest mover");
     expect(valueSource).toContain("Weakest mover");
     expect(valueSource).not.toContain("Lowest mover");
     expect(valueSource).toContain("Welcome back");
@@ -72,7 +72,7 @@ describe("dashboard portfolio value widget", () => {
           holding({ symbol: "BTC", assetType: "crypto" }),
         ]),
       ),
-    ).toBe("Exchange-traded: last session · Crypto: 24h");
+    ).toBe("Previous close for listed holdings · Crypto: 24h");
 
     expect(
       formatPortfolioMovePeriodContextLine(
@@ -80,7 +80,7 @@ describe("dashboard portfolio value widget", () => {
           holding({ symbol: "BTC", assetType: "crypto" }),
         ]),
       ),
-    ).toBe("Crypto: 24h");
+    ).toBe("Based on the last 24 hours");
 
     expect(
       formatPortfolioMovePeriodContextLine(
@@ -91,7 +91,7 @@ describe("dashboard portfolio value widget", () => {
           }),
         ]),
       ),
-    ).toBe("Exchange-traded: last session · Jul 24");
+    ).toBe("Based on Friday's market close");
 
     expect(
       formatPortfolioMovePeriodContextLine(
@@ -123,7 +123,7 @@ describe("dashboard portfolio value widget", () => {
       false,
     );
     expect(mixed.dailyMoveContextLine).toBe(
-      "Exchange-traded: last session · Crypto: 24h",
+      "Previous close for listed holdings · Crypto: 24h",
     );
     expect(mixed.dailyMoveHeroLabel).toBe("Latest portfolio move");
 
@@ -142,7 +142,7 @@ describe("dashboard portfolio value widget", () => {
     );
     expect(flat.hasDailyData).toBe(true);
     expect(flat.todayChange).toBe(0);
-    expect(flat.dailyMoveContextLine).toContain("Exchange-traded");
+    expect(flat.dailyMoveContextLine).toMatch(/market close|Previous close/i);
   });
 
   it("uses matched KPI typography for portfolio value and latest move", () => {

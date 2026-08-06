@@ -46,7 +46,7 @@ describe("example portfolio entry surface", () => {
     expect(explore).toContain("Recommended");
     expect(explore).toContain('id: "global"');
     expect(explore).toContain("Create your own portfolio");
-    expect(explore).toContain("Start 7-day trial");
+    expect(explore).toContain("Start your 7-day trial");
     expect(explore).toContain("/signup?intent=trial");
     expect(explore).toContain("Open Demo Portfolio");
     expect(explore).toContain("No credit card required");
@@ -322,10 +322,11 @@ describe("example expiry enforcement", () => {
     expect(banner).toContain("TRIAL_UPGRADE_HREF");
     expect(banner).toContain("/api/example-portfolio/status");
     expect(banner).toContain('cache: "no-store"');
-    expect(header).toContain("Explore free for 7 days");
-    expect(header).toContain('href="/explore"');
+    expect(header).toContain("Start your 7-day trial");
+    expect(header).toContain("/signup?intent=trial");
     expect(header).not.toMatch(/24-?hour|24h trial/i);
-    expect(home).toContain("Explore free for 7 days");
+    expect(home).toContain("Start your 7-day trial");
+    expect(home).toContain("Explore Demo Portfolio");
     expect(home).not.toMatch(/24-?hour free trial/i);
     expect(expired).toContain("Your Premium trial has ended");
     expect(expired).toContain("Export Portfolio History");

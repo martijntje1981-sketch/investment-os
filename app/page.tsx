@@ -211,10 +211,10 @@ export default async function MarketingHomePage({
 
               <div className="mt-9 flex flex-col gap-3 sm:flex-row">
                 <Link
-                  href="/upload"
+                  href="/signup?intent=trial"
                   className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand px-6 py-4 text-sm font-bold text-brand-navy shadow-lg transition hover:-translate-y-0.5 hover:bg-brand-hover"
                 >
-                  Start with your portfolio
+                  Start your 7-day trial
                   <ArrowRight className="h-4 w-4" />
                 </Link>
 
@@ -222,10 +222,14 @@ export default async function MarketingHomePage({
                   href="/explore"
                   className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-4 text-sm font-bold text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-50"
                 >
-                  Explore Tobailey
+                  Explore Demo Portfolio
                   <ChevronRight className="h-4 w-4" />
                 </Link>
               </div>
+              <p className="mt-3 max-w-xl text-sm leading-6 text-slate-500">
+                View a ready-made example portfolio, or start your own empty
+                portfolio.
+              </p>
 
               <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3">
                 <TrustPoint text="No financial advice" />
@@ -544,15 +548,22 @@ export default async function MarketingHomePage({
                 </p>
 
                 <Link
-                  href="/explore"
+                  href="/signup?intent=trial"
                   className="mt-9 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand px-6 py-4 text-sm font-bold text-brand-navy transition hover:bg-brand-hover"
                 >
-                  Explore free for 7 days
+                  Start your 7-day trial
                   <ArrowRight className="h-4 w-4" />
+                </Link>
+                <Link
+                  href="/explore"
+                  className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3.5 text-sm font-bold text-slate-800 transition hover:bg-slate-50"
+                >
+                  Explore Demo Portfolio
                 </Link>
 
                 <p className="mt-4 text-center text-xs leading-5 text-slate-500">
-                  Then €7.99 per month. Cancel anytime.
+                  Demo is read-only. Personal trial starts empty. Then €7.99 per
+                  month. Cancel anytime.
                 </p>
               </div>
             </div>
@@ -641,11 +652,17 @@ export default async function MarketingHomePage({
 
               <div className="flex shrink-0 flex-col gap-3">
                 <Link
-                  href="/explore"
+                  href="/signup?intent=trial"
                   className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-6 py-4 text-sm font-bold text-slate-950 shadow-lg"
                 >
-                  Explore free for 7 days
+                  Start your 7-day trial
                   <ArrowRight className="h-4 w-4" />
+                </Link>
+                <Link
+                  href="/explore"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/10 px-6 py-3.5 text-sm font-bold text-white"
+                >
+                  Explore Demo Portfolio
                 </Link>
 
                 <a

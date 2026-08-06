@@ -24,13 +24,13 @@ describe("Phase 1 dashboard UI refinement", () => {
     expect(hero).not.toContain("HeroTopStoryPreviewCard");
     expect(hero).not.toContain("buildHeroHealthPreview");
     expect(hero).not.toContain("buildHeroTopStoryPreview");
-    expect(dashboard).toContain("DashboardPortfolioPulseCard");
+    expect(dashboard).toContain("pulse={portfolioPulse}");
     expect(dashboard).not.toContain("DashboardPortfolioScorecard");
     expect(dashboard).not.toContain("DashboardPortfolioHealthCard");
     expect(dashboard).toContain("DashboardCashIntelligenceCard");
     expect(dashboard).not.toContain("DashboardTopStoryCard");
     expect(dashboard.indexOf("<DashboardSummary")).toBeLessThan(
-      dashboard.indexOf("<DashboardPortfolioPulseCard"),
+      dashboard.indexOf("pulse={portfolioPulse}"),
     );
     expect(dashboard.indexOf("<DashboardSummary")).toBeLessThan(
       dashboard.indexOf("<DashboardCashIntelligenceCard"),

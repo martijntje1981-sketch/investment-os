@@ -63,7 +63,7 @@ describe("premium navigation and visual discovery", () => {
     expect(globals).toContain("--navy-hero-lift:");
     expect(globals).toContain("--background: #eef3f8");
     expect(surface).toContain("appTintedPanelClass");
-    expect(surface).toContain("navy-hero-lift");
+    expect(surface).toContain("bg-navy-hero");
     expect(pageHero).toContain("appHeroShellClass");
     expect(pageHero).toContain("py-4");
   });

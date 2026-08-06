@@ -203,6 +203,7 @@ export default function ExplorePage() {
         <section
           className={`${appCardClass} ${appCardPaddingClass}`}
           aria-labelledby="explore-demo-heading"
+          id="demo-portfolio-showroom"
           data-testid="demo-portfolio-showroom"
         >
           <div className="flex items-start gap-3">
@@ -309,22 +310,22 @@ export default function ExplorePage() {
             <Link
               href={PERSONAL_TRIAL_SIGNUP_HREF}
               className={appSolidButtonClass}
-              data-testid="create-own-portfolio-cta"
+              data-testid="start-trial-cta"
             >
-              Create your own portfolio
+              Start your 7-day trial
               <ArrowRight className="h-4 w-4" aria-hidden />
             </Link>
             <Link
               href={PERSONAL_TRIAL_SIGNUP_HREF}
               className={appBrandSoftButtonClass}
-              data-testid="start-trial-cta"
+              data-testid="create-own-portfolio-cta"
             >
-              Start 7-day trial
+              Create your own portfolio
             </Link>
           </div>
           <p className={`mt-3 ${appSectionMetaClass}`}>
-            A personal trial starts empty — no demo holdings, goals, history or
-            cash.
+            Demo Portfolio: view an example, read-only experience. Personal trial:
+            create and edit your own portfolio, starting empty.
           </p>
         </section>
 
@@ -427,7 +428,7 @@ export default function ExplorePage() {
                   onClick={backToSignIn}
                   className={`w-full ${appBrandSoftButtonClass}`}
                 >
-                  Back
+                  Back to sign in
                 </button>
               </div>
             ) : view === "recovery" ? (
@@ -501,7 +502,7 @@ export default function ExplorePage() {
                   onClick={backToSignIn}
                   className={`w-full ${appBrandSoftButtonClass}`}
                 >
-                  Back
+                  Back to sign in
                 </button>
 
                 <p className={`text-center ${appSectionMetaClass}`}>
@@ -510,7 +511,7 @@ export default function ExplorePage() {
                     href={PERSONAL_TRIAL_SIGNUP_HREF}
                     className="font-semibold text-blue-700 hover:text-blue-900"
                   >
-                    Start 7-day trial
+                    Start your 7-day trial
                   </Link>
                 </p>
               </div>

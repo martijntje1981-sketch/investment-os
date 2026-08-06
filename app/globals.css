@@ -17,16 +17,16 @@
   --brand-text: #0b1f3a;
 
   /*
-   * Midnight-navy surface hierarchy (authenticated UI).
-   * Slightly softer than pure ink while keeping strong contrast.
+   * Near-black surface hierarchy (authenticated UI).
+   * Premium black/white foundation; brand blue stays an accent only.
    */
-  --navy-hero: #12304f;
-  --navy-hero-lift: #1a3d62;
-  --navy-hero-deep: #0c243c;
-  --navy-card: #183555;
+  --navy-hero: #0a0a0a;
+  --navy-hero-lift: #141414;
+  --navy-hero-deep: #050505;
+  --navy-card: #121212;
   --navy-inset: rgba(255, 255, 255, 0.06);
   --navy-border: rgba(255, 255, 255, 0.1);
-  --navy-shadow: 0 16px 40px rgba(11, 31, 58, 0.2);
+  --navy-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
 
   /* Semantic finance colors — do not replace with brand blue */
   --accent-green: #16a34a;

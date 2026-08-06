@@ -400,6 +400,6 @@ describe("portfolio move context line", () => {
           holding({ symbol: "BTC", assetType: "crypto" }),
         ]),
       ),
-    ).toBe("Exchange-traded: last session · Crypto: 24h");
+    ).toBe("Previous close for listed holdings · Crypto: 24h");
   });
 });

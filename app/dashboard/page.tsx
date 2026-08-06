@@ -10,7 +10,6 @@ import { DashboardContributionsCard } from "@/components/contributions/Dashboard
 import { DashboardTodaysMarketBriefing } from "@/components/dashboard/DashboardTodaysMarketBriefing";
 import { DashboardMarketPulseCard } from "@/components/dashboard/DashboardMarketPulseCard";
 import { DashboardSummary } from "@/components/dashboard/DashboardSummary";
-import { DashboardPortfolioPulseCard } from "@/components/dashboard/DashboardPortfolioPulseCard";
 import { DashboardExploreTools } from "@/components/dashboard/DashboardExploreTools";
 import { PortfolioHistoryNavCard } from "@/components/portfolioHistory/PortfolioHistoryNavCard";
 import { DashboardFirstRunCue } from "@/components/dashboard/DashboardFirstRunCue";
@@ -236,10 +235,11 @@ export default function DashboardPage() {
             </>
           ) : null}
 
-          {/* 1. Portfolio hero */}
+          {/* 1. Portfolio hero (value + move + movers + pulse) */}
           <DashboardSummary
             snapshot={snapshot}
             welcomeFirstName={firstName}
+            pulse={portfolioPulse}
             refresh={{
               onRefresh: () => void refreshPrices(),
               isRefreshing,
@@ -250,13 +250,8 @@ export default function DashboardPage() {
             }}
           />
 
-          {/* 2–3. Portfolio Pulse + Your Holdings (tight stack) */}
-          <div className="flex min-w-0 flex-col gap-4 md:gap-5">
-            {portfolioPulse ? (
-              <DashboardPortfolioPulseCard pulse={portfolioPulse} />
-            ) : null}
-            <HoldingsToday snapshot={snapshot} />
-          </div>
+          {/* 2. Your Holdings */}
+          <HoldingsToday snapshot={snapshot} />
           {/* 4. Combined Today’s market briefing */}
           <DashboardTodaysMarketBriefing
             intelligence={intelligence}

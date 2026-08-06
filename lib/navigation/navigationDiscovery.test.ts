@@ -91,10 +91,10 @@ describe("navigation discovery", () => {
     const bottom = read("components/home/BottomNav.tsx");
 
     expect(banner).toContain("example-portfolio-banner");
-    expect(banner).toContain("Keep my portfolio");
-    expect(banner).toContain("EXAMPLE_KEEP_PORTFOLIO_HREF");
+    expect(banner).toContain("Upgrade");
+    expect(banner).toContain("TRIAL_UPGRADE_HREF");
     expect(menu).not.toContain("example-portfolio-banner");
-    expect(bottom).not.toContain("Keep my portfolio");
+    expect(bottom).not.toContain("example-portfolio-banner");
   });
 
   it("wires contextual discovery links to existing routes", () => {

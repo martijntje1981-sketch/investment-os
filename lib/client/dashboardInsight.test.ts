@@ -148,9 +148,9 @@ describe("home and dashboard hierarchy", () => {
     );
 
     expect(dashboard.indexOf("<DashboardSummary")).toBeLessThan(
-      dashboard.indexOf("<DashboardPortfolioPulseCard"),
+      dashboard.indexOf("pulse={portfolioPulse}"),
     );
-    expect(dashboard.indexOf("<DashboardPortfolioPulseCard")).toBeLessThan(
+    expect(dashboard.indexOf("pulse={portfolioPulse}")).toBeLessThan(
       dashboard.indexOf("<HoldingsToday"),
     );
     expect(dashboard.indexOf("<HoldingsToday")).toBeLessThan(
@@ -162,7 +162,7 @@ describe("home and dashboard hierarchy", () => {
     expect(dashboard).not.toContain("BottomNavigation");
     expect(dashboard).toContain("buildPortfolioPulse");
     expect(dashboard).not.toContain("DashboardInsightCard");
-    expect(dashboard).toContain("DashboardPortfolioPulseCard");
+    expect(dashboard).toContain("pulse={portfolioPulse}");
     expect(dashboard).not.toContain("DashboardPortfolioScorecard");
     expect(summary).toContain("PortfolioValueCard");
     expect(summary).not.toContain("GoalProgressCard");

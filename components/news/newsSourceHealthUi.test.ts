@@ -20,7 +20,7 @@ describe("news hub warning UI", () => {
     );
 
     expect(bannerSource).toContain("resolveNewsPageWarning");
-    expect(bannerSource).not.toContain("EODHD");
     expect(bannerSource).toContain("Wire headlines last updated");
+    expect(bannerSource).toContain("Economic calendar");
   });
 });

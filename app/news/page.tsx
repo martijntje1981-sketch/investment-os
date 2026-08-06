@@ -39,11 +39,11 @@ export default function NewsPage() {
     <>
       <PageContainer>
         <PageHero
-          title="Market Intelligence"
+          title="News"
           subtitle={
             audience === "authenticated_holdings"
-              ? "Personalized news, market developments and events relevant to your portfolio."
-              : "General market news and developments. Add holdings to prioritise what matters to your portfolio."
+              ? "Markets and portfolio-relevant intelligence."
+              : "General market news. Add holdings to personalise."
           }
           backToDashboard={Boolean(userSub)}
         />

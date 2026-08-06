@@ -103,10 +103,10 @@ describe("Dashboard UX polish phase", () => {
   it("places Cash Intelligence after Portfolio Pulse without duplicating Health", () => {
     expect(dashboard).not.toContain("DashboardTopStoryCard");
     expect(dashboard).toContain("DashboardCashIntelligenceCard");
-    expect(dashboard).toContain("DashboardPortfolioPulseCard");
+    expect(dashboard).toContain("pulse={portfolioPulse}");
     expect(dashboard).not.toContain("DashboardPortfolioScorecard");
     expect(dashboard).not.toContain("DashboardPortfolioHealthCard");
-    const pulseIdx = dashboard.indexOf("<DashboardPortfolioPulseCard");
+    const pulseIdx = dashboard.indexOf("pulse={portfolioPulse}");
     const cashIdx = dashboard.indexOf(
       "<DashboardCashIntelligenceCard holdings={holdings} />",
     );
@@ -169,7 +169,7 @@ describe("Dashboard UX polish phase", () => {
     expect(dashboard).not.toContain("usePortfolioInsight");
     expect(dashboard).not.toContain("DashboardInsightCard");
     expect(dashboard).toContain("buildPortfolioPulse");
-    expect(dashboard).toContain("DashboardPortfolioPulseCard");
+    expect(dashboard).toContain("pulse={portfolioPulse}");
   });
 
   it("keeps Cash Intelligence metrics and Analysis deep link", () => {
@@ -183,7 +183,7 @@ describe("Dashboard UX polish phase", () => {
 
   it("orders hero, Portfolio Pulse, holdings, briefing, then cash", () => {
     const summaryIdx = dashboard.indexOf("<DashboardSummary");
-    const pulseIdx = dashboard.indexOf("<DashboardPortfolioPulseCard");
+    const pulseIdx = dashboard.indexOf("pulse={portfolioPulse}");
     const holdingsIdx = dashboard.indexOf("<HoldingsToday");
     const briefingIdx = dashboard.indexOf("<DashboardTodaysMarketBriefing");
     const cashIdx = dashboard.indexOf("<DashboardCashIntelligenceCard");

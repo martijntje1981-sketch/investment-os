@@ -134,8 +134,9 @@ describe("first-run dashboard wiring", () => {
     const surface = read("components/layout/appSurface.ts");
     const hero = read("components/dashboard/PortfolioValueCard.tsx");
     expect(surface).toContain("appTintedPanelClass");
-    expect(surface).toContain("navy-hero-lift");
+    expect(surface).toContain("bg-navy-hero");
     expect(hero).toContain("HeroTrendMicroVisual");
     expect(hero).toContain("MoversSection");
+    expect(hero).toContain("HeroPortfolioPulse");
   });
 });

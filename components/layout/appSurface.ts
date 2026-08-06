@@ -40,11 +40,11 @@ export const appSectionBandClass =
 
 /* ── Dark navy hierarchy ─────────────────────────────────── */
 
-/** Primary hero — midnight navy with a quiet blue tonal lift. */
+/** Primary hero — near-black premium shell (no decorative gradient). */
 export const appHeroShellClass =
-  "min-w-0 overflow-hidden rounded-[28px] border border-white/10 bg-[linear-gradient(155deg,var(--navy-hero-lift)_0%,var(--navy-hero)_52%,var(--navy-hero-deep)_100%)] text-white shadow-[var(--navy-shadow)] md:rounded-[32px]";
+  "min-w-0 overflow-hidden rounded-[28px] border border-white/10 bg-navy-hero text-white shadow-[var(--navy-shadow)] md:rounded-[32px]";
 
-/** Important dark card — slightly lighter navy. */
+/** Important dark card — slightly lifted near-black. */
 export const appDarkCardClass =
   "min-w-0 overflow-hidden rounded-[24px] border border-white/10 bg-navy-card text-white shadow-[var(--navy-shadow)] md:rounded-[28px]";
 
@@ -63,7 +63,7 @@ export const appDarkCardPaddingClass = "px-4 py-5 md:px-6 md:py-6";
 
 /** Dominant hero portfolio value. */
 export const appDisplayClass =
-  "max-w-full break-words text-[2rem] font-bold leading-none tracking-[-0.04em] tabular-nums sm:text-[2.5rem] md:text-[2.75rem]";
+  "max-w-full break-words text-[2.25rem] font-bold leading-none tracking-[-0.045em] tabular-nums sm:text-[2.75rem] md:text-[3.25rem]";
 
 /** Matched KPI size for secondary hero metrics (move). */
 export const appHeroMatchedKpiClass =

@@ -1,10 +1,17 @@
 /**
  * React wiring for Portfolio / Dashboard "Refresh prices" controls.
  * Callers must pass the same useUserPortfolio holdings/saveHoldings instance.
+ *
+ * Also runs one controlled app-entry / tab-return refresh when data is stale,
+ * reusing the same action + cooldown / in-flight guards (no duplicate paths).
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import {
+  APP_ENTRY_VISIBILITY_MIN_GAP_MS,
+  shouldRunAppEntryPortfolioRefresh,
+} from "@/lib/client/appEntryPortfolioRefresh";
 import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 import type { CryptoRefreshDiagnosticRecord } from "@/lib/client/cryptoRefreshDiagnostics";
 import { readLastLivePriceRefreshAt } from "@/lib/client/livePortfolioPriceRefresh";
@@ -45,6 +52,10 @@ export function useLivePortfolioPriceRefresh({
   >(null);
   const [showRefreshDiagnostics, setShowRefreshDiagnostics] = useState(false);
   const isRefreshingRef = useRef(false);
+  const holdingsRef = useRef(holdings);
+  const entryRefreshStartedRef = useRef(false);
+  const lastVisibilityAttemptRef = useRef(0);
+  holdingsRef.current = holdings;
 
   useEffect(() => {
     if (!userSub) {
@@ -57,7 +68,11 @@ export function useLivePortfolioPriceRefresh({
   const refreshPrices = useCallback(async () => {
     if (!userSub || isRefreshingRef.current) return;
 
-    const preview = buildRefreshPreviewMessageForHoldings(holdings, userSub);
+    const currentHoldings = holdingsRef.current;
+    const preview = buildRefreshPreviewMessageForHoldings(
+      currentHoldings,
+      userSub,
+    );
     if (preview) {
       setMessage(preview);
     }
@@ -70,15 +85,26 @@ export function useLivePortfolioPriceRefresh({
     try {
       const outcome = await runLivePortfolioPriceRefreshAction({
         userSub,
-        holdings,
+        holdings: currentHoldings,
         saveHoldings,
         baseCurrency,
         fxStatus: snapshot.status,
         refreshFx,
       });
 
-      setMessage(outcome.message);
-      setStatus(outcome.status === "idle" ? "idle" : outcome.status);
+      // Keep prior figures on soft skip (cooldown / in-flight) — never clear data.
+      if (outcome.updated || outcome.status === "success") {
+        setMessage(outcome.message);
+        setStatus("success");
+      } else if (outcome.status === "error") {
+        setMessage(
+          "Prices could not be refreshed. Your last available prices remain visible.",
+        );
+        setStatus("error");
+      } else {
+        setMessage(idleMessage);
+        setStatus("idle");
+      }
       if (outcome.liveRefreshAt) {
         setLiveRefreshAt(outcome.liveRefreshAt);
       }
@@ -93,28 +119,63 @@ export function useLivePortfolioPriceRefresh({
         setShowRefreshDiagnostics(false);
       }
       return outcome;
-    } catch (error) {
+    } catch {
       setStatus("error");
       setMessage(
-        error instanceof Error
-          ? error.message
-          : "Live prices could not be refreshed. Your last available prices remain visible.",
+        "Prices could not be refreshed. Your last available prices remain visible.",
       );
       setRefreshDiagnostics(null);
       setShowRefreshDiagnostics(false);
-      throw error;
+      return undefined;
     } finally {
       isRefreshingRef.current = false;
       setIsRefreshing(false);
     }
   }, [
     baseCurrency,
-    holdings,
+    idleMessage,
     refreshFx,
     saveHoldings,
     snapshot.status,
     userSub,
   ]);
+
+  useEffect(() => {
+    if (!ready || !userSub) return;
+
+    const attempt = (source: "entry" | "visible") => {
+      if (source === "visible") {
+        const now = Date.now();
+        if (now - lastVisibilityAttemptRef.current < APP_ENTRY_VISIBILITY_MIN_GAP_MS) {
+          return;
+        }
+        lastVisibilityAttemptRef.current = now;
+      }
+
+      const decision = shouldRunAppEntryPortfolioRefresh({
+        ready,
+        userSub,
+        holdingsCount: holdingsRef.current.length,
+      });
+      if (!decision.shouldRefresh) return;
+      void refreshPrices();
+    };
+
+    if (!entryRefreshStartedRef.current) {
+      entryRefreshStartedRef.current = true;
+      attempt("entry");
+    }
+
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") {
+        attempt("visible");
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [ready, refreshPrices, userSub]);
 
   return {
     refreshPrices,

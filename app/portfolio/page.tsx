@@ -527,7 +527,7 @@ export default function PortfolioPage() {
       <PageContainer>
         <PageHero
           title="Portfolio"
-          subtitle={`View and manage all your holdings in one place. ${heroRefreshLabel}`}
+          subtitle={heroRefreshLabel}
           backToDashboard
           actions={
             <>
@@ -543,7 +543,7 @@ export default function PortfolioPage() {
                 className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-bold text-white hover:bg-white/15"
               >
                 <PieChart className="h-4 w-4" aria-hidden="true" />
-                View Portfolio Health
+                Portfolio Health
               </Link>
               <Link
                 href="/market-pulse"
@@ -710,15 +710,15 @@ export default function PortfolioPage() {
               />
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="min-w-0 overflow-x-clip">
               {holdings.some((holding) => isCryptoHolding(holding)) ? (
                 <p
-                  className={`border-b border-slate-100 px-5 py-3 text-sm text-slate-600 sm:px-7`}
+                  className={`border-b border-slate-100 px-4 py-2.5 text-sm text-slate-600 sm:px-5`}
                 >
                   {CRYPTO_PRICING_DISCLOSURE}
                 </p>
               ) : null}
-              <div className="min-w-[720px] divide-y divide-slate-200">
+              <div className="divide-y divide-slate-200">
                 {holdings.map((holding) => {
                   const holdingValue = getHoldingMarketValue(holding);
                   const estimatedPrice = isEstimatedHoldingPrice(holding);
@@ -757,10 +757,16 @@ export default function PortfolioPage() {
                     holding.assetType === "cash"
                       ? null
                       : holdingDetailPath(holding.symbol);
+                  const quantityLabel =
+                    holding.assetType === "cash"
+                      ? "Cash"
+                      : `${holding.quantity.toLocaleString("en-GB")}${
+                          isCrypto ? "" : " units"
+                        }`;
                   return (
                     <article
                       key={holding.id}
-                      className={`space-y-3 px-5 py-5 lg:px-7 ${detailHref ? "cursor-pointer rounded-2xl transition-colors hover:bg-slate-50/80 focus-within:bg-slate-50/80" : ""}`}
+                      className={`min-w-0 px-4 py-3.5 sm:px-5 sm:py-4 ${detailHref ? "cursor-pointer transition-colors hover:bg-slate-50/80 focus-within:bg-slate-50/80" : ""}`}
                       onClick={
                         detailHref
                           ? () => {
@@ -786,7 +792,95 @@ export default function PortfolioPage() {
                           : undefined
                       }
                     >
-                      <div className="grid gap-4 lg:grid-cols-[0.65fr_1.5fr_1fr_0.8fr_1fr_auto] lg:items-start">
+                      {/* Mobile-first compact row */}
+                      <div className="flex min-w-0 items-start gap-3 lg:hidden">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex min-w-0 items-center gap-2">
+                            <span
+                              className={`inline-flex shrink-0 rounded-lg px-2 py-1 text-[12px] font-bold ${holding.assetType === "cash" ? "bg-emerald-100 text-emerald-800" : isCrypto ? "bg-violet-100 text-violet-900" : "bg-slate-950 text-white"}`}
+                            >
+                              {holding.symbol}
+                            </span>
+                            <p className="min-w-0 truncate text-[14px] font-semibold text-slate-900">
+                              {holding.name}
+                            </p>
+                          </div>
+                          <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1.5">
+                            <div className="min-w-0">
+                              <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-slate-400">
+                                Value
+                              </p>
+                              <p className="truncate text-[14px] font-bold tabular-nums text-slate-950">
+                                {holdingValue === null
+                                  ? holdingValueUnavailableLabel(holding)
+                                  : formatEur(holdingValue)}
+                                {estimatedPrice && holdingValue !== null ? (
+                                  <span className="ml-1 text-[11px] font-semibold text-amber-700">
+                                    est.
+                                  </span>
+                                ) : null}
+                              </p>
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-slate-400">
+                                Gain / loss
+                              </p>
+                              <p
+                                className={`truncate text-[14px] font-bold tabular-nums ${holdingReturn === null ? "text-slate-600" : holdingReturn >= 0 ? "text-emerald-700" : "text-red-700"}`}
+                              >
+                                {holding.assetType === "cash"
+                                  ? "Stable"
+                                  : holdingReturn === null
+                                    ? holdingValueUnavailableLabel(holding)
+                                    : `${holdingReturn >= 0 ? "+" : ""}${formatEur(holdingReturn)}`}
+                              </p>
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-slate-400">
+                                Qty
+                              </p>
+                              <p className="truncate text-[13px] font-semibold tabular-nums text-slate-700">
+                                {quantityLabel}
+                              </p>
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-slate-400">
+                                Allocation
+                              </p>
+                              <p className="truncate text-[13px] font-semibold tabular-nums text-slate-700">
+                                {holdingValue === null
+                                  ? "—"
+                                  : `${allocation.toFixed(1)}%`}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                        <div
+                          className="flex shrink-0 flex-col items-center gap-1"
+                          onClick={(event) => event.stopPropagation()}
+                          onKeyDown={(event) => event.stopPropagation()}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => openEdit(holding)}
+                            aria-label={`Edit ${holding.name}`}
+                            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => removeHolding(holding)}
+                            aria-label={`Remove ${holding.name}`}
+                            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-red-600"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Desktop row */}
+                      <div className="hidden min-w-0 gap-4 lg:grid lg:grid-cols-[0.55fr_1.4fr_1fr_0.7fr_1fr_auto] lg:items-start">
                         <div className="flex items-start">
                           <span
                             className={`inline-flex rounded-xl px-3 py-2 ${appTableValueClass} ${holding.assetType === "cash" ? "bg-emerald-100 text-emerald-800" : isCrypto ? "bg-violet-100 text-violet-900" : "bg-slate-950 text-white"}`}
@@ -794,7 +888,7 @@ export default function PortfolioPage() {
                             {holding.symbol}
                           </span>
                         </div>
-                        <div>
+                        <div className="min-w-0">
                           <p className={appTableNameClass}>{holding.name}</p>
                           <p className={`mt-1 ${appSectionMetaClass}`}>
                             {holding.assetType === "cash"
@@ -840,9 +934,6 @@ export default function PortfolioPage() {
                           ) : null}
                         </div>
                         <div>
-                          <p className={`${appSectionLabelClass} lg:hidden`}>
-                            Value
-                          </p>
                           <p className={appTableValueClass}>
                             {holdingValue === null
                               ? holdingValueUnavailableLabel(holding)
@@ -855,9 +946,6 @@ export default function PortfolioPage() {
                           </p>
                         </div>
                         <div>
-                          <p className={`${appSectionLabelClass} lg:hidden`}>
-                            Allocation
-                          </p>
                           <p className={appTableValueClass}>
                             {holdingValue === null
                               ? "—"
@@ -865,9 +953,6 @@ export default function PortfolioPage() {
                           </p>
                         </div>
                         <div>
-                          <p className={`${appSectionLabelClass} lg:hidden`}>
-                            Return
-                          </p>
                           <p
                             className={`${appTableValueClass} ${holdingReturn === null ? "text-slate-600" : holdingReturn >= 0 ? "text-emerald-700" : "text-red-700"}`}
                           >

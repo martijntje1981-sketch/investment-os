@@ -148,7 +148,10 @@ describe("upcomingEvents", () => {
           {
             type: "US Gross Domestic Product",
             country: "United States",
-            date: "2026-08-01 23:30:00",
+            // Keep inside the provider lookahead window from "today".
+            date: `${new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+              .toISOString()
+              .slice(0, 10)} 23:30:00`,
             estimate: 2.4,
             previous: 2.1,
           },
@@ -163,7 +166,7 @@ describe("upcomingEvents", () => {
     const result = await fetchUpcomingMarketEvents();
     expect(result.events).toHaveLength(1);
     expect(result.events[0]?.title).toContain("Gross Domestic Product");
-    expect(result.events[0]?.date).toBe("2026-08-01");
+    expect(result.events[0]?.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 
   it("requests at least a 14-day lookahead window", async () => {

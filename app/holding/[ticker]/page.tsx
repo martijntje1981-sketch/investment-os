@@ -104,11 +104,16 @@ function priceQualityLabel(
 export default function HoldingPage() {
   const router = useRouter();
   const params = useParams<{ ticker: string }>();
-  const { holdings, portfolioReady } = useUserPortfolio();
+  const { holdings, portfolioReady, syncState } = useUserPortfolio();
 
-  const ticker = decodeURIComponent(params.ticker ?? "")
-    .trim()
-    .toUpperCase();
+  const rawTicker = params.ticker ?? "";
+  const ticker = (() => {
+    try {
+      return decodeURIComponent(rawTicker).trim().toUpperCase();
+    } catch {
+      return String(rawTicker).trim().toUpperCase();
+    }
+  })();
 
   const holding = useMemo(
     () => holdings.find((item) => item.symbol.trim().toUpperCase() === ticker),
@@ -123,7 +128,8 @@ export default function HoldingPage() {
     return buildHoldingValuation(holding, holdings);
   }, [holding, holdings]);
 
-  if (!portfolioReady) {
+  // Wait for hydrate/sync so mover clicks never flash "not found" / bounce to login.
+  if (!portfolioReady || syncState.status === "loading") {
     return <AppPageLoading />;
   }
 

@@ -137,10 +137,10 @@ export default function MarketingHeader() {
           </Link>
 
           <Link
-            href="/explore"
+            href="/signup?intent=trial"
             className="inline-flex items-center gap-2 rounded-xl bg-brand px-5 py-3 text-sm font-bold text-brand-navy shadow-sm transition hover:bg-brand-hover"
           >
-            Explore free for 7 days
+            Start your 7-day trial
             <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
@@ -208,15 +208,15 @@ export default function MarketingHeader() {
                 onClick={closeMenu}
                 className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-brand-navy"
               >
-                Explore Tobailey
+                Explore Demo Portfolio
               </Link>
 
               <Link
-                href="/explore"
+                href="/signup?intent=trial"
                 onClick={closeMenu}
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand px-4 py-3 text-sm font-bold text-brand-navy"
               >
-                Explore free for 7 days
+                Start your 7-day trial
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>

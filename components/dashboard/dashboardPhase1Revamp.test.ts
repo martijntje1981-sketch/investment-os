@@ -117,7 +117,7 @@ describe("dashboard phase 1 revamp", () => {
 
   it("keeps portfolio hero movers rendered", () => {
     expect(valueSource).toContain("heroTopMover");
-    expect(valueSource).toContain("Top mover");
+    expect(valueSource).toContain("Biggest mover");
     expect(valueSource).toContain("Weakest mover");
     expect(valueSource).toContain("changePeriodLabel");
 
@@ -146,7 +146,7 @@ describe("dashboard phase 1 revamp", () => {
   });
 
   it("keeps Market Briefing, Portfolio Pulse and Trading Hours without Dashboard insight card", () => {
-    expect(dashboardSource).toContain("DashboardPortfolioPulseCard");
+    expect(dashboardSource).toContain("pulse={portfolioPulse}");
     expect(dashboardSource).toContain("DashboardTodaysMarketBriefing");
     expect(dashboardSource).not.toContain("DashboardPortfolioScorecard");
     expect(dashboardSource).not.toContain("DashboardIntelligencePreview");

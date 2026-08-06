@@ -8,9 +8,9 @@ describe("Dashboard hero mobile movers prominence", () => {
     "utf8",
   );
 
-  it("keeps Top mover and Weakest mover side by side on mobile", () => {
+  it("keeps Biggest mover and Weakest mover side by side on mobile", () => {
     expect(source).toContain("grid min-w-0 grid-cols-2 gap-2");
-    expect(source).toContain('label="Top mover"');
+    expect(source).toContain('label="Biggest mover"');
     expect(source).toContain('label="Weakest mover"');
     expect(source).not.toContain("Lowest mover");
     expect(source).not.toContain("Today’s biggest winner");

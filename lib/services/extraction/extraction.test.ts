@@ -85,7 +85,7 @@ describe("processRawPortfolioExtraction", () => {
 
     expect(result.broker).toBe("Interactive Brokers");
     expect(row?.ticker).toBe("AAPL");
-    expect(row?.exchange).toBe("US");
+    expect(row?.exchange).toBe("NASDAQ");
     expect(row?.currency).toBe("USD");
     expect(row?.marketValue).toBe(3214.35);
   });

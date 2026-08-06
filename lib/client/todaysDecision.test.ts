@@ -359,7 +359,7 @@ describe("dashboard Today's Decision integration", () => {
     );
 
     expect(dashboard.indexOf("<DashboardSummary")).toBeLessThan(
-      dashboard.indexOf("<DashboardPortfolioPulseCard"),
+      dashboard.indexOf("pulse={portfolioPulse}"),
     );
     expect(dashboard.indexOf("<HoldingsToday")).toBeLessThan(
       dashboard.indexOf("<DashboardTodaysMarketBriefing"),

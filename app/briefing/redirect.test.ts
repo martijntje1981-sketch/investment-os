@@ -31,7 +31,8 @@ describe("legacy briefing redirect", () => {
     expect(briefingPage).not.toContain('"use client"');
     expect(newsPage).not.toContain(`redirect("${LEGACY_BRIEFING_PATH}")`);
     expect(newsPage).not.toContain(`redirect('${LEGACY_BRIEFING_PATH}')`);
-    expect(middleware).toContain('"/briefing"');
-    expect(middleware).toContain('"/news"');
+    // Legacy /briefing is handled by the server page redirect, not middleware.
+    expect(briefingPage).toContain(NEWS_HUB_PATH);
+    void middleware;
   });
 });

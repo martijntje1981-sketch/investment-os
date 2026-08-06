@@ -67,7 +67,7 @@ export function TrialStepsCard({
       <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
         {showCreateCta ? (
           <Link href="/signup?intent=trial" className={appSolidButtonClass}>
-            Create your own portfolio
+            Start your 7-day trial
           </Link>
         ) : (
           <Link href={PORTFOLIO_SETUP_ROUTES.import} className={appSolidButtonClass}>

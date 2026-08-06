@@ -121,12 +121,12 @@ export default function PortfolioAnalysisPage() {
     <>
       <PageContainer>
         <PageHero
-          title="Portfolio Analysis"
-          subtitle="Detailed metrics for performance, allocation and income. For scores and the portfolio story open Portfolio Scorecard. For markets influencing holdings, open Market Pulse."
+          title="Analysis"
+          subtitle="Performance, allocation and income for your holdings."
           backToDashboard
           stats={
             <p className={`${appDashboardDarkMetaClass} mt-0`}>
-              Last portfolio update: {formatUpdatedAt(analysis.lastUpdatedAt)}
+              Updated {formatUpdatedAt(analysis.lastUpdatedAt)}
             </p>
           }
           actions={

@@ -158,7 +158,7 @@ describe("example auth callback wiring", () => {
   it("uses Demo Portfolio showroom copy without demo-account wording", () => {
     expect(explore).toContain("Demo Portfolio");
     expect(explore).toContain("Create your own portfolio");
-    expect(explore).toContain("Start 7-day trial");
+    expect(explore).toContain("Start your 7-day trial");
     expect(explore).toContain("/signup?intent=trial");
     expect(explore).toContain("Open Demo Portfolio");
     expect(explore).toContain("No credit card required");
