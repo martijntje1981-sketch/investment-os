@@ -6,7 +6,7 @@ import type { PortfolioPulseResult } from "@/lib/services/portfolio/periodScores
 
 /**
  * Compact Daily + Weekly + Monthly pulse rings for the Dashboard hero.
- * Reuses existing score objects — no new formulas beyond periodScores.
+ * Omits combinedSummary to avoid duplicating Personal Intelligence drivers.
  */
 export function HeroPortfolioPulse({
   pulse,
@@ -30,31 +30,26 @@ export function HeroPortfolioPulse({
           Scorecard
         </Link>
       </div>
-      <div className="mt-2 grid grid-cols-3 items-start justify-items-center gap-0.5 sm:gap-1">
+      <div className="mt-1.5 grid grid-cols-3 items-start justify-items-center gap-0 sm:mt-2 sm:gap-1">
         <DynamicScoreRing
           score={pulse.daily}
-          size={58}
+          size={60}
           emphasis="primary"
           appearance="onDark"
         />
         <DynamicScoreRing
           score={pulse.weekly}
-          size={54}
+          size={56}
           emphasis="default"
           appearance="onDark"
         />
         <DynamicScoreRing
           score={pulse.monthly}
-          size={54}
+          size={56}
           emphasis="default"
           appearance="onDark"
         />
       </div>
-      {pulse.combinedSummary ? (
-        <p className="mt-2 line-clamp-2 text-center text-[11px] font-medium leading-snug text-white/45 sm:text-left">
-          {pulse.combinedSummary}
-        </p>
-      ) : null}
     </div>
   );
 }

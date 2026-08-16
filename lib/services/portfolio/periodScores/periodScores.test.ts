@@ -463,10 +463,11 @@ describe("Dashboard Portfolio Pulse wiring", () => {
     expect(hero).toContain("HeroPortfolioPulse");
     expect(pulse).toContain("Scorecard");
     expect(pulse).toContain("DASHBOARD_DEEP_LINKS.scorecard");
-    expect(pulse).toContain("size={58}");
-    expect(pulse).toContain("size={54}");
+    expect(pulse).toContain("size={60}");
+    expect(pulse).toContain("size={56}");
     expect(pulse).toContain("pulse.monthly");
     expect(pulse).toContain('emphasis="primary"');
+    expect(pulse).not.toContain("pulse.combinedSummary");
     expect(pulse).toContain('appearance="onDark"');
     expect(ring).toContain('emphasis?: "primary" | "default"');
     expect(ring).toContain('appearance?: "onLight" | "onDark"');

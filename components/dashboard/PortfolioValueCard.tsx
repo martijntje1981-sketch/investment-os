@@ -82,16 +82,16 @@ function SnapshotMover({
     <Link
       href={holdingDetailPath(mover.holding.symbol)}
       prefetch
-      className={`block min-h-[72px] min-w-0 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:ring-offset-2 focus-visible:ring-offset-navy-hero ${appDarkInsetClass} px-3 py-2.5`}
+      className={`block min-h-[56px] min-w-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:ring-offset-2 focus-visible:ring-offset-navy-hero ${appDarkInsetClass} px-2.5 py-2 sm:min-h-[64px] sm:rounded-2xl sm:px-3 sm:py-2.5`}
       aria-label={`${label}: ${displayName}, ${signedPercent(mover.changePercent)}. ${mover.changePeriodAccessibleDescription}`}
     >
       <p className={appHeroMetricLabelClass}>{label}</p>
-      <p className="mt-1 truncate text-[13px] font-semibold leading-tight text-white">
+      <p className="mt-0.5 truncate text-[12px] font-semibold leading-tight text-white sm:mt-1 sm:text-[13px]">
         {displayName}
       </p>
-      <div className={`mt-1 flex min-w-0 items-center gap-1 ${accentClass}`}>
+      <div className={`mt-0.5 flex min-w-0 items-center gap-1 ${accentClass}`}>
         <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden />
-        <span className="truncate text-sm font-bold tabular-nums tracking-[-0.02em]">
+        <span className="truncate text-[13px] font-bold tabular-nums tracking-[-0.02em] sm:text-sm">
           {signedPercent(mover.changePercent)}
         </span>
       </div>
@@ -101,6 +101,7 @@ function SnapshotMover({
 
 /**
  * Premium black portfolio hero — value, move, trend, pulse, glanceable snapshot.
+ * Mobile: Zone 1 status + Zone 2 snapshot (visually segmented).
  */
 export function PortfolioValueCard({
   snapshot,
@@ -112,7 +113,6 @@ export function PortfolioValueCard({
   snapshot: DashboardPortfolioSnapshot;
   pulse?: PortfolioPulseResult | null;
   smart: SmartDashboardIntelligence;
-  /** Existing 1M (or week) history points for the hero sparkline. */
   performancePoints?: PortfolioPerformancePoint[] | null;
   refresh?: {
     onRefresh: () => void;
@@ -165,6 +165,11 @@ export function PortfolioValueCard({
       ? `${snapshot.concentrationSymbol} · ${Math.round(snapshot.concentrationWeightPercent)}%`
       : null;
 
+  const hasSnapshotItems =
+    Boolean(focus) ||
+    Boolean(concentrationLabel) ||
+    Boolean(snapshot.hasReliableHeroMoverData && snapshot.heroTopMover);
+
   return (
     <article
       aria-label="Portfolio value"
@@ -177,7 +182,11 @@ export function PortfolioValueCard({
       data-hero-emphasis={heroElevated ? "elevated" : "default"}
       data-hero-scenario={smart.scenario}
     >
-      <div className={`relative min-w-0 ${appHeroPaddingCompactClass}`}>
+      {/* ZONE 1 — primary status */}
+      <div
+        className={`relative min-w-0 ${appHeroPaddingCompactClass}`}
+        data-testid="hero-zone-primary"
+      >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <p className={appHeroMetricLabelClass}>Portfolio value</p>
@@ -190,7 +199,7 @@ export function PortfolioValueCard({
                 ? formatEur(snapshot.portfolioValue)
                 : "Unavailable"}
             </p>
-            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
               <ConversionDetailsDisclosure compactTrigger tone="dark" />
               {snapshot.portfolioValueCoverageMessage ? (
                 <p className="text-[12px] font-medium text-white/50">
@@ -210,7 +219,7 @@ export function PortfolioValueCard({
           ) : null}
         </div>
 
-        <div className="mt-4 min-w-0 border-t border-white/10 pt-4 lg:grid lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] lg:items-end lg:gap-5">
+        <div className="mt-3 min-w-0 border-t border-white/10 pt-3 lg:mt-4 lg:grid lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] lg:items-end lg:gap-5 lg:pt-4">
           <div className="min-w-0">
             <p className={appHeroMetricLabelClass}>Latest move</p>
             <p
@@ -226,73 +235,16 @@ export function PortfolioValueCard({
               {priceBasisLabel}
             </p>
           </div>
-          <div className="mt-3 min-w-0 lg:mt-0">
+          <div className="mt-2.5 min-w-0 lg:mt-0">
             <HeroPerformanceSparkline
               points={performancePoints}
               tone={sparklineTone(snapshot)}
+              compactOnMobile
             />
           </div>
         </div>
 
-        {pulse ? (
-          <div className="mt-4 border-t border-white/10 pt-4">
-            <HeroPortfolioPulse pulse={pulse} />
-          </div>
-        ) : null}
-
-        <div
-          className="mt-4 grid min-w-0 grid-cols-1 gap-2 border-t border-white/10 pt-4 sm:grid-cols-2 lg:grid-cols-3"
-          aria-label="Portfolio snapshot"
-          data-testid="hero-snapshot-strip"
-        >
-          {focus ? (
-            <div className={`${appDarkInsetClass} min-h-[72px] px-3 py-2.5`}>
-              <p className={appHeroMetricLabelClass}>Today’s focus</p>
-              {focus.href ? (
-                <Link
-                  href={focus.href}
-                  className="mt-1 block truncate text-[13px] font-semibold text-white underline-offset-2 hover:underline"
-                >
-                  {focus.label}
-                </Link>
-              ) : (
-                <p className="mt-1 truncate text-[13px] font-semibold text-white">
-                  {focus.label}
-                </p>
-              )}
-              {concentrationLabel && focus.kind === "concentration" ? (
-                <p className="mt-1 text-[11px] font-medium text-white/45">
-                  {concentrationLabel}
-                </p>
-              ) : null}
-            </div>
-          ) : concentrationLabel ? (
-            <div className={`${appDarkInsetClass} min-h-[72px] px-3 py-2.5`}>
-              <p className={appHeroMetricLabelClass}>Portfolio structure</p>
-              <p className="mt-1 text-[13px] font-semibold text-white">
-                Largest holding {concentrationLabel}
-              </p>
-            </div>
-          ) : null}
-
-          {snapshot.hasReliableHeroMoverData && snapshot.heroTopMover ? (
-            <SnapshotMover
-              label="Biggest mover"
-              mover={snapshot.heroTopMover}
-              tone="positive"
-            />
-          ) : null}
-
-          {snapshot.hasReliableHeroMoverData && snapshot.heroLowestMover ? (
-            <SnapshotMover
-              label="Weakest mover"
-              mover={snapshot.heroLowestMover}
-              tone="negative"
-            />
-          ) : null}
-        </div>
-
-        <div className="mt-3 flex flex-wrap items-center gap-2">
+        <div className="mt-2.5 flex flex-wrap items-center gap-2">
           <p className="text-[12px] font-medium text-white/50">
             {isStaleDisplay ? (
               <span className="text-amber-200/90">Previous close · </span>
@@ -316,7 +268,85 @@ export function PortfolioValueCard({
               : refresh.message}
           </p>
         ) : null}
+      </div>
 
+      {/* ZONE 2 — secondary snapshot (segmented on mobile; integrated on desktop) */}
+      {pulse || hasSnapshotItems ? (
+        <div
+          className="mx-3 mb-3 rounded-2xl border border-white/10 bg-white/[0.045] px-3 py-3 sm:mx-4 sm:mb-3.5 sm:px-3.5 sm:py-3.5 md:mx-5 lg:mx-5 lg:mb-4 lg:border-0 lg:bg-transparent lg:px-0 lg:py-0 lg:pt-0"
+          data-testid="hero-zone-snapshot"
+        >
+          <div className="hidden border-t border-white/10 lg:block" />
+
+          {pulse ? (
+            <div className="lg:mt-4 lg:border-t lg:border-white/10 lg:pt-4">
+              <HeroPortfolioPulse pulse={pulse} />
+            </div>
+          ) : null}
+
+          {hasSnapshotItems ? (
+            <div
+              className={`grid min-w-0 grid-cols-2 gap-1.5 sm:gap-2 lg:grid-cols-3 ${
+                pulse ? "mt-3 lg:mt-4 lg:border-t lg:border-white/10 lg:pt-4" : ""
+              }`}
+              aria-label="Portfolio snapshot"
+              data-testid="hero-snapshot-strip"
+            >
+              {focus ? (
+                <div
+                  className={`${appDarkInsetClass} col-span-2 min-h-[56px] px-2.5 py-2 sm:min-h-[64px] sm:px-3 sm:py-2.5 lg:col-span-1`}
+                >
+                  <p className={appHeroMetricLabelClass}>Today’s focus</p>
+                  {focus.href ? (
+                    <Link
+                      href={focus.href}
+                      className="mt-0.5 block truncate text-[12px] font-semibold text-white underline-offset-2 hover:underline sm:mt-1 sm:text-[13px]"
+                    >
+                      {focus.label}
+                    </Link>
+                  ) : (
+                    <p className="mt-0.5 truncate text-[12px] font-semibold text-white sm:mt-1 sm:text-[13px]">
+                      {focus.label}
+                    </p>
+                  )}
+                  {concentrationLabel && focus.kind === "concentration" ? (
+                    <p className="mt-0.5 text-[11px] font-medium text-white/45">
+                      {concentrationLabel}
+                    </p>
+                  ) : null}
+                </div>
+              ) : concentrationLabel ? (
+                <div
+                  className={`${appDarkInsetClass} col-span-2 min-h-[56px] px-2.5 py-2 sm:min-h-[64px] sm:px-3 sm:py-2.5 lg:col-span-1`}
+                >
+                  <p className={appHeroMetricLabelClass}>Portfolio structure</p>
+                  <p className="mt-0.5 text-[12px] font-semibold text-white sm:mt-1 sm:text-[13px]">
+                    Largest holding {concentrationLabel}
+                  </p>
+                </div>
+              ) : null}
+
+              {snapshot.hasReliableHeroMoverData && snapshot.heroTopMover ? (
+                <SnapshotMover
+                  label="Biggest mover"
+                  mover={snapshot.heroTopMover}
+                  tone="positive"
+                />
+              ) : null}
+
+              {snapshot.hasReliableHeroMoverData && snapshot.heroLowestMover ? (
+                <SnapshotMover
+                  label="Weakest mover"
+                  mover={snapshot.heroLowestMover}
+                  tone="negative"
+                />
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      <div className={`relative min-w-0 ${appHeroPaddingCompactClass} !pt-0`}>
         <DailyPortfolioBriefing
           briefing={smart.briefing}
           todaysFocus={null}

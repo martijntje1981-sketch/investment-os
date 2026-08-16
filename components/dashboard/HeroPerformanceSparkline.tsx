@@ -11,20 +11,30 @@ export function HeroPerformanceSparkline({
   tone = "neutral",
   label = "Portfolio trend",
   className,
+  compactOnMobile = false,
 }: {
   points: PortfolioPerformancePoint[] | null | undefined;
   tone?: "positive" | "negative" | "neutral";
   label?: string;
   className?: string;
+  /** Slightly shorter chart on narrow viewports. */
+  compactOnMobile?: boolean;
 }) {
   const series = (points ?? []).filter(
     (point) => Number.isFinite(point.portfolioValue),
   );
 
+  const heightClass = compactOnMobile
+    ? "h-[56px] sm:h-[72px] lg:h-[84px]"
+    : "h-[72px] sm:h-[84px]";
+  const emptyHeightClass = compactOnMobile
+    ? "h-[56px] sm:h-[72px]"
+    : "h-[72px]";
+
   if (series.length < 2) {
     return (
       <div
-        className={`flex h-[72px] w-full items-center justify-center rounded-2xl border border-dashed border-white/15 bg-white/[0.03] px-3 text-[12px] font-medium text-white/40 ${className ?? ""}`}
+        className={`flex w-full items-center justify-center rounded-2xl border border-dashed border-white/15 bg-white/[0.03] px-3 text-[12px] font-medium text-white/40 ${emptyHeightClass} ${className ?? ""}`}
         aria-label={`${label} unavailable`}
         data-testid="hero-performance-sparkline-empty"
       >
@@ -82,7 +92,7 @@ export function HeroPerformanceSparkline({
       </div>
       <svg
         viewBox={`0 0 ${width} ${height}`}
-        className="h-[72px] w-full sm:h-[84px]"
+        className={`${heightClass} w-full`}
         role="img"
         aria-label={`${label}. ${changeLabel}`}
         preserveAspectRatio="none"

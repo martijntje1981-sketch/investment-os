@@ -9,7 +9,6 @@ import { DashboardTodaysMarketBriefing } from "@/components/dashboard/DashboardT
 import { DashboardMarketPulseCard } from "@/components/dashboard/DashboardMarketPulseCard";
 import { DashboardSummary } from "@/components/dashboard/DashboardSummary";
 import { DashboardExploreTools } from "@/components/dashboard/DashboardExploreTools";
-import { DashboardReviewTeaser } from "@/components/companion/DashboardReviewTeaser";
 import { DashboardPortfolioHistorySection } from "@/components/dashboard/DashboardPortfolioHistorySection";
 import { PortfolioThirtySeconds } from "@/components/dashboard/PortfolioThirtySeconds";
 import { PageRelatedLinks } from "@/components/layout/PageRelatedLinks";
@@ -50,7 +49,6 @@ import { buildSmartDashboardIntelligence } from "@/lib/client/smartDashboardInte
 import { buildPortfolioHealthProfile } from "@/lib/services/portfolio/portfolioHealthProfile";
 import { buildPortfolioExposureAllocation } from "@/lib/services/classification";
 import { buildPortfolioPulse } from "@/lib/services/portfolio/periodScores";
-import { buildCompanionBundle } from "@/lib/services/portfolio/companion";
 import { buildPersonalIntelligenceToday } from "@/lib/services/personalIntelligence";
 import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 import { logDashboardProductionDiagnostics } from "@/lib/client/investmentOsProductionDebug";
@@ -201,36 +199,6 @@ export default function DashboardPage() {
     snapshot,
   ]);
 
-  /** Lightweight readiness for the Review teaser — reuses week/month history already loaded. */
-  const companionBundle = useMemo(
-    () =>
-      buildCompanionBundle({
-        holdingCount: holdings.length,
-        hasDailyData: snapshot.hasDailyData,
-        todayPercent: snapshot.todayPercent,
-        weekSeries: weekHistory.data?.chartPoints ?? null,
-        monthSeries: monthHistory.data?.chartPoints ?? null,
-        hasSavedGoal,
-        goalStatus: goalProgress.status,
-        goalProgressPercent: goalProgress.hasGoal
-          ? goalProgress.currentProgressPercent
-          : null,
-        goalReached: goalProgress.goalReached,
-      }),
-    [
-      goalProgress.currentProgressPercent,
-      goalProgress.goalReached,
-      goalProgress.hasGoal,
-      goalProgress.status,
-      hasSavedGoal,
-      holdings.length,
-      monthHistory.data?.chartPoints,
-      snapshot.hasDailyData,
-      snapshot.todayPercent,
-      weekHistory.data?.chartPoints,
-    ],
-  );
-
   /** Phase 1B — compact personal briefing above the Dashboard motor. */
   const personalIntelligenceToday = useMemo(() => {
     if (holdings.length === 0) return null;
@@ -369,18 +337,6 @@ export default function DashboardPage() {
             <PortfolioThirtySeconds intelligence={personalIntelligenceToday} />
           ) : null}
 
-          <DashboardReviewTeaser bundle={companionBundle} />
-
-          <PageRelatedLinks
-            purpose="How is my portfolio doing today?"
-            links={[
-              { href: "/analysis", label: "Open Analysis" },
-              { href: "/portfolio-history", label: "Portfolio History" },
-              { href: "/portfolio-health", label: "Portfolio Scorecard" },
-            ]}
-            className="px-1"
-          />
-
           {/* 2. Your Holdings */}
           <HoldingsToday snapshot={snapshot} />
 
@@ -436,6 +392,16 @@ export default function DashboardPage() {
           {/* 10. Understand your portfolio */}
           <DashboardExploreTools
             emphasizeGoals={smartDashboard.emphasis.exploreGoalsHighlight}
+          />
+
+          <PageRelatedLinks
+            purpose="How is my portfolio doing today?"
+            links={[
+              { href: "/analysis", label: "Open Analysis" },
+              { href: "/portfolio-history", label: "Portfolio History" },
+              { href: "/portfolio-health", label: "Portfolio Scorecard" },
+            ]}
+            className="px-1"
           />
 
           {/* 11. Trading Hours */}
