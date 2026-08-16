@@ -311,7 +311,7 @@ describe("attribution polish", () => {
     ).toBe(true);
     const plan = buildPersonalActionPlan(pi);
     const understand = plan.items.find((item) => item.category === "understand");
-    expect(understand?.headline).toMatch(/large share of today’s movement/i);
+    expect(understand?.headline).toMatch(/accounts for most of today’s move|drove most of today’s portfolio move/i);
     expect(understand?.detail).not.toMatch(/\b55%\b|\b40%\b|too concentrated|dangerous/i);
   });
 
@@ -372,7 +372,7 @@ describe("attribution polish", () => {
       (item) => item.id === "action-review-concentration",
     );
     expect(review).toBeTruthy();
-    expect(review?.headline).toMatch(/substantial share/i);
+    expect(review?.headline).toMatch(/represents \d+% of your portfolio/i);
     expect(review?.detail).toMatch(/portfolio structure you intended/i);
     expect(review?.detail).not.toMatch(/too concentrated|objectively|should sell|rebalance/i);
   });

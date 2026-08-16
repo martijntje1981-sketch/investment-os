@@ -147,6 +147,7 @@ describe("dashboardConclusions presentation layer", () => {
 
     expect(conclusion.isQuiet).toBe(true);
     expect(conclusion.primaryConclusion).toBe("You’re up to date.");
+    expect(conclusion.showFooterCta).toBe(true);
     expect(
       selectDashboardActionPlanItems(plan, {
         isQuiet: true,
@@ -195,6 +196,32 @@ describe("dashboardConclusions presentation layer", () => {
     expect(conclusion.primaryConclusion.toLowerCase()).toContain("bitcoin");
     expect(conclusion.primaryConclusion.toLowerCase()).toContain("main driver");
     expect(conclusion.attentionLine).toBeNull();
+    expect(conclusion.ctaLabel).toBe("View today’s performance");
+    expect(conclusion.ctaHref).toBe(DASHBOARD_DEEP_LINKS.portfolioPerformance);
+    expect(conclusion.showFooterCta).toBe(false);
+  });
+
+  it("uses Explore scenarios for calmer days without a See why footer", () => {
+    const conclusion = buildPersonalIntelligenceConclusion({
+      intelligence: stubIntelligence("elevated"),
+      view: activeView(),
+      calmer: notableCalmer(),
+      actionPlan: actionPlan([
+        {
+          id: "watch-btc",
+          category: "watch",
+          categoryLabel: "Watch",
+          headline: "Watch Bitcoin closely",
+          detail: "Material move",
+          href: "/news",
+        },
+      ]),
+    });
+
+    expect(conclusion.ctaLabel).toBe("Explore scenarios");
+    expect(conclusion.ctaHref).toBe(DASHBOARD_DEEP_LINKS.scenarioStress);
+    expect(conclusion.showFooterCta).toBe(false);
+    expect(conclusion.ctaLabel.toLowerCase()).not.toContain("see why");
   });
 
   it("caps Action Plan items at two distinct categories", () => {
@@ -248,6 +275,8 @@ describe("dashboardConclusions presentation layer", () => {
 
     expect(conclusion.primaryConclusion.toLowerCase()).toContain("bitcoin");
     expect(conclusion.ctaHref).toBe(DASHBOARD_DEEP_LINKS.scenarioStress);
+    expect(conclusion.ctaLabel).toBe("Explore scenarios");
+    expect(conclusion.showFooterCta).toBe(false);
   });
 
   it("builds resilience and goal conclusions with deep links", () => {

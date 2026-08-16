@@ -9,6 +9,7 @@ import {
   appSectionMetaClass,
   appTextLinkClass,
 } from "@/components/layout/appSurface";
+import { NewsMediaThumbnail } from "@/components/news/NewsMediaThumbnail";
 import { buildMarketConclusion } from "@/lib/client/dashboardConclusions";
 import { formatNewsRefreshedAt } from "@/components/news/newsFormatting";
 import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
@@ -84,6 +85,11 @@ export function DashboardTodaysMarketBriefing(
 
   const href =
     decision.destinationHref || DASHBOARD_DEEP_LINKS.marketBriefing;
+  const storyThumb = mustWatch?.thumbnailUrl ?? null;
+  const showStoryThumb =
+    Boolean(storyThumb) &&
+    Boolean(mustWatch?.title?.trim()) &&
+    !/no standout market development/i.test(leadTitle);
 
   return (
     <section
@@ -92,12 +98,27 @@ export function DashboardTodaysMarketBriefing(
       data-testid="todays-market-briefing"
     >
       <div className="flex items-start gap-3">
-        <span
-          className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-violet-50 text-violet-800 ring-1 ring-violet-100"
-          aria-hidden
-        >
-          <Radio className="h-4 w-4" />
-        </span>
+        {showStoryThumb ? (
+          <span className="mt-0.5 hidden shrink-0 sm:inline-flex" aria-hidden>
+            <NewsMediaThumbnail
+              thumbnailUrl={storyThumb}
+              sourceType={mustWatch?.type === "video" ? "youtube" : "news"}
+              fallbackCategory={
+                mustWatch?.type === "video" ? "video" : "portfolio"
+              }
+              size="micro"
+              showPlayIndicator={mustWatch?.type === "video"}
+              alt=""
+            />
+          </span>
+        ) : (
+          <span
+            className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-violet-50 text-violet-800 ring-1 ring-violet-100"
+            aria-hidden
+          >
+            <Radio className="h-4 w-4" />
+          </span>
+        )}
         <div className="min-w-0 flex-1">
           <p
             className={`${appSectionLabelClass} text-violet-900/80`}
@@ -116,6 +137,7 @@ export function DashboardTodaysMarketBriefing(
           </p>
           <p className={`mt-1 ${appSectionMetaClass}`}>
             Updated {formatNewsRefreshedAt(intelligence.generatedAt)}
+            {mustWatch?.sourceName ? ` · ${mustWatch.sourceName}` : ""}
           </p>
           <Link
             href={href}

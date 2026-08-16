@@ -4,12 +4,10 @@
  */
 
 import {
-  ANALYSIS_PATH,
   GOALS_PATH,
-  NEWS_PATH,
-  PORTFOLIO_HEALTH_PATH,
   REVIEW_PATH,
 } from "@/lib/navigation/appRoutes";
+import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 import {
   ATTRIBUTION_CONCENTRATION_WEIGHT,
   ATTRIBUTION_DOMINANT_SHARE,
@@ -33,6 +31,8 @@ export type ActionPlanCategory =
   | "review"
   | "no_action_required";
 
+export type PersonalActionPlanVisualKind = "holding" | "news" | "none";
+
 export type PersonalActionPlanItem = {
   id: string;
   category: ActionPlanCategory;
@@ -41,6 +41,13 @@ export type PersonalActionPlanItem = {
   detail: string;
   href?: string | null;
   hrefLabel?: string | null;
+  /** Optional entity for contextual visuals — never invented. */
+  entitySymbol?: string | null;
+  entityName?: string | null;
+  thumbnailUrl?: string | null;
+  mediaType?: "article" | "video" | null;
+  sourceName?: string | null;
+  visualKind?: PersonalActionPlanVisualKind;
 };
 
 export type PersonalActionPlan = {
@@ -81,6 +88,7 @@ export const ACTION_PLAN_PROHIBITED_PATTERNS: RegExp[] = [
   /\bguaranteed\b/i,
   /\bwill (rise|fall|rally|crash)\b/i,
 ];
+
 function categoryLabel(category: ActionPlanCategory): string {
   return CATEGORY_LABEL[category];
 }
@@ -91,7 +99,14 @@ function item(
   return {
     ...partial,
     categoryLabel: categoryLabel(partial.category),
+    visualKind: partial.visualKind ?? "none",
   };
+}
+
+function clipWords(text: string, maxWords: number): string {
+  const words = text.trim().split(/\s+/).filter(Boolean);
+  if (words.length <= maxWords) return text.trim();
+  return `${words.slice(0, maxWords).join(" ")}…`;
 }
 
 function largestHoldingWeight(
@@ -120,6 +135,7 @@ function buildWatchCandidate(
     return null;
   }
 
+  const mustWatch = news.mustWatch;
   const linked = [
     ...(news.holdingInsights.negative ?? []),
     ...(news.holdingInsights.positive ?? []),
@@ -128,16 +144,33 @@ function buildWatchCandidate(
     .filter(Boolean)
     .slice(0, 2);
 
+  const verifiedTitle = mustWatch.title?.trim() ?? "";
+  const headline = verifiedTitle
+    ? clipWords(verifiedTitle, 12)
+    : "A portfolio-linked development is worth monitoring";
+
+  const leadSymbol = linked[0] ?? null;
+
   return item({
     id: "action-watch-news",
     category: "watch",
-    headline: "A portfolio-linked development is worth monitoring",
-        detail:
-          linked.length > 0
-            ? `A development connected to holdings such as ${linked.join(" and ")} is flagged for monitoring.`
-            : "A development connected to your holdings is flagged for monitoring.",
-    href: NEWS_PATH,
+    headline,
+    detail:
+      linked.length > 0
+        ? `A development connected to holdings such as ${linked.join(" and ")} is flagged for monitoring.`
+        : "A development connected to your holdings is flagged for monitoring.",
+    href: DASHBOARD_DEEP_LINKS.portfolioNews,
     hrefLabel: "Open News",
+    entitySymbol: leadSymbol,
+    entityName: leadSymbol,
+    thumbnailUrl: mustWatch.thumbnailUrl ?? null,
+    mediaType: mustWatch.type,
+    sourceName: mustWatch.sourceName || null,
+    visualKind: mustWatch.thumbnailUrl
+      ? "news"
+      : leadSymbol
+        ? "holding"
+        : "none",
   });
 }
 
@@ -175,15 +208,22 @@ function buildUnderstandCandidate(
       dominant.symbol.trim().toUpperCase(),
   );
 
+  const label = dominant.symbol || dominant.name;
+
   return item({
     id: "action-understand-driver",
     category: "understand",
-    headline: "A large share of today’s movement came from one exposure",
+    headline: topAlreadyNamed
+      ? `${label} still accounts for most of today’s move`
+      : `${label} drove most of today’s portfolio move`,
     detail: topAlreadyNamed
       ? `${dominant.name} accounts for most of today’s material portfolio movement, concentrating short-term results in fewer drivers.`
       : `Most of today’s material change is coming from ${dominant.name}, rather than a broad portfolio move.`,
-    href: ANALYSIS_PATH,
-    hrefLabel: "Open Analysis",
+    href: DASHBOARD_DEEP_LINKS.portfolioPerformance,
+    hrefLabel: "View performance",
+    entitySymbol: dominant.symbol,
+    entityName: dominant.name,
+    visualKind: "holding",
   });
 }
 
@@ -203,13 +243,18 @@ function buildReviewConcentrationCandidate(
     return null;
   }
 
+  const weight = Math.round(largest.weightPercent);
+
   return item({
     id: "action-review-concentration",
     category: "review",
-    headline: "One holding represents a substantial share of this portfolio",
-    detail: `${largest.name} is about ${Math.round(largest.weightPercent)}% of portfolio value. You may want to review whether that still matches the portfolio structure you intended.`,
-    href: PORTFOLIO_HEALTH_PATH,
-    hrefLabel: "Open Scorecard",
+    headline: `${largest.symbol} represents ${weight}% of your portfolio`,
+    detail: `${largest.name} is about ${weight}% of portfolio value. You may want to review whether that still matches the portfolio structure you intended.`,
+    href: DASHBOARD_DEEP_LINKS.portfolioExposure,
+    hrefLabel: "View exposure",
+    entitySymbol: largest.symbol,
+    entityName: largest.name,
+    visualKind: "holding",
   });
 }
 
@@ -230,6 +275,7 @@ function buildReviewCoverageCandidate(
     detail: `${move.validPerformanceCount} of ${move.eligibleMarketHoldingCount} market holdings have usable daily performance. Treat the day move as incomplete until coverage improves.`,
     href: REVIEW_PATH,
     hrefLabel: "Open Your Review",
+    visualKind: "none",
   });
 }
 
@@ -248,6 +294,7 @@ function buildGoalCandidate(
         "Based on your saved goal inputs and available portfolio value.",
       href: GOALS_PATH,
       hrefLabel: "Open Goals",
+      visualKind: "none",
     });
   }
 
@@ -266,6 +313,7 @@ function buildGoalCandidate(
       detail: `Your long-term goal model shows a behind-schedule reading based on current inputs.${progress}`,
       href: GOALS_PATH,
       hrefLabel: "Open Goals",
+      visualKind: "none",
     });
   }
 
@@ -287,6 +335,7 @@ function noActionItem(): PersonalActionPlanItem {
     headline: "Nothing materially requires your attention today",
     detail:
       "No material portfolio, news, or goal signals need a follow-up right now.",
+    visualKind: "none",
   });
 }
 

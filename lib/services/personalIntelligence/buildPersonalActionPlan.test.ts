@@ -166,9 +166,47 @@ describe("buildPersonalActionPlan", () => {
     const plan = buildPersonalActionPlan(pi);
     const watch = plan.items.find((item) => item.category === "watch");
     expect(watch).toBeTruthy();
-    expect(watch?.headline).not.toBe("Unique headline about a holding event");
-    expect(allCopy(plan)).not.toContain(
-      "Unique headline about a holding event",
+    expect(watch?.headline).toBe("Unique headline about a holding event");
+    expect(watch?.entitySymbol).toBe("BTC");
+    expect(watch?.href).toContain("portfolio-news");
+  });
+
+  it("keeps generic WATCH copy when the verified title is missing", () => {
+    const pi = intelligenceFromHoldings(
+      [
+        holding({
+          symbol: "BTC",
+          name: "Bitcoin",
+          assetType: "crypto",
+          quantity: 1,
+          currentPrice: 50_000,
+          change24hPercent: 0.2,
+        }),
+      ],
+      quietIntelligence({
+        quietMarket: false,
+        portfolioStatus: "Elevated",
+        mustWatch: {
+          type: "article",
+          itemId: "n1",
+          title: "   ",
+          sourceName: "Example",
+          canonicalUrl: "https://example.com",
+          reason: "Mentions a portfolio symbol.",
+        },
+        holdingInsights: {
+          positive: [],
+          neutral: [],
+          negative: ["BTC"],
+        },
+      }),
+    );
+
+    const watch = buildPersonalActionPlan(pi).items.find(
+      (item) => item.category === "watch",
+    );
+    expect(watch?.headline).toBe(
+      "A portfolio-linked development is worth monitoring",
     );
   });
 

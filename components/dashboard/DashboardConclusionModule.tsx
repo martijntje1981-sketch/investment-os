@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import {
   ArrowUpRight,
   ClipboardList,
@@ -30,6 +31,8 @@ type DashboardConclusionModuleProps = {
   testId?: string;
   tone?: DashboardConclusionTone;
   statusToneClassName?: string;
+  /** Optional contextual visual replacing the tone icon (e.g. goal progress). */
+  leadingVisual?: ReactNode;
 };
 
 const TONE_VISUAL: Record<
@@ -108,6 +111,7 @@ export function DashboardConclusionModule({
   testId,
   tone = "intelligence",
   statusToneClassName = "text-slate-950",
+  leadingVisual,
 }: DashboardConclusionModuleProps) {
   const visual = TONE_VISUAL[tone];
   const Icon = visual.Icon;
@@ -119,12 +123,16 @@ export function DashboardConclusionModule({
       aria-label={card.eyebrow}
     >
       <div className="flex items-start gap-3">
-        <span
-          className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl ${visual.iconSurface}`}
-          aria-hidden
-        >
-          <Icon className={`h-4 w-4 ${visual.iconClass}`} />
-        </span>
+        {leadingVisual ? (
+          <span className="mt-0.5 shrink-0">{leadingVisual}</span>
+        ) : (
+          <span
+            className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl ${visual.iconSurface}`}
+            aria-hidden
+          >
+            <Icon className={`h-4 w-4 ${visual.iconClass}`} />
+          </span>
+        )}
         <div className="min-w-0 flex-1">
           <p className={`${appSectionLabelClass} ${visual.labelClass}`}>
             {card.eyebrow}

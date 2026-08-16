@@ -4,11 +4,13 @@ import { useId, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight, CheckCircle2, Sparkles } from "lucide-react";
 
+import { HoldingSymbolChip } from "@/components/dashboard/HoldingSymbolChip";
 import {
   appCardPaddingCompactClass,
   appSectionMetaClass,
   appTextLinkClass,
 } from "@/components/layout/appSurface";
+import { NewsMediaThumbnail } from "@/components/news/NewsMediaThumbnail";
 import {
   buildPersonalIntelligenceConclusion,
   selectDashboardActionPlanItems,
@@ -37,16 +39,49 @@ type PortfolioThirtySecondsProps = {
   hasSavedGoal?: boolean;
 };
 
+function ActionRowVisual({ item }: { item: PersonalActionPlanItem }) {
+  if (item.visualKind === "news") {
+    return (
+      <span className="hidden shrink-0 sm:inline-flex" aria-hidden>
+        <NewsMediaThumbnail
+          thumbnailUrl={item.thumbnailUrl}
+          sourceType={item.mediaType === "video" ? "youtube" : "news"}
+          fallbackCategory={item.mediaType === "video" ? "video" : "portfolio"}
+          size="micro"
+          showPlayIndicator={item.mediaType === "video"}
+          alt=""
+        />
+      </span>
+    );
+  }
+
+  if (item.visualKind === "holding" && item.entitySymbol) {
+    return (
+      <span className="hidden shrink-0 sm:inline-flex">
+        <HoldingSymbolChip symbol={item.entitySymbol} size={32} />
+      </span>
+    );
+  }
+
+  return null;
+}
+
 function CompactActionRow({ item }: { item: PersonalActionPlanItem }) {
   const body = (
     <>
+      <span className="w-14 shrink-0 pt-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
+        {item.categoryLabel}
+      </span>
+      <ActionRowVisual item={item} />
       <span className="min-w-0 flex-1">
-        <span className="block text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
-          {item.categoryLabel}
-        </span>
-        <span className="mt-0.5 block text-[14px] font-semibold leading-snug tracking-[-0.02em] text-slate-950">
+        <span className="block text-[13px] font-semibold leading-snug tracking-[-0.02em] text-slate-950 sm:text-[14px]">
           {item.headline}
         </span>
+        {item.sourceName ? (
+          <span className={`mt-0.5 block truncate ${appSectionMetaClass}`}>
+            {item.sourceName}
+          </span>
+        ) : null}
       </span>
       {item.href ? (
         <ArrowUpRight
@@ -58,13 +93,14 @@ function CompactActionRow({ item }: { item: PersonalActionPlanItem }) {
   );
 
   const rowClass =
-    "flex min-h-11 items-start gap-2 rounded-xl border border-slate-200/70 bg-white/70 px-3 py-2.5";
+    "flex min-h-11 items-center gap-2 rounded-xl border border-slate-200/70 bg-white/70 px-2.5 py-2 sm:gap-2.5 sm:px-3";
 
   if (item.href) {
     return (
       <Link
         href={item.href}
         className={`${rowClass} transition hover:brightness-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40`}
+        aria-label={`${item.categoryLabel}: ${item.headline}`}
       >
         {body}
       </Link>
@@ -91,25 +127,25 @@ function MarketCalmerBlock({ calmer }: { calmer: MarketCalmerResult }) {
 
   return (
     <div
-      className={`mt-3 rounded-2xl border border-slate-200/80 bg-gradient-to-br from-slate-50/90 to-white px-3.5 py-3.5 shadow-sm border-l-[3px] ${directionBorder}`}
+      className={`mt-2.5 rounded-2xl border border-slate-200/80 bg-gradient-to-br from-slate-50/90 to-white px-3 py-2.5 shadow-sm border-l-[3px] ${directionBorder}`}
       data-testid="market-calmer"
       data-activation={calmer.activation}
     >
       <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
         Market context
       </p>
-      <p className="mt-1 text-[15px] font-semibold leading-snug tracking-[-0.02em] text-slate-950">
+      <p className="mt-1 text-[14px] font-semibold leading-snug tracking-[-0.02em] text-slate-950 sm:text-[15px]">
         {calmer.headline}
       </p>
       {calmer.mainDriver ? (
-        <p className={`mt-1.5 ${appSectionMetaClass}`}>
+        <p className={`mt-1 ${appSectionMetaClass}`}>
           {calmer.mainDriver.summary}
         </p>
       ) : null}
 
       <button
         type="button"
-        className="mt-2 inline-flex min-h-11 items-center text-sm font-medium text-sky-800"
+        className="mt-1.5 inline-flex min-h-11 items-center text-sm font-medium text-sky-800"
         aria-expanded={expanded}
         aria-controls={detailsId}
         onClick={() => setExpanded((value) => !value)}
@@ -210,9 +246,9 @@ export function PortfolioThirtySeconds({
       data-testid="portfolio-thirty-seconds"
       data-emphasis={conclusion.isQuiet ? "quiet" : "active"}
     >
-      <div className="flex items-start gap-3">
+      <div className="flex items-start gap-2.5 sm:gap-3">
         <span
-          className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-800 ring-1 ring-blue-100"
+          className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-800 ring-1 ring-blue-100 sm:h-9 sm:w-9"
           aria-hidden
         >
           <Sparkles className="h-4 w-4" />
@@ -224,22 +260,33 @@ export function PortfolioThirtySeconds({
             </p>
             <h2
               id="portfolio-thirty-seconds-heading"
-              className="mt-1 text-[1.15rem] font-bold tracking-[-0.03em] text-slate-950 sm:text-[1.2rem]"
+              className="mt-0.5 text-[1.05rem] font-bold tracking-[-0.03em] text-slate-950 sm:text-[1.15rem]"
             >
               Your portfolio in 30 seconds
             </h2>
           </header>
 
           <p
-            className="mt-3 text-[1.05rem] font-semibold leading-snug tracking-[-0.02em] text-slate-950 sm:text-[1.1rem]"
+            className="mt-2 text-[1rem] font-semibold leading-snug tracking-[-0.02em] text-slate-950 sm:mt-2.5 sm:text-[1.05rem]"
             data-testid="pi-primary-conclusion"
           >
             {conclusion.primaryConclusion}
           </p>
 
+          {!conclusion.isQuiet ? (
+            <Link
+              href={conclusion.ctaHref}
+              className={`mt-1.5 inline-flex min-h-11 items-center gap-1.5 ${appTextLinkClass}`}
+              data-testid="pi-primary-cta"
+            >
+              {conclusion.ctaLabel}
+              <ArrowUpRight className="h-4 w-4" aria-hidden />
+            </Link>
+          ) : null}
+
           {conclusion.isQuiet ? (
             <div
-              className="mt-3 flex items-start gap-2.5 rounded-2xl border border-emerald-200/60 bg-gradient-to-br from-emerald-50/80 to-white px-3.5 py-3"
+              className="mt-2.5 flex items-start gap-2.5 rounded-2xl border border-emerald-200/60 bg-gradient-to-br from-emerald-50/80 to-white px-3 py-2.5"
               data-testid="portfolio-thirty-seconds-quiet"
             >
               <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-50">
@@ -252,27 +299,16 @@ export function PortfolioThirtySeconds({
                 {conclusion.attentionLine}
               </p>
             </div>
-          ) : conclusion.attentionLine ? (
-            <div className="mt-3" data-testid="pi-attention-item">
-              <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
-                1 thing worth your attention
-              </p>
-              <p
-                className={`mt-1 ${appSectionMetaClass} text-[14px] leading-snug text-slate-800`}
-              >
-                {conclusion.attentionLine}
-              </p>
-            </div>
           ) : null}
 
           <MarketCalmerBlock calmer={calmer} />
 
           {dashboardActions.length > 0 ? (
-            <div className="mt-4 min-w-0" data-testid="personal-action-plan">
+            <div className="mt-3 min-w-0" data-testid="personal-action-plan">
               <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
                 Action plan
               </p>
-              <ul className="mt-2 space-y-1.5">
+              <ul className="mt-1.5 space-y-1">
                 {dashboardActions.map((entry) => (
                   <li key={entry.id}>
                     <CompactActionRow item={entry} />
@@ -286,14 +322,16 @@ export function PortfolioThirtySeconds({
             </div>
           ) : null}
 
-          <Link
-            href={conclusion.ctaHref}
-            className={`mt-3 inline-flex min-h-11 items-center gap-1.5 ${appTextLinkClass}`}
-            data-testid="pi-primary-cta"
-          >
-            {conclusion.ctaLabel}
-            <ArrowUpRight className="h-4 w-4" aria-hidden />
-          </Link>
+          {conclusion.showFooterCta ? (
+            <Link
+              href={conclusion.ctaHref}
+              className={`mt-2.5 inline-flex min-h-11 items-center gap-1.5 ${appTextLinkClass}`}
+              data-testid="pi-footer-cta"
+            >
+              {conclusion.ctaLabel}
+              <ArrowUpRight className="h-4 w-4" aria-hidden />
+            </Link>
+          ) : null}
         </div>
       </div>
     </section>

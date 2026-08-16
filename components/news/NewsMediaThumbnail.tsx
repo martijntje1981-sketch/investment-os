@@ -12,6 +12,7 @@ import { selectTrustedNewsThumbnailFromUrl } from "@/lib/services/news/newsThumb
 import type { NewsSourceType } from "@/lib/types/newsContent";
 
 const SIZE_CLASSES = {
+  micro: "h-8 w-8 shrink-0 sm:h-9 sm:w-9",
   compact:
     "h-11 w-[3.75rem] shrink-0 aspect-[4/3] min-[480px]:h-12 min-[480px]:w-16",
   small:

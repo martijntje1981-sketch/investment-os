@@ -74,15 +74,17 @@ export function buildPersonalIntelligenceConclusion(input: {
   isQuiet: boolean;
   primaryConclusion: string;
   attentionLine: string | null;
+  /** Contextual destination for the primary conclusion itself. */
   ctaLabel: string;
   ctaHref: string;
+  /**
+   * When false, UI should omit the footer CTA — primary/action rows already
+   * carry destinations (avoids duplicate “See why”).
+   */
+  showFooterCta: boolean;
 } {
-  const { view, calmer, actionPlan, resilienceSensitivityName } = input;
+  const { view, calmer } = input;
   const mainDriver = view.drivers[0] ?? null;
-  const dashboardActions = selectDashboardActionPlanItems(actionPlan, {
-    isQuiet: view.isQuiet,
-    calmerActive: calmer.activation !== "inactive",
-  });
 
   if (view.isQuiet && calmer.activation === "inactive") {
     return {
@@ -93,6 +95,7 @@ export function buildPersonalIntelligenceConclusion(input: {
         "Nothing material requires your attention today.",
       ctaLabel: "View review",
       ctaHref: REVIEW_PATH,
+      showFooterCta: true,
     };
   }
 
@@ -108,55 +111,35 @@ export function buildPersonalIntelligenceConclusion(input: {
     primaryConclusion = clipWords(view.headline, 18);
   }
 
-  let attentionLine: string | null = null;
-  const attentionCandidate =
-    dashboardActions.find((item) => item.category === "review") ??
-    dashboardActions[0] ??
-    null;
+  // Prefer Action Plan rows as the actionable conclusions — avoid duplicating
+  // the same headline under “1 thing worth your attention”.
+  const attentionLine: string | null = null;
+  void input.actionPlan;
+  void input.resilienceSensitivityName;
 
-  if (attentionCandidate) {
-    attentionLine = clipWords(attentionCandidate.headline, 16);
-  } else if (mainDriver && calmer.activation === "inactive") {
-    attentionLine = null;
+  let ctaLabel: string;
+  let ctaHref: string;
+  if (calmer.activation !== "inactive") {
+    ctaLabel = "Explore scenarios";
+    ctaHref = DASHBOARD_DEEP_LINKS.scenarioStress;
+  } else if (mainDriver) {
+    ctaLabel = "View today’s performance";
+    ctaHref = DASHBOARD_DEEP_LINKS.portfolioPerformance;
+  } else {
+    ctaLabel = "View review";
+    ctaHref = REVIEW_PATH;
   }
 
-  // Avoid repeating the same driver name twice on the card.
-  if (
-    attentionLine &&
-    mainDriver &&
-    attentionLine.toLowerCase().includes(mainDriver.name.toLowerCase()) &&
-    primaryConclusion.toLowerCase().includes(mainDriver.name.toLowerCase())
-  ) {
-    const alt = dashboardActions.find(
-      (item) =>
-        item.id !== attentionCandidate?.id &&
-        !item.headline.toLowerCase().includes(mainDriver.name.toLowerCase()),
-    );
-    attentionLine = alt ? clipWords(alt.headline, 16) : null;
-  }
-
-  if (
-    attentionLine &&
-    resilienceSensitivityName &&
-    attentionLine
-      .toLowerCase()
-      .includes(resilienceSensitivityName.toLowerCase().split(/\s+/)[0] ?? "")
-  ) {
-    attentionLine = null;
-  }
+  // Active days: conclusion link sits with the primary line; omit footer “See why”.
+  const showFooterCta = false;
 
   return {
     isQuiet: false,
     primaryConclusion,
     attentionLine,
-    ctaLabel:
-      mainDriver || calmer.activation !== "inactive" ? "See why" : "View review",
-    ctaHref:
-      calmer.activation !== "inactive"
-        ? DASHBOARD_DEEP_LINKS.scenarioStress
-        : mainDriver
-          ? DASHBOARD_DEEP_LINKS.portfolioPerformance
-          : REVIEW_PATH,
+    ctaLabel,
+    ctaHref,
+    showFooterCta,
   };
 }
 

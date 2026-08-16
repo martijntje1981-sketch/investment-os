@@ -1,3 +1,4 @@
+import { selectTrustedNewsThumbnail } from "@/lib/services/news/newsThumbnail";
 import {
   bulletFromNewsItem,
   bulletTextOnly,
@@ -34,6 +35,8 @@ export type MustWatchRecommendation = {
   sourceName: string;
   canonicalUrl: string;
   reason: string;
+  /** Trusted feed thumbnail only — never fabricated. */
+  thumbnailUrl?: string | null;
 };
 
 export type InvestmentIntelligence = {
@@ -306,6 +309,7 @@ function buildMustWatch(
       chosen.relevanceScore >= STRONG_PORTFOLIO_MATCH_SCORE
         ? "Highest verified relevance to your holdings."
         : "Most relevant verified headline in today's feed.",
+    thumbnailUrl: selectTrustedNewsThumbnail(chosen),
   };
 }
 
