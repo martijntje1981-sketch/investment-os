@@ -24,7 +24,7 @@ import type {
   ResilienceProfile,
 } from "@/lib/services/resilience/types";
 import { assertNoAdvisoryLanguage } from "@/lib/services/resilience/wording";
-import { runAllPortfolioScenarios } from "@/lib/services/scenarioEngine";
+import { runRelevantPortfolioScenarios } from "@/lib/services/scenarioRelevance";
 import { roundScore } from "@/lib/services/portfolio/healthScore/math";
 import type { GoalSettings } from "@/lib/types/portfolioStorage";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
@@ -78,7 +78,7 @@ export function buildResilienceProfile(input: {
   const hasSavedGoal = Boolean(input.hasSavedGoal && input.goal);
   const goal = hasSavedGoal ? input.goal! : null;
 
-  const scenarioResults = runAllPortfolioScenarios(input.holdings);
+  const scenarioResults = runRelevantPortfolioScenarios(input.holdings);
   const inputs = collectResilienceInputs(input.holdings);
   const hasValue = inputs.analysis.totalValue > 0;
 

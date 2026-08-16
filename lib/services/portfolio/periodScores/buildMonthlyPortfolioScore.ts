@@ -1,13 +1,15 @@
 /**
- * Monthly Portfolio Score (mps-v1).
- * Answers: how strong was the verified 1M portfolio history?
- * Uses the same history series already loaded for Weekly context — no new APIs.
+ * Monthly Portfolio Score (mps-v2).
+ * Answers: is the portfolio structurally improving over ~1M?
+ * Uses verified 1M history plus optional resilience / concentration / goal context.
  */
 
 import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 import {
   MONTHLY_PORTFOLIO_SCORE_VERSION,
+  MONTHLY_PULSE_WEIGHTS,
   MONTHLY_SCORE_BANDS,
+  MONTHLY_STRUCTURE_RESILIENCE_BLEND,
 } from "@/lib/services/portfolio/periodScores/config";
 import {
   availableDynamicScore,
@@ -24,6 +26,12 @@ import type { PortfolioPerformanceHistoryApiResponse } from "@/lib/services/perf
 export type BuildMonthlyPortfolioScoreInput = {
   month: PortfolioPerformanceHistoryApiResponse | null;
   week?: PortfolioPerformanceHistoryApiResponse | null;
+  /** Optional Resilience master score (0–100) for structural weight. */
+  resilienceScore?: number | null;
+  /** Largest holding weight % when known. */
+  largestHoldingWeightPercent?: number | null;
+  goalStatus?: string | null;
+  hasSavedGoal?: boolean;
   calculatedAt?: string;
   href?: string;
 };
@@ -59,14 +67,29 @@ function weekReturn(
   return week.investmentReturnPercent;
 }
 
+function structureFromConcentration(weight: number | null | undefined): number {
+  if (weight == null || !Number.isFinite(weight)) return 62;
+  return interpolateAnchors(weight, [
+    { at: 25, score: 88 },
+    { at: 40, score: 72 },
+    { at: 55, score: 52 },
+    { at: 70, score: 34 },
+    { at: 85, score: 18 },
+  ]);
+}
+
+/**
+ * Monthly Pulse — structural improvement over ~1 month.
+ * Weights (product heuristics): strength 45%, consistency 20%, structure 35%.
+ */
 export function buildMonthlyPortfolioScore(
   input: BuildMonthlyPortfolioScoreInput,
 ): DynamicPortfolioScore {
   const calculatedAt = input.calculatedAt ?? new Date().toISOString();
-  const href = input.href ?? DASHBOARD_DEEP_LINKS.portfolioPerformance;
+  const href = input.href ?? DASHBOARD_DEEP_LINKS.resilienceSleep;
   const version = MONTHLY_PORTFOLIO_SCORE_VERSION;
   const timingContext =
-    "Monthly score uses verified 1M portfolio history; 1W is short-term context only.";
+    "Monthly Pulse blends verified 1M performance with structural context where available.";
 
   if (!monthAvailable(input.month)) {
     return unavailableDynamicScore({
@@ -81,7 +104,7 @@ export function buildMonthlyPortfolioScore(
           id: "month-history",
           label: "1M history",
           explanation:
-            "A Monthly Score needs a successful 1M portfolio return series.",
+            "A Monthly Pulse needs a successful 1M portfolio return series.",
         },
       ],
     });
@@ -90,7 +113,6 @@ export function buildMonthlyPortfolioScore(
   const monthPct = input.month.investmentReturnPercent;
   const weekPct = weekReturn(input.week);
 
-  // Wider anchors than weekly — monthly moves are typically larger.
   const strength = interpolateAnchors(monthPct, [
     { at: -12, score: 14 },
     { at: -6, score: 28 },
@@ -108,6 +130,34 @@ export function buildMonthlyPortfolioScore(
       (monthPct >= 0 && weekPct >= 0) || (monthPct < 0 && weekPct < 0);
     const nearFlat = Math.abs(monthPct) < 1 && Math.abs(weekPct) < 0.5;
     consistency = sameSign ? (nearFlat ? 70 : 86) : 44;
+  }
+
+  let structure = structureFromConcentration(
+    input.largestHoldingWeightPercent,
+  );
+  if (
+    input.resilienceScore != null &&
+    Number.isFinite(input.resilienceScore)
+  ) {
+    structure = clampScore(
+      input.resilienceScore * MONTHLY_STRUCTURE_RESILIENCE_BLEND.resilience +
+        structure * MONTHLY_STRUCTURE_RESILIENCE_BLEND.concentration,
+    );
+  }
+
+  let goalAdj = 0;
+  if (input.hasSavedGoal && input.goalStatus) {
+    if (
+      input.goalStatus === "Slightly behind" ||
+      input.goalStatus === "Behind schedule"
+    ) {
+      goalAdj = -6;
+    } else if (
+      input.goalStatus === "On track" ||
+      input.goalStatus === "Ahead of schedule"
+    ) {
+      goalAdj = 3;
+    }
   }
 
   let volAdj = 0;
@@ -135,33 +185,61 @@ export function buildMonthlyPortfolioScore(
   }
 
   const raw = clampScore(
-    strength * 0.7 + consistency * 0.3 + volAdj - coveragePenalty,
+    strength * MONTHLY_PULSE_WEIGHTS.strength +
+      consistency * MONTHLY_PULSE_WEIGHTS.consistency +
+      structure * MONTHLY_PULSE_WEIGHTS.structure +
+      volAdj +
+      goalAdj -
+      coveragePenalty,
   );
 
   const evidence: DynamicScoreEvidence[] = [
     {
       id: "month-return",
-      label: "1M portfolio return",
+      label: "1M return",
       value: Number(monthPct.toFixed(2)),
       explanation: `Portfolio ${monthPct >= 0 ? "gained" : "declined"} ${Math.abs(monthPct).toFixed(1)}% over one month.`,
+      impact: monthPct >= 0 ? "positive" : "limiting",
+    },
+    {
+      id: "structure",
+      label: "Structure",
+      value:
+        input.resilienceScore != null
+          ? Math.round(input.resilienceScore)
+          : input.largestHoldingWeightPercent != null
+            ? `${Math.round(input.largestHoldingWeightPercent)}%`
+            : null,
+      explanation:
+        input.resilienceScore != null
+          ? `Resilience score ${Math.round(input.resilienceScore)} informs structural weight.`
+          : input.largestHoldingWeightPercent != null
+            ? `Largest holding is about ${Math.round(input.largestHoldingWeightPercent)}% of the portfolio.`
+            : "Structural context uses concentration when Resilience is unavailable.",
+      impact:
+        structure >= 60 ? "positive" : structure < 45 ? "limiting" : "neutral",
     },
   ];
 
   if (weekPct != null) {
+    const sameSign =
+      (monthPct >= 0 && weekPct >= 0) || (monthPct < 0 && weekPct < 0);
     evidence.push({
       id: "week-return-context",
-      label: "1W short-term context",
+      label: "Consistency",
       value: Number(weekPct.toFixed(2)),
-      explanation: `One-week return ${weekPct >= 0 ? "is" : "was"} ${Math.abs(weekPct).toFixed(1)}% for direction context.`,
+      explanation: `One-week return ${weekPct >= 0 ? "is" : "was"} ${Math.abs(weekPct).toFixed(1)}% for consistency.`,
+      impact: sameSign ? "positive" : "limiting",
     });
   }
 
-  if (total > 0) {
+  if (input.hasSavedGoal && input.goalStatus) {
     evidence.push({
-      id: "history-coverage",
-      label: "History coverage",
-      value: `${covered}/${total}`,
-      explanation: `1M series covered ${covered} of ${total} holdings.`,
+      id: "goal-status",
+      label: "Goal",
+      value: input.goalStatus,
+      explanation: `Saved goal status: ${input.goalStatus}.`,
+      impact: goalAdj >= 0 ? "positive" : "limiting",
     });
   }
 
@@ -176,15 +254,15 @@ export function buildMonthlyPortfolioScore(
     timingContext,
     href,
   });
-  const bandLabel = preview.band?.label ?? "Mixed month";
+  const bandLabel = preview.band?.label ?? "Balanced";
 
   const summary =
-    weekPct != null &&
-    ((monthPct >= 0 && weekPct >= 0) || (monthPct < 0 && weekPct < 0))
-      ? `${bandLabel}: monthly and weekly direction are aligned.`
-      : weekPct != null
-        ? `${bandLabel}: monthly and weekly direction differ.`
-        : `${bandLabel}: based on verified 1M portfolio history.`;
+    input.resilienceScore != null
+      ? `${bandLabel}: 1M performance with Resilience ${Math.round(input.resilienceScore)} as structural context.`
+      : weekPct != null &&
+          ((monthPct >= 0 && weekPct >= 0) || (monthPct < 0 && weekPct < 0))
+        ? `${bandLabel}: monthly trend and weekly direction are aligned.`
+        : `${bandLabel}: based on verified 1M history and portfolio structure.`;
 
   return availableDynamicScore({
     id: "monthly",

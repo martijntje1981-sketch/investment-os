@@ -1,12 +1,14 @@
 /**
- * Weekly Portfolio Score (wps-v1).
- * Answers: how strong, consistent, and broad was the recent week?
+ * Weekly Portfolio Score (wps-v2).
+ * Answers: is short-term direction improving or weakening?
  * Uses real 1W history — never substitutes 1D returns for weekly calculations.
  */
 
 import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 import {
   WEEKLY_PORTFOLIO_SCORE_VERSION,
+  WEEKLY_PULSE_WEIGHTS_RETURN_ONLY,
+  WEEKLY_PULSE_WEIGHTS_WITH_BREADTH,
   WEEKLY_SCORE_BANDS,
 } from "@/lib/services/portfolio/periodScores/config";
 import {
@@ -196,15 +198,15 @@ export function buildWeeklyPortfolioScore(
   const useBreadthWeight = Boolean(breadth && breadth.measuredCount >= 1);
   const raw = clampScore(
     useBreadthWeight
-      ? strength * 0.5 +
-          consistency * 0.25 +
-          breadthScore * 0.25 +
+      ? strength * WEEKLY_PULSE_WEIGHTS_WITH_BREADTH.strength +
+          consistency * WEEKLY_PULSE_WEIGHTS_WITH_BREADTH.consistency +
+          breadthScore * WEEKLY_PULSE_WEIGHTS_WITH_BREADTH.breadth +
           relativeAdj +
           volAdj -
           concentrationPenalty -
           coveragePenalty
-      : strength * 0.62 +
-          consistency * 0.38 +
+      : strength * WEEKLY_PULSE_WEIGHTS_RETURN_ONLY.strength +
+          consistency * WEEKLY_PULSE_WEIGHTS_RETURN_ONLY.consistency +
           relativeAdj +
           volAdj -
           coveragePenalty,
@@ -213,47 +215,62 @@ export function buildWeeklyPortfolioScore(
   const evidence: DynamicScoreEvidence[] = [
     {
       id: "week-return",
-      label: "1W portfolio return",
+      label: "Trend",
       value: Number(weekPct.toFixed(2)),
       explanation: `Portfolio ${weekPct >= 0 ? "gained" : "declined"} ${Math.abs(weekPct).toFixed(1)}% over one week.`,
+      impact: weekPct >= 0 ? "positive" : "limiting",
     },
   ];
 
   if (monthPct != null) {
+    const sameSign =
+      (weekPct >= 0 && monthPct >= 0) || (weekPct < 0 && monthPct < 0);
     evidence.push({
       id: "month-return",
-      label: "1M trend context",
+      label: "Consistency",
       value: Number(monthPct.toFixed(2)),
       explanation: `One-month return ${monthPct >= 0 ? "is" : "was"} ${Math.abs(monthPct).toFixed(1)}% for direction context.`,
+      impact: sameSign ? "positive" : "limiting",
     });
   }
 
   if (breadth && breadth.measuredCount > 0) {
+    const positiveShare =
+      (breadth.positiveCount / breadth.measuredCount) * 100;
     evidence.push({
       id: "weekly-breadth",
-      label: "Weekly positive holdings",
+      label: "Breadth",
       value: `${breadth.positiveCount}/${breadth.measuredCount}`,
       explanation:
         breadth.measuredCount === 1
           ? "The weekly move is fully concentrated in one holding."
           : `${breadth.positiveCount} of ${breadth.measuredCount} holdings were positive over the week.`,
+      impact:
+        positiveShare >= 55
+          ? "positive"
+          : positiveShare <= 45
+            ? "limiting"
+            : "neutral",
     });
     if (breadth.topContributorSharePercent != null) {
       evidence.push({
         id: "weekly-concentration",
-        label: "Top weekly contributor",
+        label: "Concentration",
         value: Number(breadth.topContributorSharePercent.toFixed(1)),
         explanation: breadth.topContributorSymbol
           ? `${breadth.topContributorSymbol} contributed about ${breadth.topContributorSharePercent.toFixed(0)}% of absolute weekly moves.`
           : `Top holding contributed about ${breadth.topContributorSharePercent.toFixed(0)}% of absolute weekly moves.`,
+        impact:
+          breadth.topContributorSharePercent >= 70 ? "limiting" : "neutral",
       });
     }
   } else {
     evidence.push({
       id: "weekly-breadth",
-      label: "Holding breadth",
+      label: "Breadth",
       explanation:
         "Holding-level weekly breadth is not available yet; this score uses portfolio return and 1M consistency.",
+      impact: "neutral",
     });
   }
 

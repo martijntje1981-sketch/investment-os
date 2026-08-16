@@ -10,6 +10,7 @@ import { buildMonthlyPortfolioScore } from "@/lib/services/portfolio/periodScore
 import type { BuildMonthlyPortfolioScoreInput } from "@/lib/services/portfolio/periodScores/buildMonthlyPortfolioScore";
 import type { PortfolioPulseResult } from "@/lib/services/portfolio/periodScores/types";
 import { toDynamicScoreSnapshot } from "@/lib/services/portfolio/periodScores/types";
+import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 
 export type BuildPortfolioPulseInput = {
   daily: BuildDailyPortfolioScoreInput;
@@ -58,11 +59,11 @@ function isGenericEvidence(evidence: string): boolean {
 }
 
 function isSupportiveFeel(feel: string): boolean {
-  return /strong|stable|positive|broadly/.test(feel);
+  return /strong|stable|positive|improving|broadly/.test(feel);
 }
 
 function isWeakFeel(feel: string): boolean {
-  return /weak/.test(feel);
+  return /weak|stress|constrain|sensitiv/.test(feel);
 }
 
 function extractDriverSymbol(evidence: string): string | null {
@@ -186,7 +187,11 @@ export function buildPortfolioPulse(
   const monthly = buildMonthlyPortfolioScore({
     month: input.monthly?.month ?? input.weekly.month ?? null,
     week: input.monthly?.week ?? input.weekly.week ?? null,
-    href: input.monthly?.href ?? input.weekly.href,
+    resilienceScore: input.monthly?.resilienceScore,
+    largestHoldingWeightPercent: input.monthly?.largestHoldingWeightPercent,
+    goalStatus: input.monthly?.goalStatus,
+    hasSavedGoal: input.monthly?.hasSavedGoal,
+    href: input.monthly?.href ?? DASHBOARD_DEEP_LINKS.resilienceSleep,
     calculatedAt,
   });
 

@@ -9,10 +9,12 @@ import path from "node:path";
 import {
   buildCombinedPulseSummary,
   buildDailyPortfolioScore,
+  buildMonthlyPortfolioScore,
   buildPortfolioPulse,
   buildPortfolioPulseSnapshots,
   buildWeeklyPortfolioScore,
   DAILY_PORTFOLIO_SCORE_VERSION,
+  MONTHLY_PORTFOLIO_SCORE_VERSION,
   WEEKLY_PORTFOLIO_SCORE_VERSION,
 } from "@/lib/services/portfolio/periodScores";
 import type { PortfolioPerformanceHistoryApiResponse } from "@/lib/services/performance/types";
@@ -95,9 +97,9 @@ describe("Daily Portfolio Score", () => {
     expect(score.value!).toBeGreaterThan(60);
     expect(score.value!).toBeLessThanOrEqual(100);
     expect(score.version).toBe(DAILY_PORTFOLIO_SCORE_VERSION);
-    expect(score.band?.label).toMatch(/session/i);
+    expect(score.band?.label).toMatch(/Positive|Strong|Mixed/);
     expect(score.evidence.some((e) => e.id === "breadth")).toBe(true);
-    expect(score.summary.toLowerCase()).toMatch(/broad|strong|stable/);
+    expect(score.summary.toLowerCase()).toMatch(/broad|strong|positive/);
   });
 
   it("dampens a one-holding-driven gain and states concentration", () => {
@@ -192,7 +194,7 @@ describe("Daily Portfolio Score", () => {
     const score = buildDailyPortfolioScore({ holdings });
     expect(score.available).toBe(true);
     expect(score.value!).toBeLessThan(50);
-    expect(score.band?.label.toLowerCase()).toMatch(/weak|mixed/);
+    expect(score.band?.label.toLowerCase()).toMatch(/weak|mixed|stressed/);
   });
 
   it("preserves mixed timing context for equity + crypto", () => {
@@ -336,6 +338,83 @@ describe("Weekly Portfolio Score", () => {
   });
 });
 
+describe("Monthly Portfolio Score", () => {
+  it("scores structural improvement, not 1M return alone", () => {
+    const strongReturnWeakStructure = buildMonthlyPortfolioScore({
+      month: history("1M", 12),
+      week: history("1W", 2),
+      resilienceScore: 28,
+      largestHoldingWeightPercent: 78,
+      calculatedAt: "2026-08-03T10:00:00.000Z",
+    });
+    const moderateReturnStrongStructure = buildMonthlyPortfolioScore({
+      month: history("1M", 3),
+      week: history("1W", 1),
+      resilienceScore: 82,
+      largestHoldingWeightPercent: 28,
+    });
+    expect(strongReturnWeakStructure.available).toBe(true);
+    expect(moderateReturnStrongStructure.available).toBe(true);
+    expect(strongReturnWeakStructure.version).toBe(MONTHLY_PORTFOLIO_SCORE_VERSION);
+    expect(moderateReturnStrongStructure.value!).toBeGreaterThan(
+      strongReturnWeakStructure.value!,
+    );
+    expect(strongReturnWeakStructure.evidence.some((e) => e.id === "structure")).toBe(
+      true,
+    );
+  });
+
+  it("applies a goal-behind penalty when a saved goal exists", () => {
+    const onTrack = buildMonthlyPortfolioScore({
+      month: history("1M", 4),
+      week: history("1W", 1),
+      resilienceScore: 70,
+      hasSavedGoal: true,
+      goalStatus: "On track",
+    });
+    const behind = buildMonthlyPortfolioScore({
+      month: history("1M", 4),
+      week: history("1W", 1),
+      resilienceScore: 70,
+      hasSavedGoal: true,
+      goalStatus: "Behind schedule",
+    });
+    expect(behind.value!).toBeLessThan(onTrack.value!);
+    expect(behind.evidence.some((e) => e.id === "goal-status")).toBe(true);
+  });
+
+  it("still scores without a goal", () => {
+    const score = buildMonthlyPortfolioScore({
+      month: history("1M", 2.5),
+      week: history("1W", 0.5),
+      hasSavedGoal: false,
+    });
+    expect(score.available).toBe(true);
+    expect(score.evidence.every((e) => e.id !== "goal-status")).toBe(true);
+  });
+
+  it("shows More history needed without fabricating a monthly score", () => {
+    const score = buildMonthlyPortfolioScore({
+      month: history("1M", null, { success: false }),
+      resilienceScore: 80,
+    });
+    expect(score.available).toBe(false);
+    expect(score.value).toBeNull();
+    expect(score.unavailableReason).toBe("More history needed");
+  });
+
+  it("uses concentration when Resilience is unavailable", () => {
+    const score = buildMonthlyPortfolioScore({
+      month: history("1M", 5),
+      largestHoldingWeightPercent: 72,
+    });
+    expect(score.available).toBe(true);
+    expect(score.evidence.find((e) => e.id === "structure")?.explanation).toMatch(
+      /Largest holding/i,
+    );
+  });
+});
+
 describe("Portfolio Pulse combined summary", () => {
   it("writes one evidence-based sentence instead of bare band labels", () => {
     const summary = buildCombinedPulseSummary(
@@ -463,6 +542,8 @@ describe("Dashboard Portfolio Pulse wiring", () => {
     expect(hero).toContain("HeroPortfolioPulse");
     expect(pulse).toContain("Scorecard");
     expect(pulse).toContain("DASHBOARD_DEEP_LINKS.scorecard");
+    expect(pulse).toContain("PortfolioPulseDetailSheet");
+    expect(pulse).toContain("onActivate");
     expect(pulse).toContain("size={60}");
     expect(pulse).toContain("size={56}");
     expect(pulse).toContain("pulse.monthly");
@@ -471,6 +552,9 @@ describe("Dashboard Portfolio Pulse wiring", () => {
     expect(pulse).toContain('appearance="onDark"');
     expect(ring).toContain('emphasis?: "primary" | "default"');
     expect(ring).toContain('appearance?: "onLight" | "onDark"');
+    expect(ring).toContain("onActivate");
+    expect(dashboard).toContain("buildResilienceProfile");
+    expect(dashboard).toContain("resilienceScore");
     expect(briefing).toContain("Markets today");
     expect(pulse).not.toContain("overflow-x-auto");
   });

@@ -1,7 +1,8 @@
 /**
- * Daily Portfolio Score (dps-v1).
- * Answers: how strong and broad is today’s portfolio performance?
+ * Daily Portfolio Score (dps-v2).
+ * Answers: what is happening in the portfolio right now?
  * Uses latest-session / 24h movers only — never fabricates a neutral 50.
+ * Emphasizes direction, breadth, and concentration — not structural diversification.
  */
 
 import { summarizeDailyPerformance } from "@/lib/client/dailyPerformance";
@@ -11,6 +12,7 @@ import {
 } from "@/lib/client/performancePeriod";
 import {
   DAILY_PORTFOLIO_SCORE_VERSION,
+  DAILY_PULSE_WEIGHTS,
   DAILY_SCORE_BANDS,
 } from "@/lib/services/portfolio/periodScores/config";
 import {
@@ -54,7 +56,7 @@ export function buildDailyPortfolioScore(
   input: BuildDailyPortfolioScoreInput,
 ): DynamicPortfolioScore {
   const calculatedAt = input.calculatedAt ?? new Date().toISOString();
-  const href = input.href ?? "/market-pulse";
+  const href = input.href ?? "/review";
   const marketsClosed = Boolean(input.marketsClosed);
   const timingContext = timingContextFor(input.holdings, marketsClosed);
   const version = DAILY_PORTFOLIO_SCORE_VERSION;
@@ -173,8 +175,8 @@ export function buildDailyPortfolioScore(
   }
 
   const raw = clampScore(
-    strength * 0.48 +
-      breadthScore * 0.42 +
+    strength * DAILY_PULSE_WEIGHTS.strength +
+      breadthScore * DAILY_PULSE_WEIGHTS.breadth +
       relativeAdj -
       concentrationPenalty -
       coveragePenalty,
@@ -183,24 +185,28 @@ export function buildDailyPortfolioScore(
   const evidence: DynamicScoreEvidence[] = [
     {
       id: "daily-return",
-      label: "Portfolio move",
+      label: "Direction",
       value: Number(daily.todayPercent.toFixed(2)),
       explanation: `Portfolio ${daily.todayPercent >= 0 ? "moved" : "declined"} ${Math.abs(daily.todayPercent).toFixed(2)}% on the latest session / 24h mix.`,
+      impact: daily.todayPercent >= 0 ? "positive" : "limiting",
     },
     {
       id: "breadth",
-      label: "Positive holdings",
+      label: "Breadth",
       value: `${positiveCount}/${measuredCount}`,
       explanation: `${positiveCount} of ${measuredCount} valued holdings finished positive.`,
+      impact: positiveShare >= 55 ? "positive" : positiveShare <= 45 ? "limiting" : "neutral",
     },
     {
       id: "concentration",
-      label: "Top contributor share",
+      label: "Concentration",
       value: Number(topShare.toFixed(1)),
       explanation:
         measuredCount === 1
           ? `${top.holding.symbol} accounts for the entire measured move.`
           : `${top.holding.symbol} contributed about ${topShare.toFixed(0)}% of absolute moves.`,
+      impact:
+        measuredCount === 1 || topShare >= 70 ? "limiting" : "neutral",
     },
   ];
 

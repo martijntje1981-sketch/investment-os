@@ -1,18 +1,27 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 
 import { DynamicScoreRing } from "@/components/dashboard/DynamicScoreRing";
+import { PortfolioPulseDetailSheet } from "@/components/dashboard/PortfolioPulseDetailSheet";
 import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
-import type { PortfolioPulseResult } from "@/lib/services/portfolio/periodScores";
+import type {
+  DynamicPortfolioScore,
+  PortfolioPulseResult,
+} from "@/lib/services/portfolio/periodScores";
 
 /**
  * Compact Daily + Weekly + Monthly pulse rings for the Dashboard hero.
- * Omits combinedSummary to avoid duplicating Personal Intelligence drivers.
+ * Detail opens in a sheet — keeps Dashboard conclusion-first.
  */
 export function HeroPortfolioPulse({
   pulse,
 }: {
   pulse: PortfolioPulseResult;
 }) {
+  const [active, setActive] = useState<DynamicPortfolioScore | null>(null);
+
   return (
     <div
       className="min-w-0"
@@ -36,20 +45,29 @@ export function HeroPortfolioPulse({
           size={60}
           emphasis="primary"
           appearance="onDark"
+          onActivate={() => setActive(pulse.daily)}
         />
         <DynamicScoreRing
           score={pulse.weekly}
           size={56}
           emphasis="default"
           appearance="onDark"
+          onActivate={() => setActive(pulse.weekly)}
         />
         <DynamicScoreRing
           score={pulse.monthly}
           size={56}
           emphasis="default"
           appearance="onDark"
+          onActivate={() => setActive(pulse.monthly)}
         />
       </div>
+
+      <PortfolioPulseDetailSheet
+        score={active}
+        open={active != null}
+        onClose={() => setActive(null)}
+      />
     </div>
   );
 }

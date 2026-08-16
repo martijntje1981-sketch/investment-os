@@ -26,10 +26,10 @@ import {
 import { buildResilienceProfile } from "@/lib/services/resilience";
 import {
   runPortfolioScenario,
-  SCENARIO_DEFINITIONS,
   type ScenarioId,
   type ScenarioResult,
 } from "@/lib/services/scenarioEngine";
+import { selectRelevantPortfolioScenarios } from "@/lib/services/scenarioRelevance";
 import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 import {
   detailsToggleClass,
@@ -654,13 +654,25 @@ export function ScenarioStressSection({
   hasSavedGoal?: boolean;
 }) {
   const { formatEur } = useBaseCurrencyDisplay();
-  const [selectedId, setSelectedId] = useState<ScenarioId>(
-    "global_equities_minus_20",
+  const relevant = useMemo(
+    () => selectRelevantPortfolioScenarios(holdings),
+    [holdings],
   );
+  const [selectedId, setSelectedId] = useState<ScenarioId | null>(null);
+
+  const effectiveId =
+    selectedId &&
+    relevant.modeled.some((row) => row.scenarioId === selectedId)
+      ? selectedId
+      : relevant.defaultScenarioId;
 
   const result = useMemo(
-    () => runPortfolioScenario(holdings, selectedId),
-    [holdings, selectedId],
+    () => runPortfolioScenario(holdings, effectiveId),
+    [holdings, effectiveId],
+  );
+
+  const selectedMeta = relevant.modeled.find(
+    (row) => row.scenarioId === effectiveId,
   );
 
   return (
@@ -690,53 +702,88 @@ export function ScenarioStressSection({
       </div>
 
       <div className={`${appCardPaddingClass} space-y-5`}>
-        <div
-          role="radiogroup"
-          aria-label="Choose a hypothetical scenario"
-          className="grid gap-3 sm:grid-cols-3"
-        >
-          {SCENARIO_DEFINITIONS.map((definition) => {
-            const selected = definition.id === selectedId;
-            return (
-              <button
-                key={definition.id}
-                type="button"
-                role="radio"
-                aria-checked={selected}
-                aria-label={`${definition.shortLabel}${selected ? ", currently modeled" : ""}`}
-                onClick={() => setSelectedId(definition.id)}
-                className={scenarioChoiceClass(selected)}
-                data-testid={`scenario-choice-${definition.id}`}
-                data-selected={selected ? "true" : "false"}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <p
-                    className={`text-sm font-semibold ${selected ? "text-sky-950" : "text-slate-900"}`}
-                  >
-                    {definition.shortLabel}
-                  </p>
-                  {selected ? (
-                    <span className="shrink-0 rounded-full bg-sky-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
-                      Selected
-                    </span>
-                  ) : (
-                    <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-                      Choose
-                    </span>
-                  )}
-                </div>
-                <p className={`mt-1 text-xs leading-snug ${appSectionMetaClass}`}>
-                  {definition.description}
-                </p>
-              </button>
-            );
-          })}
+        <div>
+          <p className={appSectionLabelClass}>
+            Scenarios that matter to your portfolio
+          </p>
+          <p className={`mt-1 ${appSectionMetaClass}`}>
+            Selected from your current exposures.
+          </p>
         </div>
+
+        {relevant.modeled.length === 0 ? (
+          <p className={appSectionBodyClass}>
+            No modeled stress scenarios currently match a meaningful share of
+            this portfolio. Add classified equity or crypto holdings to explore
+            supported scenarios.
+          </p>
+        ) : (
+          <div
+            role="radiogroup"
+            aria-label="Scenarios that matter to your portfolio"
+            className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+          >
+            {relevant.modeled.map((row) => {
+              const selected = row.scenarioId === effectiveId;
+              return (
+                <button
+                  key={row.scenarioId}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  aria-label={`${row.shortLabel}${selected ? ", currently modeled" : ""}`}
+                  onClick={() => setSelectedId(row.scenarioId)}
+                  className={scenarioChoiceClass(selected)}
+                  data-testid={`scenario-choice-${row.scenarioId}`}
+                  data-selected={selected ? "true" : "false"}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <p
+                      className={`text-sm font-semibold ${selected ? "text-sky-950" : "text-slate-900"}`}
+                    >
+                      {row.shortLabel}
+                    </p>
+                    {selected ? (
+                      <span className="shrink-0 rounded-full bg-sky-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                        Selected
+                      </span>
+                    ) : (
+                      <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                        Choose
+                      </span>
+                    )}
+                  </div>
+                  <p className={`mt-1 text-xs leading-snug ${appSectionMetaClass}`}>
+                    {row.reason}
+                  </p>
+                  <p className={`mt-1 text-[11px] font-semibold tabular-nums text-slate-600`}>
+                    ~{row.affectedWeightPercent}% affected
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {relevant.unavailableRelevant.length > 0 ? (
+          <div className="space-y-2 rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-4 py-3">
+            <p className={appSectionLabelClass}>Relevant but not yet modeled</p>
+            {relevant.unavailableRelevant.map((row) => (
+              <div key={row.id}>
+                <p className="text-sm font-semibold text-slate-900">{row.name}</p>
+                <p className={`mt-0.5 ${appSectionMetaClass}`}>{row.reason}</p>
+              </div>
+            ))}
+          </div>
+        ) : null}
 
         <div>
           <p className={`${appSectionTitleClass} text-base`}>
             {result.scenarioName}
           </p>
+          {selectedMeta ? (
+            <p className={`mt-1 ${appSectionMetaClass}`}>{selectedMeta.reason}</p>
+          ) : null}
           <div className="mt-3">
             <ScenarioResultPanel result={result} formatEur={formatEur} />
           </div>

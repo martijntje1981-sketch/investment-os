@@ -16,9 +16,14 @@ describe("Scenario stress interactive affordance", () => {
   it("uses button radios with stronger selected vs idle scenario styles", () => {
     expect(sectionSource).toContain('role="radio"');
     expect(sectionSource).toContain("scenarioChoiceClass(selected)");
-    expect(sectionSource).toContain('data-testid={`scenario-choice-${definition.id}`}');
+    expect(sectionSource).toContain(
+      "data-testid={`scenario-choice-${row.scenarioId}`}",
+    );
+    expect(sectionSource).toContain("Scenarios that matter to your portfolio");
+    expect(sectionSource).toContain("selectRelevantPortfolioScenarios");
     expect(sectionSource).toContain("Selected");
     expect(sectionSource).toContain("Choose");
+    expect(sectionSource).toContain("min-h-11");
 
     const selected = scenarioChoiceClass(true);
     const idle = scenarioChoiceClass(false);

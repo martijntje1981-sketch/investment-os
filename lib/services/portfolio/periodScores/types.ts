@@ -7,11 +7,18 @@ import type { ScoreBandTone } from "@/lib/services/portfolio/scorecard/config";
 
 export type DynamicPortfolioScoreId = "daily" | "weekly" | "monthly";
 
+export type DynamicScoreEvidenceImpact =
+  | "positive"
+  | "limiting"
+  | "neutral";
+
 export type DynamicScoreEvidence = {
   id: string;
   label: string;
   value?: string | number | null;
   explanation: string;
+  /** Optional polarity for Pulse detail “what shaped it”. */
+  impact?: DynamicScoreEvidenceImpact;
 };
 
 export type DynamicScoreBand = {

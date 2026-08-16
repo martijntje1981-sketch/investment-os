@@ -23,6 +23,7 @@ export function DynamicScoreRing({
   emphasis = "default",
   appearance = "onLight",
   className,
+  onActivate,
 }: {
   score: DynamicPortfolioScore;
   size?: number;
@@ -31,6 +32,8 @@ export function DynamicScoreRing({
   /** Hero uses onDark; standalone pulse card keeps onLight. */
   appearance?: "onLight" | "onDark";
   className?: string;
+  /** When set, opens detail instead of navigating immediately. */
+  onActivate?: () => void;
 }) {
   const stroke = Math.max(5, Math.round(size * 0.082));
   const radius = (size - stroke) / 2;
@@ -65,18 +68,16 @@ export function DynamicScoreRing({
     ? `${title} Portfolio Score ${score.value} out of 100, ${status}. ${score.summary}`
     : `${title} Portfolio Score unavailable. ${status}`;
 
-  return (
-    <Link
-      href={score.href}
-      className={cn(
-        "group flex min-w-0 flex-1 flex-col items-center rounded-xl px-1 py-1 text-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40",
-        onDark
-          ? "hover:bg-white/5 focus-visible:ring-offset-2 focus-visible:ring-offset-navy-hero"
-          : "hover:bg-slate-50/80",
-        className,
-      )}
-      aria-label={aria}
-    >
+  const shellClass = cn(
+    "group flex min-h-11 min-w-0 flex-1 flex-col items-center rounded-xl px-1 py-1 text-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40",
+    onDark
+      ? "hover:bg-white/5 focus-visible:ring-offset-2 focus-visible:ring-offset-navy-hero"
+      : "hover:bg-slate-50/80",
+    className,
+  );
+
+  const body = (
+    <>
       <div className="relative shrink-0" style={{ width: size, height: size }}>
         <svg
           width={size}
@@ -169,13 +170,46 @@ export function DynamicScoreRing({
           {status}
         </p>
       ) : (
-        <span className="sr-only">{status}</span>
+        <p
+          className={cn(
+            "mt-0.5 max-w-[4.75rem] truncate text-[9px] font-semibold leading-tight",
+            score.available
+              ? onDark
+                ? "text-white/55"
+                : SCORE_TONE_LABEL_CLASS[tone]
+              : onDark
+                ? "text-white/40"
+                : "text-slate-500",
+          )}
+        >
+          {status}
+        </p>
       )}
       <span className="sr-only">
         {score.available
           ? `${title} ${score.value} out of 100. ${status}. ${score.timingContext}`
           : `${title} unavailable. ${status}. ${score.timingContext}`}
       </span>
+    </>
+  );
+
+  if (onActivate) {
+    return (
+      <button
+        type="button"
+        className={shellClass}
+        aria-label={aria}
+        onClick={onActivate}
+        data-testid={`pulse-ring-${score.id}`}
+      >
+        {body}
+      </button>
+    );
+  }
+
+  return (
+    <Link href={score.href} className={shellClass} aria-label={aria}>
+      {body}
     </Link>
   );
 }

@@ -205,7 +205,7 @@ export function scoreScenarioSensitivityFactor(
     label: "Scenario sensitivity",
     score,
     applicable: true,
-    explanation: `Of the supported scenarios, ${worst.scenarioName} currently produces the largest estimated portfolio impact (${formatSignedPercent(worst.estimatedPortfolioImpactPercent ?? 0)}).`,
+    explanation: `Among scenarios relevant to your portfolio, ${worst.scenarioName} currently produces the largest estimated portfolio impact (${formatSignedPercent(worst.estimatedPortfolioImpactPercent ?? 0)}).`,
   };
 }
 

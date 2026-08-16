@@ -52,6 +52,7 @@ import { buildPortfolioHealthProfile } from "@/lib/services/portfolio/portfolioH
 import { buildPortfolioExposureAllocation } from "@/lib/services/classification";
 import { buildPortfolioPulse } from "@/lib/services/portfolio/periodScores";
 import { buildPersonalIntelligenceToday } from "@/lib/services/personalIntelligence";
+import { buildResilienceProfile } from "@/lib/services/resilience";
 import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 import { logDashboardProductionDiagnostics } from "@/lib/client/investmentOsProductionDebug";
 
@@ -141,19 +142,44 @@ export default function DashboardPage() {
 
   const portfolioPulse = useMemo(() => {
     if (holdings.length === 0) return null;
+    const resilience = buildResilienceProfile({
+      holdings,
+      goal,
+      hasSavedGoal,
+    });
     return buildPortfolioPulse({
       daily: {
         holdings,
         marketsClosed,
-        href: "/market-pulse",
+        href: "/review",
       },
       weekly: {
         week: weekHistory.data,
         month: monthHistory.data,
         href: DASHBOARD_DEEP_LINKS.portfolioPerformance,
       },
+      monthly: {
+        month: monthHistory.data,
+        week: weekHistory.data,
+        resilienceScore: resilience.score,
+        largestHoldingWeightPercent:
+          snapshot.concentrationWeightPercent ?? null,
+        goalStatus: goalProgress.hasGoal ? goalProgress.status : null,
+        hasSavedGoal: goalProgress.hasGoal,
+        href: DASHBOARD_DEEP_LINKS.resilienceSleep,
+      },
     });
-  }, [holdings, marketsClosed, monthHistory.data, weekHistory.data]);
+  }, [
+    goal,
+    goalProgress.hasGoal,
+    goalProgress.status,
+    hasSavedGoal,
+    holdings,
+    marketsClosed,
+    monthHistory.data,
+    snapshot.concentrationWeightPercent,
+    weekHistory.data,
+  ]);
 
   const smartDashboard = useMemo(() => {
     const usesPreviousClose =
