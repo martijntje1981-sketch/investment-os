@@ -341,7 +341,13 @@ function noActionItem(): PersonalActionPlanItem {
 
 function assertNonAdvisory(items: PersonalActionPlanItem[]): void {
   for (const entry of items) {
-    const blob = `${entry.headline} ${entry.detail} ${entry.hrefLabel ?? ""}`;
+    // Watch headlines are verified external news titles and may contain words like
+    // "hold" / "sell" (e.g. "Fed to hold rates") without being product advice.
+    // Assert only our generated copy for Watch; assert full copy elsewhere.
+    const blob =
+      entry.category === "watch"
+        ? `${entry.detail} ${entry.hrefLabel ?? ""}`
+        : `${entry.headline} ${entry.detail} ${entry.hrefLabel ?? ""}`;
     for (const pattern of ACTION_PLAN_PROHIBITED_PATTERNS) {
       if (pattern.test(blob)) {
         throw new Error(

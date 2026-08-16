@@ -171,6 +171,46 @@ describe("buildPersonalActionPlan", () => {
     expect(watch?.href).toContain("portfolio-news");
   });
 
+  it("does not crash when a verified news title contains hold/buy/sell wording", () => {
+    const pi = intelligenceFromHoldings(
+      [
+        holding({
+          symbol: "BTC",
+          name: "Bitcoin",
+          assetType: "crypto",
+          quantity: 1,
+          currentPrice: 50_000,
+          change24hPercent: 0.2,
+        }),
+      ],
+      quietIntelligence({
+        quietMarket: false,
+        portfolioStatus: "Elevated",
+        mustWatch: {
+          type: "article",
+          itemId: "n-hold",
+          title: "Fed to hold rates steady as markets wait",
+          sourceName: "Example Wire",
+          canonicalUrl: "https://example.com/fed-hold",
+          reason: "Mentions a portfolio symbol.",
+          thumbnailUrl: "https://i.ytimg.com/vi/abc123/hqdefault.jpg",
+        },
+        holdingInsights: {
+          positive: [],
+          neutral: [],
+          negative: ["BTC"],
+        },
+      }),
+    );
+
+    expect(() => buildPersonalActionPlan(pi)).not.toThrow();
+    const watch = buildPersonalActionPlan(pi).items.find(
+      (item) => item.category === "watch",
+    );
+    expect(watch?.headline).toMatch(/Fed to hold rates/i);
+    expect(watch?.visualKind).toBe("news");
+  });
+
   it("keeps generic WATCH copy when the verified title is missing", () => {
     const pi = intelligenceFromHoldings(
       [

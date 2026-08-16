@@ -14,10 +14,14 @@ export function HoldingSymbolChip({
   size = 32,
   className,
 }: {
-  symbol: string;
+  symbol: string | null | undefined;
   size?: 28 | 32 | 36;
   className?: string;
 }) {
+  if (typeof symbol !== "string" || !symbol.trim()) {
+    return null;
+  }
+
   const label = initialsFromSymbol(symbol);
   return (
     <span

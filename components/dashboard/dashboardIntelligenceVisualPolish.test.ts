@@ -171,6 +171,50 @@ describe("Dashboard intelligence visual polish", () => {
     expect(watch?.visualKind).toBe("holding");
   });
 
+  it("does not throw for verified mustWatch titles containing hold/buy/sell wording", () => {
+    const holdings = [
+      holding({
+        symbol: "BTC",
+        assetType: "crypto",
+        quantity: 1,
+        currentPrice: 40_000,
+        change24hPercent: 0.1,
+      }),
+    ];
+    const daily = summarizeDailyPerformance(holdings);
+    const intelligence = buildPersonalIntelligenceToday({
+      daily,
+      holdingsWeights: [{ symbol: "BTC", name: "Bitcoin", weightPercent: 100 }],
+      intelligence: {
+        portfolioStatus: "Elevated",
+        portfolioSummary: "Material",
+        todayMatters: [],
+        holdingInsights: { positive: [], neutral: [], negative: ["BTC"] },
+        macroHighlights: [],
+        mustWatch: {
+          type: "article",
+          itemId: "n-hold",
+          title: "Fed to hold rates steady as markets wait",
+          sourceName: "Example Wire",
+          canonicalUrl: "https://example.com/fed-hold",
+          reason: "Mentions BTC.",
+          thumbnailUrl: "https://i.ytimg.com/vi/abc123/hqdefault.jpg",
+        },
+        keyRisks: [],
+        opportunities: [],
+        quietMarket: false,
+        generatedAt: "2026-08-16T10:00:00.000Z",
+      } satisfies InvestmentIntelligence,
+      now: new Date("2026-08-16T12:00:00.000Z"),
+    });
+
+    expect(() => buildPersonalActionPlan(intelligence)).not.toThrow();
+    const watch = buildPersonalActionPlan(intelligence).items.find(
+      (item) => item.category === "watch",
+    );
+    expect(watch?.headline).toMatch(/Fed to hold rates/i);
+  });
+
   it("keeps Goal micro-ring and skips Review sparkline", () => {
     const goal = read("components/dashboard/DashboardGoalConclusionCard.tsx");
     const review = read(
