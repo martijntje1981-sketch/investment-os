@@ -31,6 +31,11 @@ import {
   type ScenarioResult,
 } from "@/lib/services/scenarioEngine";
 import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
+import {
+  detailsToggleClass,
+  personalChoiceClass,
+  scenarioChoiceClass,
+} from "@/components/analysis/scenarioStressControls";
 import type {
   GoalSettings,
   StoredPortfolioHolding,
@@ -123,7 +128,7 @@ function ScenarioResultPanel({
       <details className="mt-4 group">
         <summary
           id={assumptionsId}
-          className="cursor-pointer list-none rounded-xl px-1 py-2 text-sm font-medium text-sky-800 outline-none marker:content-none focus-visible:ring-2 focus-visible:ring-sky-300 [&::-webkit-details-marker]:hidden"
+          className={detailsToggleClass}
         >
           <span className="inline-flex min-h-11 items-center">
             Assumptions &amp; limitations
@@ -369,14 +374,16 @@ function GoalSensitivityPanel({
                       type="button"
                       role="radio"
                       aria-checked={selected}
+                      aria-label={`${row.label}${selected ? ", selected" : ""}`}
                       onClick={() => setContributionDelta(row.deltaEuro)}
-                      className={`min-h-11 rounded-xl border px-3 py-2 text-sm font-medium transition ${
-                        selected
-                          ? "border-sky-600 bg-white text-sky-900 shadow-sm"
-                          : "border-slate-200 bg-white/80 text-slate-700 hover:border-sky-300"
-                      }`}
+                      className={personalChoiceClass(selected)}
+                      data-testid={`contribution-choice-${row.deltaEuro}`}
+                      data-selected={selected ? "true" : "false"}
                     >
                       {row.label}
+                      {selected ? (
+                        <span className="sr-only"> (selected)</span>
+                      ) : null}
                     </button>
                   );
                 })}
@@ -425,27 +432,31 @@ function GoalSensitivityPanel({
                   type="button"
                   role="radio"
                   aria-checked={!showExtraYear}
+                  aria-label={`Current target year ${targetYearSensitivity.currentTargetYear}${!showExtraYear ? ", selected" : ""}`}
                   onClick={() => setShowExtraYear(false)}
-                  className={`min-h-11 rounded-xl border px-3 py-2 text-sm font-medium transition ${
-                    !showExtraYear
-                      ? "border-sky-600 bg-white text-sky-900 shadow-sm"
-                      : "border-slate-200 bg-white/80 text-slate-700 hover:border-sky-300"
-                  }`}
+                  className={personalChoiceClass(!showExtraYear)}
+                  data-testid="target-year-current"
+                  data-selected={!showExtraYear ? "true" : "false"}
                 >
                   Current ({targetYearSensitivity.currentTargetYear})
+                  {!showExtraYear ? (
+                    <span className="sr-only"> (selected)</span>
+                  ) : null}
                 </button>
                 <button
                   type="button"
                   role="radio"
                   aria-checked={showExtraYear}
+                  aria-label={`Plus one year ${targetYearSensitivity.illustrativeTargetYear}${showExtraYear ? ", selected" : ""}`}
                   onClick={() => setShowExtraYear(true)}
-                  className={`min-h-11 rounded-xl border px-3 py-2 text-sm font-medium transition ${
-                    showExtraYear
-                      ? "border-sky-600 bg-white text-sky-900 shadow-sm"
-                      : "border-slate-200 bg-white/80 text-slate-700 hover:border-sky-300"
-                  }`}
+                  className={personalChoiceClass(showExtraYear)}
+                  data-testid="target-year-plus-one"
+                  data-selected={showExtraYear ? "true" : "false"}
                 >
                   +1 year ({targetYearSensitivity.illustrativeTargetYear})
+                  {showExtraYear ? (
+                    <span className="sr-only"> (selected)</span>
+                  ) : null}
                 </button>
               </div>
               <p className={appSectionMetaClass}>
@@ -592,7 +603,7 @@ function ResiliencePanel({
           <details className="group">
             <summary
               id={detailsId}
-              className="cursor-pointer list-none rounded-xl px-1 py-2 text-sm font-medium text-sky-800 outline-none marker:content-none focus-visible:ring-2 focus-visible:ring-sky-300 [&::-webkit-details-marker]:hidden"
+              className={detailsToggleClass}
             >
               <span className="inline-flex min-h-11 items-center">
                 Assumptions &amp; limitations
@@ -692,18 +703,28 @@ export function ScenarioStressSection({
                 type="button"
                 role="radio"
                 aria-checked={selected}
+                aria-label={`${definition.shortLabel}${selected ? ", currently modeled" : ""}`}
                 onClick={() => setSelectedId(definition.id)}
-                className={`min-h-11 rounded-2xl border px-4 py-3 text-left transition ${
-                  selected
-                    ? "border-sky-600 bg-sky-50 shadow-sm ring-1 ring-sky-600/20"
-                    : "border-slate-200 bg-white hover:border-sky-300 hover:bg-sky-50/40"
-                }`}
+                className={scenarioChoiceClass(selected)}
+                data-testid={`scenario-choice-${definition.id}`}
+                data-selected={selected ? "true" : "false"}
               >
-                <p
-                  className={`text-sm font-semibold ${selected ? "text-sky-900" : "text-slate-900"}`}
-                >
-                  {definition.shortLabel}
-                </p>
+                <div className="flex items-start justify-between gap-2">
+                  <p
+                    className={`text-sm font-semibold ${selected ? "text-sky-950" : "text-slate-900"}`}
+                  >
+                    {definition.shortLabel}
+                  </p>
+                  {selected ? (
+                    <span className="shrink-0 rounded-full bg-sky-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                      Selected
+                    </span>
+                  ) : (
+                    <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                      Choose
+                    </span>
+                  )}
+                </div>
                 <p className={`mt-1 text-xs leading-snug ${appSectionMetaClass}`}>
                   {definition.description}
                 </p>

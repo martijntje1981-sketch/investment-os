@@ -11,6 +11,7 @@ import { DashboardSummary } from "@/components/dashboard/DashboardSummary";
 import { DashboardExploreTools } from "@/components/dashboard/DashboardExploreTools";
 import { DashboardPortfolioHistorySection } from "@/components/dashboard/DashboardPortfolioHistorySection";
 import { PortfolioThirtySeconds } from "@/components/dashboard/PortfolioThirtySeconds";
+import { DashboardPortfolioResilienceCard } from "@/components/dashboard/DashboardPortfolioResilienceCard";
 import { PageRelatedLinks } from "@/components/layout/PageRelatedLinks";
 import { DashboardFirstRunCue } from "@/components/dashboard/DashboardFirstRunCue";
 import { DemoHoldingsCallout } from "@/components/example/DemoHoldingsCallout";
@@ -341,6 +342,12 @@ export default function DashboardPage() {
               hasSavedGoal={hasSavedGoal}
             />
           ) : null}
+
+          <DashboardPortfolioResilienceCard
+            holdings={holdings}
+            goal={goal}
+            hasSavedGoal={hasSavedGoal}
+          />
 
           {/* 2. Your Holdings */}
           <HoldingsToday snapshot={snapshot} />
