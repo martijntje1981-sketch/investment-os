@@ -10,6 +10,10 @@ export {
   type WeeklyHoldingBreadth,
 } from "@/lib/services/portfolio/periodScores/buildWeeklyPortfolioScore";
 export {
+  buildMonthlyPortfolioScore,
+  type BuildMonthlyPortfolioScoreInput,
+} from "@/lib/services/portfolio/periodScores/buildMonthlyPortfolioScore";
+export {
   buildPortfolioPulse,
   buildPortfolioPulseSnapshots,
   buildCombinedPulseSummary,

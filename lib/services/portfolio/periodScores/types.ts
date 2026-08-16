@@ -5,7 +5,7 @@
 
 import type { ScoreBandTone } from "@/lib/services/portfolio/scorecard/config";
 
-export type DynamicPortfolioScoreId = "daily" | "weekly";
+export type DynamicPortfolioScoreId = "daily" | "weekly" | "monthly";
 
 export type DynamicScoreEvidence = {
   id: string;
@@ -60,7 +60,8 @@ export type DynamicPortfolioScoreSnapshot = {
 export type PortfolioPulseResult = {
   daily: DynamicPortfolioScore;
   weekly: DynamicPortfolioScore;
-  /** One concise Dashboard summary combining both scores. */
+  monthly: DynamicPortfolioScore;
+  /** One concise Dashboard summary combining period scores. */
   combinedSummary: string;
   calculatedAt: string;
 };

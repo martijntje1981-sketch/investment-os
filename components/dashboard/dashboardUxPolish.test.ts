@@ -131,7 +131,7 @@ describe("Dashboard UX polish phase", () => {
     expect(heroVisual).toContain("no invented sparkline points");
     expect(heroVisual).not.toMatch(/Math\.random|fakeHistory|interpolate/i);
     expect(heroVisual).toContain('role="img"');
-    expect(hero).toContain("HeroTrendMicroVisual");
+    expect(hero).toContain("HeroPerformanceSparkline");
     expect(hero).toContain("overflow-hidden");
   });
 

@@ -349,7 +349,7 @@ describe("perspectives polish wiring", () => {
       path.resolve(process.cwd(), "app/dashboard/page.tsx"),
       "utf8",
     );
-    expect(hero).toContain("HeroTrendMicroVisual");
+    expect(hero).toContain("HeroPerformanceSparkline");
     expect(hero).toContain("appHeroPaddingCompactClass");
     expect(hero).not.toContain("HeroHealthRing");
     expect(hero).not.toContain("HeroTopStoryPreviewCard");
@@ -368,12 +368,12 @@ describe("perspectives polish wiring", () => {
     const source = readFileSync(
       path.resolve(
         process.cwd(),
-        "components/dashboard/DashboardHeroIntelligence.tsx",
+        "components/dashboard/HeroPerformanceSparkline.tsx",
       ),
       "utf8",
     );
-    expect(source).toContain("HeroTrendMicroVisual");
+    expect(source).toContain("HeroPerformanceSparkline");
     expect(source).not.toMatch(/fakeHistory|Math\.random/i);
-    expect(source).toContain("no invented sparkline points");
+    expect(source).toContain("no invented series");
   });
 });

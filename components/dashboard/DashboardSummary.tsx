@@ -2,6 +2,7 @@ import { PortfolioValueCard } from "@/components/dashboard/PortfolioValueCard";
 import { DashboardSummarySkeleton } from "@/components/dashboard/DashboardSummarySkeleton";
 import type { DashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
 import type { RefreshPricesUiStatus } from "@/lib/client/livePortfolioPriceRefreshAction";
+import type { PortfolioPerformancePoint } from "@/lib/client/performance/types";
 import type { SmartDashboardIntelligence } from "@/lib/client/smartDashboardIntelligence";
 import type { PortfolioPulseResult } from "@/lib/services/portfolio/periodScores";
 
@@ -20,6 +21,7 @@ export function DashboardSummary({
   refresh,
   pulse = null,
   smart,
+  performancePoints = null,
 }: {
   snapshot: DashboardPortfolioSnapshot;
   isLoading?: boolean;
@@ -27,6 +29,7 @@ export function DashboardSummary({
   pulse?: PortfolioPulseResult | null;
   /** Phase 3C Smart Hero + Today's Focus — built once on the Dashboard page. */
   smart: SmartDashboardIntelligence;
+  performancePoints?: PortfolioPerformancePoint[] | null;
 }) {
   if (isLoading) {
     return <DashboardSummarySkeleton />;
@@ -39,6 +42,7 @@ export function DashboardSummary({
         refresh={refresh}
         pulse={pulse}
         smart={smart}
+        performancePoints={performancePoints}
       />
     </section>
   );

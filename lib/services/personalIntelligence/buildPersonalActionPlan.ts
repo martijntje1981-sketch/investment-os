@@ -132,10 +132,10 @@ function buildWatchCandidate(
     id: "action-watch-news",
     category: "watch",
     headline: "A portfolio-linked development is worth monitoring",
-    detail:
-      linked.length > 0
-        ? `News intelligence flagged a development connected to holdings such as ${linked.join(" and ")}. This is for awareness, not a trade instruction.`
-        : "News intelligence flagged a development connected to your holdings. This is for awareness, not a trade instruction.",
+        detail:
+          linked.length > 0
+            ? `A development connected to holdings such as ${linked.join(" and ")} is flagged for monitoring.`
+            : "A development connected to your holdings is flagged for monitoring.",
     href: NEWS_PATH,
     hrefLabel: "Open News",
   });
@@ -169,7 +169,7 @@ function buildUnderstandCandidate(
     category: "understand",
     headline: "A large share of today’s movement came from one exposure",
     detail: topAlreadyNamed
-      ? `${dominant.name} accounts for most of today’s material portfolio movement. That concentrates short-term results in fewer drivers — worth understanding, not a trade signal.`
+      ? `${dominant.name} accounts for most of today’s material portfolio movement, concentrating short-term results in fewer drivers.`
       : `Most of today’s material change is coming from ${dominant.name}, rather than a broad portfolio move.`,
     href: ANALYSIS_PATH,
     hrefLabel: "Open Analysis",
@@ -234,7 +234,7 @@ function buildGoalCandidate(
       category: "goal",
       headline: "Your goal model shows the target as reached",
       detail:
-        "Based on your saved goal inputs and available portfolio value — this is a status signal for your own review, not a recommendation.",
+        "Based on your saved goal inputs and available portfolio value.",
       href: GOALS_PATH,
       hrefLabel: "Open Goals",
     });
@@ -252,7 +252,7 @@ function buildGoalCandidate(
       id: "action-goal-behind",
       category: "goal",
       headline: `Goal status: ${goals.status.toLowerCase()}`,
-      detail: `Your long-term goal model shows a behind-schedule reading based on current inputs.${progress} You decide whether any change is warranted.`,
+      detail: `Your long-term goal model shows a behind-schedule reading based on current inputs.${progress}`,
       href: GOALS_PATH,
       hrefLabel: "Open Goals",
     });

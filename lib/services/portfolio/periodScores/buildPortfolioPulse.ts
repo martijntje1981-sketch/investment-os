@@ -1,17 +1,20 @@
 /**
- * Portfolio Pulse — Daily + Weekly scores and a combined Dashboard summary.
+ * Portfolio Pulse — Daily + Weekly + Monthly scores and a combined Dashboard summary.
  */
 
 import { buildDailyPortfolioScore } from "@/lib/services/portfolio/periodScores/buildDailyPortfolioScore";
 import type { BuildDailyPortfolioScoreInput } from "@/lib/services/portfolio/periodScores/buildDailyPortfolioScore";
 import { buildWeeklyPortfolioScore } from "@/lib/services/portfolio/periodScores/buildWeeklyPortfolioScore";
 import type { BuildWeeklyPortfolioScoreInput } from "@/lib/services/portfolio/periodScores/buildWeeklyPortfolioScore";
+import { buildMonthlyPortfolioScore } from "@/lib/services/portfolio/periodScores/buildMonthlyPortfolioScore";
+import type { BuildMonthlyPortfolioScoreInput } from "@/lib/services/portfolio/periodScores/buildMonthlyPortfolioScore";
 import type { PortfolioPulseResult } from "@/lib/services/portfolio/periodScores/types";
 import { toDynamicScoreSnapshot } from "@/lib/services/portfolio/periodScores/types";
 
 export type BuildPortfolioPulseInput = {
   daily: BuildDailyPortfolioScoreInput;
   weekly: BuildWeeklyPortfolioScoreInput;
+  monthly?: BuildMonthlyPortfolioScoreInput;
   calculatedAt?: string;
 };
 
@@ -180,10 +183,17 @@ export function buildPortfolioPulse(
     ...input.weekly,
     calculatedAt,
   });
+  const monthly = buildMonthlyPortfolioScore({
+    month: input.monthly?.month ?? input.weekly.month ?? null,
+    week: input.monthly?.week ?? input.weekly.week ?? null,
+    href: input.monthly?.href ?? input.weekly.href,
+    calculatedAt,
+  });
 
   return {
     daily,
     weekly,
+    monthly,
     combinedSummary: buildCombinedPulseSummary(
       daily.summary,
       weekly.summary,
@@ -198,6 +208,7 @@ export function buildPortfolioPulseSnapshots(pulse: PortfolioPulseResult) {
   return {
     daily: toDynamicScoreSnapshot(pulse.daily),
     weekly: toDynamicScoreSnapshot(pulse.weekly),
+    monthly: toDynamicScoreSnapshot(pulse.monthly),
     combinedSummary: pulse.combinedSummary,
     calculatedAt: pulse.calculatedAt,
   };

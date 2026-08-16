@@ -406,10 +406,25 @@ describe("Portfolio Pulse snapshot contract", () => {
     expect(snapshots.daily.previousValue).toBeNull();
     expect(snapshots.daily.delta).toBeNull();
     expect(snapshots.weekly.evidenceIds.length).toBeGreaterThan(0);
+    expect(snapshots.monthly.evidenceIds.length).toBeGreaterThan(0);
+    expect(pulse.monthly.available).toBe(true);
     expect(snapshots.combinedSummary.length).toBeGreaterThan(0);
     expect(snapshots.combinedSummary).not.toMatch(
       /^Mixed session\. Mixed week\.?$/i,
     );
+  });
+
+  it("builds a Monthly score from verified 1M history", () => {
+    const pulse = buildPortfolioPulse({
+      daily: { holdings: [] },
+      weekly: {
+        week: history("1W", 0.8),
+        month: history("1M", 3.5),
+      },
+    });
+    expect(pulse.monthly.available).toBe(true);
+    expect(pulse.monthly.value).not.toBeNull();
+    expect(pulse.monthly.id).toBe("monthly");
   });
 });
 
@@ -448,8 +463,9 @@ describe("Dashboard Portfolio Pulse wiring", () => {
     expect(hero).toContain("HeroPortfolioPulse");
     expect(pulse).toContain("Scorecard");
     expect(pulse).toContain("DASHBOARD_DEEP_LINKS.scorecard");
-    expect(pulse).toContain("size={64}");
     expect(pulse).toContain("size={58}");
+    expect(pulse).toContain("size={54}");
+    expect(pulse).toContain("pulse.monthly");
     expect(pulse).toContain('emphasis="primary"');
     expect(pulse).toContain('appearance="onDark"');
     expect(ring).toContain('emphasis?: "primary" | "default"');

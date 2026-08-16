@@ -11,6 +11,7 @@ import {
 
 export const DAILY_PORTFOLIO_SCORE_VERSION = "dps-v1" as const;
 export const WEEKLY_PORTFOLIO_SCORE_VERSION = "wps-v1" as const;
+export const MONTHLY_PORTFOLIO_SCORE_VERSION = "mps-v1" as const;
 
 const DAILY_LABELS = [
   "Weak session",
@@ -26,6 +27,14 @@ const WEEKLY_LABELS = [
   "Positive week",
   "Strong week",
   "Broadly strong week",
+] as const;
+
+const MONTHLY_LABELS = [
+  "Weak month",
+  "Mixed month",
+  "Positive month",
+  "Strong month",
+  "Broadly strong month",
 ] as const;
 
 const TONES: ScoreBandTone[] = [
@@ -51,3 +60,4 @@ function bandsFromLabels(
 
 export const DAILY_SCORE_BANDS = bandsFromLabels(DAILY_LABELS, "daily");
 export const WEEKLY_SCORE_BANDS = bandsFromLabels(WEEKLY_LABELS, "weekly");
+export const MONTHLY_SCORE_BANDS = bandsFromLabels(MONTHLY_LABELS, "monthly");

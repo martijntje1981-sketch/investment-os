@@ -49,7 +49,12 @@ export function DynamicScoreRing({
       : "text-slate-300";
   const display =
     score.available && score.value != null ? String(score.value) : "—";
-  const title = score.id === "daily" ? "Daily" : "Weekly";
+  const title =
+    score.id === "daily"
+      ? "Daily"
+      : score.id === "weekly"
+        ? "Weekly"
+        : "Monthly";
   const status = score.available
     ? (score.band?.label ?? score.summary)
     : (score.unavailableReason ?? "Unavailable");

@@ -71,7 +71,7 @@ describe("Phase 1 dashboard UI refinement", () => {
     expect(hero).toContain("TrendingUp");
     expect(hero).toContain("TrendingDown");
     expect(hero).toContain("signedPercent");
-    expect(hero).toContain("HeroTrendMicroVisual");
+    expect(hero).toContain("HeroPerformanceSparkline");
   });
 
   it("keeps progressive disclosure controls keyboard-accessible", () => {

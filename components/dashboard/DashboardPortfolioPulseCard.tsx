@@ -32,9 +32,10 @@ export function DashboardPortfolioPulseCard({
       />
 
       <div className="px-4 pb-3 pt-0 md:px-5 md:pb-3.5">
-        <div className="mx-auto grid min-w-0 max-w-[22rem] grid-cols-2 items-start justify-items-center gap-0 sm:max-w-sm sm:gap-1 md:max-w-md">
-          <DynamicScoreRing score={pulse.daily} size={88} emphasis="primary" />
-          <DynamicScoreRing score={pulse.weekly} size={80} emphasis="default" />
+        <div className="mx-auto grid min-w-0 max-w-[28rem] grid-cols-3 items-start justify-items-center gap-0 sm:max-w-lg sm:gap-1">
+          <DynamicScoreRing score={pulse.daily} size={80} emphasis="primary" />
+          <DynamicScoreRing score={pulse.weekly} size={72} emphasis="default" />
+          <DynamicScoreRing score={pulse.monthly} size={72} emphasis="default" />
         </div>
 
         <div className="mt-1.5 space-y-1">

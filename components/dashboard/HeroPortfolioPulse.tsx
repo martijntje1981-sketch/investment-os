@@ -5,8 +5,8 @@ import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 import type { PortfolioPulseResult } from "@/lib/services/portfolio/periodScores";
 
 /**
- * Compact Daily + Weekly pulse rings for the Dashboard hero.
- * Reuses existing score objects — no new formulas.
+ * Compact Daily + Weekly + Monthly pulse rings for the Dashboard hero.
+ * Reuses existing score objects — no new formulas beyond periodScores.
  */
 export function HeroPortfolioPulse({
   pulse,
@@ -30,20 +30,31 @@ export function HeroPortfolioPulse({
           Scorecard
         </Link>
       </div>
-      <div className="mt-2 grid grid-cols-2 items-start justify-items-center gap-1">
+      <div className="mt-2 grid grid-cols-3 items-start justify-items-center gap-0.5 sm:gap-1">
         <DynamicScoreRing
           score={pulse.daily}
-          size={64}
+          size={58}
           emphasis="primary"
           appearance="onDark"
         />
         <DynamicScoreRing
           score={pulse.weekly}
-          size={58}
+          size={54}
+          emphasis="default"
+          appearance="onDark"
+        />
+        <DynamicScoreRing
+          score={pulse.monthly}
+          size={54}
           emphasis="default"
           appearance="onDark"
         />
       </div>
+      {pulse.combinedSummary ? (
+        <p className="mt-2 line-clamp-2 text-center text-[11px] font-medium leading-snug text-white/45 sm:text-left">
+          {pulse.combinedSummary}
+        </p>
+      ) : null}
     </div>
   );
 }
