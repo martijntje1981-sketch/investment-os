@@ -143,6 +143,7 @@ function buildWatchCandidate(
 
 function buildUnderstandCandidate(
   intelligence: PersonalIntelligenceToday,
+  options?: BuildPersonalActionPlanOptions,
 ): PersonalActionPlanItem | null {
   const ranked = [
     ...intelligence.topContributors,
@@ -154,6 +155,16 @@ function buildUnderstandCandidate(
     dominant.shareOfMaterialAbs < ATTRIBUTION_DOMINANT_SHARE ||
     Math.abs(dominant.contributionPp) < ATTRIBUTION_MATERIAL_MIN_PP
   ) {
+    return null;
+  }
+
+  const suppressSymbols = new Set(
+    (options?.suppressUnderstandForSymbols ?? []).map((symbol) =>
+      symbol.trim().toUpperCase(),
+    ),
+  );
+  if (suppressSymbols.has(dominant.symbol.trim().toUpperCase())) {
+    // Market Calmer already explained this driver on a notable/high-stress day.
     return null;
   }
 
@@ -295,12 +306,18 @@ function assertNonAdvisory(items: PersonalActionPlanItem[]): void {
 /**
  * Build 1–3 Action Plan items (or a single NO ACTION REQUIRED state).
  */
+export type BuildPersonalActionPlanOptions = {
+  /** Skip Understand when Market Calmer already named these symbols. */
+  suppressUnderstandForSymbols?: string[];
+};
+
 export function buildPersonalActionPlan(
   intelligence: PersonalIntelligenceToday,
+  options?: BuildPersonalActionPlanOptions,
 ): PersonalActionPlan {
   const candidates = [
     buildWatchCandidate(intelligence),
-    buildUnderstandCandidate(intelligence),
+    buildUnderstandCandidate(intelligence, options),
     buildReviewConcentrationCandidate(intelligence),
     buildReviewCoverageCandidate(intelligence),
     buildGoalCandidate(intelligence),

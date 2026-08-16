@@ -334,7 +334,12 @@ export default function DashboardPage() {
           />
 
           {personalIntelligenceToday ? (
-            <PortfolioThirtySeconds intelligence={personalIntelligenceToday} />
+            <PortfolioThirtySeconds
+              intelligence={personalIntelligenceToday}
+              holdings={holdings}
+              goal={goal}
+              hasSavedGoal={hasSavedGoal}
+            />
           ) : null}
 
           {/* 2. Your Holdings */}

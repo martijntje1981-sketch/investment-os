@@ -40,6 +40,24 @@ export const MAIN_EXPOSURE_GROUP_IDS: ExposureGroupId[] = [
   "other_unclassified",
 ];
 
+/**
+ * Classified equity / equity-like exposure groups (whole-instrument).
+ * Excludes cash, crypto, and other_unclassified.
+ * Shared by Portfolio Health DNA and Scenario Engine.
+ */
+export const EQUITY_EXPOSURE_GROUP_IDS: readonly ExposureGroupId[] = [
+  "technology_communication",
+  "healthcare",
+  "consumer",
+  "financials_real_estate",
+  "industrials_resources",
+  "diversified_equity",
+] as const;
+
+export const EQUITY_EXPOSURE_GROUP_ID_SET = new Set<ExposureGroupId>(
+  EQUITY_EXPOSURE_GROUP_IDS,
+);
+
 export type ExposureClassificationSource =
   | "asset_type"
   | "research_profile"

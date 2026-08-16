@@ -46,7 +46,7 @@ const dashboardCardSource = readFileSync(
 );
 
 describe("Analysis portfolio exposure section", () => {
-  it("places Portfolio Performance first, then Top performers, then Exposure", () => {
+  it("places Portfolio Performance first, then Top performers, then Exposure, then Scenario stress", () => {
     const performanceIdx = analysisPageSource.indexOf(
       "<PortfolioPerformanceSection",
     );
@@ -54,10 +54,12 @@ describe("Analysis portfolio exposure section", () => {
       "<TopPerformersByCategorySection",
     );
     const exposureIdx = analysisPageSource.indexOf("<PortfolioExposureSection");
+    const scenarioIdx = analysisPageSource.indexOf("<ScenarioStressSection");
 
     expect(performanceIdx).toBeGreaterThan(-1);
     expect(topPerformersIdx).toBeGreaterThan(performanceIdx);
     expect(exposureIdx).toBeGreaterThan(topPerformersIdx);
+    expect(scenarioIdx).toBeGreaterThan(exposureIdx);
 
     expect(analysisPageSource).not.toContain('label="Total portfolio value"');
     expect(analysisPageSource).not.toContain("Portfolio composition");
@@ -74,10 +76,18 @@ describe("Analysis portfolio exposure section", () => {
     const exposureCount = (
       analysisPageSource.match(/<PortfolioExposureSection/g) ?? []
     ).length;
+    const scenarioCount = (
+      analysisPageSource.match(/<ScenarioStressSection/g) ?? []
+    ).length;
     expect(performanceCount).toBe(1);
     expect(topPerformersCount).toBe(1);
     expect(exposureCount).toBe(1);
+    expect(scenarioCount).toBe(1);
 
+    expect(analysisPageSource).toContain("<ScenarioStressSection");
+    expect(analysisPageSource).toContain("goal={goal}");
+    expect(analysisPageSource).toContain("hasSavedGoal={hasSavedGoal}");
+    expect(analysisPageSource).toContain("useUserGoal");
     expect(analysisPageSource).toContain("compositionMeta={{");
   });
 

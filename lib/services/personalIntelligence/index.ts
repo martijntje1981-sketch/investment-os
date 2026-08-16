@@ -60,6 +60,7 @@ export {
 } from "@/lib/services/personalIntelligence/buildPersonalActionPlan";
 export type {
   ActionPlanCategory,
+  BuildPersonalActionPlanOptions,
   PersonalActionPlan,
   PersonalActionPlanItem,
 } from "@/lib/services/personalIntelligence/buildPersonalActionPlan";

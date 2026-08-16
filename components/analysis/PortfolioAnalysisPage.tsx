@@ -12,6 +12,7 @@ import {
 import { DividendIntelligenceSection } from "@/components/analysis/DividendIntelligenceSection";
 import { CashIntelligenceSection } from "@/components/analysis/CashIntelligenceSection";
 import { PortfolioExposureSection } from "@/components/analysis/PortfolioExposureSection";
+import { ScenarioStressSection } from "@/components/analysis/ScenarioStressSection";
 import { PortfolioPerformanceSection } from "@/components/analysis/performance/PortfolioPerformanceSection";
 import { MarketConsensusSection } from "@/components/analysis/marketConsensus/MarketConsensusSection";
 import { TopPerformersByCategorySection } from "@/components/analysis/TopPerformersByCategorySection";
@@ -63,6 +64,7 @@ import {
 } from "@/lib/client/portfolioAnalysis";
 import { usePortfolioDividends } from "@/lib/client/usePortfolioDividends";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
+import { useUserGoal } from "@/lib/client/useUserGoal";
 import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 
 function formatUpdatedAt(value: string | null) {
@@ -109,6 +111,8 @@ export default function PortfolioAnalysisPage() {
     dismissRecovery,
     saveHoldings,
   } = useUserPortfolio();
+
+  const { goal, hasSavedGoal } = useUserGoal();
 
   const { quotes, isLoading: dividendsLoading } = usePortfolioDividends(
     holdings,
@@ -242,6 +246,12 @@ export default function PortfolioAnalysisPage() {
             </div>
 
             <PortfolioExposureSection allocation={exposureAllocation} />
+
+            <ScenarioStressSection
+              holdings={holdings}
+              goal={goal}
+              hasSavedGoal={hasSavedGoal}
+            />
 
             <MarketConsensusSection
               analysis={analysis}

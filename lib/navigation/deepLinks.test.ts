@@ -23,6 +23,12 @@ describe("Dashboard deep links", () => {
     expect(DASHBOARD_DEEP_LINKS.portfolioAllocation).toBe(
       "/analysis#portfolio-allocation",
     );
+    expect(DASHBOARD_DEEP_LINKS.scenarioStress).toBe(
+      "/analysis#scenario-stress",
+    );
+    expect(DASHBOARD_DEEP_LINKS.resilienceSleep).toBe(
+      "/analysis#resilience-sleep",
+    );
     expect(DASHBOARD_DEEP_LINKS.goalProgress).toBe("/goals#goal-progress");
     expect(DASHBOARD_DEEP_LINKS.goalScore).toBe("/portfolio-health#goal");
     expect(DASHBOARD_DEEP_LINKS.portfolioMomentum).toBe(
@@ -51,6 +57,12 @@ describe("Dashboard deep links", () => {
     expect(
       read("components/analysis/DividendIntelligenceSection.tsx"),
     ).toContain(`id="${SECTION_IDS.dividendIntelligence}"`);
+    expect(read("components/analysis/ScenarioStressSection.tsx")).toContain(
+      `id="${SECTION_IDS.scenarioStress}"`,
+    );
+    expect(read("components/analysis/ScenarioStressSection.tsx")).toContain(
+      `id="${SECTION_IDS.resilienceSleep}"`,
+    );
     expect(read("components/analysis/PortfolioAnalysisPage.tsx")).toContain(
       `id="${SECTION_IDS.portfolioAllocation}"`,
     );

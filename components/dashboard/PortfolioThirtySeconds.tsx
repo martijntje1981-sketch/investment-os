@@ -1,5 +1,6 @@
 "use client";
 
+import { useId, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   ArrowUpRight,
@@ -18,6 +19,11 @@ import {
 } from "@/components/layout/appSurface";
 import { REVIEW_PATH } from "@/lib/navigation/appRoutes";
 import {
+  buildMarketCalmer,
+  marketCalmerDriverSymbols,
+  type MarketCalmerResult,
+} from "@/lib/services/marketCalmer";
+import {
   buildPersonalActionPlan,
   type ActionPlanCategory,
   type PersonalActionPlanItem,
@@ -27,9 +33,16 @@ import {
   type ThirtySecondsBriefingView,
 } from "@/lib/services/personalIntelligence/thirtySecondsBriefing";
 import type { PersonalIntelligenceToday } from "@/lib/services/personalIntelligence";
+import type {
+  GoalSettings,
+  StoredPortfolioHolding,
+} from "@/lib/types/portfolioStorage";
 
 type PortfolioThirtySecondsProps = {
   intelligence: PersonalIntelligenceToday;
+  holdings?: StoredPortfolioHolding[];
+  goal?: GoalSettings | null;
+  hasSavedGoal?: boolean;
 };
 
 type DriverRow = ThirtySecondsBriefingView["drivers"][number];
@@ -205,14 +218,108 @@ function ActionPlanRow({ item }: { item: PersonalActionPlanItem }) {
   return <div className={rowClass}>{body}</div>;
 }
 
+function MarketCalmerBlock({ calmer }: { calmer: MarketCalmerResult }) {
+  const detailsId = useId();
+  const [expanded, setExpanded] = useState(false);
+
+  if (calmer.activation === "inactive" || !calmer.headline) {
+    return null;
+  }
+
+  const isHigh = calmer.activation === "high_stress";
+  const directionBorder =
+    calmer.direction === "negative"
+      ? "border-l-rose-400"
+      : calmer.direction === "positive"
+        ? "border-l-emerald-500"
+        : "border-l-sky-500";
+
+  return (
+    <div
+      className={`mt-3 rounded-2xl border border-slate-200/80 bg-gradient-to-br from-slate-50/90 to-white ${
+        isHigh ? "px-3.5 py-3.5 shadow-sm" : "px-3 py-2.5"
+      } border-l-[3px] ${directionBorder}`}
+      data-testid="market-calmer"
+      data-activation={calmer.activation}
+    >
+      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
+        Market context
+      </p>
+      <p
+        className={`mt-1 font-semibold tracking-[-0.02em] text-slate-950 ${
+          isHigh ? "text-[15px] leading-snug" : "text-[14px] leading-snug"
+        }`}
+      >
+        {calmer.headline}
+      </p>
+      {calmer.mainDriver ? (
+        <p className={`mt-1.5 ${appSectionMetaClass}`}>
+          {calmer.mainDriver.summary}
+        </p>
+      ) : null}
+
+      <button
+        type="button"
+        className="mt-2 inline-flex min-h-11 items-center text-sm font-medium text-sky-800"
+        aria-expanded={expanded}
+        aria-controls={detailsId}
+        onClick={() => setExpanded((value) => !value)}
+      >
+        {expanded ? "Hide context" : "See context"}
+      </button>
+
+      {expanded ? (
+        <div id={detailsId} className="mt-2 space-y-2 border-t border-slate-200/70 pt-2">
+          {calmer.scenarioContext ? (
+            <p className={appSectionMetaClass}>{calmer.scenarioContext.summary}</p>
+          ) : null}
+          {calmer.resilienceContext ? (
+            <p className={appSectionMetaClass}>
+              {calmer.resilienceContext.summary}
+            </p>
+          ) : null}
+          {calmer.goalContext ? (
+            <p className={appSectionMetaClass}>{calmer.goalContext.summary}</p>
+          ) : null}
+          <p className={appSectionMetaClass}>
+            Review the context before drawing conclusions from one trading day.
+          </p>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 /**
  * Compact Personal Intelligence surface — briefing + Action Plan as one product.
  */
 export function PortfolioThirtySeconds({
   intelligence,
+  holdings = [],
+  goal = null,
+  hasSavedGoal = false,
 }: PortfolioThirtySecondsProps) {
   const view = buildThirtySecondsBriefingView(intelligence);
-  const actionPlan = buildPersonalActionPlan(intelligence);
+
+  const calmer = useMemo(
+    () =>
+      buildMarketCalmer({
+        intelligence,
+        holdings,
+        goal,
+        hasSavedGoal,
+      }),
+    [intelligence, holdings, goal, hasSavedGoal],
+  );
+
+  const actionPlan = useMemo(
+    () =>
+      buildPersonalActionPlan(intelligence, {
+        suppressUnderstandForSymbols: marketCalmerDriverSymbols(calmer),
+      }),
+    [intelligence, calmer],
+  );
+
   const [mainDriver, ...otherDrivers] = view.drivers;
 
   return (
@@ -263,6 +370,8 @@ export function PortfolioThirtySeconds({
           </div>
         </div>
       ) : null}
+
+      <MarketCalmerBlock calmer={calmer} />
 
       <div className="mt-4 grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-start lg:gap-6">
         <div className="min-w-0">

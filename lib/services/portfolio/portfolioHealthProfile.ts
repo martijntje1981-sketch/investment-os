@@ -10,6 +10,8 @@ import {
 } from "@/lib/client/portfolioAnalysis";
 import {
   buildPortfolioExposureAllocation,
+  EQUITY_EXPOSURE_GROUP_ID_SET,
+  isBitcoinHolding,
   type PortfolioExposureAllocation,
 } from "@/lib/services/classification";
 import type { ExposureGroupId } from "@/lib/services/classification/types";
@@ -206,14 +208,7 @@ const THEMATIC_GROUPS = new Set<ExposureGroupId>([
   "industrials_resources",
 ]);
 
-const EQUITY_GROUP_IDS = new Set<ExposureGroupId>([
-  "technology_communication",
-  "healthcare",
-  "consumer",
-  "financials_real_estate",
-  "industrials_resources",
-  "diversified_equity",
-]);
+const EQUITY_GROUP_IDS = EQUITY_EXPOSURE_GROUP_ID_SET;
 
 const ASSET_COLORS = {
   crypto: "bg-violet-500",
@@ -240,20 +235,6 @@ function round1(value: number): number {
 
 function formatPct(value: number): string {
   return `${round1(value)}%`;
-}
-
-function isBitcoinHolding(holding: StoredPortfolioHolding): boolean {
-  const symbol = holding.symbol.trim().toUpperCase();
-  const provider = (holding.providerSymbol ?? "").toUpperCase();
-  const name = holding.name.trim().toUpperCase();
-  return (
-    symbol === "BTC" ||
-    symbol.startsWith("BTC") ||
-    provider.startsWith("BTC-") ||
-    provider.startsWith("BTC.") ||
-    name === "BITCOIN" ||
-    name.includes("BITCOIN")
-  );
 }
 
 function isEthereumHolding(holding: StoredPortfolioHolding): boolean {

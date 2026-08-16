@@ -19,6 +19,8 @@ export const SECTION_IDS = {
   dividendIntelligence: "dividend-intelligence",
   portfolioAllocation: "portfolio-allocation",
   portfolioExposure: "portfolio-exposure",
+  scenarioStress: "scenario-stress",
+  resilienceSleep: "resilience-sleep",
   marketConsensus: "market-consensus",
   portfolioPerformance: "portfolio-performance",
   /** @deprecated Prefer scorecardMomentum — Analysis keeps performance only. */
@@ -47,6 +49,8 @@ export const DASHBOARD_DEEP_LINKS = {
   dividendIntelligence: `${ANALYSIS_PATH}#${SECTION_IDS.dividendIntelligence}`,
   portfolioAllocation: `${ANALYSIS_PATH}#${SECTION_IDS.portfolioAllocation}`,
   portfolioExposure: `${ANALYSIS_PATH}#${SECTION_IDS.portfolioExposure}`,
+  scenarioStress: `${ANALYSIS_PATH}#${SECTION_IDS.scenarioStress}`,
+  resilienceSleep: `${ANALYSIS_PATH}#${SECTION_IDS.resilienceSleep}`,
   marketConsensus: `${ANALYSIS_PATH}#${SECTION_IDS.marketConsensus}`,
   portfolioPerformance: `${ANALYSIS_PATH}#${SECTION_IDS.portfolioPerformance}`,
   portfolioMomentum: `${SCORECARD_PATH}#${SECTION_IDS.scorecardMomentum}`,
