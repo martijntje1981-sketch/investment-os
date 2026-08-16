@@ -11,6 +11,7 @@ import { DashboardSummary } from "@/components/dashboard/DashboardSummary";
 import { DashboardExploreTools } from "@/components/dashboard/DashboardExploreTools";
 import { DashboardReviewTeaser } from "@/components/companion/DashboardReviewTeaser";
 import { DashboardPortfolioHistorySection } from "@/components/dashboard/DashboardPortfolioHistorySection";
+import { PortfolioThirtySeconds } from "@/components/dashboard/PortfolioThirtySeconds";
 import { PageRelatedLinks } from "@/components/layout/PageRelatedLinks";
 import { DashboardFirstRunCue } from "@/components/dashboard/DashboardFirstRunCue";
 import { DemoHoldingsCallout } from "@/components/example/DemoHoldingsCallout";
@@ -28,7 +29,11 @@ import {
 } from "@/components/layout/PageContainer";
 import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
 import PortfolioSyncBanner from "@/components/PortfolioSyncBanner";
-import { buildPortfolioAnalysis } from "@/lib/client/portfolioAnalysis";
+import {
+  buildPortfolioAnalysis,
+  buildValuedPositions,
+} from "@/lib/client/portfolioAnalysis";
+import { summarizeDailyPerformance } from "@/lib/client/dailyPerformance";
 import { buildDashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
 import { previousClosePhraseFromContextLine } from "@/lib/client/dailyPortfolioBriefing";
 import { areMajorMarketsClosed } from "@/lib/client/todaysDecision";
@@ -46,6 +51,7 @@ import { buildPortfolioHealthProfile } from "@/lib/services/portfolio/portfolioH
 import { buildPortfolioExposureAllocation } from "@/lib/services/classification";
 import { buildPortfolioPulse } from "@/lib/services/portfolio/periodScores";
 import { buildCompanionBundle } from "@/lib/services/portfolio/companion";
+import { buildPersonalIntelligenceToday } from "@/lib/services/personalIntelligence";
 import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 import { logDashboardProductionDiagnostics } from "@/lib/client/investmentOsProductionDebug";
 
@@ -225,6 +231,40 @@ export default function DashboardPage() {
     ],
   );
 
+  /** Phase 1B — compact personal briefing above the Dashboard motor. */
+  const personalIntelligenceToday = useMemo(() => {
+    if (holdings.length === 0) return null;
+    const daily = summarizeDailyPerformance(holdings);
+    const { valuedPositions } = buildValuedPositions(holdings);
+    return buildPersonalIntelligenceToday({
+      daily,
+      holdingsWeights: valuedPositions.map((position) => ({
+        symbol: position.holding.symbol,
+        name: position.holding.name,
+        weightPercent: position.weightPercent,
+      })),
+      exposure: exposureAllocation,
+      intelligence,
+      goals: goalProgress.hasGoal
+        ? {
+            hasGoal: true,
+            status: goalProgress.status,
+            goalReached: goalProgress.goalReached,
+            currentProgressPercent: goalProgress.currentProgressPercent,
+          }
+        : null,
+    });
+  }, [
+    exposureAllocation,
+    goalProgress.currentProgressPercent,
+    goalProgress.goalReached,
+    goalProgress.hasGoal,
+    goalProgress.status,
+    holdings,
+    intelligence,
+  ]);
+
+
   const exampleActive = useExampleActiveStatus(
     portfolioReady && Boolean(userSub),
   );
@@ -319,6 +359,10 @@ export default function DashboardPage() {
               liveRefreshAt,
             }}
           />
+
+          {personalIntelligenceToday ? (
+            <PortfolioThirtySeconds intelligence={personalIntelligenceToday} />
+          ) : null}
 
           <DashboardReviewTeaser bundle={companionBundle} />
 
