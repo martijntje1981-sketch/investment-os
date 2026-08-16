@@ -455,8 +455,8 @@ describe("Dashboard Portfolio Pulse wiring", () => {
     const holdingsIdx = dashboard.indexOf("<HoldingsToday");
     const briefingIdx = dashboard.indexOf("<DashboardTodaysMarketBriefing");
     expect(pulseIdx).toBeGreaterThan(-1);
-    expect(holdingsIdx).toBeGreaterThan(pulseIdx);
-    expect(briefingIdx).toBeGreaterThan(holdingsIdx);
+    expect(briefingIdx).toBeGreaterThan(pulseIdx);
+    expect(holdingsIdx).toBeGreaterThan(briefingIdx);
 
     expect(scorecardPage).toContain("buildPortfolioScorecard");
     expect(scorecardPage).toContain("ScoreRing");
@@ -471,7 +471,7 @@ describe("Dashboard Portfolio Pulse wiring", () => {
     expect(pulse).toContain('appearance="onDark"');
     expect(ring).toContain('emphasis?: "primary" | "default"');
     expect(ring).toContain('appearance?: "onLight" | "onDark"');
-    expect(briefing).toContain("Today’s market briefing");
+    expect(briefing).toContain("Markets today");
     expect(pulse).not.toContain("overflow-x-auto");
   });
 });

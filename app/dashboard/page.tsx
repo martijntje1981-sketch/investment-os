@@ -12,6 +12,8 @@ import { DashboardExploreTools } from "@/components/dashboard/DashboardExploreTo
 import { DashboardPortfolioHistorySection } from "@/components/dashboard/DashboardPortfolioHistorySection";
 import { PortfolioThirtySeconds } from "@/components/dashboard/PortfolioThirtySeconds";
 import { DashboardPortfolioResilienceCard } from "@/components/dashboard/DashboardPortfolioResilienceCard";
+import { DashboardGoalConclusionCard } from "@/components/dashboard/DashboardGoalConclusionCard";
+import { DashboardReviewConclusionCard } from "@/components/dashboard/DashboardReviewConclusionCard";
 import { PageRelatedLinks } from "@/components/layout/PageRelatedLinks";
 import { DashboardFirstRunCue } from "@/components/dashboard/DashboardFirstRunCue";
 import { DemoHoldingsCallout } from "@/components/example/DemoHoldingsCallout";
@@ -343,81 +345,89 @@ export default function DashboardPage() {
             />
           ) : null}
 
-          <DashboardPortfolioResilienceCard
-            holdings={holdings}
-            goal={goal}
-            hasSavedGoal={hasSavedGoal}
-          />
+          <div className="grid gap-4 md:grid-cols-2 md:items-stretch md:gap-5 [&>*:only-child]:md:col-span-2">
+            <DashboardPortfolioResilienceCard
+              holdings={holdings}
+              goal={goal}
+              hasSavedGoal={hasSavedGoal}
+            />
+            <DashboardGoalConclusionCard progress={goalProgress} />
+          </div>
 
-          {/* 2. Your Holdings */}
+          <div className="grid gap-4 md:grid-cols-2 md:items-stretch md:gap-5">
+            <DashboardTodaysMarketBriefing
+              intelligence={intelligence}
+              intelligenceFromCache={intelligenceFromCache}
+              goalProgress={goalProgress}
+              upcomingEvents={payload.upcomingEvents}
+              marketsClosed={marketsClosed}
+              heroBriefingText={smartDashboard.briefing.text}
+            />
+            <DashboardReviewConclusionCard
+              pulse={portfolioPulse}
+              isQuietDay={
+                personalIntelligenceToday?.attention ===
+                "nothing_requires_attention"
+              }
+            />
+          </div>
+
           <HoldingsToday snapshot={snapshot} />
 
-          {/* 3. Today’s Market Briefing */}
-          <DashboardTodaysMarketBriefing
-            intelligence={intelligence}
-            intelligenceFromCache={intelligenceFromCache}
-            goalProgress={goalProgress}
-            upcomingEvents={payload.upcomingEvents}
-            marketsClosed={marketsClosed}
-            heroBriefingText={smartDashboard.briefing.text}
-          />
+          <div
+            className="space-y-4 opacity-95"
+            data-testid="dashboard-secondary-modules"
+          >
+            {/* Secondary detail — visually lighter than conclusion modules */}
+            <DashboardMarketPulseCard
+              holdings={holdings}
+              leadLabel={
+                portfolioHealthProfile.classification.cryptoWeight >= 20
+                  ? "Bitcoin and linked markets may be moving with your portfolio."
+                  : "See commodities, crypto and markets connected to your holdings."
+              }
+            />
 
-          {/* 4. Market Pulse */}
-          <DashboardMarketPulseCard
-            holdings={holdings}
-            leadLabel={
-              portfolioHealthProfile.classification.cryptoWeight >= 20
-                ? "Bitcoin and linked markets may be moving with your portfolio."
-                : "See commodities, crypto and markets connected to your holdings."
-            }
-          />
+            <DashboardPerspectivesWidget />
 
-          {/* 5. Latest Perspectives */}
-          <DashboardPerspectivesWidget />
+            <DashboardCashIntelligenceCard holdings={holdings} />
 
-          {/* 6. Cash Intelligence */}
-          <DashboardCashIntelligenceCard holdings={holdings} />
+            <DashboardPortfolioHistorySection
+              holdings={holdings}
+              history={monthHistory.data}
+              portfolioValue={snapshot.portfolioValue}
+              portfolioValueAvailable={snapshot.portfolioValueAvailable}
+              emphasisNote={smartDashboard.emphasis.historyNote}
+            />
 
-          {/* 7. Portfolio History */}
-          <DashboardPortfolioHistorySection
-            holdings={holdings}
-            history={monthHistory.data}
-            portfolioValue={snapshot.portfolioValue}
-            portfolioValueAvailable={snapshot.portfolioValueAvailable}
-            emphasisNote={smartDashboard.emphasis.historyNote}
-          />
+            <DashboardPortfolioExposureCard allocation={exposureAllocation} />
 
-          {/* 8. Portfolio Exposure */}
-          <DashboardPortfolioExposureCard allocation={exposureAllocation} />
+            <DashboardContributionsCard
+              snapshot={snapshot}
+              holdings={holdings.map((holding) => ({
+                id: holding.id,
+                symbol: holding.symbol,
+                name: holding.name,
+                assetType: holding.assetType,
+              }))}
+            />
 
-          {/* 9. Contributions */}
-          <DashboardContributionsCard
-            snapshot={snapshot}
-            holdings={holdings.map((holding) => ({
-              id: holding.id,
-              symbol: holding.symbol,
-              name: holding.name,
-              assetType: holding.assetType,
-            }))}
-          />
+            <DashboardExploreTools
+              emphasizeGoals={smartDashboard.emphasis.exploreGoalsHighlight}
+            />
 
-          {/* 10. Understand your portfolio */}
-          <DashboardExploreTools
-            emphasizeGoals={smartDashboard.emphasis.exploreGoalsHighlight}
-          />
+            <PageRelatedLinks
+              purpose="How is my portfolio doing today?"
+              links={[
+                { href: "/analysis", label: "Open Analysis" },
+                { href: "/portfolio-history", label: "Portfolio History" },
+                { href: "/portfolio-health", label: "Portfolio Scorecard" },
+              ]}
+              className="px-1"
+            />
 
-          <PageRelatedLinks
-            purpose="How is my portfolio doing today?"
-            links={[
-              { href: "/analysis", label: "Open Analysis" },
-              { href: "/portfolio-history", label: "Portfolio History" },
-              { href: "/portfolio-health", label: "Portfolio Scorecard" },
-            ]}
-            className="px-1"
-          />
-
-          {/* 11. Trading Hours */}
-          <DashboardMarketStatus lastUpdatedAt={marketUpdatedAt} />
+            <DashboardMarketStatus lastUpdatedAt={marketUpdatedAt} />
+          </div>
         </>
       ) : null}
 

@@ -16,6 +16,7 @@ import {
   appTextLinkClass,
 } from "@/components/layout/appSurface";
 import type { DashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
+import { buildHoldingsConclusion } from "@/lib/client/dashboardConclusions";
 import { resolveHoldingsMoveColumnLabel } from "@/lib/client/performancePeriod";
 import {
   useCollapsedListLimit,
@@ -80,13 +81,19 @@ export function HoldingsToday({
     : Math.min(total, collapsedLimit);
   const visibleHoldings = snapshot.marketHoldings.slice(0, visibleLimit);
   const hiddenCount = Math.max(0, total - collapsedLimit);
-  const positionSubtitle = `${total} ${total === 1 ? "position" : "positions"} monitored`;
+  const holdingsConclusion = buildHoldingsConclusion(snapshot);
+  const positionSubtitle =
+    holdingsConclusion?.summaryLine ??
+    `${total} ${total === 1 ? "position" : "positions"} monitored`;
 
   return (
-    <section className={appDashboardLightCardClass}>
+    <section
+      className={appDashboardLightCardClass}
+      data-testid="dashboard-holdings-summary"
+    >
       <DashboardSectionHeader
         variant="holdings"
-        title="Your holdings"
+        title="Holdings"
         subtitle={positionSubtitle}
         icon={<Wallet className="h-5 w-5" />}
         trailing={
@@ -94,7 +101,7 @@ export function HoldingsToday({
             href={PORTFOLIO_PATH}
             className={`min-h-[44px] items-center ${appTextLinkClass}`}
           >
-            View all holdings
+            View portfolio
           </Link>
         }
       />

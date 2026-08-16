@@ -75,13 +75,13 @@ describe("dashboard phase 2 compact previews", () => {
     expect(decisionBlockSource).toContain("destinationHref");
   });
 
-  it("renders Today’s market briefing with one lead insight", () => {
+  it("renders Markets today with one lead conclusion", () => {
     expect(briefingSource).toContain("mustWatch");
     expect(briefingSource).toContain("buildIntelligenceDisplayMessage");
     expect(briefingSource).toContain("leadTitle");
     expect(briefingSource).toContain("DASHBOARD_DEEP_LINKS.marketBriefing");
-    expect(briefingSource).toContain("Open News");
-    expect(briefingSource).toContain("line-clamp-3");
+    expect(briefingSource).toContain("Markets today");
+    expect(briefingSource).toContain("line-clamp-2");
     expect(briefingSource).toContain("mustWatch?.title");
     expect(briefingSource).not.toContain("Portfolio context");
     expect(briefingSource).not.toContain("DiscoverMissedTeaser");
@@ -90,15 +90,19 @@ describe("dashboard phase 2 compact previews", () => {
     expect(briefingSource).not.toContain("macroHighlights");
   });
 
-  it("places Portfolio Pulse above holdings and merged briefing below holdings", () => {
+  it("places conclusion modules before holdings; hero pulse remains in DashboardSummary", () => {
     const pulseIdx = dashboardSource.indexOf("pulse={portfolioPulse}");
-    const holdingsIdx = dashboardSource.indexOf("<HoldingsToday");
+    const resilienceIdx = dashboardSource.indexOf(
+      "<DashboardPortfolioResilienceCard",
+    );
     const briefingIdx = dashboardSource.indexOf(
       "<DashboardTodaysMarketBriefing",
     );
+    const holdingsIdx = dashboardSource.indexOf("<HoldingsToday");
     expect(pulseIdx).toBeGreaterThan(-1);
-    expect(holdingsIdx).toBeGreaterThan(pulseIdx);
-    expect(briefingIdx).toBeGreaterThan(holdingsIdx);
+    expect(resilienceIdx).toBeGreaterThan(pulseIdx);
+    expect(briefingIdx).toBeGreaterThan(resilienceIdx);
+    expect(holdingsIdx).toBeGreaterThan(briefingIdx);
     expect(dashboardSource).not.toContain("DashboardTodaysDecision");
     expect(dashboardSource).not.toContain("DashboardIntelligencePreview");
     expect(dashboardSource).not.toMatch(/overflow-x-auto|overflow-x-scroll/);

@@ -151,10 +151,10 @@ describe("home and dashboard hierarchy", () => {
       dashboard.indexOf("pulse={portfolioPulse}"),
     );
     expect(dashboard.indexOf("pulse={portfolioPulse}")).toBeLessThan(
-      dashboard.indexOf("<HoldingsToday"),
-    );
-    expect(dashboard.indexOf("<HoldingsToday")).toBeLessThan(
       dashboard.indexOf("<DashboardTodaysMarketBriefing"),
+    );
+    expect(dashboard.indexOf("<DashboardTodaysMarketBriefing")).toBeLessThan(
+      dashboard.indexOf("<HoldingsToday"),
     );
     expect(dashboard).not.toContain("DashboardQuickActions");
     expect(dashboard).not.toContain("PortfolioIntelligencePanel");
@@ -172,7 +172,7 @@ describe("home and dashboard hierarchy", () => {
     expect(holdingsToday).toContain("md:hidden");
     expect(holdingsToday).toContain("hidden md:block");
     expect(preview).not.toContain("Also worth noting");
-    expect(preview).toContain("Today’s market briefing");
+    expect(preview).toContain("Markets today");
   });
 
   it("redirects authenticated users away from the marketing home route", async () => {

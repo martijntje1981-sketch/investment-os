@@ -17,11 +17,15 @@ describe("Phase 3C Smart Dashboard Intelligence wiring", () => {
   const explore = read("components/dashboard/DashboardExploreTools.tsx");
   const smart = read("lib/client/smartDashboardIntelligence.ts");
 
-  it("keeps the same Dashboard section order without new cards", () => {
+  it("keeps conclusion-first Dashboard section order without remounting Goal Progress card", () => {
     const order = [
       "<DashboardSummary",
-      "<HoldingsToday",
+      "<PortfolioThirtySeconds",
+      "<DashboardPortfolioResilienceCard",
+      "<DashboardGoalConclusionCard",
       "<DashboardTodaysMarketBriefing",
+      "<DashboardReviewConclusionCard",
+      "<HoldingsToday",
       "<DashboardMarketPulseCard",
       "<DashboardPerspectivesWidget",
       "<DashboardCashIntelligenceCard",
@@ -49,7 +53,8 @@ describe("Phase 3C Smart Dashboard Intelligence wiring", () => {
     expect(dashboard).toContain("buildSmartDashboardIntelligence");
     expect(dashboard).toContain("smart={smartDashboard}");
     expect(hero).toContain("smart.briefing");
-    expect(hero).toContain("todaysFocus={smart.todaysFocus}");
+    expect(hero).toContain("smart.todaysFocus");
+    expect(hero).toContain("todaysFocus={null}");
     expect(hero).not.toContain("buildDailyPortfolioBriefing");
     expect(hero).not.toContain("deriveBriefingMarketTopic");
   });
@@ -67,7 +72,7 @@ describe("Phase 3C Smart Dashboard Intelligence wiring", () => {
     expect(marketBriefing).not.toContain(
       "The most important broader market development",
     );
-    expect(marketBriefing).toContain("Open News");
+    expect(marketBriefing).toContain("Markets today");
   });
 
   it("applies emphasis without reordering sections", () => {

@@ -3,6 +3,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
+import { buildResilienceConclusion } from "@/lib/client/dashboardConclusions";
 import { buildResilienceProfile } from "@/lib/services/resilience";
 import type { GoalSettings } from "@/lib/types/portfolioStorage";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
@@ -44,12 +45,17 @@ const dashboardSource = readFileSync(
   path.resolve(process.cwd(), "app/dashboard/page.tsx"),
   "utf8",
 );
+const conclusionsSource = readFileSync(
+  path.resolve(process.cwd(), "lib/client/dashboardConclusions.ts"),
+  "utf8",
+);
 
 describe("Dashboard Portfolio Resilience summary", () => {
   it("reuses live Resilience profile values without hardcoding scores", () => {
     expect(cardSource).toContain("buildResilienceProfile");
-    expect(cardSource).toContain("profile.score");
-    expect(cardSource).toContain("mostSensitive.scenarioName");
+    expect(cardSource).toContain("buildResilienceConclusion");
+    expect(conclusionsSource).toContain("profile.score");
+    expect(conclusionsSource).toContain("mostSensitive.scenarioName");
     expect(cardSource).not.toContain("49 / 100");
     expect(cardSource).not.toContain("-14.0%");
 
@@ -67,24 +73,14 @@ describe("Dashboard Portfolio Resilience summary", () => {
     expect(profile.status).toBe("ok");
     expect(profile.score).not.toBeNull();
     expect(profile.mostSensitive?.scenarioId).toBeTruthy();
+
+    const card = buildResilienceConclusion(profile);
+    expect(card?.status).toContain(String(profile.score));
+    expect(card?.conclusion.toLowerCase()).toContain("sensitivity");
   });
 
-  it("includes goal context only when Resilience provides it", () => {
-    expect(cardSource).toContain("profile.goalContext?.summary");
-
-    const withoutGoal = buildResilienceProfile({
-      holdings: [
-        holding({
-          symbol: "BTC",
-          name: "Bitcoin",
-          assetType: "crypto",
-          quantity: 1,
-          currentPrice: 40_000,
-        }),
-      ],
-      hasSavedGoal: false,
-    });
-    expect(withoutGoal.goalContext).toBeNull();
+  it("keeps goal context off the resilience card when Goal has its own module", () => {
+    expect(cardSource).not.toContain("profile.goalContext?.summary");
 
     const withGoal = buildResilienceProfile({
       holdings: [
@@ -110,25 +106,31 @@ describe("Dashboard Portfolio Resilience summary", () => {
   });
 
   it("omits the module when resilience is unavailable", () => {
-    expect(cardSource).toContain('profile.status === "insufficient_data"');
-    expect(cardSource).toContain("return null");
+    expect(cardSource).toContain("if (!card) return null");
 
     const empty = buildResilienceProfile({ holdings: [] });
     expect(empty.status).toBe("insufficient_data");
+    expect(buildResilienceConclusion(empty)).toBeNull();
   });
 
   it("deep-links to Analysis scenario stress and sits after Personal Intelligence", () => {
     expect(DASHBOARD_DEEP_LINKS.scenarioStress).toBe("/analysis#scenario-stress");
-    expect(cardSource).toContain("DASHBOARD_DEEP_LINKS.scenarioStress");
-    expect(cardSource).toContain("Explore scenarios &amp; resilience");
+    expect(conclusionsSource).toContain("DASHBOARD_DEEP_LINKS.scenarioStress");
+    expect(conclusionsSource).toContain("Explore scenarios & resilience");
 
     const piIdx = dashboardSource.indexOf("<PortfolioThirtySeconds");
     const resilienceIdx = dashboardSource.indexOf(
       "<DashboardPortfolioResilienceCard",
     );
+    const goalIdx = dashboardSource.indexOf("<DashboardGoalConclusionCard");
+    const marketsIdx = dashboardSource.indexOf("<DashboardTodaysMarketBriefing");
+    const reviewIdx = dashboardSource.indexOf("<DashboardReviewConclusionCard");
     const holdingsIdx = dashboardSource.indexOf("<HoldingsToday");
     expect(piIdx).toBeGreaterThan(-1);
     expect(resilienceIdx).toBeGreaterThan(piIdx);
-    expect(holdingsIdx).toBeGreaterThan(resilienceIdx);
+    expect(goalIdx).toBeGreaterThan(resilienceIdx);
+    expect(marketsIdx).toBeGreaterThan(goalIdx);
+    expect(reviewIdx).toBeGreaterThan(marketsIdx);
+    expect(holdingsIdx).toBeGreaterThan(reviewIdx);
   });
 });

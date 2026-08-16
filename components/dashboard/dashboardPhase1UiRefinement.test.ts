@@ -41,10 +41,10 @@ describe("Phase 1 dashboard UI refinement", () => {
     expect(dashboard).toContain("<DashboardTodaysMarketBriefing");
     expect(dashboard).not.toContain("<DashboardTodaysDecision");
     expect(dashboard).not.toContain("<DashboardIntelligencePreview");
-    expect(briefing).toContain("Today’s market briefing");
+    expect(briefing).toContain("Markets today");
     expect(briefing).toContain("buildTodaysDecision");
     expect(decision).toContain("appDashboardLightCardClass");
-    expect(briefing).toContain("appDashboardLightCardClass");
+    expect(briefing).toContain("appTintedPanelClass");
     expect(cash).toContain("Cash intelligence");
     expect(health).toContain("View full analysis");
   });

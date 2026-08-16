@@ -361,8 +361,8 @@ describe("dashboard Today's Decision integration", () => {
     expect(dashboard.indexOf("<DashboardSummary")).toBeLessThan(
       dashboard.indexOf("pulse={portfolioPulse}"),
     );
-    expect(dashboard.indexOf("<HoldingsToday")).toBeLessThan(
-      dashboard.indexOf("<DashboardTodaysMarketBriefing"),
+    expect(dashboard.indexOf("<DashboardTodaysMarketBriefing")).toBeLessThan(
+      dashboard.indexOf("<HoldingsToday"),
     );
     expect(dashboard).toContain("DashboardTodaysMarketBriefing");
     expect(dashboard).not.toContain("<DashboardTodaysDecision");
@@ -372,7 +372,7 @@ describe("dashboard Today's Decision integration", () => {
     expect(decisionSection).toContain("shouldShowTodaysDecisionSubsection");
     expect(preview).toContain("buildIntelligenceDisplayMessage");
     expect(preview).toContain("DASHBOARD_DEEP_LINKS.marketBriefing");
-    expect(preview).toContain("Today’s market briefing");
+    expect(preview).toContain("Markets today");
     expect(preview).not.toContain("DiscoverMissedTeaser");
     expect(dashboard).not.toContain("BottomNavigation");
     expect(dashboard).not.toMatch(/innerWidth|matchMedia|useMediaQuery/);

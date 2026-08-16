@@ -21,11 +21,15 @@ describe("Priority 2 Dashboard progressive disclosure", () => {
   const limits = read("lib/client/useCollapsedListLimit.ts");
   const expandPref = read("lib/client/useDashboardSectionExpanded.ts");
 
-  it("keeps the final Dashboard section order", () => {
+  it("keeps conclusion-first Dashboard section order", () => {
     const order = [
       "<DashboardSummary",
-      "<HoldingsToday",
+      "<PortfolioThirtySeconds",
+      "<DashboardPortfolioResilienceCard",
+      "<DashboardGoalConclusionCard",
       "<DashboardTodaysMarketBriefing",
+      "<DashboardReviewConclusionCard",
+      "<HoldingsToday",
       "<DashboardMarketPulseCard",
       "<DashboardPerspectivesWidget",
       "<DashboardCashIntelligenceCard",
@@ -62,7 +66,7 @@ describe("Priority 2 Dashboard progressive disclosure", () => {
     expect(marketBriefing).toContain("mustWatch");
     expect(marketBriefing).toContain("leadTitle");
     expect(marketBriefing).not.toContain("Portfolio context");
-    expect(marketBriefing).toContain("Open News");
+    expect(marketBriefing).toContain("Markets today");
   });
 
   it("provides a shared expandable section pattern with accessibility", () => {
@@ -81,6 +85,7 @@ describe("Priority 2 Dashboard progressive disclosure", () => {
     expect(limits).toContain("DESKTOP_LIMIT = 3");
     expect(holdings).toContain("useCollapsedListLimit");
     expect(holdings).toContain("useExpandedListLimit");
+    expect(holdings).toContain("View portfolio");
     expect(holdings).toContain("View all holdings");
     expect(holdings).toContain('aria-expanded={expanded}');
     expect(holdings).not.toContain("min-w-[720px]");
