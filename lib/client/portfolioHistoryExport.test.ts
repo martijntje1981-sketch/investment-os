@@ -57,6 +57,7 @@ const summary: ContributionSummary = {
   contributionCount: 2,
   withdrawalCount: 1,
   hasContributionData: true,
+  contributionBasisReliable: true,
 };
 
 const sampleInput = {

@@ -66,11 +66,11 @@ describe("product architecture cohesion", () => {
     expect(menu).toContain("Explore");
   });
 
-  it("adds Related connections on key pages", () => {
+  it("adds Related connections on key pages without Dashboard duplication", () => {
     expect(read("components/layout/PageRelatedLinks.tsx")).toContain(
       "page-related-links",
     );
-    expect(read("app/dashboard/page.tsx")).toContain("PageRelatedLinks");
+    expect(read("app/dashboard/page.tsx")).not.toContain("PageRelatedLinks");
     expect(read("components/analysis/PortfolioAnalysisPage.tsx")).toContain(
       "PageRelatedLinks",
     );

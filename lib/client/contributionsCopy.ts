@@ -4,6 +4,9 @@ export const CONTRIBUTIONS_EXPLANATORY_COPY =
 export const CONTRIBUTIONS_ONBOARDING_COPY =
   "Add the total amount you have contributed to establish your starting point.";
 
+export const CONTRIBUTIONS_INCOMPLETE_BASIS_COPY =
+  "Contribution history is incomplete. Recorded deposits do not yet establish a reliable funding basis for return-style comparisons.";
+
 export const CONTRIBUTIONS_OPENING_LABEL = "Opening contribution";
 
 export const CONTRIBUTIONS_MANAGE_LABEL = "Manage contributions";

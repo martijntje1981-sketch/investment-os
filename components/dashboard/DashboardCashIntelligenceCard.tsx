@@ -127,19 +127,22 @@ export function DashboardCashIntelligenceCard({
         </div>
 
         {yieldLabel ? (
-          <p className={appSectionBodyClass}>
+          <p className={`hidden md:block ${appSectionBodyClass}`}>
             Indicative annual benchmark yield {yieldLabel}
             {snapshot?.hasCash ? " based on recorded cash balances." : ""}
           </p>
         ) : (
-          <p className={appSectionBodyClass}>
+          <p className={`hidden md:block ${appSectionBodyClass}`}>
             {snapshot?.hasCash
               ? "Cash is recorded; indicative yield needs a live overnight benchmark."
               : "No cash holdings recorded. Benchmark rates remain available for context."}
           </p>
         )}
 
-        <p className={`line-clamp-2 ${appSectionMetaClass}`} title={disclaimer}>
+        <p
+          className={`hidden line-clamp-2 md:block ${appSectionMetaClass}`}
+          title={disclaimer}
+        >
           {disclaimer}
         </p>
 

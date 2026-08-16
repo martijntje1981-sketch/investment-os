@@ -44,7 +44,7 @@ describe("Phase 1 dashboard UI refinement", () => {
     expect(briefing).toContain("Markets today");
     expect(briefing).toContain("buildTodaysDecision");
     expect(decision).toContain("appDashboardLightCardClass");
-    expect(briefing).toContain("appTintedPanelClass");
+    expect(briefing).toContain("border-l-violet-500");
     expect(cash).toContain("Cash intelligence");
     expect(health).toContain("View full analysis");
   });

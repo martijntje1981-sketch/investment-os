@@ -46,7 +46,11 @@ describe("premium navigation and visual discovery", () => {
     expect(tools).toContain("GOALS_PATH");
     expect(tools).toContain("ANALYSIS_PATH");
     expect(tools).toContain("PORTFOLIO_HEALTH_PATH");
-    expect(tools).toContain("min-[390px]:grid-cols-3");
+    expect(tools).toContain("explore-tools-mobile");
+    expect(tools).toContain("explore-tools-desktop");
+    expect(tools).toContain("md:hidden");
+    expect(tools).toContain("hidden grid-cols-3 gap-3 md:grid");
+    expect(tools).not.toContain("min-[390px]:grid-cols-3");
   });
 
   it("keeps lighter navy hero tokens and tinted shared surfaces", () => {

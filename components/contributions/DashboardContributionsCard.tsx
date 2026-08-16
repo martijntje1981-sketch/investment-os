@@ -15,6 +15,7 @@ import {
 } from "@/components/layout/appSurface";
 import {
   CONTRIBUTIONS_ADD_LABEL,
+  CONTRIBUTIONS_INCOMPLETE_BASIS_COPY,
   CONTRIBUTIONS_MANAGE_LABEL,
   CONTRIBUTIONS_ONBOARDING_COPY,
 } from "@/lib/client/contributionsCopy";
@@ -119,7 +120,9 @@ export function DashboardContributionsCard({
           </div>
         </div>
 
-        {portfolioValueAvailable && summary.valueAboveContributions != null ? (
+        {portfolioValueAvailable &&
+        summary.contributionBasisReliable &&
+        summary.valueAboveContributions != null ? (
           <div>
             <p className={appSectionLabelClass}>Value above contributions</p>
             <p
@@ -143,6 +146,10 @@ export function DashboardContributionsCard({
               ) : null}
             </p>
           </div>
+        ) : hasEntries && !summary.contributionBasisReliable ? (
+          <p className={appSectionMetaClass}>
+            {CONTRIBUTIONS_INCOMPLETE_BASIS_COPY}
+          </p>
         ) : (
           <p className={appSectionMetaClass}>
             Portfolio value is unavailable, so the comparison cannot be shown.

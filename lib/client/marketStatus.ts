@@ -104,3 +104,24 @@ export function formatMarketUpdateTime(value?: string | null): string {
     minute: "2-digit",
   }).format(date);
 }
+
+/** Updates older than this are not presented as a fresh “latest” refresh. */
+export const MARKET_UPDATE_STALE_AFTER_MS = 3 * 24 * 60 * 60 * 1000;
+
+/**
+ * Honest market-update presentation. Returns null when there is nothing useful
+ * to show (missing/invalid timestamps).
+ */
+export function resolveMarketUpdateDisplay(
+  value?: string | null,
+  nowMs: number = Date.now(),
+): { isStale: boolean } | null {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  const ageMs = nowMs - date.getTime();
+  if (!Number.isFinite(ageMs) || ageMs < 0) {
+    return { isStale: true };
+  }
+  return { isStale: ageMs > MARKET_UPDATE_STALE_AFTER_MS };
+}

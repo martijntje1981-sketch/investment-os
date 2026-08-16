@@ -99,13 +99,24 @@ describe("Priority 2 Dashboard progressive disclosure", () => {
     expect(expandPref).toContain("useEffect");
   });
 
-  it("keeps Understand strip quiet with at most three destinations", () => {
+  it("keeps Understand strip quiet with mobile rows and desktop cards", () => {
     expect(explore).toContain("Analysis");
     expect(explore).toContain("Goals");
     expect(explore).toContain("Portfolio Scorecard");
+    expect(explore).toContain("explore-tools-mobile");
+    expect(explore).toContain("explore-tools-desktop");
+    expect(explore).toContain("ArrowUpRight");
     expect(explore).not.toContain("Explore Demo Portfolio");
     const toolCount = (explore.match(/title: "/g) ?? []).length;
     expect(toolCount).toBeLessThanOrEqual(3);
+  });
+
+  it("hides Trading Hours on mobile and removes duplicate Related navigation", () => {
+    expect(dashboard).not.toContain("PageRelatedLinks");
+    expect(dashboard).toContain("DashboardMarketStatus");
+    const marketStatus = read("components/dashboard/DashboardMarketStatus.tsx");
+    expect(marketStatus).toContain("hidden md:block");
+    expect(marketStatus).toContain("resolveMarketUpdateDisplay");
   });
 
   it("preserves Priority 1 hero pulse wiring and app-entry refresh import surface", () => {

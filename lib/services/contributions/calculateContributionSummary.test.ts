@@ -107,6 +107,7 @@ describe("calculateContributionSummary", () => {
       contributionCount: 0,
       withdrawalCount: 0,
       hasContributionData: false,
+      contributionBasisReliable: false,
     });
   });
 
@@ -129,7 +130,8 @@ describe("calculateContributionSummary", () => {
     );
 
     expect(summary.netContributed).toBe(0);
-    expect(summary.valueAboveContributions).toBe(1200);
+    expect(summary.contributionBasisReliable).toBe(false);
+    expect(summary.valueAboveContributions).toBeNull();
     expect(summary.valueAboveContributionsPercent).toBeNull();
   });
 
@@ -147,6 +149,8 @@ describe("calculateContributionSummary", () => {
     );
 
     expect(summary.netContributed).toBe(-5000);
+    expect(summary.contributionBasisReliable).toBe(false);
+    expect(summary.valueAboveContributions).toBeNull();
     expect(summary.valueAboveContributionsPercent).toBeNull();
   });
 
@@ -247,5 +251,48 @@ describe("calculateContributionSummary", () => {
     expect(summary.totalContributed).toBe(1502.53);
     expect(summary.netContributed).toBe(1502.53);
     expect(summary.contributionCount).toBe(1);
+  });
+
+  it("does not treat incomplete ledgers as portfolio return", () => {
+    const incomplete = calculateContributionSummary(
+      [
+        entry({
+          entryType: "contribution",
+          baseAmount: 400,
+          entryDate: "2026-08-01",
+          source: "manual",
+        }),
+      ],
+      91_284,
+      "EUR",
+    );
+
+    expect(incomplete.netContributed).toBe(400);
+    expect(incomplete.contributionBasisReliable).toBe(false);
+    expect(incomplete.valueAboveContributions).toBeNull();
+    expect(incomplete.valueAboveContributionsPercent).toBeNull();
+
+    const withOpening = calculateContributionSummary(
+      [
+        entry({
+          entryType: "contribution",
+          baseAmount: 80_000,
+          entryDate: "2024-01-01",
+          source: "opening_balance",
+        }),
+        entry({
+          entryType: "contribution",
+          baseAmount: 400,
+          entryDate: "2026-08-01",
+          source: "manual",
+        }),
+      ],
+      91_284,
+      "EUR",
+    );
+
+    expect(withOpening.contributionBasisReliable).toBe(true);
+    expect(withOpening.valueAboveContributions).toBe(10_884);
+    expect(withOpening.valueAboveContributionsPercent).not.toBeNull();
   });
 });

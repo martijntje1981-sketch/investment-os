@@ -104,6 +104,8 @@ describe("contributions ledger UI", () => {
     expect(cardSource).toContain("Net contributed");
     expect(cardSource).toContain("Current value");
     expect(cardSource).toContain("Value above contributions");
+    expect(cardSource).toContain("contributionBasisReliable");
+    expect(cardSource).toContain("CONTRIBUTIONS_INCOMPLETE_BASIS_COPY");
     expect(cardSource).toContain("CONTRIBUTIONS_ADD_LABEL");
     expect(cardSource).toContain("CONTRIBUTIONS_MANAGE_LABEL");
     expect(cardSource).toContain("Recent activity");

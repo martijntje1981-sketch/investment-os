@@ -14,7 +14,6 @@ import { PortfolioThirtySeconds } from "@/components/dashboard/PortfolioThirtySe
 import { DashboardPortfolioResilienceCard } from "@/components/dashboard/DashboardPortfolioResilienceCard";
 import { DashboardGoalConclusionCard } from "@/components/dashboard/DashboardGoalConclusionCard";
 import { DashboardReviewConclusionCard } from "@/components/dashboard/DashboardReviewConclusionCard";
-import { PageRelatedLinks } from "@/components/layout/PageRelatedLinks";
 import { DashboardFirstRunCue } from "@/components/dashboard/DashboardFirstRunCue";
 import { DemoHoldingsCallout } from "@/components/example/DemoHoldingsCallout";
 import { TrialStepsCard } from "@/components/example/TrialStepsCard";
@@ -375,10 +374,11 @@ export default function DashboardPage() {
           <HoldingsToday snapshot={snapshot} />
 
           <div
-            className="space-y-4 opacity-95"
+            className="space-y-3 opacity-90 md:space-y-4 md:opacity-95"
             data-testid="dashboard-secondary-modules"
+            data-zone="explore-more"
           >
-            {/* Secondary detail — visually lighter than conclusion modules */}
+            {/* Zone 4 — Explore More: quieter, compact previews */}
             <DashboardMarketPulseCard
               holdings={holdings}
               leadLabel={
@@ -414,16 +414,6 @@ export default function DashboardPage() {
 
             <DashboardExploreTools
               emphasizeGoals={smartDashboard.emphasis.exploreGoalsHighlight}
-            />
-
-            <PageRelatedLinks
-              purpose="How is my portfolio doing today?"
-              links={[
-                { href: "/analysis", label: "Open Analysis" },
-                { href: "/portfolio-history", label: "Portfolio History" },
-                { href: "/portfolio-health", label: "Portfolio Scorecard" },
-              ]}
-              className="px-1"
             />
 
             <DashboardMarketStatus lastUpdatedAt={marketUpdatedAt} />

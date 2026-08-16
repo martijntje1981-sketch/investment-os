@@ -12,6 +12,7 @@ import {
   appSectionTitleClass,
 } from "@/components/layout/appSurface";
 import {
+  CONTRIBUTIONS_INCOMPLETE_BASIS_COPY,
   CONTRIBUTIONS_MANAGE_LABEL,
   PORTFOLIO_FUNDING_DESCRIPTION,
   PORTFOLIO_FUNDING_EMPTY_COPY,
@@ -184,15 +185,19 @@ export function PortfolioFundingSection({
                   label="Value above contributions"
                   value={
                     portfolioValueAvailable &&
+                    summary.contributionBasisReliable &&
                     summary.valueAboveContributions != null
                       ? `${formatSignedPortfolioCurrency(
                           summary.valueAboveContributions,
                           formatContributionAmount,
                         )}${valueAbovePercent ? ` · ${valueAbovePercent}` : ""}`
-                      : "Unavailable"
+                      : !summary.contributionBasisReliable
+                        ? "Incomplete history"
+                        : "Unavailable"
                   }
                   prominent
                   tone={
+                    summary.contributionBasisReliable &&
                     summary.valueAboveContributions != null
                       ? summary.valueAboveContributions > 0
                         ? "positive"
@@ -203,6 +208,12 @@ export function PortfolioFundingSection({
                   }
                 />
               </div>
+
+              {!summary.contributionBasisReliable ? (
+                <p className={appSectionMetaClass}>
+                  {CONTRIBUTIONS_INCOMPLETE_BASIS_COPY}
+                </p>
+              ) : null}
 
               {portfolioValueAvailable ? null : (
                 <p className={appSectionMetaClass}>

@@ -11,6 +11,7 @@ import {
 import {
   formatMarketUpdateTime,
   getMarketStatuses,
+  resolveMarketUpdateDisplay,
 } from "@/lib/client/marketStatus";
 
 export function DashboardMarketStatus({
@@ -19,9 +20,13 @@ export function DashboardMarketStatus({
   lastUpdatedAt: string | null;
 }) {
   const statuses = getMarketStatuses();
+  const updateDisplay = resolveMarketUpdateDisplay(lastUpdatedAt);
 
   return (
-    <section className={appDashboardLightCardClass}>
+    <section
+      className={`${appDashboardLightCardClass} hidden md:block`}
+      data-testid="dashboard-trading-hours"
+    >
       <DashboardSectionHeader
         title="Trading hours"
         subtitle="Major market session status"
@@ -60,12 +65,29 @@ export function DashboardMarketStatus({
           })}
         </div>
 
-        <p className={`mt-6 border-t border-slate-100 pt-5 ${appSectionMetaClass}`}>
-          Latest market update:{" "}
-          <span className="font-semibold text-slate-700">
-            {formatMarketUpdateTime(lastUpdatedAt)}
-          </span>
-        </p>
+        {updateDisplay ? (
+          <p
+            className={`mt-6 border-t border-slate-100 pt-5 ${appSectionMetaClass}`}
+            data-stale={updateDisplay.isStale ? "true" : "false"}
+          >
+            {updateDisplay.isStale ? (
+              <>
+                Market data last refreshed:{" "}
+                <span className="font-semibold text-amber-800">
+                  {formatMarketUpdateTime(lastUpdatedAt)}
+                </span>
+                <span className="text-amber-800"> · may be outdated</span>
+              </>
+            ) : (
+              <>
+                Latest market update:{" "}
+                <span className="font-semibold text-slate-700">
+                  {formatMarketUpdateTime(lastUpdatedAt)}
+                </span>
+              </>
+            )}
+          </p>
+        ) : null}
       </div>
     </section>
   );

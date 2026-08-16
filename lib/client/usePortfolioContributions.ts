@@ -28,6 +28,7 @@ const EMPTY_SUMMARY: ContributionSummary = {
   contributionCount: 0,
   withdrawalCount: 0,
   hasContributionData: false,
+  contributionBasisReliable: false,
 };
 
 export function usePortfolioContributions(

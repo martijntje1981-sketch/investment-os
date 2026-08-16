@@ -54,6 +54,7 @@ describe("buildGoalsIntelligence", () => {
           contributionCount: 1,
           withdrawalCount: 0,
           hasContributionData: true,
+          contributionBasisReliable: true,
         },
       },
     });

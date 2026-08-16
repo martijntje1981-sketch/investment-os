@@ -108,7 +108,7 @@ function MarketStripItem({ asset }: { asset: MarketPulseAsset }) {
 
 function MarketPulseGrid({ items }: { items: MarketPulseAsset[] }) {
   return (
-    <div className="grid min-w-0 grid-cols-1 gap-2.5 min-[360px]:grid-cols-2 sm:grid-cols-3">
+    <div className="grid min-w-0 grid-cols-1 gap-2.5 sm:grid-cols-2 md:grid-cols-3">
       {items.map((asset) => (
         <MarketStripItem key={asset.id} asset={asset} />
       ))}
