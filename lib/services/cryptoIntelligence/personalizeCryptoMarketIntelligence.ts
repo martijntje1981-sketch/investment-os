@@ -1,7 +1,6 @@
 /**
  * Personalize crypto market context for this user's sleeve.
- * Deep analysis underneath → short conclusions on top.
- * Owned-coin intelligence outranks generic Bitcoin commentary when material.
+ * Owned-coin materiality and high-confidence news outrank generic BTC commentary.
  */
 
 import type { CryptoIntelligenceProfile } from "@/lib/services/cryptoIntelligence/buildCryptoIntelligenceProfile";
@@ -15,12 +14,13 @@ import {
 export type PersonalizedCryptoIntelligence = {
   /** Default “Your crypto today” line. */
   personalConclusion: string | null;
-  /** Default market-structure line. */
+  /** Default market-structure line (expanded). */
   marketStructureLine: string | null;
-  /** Default “What matters now” — max 2 (legacy / supporting). */
-  whatMatters: Array<{ id: string; text: string }>;
+  /** Default “What matters now” — max 2 high-confidence stories. */
+  whatMatters: Array<{ id: string; text: string; href?: string | null }>;
   /** Single Dashboard / PI line when material and not redundant. */
   dashboardLine: string | null;
+  quiet: boolean;
 };
 
 function round1(value: number): number {
@@ -37,8 +37,41 @@ function btcShareLabel(profile: CryptoIntelligenceProfile): string | null {
   return `${Math.round(profile.bitcoinOfCryptoPercent)}%`;
 }
 
+function collectHighConfidenceStories(
+  coins: CoinIntelligence[],
+): Array<{ id: string; text: string; href: string | null; score: number }> {
+  const out: Array<{
+    id: string;
+    text: string;
+    href: string | null;
+    score: number;
+  }> = [];
+  const seen = new Set<string>();
+
+  for (const coin of coins) {
+    for (const story of coin.news) {
+      if (story.confidence !== "strong" && story.confidence !== "likely") {
+        continue;
+      }
+      if (seen.has(story.id)) continue;
+      seen.add(story.id);
+      out.push({
+        id: `coin-news-${story.id}`,
+        text: story.title,
+        href: story.canonicalUrl,
+        score:
+          (story.confidence === "strong" ? 100 : 50) +
+          coin.importanceScore,
+      });
+    }
+  }
+
+  out.sort((a, b) => b.score - a.score);
+  return out;
+}
+
 /**
- * Combine Phase 4A profile with Phase 4B market context (+ optional 4C coins).
+ * Combine Phase 4A–4C into short copy with holdings-first priority.
  */
 export function personalizeCryptoMarketIntelligence(
   profile: CryptoIntelligenceProfile,
@@ -51,15 +84,18 @@ export function personalizeCryptoMarketIntelligence(
       marketStructureLine: null,
       whatMatters: [],
       dashboardLine: null,
+      quiet: true,
     };
   }
 
-  const whatMatters: Array<{ id: string; text: string }> = [];
+  const whatMatters: Array<{ id: string; text: string; href?: string | null }> =
+    [];
   let personalConclusion: string | null = null;
 
   const topCoins = coins ? selectCoinsThatMatterToday(coins, 2) : [];
   const topCoin = topCoins[0] ?? null;
 
+  // 1) Material owned-coin development
   if (topCoin?.conclusion && topCoin.importanceScore >= 8) {
     personalConclusion = topCoin.conclusion;
   }
@@ -68,6 +104,7 @@ export function personalizeCryptoMarketIntelligence(
   const leadership = context.leadership.summary;
   const contribution = profile.cryptoContributionPp;
 
+  // 4–5) Broader market / BTC context only when no stronger owned-coin line
   if (!personalConclusion) {
     if (
       context.leadership.kind === "bitcoin_leading" &&
@@ -123,49 +160,42 @@ export function personalizeCryptoMarketIntelligence(
     }
   }
 
-  const marketStructureLine = leadership;
-
-  if (context.regime && context.moveMagnitude === "stressed") {
-    whatMatters.push({
-      id: "regime-stress",
-      text: "Move size is elevated — treat today’s crypto reading as high-volatility context.",
-    });
+  // 2) High-confidence owned-coin stories only — never pad with weak generics
+  if (coins) {
+    for (const story of collectHighConfidenceStories(coins).slice(0, 2)) {
+      whatMatters.push({
+        id: story.id,
+        text: story.text,
+        href: story.href,
+      });
+    }
   }
 
-  if (
-    contribution != null &&
-    Math.abs(contribution) >= 0.2 &&
-    personalConclusion &&
-    !personalConclusion.includes("percentage points") &&
-    !personalConclusion.includes("pp")
-  ) {
-    whatMatters.push({
-      id: "contribution",
-      text: `Crypto contributed ${formatSignedPp(contribution)}pp to your portfolio today.`,
-    });
-  }
+  const quiet =
+    !personalConclusion &&
+    topCoins.length === 0 &&
+    whatMatters.length === 0 &&
+    context.regime == null;
 
-  for (const story of context.news.slice(0, 2)) {
-    if (whatMatters.length >= 2) break;
-    whatMatters.push({
-      id: `news-${story.id}`,
-      text: story.title,
-    });
+  if (quiet) {
+    personalConclusion =
+      "No material crypto developments stand out for your holdings right now.";
   }
 
   const coinDashboard = coins ? selectDashboardCoinConclusion(coins) : null;
   const dashboardLine = profile.hasMaterialCrypto
     ? (coinDashboard ??
-      personalConclusion ??
-      marketStructureLine ??
-      profile.conclusions[0]?.text ??
+      (topCoin && topCoin.importanceScore >= 12
+        ? personalConclusion
+        : null) ??
       null)
     : null;
 
   return {
     personalConclusion,
-    marketStructureLine,
+    marketStructureLine: leadership,
     whatMatters: whatMatters.slice(0, 2),
     dashboardLine,
+    quiet,
   };
 }

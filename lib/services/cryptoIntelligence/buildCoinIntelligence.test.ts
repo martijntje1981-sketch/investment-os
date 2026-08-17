@@ -199,30 +199,53 @@ describe("buildCoinIntelligence", () => {
     });
     expect(coin?.news).toHaveLength(1);
     expect(coin?.news[0]?.matchBasis).toBe("holding_id");
-    expect(coin?.news[0]?.watchLabel).toMatch(/worth watching/i);
+    expect(coin?.news[0]?.confidence).toBe("strong");
+    expect(coin?.news[0]?.watchLabel).toMatch(/High-confidence|Likely relevant/i);
     const blob = `${coin?.conclusion ?? ""} ${coin?.news[0]?.watchLabel ?? ""}`;
     expect(blob).not.toMatch(/\b(caused|buy|sell|hold|bullish|bearish)\b/i);
   });
 
-  it("surfaces a dashboard coin conclusion for material drivers", () => {
-    const coins = buildOwnedCoinIntelligence({
-      holdings: [
-        holding({
-          symbol: "XRP",
-          name: "XRP",
-          currentPrice: 30_000,
-          change24hPercent: 4,
-          change24hAmount: 1200,
-        }),
-        holding({
-          symbol: "ETH",
-          name: "Ethereum",
-          currentPrice: 20_000,
-          change24hPercent: 0.2,
-          change24hAmount: 40,
+  it("does not surface weak mentions in default coin news", () => {
+    const coin = buildCoinIntelligence({
+      holding: holding({
+        symbol: "ADA",
+        name: "Cardano",
+        currentPrice: 10_000,
+        change24hPercent: 1,
+        change24hAmount: 100,
+      }),
+      totalPortfolioValue: 50_000,
+      newsItems: [
+        news({
+          id: "weak",
+          title: "Crypto market mixed as Bitcoin and Ethereum consolidate",
+          description: "ADA was barely mentioned in passing.",
         }),
       ],
     });
+    expect(coin?.news).toHaveLength(0);
+  });
+
+  it("lets material XRP contribution outrank generic BTC context in ranking", () => {
+    const coins = buildOwnedCoinIntelligence({
+      holdings: [
+        holding({
+          symbol: "BTC",
+          name: "Bitcoin",
+          currentPrice: 5_000,
+          change24hPercent: 0.3,
+          change24hAmount: 15,
+        }),
+        holding({
+          symbol: "XRP",
+          name: "XRP",
+          currentPrice: 40_000,
+          change24hPercent: 4.5,
+          change24hAmount: 1800,
+        }),
+      ],
+    });
+    expect(coins[0]?.symbol).toBe("XRP");
     expect(selectDashboardCoinConclusion(coins)).toMatch(/XRP drove/i);
   });
 
@@ -237,11 +260,11 @@ describe("buildCoinIntelligence", () => {
           change24hAmount: 200,
         }),
         holding({
-          symbol: "ETH",
-          name: "Ethereum",
+          symbol: "SHIB",
+          name: "Shiba Inu",
           currentPrice: 25_000,
-          change24hPercent: 0.4,
-          change24hAmount: 100,
+          change24hPercent: -2.1,
+          change24hAmount: -525,
         }),
         holding({
           symbol: "DOGE",
@@ -251,21 +274,9 @@ describe("buildCoinIntelligence", () => {
           change24hAmount: -450,
         }),
       ],
-      benchmarks: {
-        btc: {
-          change24hPercent: 0.5,
-          change1wPercent: 1,
-          change1mPercent: 2,
-        },
-        eth: {
-          change24hPercent: 0.4,
-          change1wPercent: 1.2,
-          change1mPercent: 1.5,
-        },
-      },
     });
     expect(coins.map((c) => c.symbol)).toEqual(
-      expect.arrayContaining(["BTC", "ETH", "DOGE"]),
+      expect.arrayContaining(["BTC", "SHIB", "DOGE"]),
     );
     const text = coins.map((c) => c.conclusion ?? "").join(" ");
     expect(text).not.toMatch(/\b(buy|sell|recommend|target)\b/i);

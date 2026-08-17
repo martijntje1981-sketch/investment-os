@@ -83,6 +83,21 @@ export function linkPortfolioToMarketPulse(
           ...baseLink,
           relationship: "Direct exposure",
         });
+      } else if (symbol === "ADA") {
+        pushLink(byMarket, "cardano", {
+          ...baseLink,
+          relationship: "Direct exposure",
+        });
+      } else if (symbol === "DOGE") {
+        pushLink(byMarket, "dogecoin", {
+          ...baseLink,
+          relationship: "Direct exposure",
+        });
+      } else if (symbol === "SHIB") {
+        pushLink(byMarket, "shiba_inu", {
+          ...baseLink,
+          relationship: "Direct exposure",
+        });
       }
       continue;
     }

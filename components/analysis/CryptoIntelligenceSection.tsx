@@ -46,24 +46,24 @@ function CompositionBar({
   if (total <= 0) return null;
   return (
     <div
-      className="flex h-2.5 w-full overflow-hidden rounded-full bg-slate-100"
+      className="flex h-2 w-full overflow-hidden rounded-full bg-slate-100"
       aria-hidden
     >
       {bitcoin > 0 ? (
         <span
-          className="bg-amber-500"
+          className="bg-amber-500/90"
           style={{ width: `${(bitcoin / total) * 100}%` }}
         />
       ) : null}
       {ethereum > 0 ? (
         <span
-          className="bg-indigo-500"
+          className="bg-violet-500/90"
           style={{ width: `${(ethereum / total) * 100}%` }}
         />
       ) : null}
       {other > 0 ? (
         <span
-          className="bg-slate-400"
+          className="bg-sky-500/80"
           style={{ width: `${(other / total) * 100}%` }}
         />
       ) : null}
@@ -87,21 +87,36 @@ function formatSignedPp(value: number): string {
   return `${rounded > 0 ? "+" : ""}${rounded.toFixed(1)}pp`;
 }
 
+function moveToneClass(value: number | null): string {
+  if (value == null || !Number.isFinite(value) || Math.abs(value) < 0.05) {
+    return "text-slate-700";
+  }
+  return value > 0 ? "text-emerald-700" : "text-rose-700";
+}
+
+function CoinChip({ symbol }: { symbol: string }) {
+  return (
+    <span className="inline-flex min-h-8 items-center rounded-md bg-violet-50 px-2 text-[12px] font-semibold tracking-wide text-violet-900">
+      {symbol}
+    </span>
+  );
+}
+
 function CoinMatterRow({ coin }: { coin: CoinIntelligence }) {
   return (
     <div
-      className="min-h-11 rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-3"
+      className="min-h-11 border-b border-slate-100 py-3 last:border-b-0"
       data-testid={`coin-matter-${coin.symbol}`}
     >
-      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-        <p className="text-[15px] font-semibold text-slate-950">{coin.symbol}</p>
-        <div className="flex flex-wrap gap-x-3 text-[13px] font-medium text-slate-700">
-          <span>
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+        <CoinChip symbol={coin.symbol} />
+        <div className="flex flex-wrap items-baseline gap-x-3 text-[13px] font-semibold">
+          <span className={moveToneClass(coin.change24hPercent)}>
             {coin.change24hPercent != null
               ? formatSignedPct(coin.change24hPercent)
               : "—"}
           </span>
-          <span className="text-slate-500">
+          <span className="font-medium text-slate-500">
             {coin.contributionPp != null
               ? formatSignedPp(coin.contributionPp)
               : "—"}
@@ -109,24 +124,28 @@ function CoinMatterRow({ coin }: { coin: CoinIntelligence }) {
         </div>
       </div>
       {coin.headline ? (
-        <p className={`mt-1 ${appSectionMetaClass}`}>{coin.headline}</p>
+        <p className={`mt-1.5 ${appSectionMetaClass}`}>{coin.headline}</p>
       ) : null}
     </div>
   );
 }
 
 function CoinDetailBlock({ coin }: { coin: CoinIntelligence }) {
+  const stories =
+    coin.detailNews.length > 0 ? coin.detailNews.slice(0, 3) : coin.news;
   return (
-    <div className="space-y-2 border-t border-slate-100 pt-3 first:border-t-0 first:pt-0">
-      <p className="text-[14px] font-semibold text-slate-950">
-        {coin.symbol}
-        <span className="ml-2 font-normal text-slate-500">{coin.name}</span>
-      </p>
+    <div className="space-y-2 border-t border-slate-100 pt-4 first:border-t-0 first:pt-0">
+      <div className="flex flex-wrap items-center gap-2">
+        <CoinChip symbol={coin.symbol} />
+        <span className={`text-[13px] ${appSectionMetaClass}`}>{coin.name}</span>
+      </div>
       <p className={appSectionMetaClass}>
         24h:{" "}
-        {coin.change24hPercent != null
-          ? formatSignedPct(coin.change24hPercent)
-          : "Unavailable"}
+        <span className={moveToneClass(coin.change24hPercent)}>
+          {coin.change24hPercent != null
+            ? formatSignedPct(coin.change24hPercent)
+            : "Unavailable"}
+        </span>
         {" · "}
         Weight: {formatPortfolioPercent(coin.portfolioWeightPercent)}
         {" · "}
@@ -151,9 +170,9 @@ function CoinDetailBlock({ coin }: { coin: CoinIntelligence }) {
         {" · "}
         vs ETH: {coin.vsEth.summary ?? coin.vsEth.day}
       </p>
-      {coin.news.length > 0 ? (
+      {stories.length > 0 ? (
         <ul className="space-y-1">
-          {coin.news.map((story) => (
+          {stories.map((story) => (
             <li key={story.id} className="min-h-11">
               <a
                 href={story.canonicalUrl}
@@ -173,8 +192,8 @@ function CoinDetailBlock({ coin }: { coin: CoinIntelligence }) {
 }
 
 /**
- * Analysis — Crypto Intelligence (Phase 4B + 4C coin layer).
- * Simple default → expandable depth. Shown only for material crypto.
+ * Analysis — Crypto Intelligence finishing layer (4A–4D).
+ * One coherent experience: conclusions first, depth on demand.
  */
 export function CryptoIntelligenceSection({
   holdings,
@@ -364,9 +383,9 @@ export function CryptoIntelligenceSection({
       aria-labelledby="crypto-intelligence-heading"
       data-testid="crypto-intelligence-section"
     >
-      <div className="border-b border-slate-200 bg-gradient-to-br from-amber-900 to-slate-950 px-5 py-5 text-white sm:px-8">
+      <div className="border-b border-slate-200 bg-gradient-to-br from-slate-950 via-violet-950 to-sky-950 px-5 py-5 text-white sm:px-8">
         <div
-          className={`inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 ${appHeroMetricLabelClass} text-amber-100`}
+          className={`inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 ${appHeroMetricLabelClass} text-violet-100`}
         >
           <Coins className="h-3.5 w-3.5" aria-hidden="true" />
           Crypto intelligence
@@ -378,10 +397,9 @@ export function CryptoIntelligenceSection({
           Crypto intelligence
         </h2>
         <p
-          className={`mt-2 max-w-2xl ${appAnalysisDarkHeaderCopyClass} text-amber-50/95`}
+          className={`mt-2 max-w-2xl ${appAnalysisDarkHeaderCopyClass} text-violet-50/90`}
         >
-          What happened in the coins you own — conclusions first, detail on
-          demand.
+          What happened in the coins you own — analysed deeply, shown simply.
         </p>
       </div>
 
@@ -389,13 +407,8 @@ export function CryptoIntelligenceSection({
         <div>
           <p className={appSectionLabelClass}>Market regime</p>
           <p className={`mt-1 ${appCardValueClass}`}>
-            {marketContext.regime ?? "Unavailable"}
+            {marketContext.regime ?? "Quiet"}
           </p>
-          {marketContext.regimeSummary ? (
-            <p className={`mt-1 ${appSectionMetaClass}`}>
-              {marketContext.regimeSummary}
-            </p>
-          ) : null}
         </div>
 
         {personalized.personalConclusion ? (
@@ -409,12 +422,38 @@ export function CryptoIntelligenceSection({
 
         {coinsThatMatter.length > 0 ? (
           <div>
-            <p className={appSectionLabelClass}>Coins that matter today</p>
-            <div className="mt-2 space-y-2">
+            <p className={appSectionLabelClass}>Coins that matter</p>
+            <div className="mt-1">
               {coinsThatMatter.map((coin) => (
                 <CoinMatterRow key={coin.holdingId} coin={coin} />
               ))}
             </div>
+          </div>
+        ) : null}
+
+        {personalized.whatMatters.length > 0 ? (
+          <div>
+            <p className={appSectionLabelClass}>What matters now</p>
+            <ul className="mt-2 space-y-2">
+              {personalized.whatMatters.map((item) => (
+                <li key={item.id} className="min-h-11">
+                  {item.href ? (
+                    <a
+                      href={item.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-[14px] leading-snug text-slate-800 underline-offset-2 hover:underline"
+                    >
+                      {item.text}
+                    </a>
+                  ) : (
+                    <span className="text-[14px] leading-snug text-slate-800">
+                      {item.text}
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
           </div>
         ) : null}
 
@@ -425,10 +464,10 @@ export function CryptoIntelligenceSection({
             aria-expanded={detailsOpen}
             onClick={() => setDetailsOpen((open) => !open)}
           >
-            {detailsOpen ? "Hide crypto detail" : "View all crypto"}
+            {detailsOpen ? "Hide detail" : "View more"}
           </button>
           {detailsOpen ? (
-            <div className="mt-3 space-y-4 rounded-2xl border border-slate-200 bg-white px-4 py-4">
+            <div className="mt-3 space-y-5 border-t border-slate-200 pt-4">
               {personalized.marketStructureLine ? (
                 <div>
                   <p className={appSectionLabelClass}>Market structure</p>
@@ -440,39 +479,10 @@ export function CryptoIntelligenceSection({
 
               <div>
                 <p className={appSectionLabelClass}>Your coins</p>
-                <div className="mt-2 space-y-3">
+                <div className="mt-2 space-y-1">
                   {coins.map((coin) => (
                     <CoinDetailBlock key={coin.holdingId} coin={coin} />
                   ))}
-                </div>
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <p className={appSectionLabelClass}>Crypto share</p>
-                  <p className={`mt-1 ${appCardValueClass}`}>
-                    {formatPortfolioPercent(profile.cryptoPortfolioWeightPercent)}
-                  </p>
-                  <p className={`mt-1 ${appSectionMetaClass}`}>
-                    {formatEur(profile.cryptoValue)} ·{" "}
-                    {profile.cryptoInstrumentCount} instrument
-                    {profile.cryptoInstrumentCount === 1 ? "" : "s"}
-                  </p>
-                </div>
-                <div>
-                  <p className={appSectionLabelClass}>Today (crypto)</p>
-                  <p className={`mt-1 ${appCardValueClass}`}>
-                    {daily.available
-                      ? pulseDirectionLabel(daily.direction)
-                      : "Unavailable"}
-                  </p>
-                  <p className={`mt-1 ${appSectionMetaClass}`}>
-                    {daily.contributionPp != null
-                      ? `${formatSignedPp(daily.contributionPp)} portfolio contribution`
-                      : daily.available
-                        ? "Contribution not estimable"
-                        : "24h move data incomplete"}
-                  </p>
                 </div>
               </div>
 
@@ -512,8 +522,8 @@ export function CryptoIntelligenceSection({
                   {daily.available
                     ? pulseDirectionLabel(daily.direction)
                     : "Unavailable"}
-                  {daily.breadthUp + daily.breadthDown > 0
-                    ? ` · breadth ${daily.breadthUp} up / ${daily.breadthDown} down`
+                  {daily.contributionPp != null
+                    ? ` · ${formatSignedPp(daily.contributionPp)}`
                     : ""}
                 </p>
                 <p className={appSectionMetaClass}>
@@ -531,26 +541,18 @@ export function CryptoIntelligenceSection({
               </div>
 
               <div className="space-y-1">
-                <p className={appSectionLabelClass}>Market signals</p>
+                <p className={appSectionLabelClass}>Market context</p>
                 <p className={appSectionMetaClass}>
-                  Breadth: {marketContext.breadth.up} up /{" "}
-                  {marketContext.breadth.down} down · magnitude{" "}
-                  {marketContext.moveMagnitude}
-                </p>
-                <p className={appSectionMetaClass}>
-                  Leadership:{" "}
-                  {marketContext.leadership.summary ?? "Unavailable"}
-                </p>
-              </div>
-
-              <div className="space-y-1">
-                <p className={appSectionLabelClass}>Data quality</p>
-                <p className={appSectionMetaClass}>
-                  Move coverage: {profile.dataCoverage.moveDataCount}/
-                  {profile.dataCoverage.valuedCryptoCount}
-                  {coins.length > 0
-                    ? ` · ${coins.length} coin profile${coins.length === 1 ? "" : "s"}`
+                  Breadth {marketContext.breadth.up} up /{" "}
+                  {marketContext.breadth.down} down
+                  {marketContext.leadership.summary
+                    ? ` · ${marketContext.leadership.summary}`
                     : ""}
+                </p>
+                <p className={appSectionMetaClass}>
+                  Sleeve {formatEur(profile.cryptoValue)} · coverage{" "}
+                  {profile.dataCoverage.moveDataCount}/
+                  {profile.dataCoverage.valuedCryptoCount}
                 </p>
               </div>
             </div>

@@ -35,11 +35,17 @@ export {
   type CoinHoldingNews,
   type CoinIntelligence,
   type CoinNewsMatchBasis,
+  type CoinNewsMatchConfidence,
   type CoinPeriodHistoryByHoldingId,
   type CoinPeriodReturn,
   type CoinRelativeVerdict,
   type CryptoBenchmarkMoves,
 } from "@/lib/services/cryptoIntelligence/buildCoinIntelligence";
+
+export {
+  scoreCoinNewsAboutness,
+  watchLabelForConfidence,
+} from "@/lib/services/cryptoIntelligence/scoreCoinNewsAboutness";
 
 export {
   personalizeCryptoMarketIntelligence,

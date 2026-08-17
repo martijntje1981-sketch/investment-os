@@ -5,9 +5,17 @@
 
 import { getHoldingMarketValue } from "@/lib/client/portfolioAnalysis";
 import { isCryptoIntelligenceHolding } from "@/lib/services/classification/cryptoInstrumentIdentity";
+import {
+  scoreCoinNewsAboutness,
+  watchLabelForConfidence,
+  type CoinNewsMatchBasis,
+  type CoinNewsMatchConfidence,
+} from "@/lib/services/cryptoIntelligence/scoreCoinNewsAboutness";
 import { isCryptoHolding } from "@/lib/services/portfolio/cryptoHolding";
 import type { NewsContentItem } from "@/lib/types/newsContent";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
+
+export type { CoinNewsMatchBasis, CoinNewsMatchConfidence };
 
 export type CoinPeriodReturn = {
   available: boolean;
@@ -21,12 +29,6 @@ export type CoinRelativeVerdict =
   | "in_line"
   | "unavailable";
 
-export type CoinNewsMatchBasis =
-  | "provider_symbol"
-  | "article_symbol"
-  | "holding_id"
-  | "ticker_or_name_keyword";
-
 export type CoinHoldingNews = {
   id: string;
   title: string;
@@ -34,6 +36,7 @@ export type CoinHoldingNews = {
   canonicalUrl: string;
   publishedAt: string;
   matchBasis: CoinNewsMatchBasis;
+  confidence: CoinNewsMatchConfidence;
   /** Trust-safe label — never implies causality. */
   watchLabel: string;
 };
@@ -88,6 +91,8 @@ export type CoinIntelligence = {
     summary: string | null;
   };
   news: CoinHoldingNews[];
+  /** Expanded detail may include weaker mentions (labelled). */
+  detailNews: CoinHoldingNews[];
   /** Compact default-row headline. */
   headline: string | null;
   /** Longer personalized conclusion when this coin is material. */
@@ -237,69 +242,36 @@ function periodReturn(
   return { available: false, returnPercent: null, reason: missingReason };
 }
 
-function matchBasisForItem(
-  item: NewsContentItem,
-  holding: StoredPortfolioHolding,
-): CoinNewsMatchBasis | null {
-  const symbol = holding.symbol.trim().toUpperCase();
-  const provider = (holding.providerSymbol ?? "").trim().toUpperCase();
-  const name = holding.name.trim().toLowerCase();
-  const articleSymbols = (item.articleSymbols ?? []).map((s) =>
-    s.trim().toUpperCase(),
-  );
-
-  if (item.matchedHoldingIds.includes(holding.id)) {
-    return "holding_id";
-  }
-  if (provider && articleSymbols.some((s) => s === provider || provider.startsWith(s))) {
-    return "article_symbol";
-  }
-  if (articleSymbols.includes(symbol)) {
-    return "article_symbol";
-  }
-  if (
-    item.matchedSymbols.some((s) => s.trim().toUpperCase() === symbol) ||
-    (provider &&
-      item.matchedSymbols.some(
-        (s) => s.trim().toUpperCase() === provider,
-      ))
-  ) {
-    return "provider_symbol";
-  }
-
-  const text = `${item.title} ${item.description ?? ""} ${item.summary ?? ""}`;
-  const tickerRe = new RegExp(`\\b${symbol.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i");
-  if (tickerRe.test(text)) return "ticker_or_name_keyword";
-  if (name.length >= 4 && text.toLowerCase().includes(name)) {
-    return "ticker_or_name_keyword";
-  }
-  return null;
-}
-
 function selectCoinNews(
   holding: StoredPortfolioHolding,
   items: NewsContentItem[],
-  limit = 2,
+  options?: { limit?: number; includeWeak?: boolean },
 ): CoinHoldingNews[] {
+  const limit = options?.limit ?? 2;
+  const includeWeak = options?.includeWeak ?? false;
   const ranked: Array<CoinHoldingNews & { score: number }> = [];
+
   for (const item of items) {
-    const basis = matchBasisForItem(item, holding);
-    if (!basis) continue;
-    let score = item.relevanceScore > 0 ? item.relevanceScore : 1;
-    if (basis === "holding_id" || basis === "provider_symbol") score += 40;
-    else if (basis === "article_symbol") score += 30;
-    else score += 15;
+    const aboutness = scoreCoinNewsAboutness(item, holding);
+    if (!aboutness) continue;
+    if (!includeWeak && !aboutness.defaultEligible) continue;
+
     ranked.push({
       id: item.id,
       title: item.title.trim(),
       sourceName: item.sourceName,
       canonicalUrl: item.canonicalUrl,
       publishedAt: item.publishedAt,
-      matchBasis: basis,
-      watchLabel: "Holding-matched story worth watching",
-      score,
+      matchBasis: aboutness.basis,
+      confidence: aboutness.confidence,
+      watchLabel: watchLabelForConfidence(
+        aboutness.confidence,
+        holding.symbol.trim().toUpperCase(),
+      ),
+      score: aboutness.score,
     });
   }
+
   ranked.sort((a, b) => b.score - a.score);
   return ranked.slice(0, limit).map((row) => ({
     id: row.id,
@@ -308,6 +280,7 @@ function selectCoinNews(
     canonicalUrl: row.canonicalUrl,
     publishedAt: row.publishedAt,
     matchBasis: row.matchBasis,
+    confidence: row.confidence,
     watchLabel: row.watchLabel,
   }));
 }
@@ -371,7 +344,7 @@ function buildConclusion(coin: {
 
   if (coin.newsTitle && parts.length > 0) {
     parts.push(
-      `A holding-matched story worth watching is “${coin.newsTitle}”.`,
+      `A high-confidence story worth watching is “${coin.newsTitle}”.`,
     );
   }
 
@@ -384,7 +357,8 @@ function importanceScore(input: {
   portfolioWeightPercent: number;
   vsDayBtc: CoinRelativeVerdict;
   vsDayEth: CoinRelativeVerdict;
-  newsCount: number;
+  strongNewsCount: number;
+  likelyNewsCount: number;
 }): number {
   let score = 0;
   if (input.contributionPp != null) {
@@ -403,7 +377,8 @@ function importanceScore(input: {
   ) {
     score += 8;
   }
-  score += input.newsCount * 3;
+  score += input.strongNewsCount * 14;
+  score += input.likelyNewsCount * 6;
   // Tiny holdings with huge % moves stay low unless contribution is material
   if (
     input.portfolioWeightPercent < 0.5 &&
@@ -502,14 +477,22 @@ export function buildCoinIntelligence(
   );
   const vsSummary = daySummary ?? weekSummary ?? monthSummary;
 
-  const news = selectCoinNews(holding, input.newsItems ?? [], 2);
+  const news = selectCoinNews(holding, input.newsItems ?? [], {
+    limit: 2,
+    includeWeak: false,
+  });
+  const expandedNews = selectCoinNews(holding, input.newsItems ?? [], {
+    limit: 4,
+    includeWeak: true,
+  });
   const score = importanceScore({
     contributionPp,
     change24hPercent,
     portfolioWeightPercent,
     vsDayBtc: vsBtcDay,
     vsDayEth: vsEthDay,
-    newsCount: news.length,
+    strongNewsCount: news.filter((row) => row.confidence === "strong").length,
+    likelyNewsCount: news.filter((row) => row.confidence === "likely").length,
   });
 
   const base = {
@@ -541,6 +524,7 @@ export function buildCoinIntelligence(
         relativeSummary(holding.symbol, "unavailable", vsEthMonth, "this month"),
     },
     news,
+    detailNews: expandedNews,
     dataCoverage: {
       has24h: change24hPercent != null,
       hasWeek: week.available,
@@ -561,6 +545,9 @@ export function buildCoinIntelligence(
     },
   };
 
+  const strongNewsTitle =
+    news.find((row) => row.confidence === "strong")?.title ?? null;
+
   return {
     ...base,
     headline: buildHeadline({
@@ -574,7 +561,7 @@ export function buildCoinIntelligence(
       change24hPercent,
       contributionPp,
       vsSummary,
-      newsTitle: news[0]?.title ?? null,
+      newsTitle: strongNewsTitle,
     }),
     importanceScore: score,
   };

@@ -23,6 +23,9 @@ const WHY_BY_MARKET: Record<string, string> = {
   solana: "Solana prices influence your SOL exposure.",
   xrp: "XRP prices influence your XRP exposure.",
   bnb: "BNB prices influence your BNB exposure.",
+  cardano: "Cardano prices influence your ADA exposure.",
+  dogecoin: "Dogecoin prices influence your DOGE exposure.",
+  shiba_inu: "Shiba Inu prices influence your SHIB exposure.",
   copper:
     "Copper (ETF Proxy) relates to your mining ETF exposure — not spot copper.",
   uranium:
