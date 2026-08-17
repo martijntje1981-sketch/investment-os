@@ -390,11 +390,14 @@ export default function DashboardPage() {
             }}
           />
 
-          <AuthenticatedFourQuestionsNav className="mt-1" />
-
           {fourQuestions ? (
-            <FourQuestionsSection bundle={fourQuestions} />
+            <FourQuestionsSection
+              bundle={fourQuestions}
+              intelligenceDepth="complete"
+            />
           ) : null}
+
+          <AuthenticatedFourQuestionsNav className="mt-1" />
 
           <HoldingsToday snapshot={snapshot} />
 

@@ -61,7 +61,7 @@ export function buildAmIOnTrackQuestion(input: {
       expandItems: [],
       disclosures: [],
       explore: {
-        label: "Full goal view",
+        label: "Explore full analysis",
         href: fourQuestionHubPath("am_i_on_track"),
       },
       quiet: true,
@@ -146,7 +146,7 @@ export function buildAmIOnTrackQuestion(input: {
     expandItems,
     disclosures,
     explore: {
-      label: "Full goal view",
+      label: "Explore full analysis",
       href: fourQuestionHubPath("am_i_on_track"),
     },
     quiet: false,

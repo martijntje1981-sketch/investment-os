@@ -4,6 +4,7 @@ export type {
   FourQuestionExploreLink,
   FourQuestionId,
   FourQuestionsBundle,
+  FourQuestionsIntelligenceDepth,
 } from "./types";
 export { FOUR_QUESTION_VISUAL } from "./types";
 export {

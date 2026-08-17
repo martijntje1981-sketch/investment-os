@@ -21,24 +21,24 @@ describe("Four Questions Dashboard UI wiring", () => {
       "setExpandedId((current) => (current === id ? null : id))",
     );
     expect(section).toContain("aria-expanded");
-    expect(section).toContain("min-h-11");
+    expect(section).toContain("min-h-12");
   });
 
-  it("uses four restrained visual identities", () => {
+  it("presents one coherent stack with restrained question accents", () => {
     expect(types).toContain("FOUR_QUESTION_VISUAL");
-    expect(types).toContain("from-cyan-50");
-    expect(types).toContain("from-violet-50");
-    expect(types).toContain("from-amber-50");
-    expect(types).toContain("from-teal-50");
+    expect(types).toContain("FourQuestionsIntelligenceDepth");
     expect(section).toContain("FOUR_QUESTION_VISUAL");
     expect(section).toContain("data-visual={question.id}");
-    expect(section).toContain("space-y-2.5");
+    expect(section).toContain('data-testid="four-questions-stack"');
+    expect(section).toContain("Your portfolio in four questions");
+    expect(section).toContain("data-intelligence-depth={depth}");
   });
 
-  it("exposes Explore deep links for each question", () => {
+  it("keeps Explore inside the expanded state with hub deep links", () => {
     expect(section).toContain("four-question-explore-${question.id}");
     expect(section).toContain("question.explore.href");
     expect(section).toContain("question.explore.label");
+    expect(section).not.toContain("ExploreLink question={question} compact");
   });
 
   it("makes intelligence rows clickable without toggling the accordion", () => {
@@ -57,6 +57,7 @@ describe("Four Questions Dashboard UI wiring", () => {
     expect(summaryIdx).toBeGreaterThan(-1);
     expect(fourIdx).toBeGreaterThan(summaryIdx);
     expect(holdingsIdx).toBeGreaterThan(fourIdx);
+    expect(dashboard).toContain('intelligenceDepth="complete"');
   });
 
   it("retires redundant conclusion cards once Four Questions exist", () => {
@@ -73,12 +74,13 @@ describe("Four Questions Dashboard UI wiring", () => {
     expect(dashboard).toContain("filterHoldingsByIntelligenceScope");
     expect(dashboard).toContain("useGoalRealityCheck");
     expect(dashboard).not.toMatch(/stripe|checkout|subscriptionTier|entitlement/i);
+    expect(types).toContain('"free" | "complete"');
   });
 
   it("keeps mobile-friendly stacked layout tokens", () => {
     expect(section).toContain("space-y-3");
     expect(section).not.toContain("overflow-x-scroll");
-    expect(section).toContain("sm:px-4");
+    expect(section).toContain("sm:px-5");
     expect(section).toContain("w-full");
   });
 });

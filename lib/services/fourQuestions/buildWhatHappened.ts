@@ -193,7 +193,7 @@ export function buildWhatHappenedQuestion(input: {
     expandItems,
     disclosures,
     explore: {
-      label: "Full performance",
+      label: "Explore full analysis",
       href: fourQuestionHubPath("what_happened"),
     },
     quiet,

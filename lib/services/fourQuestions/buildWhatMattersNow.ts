@@ -39,7 +39,7 @@ export function buildWhatMattersNowQuestion(input: {
       expandItems: [],
       disclosures: [],
       explore: {
-        label: "Full intelligence",
+        label: "Explore full analysis",
         href: fourQuestionHubPath("what_matters_now"),
       },
       quiet: true,
@@ -128,7 +128,7 @@ export function buildWhatMattersNowQuestion(input: {
     expandItems,
     disclosures: [],
     explore: {
-      label: "Full intelligence",
+      label: "Explore full analysis",
       href: fourQuestionHubPath("what_matters_now"),
     },
     quiet,

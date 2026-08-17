@@ -4,6 +4,13 @@
 
 import type { IntelligenceScopeId } from "@/lib/services/intelligenceScope";
 
+/**
+ * Presentation depth for Four Questions intelligence.
+ * Phase 6A always uses `complete`. `free` is reserved for a later
+ * entitlement slice — do not gate access here.
+ */
+export type FourQuestionsIntelligenceDepth = "free" | "complete";
+
 export type FourQuestionId =
   | "what_happened"
   | "what_matters_now"
@@ -44,6 +51,8 @@ export type FourQuestionAnswer = {
 
 export type FourQuestionsBundle = {
   scope: IntelligenceScopeId;
+  /** Defaults to complete until Free/Complete entitlements ship. */
+  intelligenceDepth: FourQuestionsIntelligenceDepth;
   questions: FourQuestionAnswer[];
 };
 

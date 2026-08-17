@@ -126,6 +126,7 @@ describe("Four Questions builders", () => {
       realityCheck: null,
     });
     expect(bundle.scope).toBe("complete");
+    expect(bundle.intelligenceDepth).toBe("complete");
     expect(bundle.questions.map((q) => q.id)).toEqual([
       "what_happened",
       "what_matters_now",
@@ -246,7 +247,7 @@ describe("Four Questions builders", () => {
       scope: "complete",
       holdings: [invest, crypto],
     });
-    expect(q1.explore.label).toBe("Full performance");
+    expect(q1.explore.label).toBe("Explore full analysis");
     const period = q1.expandItems.find((row) => row.id === "period-return");
     expect(period?.href).toContain("#portfolio-performance");
     const top = q1.expandItems.find(
@@ -287,7 +288,7 @@ describe("Four Questions builders", () => {
     expect(q3.expandItems.find((row) => row.id === "reality")?.href).toBe(
       "/goals#goal-reality-check",
     );
-    expect(q3.explore.label).toBe("Full goal view");
+    expect(q3.explore.label).toBe("Explore full analysis");
     expect(q3.explore.href).toContain("on-track");
 
     const q4 = buildWhatsAheadQuestion({
@@ -310,7 +311,7 @@ describe("Four Questions builders", () => {
     expect(q4.expandItems.find((row) => row.id === "event")?.href).toBe(
       "/events",
     );
-    expect(q4.explore.label).toBe("Full outlook");
+    expect(q4.explore.label).toBe("Explore full analysis");
     expect(q4.explore.href).toContain("whats-ahead");
   });
 

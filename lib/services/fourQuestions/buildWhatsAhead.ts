@@ -48,7 +48,7 @@ export function buildWhatsAheadQuestion(input: {
       expandItems: [],
       disclosures: [],
       explore: {
-        label: "Full outlook",
+        label: "Explore full analysis",
         href: fourQuestionHubPath("whats_ahead"),
       },
       quiet: true,
@@ -151,7 +151,7 @@ export function buildWhatsAheadQuestion(input: {
       "Scenario and resilience figures are illustrative models, not predictions.",
     ],
     explore: {
-      label: "Full outlook",
+      label: "Explore full analysis",
       href: fourQuestionHubPath("whats_ahead"),
     },
     quiet,

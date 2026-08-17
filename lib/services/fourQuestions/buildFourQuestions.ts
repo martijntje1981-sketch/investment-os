@@ -13,7 +13,10 @@ import { buildAmIOnTrackQuestion } from "@/lib/services/fourQuestions/buildAmIOn
 import { buildWhatHappenedQuestion } from "@/lib/services/fourQuestions/buildWhatHappened";
 import { buildWhatMattersNowQuestion } from "@/lib/services/fourQuestions/buildWhatMattersNow";
 import { buildWhatsAheadQuestion } from "@/lib/services/fourQuestions/buildWhatsAhead";
-import type { FourQuestionsBundle } from "@/lib/services/fourQuestions/types";
+import type {
+  FourQuestionsBundle,
+  FourQuestionsIntelligenceDepth,
+} from "@/lib/services/fourQuestions/types";
 import type { GoalRealityCheck } from "@/lib/services/goals/buildGoalRealityCheck";
 import type { GoalProgress } from "@/lib/services/goals/goalProgressEngine";
 import type { InvestmentIntelligence } from "@/lib/services/news/investmentIntelligence";
@@ -29,6 +32,11 @@ export type BuildFourQuestionsInput = {
   holdings: StoredPortfolioHolding[];
   /** Defaults to complete when omitted. */
   preferredScope?: IntelligenceScopeId | null;
+  /**
+   * Presentation depth only — defaults to complete.
+   * Does not enforce Free access; reserved for a later entitlement slice.
+   */
+  intelligenceDepth?: FourQuestionsIntelligenceDepth | null;
   goal: GoalSettings | null;
   hasSavedGoal: boolean;
   /** Goal progress already computed on scoped holdings. */
@@ -111,5 +119,8 @@ export function buildFourQuestions(
     }),
   ];
 
-  return { scope, questions };
+  const intelligenceDepth: FourQuestionsIntelligenceDepth =
+    input.intelligenceDepth === "free" ? "free" : "complete";
+
+  return { scope, intelligenceDepth, questions };
 }
