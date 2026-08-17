@@ -166,7 +166,7 @@ export const PAGE_PURPOSE = {
   dashboard: "How is my portfolio doing today?",
   portfolio: "What do I own?",
   history: "How did my portfolio develop over time?",
-  analysis: "Why is my portfolio performing this way?",
+  analysis: "Explore your portfolio through four questions.",
   scorecard: "What are my strengths and weaknesses?",
   goals: "Am I on track?",
   review: "What happened today, this week and this month?",

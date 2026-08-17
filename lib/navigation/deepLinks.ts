@@ -24,6 +24,11 @@ export const SECTION_IDS = {
   resilienceSleep: "resilience-sleep",
   marketConsensus: "market-consensus",
   portfolioPerformance: "portfolio-performance",
+  /** Analysis Four Questions section bands. */
+  whatHappened: "what-happened",
+  whatMatters: "what-matters",
+  onTrack: "on-track",
+  whatsAhead: "whats-ahead",
   /** @deprecated Prefer scorecardMomentum — Analysis keeps performance only. */
   portfolioMomentum: "portfolio-momentum",
   /** @deprecated Prefer scorecardReadiness */
@@ -55,6 +60,10 @@ export const DASHBOARD_DEEP_LINKS = {
   resilienceSleep: `${ANALYSIS_PATH}#${SECTION_IDS.resilienceSleep}`,
   marketConsensus: `${ANALYSIS_PATH}#${SECTION_IDS.marketConsensus}`,
   portfolioPerformance: `${ANALYSIS_PATH}#${SECTION_IDS.portfolioPerformance}`,
+  whatHappened: `${ANALYSIS_PATH}#${SECTION_IDS.whatHappened}`,
+  whatMatters: `${ANALYSIS_PATH}#${SECTION_IDS.whatMatters}`,
+  onTrack: `${ANALYSIS_PATH}#${SECTION_IDS.onTrack}`,
+  whatsAhead: `${ANALYSIS_PATH}#${SECTION_IDS.whatsAhead}`,
   portfolioMomentum: `${SCORECARD_PATH}#${SECTION_IDS.scorecardMomentum}`,
   portfolioReadiness: `${SCORECARD_PATH}#${SECTION_IDS.scorecardReadiness}`,
   goalProgress: `${GOALS_PATH}#${SECTION_IDS.goalProgress}`,

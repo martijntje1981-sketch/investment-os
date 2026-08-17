@@ -18,6 +18,9 @@ import { ScenarioStressSection } from "@/components/analysis/ScenarioStressSecti
 import { PortfolioPerformanceSection } from "@/components/analysis/performance/PortfolioPerformanceSection";
 import { MarketConsensusSection } from "@/components/analysis/marketConsensus/MarketConsensusSection";
 import { TopPerformersByCategorySection } from "@/components/analysis/TopPerformersByCategorySection";
+import { AnalysisFourQuestionsNav } from "@/components/analysis/fourQuestions/AnalysisFourQuestionsNav";
+import { AnalysisOnTrackGateway } from "@/components/analysis/fourQuestions/AnalysisOnTrackGateway";
+import { AnalysisQuestionSection } from "@/components/analysis/fourQuestions/AnalysisQuestionSection";
 import { buildPortfolioExposureAllocation } from "@/lib/services/classification";
 import BottomNavigation from "@/components/home/BottomNav";
 import {
@@ -67,7 +70,11 @@ import {
 import { usePortfolioDividends } from "@/lib/client/usePortfolioDividends";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 import { useUserGoal } from "@/lib/client/useUserGoal";
+import { useGoalProgress } from "@/lib/client/useGoalProgress";
+import { useGoalRealityCheck } from "@/lib/client/useGoalRealityCheck";
 import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
+import { ANALYSIS_FOUR_QUESTION_NAV } from "@/lib/services/fourQuestions/analysisSections";
+import { resolveIntelligenceScope } from "@/lib/services/intelligenceScope";
 
 function formatUpdatedAt(value: string | null) {
   if (!value) {
@@ -102,6 +109,8 @@ function allocationBarColor(index: number) {
   return palette[index % palette.length];
 }
 
+const [Q1, Q2, Q3, Q4] = ANALYSIS_FOUR_QUESTION_NAV;
+
 export default function PortfolioAnalysisPage() {
   const { formatEur, baseCurrency, convertEur } = useBaseCurrencyDisplay();
   const {
@@ -115,6 +124,18 @@ export default function PortfolioAnalysisPage() {
   } = useUserPortfolio();
 
   const { goal, hasSavedGoal, persistGoal } = useUserGoal();
+  const goalProgress = useGoalProgress({ holdings, goal, hasSavedGoal });
+  const { realityCheck } = useGoalRealityCheck(
+    holdings,
+    goal,
+    holdings.length > 0 && hasSavedGoal,
+  );
+
+  // Foundation only — default complete; no pricing/gating hide logic yet.
+  const intelligenceScope = useMemo(
+    () => resolveIntelligenceScope().scope,
+    [],
+  );
 
   const { quotes, isLoading: dividendsLoading } = usePortfolioDividends(
     holdings,
@@ -141,7 +162,7 @@ export default function PortfolioAnalysisPage() {
       <PageContainer>
         <PageHero
           title="Analysis"
-          subtitle="Why your portfolio is performing this way — performance, structure and income."
+          subtitle="Explore your portfolio through four questions — explanation, evidence and tools."
           backToDashboard
           stats={
             <p className={`${appDashboardDarkMetaClass} mt-0`}>
@@ -202,7 +223,7 @@ export default function PortfolioAnalysisPage() {
             body="Import a CSV or Excel file, or add holdings manually, to see allocation, concentration and diversification insights."
           />
         ) : (
-          <>
+          <div data-intelligence-scope={intelligenceScope}>
             {analysis.unvaluedHoldings.length > 0 && (
               <div className="mt-6 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -217,7 +238,9 @@ export default function PortfolioAnalysisPage() {
               </div>
             )}
 
-            <div className="mt-6">
+            <AnalysisFourQuestionsNav />
+
+            <AnalysisQuestionSection item={Q1}>
               <PortfolioPerformanceSection
                 holdings={holdings}
                 compositionMeta={{
@@ -230,232 +253,188 @@ export default function PortfolioAnalysisPage() {
                     analysis.largestPosition?.weightPercent ?? null,
                 }}
               />
-            </div>
-
-            <p className={`mt-3 ${appSectionMetaClass}`}>
-              Scores live on the{" "}
-              <Link
-                href={DASHBOARD_DEEP_LINKS.scorecard}
-                className={appTextLinkClass}
-              >
-                Portfolio Scorecard
-              </Link>
-              .
-            </p>
-
-            <div className="mt-7">
               <TopPerformersByCategorySection holdings={holdings} />
-            </div>
+              <p className={appSectionMetaClass}>
+                For the full timeline, open{" "}
+                <Link href={PORTFOLIO_HISTORY_PATH} className={appTextLinkClass}>
+                  Portfolio History
+                </Link>
+                .
+              </p>
+            </AnalysisQuestionSection>
 
-            <PortfolioExposureSection allocation={exposureAllocation} />
+            <AnalysisQuestionSection item={Q2}>
+              <PortfolioExposureSection allocation={exposureAllocation} />
+              <PortfolioXRaySection holdings={holdings} />
+              <CryptoIntelligenceSection holdings={holdings} userSub={userSub} />
 
-            <PortfolioXRaySection holdings={holdings} />
-
-            <CryptoIntelligenceSection holdings={holdings} userSub={userSub} />
-
-            <ScenarioStressSection
-              holdings={holdings}
-              goal={goal}
-              hasSavedGoal={hasSavedGoal}
-              onPersistGoal={persistGoal}
-            />
-
-            <MarketConsensusSection
-              analysis={analysis}
-              holdings={holdings}
-              userSub={userSub}
-            />
-
-            <section
-              id="portfolio-allocation"
-              className={`mt-6 scroll-mt-24 ${appCardClass} ${appCardPaddingClass}`}
-              aria-labelledby="portfolio-allocation-heading"
-            >
-              <div className="flex items-start gap-3">
-                <div className="rounded-2xl bg-brand-soft p-3 text-brand-navy">
-                  <Layers3 className="h-5 w-5" />
-                </div>
-                <div>
-                  <h2
-                    id="portfolio-allocation-heading"
-                    className={appSectionTitleClass}
-                  >
-                    Allocation
-                  </h2>
-                  <p className={`mt-1 ${appSectionMetaClass}`}>
-                    Valued holdings, including cash.
-                  </p>
-                </div>
-              </div>
-
-              {hasValuedPositions ? (
-                <div className="mt-6 space-y-4">
-                  {analysis.valuedPositions.map((position, index) => (
-                    <div key={position.holding.id}>
-                      <div
-                        className={`mb-2 flex items-center justify-between gap-3 ${appSectionBodyClass}`}
-                      >
-                        <div className="min-w-0">
-                          <p className={`truncate ${appTableNameClass}`}>
-                            {position.holding.assetType === "cash" ? (
-                              position.holding.name
-                            ) : (
-                              <>
-                                {position.holding.symbol}
-                                <span aria-hidden="true"> · </span>
-                                {position.holding.name}
-                              </>
-                            )}
-                          </p>
-                          <p className={appSectionMetaClass}>
-                            {formatEur(position.value)}
-                          </p>
-                        </div>
-                        <p className={`shrink-0 ${appTableValueClass}`}>
-                          {formatPortfolioPercent(position.weightPercent)}
-                        </p>
-                      </div>
-                      <div className="h-2 overflow-hidden rounded-full bg-slate-100">
-                        <div
-                          className={`h-full rounded-full ${allocationBarColor(index)}`}
-                          style={{
-                            width: `${Math.min(position.weightPercent, 100)}%`,
-                          }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className={`mt-6 ${appSectionMetaClass}`}>
-                  Add current prices to your investments to calculate
-                  allocation.
-                </p>
-              )}
-            </section>
-
-            <DividendIntelligenceSection
-              holdings={holdings}
-              quotes={quotes}
-              isLoading={dividendsLoading}
-              onPolicyOverrideChange={(holdingId, value) => {
-                saveHoldings(
-                  holdings.map((holding) =>
-                    holding.id === holdingId
-                      ? { ...holding, distributionPolicyUserOverride: value }
-                      : holding,
-                  ),
-                );
-              }}
-              onPassiveIncomeEstimateChange={(holdingId, estimate) => {
-                saveHoldings(
-                  holdings.map((holding) =>
-                    holding.id === holdingId
-                      ? {
-                          ...holding,
-                          passiveIncomeUserEstimate: estimate ?? undefined,
-                        }
-                      : holding,
-                  ),
-                );
-              }}
-            />
-
-            <CashIntelligenceSection holdings={holdings} />
-
-            <section className="mt-6 grid gap-4 lg:grid-cols-2">
-              <article className={`${appCardClass} ${appCardPaddingClass}`}>
+              <section
+                id="portfolio-allocation"
+                className={`scroll-mt-24 ${appCardClass} ${appCardPaddingClass}`}
+                aria-labelledby="portfolio-allocation-heading"
+              >
                 <div className="flex items-start gap-3">
-                  <div className="rounded-2xl bg-slate-100 p-3 text-slate-700">
-                    <Scale className="h-5 w-5" />
+                  <div className="rounded-2xl bg-brand-soft p-3 text-brand-navy">
+                    <Layers3 className="h-5 w-5" />
                   </div>
                   <div>
-                    <h2 className={appSectionTitleClass}>Concentration</h2>
+                    <h3
+                      id="portfolio-allocation-heading"
+                      className={appSectionTitleClass}
+                    >
+                      Allocation
+                    </h3>
                     <p className={`mt-1 ${appSectionMetaClass}`}>
-                      Largest positions among valued holdings.
+                      Valued holdings, including cash.
                     </p>
                   </div>
                 </div>
 
                 {hasValuedPositions ? (
-                  <div className="mt-5 space-y-3">
-                    <p className={appCardValueClass}>
-                      {concentrationLabel(analysis.concentrationLevel)}
-                    </p>
-                    <p className={appSectionBodyClass}>
-                      {concentrationExplanation(analysis.concentrationLevel)}
-                    </p>
-                    <MetricRow
-                      label="Largest position"
-                      value={
-                        analysis.largestPosition
-                          ? formatPortfolioPercent(
-                              analysis.largestPosition.weightPercent,
-                            )
-                          : "—"
-                      }
-                    />
-                    <MetricRow
-                      label="Top three combined"
-                      value={formatPortfolioPercent(
-                        analysis.topThreeWeightPercent,
-                      )}
-                    />
+                  <div className="mt-6 space-y-4">
+                    {analysis.valuedPositions.map((position, index) => (
+                      <div key={position.holding.id}>
+                        <div
+                          className={`mb-2 flex items-center justify-between gap-3 ${appSectionBodyClass}`}
+                        >
+                          <div className="min-w-0">
+                            <p className={`truncate ${appTableNameClass}`}>
+                              {position.holding.assetType === "cash" ? (
+                                position.holding.name
+                              ) : (
+                                <>
+                                  {position.holding.symbol}
+                                  <span aria-hidden="true"> · </span>
+                                  {position.holding.name}
+                                </>
+                              )}
+                            </p>
+                            <p className={appSectionMetaClass}>
+                              {formatEur(position.value)}
+                            </p>
+                          </div>
+                          <p className={`shrink-0 ${appTableValueClass}`}>
+                            {formatPortfolioPercent(position.weightPercent)}
+                          </p>
+                        </div>
+                        <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                          <div
+                            className={`h-full rounded-full ${allocationBarColor(index)}`}
+                            style={{
+                              width: `${Math.min(position.weightPercent, 100)}%`,
+                            }}
+                          />
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 ) : (
-                  <p className={`mt-5 ${appSectionMetaClass}`}>
-                    Needs at least one valued position.
+                  <p className={`mt-6 ${appSectionMetaClass}`}>
+                    Add current prices to your investments to calculate
+                    allocation.
                   </p>
                 )}
-              </article>
+              </section>
 
-              <article className={`${appCardClass} ${appCardPaddingClass}`}>
-                <div className="flex items-start gap-3">
-                  <div className="rounded-2xl bg-emerald-50 p-3 text-emerald-700">
-                    <Sparkles className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h2 className={appSectionTitleClass}>Diversification</h2>
-                    <p className={`mt-1 ${appSectionMetaClass}`}>
-                      Asset mix from your stored holdings.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-6 space-y-5">
-                  <div>
-                    <p className={appSectionLabelClass}>Asset mix</p>
-                    <div className="mt-3 space-y-3">
-                      {analysis.assetTypeBreakdown.map((item) => (
-                        <MetricRow
-                          key={item.label}
-                          label={item.label}
-                          value={
-                            <>
-                              {formatEur(item.value)}
-                              <span aria-hidden="true"> · </span>
-                              {formatPortfolioPercent(item.weightPercent)}
-                            </>
+              <DividendIntelligenceSection
+                holdings={holdings}
+                quotes={quotes}
+                isLoading={dividendsLoading}
+                onPolicyOverrideChange={(holdingId, value) => {
+                  saveHoldings(
+                    holdings.map((holding) =>
+                      holding.id === holdingId
+                        ? { ...holding, distributionPolicyUserOverride: value }
+                        : holding,
+                    ),
+                  );
+                }}
+                onPassiveIncomeEstimateChange={(holdingId, estimate) => {
+                  saveHoldings(
+                    holdings.map((holding) =>
+                      holding.id === holdingId
+                        ? {
+                            ...holding,
+                            passiveIncomeUserEstimate: estimate ?? undefined,
                           }
-                        />
-                      ))}
+                        : holding,
+                    ),
+                  );
+                }}
+              />
+
+              <CashIntelligenceSection holdings={holdings} />
+
+              <section className="grid gap-4 lg:grid-cols-2">
+                <article className={`${appCardClass} ${appCardPaddingClass}`}>
+                  <div className="flex items-start gap-3">
+                    <div className="rounded-2xl bg-slate-100 p-3 text-slate-700">
+                      <Scale className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h3 className={appSectionTitleClass}>Concentration</h3>
+                      <p className={`mt-1 ${appSectionMetaClass}`}>
+                        Largest positions among valued holdings.
+                      </p>
                     </div>
                   </div>
 
-                  {analysis.cashByCurrency.length > 0 && (
+                  {hasValuedPositions ? (
+                    <div className="mt-5 space-y-3">
+                      <p className={appCardValueClass}>
+                        {concentrationLabel(analysis.concentrationLevel)}
+                      </p>
+                      <p className={appSectionBodyClass}>
+                        {concentrationExplanation(analysis.concentrationLevel)}
+                      </p>
+                      <MetricRow
+                        label="Largest position"
+                        value={
+                          analysis.largestPosition
+                            ? formatPortfolioPercent(
+                                analysis.largestPosition.weightPercent,
+                              )
+                            : "—"
+                        }
+                      />
+                      <MetricRow
+                        label="Top three combined"
+                        value={formatPortfolioPercent(
+                          analysis.topThreeWeightPercent,
+                        )}
+                      />
+                    </div>
+                  ) : (
+                    <p className={`mt-5 ${appSectionMetaClass}`}>
+                      Needs at least one valued position.
+                    </p>
+                  )}
+                </article>
+
+                <article className={`${appCardClass} ${appCardPaddingClass}`}>
+                  <div className="flex items-start gap-3">
+                    <div className="rounded-2xl bg-emerald-50 p-3 text-emerald-700">
+                      <Sparkles className="h-5 w-5" />
+                    </div>
                     <div>
-                      <p className={appSectionLabelClass}>Cash by currency</p>
+                      <h3 className={appSectionTitleClass}>Diversification</h3>
+                      <p className={`mt-1 ${appSectionMetaClass}`}>
+                        Asset mix from your stored holdings.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 space-y-5">
+                    <div>
+                      <p className={appSectionLabelClass}>Asset mix</p>
                       <div className="mt-3 space-y-3">
-                        {analysis.cashByCurrency.map((item) => (
+                        {analysis.assetTypeBreakdown.map((item) => (
                           <MetricRow
-                            key={item.currency}
-                            label={item.currency}
+                            key={item.label}
+                            label={item.label}
                             value={
                               <>
-                                {formatPortfolioCurrency(
-                                  item.value,
-                                  item.currency,
-                                )}
+                                {formatEur(item.value)}
                                 <span aria-hidden="true"> · </span>
                                 {formatPortfolioPercent(item.weightPercent)}
                               </>
@@ -464,68 +443,113 @@ export default function PortfolioAnalysisPage() {
                         ))}
                       </div>
                     </div>
-                  )}
-                </div>
-              </article>
-            </section>
 
-            {analysis.unvaluedHoldings.length > 0 && (
-              <section
-                className={`mt-6 ${appCardClass} ${appCardPaddingClass}`}
-              >
-                <h2 className={appSectionTitleClass}>
-                  Excluded from valued totals
-                </h2>
-                <p className={`mt-1 ${appSectionMetaClass}`}>
-                  Visible holdings without a usable price — not counted as zero.
-                </p>
-                <div className="mt-5 divide-y divide-slate-200 rounded-2xl border border-slate-200">
-                  {analysis.unvaluedHoldings.map((holding) => (
-                    <div
-                      key={holding.id}
-                      className={`flex items-center justify-between gap-3 px-4 py-3.5 ${appSectionBodyClass}`}
-                    >
+                    {analysis.cashByCurrency.length > 0 && (
                       <div>
-                        <p className={appTableNameClass}>{holding.symbol}</p>
-                        <p className={appSectionMetaClass}>{holding.name}</p>
+                        <p className={appSectionLabelClass}>Cash by currency</p>
+                        <div className="mt-3 space-y-3">
+                          {analysis.cashByCurrency.map((item) => (
+                            <MetricRow
+                              key={item.currency}
+                              label={item.currency}
+                              value={
+                                <>
+                                  {formatPortfolioCurrency(
+                                    item.value,
+                                    item.currency,
+                                  )}
+                                  <span aria-hidden="true"> · </span>
+                                  {formatPortfolioPercent(item.weightPercent)}
+                                </>
+                              }
+                            />
+                          ))}
+                        </div>
                       </div>
-                      <p className="font-semibold text-amber-700">
-                        Missing usable price
-                      </p>
-                    </div>
-                  ))}
-                </div>
+                    )}
+                  </div>
+                </article>
               </section>
-            )}
 
-            <section
-              className={`mt-7 ${appDarkCardClass} ${appDarkCardPaddingClass}`}
-            >
-              <p className={appHeroMetricLabelClass}>Observations</p>
-              <h2 className={`mt-2 ${appAnalysisDarkTitleClass}`}>
-                Portfolio observations
-              </h2>
-              {analysis.observations.length > 0 ? (
-                <ul className={`mt-5 space-y-3 ${appAnalysisDarkBodyClass}`}>
-                  {analysis.observations.map((observation) => (
-                    <li key={observation} className="flex gap-3">
-                      <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-400" />
-                      <span>{observation}</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className={`mt-5 ${appAnalysisDarkBodyClass}`}>
-                  Add valued holdings to generate portfolio observations.
-                </p>
+              {analysis.unvaluedHoldings.length > 0 && (
+                <section className={`${appCardClass} ${appCardPaddingClass}`}>
+                  <h3 className={appSectionTitleClass}>
+                    Excluded from valued totals
+                  </h3>
+                  <p className={`mt-1 ${appSectionMetaClass}`}>
+                    Visible holdings without a usable price — not counted as
+                    zero.
+                  </p>
+                  <div className="mt-5 divide-y divide-slate-200 rounded-2xl border border-slate-200">
+                    {analysis.unvaluedHoldings.map((holding) => (
+                      <div
+                        key={holding.id}
+                        className={`flex items-center justify-between gap-3 px-4 py-3.5 ${appSectionBodyClass}`}
+                      >
+                        <div>
+                          <p className={appTableNameClass}>{holding.symbol}</p>
+                          <p className={appSectionMetaClass}>{holding.name}</p>
+                        </div>
+                        <p className="font-semibold text-amber-700">
+                          Missing usable price
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </section>
               )}
-              <p className={`mt-6 ${appAnalysisDarkDisclaimerClass}`}>
-                These observations describe portfolio structure only. They are
-                not financial advice and do not include buy or sell
-                instructions.
-              </p>
-            </section>
-          </>
+
+              <section
+                className={`${appDarkCardClass} ${appDarkCardPaddingClass}`}
+              >
+                <p className={appHeroMetricLabelClass}>Observations</p>
+                <h3 className={`mt-2 ${appAnalysisDarkTitleClass}`}>
+                  Portfolio observations
+                </h3>
+                {analysis.observations.length > 0 ? (
+                  <ul className={`mt-5 space-y-3 ${appAnalysisDarkBodyClass}`}>
+                    {analysis.observations.map((observation) => (
+                      <li key={observation} className="flex gap-3">
+                        <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-400" />
+                        <span>{observation}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className={`mt-5 ${appAnalysisDarkBodyClass}`}>
+                    Add valued holdings to generate portfolio observations.
+                  </p>
+                )}
+                <p className={`mt-6 ${appAnalysisDarkDisclaimerClass}`}>
+                  These observations describe portfolio structure only. They are
+                  not financial advice and do not include buy or sell
+                  instructions.
+                </p>
+              </section>
+            </AnalysisQuestionSection>
+
+            <AnalysisQuestionSection item={Q3}>
+              <AnalysisOnTrackGateway
+                progress={goalProgress}
+                goal={goal}
+                realityCheck={realityCheck}
+              />
+            </AnalysisQuestionSection>
+
+            <AnalysisQuestionSection item={Q4}>
+              <ScenarioStressSection
+                holdings={holdings}
+                goal={goal}
+                hasSavedGoal={hasSavedGoal}
+                onPersistGoal={persistGoal}
+              />
+              <MarketConsensusSection
+                analysis={analysis}
+                holdings={holdings}
+                userSub={userSub}
+              />
+            </AnalysisQuestionSection>
+          </div>
         )}
       </PageContainer>
       <BottomNavigation />

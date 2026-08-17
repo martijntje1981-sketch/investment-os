@@ -47,7 +47,7 @@ describe("product architecture cohesion", () => {
 
   it("keeps page purpose one-liners stable for Related strips", () => {
     expect(PAGE_PURPOSE.dashboard).toMatch(/today/i);
-    expect(PAGE_PURPOSE.analysis).toMatch(/performing/i);
+    expect(PAGE_PURPOSE.analysis).toMatch(/four questions/i);
     expect(PAGE_PURPOSE.review).toMatch(/week|month|today/i);
   });
 
