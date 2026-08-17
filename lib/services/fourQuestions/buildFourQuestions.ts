@@ -39,6 +39,7 @@ export type BuildFourQuestionsInput = {
   cryptoDashboardLine?: string | null;
   contributionSummaryLine?: string | null;
   nextEventLabel?: string | null;
+  nextEventHref?: string | null;
 };
 
 export function buildFourQuestions(
@@ -106,6 +107,7 @@ export function buildFourQuestions(
       goal: input.goal,
       hasSavedGoal: input.hasSavedGoal,
       nextEventLabel: input.nextEventLabel,
+      nextEventHref: input.nextEventHref,
     }),
   ];
 

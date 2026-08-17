@@ -240,4 +240,84 @@ describe("Four Questions builders", () => {
     expect(q.explore.href).toContain("scenario");
     expect(q.answer.length).toBeGreaterThan(0);
   });
+
+  it("attaches trustworthy click destinations for expand rows", () => {
+    const q1 = buildWhatHappenedQuestion({
+      scope: "complete",
+      holdings: [invest, crypto],
+    });
+    expect(q1.explore.label).toBe("Full performance");
+    const period = q1.expandItems.find((row) => row.id === "period-return");
+    expect(period?.href).toContain("#portfolio-performance");
+    const top = q1.expandItems.find(
+      (row) => row.id === "top-positive" || row.id === "top-negative",
+    );
+    expect(top?.href).toMatch(/\/holding\/|portfolio-performance/);
+
+    const progress = deriveGoalProgress({
+      currentPortfolioValue: 200_000,
+      goal,
+      hasSavedGoal: true,
+    });
+    const q3 = buildAmIOnTrackQuestion({
+      scope: "complete",
+      progress,
+      goal,
+      realityCheck: {
+        available: true,
+        expectedAnnualReturnPercent: 20,
+        comparableAnnualPercent: -0.1,
+        comparableKind: "recent_annualized_pace",
+        periodId: "1Y",
+        sourcePeriodLabel: "the last year",
+        yearsRepresented: 1,
+        gapPp: -20.1,
+        historyQuality: "moderate",
+        conclusion: "Pace trails assumption.",
+        qualityNote: null,
+        methodologyNote: "Constant-holdings EOD.",
+        disclaimer:
+          "Recent pace is historical and is not a forecast of future returns.",
+      },
+    });
+    expect(q3.support).toBe(
+      "Under your 20% assumption · recent pace -0.1%",
+    );
+    expect(q3.support).not.toMatch(/forecast|will return|expected future/i);
+    expect(q3.expandItems.find((row) => row.id === "reality")?.href).toBe(
+      "/goals#goal-reality-check",
+    );
+    expect(q3.explore.label).toBe("Full goal view");
+
+    const q4 = buildWhatsAheadQuestion({
+      scope: "complete",
+      holdings: [invest, crypto],
+      goal,
+      hasSavedGoal: true,
+      nextEventLabel: "CPI release",
+      nextEventHref: "/events",
+    });
+    const scenario = q4.expandItems.find((row) => row.id === "scenario");
+    const resilience = q4.expandItems.find((row) => row.id === "resilience");
+    if (scenario) {
+      expect(scenario.href).toContain("scenario-stress");
+    }
+    if (resilience) {
+      expect(resilience.href).toContain("resilience-sleep");
+    }
+    expect(scenario || resilience).toBeTruthy();
+    expect(q4.expandItems.find((row) => row.id === "event")?.href).toBe(
+      "/events",
+    );
+    expect(q4.explore.label).toBe("Full outlook");
+  });
+
+  it("leaves expand rows without destinations non-clickable", () => {
+    const q = buildWhatMattersNowQuestion({
+      scope: "complete",
+      holdings: [],
+      intelligence: null,
+    });
+    expect(q.expandItems.every((row) => !row.href)).toBe(true);
+  });
 });

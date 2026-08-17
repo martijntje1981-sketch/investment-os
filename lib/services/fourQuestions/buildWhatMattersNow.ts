@@ -6,16 +6,16 @@ import {
   buildPersonalIntelligenceConclusion,
   selectDashboardActionPlanItems,
 } from "@/lib/client/dashboardConclusions";
-import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 import { NEWS_HUB_PATH } from "@/lib/navigation/newsHubRoutes";
 import type { IntelligenceScopeId } from "@/lib/services/intelligenceScope";
 import { buildMarketCalmer } from "@/lib/services/marketCalmer";
-import {
-  buildPersonalActionPlan,
-} from "@/lib/services/personalIntelligence/buildPersonalActionPlan";
+import { buildPersonalActionPlan } from "@/lib/services/personalIntelligence/buildPersonalActionPlan";
 import { buildThirtySecondsBriefingView } from "@/lib/services/personalIntelligence/thirtySecondsBriefing";
 import type { PersonalIntelligenceToday } from "@/lib/services/personalIntelligence";
-import type { FourQuestionAnswer } from "@/lib/services/fourQuestions/types";
+import type {
+  FourQuestionAnswer,
+  FourQuestionExpandItem,
+} from "@/lib/services/fourQuestions/types";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
 const QUIET_ANSWER = "Nothing requires special attention right now.";
@@ -39,7 +39,7 @@ export function buildWhatMattersNowQuestion(input: {
       expandItems: [],
       disclosures: [],
       explore: {
-        label: "Explore news",
+        label: "Full intelligence",
         href: NEWS_HUB_PATH,
       },
       quiet: true,
@@ -70,7 +70,6 @@ export function buildWhatMattersNowQuestion(input: {
   let answer = conclusion.primaryConclusion;
   let quiet = conclusion.isQuiet;
 
-  // Crypto scope: prefer owned-coin / crypto personal line when stronger.
   if (
     scope === "crypto" &&
     cryptoDashboardLine?.trim() &&
@@ -82,14 +81,12 @@ export function buildWhatMattersNowQuestion(input: {
     cryptoDashboardLine?.trim() &&
     conclusion.isQuiet
   ) {
-    // Material crypto line can override quiet PI when present.
     answer = cryptoDashboardLine.trim();
     quiet = false;
   } else if (conclusion.isQuiet) {
     answer = QUIET_ANSWER;
   }
 
-  // Complete: do not stack — keep single highest-value conclusion (already one line).
   const support =
     !quiet && conclusion.attentionLine
       ? conclusion.attentionLine
@@ -97,11 +94,15 @@ export function buildWhatMattersNowQuestion(input: {
         ? planItems[0].headline
         : null;
 
-  const expandItems = planItems.slice(0, 2).map((item, index) => ({
-    id: `matter-${index}`,
-    label: item.categoryLabel,
-    detail: item.headline,
-  }));
+  const expandItems: FourQuestionExpandItem[] = planItems
+    .slice(0, 2)
+    .map((item, index) => ({
+      id: `matter-${index}`,
+      label: item.categoryLabel,
+      detail: item.headline,
+      href: item.href?.trim() || null,
+      hrefExternal: Boolean(item.hrefExternal),
+    }));
 
   if (
     !quiet &&
@@ -113,15 +114,10 @@ export function buildWhatMattersNowQuestion(input: {
         id: "context",
         label: "Context",
         detail: intelligence.headline,
+        href: null,
       });
     }
   }
-
-  const exploreHref =
-    conclusion.ctaHref ||
-    (scope === "crypto"
-      ? DASHBOARD_DEEP_LINKS.portfolioPerformance
-      : DASHBOARD_DEEP_LINKS.portfolioNews);
 
   return {
     id: "what_matters_now",
@@ -132,10 +128,8 @@ export function buildWhatMattersNowQuestion(input: {
     expandItems,
     disclosures: [],
     explore: {
-      label: "Explore intelligence",
-      href: exploreHref.includes("/news")
-        ? exploreHref
-        : NEWS_HUB_PATH,
+      label: "Full intelligence",
+      href: NEWS_HUB_PATH,
     },
     quiet,
     scope,

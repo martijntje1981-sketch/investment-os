@@ -6,7 +6,10 @@ import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 import type { IntelligenceScopeId } from "@/lib/services/intelligenceScope";
 import { buildResilienceProfile } from "@/lib/services/resilience";
 import { selectRelevantPortfolioScenarios } from "@/lib/services/scenarioRelevance";
-import type { FourQuestionAnswer } from "@/lib/services/fourQuestions/types";
+import type {
+  FourQuestionAnswer,
+  FourQuestionExpandItem,
+} from "@/lib/services/fourQuestions/types";
 import type {
   GoalSettings,
   StoredPortfolioHolding,
@@ -22,8 +25,17 @@ export function buildWhatsAheadQuestion(input: {
   hasSavedGoal?: boolean;
   /** Only include when already available from existing intelligence payload. */
   nextEventLabel?: string | null;
+  /** Existing events destination when the label is trustworthy. */
+  nextEventHref?: string | null;
 }): FourQuestionAnswer {
-  const { scope, holdings, goal, hasSavedGoal, nextEventLabel } = input;
+  const {
+    scope,
+    holdings,
+    goal,
+    hasSavedGoal,
+    nextEventLabel,
+    nextEventHref,
+  } = input;
 
   if (holdings.length === 0) {
     return {
@@ -35,7 +47,7 @@ export function buildWhatsAheadQuestion(input: {
       expandItems: [],
       disclosures: [],
       explore: {
-        label: "Explore scenarios",
+        label: "Full outlook",
         href: DASHBOARD_DEEP_LINKS.scenarioStress,
       },
       quiet: true,
@@ -79,7 +91,7 @@ export function buildWhatsAheadQuestion(input: {
     quiet = false;
   }
 
-  const expandItems = [];
+  const expandItems: FourQuestionExpandItem[] = [];
 
   if (top) {
     expandItems.push({
@@ -90,6 +102,7 @@ export function buildWhatsAheadQuestion(input: {
           ? ` · ${Math.round(top.affectedWeightPercent)}% of portfolio affected`
           : ""
       }`,
+      href: DASHBOARD_DEEP_LINKS.scenarioStress,
     });
   }
 
@@ -104,6 +117,7 @@ export function buildWhatsAheadQuestion(input: {
           ? ` — ${resilience.primaryDriverExplanation.split(".")[0]}.`
           : ""
       }`,
+      href: DASHBOARD_DEEP_LINKS.resilienceSleep,
     });
   }
 
@@ -112,6 +126,7 @@ export function buildWhatsAheadQuestion(input: {
       id: "event",
       label: "Upcoming",
       detail: nextEventLabel.trim(),
+      href: nextEventHref?.trim() || null,
     });
   }
 
@@ -120,6 +135,7 @@ export function buildWhatsAheadQuestion(input: {
       id: "none",
       label: "Outlook",
       detail: QUIET_ANSWER,
+      href: null,
     });
   }
 
@@ -134,7 +150,7 @@ export function buildWhatsAheadQuestion(input: {
       "Scenario and resilience figures are illustrative models, not predictions.",
     ],
     explore: {
-      label: "Explore outlook",
+      label: "Full outlook",
       href: DASHBOARD_DEEP_LINKS.scenarioStress,
     },
     quiet,

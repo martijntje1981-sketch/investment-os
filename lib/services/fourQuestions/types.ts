@@ -19,6 +19,10 @@ export type FourQuestionExpandItem = {
   id: string;
   label: string;
   detail?: string | null;
+  /** Trustworthy destination only — omit when none exists. */
+  href?: string | null;
+  /** True when href is a verified external article URL. */
+  hrefExternal?: boolean;
 };
 
 export type FourQuestionAnswer = {
@@ -41,4 +45,49 @@ export type FourQuestionAnswer = {
 export type FourQuestionsBundle = {
   scope: IntelligenceScopeId;
   questions: FourQuestionAnswer[];
+};
+
+/** Restrained visual identity tokens per question (CSS class keys). */
+export const FOUR_QUESTION_VISUAL: Record<
+  FourQuestionId,
+  {
+    panel: string;
+    number: string;
+    eyebrow: string;
+    hover: string;
+    ring: string;
+  }
+> = {
+  what_happened: {
+    panel:
+      "border-cyan-200/55 bg-gradient-to-br from-cyan-50/70 via-white to-white",
+    number: "text-cyan-700/75",
+    eyebrow: "text-cyan-900/55",
+    hover: "hover:bg-cyan-50/50",
+    ring: "focus-visible:ring-cyan-400/40",
+  },
+  what_matters_now: {
+    panel:
+      "border-violet-200/55 bg-gradient-to-br from-violet-50/65 via-white to-white",
+    number: "text-violet-700/75",
+    eyebrow: "text-violet-900/55",
+    hover: "hover:bg-violet-50/45",
+    ring: "focus-visible:ring-violet-400/40",
+  },
+  am_i_on_track: {
+    panel:
+      "border-amber-200/55 bg-gradient-to-br from-amber-50/65 via-white to-white",
+    number: "text-amber-800/75",
+    eyebrow: "text-amber-950/50",
+    hover: "hover:bg-amber-50/45",
+    ring: "focus-visible:ring-amber-400/40",
+  },
+  whats_ahead: {
+    panel:
+      "border-teal-200/55 bg-gradient-to-br from-teal-50/65 via-white to-white",
+    number: "text-teal-700/75",
+    eyebrow: "text-teal-900/55",
+    hover: "hover:bg-teal-50/45",
+    ring: "focus-visible:ring-teal-400/40",
+  },
 };

@@ -3,18 +3,41 @@
  */
 
 import { formatExpectedReturnAssumptionContext } from "@/lib/client/expectedReturnAssumption";
-import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 import { buildGoalConclusion } from "@/lib/client/dashboardConclusions";
+import { GOALS_PATH, PORTFOLIO_HISTORY_PATH } from "@/lib/navigation/appRoutes";
+import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 import type { IntelligenceScopeId } from "@/lib/services/intelligenceScope";
 import type { GoalRealityCheck } from "@/lib/services/goals/buildGoalRealityCheck";
 import type { GoalProgress } from "@/lib/services/goals/goalProgressEngine";
-import type { FourQuestionAnswer } from "@/lib/services/fourQuestions/types";
+import type {
+  FourQuestionAnswer,
+  FourQuestionExpandItem,
+} from "@/lib/services/fourQuestions/types";
 import type { GoalSettings } from "@/lib/types/portfolioStorage";
+
+const GOAL_REALITY_HREF = `${GOALS_PATH}#goal-reality-check`;
 
 function formatGap(gapPp: number): string {
   const rounded = Math.round(gapPp * 10) / 10;
   const sign = rounded > 0 ? "+" : "";
   return `${sign}${rounded.toFixed(1)} pp`;
+}
+
+function formatPacePercent(value: number): string {
+  const rounded = Math.round(value * 10) / 10;
+  const sign = rounded > 0 ? "+" : "";
+  return `${sign}${rounded.toFixed(1)}%`;
+}
+
+/**
+ * Glance support: keep on-track status separate from realized pace wording.
+ * Does not change goal mathematics — only clarifies that pace ≠ assumption.
+ */
+export function formatOnTrackSupportLine(input: {
+  expectedAnnualReturnPercent: number;
+  recentAnnualizedPacePercent: number;
+}): string {
+  return `Under your ${input.expectedAnnualReturnPercent}% assumption · recent pace ${formatPacePercent(input.recentAnnualizedPacePercent)}`;
 }
 
 export function buildAmIOnTrackQuestion(input: {
@@ -38,7 +61,7 @@ export function buildAmIOnTrackQuestion(input: {
       expandItems: [],
       disclosures: [],
       explore: {
-        label: "Explore goals",
+        label: "Full goal view",
         href: DASHBOARD_DEEP_LINKS.goals,
       },
       quiet: true,
@@ -50,16 +73,18 @@ export function buildAmIOnTrackQuestion(input: {
   let support = card.contextLine ?? card.conclusion;
 
   if (realityCheck?.available) {
-    const pace = `${realityCheck.comparableAnnualPercent.toFixed(1)}% recent annualized pace`;
-    const assumption = `${realityCheck.expectedAnnualReturnPercent}% assumption`;
-    support = `${assumption} · ${pace}`;
+    support = formatOnTrackSupportLine({
+      expectedAnnualReturnPercent: realityCheck.expectedAnnualReturnPercent,
+      recentAnnualizedPacePercent: realityCheck.comparableAnnualPercent,
+    });
   }
 
-  const expandItems = [
+  const expandItems: FourQuestionExpandItem[] = [
     {
       id: "progress",
       label: "Progress",
       detail: `${Math.round(progress.currentProgressPercent)}% of ${card.status.includes("€") ? "target" : "goal"} · ${progress.status}`,
+      href: GOALS_PATH,
     },
   ];
 
@@ -72,6 +97,7 @@ export function buildAmIOnTrackQuestion(input: {
       id: "projection",
       label: "Projected completion",
       detail: progress.estimatedCompletionLabel,
+      href: GOALS_PATH,
     });
   }
 
@@ -80,6 +106,7 @@ export function buildAmIOnTrackQuestion(input: {
       id: "assumption",
       label: "Expected return",
       detail: formatExpectedReturnAssumptionContext(goal.expectedAnnualReturn),
+      href: GOAL_REALITY_HREF,
     });
   }
 
@@ -88,6 +115,7 @@ export function buildAmIOnTrackQuestion(input: {
       id: "reality",
       label: "Reality check",
       detail: `${realityCheck.comparableAnnualPercent.toFixed(1)}% ${realityCheck.sourcePeriodLabel} · gap ${formatGap(realityCheck.gapPp)}`,
+      href: GOAL_REALITY_HREF,
     });
   }
 
@@ -96,6 +124,7 @@ export function buildAmIOnTrackQuestion(input: {
       id: "contributions",
       label: "Contributions",
       detail: contributionSummaryLine.trim(),
+      href: PORTFOLIO_HISTORY_PATH,
     });
   }
 
@@ -117,7 +146,7 @@ export function buildAmIOnTrackQuestion(input: {
     expandItems,
     disclosures,
     explore: {
-      label: "Explore goals",
+      label: "Full goal view",
       href: DASHBOARD_DEEP_LINKS.goalProgress,
     },
     quiet: false,

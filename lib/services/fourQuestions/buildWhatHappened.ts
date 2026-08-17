@@ -3,6 +3,7 @@
  */
 
 import { summarizeDailyPerformance } from "@/lib/client/dailyPerformance";
+import { holdingDetailPath } from "@/lib/navigation/appRoutes";
 import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 import type { IntelligenceScopeId } from "@/lib/services/intelligenceScope";
 import {
@@ -10,7 +11,10 @@ import {
   buildPortfolioPerformanceAttribution,
 } from "@/lib/services/performanceAttribution";
 import type { PortfolioPulseResult } from "@/lib/services/portfolio/periodScores/types";
-import type { FourQuestionAnswer } from "@/lib/services/fourQuestions/types";
+import type {
+  FourQuestionAnswer,
+  FourQuestionExpandItem,
+} from "@/lib/services/fourQuestions/types";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
 function formatSignedPercent(value: number): string {
@@ -23,6 +27,12 @@ function clipWords(text: string, maxWords: number): string {
   const words = text.trim().split(/\s+/).filter(Boolean);
   if (words.length <= maxWords) return text.trim();
   return `${words.slice(0, maxWords).join(" ")}…`;
+}
+
+function holdingHref(symbol: string | null | undefined): string | null {
+  const trimmed = symbol?.trim();
+  if (!trimmed) return null;
+  return holdingDetailPath(trimmed);
 }
 
 export function buildWhatHappenedQuestion(input: {
@@ -92,13 +102,14 @@ export function buildWhatHappenedQuestion(input: {
     maxConclusions: 2,
   });
 
-  const expandItems = [
+  const expandItems: FourQuestionExpandItem[] = [
     {
       id: "period-return",
       label: "Today",
       detail: daily.hasDailyData
         ? formatSignedPercent(daily.todayPercent)
         : "Unavailable",
+      href: DASHBOARD_DEEP_LINKS.portfolioPerformance,
     },
   ];
 
@@ -111,6 +122,8 @@ export function buildWhatHappenedQuestion(input: {
           ? ` · ${topPos.contributionPp > 0 ? "+" : ""}${topPos.contributionPp.toFixed(1)} pp`
           : ""
       }`,
+      href:
+        holdingHref(topPos.symbol) ?? DASHBOARD_DEEP_LINKS.portfolioPerformance,
     });
   }
   if (topNeg) {
@@ -122,6 +135,8 @@ export function buildWhatHappenedQuestion(input: {
           ? ` · ${topNeg.contributionPp > 0 ? "+" : ""}${topNeg.contributionPp.toFixed(1)} pp`
           : ""
       }`,
+      href:
+        holdingHref(topNeg.symbol) ?? DASHBOARD_DEEP_LINKS.portfolioPerformance,
     });
   }
 
@@ -130,6 +145,7 @@ export function buildWhatHappenedQuestion(input: {
       id: "pulse-daily",
       label: "Daily pulse",
       detail: clipWords(pulse.daily.summary, 14),
+      href: pulse.daily.href || DASHBOARD_DEEP_LINKS.portfolioPerformance,
     });
   }
   if (pulse?.weekly?.summary) {
@@ -137,6 +153,7 @@ export function buildWhatHappenedQuestion(input: {
       id: "pulse-weekly",
       label: "Weekly pulse",
       detail: clipWords(pulse.weekly.summary, 12),
+      href: pulse.weekly.href || DASHBOARD_DEEP_LINKS.portfolioPerformance,
     });
   }
   if (pulse?.monthly?.summary) {
@@ -144,6 +161,7 @@ export function buildWhatHappenedQuestion(input: {
       id: "pulse-monthly",
       label: "Monthly pulse",
       detail: clipWords(pulse.monthly.summary, 12),
+      href: pulse.monthly.href || DASHBOARD_DEEP_LINKS.portfolioPerformance,
     });
   }
 
@@ -152,6 +170,7 @@ export function buildWhatHappenedQuestion(input: {
       id: `attr-${conclusion.id}`,
       label: "Driver",
       detail: clipWords(conclusion.text, 18),
+      href: DASHBOARD_DEEP_LINKS.portfolioPerformance,
     });
   }
 
@@ -173,7 +192,7 @@ export function buildWhatHappenedQuestion(input: {
     expandItems,
     disclosures,
     explore: {
-      label: "Explore performance",
+      label: "Full performance",
       href: DASHBOARD_DEEP_LINKS.portfolioPerformance,
     },
     quiet,

@@ -303,6 +303,7 @@ export default function DashboardPage() {
       intelligence,
       pulse: portfolioPulse,
       nextEventLabel,
+      nextEventHref: nextEventLabel ? "/events" : null,
     });
   }, [
     goal,
