@@ -25,6 +25,23 @@ export {
 } from "@/lib/services/cryptoIntelligence/buildCryptoMarketContext";
 
 export {
+  buildCoinIntelligence,
+  buildOwnedCoinIntelligence,
+  cryptoBenchmarksFromMajors,
+  selectCoinsThatMatterToday,
+  selectDashboardCoinConclusion,
+  type BuildCoinIntelligenceInput,
+  type BuildOwnedCoinIntelligenceInput,
+  type CoinHoldingNews,
+  type CoinIntelligence,
+  type CoinNewsMatchBasis,
+  type CoinPeriodHistoryByHoldingId,
+  type CoinPeriodReturn,
+  type CoinRelativeVerdict,
+  type CryptoBenchmarkMoves,
+} from "@/lib/services/cryptoIntelligence/buildCoinIntelligence";
+
+export {
   personalizeCryptoMarketIntelligence,
   type PersonalizedCryptoIntelligence,
 } from "@/lib/services/cryptoIntelligence/personalizeCryptoMarketIntelligence";

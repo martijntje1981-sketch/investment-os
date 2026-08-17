@@ -15,6 +15,7 @@ import {
 import {
   buildCryptoIntelligenceProfile,
   buildCryptoMarketContext,
+  buildOwnedCoinIntelligence,
   selectDashboardCryptoConclusion,
 } from "@/lib/services/cryptoIntelligence";
 import type {
@@ -202,14 +203,18 @@ function buildAttentionItems(input: {
       profile: cryptoProfile,
       holdings: cryptoHoldings,
     });
+    const coins = buildOwnedCoinIntelligence({
+      holdings: cryptoHoldings,
+    });
     const cryptoLine = selectDashboardCryptoConclusion(
       cryptoProfile,
       cryptoContext,
+      coins,
     );
     if (
       cryptoLine &&
       !items.some((item) =>
-        /bitcoin|crypto exposure|crypto sleeve|crypto move|crypto is responsible/i.test(
+        /bitcoin|crypto exposure|crypto sleeve|crypto move|crypto is responsible|drove .*pp/i.test(
           item.label,
         ),
       )
@@ -222,10 +227,14 @@ function buildAttentionItems(input: {
           cryptoProfile.cryptoPortfolioWeightPercent >= 5
             ? `Crypto ≈ ${Math.round(cryptoProfile.cryptoPortfolioWeightPercent)}% of portfolio`
             : null,
-        whyItMatters: "Describes your crypto sleeve — not a recommendation.",
+        whyItMatters:
+          "Personal crypto reading — open Analysis → Crypto intelligence for detail.",
         portfolioWeightPercent: cryptoProfile.cryptoPortfolioWeightPercent,
         materiality:
-          cryptoProfile.cryptoPortfolioWeightPercent >= 25 ? "medium" : "low",
+          cryptoProfile.cryptoPortfolioWeightPercent >= 25 ||
+          /drove .*pp/i.test(cryptoLine)
+            ? "medium"
+            : "low",
         source: "derived",
       });
     }

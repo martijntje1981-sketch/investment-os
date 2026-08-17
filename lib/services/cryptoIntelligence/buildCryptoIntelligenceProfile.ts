@@ -9,6 +9,10 @@ import {
   isEthereumHolding,
 } from "@/lib/services/classification/cryptoInstrumentIdentity";
 import type { CryptoMarketContext } from "@/lib/services/cryptoIntelligence/buildCryptoMarketContext";
+import {
+  selectDashboardCoinConclusion,
+  type CoinIntelligence,
+} from "@/lib/services/cryptoIntelligence/buildCoinIntelligence";
 import { personalizeCryptoMarketIntelligence } from "@/lib/services/cryptoIntelligence/personalizeCryptoMarketIntelligence";
 import { isCryptoHolding } from "@/lib/services/portfolio/cryptoHolding";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
@@ -445,12 +449,18 @@ export function buildCryptoIntelligenceProfile(
 export function selectDashboardCryptoConclusion(
   profile: CryptoIntelligenceProfile,
   marketContext?: CryptoMarketContext | null,
+  coins?: CoinIntelligence[] | null,
 ): string | null {
   if (!profile.hasMaterialCrypto) return null;
+  if (coins && coins.length > 0) {
+    const coinLine = selectDashboardCoinConclusion(coins);
+    if (coinLine) return coinLine;
+  }
   if (marketContext) {
     const personalized = personalizeCryptoMarketIntelligence(
       profile,
       marketContext,
+      coins,
     );
     if (personalized.dashboardLine) return personalized.dashboardLine;
   }

@@ -53,7 +53,24 @@ describe("cryptoBaseAssetRegistry", () => {
   it("exposes a data-driven live-pricing registry", () => {
     const symbols = listLivePricedCryptoBaseAssets().map((entry) => entry.symbol);
     expect(symbols).toEqual(
-      expect.arrayContaining(["BTC", "ETH", "SOL", "XRP", "ADA", "DOGE"]),
+      expect.arrayContaining([
+        "BTC",
+        "ETH",
+        "SOL",
+        "XRP",
+        "ADA",
+        "DOGE",
+        "SHIB",
+      ]),
     );
+    expect(isLivePricedCryptoBaseAsset("SHIB")).toBe(true);
+    expect(recognizeKnownCrypto({ symbol: "SHIB" })).toEqual({
+      name: "Shiba Inu",
+      symbol: "SHIB",
+    });
+    expect(recognizeKnownCrypto({ name: "Shiba Inu" })).toEqual({
+      name: "Shiba Inu",
+      symbol: "SHIB",
+    });
   });
 });

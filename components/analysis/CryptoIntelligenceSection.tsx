@@ -23,8 +23,13 @@ import { isCryptoIntelligenceHolding } from "@/lib/services/classification/crypt
 import {
   buildCryptoIntelligenceProfile,
   buildCryptoMarketContext,
+  buildOwnedCoinIntelligence,
+  cryptoBenchmarksFromMajors,
   cryptoMajorsFromMarketPulse,
   personalizeCryptoMarketIntelligence,
+  selectCoinsThatMatterToday,
+  type CoinIntelligence,
+  type CoinPeriodHistoryByHoldingId,
 } from "@/lib/services/cryptoIntelligence";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
@@ -73,8 +78,102 @@ function pulseDirectionLabel(direction: string): string {
   return "Unavailable";
 }
 
+function formatSignedPct(value: number): string {
+  return `${value > 0 ? "+" : ""}${value.toFixed(1)}%`;
+}
+
+function formatSignedPp(value: number): string {
+  const rounded = Math.round(value * 10) / 10;
+  return `${rounded > 0 ? "+" : ""}${rounded.toFixed(1)}pp`;
+}
+
+function CoinMatterRow({ coin }: { coin: CoinIntelligence }) {
+  return (
+    <div
+      className="min-h-11 rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-3"
+      data-testid={`coin-matter-${coin.symbol}`}
+    >
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+        <p className="text-[15px] font-semibold text-slate-950">{coin.symbol}</p>
+        <div className="flex flex-wrap gap-x-3 text-[13px] font-medium text-slate-700">
+          <span>
+            {coin.change24hPercent != null
+              ? formatSignedPct(coin.change24hPercent)
+              : "—"}
+          </span>
+          <span className="text-slate-500">
+            {coin.contributionPp != null
+              ? formatSignedPp(coin.contributionPp)
+              : "—"}
+          </span>
+        </div>
+      </div>
+      {coin.headline ? (
+        <p className={`mt-1 ${appSectionMetaClass}`}>{coin.headline}</p>
+      ) : null}
+    </div>
+  );
+}
+
+function CoinDetailBlock({ coin }: { coin: CoinIntelligence }) {
+  return (
+    <div className="space-y-2 border-t border-slate-100 pt-3 first:border-t-0 first:pt-0">
+      <p className="text-[14px] font-semibold text-slate-950">
+        {coin.symbol}
+        <span className="ml-2 font-normal text-slate-500">{coin.name}</span>
+      </p>
+      <p className={appSectionMetaClass}>
+        24h:{" "}
+        {coin.change24hPercent != null
+          ? formatSignedPct(coin.change24hPercent)
+          : "Unavailable"}
+        {" · "}
+        Weight: {formatPortfolioPercent(coin.portfolioWeightPercent)}
+        {" · "}
+        Contribution:{" "}
+        {coin.contributionPp != null
+          ? formatSignedPp(coin.contributionPp)
+          : "Unavailable"}
+      </p>
+      <p className={appSectionMetaClass}>
+        1W:{" "}
+        {coin.week.available && coin.week.returnPercent != null
+          ? formatSignedPct(coin.week.returnPercent)
+          : (coin.week.reason ?? "Unavailable")}
+        {" · "}
+        1M:{" "}
+        {coin.month.available && coin.month.returnPercent != null
+          ? formatSignedPct(coin.month.returnPercent)
+          : (coin.month.reason ?? "Unavailable")}
+      </p>
+      <p className={appSectionMetaClass}>
+        vs BTC: {coin.vsBtc.summary ?? coin.vsBtc.day}
+        {" · "}
+        vs ETH: {coin.vsEth.summary ?? coin.vsEth.day}
+      </p>
+      {coin.news.length > 0 ? (
+        <ul className="space-y-1">
+          {coin.news.map((story) => (
+            <li key={story.id} className="min-h-11">
+              <a
+                href={story.canonicalUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-[13px] font-medium text-sky-900 underline-offset-2 hover:underline"
+              >
+                {story.title}
+              </a>
+              <p className={appSectionMetaClass}>{story.watchLabel}</p>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
+
 /**
- * Analysis — Crypto Intelligence (Phase 4B).
+ * Analysis — Crypto Intelligence (Phase 4B + 4C coin layer).
  * Simple default → expandable depth. Shown only for material crypto.
  */
 export function CryptoIntelligenceSection({
@@ -152,6 +251,25 @@ export function CryptoIntelligenceSection({
     };
   }, [weekHistory.data, weekHistory.error, monthHistory.data, monthHistory.error]);
 
+  const coinPeriodHistory = useMemo((): CoinPeriodHistoryByHoldingId => {
+    const map: CoinPeriodHistoryByHoldingId = {};
+    for (const move of weekHistory.data?.holdingMoves ?? []) {
+      if (!move.included || move.returnPercent == null) continue;
+      map[move.holdingId] = {
+        ...(map[move.holdingId] ?? {}),
+        weekPercent: move.returnPercent,
+      };
+    }
+    for (const move of monthHistory.data?.holdingMoves ?? []) {
+      if (!move.included || move.returnPercent == null) continue;
+      map[move.holdingId] = {
+        ...(map[move.holdingId] ?? {}),
+        monthPercent: move.returnPercent,
+      };
+    }
+    return map;
+  }, [weekHistory.data, monthHistory.data]);
+
   const profile = useMemo(
     () => buildCryptoIntelligenceProfile(holdings, periodHistory),
     [holdings, periodHistory],
@@ -167,8 +285,25 @@ export function CryptoIntelligenceSection({
     [payload],
   );
 
+  const majors = useMemo(
+    () => cryptoMajorsFromMarketPulse(marketPulse?.crypto),
+    [marketPulse],
+  );
+
+  const benchmarks = useMemo(() => {
+    const fromPulse = (marketPulse?.crypto ?? []).map((asset) => ({
+      id: asset.id,
+      symbol: asset.symbol,
+      name: asset.name,
+      changePercent: asset.quoteChangePercent ?? asset.changePercent,
+      change7dPercent: asset.change7dPercent,
+      chartPeriodChangePercent: asset.chartPeriodChangePercent,
+      chartPeriod: asset.chartPeriod,
+    }));
+    return cryptoBenchmarksFromMajors(fromPulse);
+  }, [marketPulse]);
+
   const marketContext = useMemo(() => {
-    const majors = cryptoMajorsFromMarketPulse(marketPulse?.crypto);
     return buildCryptoMarketContext({
       profile,
       holdings,
@@ -193,11 +328,27 @@ export function CryptoIntelligenceSection({
           : profile.pulse.monthly.reason,
       },
     });
-  }, [profile, holdings, marketPulse, newsItems]);
+  }, [profile, holdings, majors, newsItems]);
+
+  const coins = useMemo(
+    () =>
+      buildOwnedCoinIntelligence({
+        holdings,
+        periodHistoryByHoldingId: coinPeriodHistory,
+        benchmarks,
+        newsItems: newsItems.length > 0 ? newsItems : null,
+      }),
+    [holdings, coinPeriodHistory, benchmarks, newsItems],
+  );
+
+  const coinsThatMatter = useMemo(
+    () => selectCoinsThatMatterToday(coins, 2),
+    [coins],
+  );
 
   const personalized = useMemo(
-    () => personalizeCryptoMarketIntelligence(profile, marketContext),
-    [profile, marketContext],
+    () => personalizeCryptoMarketIntelligence(profile, marketContext, coins),
+    [profile, marketContext, coins],
   );
 
   if (!profile.hasMaterialCrypto) {
@@ -205,7 +356,6 @@ export function CryptoIntelligenceSection({
   }
 
   const daily = profile.pulse.daily;
-  const whatMatters = personalized.whatMatters;
 
   return (
     <section
@@ -230,8 +380,8 @@ export function CryptoIntelligenceSection({
         <p
           className={`mt-2 max-w-2xl ${appAnalysisDarkHeaderCopyClass} text-amber-50/95`}
         >
-          Deep market reading for your crypto sleeve — conclusions first, detail
-          on demand.
+          What happened in the coins you own — conclusions first, detail on
+          demand.
         </p>
       </div>
 
@@ -257,28 +407,14 @@ export function CryptoIntelligenceSection({
           </div>
         ) : null}
 
-        {personalized.marketStructureLine ? (
+        {coinsThatMatter.length > 0 ? (
           <div>
-            <p className={appSectionLabelClass}>Market structure</p>
-            <p className={`mt-1 ${appSectionBodyClass}`}>
-              {personalized.marketStructureLine}
-            </p>
-          </div>
-        ) : null}
-
-        {whatMatters.length > 0 ? (
-          <div>
-            <p className={appSectionLabelClass}>What matters now</p>
-            <ul className="mt-2 space-y-2">
-              {whatMatters.map((item) => (
-                <li
-                  key={item.id}
-                  className="text-[14px] leading-snug text-slate-800"
-                >
-                  {item.text}
-                </li>
+            <p className={appSectionLabelClass}>Coins that matter today</p>
+            <div className="mt-2 space-y-2">
+              {coinsThatMatter.map((coin) => (
+                <CoinMatterRow key={coin.holdingId} coin={coin} />
               ))}
-            </ul>
+            </div>
           </div>
         ) : null}
 
@@ -289,10 +425,28 @@ export function CryptoIntelligenceSection({
             aria-expanded={detailsOpen}
             onClick={() => setDetailsOpen((open) => !open)}
           >
-            {detailsOpen ? "Hide detail" : "Show detail"}
+            {detailsOpen ? "Hide crypto detail" : "View all crypto"}
           </button>
           {detailsOpen ? (
             <div className="mt-3 space-y-4 rounded-2xl border border-slate-200 bg-white px-4 py-4">
+              {personalized.marketStructureLine ? (
+                <div>
+                  <p className={appSectionLabelClass}>Market structure</p>
+                  <p className={`mt-1 ${appSectionBodyClass}`}>
+                    {personalized.marketStructureLine}
+                  </p>
+                </div>
+              ) : null}
+
+              <div>
+                <p className={appSectionLabelClass}>Your coins</p>
+                <div className="mt-2 space-y-3">
+                  {coins.map((coin) => (
+                    <CoinDetailBlock key={coin.holdingId} coin={coin} />
+                  ))}
+                </div>
+              </div>
+
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <p className={appSectionLabelClass}>Crypto share</p>
@@ -314,7 +468,7 @@ export function CryptoIntelligenceSection({
                   </p>
                   <p className={`mt-1 ${appSectionMetaClass}`}>
                     {daily.contributionPp != null
-                      ? `${daily.contributionPp > 0 ? "+" : ""}${daily.contributionPp.toFixed(1)}pp portfolio contribution`
+                      ? `${formatSignedPp(daily.contributionPp)} portfolio contribution`
                       : daily.available
                         ? "Contribution not estimable"
                         : "24h move data incomplete"}
@@ -365,33 +519,19 @@ export function CryptoIntelligenceSection({
                 <p className={appSectionMetaClass}>
                   Weekly:{" "}
                   {profile.pulse.weekly.available
-                    ? `${pulseDirectionLabel(profile.pulse.weekly.direction)} (${profile.pulse.weekly.returnPercent > 0 ? "+" : ""}${profile.pulse.weekly.returnPercent.toFixed(1)}%)`
+                    ? `${pulseDirectionLabel(profile.pulse.weekly.direction)} (${formatSignedPct(profile.pulse.weekly.returnPercent)})`
                     : profile.pulse.weekly.reason}
                 </p>
                 <p className={appSectionMetaClass}>
                   Monthly:{" "}
                   {profile.pulse.monthly.available
-                    ? `${pulseDirectionLabel(profile.pulse.monthly.direction)} (${profile.pulse.monthly.returnPercent > 0 ? "+" : ""}${profile.pulse.monthly.returnPercent.toFixed(1)}%)`
+                    ? `${pulseDirectionLabel(profile.pulse.monthly.direction)} (${formatSignedPct(profile.pulse.monthly.returnPercent)})`
                     : profile.pulse.monthly.reason}
                 </p>
               </div>
 
               <div className="space-y-1">
                 <p className={appSectionLabelClass}>Market signals</p>
-                <p className={appSectionMetaClass}>
-                  BTC{" "}
-                  {marketContext.btc.changePercent != null
-                    ? `${marketContext.btc.changePercent > 0 ? "+" : ""}${marketContext.btc.changePercent.toFixed(1)}%`
-                    : "—"}{" "}
-                  · ETH{" "}
-                  {marketContext.eth.changePercent != null
-                    ? `${marketContext.eth.changePercent > 0 ? "+" : ""}${marketContext.eth.changePercent.toFixed(1)}%`
-                    : "—"}{" "}
-                  · Other{" "}
-                  {marketContext.other.changePercent != null
-                    ? `${marketContext.other.changePercent > 0 ? "+" : ""}${marketContext.other.changePercent.toFixed(1)}%`
-                    : "—"}
-                </p>
                 <p className={appSectionMetaClass}>
                   Breadth: {marketContext.breadth.up} up /{" "}
                   {marketContext.breadth.down} down · magnitude{" "}
@@ -401,55 +541,17 @@ export function CryptoIntelligenceSection({
                   Leadership:{" "}
                   {marketContext.leadership.summary ?? "Unavailable"}
                 </p>
-                <p className={appSectionMetaClass}>
-                  BTC dominance: unavailable
-                </p>
-                <p className={appSectionMetaClass}>
-                  Bitcoin ETF flows: unavailable
-                </p>
-                <p className={appSectionMetaClass}>
-                  Liquidity / total market: unavailable
-                </p>
               </div>
-
-              {marketContext.news.length > 0 ? (
-                <div className="space-y-2">
-                  <p className={appSectionLabelClass}>Relevant news</p>
-                  <ul className="space-y-2">
-                    {marketContext.news.slice(0, 4).map((story) => (
-                      <li key={story.id} className="min-h-11">
-                        <a
-                          href={story.canonicalUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-[14px] font-medium text-sky-900 underline-offset-2 hover:underline"
-                        >
-                          {story.title}
-                        </a>
-                        <p className={appSectionMetaClass}>{story.reason}</p>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ) : null}
 
               <div className="space-y-1">
                 <p className={appSectionLabelClass}>Data quality</p>
                 <p className={appSectionMetaClass}>
-                  Shape: {profile.portfolioShape.replace(/_/g, " ")}
-                </p>
-                <p className={appSectionMetaClass}>
                   Move coverage: {profile.dataCoverage.moveDataCount}/
                   {profile.dataCoverage.valuedCryptoCount}
-                  {marketContext.dataCoverage.marketMajorsUsed > 0
-                    ? ` · market majors ${marketContext.dataCoverage.marketMajorsUsed}`
+                  {coins.length > 0
+                    ? ` · ${coins.length} coin profile${coins.length === 1 ? "" : "s"}`
                     : ""}
                 </p>
-                {marketContext.freshness.newestQuoteAt ? (
-                  <p className={appSectionMetaClass}>
-                    Newest market quote: {marketContext.freshness.newestQuoteAt}
-                  </p>
-                ) : null}
               </div>
             </div>
           ) : null}

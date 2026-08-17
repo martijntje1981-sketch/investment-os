@@ -45,6 +45,12 @@ export const CRYPTO_BASE_ASSET_REGISTRY: readonly CryptoBaseAssetEntry[] = [
   { symbol: "XRP", name: "XRP", livePricing: true, pricingRoute: "direct_or_converted" },
   { symbol: "ADA", name: "Cardano", livePricing: true, pricingRoute: "direct_or_converted" },
   { symbol: "DOGE", name: "Dogecoin", livePricing: true, pricingRoute: "direct_or_converted" },
+  {
+    symbol: "SHIB",
+    name: "Shiba Inu",
+    livePricing: true,
+    pricingRoute: "direct_or_converted",
+  },
   { symbol: "DOT", name: "Polkadot", livePricing: true, pricingRoute: "direct_or_converted" },
   { symbol: "AVAX", name: "Avalanche", livePricing: true, pricingRoute: "direct_or_converted" },
   { symbol: "LINK", name: "Chainlink", livePricing: true, pricingRoute: "direct_or_converted" },
