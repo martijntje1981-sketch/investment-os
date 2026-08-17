@@ -51,6 +51,52 @@ export const MIXED_PORTFOLIO_MOVE_EXPLANATION =
 const AMSTERDAM_TIME_ZONE = "Europe/Amsterdam";
 
 /**
+ * Provider realtime `timestamp` is last-trade time, not necessarily the
+ * previous-close session date. Illiquid ETFs/ETPs can keep an old last-trade
+ * stamp while close/previousClose still reflect a recent session.
+ *
+ * Dates older than this are too unreliable to show as "Last session · {date}".
+ * (Covers a normal weekend + Monday; drops multi-week stale last-trade stamps.)
+ */
+export const MAX_RELIABLE_SESSION_LABEL_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * True when a provider timestamp is recent enough to display as the session date.
+ * Never invents a calendar day — only validates an existing stamp.
+ */
+export function isReliableProviderSessionTimestampForLabel(
+  isoOrDate: string | null | undefined,
+  now = Date.now(),
+): boolean {
+  if (!isoOrDate || !String(isoOrDate).trim()) {
+    return false;
+  }
+
+  const trimmed = String(isoOrDate).trim();
+  let timestampMs: number;
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    const [year, month, day] = trimmed.split("-").map(Number);
+    if (!year || !month || !day) {
+      return false;
+    }
+    timestampMs = Date.UTC(year, month - 1, day, 12, 0, 0);
+  } else {
+    timestampMs = Date.parse(trimmed);
+    if (!Number.isFinite(timestampMs)) {
+      return false;
+    }
+  }
+
+  const ageMs = now - timestampMs;
+  if (ageMs < -6 * 60 * 60 * 1000) {
+    // Far in the future — reject.
+    return false;
+  }
+  return ageMs <= MAX_RELIABLE_SESSION_LABEL_AGE_MS;
+}
+
+/**
  * Classification from normalized assetType only — never ticker-name guesses.
  * Bitcoin ETPs/ETFs stored as investment are exchange-traded (Last session).
  * Native crypto pairs use assetType crypto (24h).
@@ -187,6 +233,7 @@ export function formatMoverPeriodLabel(
     StoredPortfolioHolding,
     "assetType" | "marketPriceUpdatedAt" | "priceUpdatedAt"
   >,
+  now = Date.now(),
 ): string {
   const assetClass = classifyHoldingForPerformancePeriod(holding);
 
@@ -199,7 +246,12 @@ export function formatMoverPeriodLabel(
   }
 
   const providerTimestamp = resolveProviderSessionTimestamp(holding);
-  const sessionDateLabel = formatMoverSessionDateLabel(providerTimestamp);
+  const sessionDateLabel = isReliableProviderSessionTimestampForLabel(
+    providerTimestamp,
+    now,
+  )
+    ? formatMoverSessionDateLabel(providerTimestamp)
+    : null;
 
   if (assetClass === "unknown") {
     return sessionDateLabel ? `Last session · ${sessionDateLabel}` : "";
@@ -243,6 +295,7 @@ export function resolveHoldingMovePeriod(
     StoredPortfolioHolding,
     "assetType" | "marketPriceUpdatedAt" | "priceUpdatedAt"
   >,
+  now = Date.now(),
 ): HoldingMovePeriod {
   const assetClass = classifyHoldingForPerformancePeriod(holding);
 
@@ -270,7 +323,12 @@ export function resolveHoldingMovePeriod(
 
   // Exchange-traded (stocks, ETFs, ETCs, ETPs) and unknown non-cash → last session.
   const providerTimestamp = resolveProviderSessionTimestamp(holding);
-  const sessionDateLabel = formatProviderSessionDateLabel(providerTimestamp);
+  const sessionDateLabel = isReliableProviderSessionTimestampForLabel(
+    providerTimestamp,
+    now,
+  )
+    ? formatProviderSessionDateLabel(providerTimestamp)
+    : null;
 
   if (sessionDateLabel) {
     return {
@@ -280,6 +338,20 @@ export function resolveHoldingMovePeriod(
       sessionDateLabel,
       providerTimestamp,
       accessibleDescription: `Change versus the previous close for the last trading session on ${sessionDateLabel}.`,
+    };
+  }
+
+  // Provider last-trade stamp missing or too old to trust as the session date
+  // (common for illiquid ETFs). Keep honest last-session wording without inventing a day.
+  if (providerTimestamp) {
+    return {
+      assetClass: "exchange_traded",
+      kind: "last_session",
+      primaryLabel: "Last session",
+      sessionDateLabel: null,
+      providerTimestamp,
+      accessibleDescription:
+        "Change versus the previous close for the latest available trading session. The provider last-trade timestamp is too old to show as the session date.",
     };
   }
 
@@ -305,6 +377,7 @@ type PeriodHolding = Pick<
  */
 export function resolvePortfolioMovePeriod(
   holdings: PeriodHolding[],
+  now = Date.now(),
 ): PortfolioMovePeriod {
   let hasExchangeTraded = false;
   let hasNativeCrypto = false;
@@ -322,7 +395,7 @@ export function resolvePortfolioMovePeriod(
     }
 
     hasExchangeTraded = true;
-    const period = resolveHoldingMovePeriod(holding);
+    const period = resolveHoldingMovePeriod(holding, now);
     const key = providerSessionDateKey(period.providerTimestamp);
     if (key && period.sessionDateLabel) {
       if (!exchangeDateKeys.has(key)) {
@@ -404,13 +477,14 @@ export function resolvePortfolioMovePeriod(
     };
   }
 
+  // Exchange-traded only, but no reliable shared session date (missing or stale last-trade stamps).
   return {
-    kind: "latest_available",
-    primaryLabel: "Latest available",
+    kind: "last_session",
+    primaryLabel: "Last session",
     detail: null,
     sessionDateLabel: null,
     accessibleDescription:
-      "Portfolio change for the latest available trading session.",
+      "Portfolio change versus the previous close for the latest available trading session.",
     hasExchangeTraded: true,
     hasNativeCrypto: false,
     isMixed: false,
@@ -420,15 +494,16 @@ export function resolvePortfolioMovePeriod(
 /** Compact column/header label for mixed holding tables. */
 export function resolveHoldingsMoveColumnLabel(
   holdings: PeriodHolding[],
+  now = Date.now(),
 ): string {
-  const period = resolvePortfolioMovePeriod(holdings);
+  const period = resolvePortfolioMovePeriod(holdings, now);
   if (period.kind === "rolling_24h") {
     return "24h";
   }
   if (period.kind === "mixed" || period.kind === "latest_sessions") {
     return "Move";
   }
-  if (period.kind === "last_session" && period.sessionDateLabel) {
+  if (period.kind === "last_session") {
     return "Last session";
   }
   if (period.kind === "latest_available") {

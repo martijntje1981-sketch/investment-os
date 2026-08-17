@@ -84,6 +84,7 @@ describe("dashboard phase 1 revamp", () => {
   });
 
   it("labels exchange-traded movers with known session date", () => {
+    const asOf = Date.parse("2026-07-26T12:00:00.000Z");
     expect(formatMoverSessionDateLabel("2026-07-24")).toBe("Fri 24 Jul");
     expect(
       formatMoverPeriodLabel(
@@ -91,6 +92,7 @@ describe("dashboard phase 1 revamp", () => {
           symbol: "VWCE",
           marketPriceUpdatedAt: "2026-07-24",
         }),
+        asOf,
       ),
     ).toBe("Last session · Fri 24 Jul");
   });
@@ -119,8 +121,11 @@ describe("dashboard phase 1 revamp", () => {
     expect(valueSource).toContain("heroTopMover");
     expect(valueSource).toContain("Biggest mover");
     expect(valueSource).toContain("Weakest mover");
-    expect(valueSource).toContain("changePeriodLabel");
+    expect(valueSource).toContain("changePeriodAccessibleDescription");
 
+    const recentSession = new Date(
+      Date.now() - 2 * 24 * 60 * 60 * 1000,
+    ).toISOString();
     const movers = pickTopAndLowestMovers(
       summarizeDailyPerformance([
         holding({
@@ -128,7 +133,7 @@ describe("dashboard phase 1 revamp", () => {
           currentPrice: 110,
           previousClose: 100,
           changePercent: 10,
-          marketPriceUpdatedAt: "2026-07-24",
+          marketPriceUpdatedAt: recentSession,
         }),
         holding({
           symbol: "BTC",
@@ -140,7 +145,7 @@ describe("dashboard phase 1 revamp", () => {
     );
     expect(movers.topMover?.holding.symbol).toBe("VWCE");
     expect(movers.topMover?.changePeriodLabel).toBe(
-      "Last session · Fri 24 Jul",
+      `Last session · ${formatMoverSessionDateLabel(recentSession)}`,
     );
     expect(movers.lowestMover?.changePeriodLabel).toBe("24h");
   });

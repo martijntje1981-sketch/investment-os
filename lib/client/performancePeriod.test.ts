@@ -7,6 +7,7 @@ import {
   formatMoverSessionDateLabel,
   formatPortfolioMovePeriodContextLine,
   formatProviderSessionDateLabel,
+  isReliableProviderSessionTimestampForLabel,
   providerSessionDateKey,
   resolveHoldingMovePeriod,
   resolveHoldingsMoveColumnLabel,
@@ -72,6 +73,8 @@ describe("classifyHoldingForPerformancePeriod", () => {
   });
 });
 
+const FIXED_NOW = Date.parse("2026-07-26T12:00:00.000Z");
+
 describe("resolveHoldingMovePeriod", () => {
   it("labels stock/ETF/ETC/ETP moves as Last session with provider date", () => {
     const period = resolveHoldingMovePeriod(
@@ -80,6 +83,7 @@ describe("resolveHoldingMovePeriod", () => {
         assetType: "investment",
         marketPriceUpdatedAt: "2026-07-24T20:00:00.000Z",
       }),
+      FIXED_NOW,
     );
 
     expect(period.kind).toBe("last_session");
@@ -87,6 +91,44 @@ describe("resolveHoldingMovePeriod", () => {
     expect(period.sessionDateLabel).toBeTruthy();
     expect(period.accessibleDescription).toContain("last trading session");
     expect(period.accessibleDescription).not.toMatch(/today/i);
+  });
+
+  it("omits stale last-trade dates like Aug 6 when viewing in mid-August", () => {
+    const asOf = Date.parse("2026-08-17T09:00:00.000Z");
+    const period = resolveHoldingMovePeriod(
+      holding({
+        symbol: "IB1T",
+        assetType: "investment",
+        previousClose: 40,
+        changePercent: 1.2,
+        marketPriceUpdatedAt: "2026-08-06T15:30:00.000Z",
+      }),
+      asOf,
+    );
+
+    expect(period.kind).toBe("last_session");
+    expect(period.primaryLabel).toBe("Last session");
+    expect(period.sessionDateLabel).toBeNull();
+    expect(period.primaryLabel).not.toContain("Aug 6");
+    expect(isReliableProviderSessionTimestampForLabel("2026-08-06", asOf)).toBe(
+      false,
+    );
+    expect(
+      isReliableProviderSessionTimestampForLabel("2026-08-14T16:00:00.000Z", asOf),
+    ).toBe(true);
+  });
+
+  it("keeps a recent Friday session date when viewed on the following Monday", () => {
+    const monday = Date.parse("2026-08-17T09:00:00.000Z");
+    const period = resolveHoldingMovePeriod(
+      holding({
+        symbol: "VWCE",
+        marketPriceUpdatedAt: "2026-08-14T16:00:00.000Z",
+      }),
+      monday,
+    );
+    expect(period.primaryLabel).toMatch(/^Last session · /);
+    expect(period.sessionDateLabel).toBeTruthy();
   });
 
   it("labels native crypto as 24h", () => {
@@ -114,6 +156,7 @@ describe("resolveHoldingMovePeriod", () => {
         assetType: "investment",
         marketPriceUpdatedAt: "2026-07-24",
       }),
+      FIXED_NOW,
     );
 
     expect(period.kind).toBe("last_session");
@@ -129,6 +172,7 @@ describe("resolveHoldingMovePeriod", () => {
         marketPriceUpdatedAt: undefined,
         priceUpdatedAt: undefined,
       }),
+      FIXED_NOW,
     );
 
     expect(period).toMatchObject({
@@ -145,6 +189,7 @@ describe("resolveHoldingMovePeriod", () => {
         symbol: "VWCE",
         marketPriceUpdatedAt: "2026-07-24T15:30:00.000Z", // Friday
       }),
+      FIXED_NOW,
     );
 
     expect(period.primaryLabel).toContain("Jul 24");
@@ -173,6 +218,7 @@ describe("resolveHoldingMovePeriod", () => {
         marketPriceUpdatedAt: fridayQuote,
         updatedAt: sundayManualRefresh,
       }),
+      FIXED_NOW,
     );
     expect(period.providerTimestamp).toBe(fridayQuote);
     expect(formatProviderSessionDateLabel(period.providerTimestamp)).toContain(
@@ -196,7 +242,10 @@ describe("resolveHoldingMovePeriod", () => {
 
   it("labels individual movers with crypto/session context without inventing dates", () => {
     expect(
-      formatMoverPeriodLabel(holding({ symbol: "BTC", assetType: "crypto" })),
+      formatMoverPeriodLabel(
+        holding({ symbol: "BTC", assetType: "crypto" }),
+        FIXED_NOW,
+      ),
     ).toBe("24h");
     expect(
       formatMoverPeriodLabel(
@@ -204,20 +253,27 @@ describe("resolveHoldingMovePeriod", () => {
           symbol: "VWCE",
           marketPriceUpdatedAt: "2026-07-24",
         }),
+        FIXED_NOW,
       ),
     ).toBe("Last session · Fri 24 Jul");
-    expect(formatMoverPeriodLabel(holding({ symbol: "AAPL" }))).toBe(
+    expect(formatMoverPeriodLabel(holding({ symbol: "AAPL" }), FIXED_NOW)).toBe(
       "Last session",
     );
     expect(
-      formatMoverPeriodLabel(holding({ symbol: "EUR", assetType: "cash" })),
+      formatMoverPeriodLabel(
+        holding({ symbol: "EUR", assetType: "cash" }),
+        FIXED_NOW,
+      ),
     ).toBe("");
     expect(
-      formatMoverPeriodLabel({
-        assetType: undefined,
-        marketPriceUpdatedAt: undefined,
-        priceUpdatedAt: undefined,
-      }),
+      formatMoverPeriodLabel(
+        {
+          assetType: undefined,
+          marketPriceUpdatedAt: undefined,
+          priceUpdatedAt: undefined,
+        },
+        FIXED_NOW,
+      ),
     ).toBe("");
   });
 
@@ -227,6 +283,7 @@ describe("resolveHoldingMovePeriod", () => {
         symbol: "VWCE",
         marketPriceUpdatedAt: "2026-07-24",
       }),
+      FIXED_NOW,
     );
     const after = resolveHoldingMovePeriod(
       holding({
@@ -234,6 +291,7 @@ describe("resolveHoldingMovePeriod", () => {
         marketPriceUpdatedAt: "2026-07-24",
         quantity: 25,
       }),
+      FIXED_NOW,
     );
 
     expect(after.kind).toBe(before.kind);
@@ -244,20 +302,53 @@ describe("resolveHoldingMovePeriod", () => {
 
 describe("resolvePortfolioMovePeriod", () => {
   it("uses Last session for exchange-traded-only portfolios", () => {
-    const period = resolvePortfolioMovePeriod([
-      holding({
-        symbol: "VWCE",
-        marketPriceUpdatedAt: "2026-07-24",
-      }),
-      holding({
-        symbol: "AAPL",
-        marketPriceUpdatedAt: "2026-07-24",
-      }),
-    ]);
+    const period = resolvePortfolioMovePeriod(
+      [
+        holding({
+          symbol: "VWCE",
+          marketPriceUpdatedAt: "2026-07-24",
+        }),
+        holding({
+          symbol: "AAPL",
+          marketPriceUpdatedAt: "2026-07-24",
+        }),
+      ],
+      FIXED_NOW,
+    );
 
     expect(period.kind).toBe("last_session");
     expect(period.primaryLabel).toBe("Last session · Jul 24");
     expect(period.detail).toBeNull();
+  });
+
+  it("uses Last session without a date when all last-trade stamps are stale", () => {
+    const asOf = Date.parse("2026-08-17T09:00:00.000Z");
+    const period = resolvePortfolioMovePeriod(
+      [
+        holding({
+          symbol: "IB1T",
+          marketPriceUpdatedAt: "2026-08-06T15:30:00.000Z",
+        }),
+        holding({
+          symbol: "VWCE",
+          marketPriceUpdatedAt: "2026-08-05T16:00:00.000Z",
+        }),
+      ],
+      asOf,
+    );
+
+    expect(period.kind).toBe("last_session");
+    expect(period.primaryLabel).toBe("Last session");
+    expect(period.sessionDateLabel).toBeNull();
+    expect(resolveHoldingsMoveColumnLabel(
+      [
+        holding({
+          symbol: "IB1T",
+          marketPriceUpdatedAt: "2026-08-06T15:30:00.000Z",
+        }),
+      ],
+      asOf,
+    )).toBe("Last session");
   });
 
   it("uses 24h for crypto-only portfolios", () => {
@@ -274,13 +365,16 @@ describe("resolvePortfolioMovePeriod", () => {
   });
 
   it("uses Latest portfolio move for mixed portfolios with transparent explanation", () => {
-    const period = resolvePortfolioMovePeriod([
-      holding({
-        symbol: "VWCE",
-        marketPriceUpdatedAt: "2026-07-24",
-      }),
-      holding({ symbol: "BTC", assetType: "crypto" }),
-    ]);
+    const period = resolvePortfolioMovePeriod(
+      [
+        holding({
+          symbol: "VWCE",
+          marketPriceUpdatedAt: "2026-07-24",
+        }),
+        holding({ symbol: "BTC", assetType: "crypto" }),
+      ],
+      FIXED_NOW,
+    );
 
     expect(period.kind).toBe("mixed");
     expect(period.primaryLabel).toBe("Latest portfolio move");
@@ -306,16 +400,19 @@ describe("resolvePortfolioMovePeriod", () => {
   });
 
   it("uses Latest sessions when exchange dates differ", () => {
-    const period = resolvePortfolioMovePeriod([
-      holding({
-        symbol: "VWCE",
-        marketPriceUpdatedAt: "2026-07-24",
-      }),
-      holding({
-        symbol: "AAPL",
-        marketPriceUpdatedAt: "2026-07-23",
-      }),
-    ]);
+    const period = resolvePortfolioMovePeriod(
+      [
+        holding({
+          symbol: "VWCE",
+          marketPriceUpdatedAt: "2026-07-24",
+        }),
+        holding({
+          symbol: "AAPL",
+          marketPriceUpdatedAt: "2026-07-23",
+        }),
+      ],
+      FIXED_NOW,
+    );
 
     expect(period.kind).toBe("latest_sessions");
     expect(period.primaryLabel).toBe("Latest sessions");
@@ -336,23 +433,30 @@ describe("resolvePortfolioMovePeriod", () => {
 describe("resolveHoldingsMoveColumnLabel", () => {
   it("returns compact column labels by portfolio composition", () => {
     expect(
-      resolveHoldingsMoveColumnLabel([
-        holding({ symbol: "BTC", assetType: "crypto" }),
-      ]),
+      resolveHoldingsMoveColumnLabel(
+        [holding({ symbol: "BTC", assetType: "crypto" })],
+        FIXED_NOW,
+      ),
     ).toBe("24h");
     expect(
-      resolveHoldingsMoveColumnLabel([
-        holding({
-          symbol: "VWCE",
-          marketPriceUpdatedAt: "2026-07-24",
-        }),
-      ]),
+      resolveHoldingsMoveColumnLabel(
+        [
+          holding({
+            symbol: "VWCE",
+            marketPriceUpdatedAt: "2026-07-24",
+          }),
+        ],
+        FIXED_NOW,
+      ),
     ).toBe("Last session");
     expect(
-      resolveHoldingsMoveColumnLabel([
-        holding({ symbol: "VWCE", marketPriceUpdatedAt: "2026-07-24" }),
-        holding({ symbol: "BTC", assetType: "crypto" }),
-      ]),
+      resolveHoldingsMoveColumnLabel(
+        [
+          holding({ symbol: "VWCE", marketPriceUpdatedAt: "2026-07-24" }),
+          holding({ symbol: "BTC", assetType: "crypto" }),
+        ],
+        FIXED_NOW,
+      ),
     ).toBe("Move");
   });
 });
@@ -392,13 +496,16 @@ describe("portfolio move context line", () => {
   it("formats composition-aware context under the portfolio move", () => {
     expect(
       formatPortfolioMovePeriodContextLine(
-        resolvePortfolioMovePeriod([
-          holding({
-            symbol: "VWCE",
-            marketPriceUpdatedAt: "2026-07-24",
-          }),
-          holding({ symbol: "BTC", assetType: "crypto" }),
-        ]),
+        resolvePortfolioMovePeriod(
+          [
+            holding({
+              symbol: "VWCE",
+              marketPriceUpdatedAt: "2026-07-24",
+            }),
+            holding({ symbol: "BTC", assetType: "crypto" }),
+          ],
+          FIXED_NOW,
+        ),
       ),
     ).toBe("Previous close for listed holdings · Crypto: 24h");
   });
