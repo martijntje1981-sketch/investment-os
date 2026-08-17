@@ -361,10 +361,11 @@ describe("dashboard Today's Decision integration", () => {
     expect(dashboard.indexOf("<DashboardSummary")).toBeLessThan(
       dashboard.indexOf("pulse={portfolioPulse}"),
     );
-    expect(dashboard.indexOf("<DashboardTodaysMarketBriefing")).toBeLessThan(
+    expect(dashboard).toContain("<FourQuestionsSection");
+    expect(dashboard.indexOf("<FourQuestionsSection")).toBeLessThan(
       dashboard.indexOf("<HoldingsToday"),
     );
-    expect(dashboard).toContain("DashboardTodaysMarketBriefing");
+    expect(dashboard).not.toContain("<DashboardTodaysMarketBriefing");
     expect(dashboard).not.toContain("<DashboardTodaysDecision");
     expect(dashboard).not.toContain("<DashboardIntelligencePreview");
     expect(decisionSection).toContain("TodaysDecisionBlock");

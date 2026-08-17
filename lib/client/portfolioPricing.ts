@@ -33,7 +33,6 @@ import {
 } from "@/lib/services/prices/marketQuote";
 import { logHoldingDailyData } from "@/lib/client/holdingDailyDataDebug";
 import { enrichPriceApiQuotes } from "@/lib/client/enrichPriceApiQuotes";
-import { logStrcPortfolioLoadDiagnostics } from "@/lib/client/investmentOsProductionDebug";
 import { CLIENT_PRICE_CACHE_FRESH_MS } from "@/lib/services/marketData/cachePolicy";
 import { findSavedMappingForHolding } from "@/lib/services/import/mappingMemory";
 import { NO_QUOTABLE_HOLDINGS_MESSAGE } from "@/lib/services/prices/types";
@@ -148,55 +147,10 @@ export function loadUserPortfolioHoldings(
 
   purgeIncorrectPriceCacheEntries(userSub, withQuoteCurrency);
 
-  const strcBeforeCache = withQuoteCurrency.find(
-    (holding) => holding.symbol.trim().toUpperCase() === "STRC",
-  );
-
   const holdings = applyCachedPrices(userSub, withQuoteCurrency);
 
   if (verifiedListingPricesChanged(withQuoteCurrency, holdings, userSub)) {
     persistVerifiedListingQuoteCorrections(userSub, holdings);
-  }
-
-  if (strcBeforeCache) {
-    const strcAfterCache = holdings.find(
-      (holding) => holding.id === strcBeforeCache.id,
-    );
-    if (strcAfterCache) {
-      const cached = readPriceCacheEntries(userSub);
-      const quotes = cached
-        .filter((item) => Number.isFinite(item.price) && item.price > 0)
-        .map((item) =>
-          normalizePriceApiQuote({
-            symbol: item.symbol,
-            providerSymbol: item.providerSymbol,
-            isin: item.isin ?? null,
-            priceEur: item.price,
-            currentPrice: item.price,
-            previousClose: item.previousClose ?? null,
-            change: item.change ?? null,
-            changePercent: item.changePercent ?? null,
-            currency: item.currency ?? null,
-            dataStatus: item.dataStatus,
-            updatedAt: item.updatedAt ?? null,
-          }),
-        );
-      const lookup = buildPriceLookup(quotes);
-      const selection = describeQuoteSelectionForHolding(strcBeforeCache, lookup);
-
-      logStrcPortfolioLoadDiagnostics({
-        beforeCache: strcBeforeCache,
-        afterCache: strcAfterCache,
-        selection: {
-          cacheKey: selection.cacheKey,
-          matchedQuoteProviderSymbol:
-            selection.quote?.providerSymbol ??
-            selection.quote?.eodhdSymbol ??
-            null,
-          matchedQuotePriceEur: selection.quote?.priceEur ?? null,
-        },
-      });
-    }
   }
 
   logHoldingDailyData(holdings, "after cache apply");

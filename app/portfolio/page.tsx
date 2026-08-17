@@ -554,7 +554,7 @@ export default function PortfolioPage() {
                     holdings,
                     entries: [],
                     portfolioValueEur: totalValue,
-                    portfolioValueAvailable: totalValue > 0,
+                    portfolioValueAvailable: performance.totalValueAvailable,
                     baseCurrency,
                     convertEur,
                   })
@@ -686,9 +686,11 @@ export default function PortfolioPage() {
             label="Cash"
             value={formatEur(cashValue)}
             detail={
-              totalValue > 0
+              performance.totalValueAvailable && totalValue > 0
                 ? `${((cashValue / totalValue) * 100).toFixed(1)}% of portfolio`
-                : "0.0% of portfolio"
+                : performance.totalValueAvailable
+                  ? "Share unavailable"
+                  : "Portfolio value unavailable"
             }
           />
           <Metric

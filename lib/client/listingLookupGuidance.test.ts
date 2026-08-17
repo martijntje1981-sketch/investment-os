@@ -40,7 +40,7 @@ describe("listingLookupGuidance", () => {
     ]);
 
     expect(result.guidance[0]).toMatch(/Purchase exchange confirmed/i);
-    expect(result.guidance[0]).toMatch(/live prices/i);
+    expect(result.guidance[0]).toMatch(/market prices/i);
     expect(result.guidance[0]).not.toMatch(/failed|incorrect|unrecognized/i);
     expect(result.alerts).toEqual([]);
   });

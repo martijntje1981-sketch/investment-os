@@ -67,8 +67,8 @@ function weekReturn(
   return week.investmentReturnPercent;
 }
 
-function structureFromConcentration(weight: number | null | undefined): number {
-  if (weight == null || !Number.isFinite(weight)) return 62;
+function structureFromConcentration(weight: number | null | undefined): number | null {
+  if (weight == null || !Number.isFinite(weight)) return null;
   return interpolateAnchors(weight, [
     { at: 25, score: 88 },
     { at: 40, score: 72 },
@@ -124,7 +124,7 @@ export function buildMonthlyPortfolioScore(
     { at: 20, score: 96 },
   ]);
 
-  let consistency = 68;
+  let consistency: number | null = null;
   if (weekPct != null) {
     const sameSign =
       (monthPct >= 0 && weekPct >= 0) || (monthPct < 0 && weekPct < 0);
@@ -139,10 +139,13 @@ export function buildMonthlyPortfolioScore(
     input.resilienceScore != null &&
     Number.isFinite(input.resilienceScore)
   ) {
-    structure = clampScore(
-      input.resilienceScore * MONTHLY_STRUCTURE_RESILIENCE_BLEND.resilience +
-        structure * MONTHLY_STRUCTURE_RESILIENCE_BLEND.concentration,
-    );
+    structure =
+      structure == null
+        ? clampScore(input.resilienceScore)
+        : clampScore(
+            input.resilienceScore * MONTHLY_STRUCTURE_RESILIENCE_BLEND.resilience +
+              structure * MONTHLY_STRUCTURE_RESILIENCE_BLEND.concentration,
+          );
   }
 
   let goalAdj = 0;
@@ -184,10 +187,38 @@ export function buildMonthlyPortfolioScore(
     ]);
   }
 
+  // Renormalize when consistency/structure inputs are missing — never invent filler scores.
+  let wStrength = MONTHLY_PULSE_WEIGHTS.strength;
+  let wConsistency =
+    consistency != null ? MONTHLY_PULSE_WEIGHTS.consistency : 0;
+  let wStructure = structure != null ? MONTHLY_PULSE_WEIGHTS.structure : 0;
+  const weightSum = wStrength + wConsistency + wStructure;
+  if (weightSum <= 0) {
+    return unavailableDynamicScore({
+      id: "monthly",
+      version,
+      reason: "More context needed",
+      calculatedAt,
+      timingContext,
+      href,
+      evidence: [
+        {
+          id: "month-history",
+          label: "1M history",
+          explanation:
+            "Monthly Pulse needs verified month return plus structural context.",
+        },
+      ],
+    });
+  }
+  wStrength /= weightSum;
+  wConsistency /= weightSum;
+  wStructure /= weightSum;
+
   const raw = clampScore(
-    strength * MONTHLY_PULSE_WEIGHTS.strength +
-      consistency * MONTHLY_PULSE_WEIGHTS.consistency +
-      structure * MONTHLY_PULSE_WEIGHTS.structure +
+    strength * wStrength +
+      (consistency ?? 0) * wConsistency +
+      (structure ?? 0) * wStructure +
       volAdj +
       goalAdj -
       coveragePenalty,
@@ -201,7 +232,10 @@ export function buildMonthlyPortfolioScore(
       explanation: `Portfolio ${monthPct >= 0 ? "gained" : "declined"} ${Math.abs(monthPct).toFixed(1)}% over one month.`,
       impact: monthPct >= 0 ? "positive" : "limiting",
     },
-    {
+  ];
+
+  if (structure != null) {
+    evidence.push({
       id: "structure",
       label: "Structure",
       value:
@@ -215,11 +249,11 @@ export function buildMonthlyPortfolioScore(
           ? `Resilience score ${Math.round(input.resilienceScore)} informs structural weight.`
           : input.largestHoldingWeightPercent != null
             ? `Largest holding is about ${Math.round(input.largestHoldingWeightPercent)}% of the portfolio.`
-            : "Structural context uses concentration when Resilience is unavailable.",
+            : "Structural context available for this Monthly Pulse.",
       impact:
         structure >= 60 ? "positive" : structure < 45 ? "limiting" : "neutral",
-    },
-  ];
+    });
+  }
 
   if (weekPct != null) {
     const sameSign =

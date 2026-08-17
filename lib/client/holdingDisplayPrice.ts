@@ -12,6 +12,16 @@ export type HoldingDisplayPrice = {
   quoteCurrency?: string | null;
 };
 
+function mapPriceDataStatusToDisplaySource(
+  status: string | null | undefined,
+): HoldingDisplayPriceSource {
+  if (status === "live") return "live";
+  if (status === "delayed" || status === "stale") return "estimated";
+  if (status === "unavailable") return "unavailable";
+  // Unknown / missing status must not imply live.
+  return "estimated";
+}
+
 function resolveCryptoDisplayPrice(
   holding: Pick<
     StoredPortfolioHolding,
@@ -31,15 +41,10 @@ function resolveCryptoDisplayPrice(
       : null;
 
   if (pairPrice != null) {
-    const source =
-      holding.priceDataStatus === "live" || holding.priceDataStatus === "delayed"
-        ? "live"
-        : holding.priceDataStatus === "stale"
-          ? "estimated"
-          : "live";
+    const mapped = mapPriceDataStatusToDisplaySource(holding.priceDataStatus);
     return {
       price: pairPrice,
-      source,
+      source: mapped === "unavailable" ? "estimated" : mapped,
       quoteCurrency: holding.pairCurrency ?? null,
     };
   }
@@ -92,7 +97,8 @@ export function resolveHoldingDisplayPrice(
       Number.isFinite(holding.currentPrice) && holding.currentPrice > 0
         ? holding.currentPrice
         : 1;
-    return { price, source: "live" };
+    // Cash is book value, not a live market quote.
+    return { price, source: "estimated" };
   }
 
   if (isCryptoHolding(holding)) {
@@ -100,9 +106,11 @@ export function resolveHoldingDisplayPrice(
   }
 
   if (Number.isFinite(holding.currentPrice) && holding.currentPrice > 0) {
-    const source =
-      holding.priceDataStatus === "unavailable" ? "estimated" : "live";
-    return { price: holding.currentPrice, source };
+    const mapped = mapPriceDataStatusToDisplaySource(holding.priceDataStatus);
+    return {
+      price: holding.currentPrice,
+      source: mapped === "unavailable" ? "estimated" : mapped,
+    };
   }
 
   if (Number.isFinite(holding.purchasePrice) && holding.purchasePrice > 0) {

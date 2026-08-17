@@ -157,12 +157,23 @@ export function PortfolioValueCard({
     ? `Updated ${formatAmsterdamPriceRefreshTime(refresh.liveRefreshAt)}`
     : `Updated ${formatMarketUpdateTime(snapshot.lastUpdatedAt)}`;
 
+  const coverageAppendix =
+    snapshot.dailyPerformanceCoverageMessage &&
+    snapshot.performanceCoverageComplete === false
+      ? snapshot.dailyPerformanceCoverageMessage
+      : null;
+
   const priceBasisLabel = showMove
-    ? usesPreviousClose
-      ? previousClosePhrase
-        ? `Based on ${previousClosePhrase}`
-        : "Based on the previous market close"
-      : snapshot.dailyMoveContextLine
+    ? [
+        usesPreviousClose
+          ? previousClosePhrase
+            ? `Based on ${previousClosePhrase}`
+            : "Based on the previous market close"
+          : snapshot.dailyMoveContextLine,
+        coverageAppendix,
+      ]
+        .filter(Boolean)
+        .join(" · ")
     : (snapshot.dailyPerformanceCoverageMessage ??
       "Movement period unavailable");
 

@@ -7,6 +7,8 @@ export type PortfolioHistoryPoint = {
 
 export type GoalProgressEngineInput = {
   currentPortfolioValue: number;
+  /** When false, value is unavailable — do not treat as a real €0 portfolio. */
+  portfolioValueAvailable?: boolean;
   goal: GoalSettings | null;
   hasSavedGoal: boolean;
   portfolioHistory?: PortfolioHistoryPoint[];
@@ -36,6 +38,8 @@ export type GoalProgress = {
   generatedAt: string;
   hasGoal: boolean;
   goalReached: boolean;
+  /** False when portfolio total cannot be valued — progress percent is not meaningful. */
+  portfolioValueAvailable: boolean;
 };
 
 /** Reserved for future scenario UI — not exposed yet. */
@@ -61,7 +65,10 @@ export type GoalProgressScenarioPlan = {
 
 export function buildGoalProgressEngine(input: GoalProgressEngineInput): GoalProgress {
   const generatedAt = input.generatedAt ?? new Date().toISOString();
-  const currentValue = Math.max(0, input.currentPortfolioValue);
+  const portfolioValueAvailable = input.portfolioValueAvailable !== false;
+  const currentValue = portfolioValueAvailable
+    ? Math.max(0, input.currentPortfolioValue)
+    : 0;
 
   if (!input.hasSavedGoal || !input.goal) {
     return {
@@ -78,6 +85,28 @@ export function buildGoalProgressEngine(input: GoalProgressEngineInput): GoalPro
       generatedAt,
       hasGoal: false,
       goalReached: false,
+      portfolioValueAvailable,
+    };
+  }
+
+  if (!portfolioValueAvailable) {
+    const goal = input.goal;
+    return {
+      currentProgressPercent: 0,
+      currentValue: 0,
+      targetValue: goal.targetValue,
+      remainingAmount: Math.max(0, goal.targetValue),
+      estimatedCompletionDate: null,
+      estimatedCompletionLabel: "Unavailable",
+      requiredMonthlyGrowth: null,
+      currentTrajectory: "Unknown",
+      status: "Unknown",
+      summary:
+        "Portfolio value is unavailable, so goal progress cannot be calculated yet.",
+      generatedAt,
+      hasGoal: true,
+      goalReached: false,
+      portfolioValueAvailable: false,
     };
   }
 
@@ -103,6 +132,7 @@ export function buildGoalProgressEngine(input: GoalProgressEngineInput): GoalPro
       generatedAt,
       hasGoal: true,
       goalReached: true,
+      portfolioValueAvailable: true,
     };
   }
 
@@ -180,6 +210,7 @@ export function buildGoalProgressEngine(input: GoalProgressEngineInput): GoalPro
     generatedAt,
     hasGoal: true,
     goalReached: false,
+    portfolioValueAvailable: true,
   };
 }
 

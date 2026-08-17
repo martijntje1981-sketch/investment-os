@@ -339,6 +339,19 @@ describe("dashboardConclusions presentation layer", () => {
       summary: "Behind",
     } as GoalProgress);
     expect(behind?.status).toBe("Goal needs attention");
+
+    const unavailable = buildGoalConclusion({
+      hasGoal: true,
+      goalReached: false,
+      status: "Unknown",
+      targetValue: 1_000_000,
+      currentProgressPercent: 0,
+      estimatedCompletionLabel: "Unavailable",
+      summary: "Portfolio value is unavailable",
+      portfolioValueAvailable: false,
+    } as GoalProgress);
+    expect(unavailable?.status).toBe("Goal progress unavailable");
+    expect(unavailable?.conclusion).not.toMatch(/0%/);
   });
 
   it("omits invented market relevance and keeps holdings compact", () => {

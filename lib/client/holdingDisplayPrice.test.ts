@@ -97,6 +97,38 @@ describe("holdingDisplayPrice crypto safety", () => {
     expect(getHoldingMarketValue(investment)).toBe(320);
   });
 
+  it("does not label delayed or unknown equity prices as live", () => {
+    expect(
+      resolveHoldingDisplayPrice(
+        equity({ priceDataStatus: "delayed", currentPrice: 100 }),
+      ).source,
+    ).toBe("estimated");
+    expect(
+      resolveHoldingDisplayPrice(
+        equity({ priceDataStatus: "stale", currentPrice: 100 }),
+      ).source,
+    ).toBe("estimated");
+    expect(
+      resolveHoldingDisplayPrice(
+        equity({ priceDataStatus: "live", currentPrice: 100 }),
+      ).source,
+    ).toBe("live");
+    const missingStatus = {
+      ...equity({ currentPrice: 100 }),
+      priceDataStatus: undefined,
+    };
+    expect(resolveHoldingDisplayPrice(missingStatus).source).toBe("estimated");
+  });
+
+  it("treats cash as book value, not a live market quote", () => {
+    expect(
+      resolveHoldingDisplayPrice({
+        ...equity({ assetType: "cash", currentPrice: 1, symbol: "EUR" }),
+        assetType: "cash",
+      }).source,
+    ).toBe("estimated");
+  });
+
   it("uses crypto-specific unavailable copy", () => {
     expect(holdingValueUnavailableLabel(unpricedCrypto())).toBe("Value unavailable");
     expect(holdingValueUnavailableLabel(equity())).toBe("Price unavailable");

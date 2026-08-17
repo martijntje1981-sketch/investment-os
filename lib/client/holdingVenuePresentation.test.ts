@@ -159,7 +159,7 @@ describe("PPFB Tradegate purchase vs Xetra live pricing", () => {
         ],
       }),
     ).toBe(true);
-    expect(MANUAL_PRICING_SELECTION_TITLE).toMatch(/live prices/i);
+    expect(MANUAL_PRICING_SELECTION_TITLE).toMatch(/market prices/i);
   });
 
   it("persists TDG / XETRA / PPFB.XETRA after manual pricing selection", () => {

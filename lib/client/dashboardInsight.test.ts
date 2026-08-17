@@ -151,11 +151,12 @@ describe("home and dashboard hierarchy", () => {
       dashboard.indexOf("pulse={portfolioPulse}"),
     );
     expect(dashboard.indexOf("pulse={portfolioPulse}")).toBeLessThan(
-      dashboard.indexOf("<DashboardTodaysMarketBriefing"),
+      dashboard.indexOf("<FourQuestionsSection"),
     );
-    expect(dashboard.indexOf("<DashboardTodaysMarketBriefing")).toBeLessThan(
+    expect(dashboard.indexOf("<FourQuestionsSection")).toBeLessThan(
       dashboard.indexOf("<HoldingsToday"),
     );
+    expect(dashboard).not.toContain("<DashboardTodaysMarketBriefing");
     expect(dashboard).not.toContain("DashboardQuickActions");
     expect(dashboard).not.toContain("PortfolioIntelligencePanel");
     expect(dashboard).not.toContain("DashboardPortfolioOverview");

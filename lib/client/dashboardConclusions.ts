@@ -196,6 +196,16 @@ export function buildGoalConclusion(
 ): DashboardConclusionCard | null {
   if (!progress.hasGoal) return null;
 
+  if (progress.portfolioValueAvailable === false) {
+    return {
+      eyebrow: "Goal",
+      status: "Goal progress unavailable",
+      conclusion: "Portfolio value is unavailable right now.",
+      ctaLabel: "View goal",
+      ctaHref: DASHBOARD_DEEP_LINKS.goalProgress,
+    };
+  }
+
   const needsAttention =
     progress.status === "Slightly behind" ||
     progress.status === "Behind schedule";

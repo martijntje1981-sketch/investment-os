@@ -53,8 +53,10 @@ export function AnalysisOnTrackGateway({
             {card.status}
           </p>
           <p className={`mt-1.5 ${appSectionBodyClass}`}>
-            {Math.round(progress.currentProgressPercent)}% of target ·{" "}
-            {progress.status}
+            {progress.portfolioValueAvailable === false
+              ? "Portfolio value unavailable"
+              : `${Math.round(progress.currentProgressPercent)}% of target`}{" "}
+            · {progress.status}
             {card.contextLine ? ` · ${card.contextLine}` : null}
           </p>
           {realityCheck?.available ? (

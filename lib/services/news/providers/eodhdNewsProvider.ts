@@ -14,7 +14,7 @@ import {
   readEodhdNewsCache,
   writeEodhdNewsCache,
 } from "@/lib/services/news/cache/eodhdNewsCache";
-import { sanitizeNewsText, sanitizeNewsUrl } from "@/lib/services/news/sanitizeNewsUrl";
+import { isUsableNewsTitle, sanitizeNewsText, sanitizeNewsUrl } from "@/lib/services/news/sanitizeNewsUrl";
 import { selectTrustedNewsThumbnailFromUrl } from "@/lib/services/news/newsThumbnail";
 import {
   isProviderUnavailable,
@@ -93,7 +93,13 @@ function mapEodhdItem(
   const canonicalUrl = sanitizeNewsUrl(raw.link ?? null);
   const publishedAt = raw.date ? new Date(raw.date).toISOString() : null;
 
-  if (!title || !canonicalUrl || !publishedAt || Number.isNaN(Date.parse(publishedAt))) {
+  if (
+    !title ||
+    !isUsableNewsTitle(title) ||
+    !canonicalUrl ||
+    !publishedAt ||
+    Number.isNaN(Date.parse(publishedAt))
+  ) {
     return null;
   }
 

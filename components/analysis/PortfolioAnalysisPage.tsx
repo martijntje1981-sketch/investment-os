@@ -68,6 +68,7 @@ import {
   formatPortfolioCurrency,
   formatPortfolioPercent,
 } from "@/lib/client/portfolioAnalysis";
+import { buildPortfolioPerformance } from "@/lib/client/portfolioPerformance";
 import { usePortfolioDividends } from "@/lib/client/usePortfolioDividends";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 import { useUserGoal } from "@/lib/client/useUserGoal";
@@ -145,6 +146,10 @@ export default function PortfolioAnalysisPage() {
   );
 
   const analysis = useMemo(() => buildPortfolioAnalysis(holdings), [holdings]);
+  const performance = useMemo(
+    () => buildPortfolioPerformance(holdings),
+    [holdings],
+  );
 
   const exposureAllocation = useMemo(
     () => buildPortfolioExposureAllocation(holdings),
@@ -178,11 +183,8 @@ export default function PortfolioAnalysisPage() {
                     runPortfolioExport({
                       holdings,
                       entries: [],
-                      portfolioValueEur: analysis.valuedPositions.reduce(
-                        (sum, position) => sum + position.value,
-                        0,
-                      ),
-                      portfolioValueAvailable: analysis.valuedPositions.length > 0,
+                      portfolioValueEur: performance.totalValue,
+                      portfolioValueAvailable: performance.totalValueAvailable,
                       baseCurrency,
                       convertEur,
                     })

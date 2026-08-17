@@ -24,7 +24,6 @@ import {
 import { writePortfolioToStorage, readPortfolioFromStorage } from "@/lib/client/userPortfolioStorage";
 import { writeUserGoal, clearUserGoal, readSavedUserGoal } from "@/lib/client/userGoalStorage";
 import { writeImportMappingsToCache } from "@/lib/services/import/mappingMemory";
-import { logStrcRemoteSyncMergeDiagnostics } from "@/lib/client/investmentOsProductionDebug";
 import { mergeRemoteMarketPrice } from "@/lib/client/portfolioPerformance";
 import {
   applyCachedPrices,
@@ -272,35 +271,6 @@ export function applyRemoteSnapshotToLocalCache(
           fallbackPrice,
         )
       : fallbackPrice;
-
-    if (
-      holding.symbol.trim().toUpperCase() === "STRC" &&
-      (options?.context ?? "push_response") === "hydrate"
-    ) {
-      const localPrice =
-        typeof localHolding?.currentPrice === "number" &&
-        Number.isFinite(localHolding.currentPrice) &&
-        localHolding.currentPrice > 0
-          ? localHolding.currentPrice
-          : null;
-      const remotePrice =
-        typeof holding.currentPrice === "number" &&
-        Number.isFinite(holding.currentPrice) &&
-        holding.currentPrice > 0
-          ? holding.currentPrice
-          : null;
-      const remoteReplacedLocal =
-        remotePrice !== null &&
-        (localPrice === null || mergedPrice === remotePrice);
-
-      logStrcRemoteSyncMergeDiagnostics({
-        context: "hydrate",
-        localPrice,
-        remotePrice,
-        mergedPrice,
-        remoteReplacedLocal,
-      });
-    }
 
     return {
       ...effectiveHolding,

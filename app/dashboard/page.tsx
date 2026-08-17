@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
-import { usePathname } from "next/navigation";
+import { useMemo } from "react";
 import { DashboardEmptyState } from "@/components/dashboard/DashboardEmptyState";
 import { DashboardCashIntelligenceCard } from "@/components/dashboard/DashboardCashIntelligenceCard";
 import { DashboardContributionsCard } from "@/components/contributions/DashboardContributionsCard";
@@ -14,7 +13,6 @@ import { AuthenticatedFourQuestionsNav } from "@/components/fourQuestions/Authen
 import { DashboardFirstRunCue } from "@/components/dashboard/DashboardFirstRunCue";
 import { DemoHoldingsCallout } from "@/components/example/DemoHoldingsCallout";
 import { TrialStepsCard } from "@/components/example/TrialStepsCard";
-import { DashboardProductionDebugMarker } from "@/components/dashboard/DashboardProductionDebugMarker";
 import { DashboardPerspectivesWidget } from "@/components/dashboard/DashboardPerspectivesWidget";
 import { HoldingsToday } from "@/components/dashboard/HoldingsToday";
 import { DashboardPortfolioExposureCard } from "@/components/dashboard/DashboardPortfolioExposureCard";
@@ -58,11 +56,8 @@ import {
   resolveIntelligenceScope,
 } from "@/lib/services/intelligenceScope";
 import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
-import { logDashboardProductionDiagnostics } from "@/lib/client/investmentOsProductionDebug";
 
 export default function DashboardPage() {
-  const pathname = usePathname();
-  const dashboardDebugLoggedRef = useRef(false);
   const firstName = useAuthenticatedFirstName();
   const {
     userSub,
@@ -322,27 +317,6 @@ export default function DashboardPage() {
     portfolioReady && Boolean(userSub),
   );
 
-  const dashboardSummaryRendered = portfolioReady && holdings.length > 0;
-  const dashboardTodaysDecisionRendered = dashboardSummaryRendered;
-
-  useEffect(() => {
-    if (!portfolioReady || dashboardDebugLoggedRef.current) {
-      return;
-    }
-
-    dashboardDebugLoggedRef.current = true;
-    logDashboardProductionDiagnostics({
-      route: pathname,
-      dashboardSummaryRendered,
-      dashboardTodaysDecisionRendered,
-    });
-  }, [
-    dashboardSummaryRendered,
-    dashboardTodaysDecisionRendered,
-    pathname,
-    portfolioReady,
-  ]);
-
   if (!portfolioReady) {
     return <AppPageLoading />;
   }
@@ -476,8 +450,6 @@ export default function DashboardPage() {
         Tobailey is a monitoring tool. It does not provide personal financial
         advice.
       </p>
-
-      <DashboardProductionDebugMarker />
     </PageContainer>
   );
 }

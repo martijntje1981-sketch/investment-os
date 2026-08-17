@@ -82,16 +82,16 @@ const holdingIntelligence: Record<string, HoldingIntelligence> = {
   IB1T: {
     category: "Digital assets",
     role: "Primary growth engine",
-    stance: "Hold",
+    stance: "Core growth exposure",
     healthScore: 88,
     concentrationLimit: 35,
     thesis:
       "IB1T gives the portfolio exposure to Bitcoin’s long-term adoption, scarcity and institutional demand without requiring direct self-custody.",
     osInsight:
       "This remains the portfolio’s strongest potential return driver, but it is also the largest source of concentration and volatility.",
-    action: "Do not add",
+    action: "Concentration context",
     actionReason:
-      "The long-term thesis remains intact, but new capital should currently strengthen diversification rather than increase Bitcoin exposure.",
+      "The long-term thesis remains intact, but concentration and volatility remain the main portfolio sensitivities for this holding.",
     drivers: [
       {
         title: "Institutional adoption",
@@ -153,14 +153,14 @@ const holdingIntelligence: Record<string, HoldingIntelligence> = {
   STRC: {
     category: "Income",
     role: "Cash-flow layer",
-    stance: "Hold",
+    stance: "Income layer",
     healthScore: 78,
     concentrationLimit: 15,
     thesis:
       "STRC adds an income-focused return source to the portfolio and reduces reliance on price appreciation alone.",
     osInsight:
       "The position improves portfolio cash flow, but it remains linked to the Bitcoin and Strategy ecosystem and is not a complete diversifier.",
-    action: "Hold and monitor",
+    action: "Income role under review",
     actionReason:
       "The income function is valuable, but issuer structure, dividend sustainability and Bitcoin-linked risk should remain under review.",
     drivers: [
@@ -223,16 +223,16 @@ const holdingIntelligence: Record<string, HoldingIntelligence> = {
   VWCE: {
     category: "Global equities",
     role: "Diversification core",
-    stance: "Build",
+    stance: "Diversification core",
     healthScore: 94,
     concentrationLimit: 50,
     thesis:
       "VWCE provides broad exposure to thousands of companies across developed and emerging markets.",
     osInsight:
       "This is the portfolio’s strongest broad diversifier and reduces dependence on Bitcoin and concentrated thematic investments.",
-    action: "Prioritise new contributions",
+    action: "Diversification context",
     actionReason:
-      "Increasing this position improves regional, sector and company diversification without requiring the sale of high-conviction holdings.",
+      "A larger share of this holding typically improves regional, sector and company diversification relative to concentrated growth positions.",
     drivers: [
       {
         title: "Global earnings growth",
@@ -294,16 +294,16 @@ const holdingIntelligence: Record<string, HoldingIntelligence> = {
   NUKL: {
     category: "Nuclear energy",
     role: "Thematic growth",
-    stance: "Build selectively",
+    stance: "Thematic growth",
     healthScore: 84,
     concentrationLimit: 15,
     thesis:
       "NUKL provides exposure to uranium, nuclear technology and growing electricity demand from electrification, data centres and AI infrastructure.",
     osInsight:
       "The structural investment case remains attractive, but the position can be cyclical and sensitive to commodity sentiment and policy changes.",
-    action: "Build gradually",
+    action: "Cyclical theme context",
     actionReason:
-      "The long-term theme is strong, but purchases should remain controlled because uranium investments can experience large cyclical movements.",
+      "The long-term theme is strong, but uranium investments can experience large cyclical movements.",
     drivers: [
       {
         title: "Electricity demand",
@@ -365,16 +365,16 @@ const holdingIntelligence: Record<string, HoldingIntelligence> = {
   AIFS: {
     category: "AI infrastructure",
     role: "Structural growth satellite",
-    stance: "Build selectively",
+    stance: "Growth satellite",
     healthScore: 86,
     concentrationLimit: 15,
     thesis:
       "AIFS provides exposure to the physical infrastructure behind artificial intelligence, including data centres, semiconductors, networks and electricity systems.",
     osInsight:
       "The position captures a powerful long-term capital-investment theme, but valuations and technology spending should be watched carefully.",
-    action: "Build gradually",
+    action: "Satellite size context",
     actionReason:
-      "The theme strengthens portfolio growth potential outside Bitcoin, but it should remain a controlled satellite rather than become another dominant position.",
+      "The theme can diversify growth exposure outside Bitcoin, while remaining a satellite rather than a dominant position.",
     drivers: [
       {
         title: "AI investment",
@@ -436,16 +436,16 @@ const holdingIntelligence: Record<string, HoldingIntelligence> = {
   PPFB: {
     category: "Precious metals",
     role: "Defensive diversifier",
-    stance: "Build selectively",
+    stance: "Defensive diversifier",
     healthScore: 90,
     concentrationLimit: 15,
     thesis:
       "PPFB provides exposure to physical gold and can support the portfolio during geopolitical stress, currency weakness and unexpected inflation.",
     osInsight:
       "Gold reduces dependency on growth assets and improves resilience, although it is not expected to be the portfolio’s primary growth engine.",
-    action: "Strengthen gradually",
+    action: "Defensive allocation context",
     actionReason:
-      "A somewhat larger defensive allocation can improve balance while the portfolio remains heavily exposed to volatile growth assets.",
+      "A larger defensive allocation can improve balance while the portfolio remains heavily exposed to volatile growth assets.",
     drivers: [
       {
         title: "Monetary uncertainty",
@@ -715,7 +715,7 @@ export default function HoldingDetailPage() {
   const currentValue = valuation?.marketValue ?? null;
   const investedCapital = getHoldingCostBasis(holding);
   const returnValue = getHoldingReturnValue(holding);
-  const returnPercentage = getHoldingReturnPercent(holding) ?? 0;
+  const returnPercentage = getHoldingReturnPercent(holding);
   const displayPrice = resolveHoldingDisplayPrice(holding);
   const estimatedPrice = isEstimatedHoldingPrice(holding);
 
@@ -879,8 +879,22 @@ export default function HoldingDetailPage() {
             <LiveMetric
               icon={<LineChart className="h-5 w-5" />}
               label="Market status"
-              value="Latest close"
-              detail="Live status will follow provider data"
+              value={
+                holding.priceDataStatus === "live"
+                  ? "Live quote"
+                  : holding.priceDataStatus === "delayed"
+                    ? "Delayed quote"
+                    : holding.priceDataStatus === "stale"
+                      ? "Stale quote"
+                      : "Latest available"
+              }
+              detail={
+                holding.priceDataStatus === "live"
+                  ? "Provider reported a live market price"
+                  : holding.priceDataStatus === "delayed"
+                    ? "Provider price may be delayed versus the exchange"
+                    : "Based on the latest available provider price — not always live"
+              }
             />
           </section>
 
@@ -923,10 +937,20 @@ export default function HoldingDetailPage() {
                       holding.currency,
                     )}`
               }
-              description={`${returnPercentage >= 0 ? "+" : ""}${formatPercentage(
-                returnPercentage,
-              )}`}
-              tone={positiveReturn ? "positive" : "negative"}
+              description={
+                returnValue === null || returnPercentage == null
+                  ? "Return unavailable until a market price is available"
+                  : `${returnPercentage >= 0 ? "+" : ""}${formatPercentage(
+                      returnPercentage,
+                    )}`
+              }
+              tone={
+                returnValue === null
+                  ? "neutral"
+                  : positiveReturn
+                    ? "positive"
+                    : "negative"
+              }
             />
 
             <MetricCard

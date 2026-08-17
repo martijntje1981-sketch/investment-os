@@ -516,32 +516,30 @@ describe("Dashboard Portfolio Pulse wiring", () => {
     const pulse = read("components/dashboard/HeroPortfolioPulse.tsx");
     const hero = read("components/dashboard/PortfolioValueCard.tsx");
     const ring = read("components/dashboard/DynamicScoreRing.tsx");
-    const briefing = read(
-      "components/dashboard/DashboardTodaysMarketBriefing.tsx",
-    );
 
     expect(dashboard).not.toContain("DashboardPortfolioScorecard");
     expect(dashboard).not.toContain("buildPortfolioScorecard");
     expect(dashboard).toContain("pulse={portfolioPulse}");
     expect(dashboard).toContain("buildPortfolioPulse");
     expect(dashboard).toContain("HoldingsToday");
-    expect(dashboard).toContain("DashboardTodaysMarketBriefing");
+    expect(dashboard).toContain("FourQuestionsSection");
     expect(dashboard).not.toContain("DashboardTodaysDecision");
     expect(dashboard).not.toContain("DashboardIntelligencePreview");
     expect(dashboard).not.toContain("DashboardPortfolioPulseCard");
 
     const pulseIdx = dashboard.indexOf("pulse={portfolioPulse}");
     const holdingsIdx = dashboard.indexOf("<HoldingsToday");
-    const briefingIdx = dashboard.indexOf("<DashboardTodaysMarketBriefing");
+    const fourQuestionsIdx = dashboard.indexOf("<FourQuestionsSection");
     expect(pulseIdx).toBeGreaterThan(-1);
-    expect(briefingIdx).toBeGreaterThan(pulseIdx);
-    expect(holdingsIdx).toBeGreaterThan(briefingIdx);
+    expect(fourQuestionsIdx).toBeGreaterThan(pulseIdx);
+    expect(holdingsIdx).toBeGreaterThan(fourQuestionsIdx);
 
     expect(scorecardPage).toContain("buildPortfolioScorecard");
     expect(scorecardPage).toContain("ScoreRing");
     expect(hero).toContain("HeroPortfolioPulse");
     expect(pulse).toContain("Scorecard");
     expect(pulse).toContain("DASHBOARD_DEEP_LINKS.scorecard");
+    expect(ring).toContain("—");
     expect(pulse).toContain("PortfolioPulseDetailSheet");
     expect(pulse).toContain("onActivate");
     expect(pulse).toContain("size={60}");
@@ -555,7 +553,7 @@ describe("Dashboard Portfolio Pulse wiring", () => {
     expect(ring).toContain("onActivate");
     expect(dashboard).toContain("buildResilienceProfile");
     expect(dashboard).toContain("resilienceScore");
-    expect(briefing).toContain("Markets today");
+    expect(hero).toContain("DailyPortfolioBriefing");
     expect(pulse).not.toContain("overflow-x-auto");
   });
 });

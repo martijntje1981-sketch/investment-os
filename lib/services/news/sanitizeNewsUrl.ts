@@ -99,3 +99,22 @@ export function sanitizeNewsText(
   if (!cleaned) return null;
   return cleaned.length > maxLength ? `${cleaned.slice(0, maxLength - 1)}…` : cleaned;
 }
+
+/**
+ * Presentation gate for provider titles that are truncated or unusable.
+ * Prefer excluding the item over showing broken journalism.
+ */
+export function isUsableNewsTitle(
+  title: string | null | undefined,
+): boolean {
+  if (!title || typeof title !== "string") return false;
+  const trimmed = title.trim();
+  if (trimmed.length < 16) return false;
+  // Truncated listicles / slideshows: "…Dollar: 3." / "…: 12"
+  if (/:\s*\d{1,3}\.?\s*$/.test(trimmed)) return false;
+  // Dangling truncation punctuation
+  if (/[:\-–—…]\s*$/.test(trimmed)) return false;
+  if (/^\d+(\.\d+)?\.?$/.test(trimmed)) return false;
+  if (/<\/?[a-z][\s\S]*>/i.test(trimmed)) return false;
+  return true;
+}

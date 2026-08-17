@@ -24,21 +24,25 @@ export function useGoalProgress(input: {
   hasSavedGoal: boolean;
   portfolioHistory?: PortfolioHistoryPoint[];
 }): GoalProgress {
-  const currentPortfolioValue = useMemo(
-    () => buildPortfolioPerformance(input.holdings).totalValue,
+  const performance = useMemo(
+    () => buildPortfolioPerformance(input.holdings),
     [input.holdings],
   );
 
   return useMemo(
     () =>
       buildGoalProgressEngine({
-        currentPortfolioValue,
+        currentPortfolioValue: performance.totalValueAvailable
+          ? performance.totalValue
+          : 0,
+        portfolioValueAvailable: performance.totalValueAvailable,
         goal: input.goal,
         hasSavedGoal: input.hasSavedGoal,
         portfolioHistory: input.portfolioHistory,
       }),
     [
-      currentPortfolioValue,
+      performance.totalValue,
+      performance.totalValueAvailable,
       input.goal,
       input.hasSavedGoal,
       input.portfolioHistory,

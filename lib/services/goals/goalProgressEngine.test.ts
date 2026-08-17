@@ -119,6 +119,20 @@ describe("goalProgressEngine", () => {
     const projected = projectPortfolioValue(10_000, 500, 8, 12);
     expect(projected).toBeGreaterThan(16_000);
   });
+
+  it("does not invent 0% progress when portfolio value is unavailable", () => {
+    const progress = buildGoalProgressEngine({
+      currentPortfolioValue: 0,
+      portfolioValueAvailable: false,
+      hasSavedGoal: true,
+      goal: baseGoal,
+    });
+
+    expect(progress.portfolioValueAvailable).toBe(false);
+    expect(progress.status).toBe("Unknown");
+    expect(progress.summary).toMatch(/unavailable/i);
+    expect(progress.estimatedCompletionLabel).toBe("Unavailable");
+  });
 });
 
 describe("goal progress reuse", () => {

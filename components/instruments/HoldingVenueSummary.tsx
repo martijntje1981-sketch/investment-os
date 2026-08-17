@@ -70,7 +70,7 @@ export function HoldingVenueSummary({
       {venue.providerSymbol ? (
         <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
           <p className="text-[11px] font-black uppercase tracking-[0.1em] text-slate-500">
-            Live pricing source
+            Pricing source
           </p>
           <p className="mt-1.5 text-sm font-semibold text-slate-900">
             {venue.pricingExchangeLabel ?? "Verified listing"}
@@ -84,7 +84,7 @@ export function HoldingVenueSummary({
           <p className={`mt-2 ${appSectionMetaClass}`}>
             {venue.autoSelectedPricing
               ? LIVE_PRICING_AUTO_SELECTED_COPY
-              : "Selected for live market prices."}
+              : "Selected for market price updates."}
           </p>
         </div>
       ) : null}
@@ -102,7 +102,7 @@ export function HoldingVenueSummary({
               <dd>{venue.purchaseExchangeLabel}</dd>
             </div>
             <div className="flex flex-wrap gap-x-2">
-              <dt className="font-semibold text-slate-900">Live price source:</dt>
+              <dt className="font-semibold text-slate-900">Price source:</dt>
               <dd>{venue.pricingExchangeLabel}</dd>
             </div>
             <div className="flex flex-wrap gap-x-2">
