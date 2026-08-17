@@ -1,5 +1,9 @@
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 import { formatPortfolioCurrency, formatPortfolioPercent } from "@/lib/client/portfolioAnalysis";
+import {
+  formatSmartPrice,
+  resolveSmartPriceFractionDigits,
+} from "@/lib/client/smartPriceFormat";
 
 export function formatCryptoPairPrice(
   price: number | null | undefined,
@@ -14,16 +18,10 @@ export function formatCryptoPairPrice(
     typeof quoteCurrency === "string" && quoteCurrency.trim()
       ? quoteCurrency.trim().toUpperCase()
       : "USD";
-  const decimals =
-    price >= 1000
-      ? 2
-      : price >= 1
-        ? 4
-        : price >= 0.01
-          ? 6
-          : 8;
-  return formatPortfolioCurrency(price, currency, decimals);
+  return formatSmartPrice(price, currency);
 }
+
+export { resolveSmartPriceFractionDigits, formatSmartPrice };
 
 export function formatCryptoQuoteTimestamp(
   updatedAt: string | null | undefined,

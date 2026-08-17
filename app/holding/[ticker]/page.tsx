@@ -17,6 +17,7 @@ import {
   isEstimatedHoldingPrice,
   resolveHoldingDisplayPrice,
 } from "@/lib/client/holdingValuation";
+import { formatSmartPrice } from "@/lib/client/smartPriceFormat";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 
 const euro = new Intl.NumberFormat("en-GB", {
@@ -25,16 +26,13 @@ const euro = new Intl.NumberFormat("en-GB", {
   maximumFractionDigits: 0,
 });
 
-const euroTwo = new Intl.NumberFormat("en-GB", {
-  style: "currency",
-  currency: "EUR",
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
-
 function signedPercent(value: number) {
   const sign = value > 0 ? "+" : "";
   return `${sign}${value.toFixed(2)}%`;
+}
+
+function formatUnitPrice(value: number): string {
+  return formatSmartPrice(value, "EUR");
 }
 
 function formatUpdateTime(value: string | null | undefined) {
@@ -248,7 +246,7 @@ export default function HoldingPage() {
 
                   <p className="mt-2 text-3xl font-bold">
                     {resolvedPrice !== null
-                      ? euroTwo.format(resolvedPrice)
+                      ? formatUnitPrice(resolvedPrice)
                       : "Unavailable"}
                   </p>
 
@@ -365,14 +363,14 @@ export default function HoldingPage() {
 
                 <DataRow
                   label="Average price"
-                  value={euroTwo.format(holding.purchasePrice)}
+                  value={formatUnitPrice(holding.purchasePrice)}
                 />
 
                 <DataRow
                   label="Current price"
                   value={
                     resolvedPrice !== null
-                      ? `${euroTwo.format(resolvedPrice)}${estimatedPrice ? " (estimated)" : ""}`
+                      ? `${formatUnitPrice(resolvedPrice)}${estimatedPrice ? " (estimated)" : ""}`
                       : "Unavailable"
                   }
                 />
@@ -381,7 +379,7 @@ export default function HoldingPage() {
                   label="Previous close"
                   value={
                     holding.previousClose != null && holding.previousClose > 0
-                      ? euroTwo.format(holding.previousClose)
+                      ? formatUnitPrice(holding.previousClose)
                       : "Not available"
                   }
                 />

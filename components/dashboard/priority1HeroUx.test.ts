@@ -59,12 +59,16 @@ describe("Priority 1 dashboard hero", () => {
   });
 
   it("labels exchange moves as previous market close, not live", () => {
-    const period = resolvePortfolioMovePeriod([
-      holding({
-        symbol: "VWCE",
-        marketPriceUpdatedAt: "2026-07-24",
-      }),
-    ]);
+    const asOf = Date.parse("2026-07-26T12:00:00.000Z");
+    const period = resolvePortfolioMovePeriod(
+      [
+        holding({
+          symbol: "VWCE",
+          marketPriceUpdatedAt: "2026-07-24",
+        }),
+      ],
+      asOf,
+    );
     expect(period.kind).toBe("last_session");
     expect(period.providerSessionKey).toBe("2026-07-24");
     expect(formatMarketCloseWeekdayPossessive("2026-07-24")).toBe("Friday's");

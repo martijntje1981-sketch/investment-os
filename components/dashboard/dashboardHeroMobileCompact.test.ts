@@ -9,7 +9,7 @@ describe("Dashboard hero mobile movers prominence", () => {
   );
 
   it("keeps Biggest mover and Weakest mover side by side on mobile", () => {
-    expect(source).toContain("grid min-w-0 grid-cols-2 gap-2");
+    expect(source).toContain("grid min-w-0 grid-cols-2 gap-1.5 sm:gap-2");
     expect(source).toContain('label="Biggest mover"');
     expect(source).toContain('label="Weakest mover"');
     expect(source).not.toContain("Lowest mover");
@@ -19,24 +19,24 @@ describe("Dashboard hero mobile movers prominence", () => {
 
   it("uses compact mover ticker and percentage sizes", () => {
     expect(source).toContain(
-      "truncate text-sm font-semibold leading-tight text-white",
+      "truncate text-[12px] font-semibold leading-tight text-white sm:mt-1 sm:text-[13px]",
     );
     expect(source).toContain(
-      "truncate text-sm font-bold leading-none tracking-[-0.02em] tabular-nums",
+      "truncate text-[13px] font-bold tabular-nums tracking-[-0.02em] sm:text-sm",
     );
   });
 
-  it("reduces secondary period labels on narrow screens", () => {
-    expect(source).toContain(
-      "mt-0.5 hidden max-w-full truncate text-[11px] font-medium text-white/45 sm:block",
-    );
+  it("keeps movers on the second premium black panel", () => {
+    expect(source).toContain('data-testid="hero-zone-snapshot"');
+    expect(source).toContain("space-y-3 sm:space-y-4");
   });
 
   it("uses a more compact mobile hero shell", () => {
     expect(source).toContain("appHeroPaddingCompactClass");
     expect(source).toContain("appHeroMatchedKpiClass");
     expect(source).toContain("appHeroMetricLabelClass");
-    expect(source).toContain("mt-3 border-t border-white/10 pt-3");
+    expect(source).toContain("mt-3 min-w-0 border-t border-white/10 pt-3");
     expect(source).toContain('variant="icon"');
+    expect(source).toContain("space-y-3 sm:space-y-4");
   });
 });

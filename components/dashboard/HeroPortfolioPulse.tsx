@@ -45,7 +45,7 @@ export function HeroPortfolioPulse({
     >
       <div className="flex items-center justify-between gap-2">
         <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-white/55">
-          Pulse
+          Portfolio Pulse
         </p>
         <Link
           href={DASHBOARD_DEEP_LINKS.scorecard}

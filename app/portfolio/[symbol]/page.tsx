@@ -37,6 +37,7 @@ import {
 } from "@/lib/client/holdingValuation";
 import { resolveHoldingChangePercent } from "@/lib/client/dailyPerformance";
 import { resolveHoldingMovePeriod } from "@/lib/client/performancePeriod";
+import { formatSmartPrice } from "@/lib/client/smartPriceFormat";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 
 type Currency = "EUR" | "USD" | "GBP";
@@ -581,6 +582,10 @@ function formatCurrency(value: number, currency: Currency = "EUR") {
   }).format(value);
 }
 
+function formatUnitPrice(value: number, currency: Currency = "EUR") {
+  return formatSmartPrice(value, currency);
+}
+
 function formatPercentage(value: number) {
   return new Intl.NumberFormat("en-GB", {
     style: "percent",
@@ -828,7 +833,7 @@ export default function HoldingDetailPage() {
               label="Current price"
               value={
                 resolvedPrice !== null
-                  ? `${formatCurrency(resolvedPrice, holding.currency)}${estimatedPrice ? " est." : ""}`
+                  ? `${formatUnitPrice(resolvedPrice, holding.currency)}${estimatedPrice ? " est." : ""}`
                   : "Price pending"
               }
               detail={holding.symbol.toUpperCase()}
@@ -1123,7 +1128,7 @@ export default function HoldingDetailPage() {
                   label="Current price"
                   value={
                     resolvedPrice !== null
-                      ? `${formatCurrency(resolvedPrice, holding.currency)}${estimatedPrice ? " (estimated)" : ""}`
+                      ? `${formatUnitPrice(resolvedPrice, holding.currency)}${estimatedPrice ? " (estimated)" : ""}`
                       : "Unavailable"
                   }
                 />
