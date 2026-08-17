@@ -168,7 +168,49 @@ describe("buildPersonalActionPlan", () => {
     expect(watch).toBeTruthy();
     expect(watch?.headline).toBe("Unique headline about a holding event");
     expect(watch?.entitySymbol).toBe("BTC");
+    expect(watch?.href).toBe("https://example.com/");
+    expect(watch?.hrefExternal).toBe(true);
+    expect(watch?.hrefLabel).toBe("Open story");
+    expect(watch?.storyId).toBe("n1");
+  });
+
+  it("falls back to portfolio-news when the verified story URL is not navigable", () => {
+    const pi = intelligenceFromHoldings(
+      [
+        holding({
+          symbol: "BTC",
+          name: "Bitcoin",
+          assetType: "crypto",
+          quantity: 1,
+          currentPrice: 50_000,
+          change24hPercent: 0.2,
+        }),
+      ],
+      quietIntelligence({
+        quietMarket: false,
+        portfolioStatus: "Elevated",
+        mustWatch: {
+          type: "article",
+          itemId: "n-fallback",
+          title: "Portfolio-linked development without a safe URL",
+          sourceName: "Example",
+          canonicalUrl: "javascript:alert(1)",
+          reason: "Mentions a portfolio symbol.",
+        },
+        holdingInsights: {
+          positive: [],
+          neutral: [],
+          negative: ["BTC"],
+        },
+      }),
+    );
+
+    const watch = buildPersonalActionPlan(pi).items.find(
+      (item) => item.category === "watch",
+    );
     expect(watch?.href).toContain("portfolio-news");
+    expect(watch?.hrefExternal).toBe(false);
+    expect(watch?.hrefLabel).toBe("Open News");
   });
 
   it("does not crash when a verified news title contains hold/buy/sell wording", () => {

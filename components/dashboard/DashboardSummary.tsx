@@ -22,6 +22,8 @@ export function DashboardSummary({
   pulse = null,
   smart,
   performancePoints = null,
+  weekPerformancePoints = null,
+  monthPerformancePoints = null,
 }: {
   snapshot: DashboardPortfolioSnapshot;
   isLoading?: boolean;
@@ -29,7 +31,10 @@ export function DashboardSummary({
   pulse?: PortfolioPulseResult | null;
   /** Phase 3C Smart Hero + Today's Focus — built once on the Dashboard page. */
   smart: SmartDashboardIntelligence;
+  /** @deprecated Prefer week/month props. */
   performancePoints?: PortfolioPerformancePoint[] | null;
+  weekPerformancePoints?: PortfolioPerformancePoint[] | null;
+  monthPerformancePoints?: PortfolioPerformancePoint[] | null;
 }) {
   if (isLoading) {
     return <DashboardSummarySkeleton />;
@@ -43,6 +48,8 @@ export function DashboardSummary({
         pulse={pulse}
         smart={smart}
         performancePoints={performancePoints}
+        weekPerformancePoints={weekPerformancePoints}
+        monthPerformancePoints={monthPerformancePoints}
       />
     </section>
   );

@@ -9,6 +9,10 @@ import {
 } from "@/lib/navigation/appRoutes";
 import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 import {
+  isNavigableNewsUrl,
+  sanitizeNewsUrl,
+} from "@/lib/services/news/sanitizeNewsUrl";
+import {
   ATTRIBUTION_CONCENTRATION_WEIGHT,
   ATTRIBUTION_DOMINANT_SHARE,
   ATTRIBUTION_MATERIAL_MIN_PP,
@@ -41,6 +45,8 @@ export type PersonalActionPlanItem = {
   detail: string;
   href?: string | null;
   hrefLabel?: string | null;
+  /** When true, href is a verified external article URL (open in new tab). */
+  hrefExternal?: boolean;
   /** Optional entity for contextual visuals — never invented. */
   entitySymbol?: string | null;
   entityName?: string | null;
@@ -48,6 +54,8 @@ export type PersonalActionPlanItem = {
   mediaType?: "article" | "video" | null;
   sourceName?: string | null;
   visualKind?: PersonalActionPlanVisualKind;
+  /** Verified mustWatch item id when WATCH is story-backed. */
+  storyId?: string | null;
 };
 
 export type PersonalActionPlan = {
@@ -150,6 +158,9 @@ function buildWatchCandidate(
     : "A portfolio-linked development is worth monitoring";
 
   const leadSymbol = linked[0] ?? null;
+  const storyUrl = isNavigableNewsUrl(mustWatch.canonicalUrl)
+    ? sanitizeNewsUrl(mustWatch.canonicalUrl)
+    : null;
 
   return item({
     id: "action-watch-news",
@@ -159,8 +170,10 @@ function buildWatchCandidate(
       linked.length > 0
         ? `A development connected to holdings such as ${linked.join(" and ")} is flagged for monitoring.`
         : "A development connected to your holdings is flagged for monitoring.",
-    href: DASHBOARD_DEEP_LINKS.portfolioNews,
-    hrefLabel: "Open News",
+    href: storyUrl ?? DASHBOARD_DEEP_LINKS.portfolioNews,
+    hrefLabel: storyUrl ? "Open story" : "Open News",
+    hrefExternal: Boolean(storyUrl),
+    storyId: mustWatch.itemId || null,
     entitySymbol: leadSymbol,
     entityName: leadSymbol,
     thumbnailUrl: mustWatch.thumbnailUrl ?? null,

@@ -109,11 +109,16 @@ export function PortfolioValueCard({
   pulse = null,
   smart,
   performancePoints = null,
+  weekPerformancePoints = null,
+  monthPerformancePoints = null,
 }: {
   snapshot: DashboardPortfolioSnapshot;
   pulse?: PortfolioPulseResult | null;
   smart: SmartDashboardIntelligence;
+  /** @deprecated Prefer weekPerformancePoints + monthPerformancePoints. */
   performancePoints?: PortfolioPerformancePoint[] | null;
+  weekPerformancePoints?: PortfolioPerformancePoint[] | null;
+  monthPerformancePoints?: PortfolioPerformancePoint[] | null;
   refresh?: {
     onRefresh: () => void;
     isRefreshing: boolean;
@@ -237,7 +242,8 @@ export function PortfolioValueCard({
           </div>
           <div className="mt-2.5 min-w-0 lg:mt-0">
             <HeroPerformanceSparkline
-              points={performancePoints}
+              weekPoints={weekPerformancePoints}
+              monthPoints={monthPerformancePoints ?? performancePoints}
               tone={sparklineTone(snapshot)}
               compactOnMobile
             />

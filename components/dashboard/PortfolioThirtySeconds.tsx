@@ -95,19 +95,34 @@ function CompactActionRow({ item }: { item: PersonalActionPlanItem }) {
   const rowClass =
     "flex min-h-11 items-center gap-2 rounded-xl border border-slate-200/70 bg-white/70 px-2.5 py-2 sm:gap-2.5 sm:px-3";
 
-  if (item.href) {
+  if (!item.href) {
+    return <div className={rowClass}>{body}</div>;
+  }
+
+  if (item.hrefExternal) {
     return (
-      <Link
+      <a
         href={item.href}
+        target="_blank"
+        rel="noopener noreferrer"
         className={`${rowClass} transition hover:brightness-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40`}
-        aria-label={`${item.categoryLabel}: ${item.headline}`}
+        aria-label={`${item.categoryLabel}: ${item.headline}. Opens story in a new tab.`}
+        data-testid="action-plan-external-link"
       >
         {body}
-      </Link>
+      </a>
     );
   }
 
-  return <div className={rowClass}>{body}</div>;
+  return (
+    <Link
+      href={item.href}
+      className={`${rowClass} transition hover:brightness-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40`}
+      aria-label={`${item.categoryLabel}: ${item.headline}`}
+    >
+      {body}
+    </Link>
+  );
 }
 
 function MarketCalmerBlock({ calmer }: { calmer: MarketCalmerResult }) {

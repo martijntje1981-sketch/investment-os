@@ -346,11 +346,8 @@ export default function DashboardPage() {
             snapshot={snapshot}
             pulse={portfolioPulse}
             smart={smartDashboard}
-            performancePoints={
-              monthHistory.data?.chartPoints ??
-              weekHistory.data?.chartPoints ??
-              null
-            }
+            weekPerformancePoints={weekHistory.data?.chartPoints ?? null}
+            monthPerformancePoints={monthHistory.data?.chartPoints ?? null}
             refresh={{
               onRefresh: () => void refreshPrices(),
               isRefreshing,
