@@ -3,8 +3,7 @@
  * Deterministic holding + asset-class attribution. No AI. No valuation changes.
  *
  * 1D: previous-close / crypto 24h moves (Phase 1 contribution pp).
- * 1W / 1M / 12M: constant-holdings EOD moves (flows not adjusted — disclosed).
- * 3M: unavailable until a verified portfolio history window exists.
+ * 1W / 1M / 3M / 12M: constant-holdings EOD moves (flows not adjusted — disclosed).
  */
 
 import { getHoldingMarketValue } from "@/lib/client/portfolioAnalysis";

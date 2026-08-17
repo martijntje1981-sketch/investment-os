@@ -39,7 +39,7 @@ function eod(date: string, value: number): EodHistoryPoint {
 }
 
 describe("attribution period capability", () => {
-  it("lists 1D/1W/1M as supported and 3M unavailable", () => {
+  it("lists 1D/1W/1M/3M/12M as supported", () => {
     const caps = listAttributionPeriodCapabilities();
     expect(caps.map((row) => row.period)).toEqual([
       "1D",
@@ -51,7 +51,8 @@ describe("attribution period capability", () => {
     expect(getAttributionPeriodCapability("1D").status).toBe("supported");
     expect(getAttributionPeriodCapability("1W").status).toBe("supported");
     expect(getAttributionPeriodCapability("1M").status).toBe("supported");
-    expect(getAttributionPeriodCapability("3M").status).toBe("unavailable");
+    expect(getAttributionPeriodCapability("3M").status).toBe("supported");
+    expect(getAttributionPeriodCapability("3M").historyPeriodId).toBe("3M");
     expect(getAttributionPeriodCapability("12M").status).toBe("supported");
     expect(getAttributionPeriodCapability("12M").historyPeriodId).toBe("1Y");
   });
@@ -286,13 +287,47 @@ describe("multi-day EOD attribution", () => {
     expect(moves[0]?.exclusionReason).toMatch(/history/i);
   });
 
-  it("returns unavailable for 3M", () => {
+  it("builds 3M attribution from constant-holdings EOD moves", () => {
     const result = buildPortfolioPerformanceAttribution({
       period: "3M",
-      holdings: [holding({ symbol: "AAPL", previousClose: 100 })],
+      holdings: [
+        holding({
+          symbol: "VWCE",
+          name: "VWCE",
+          quantity: 10,
+          currentPrice: 110,
+        }),
+      ],
+      holdingMoves: [
+        {
+          holdingId: "VWCE-id",
+          symbol: "VWCE",
+          name: "VWCE",
+          assetType: "investment",
+          quantity: 10,
+          startingClose: 100,
+          endingClose: 110,
+          startingValueEur: 1000,
+          endingValueEur: 1100,
+          moveEur: 100,
+          returnPercent: 10,
+          included: true,
+          exclusionReason: null,
+          usesApproximateFx: false,
+        },
+      ],
+      startingPortfolioValue: 1000,
+      endingPortfolioValue: 1100,
+      totalReturnPercent: 10,
+      totalReturnAmount: 100,
     });
-    expect(result.status).toBe("unavailable");
-    expect(result.calculationMethod).toBe("unavailable");
+    expect(result.status).toBe("supported");
+    expect(result.calculationMethod).toBe("constant_holdings_eod");
+    expect(result.period).toBe("3M");
+    expect(result.holdings[0]?.contributionPp).toBeCloseTo(10, 5);
+    expect(result.dataQuality.quantitiesHeldConstant).toBe(true);
+    expect(result.dataQuality.flowsAdjusted).toBe(false);
+    expect(result.dataQuality.warnings.join(" ")).toMatch(/constant/i);
   });
 
   it("returns unavailable when multi-day moves are missing", () => {

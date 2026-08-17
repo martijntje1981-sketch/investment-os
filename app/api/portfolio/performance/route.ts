@@ -30,6 +30,7 @@ const CACHE_TTL_MS = 60 * 60 * 1000;
 const HISTORY_PERIODS = new Set<PerformanceHistoryPeriodId>([
   "1W",
   "1M",
+  "3M",
   "YTD",
   "1Y",
   "ALL",

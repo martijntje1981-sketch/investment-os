@@ -9,6 +9,7 @@ export type PerformancePeriodId =
   | "1D"
   | "1W"
   | "1M"
+  | "3M"
   | "YTD"
   | "1Y"
   | "ALL";
@@ -71,6 +72,7 @@ export const PERFORMANCE_PERIODS: Array<{
   { id: "1D", label: "1 day", shortLabel: "1D" },
   { id: "1W", label: "1 week", shortLabel: "1W" },
   { id: "1M", label: "1 month", shortLabel: "1M" },
+  { id: "3M", label: "3 months", shortLabel: "3M" },
   { id: "YTD", label: "Year to date", shortLabel: "YTD" },
   { id: "1Y", label: "1 year", shortLabel: "1Y" },
   { id: "ALL", label: "All time", shortLabel: "All" },

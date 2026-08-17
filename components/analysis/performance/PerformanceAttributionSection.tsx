@@ -152,7 +152,7 @@ export function PerformanceAttributionSection({
       });
     }
 
-    if (period === "3M" || !historyPeriod) {
+    if (!historyPeriod) {
       return buildPortfolioPerformanceAttribution({
         period,
         holdings,
@@ -193,7 +193,6 @@ export function PerformanceAttributionSection({
   const primaryConclusion = attribution?.conclusions[0]?.text ?? null;
   const loadingMultiDay =
     period !== "1D" &&
-    period !== "3M" &&
     historyPeriod != null &&
     history.isLoading &&
     !history.data;

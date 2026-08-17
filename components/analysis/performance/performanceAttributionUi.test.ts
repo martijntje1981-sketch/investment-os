@@ -32,13 +32,17 @@ describe("Performance attribution UI", () => {
     expect(attribution).toContain("min-w-0");
   });
 
-  it("keeps 3M/12M in the centralized capability model", () => {
+  it("keeps 3M/12M supported via history windows", () => {
     const capability = read(
       "lib/services/performanceAttribution/periodCapability.ts",
     );
     expect(capability).toContain('"3M"');
     expect(capability).toContain('"12M"');
-    expect(capability).toContain('status: "unavailable"');
+    expect(capability).toContain('historyPeriodId: "3M"');
+    expect(capability).toContain('historyPeriodId: "1Y"');
+    expect(capability).not.toMatch(
+      /"3M":\s*\{[^}]*status:\s*"unavailable"/,
+    );
   });
 
   it("enriches pulse detail without changing score formulas", () => {

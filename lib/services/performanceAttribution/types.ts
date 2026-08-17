@@ -40,7 +40,7 @@ export type AttributionPeriodCapability = {
   calculationMethod: AttributionCalculationMethod;
   reason: string | null;
   /** Maps to PerformancePeriodId when a history fetch is needed. */
-  historyPeriodId: "1D" | "1W" | "1M" | "1Y" | null;
+  historyPeriodId: "1D" | "1W" | "1M" | "3M" | "1Y" | null;
 };
 
 export type HoldingAttributionRow = {

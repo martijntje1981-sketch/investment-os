@@ -53,14 +53,14 @@ const CAPABILITIES: Record<AttributionPeriodId, AttributionPeriodCapability> = {
   },
   "3M": {
     period: "3M",
-    status: "unavailable",
+    status: "supported",
     label: "3 months",
     shortLabel: "3M",
-    periodSemantics: "Not available until portfolio history supports a 3M window window.",
-    calculationMethod: "unavailable",
-    reason:
-      "Portfolio performance history does not yet expose a verified 3M holding-level window.",
-    historyPeriodId: null,
+    periodSemantics:
+      "End-of-day price moves over ~3 months with current holdings held constant. Cash flows and trades are not adjusted.",
+    calculationMethod: "constant_holdings_eod",
+    reason: null,
+    historyPeriodId: "3M",
   },
   "12M": {
     period: "12M",
@@ -94,8 +94,15 @@ export function resolveAttributionCalculationMethod(
 /** Map attribution period → existing performance history period for fetches. */
 export function attributionPeriodToHistoryPeriod(
   period: AttributionPeriodId,
-): "1W" | "1M" | "1Y" | null {
+): "1W" | "1M" | "3M" | "1Y" | null {
   const history = CAPABILITIES[period].historyPeriodId;
-  if (history === "1W" || history === "1M" || history === "1Y") return history;
+  if (
+    history === "1W" ||
+    history === "1M" ||
+    history === "3M" ||
+    history === "1Y"
+  ) {
+    return history;
+  }
   return null;
 }
