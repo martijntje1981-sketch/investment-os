@@ -8,6 +8,7 @@ import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 import { holdingValueUnavailableLabel } from "@/lib/client/holdingDisplayPrice";
 import { formatHoldingTodayChange } from "@/lib/client/portfolioMovementFormat";
 import { formatCrypto24hChange } from "@/lib/client/cryptoPriceDisplay";
+import { resolveSmartMoneyFractionDigits } from "@/lib/client/smartPriceFormat";
 import {
   appTableChangeClass,
   appTableNameClass,
@@ -74,15 +75,16 @@ function HoldingValueLabel({
   formatEur,
 }: {
   row: DashboardHoldingRow;
-  formatEur: (value: number) => string;
+  formatEur: (value: number, decimals?: number) => string;
 }) {
   if (row.priceStatus !== "available" || row.currentValue === null) {
     return <>{holdingValueUnavailableLabel(row)}</>;
   }
 
+  const decimals = resolveSmartMoneyFractionDigits(row.currentValue);
   return (
     <>
-      {formatEur(row.currentValue)}
+      {formatEur(row.currentValue, decimals)}
       <HoldingPriceQualityBadge row={row} />
     </>
   );
@@ -104,8 +106,11 @@ function holdingSecondaryLabel(row: DashboardHoldingRow): string {
 
 function holdingTodayLabel(
   row: DashboardHoldingRow,
-  formatEur: (value: number) => string,
+  formatEur: (value: number, decimals?: number) => string,
 ): string {
+  const smartMoney = (value: number) =>
+    formatEur(value, resolveSmartMoneyFractionDigits(value));
+
   if (row.assetType === "cash") {
     return "Stable";
   }
@@ -114,14 +119,14 @@ function holdingTodayLabel(
     return formatCrypto24hChange(
       row.dailyChangePercent,
       row.dailyChangeAmount,
-      formatEur,
+      smartMoney,
     );
   }
 
   return formatHoldingTodayChange(
     row.changeStatus === "available" ? row.dailyChangeAmount : null,
     row.changeStatus === "available" ? row.dailyChangePercent : null,
-    formatEur,
+    smartMoney,
   );
 }
 

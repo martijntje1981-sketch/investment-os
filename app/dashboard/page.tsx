@@ -277,6 +277,7 @@ export default function DashboardPage() {
     const { valuedPositions } = buildValuedPositions(holdings);
     return buildPersonalIntelligenceToday({
       daily,
+      holdings,
       holdingsWeights: valuedPositions.map((position) => ({
         symbol: position.holding.symbol,
         name: position.holding.name,

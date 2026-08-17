@@ -9,6 +9,8 @@ export {
 } from "@/lib/services/classification/buildPortfolioExposureAllocation";
 export {
   isBitcoinHolding,
+  isEthereumHolding,
+  isCryptoIntelligenceHolding,
   type CryptoIdentityHolding,
 } from "@/lib/services/classification/cryptoInstrumentIdentity";
 export {

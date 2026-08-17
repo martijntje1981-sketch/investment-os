@@ -1,10 +1,13 @@
 /**
- * Adaptive fraction digits for unit/asset prices.
+ * Adaptive fraction digits for unit/asset prices and small money amounts.
  * Keeps equities/ETFs clean while preserving meaningful micro-price movement.
- * Portfolio totals should continue using fixed low-precision formatters.
+ * Portfolio totals / large positions stay compact (no unnecessary cents).
  */
 
-import { formatPortfolioCurrency } from "@/lib/client/portfolioAnalysis";
+import {
+  formatPortfolioCurrency,
+  formatPortfolioPercent,
+} from "@/lib/client/portfolioAnalysis";
 
 /**
  * Resolve display decimals for a single unit price.
@@ -34,4 +37,42 @@ export function formatSmartPrice(
 ): string {
   const decimals = resolveSmartPriceFractionDigits(price);
   return formatPortfolioCurrency(price, currency, decimals);
+}
+
+/**
+ * Adaptive decimals for position values and day-move amounts.
+ * Large: whole currency units. Small: cents so SHIB-like moves stay visible.
+ */
+export function resolveSmartMoneyFractionDigits(amount: number): number {
+  if (!Number.isFinite(amount)) return 0;
+  const abs = Math.abs(amount);
+  if (abs === 0) return 0;
+  if (abs >= 10) return 0;
+  return 2;
+}
+
+export function formatSmartMoney(
+  amount: number,
+  currency: string = "EUR",
+): string {
+  return formatPortfolioCurrency(
+    amount,
+    currency,
+    resolveSmartMoneyFractionDigits(amount),
+  );
+}
+
+/** Keep tiny % moves visible instead of rounding to 0.0%. */
+export function resolveSmartPercentFractionDigits(percent: number): number {
+  if (!Number.isFinite(percent) || percent === 0) return 1;
+  const abs = Math.abs(percent);
+  if (abs < 0.1) return 2;
+  return 1;
+}
+
+export function formatSmartPercent(percent: number): string {
+  return formatPortfolioPercent(
+    percent,
+    resolveSmartPercentFractionDigits(percent),
+  );
 }

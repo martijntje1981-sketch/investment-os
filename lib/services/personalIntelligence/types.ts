@@ -15,6 +15,7 @@ import type {
   MustWatchRecommendation,
   PortfolioStatus,
 } from "@/lib/services/news/investmentIntelligence";
+import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
 /** Attention level for today — never invent elevated attention without data. */
 export type PersonalAttentionState =
@@ -120,6 +121,8 @@ export type PersonalIntelligenceToday = {
 export type BuildPersonalIntelligenceTodayInput = {
   now?: Date;
   daily: DailyPerformanceSnapshot | null;
+  /** Optional full holdings for crypto structure conclusions (Phase 4A). */
+  holdings?: StoredPortfolioHolding[] | null;
   holdingsWeights?: Array<{
     symbol: string;
     name: string;

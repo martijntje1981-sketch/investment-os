@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { DividendIntelligenceSection } from "@/components/analysis/DividendIntelligenceSection";
 import { CashIntelligenceSection } from "@/components/analysis/CashIntelligenceSection";
+import { CryptoIntelligenceSection } from "@/components/analysis/CryptoIntelligenceSection";
 import { PortfolioExposureSection } from "@/components/analysis/PortfolioExposureSection";
 import { PortfolioXRaySection } from "@/components/analysis/PortfolioXRaySection";
 import { ScenarioStressSection } from "@/components/analysis/ScenarioStressSection";
@@ -249,6 +250,8 @@ export default function PortfolioAnalysisPage() {
             <PortfolioExposureSection allocation={exposureAllocation} />
 
             <PortfolioXRaySection holdings={holdings} />
+
+            <CryptoIntelligenceSection holdings={holdings} />
 
             <ScenarioStressSection
               holdings={holdings}

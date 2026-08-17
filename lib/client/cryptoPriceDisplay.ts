@@ -1,6 +1,7 @@
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
-import { formatPortfolioCurrency, formatPortfolioPercent } from "@/lib/client/portfolioAnalysis";
 import {
+  formatSmartMoney,
+  formatSmartPercent,
   formatSmartPrice,
   resolveSmartPriceFractionDigits,
 } from "@/lib/client/smartPriceFormat";
@@ -92,7 +93,7 @@ export function buildCryptoPriceMetadataLine(
 export function formatCrypto24hChange(
   changePercent: number | null | undefined,
   changeAmount: number | null | undefined,
-  formatCurrency: (value: number) => string = formatPortfolioCurrency,
+  formatCurrency: (value: number) => string = formatSmartMoney,
 ): string {
   if (
     changePercent == null ||
@@ -104,7 +105,8 @@ export function formatCrypto24hChange(
   }
 
   const sign = changeAmount >= 0 ? "+" : "−";
-  return `${sign}${formatCurrency(Math.abs(changeAmount))} · ${formatPortfolioPercent(changePercent)} 24h`;
+  const percentSign = changePercent >= 0 ? "+" : "−";
+  return `${sign}${formatCurrency(Math.abs(changeAmount))} · ${percentSign}${formatSmartPercent(Math.abs(changePercent))} 24h`;
 }
 
 export const CRYPTO_PRICING_DISCLOSURE =

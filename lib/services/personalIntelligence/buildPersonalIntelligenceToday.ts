@@ -12,6 +12,10 @@ import {
   previousPortfolioValueFromPerformers,
   rankContributionsByMateriality,
 } from "@/lib/services/personalIntelligence/contribution";
+import {
+  buildCryptoIntelligenceProfile,
+  selectDashboardCryptoConclusion,
+} from "@/lib/services/cryptoIntelligence";
 import type {
   BuildPersonalIntelligenceTodayInput,
   PersonalAttentionState,
@@ -83,6 +87,7 @@ function buildAttentionItems(input: {
   intelligence: BuildPersonalIntelligenceTodayInput["intelligence"];
   goals: BuildPersonalIntelligenceTodayInput["goals"];
   daily: DailyPerformanceSnapshot | null;
+  holdings?: BuildPersonalIntelligenceTodayInput["holdings"];
 }): PersonalIntelligenceItem[] {
   const items: PersonalIntelligenceItem[] = [];
 
@@ -186,6 +191,36 @@ function buildAttentionItems(input: {
     });
   }
 
+  const cryptoHoldings =
+    input.holdings && input.holdings.length > 0
+      ? input.holdings
+      : (input.daily?.performers.map((row) => row.holding) ?? []);
+  if (cryptoHoldings.length > 0 && items.length < 4) {
+    const cryptoProfile = buildCryptoIntelligenceProfile(cryptoHoldings);
+    const cryptoLine = selectDashboardCryptoConclusion(cryptoProfile);
+    if (
+      cryptoLine &&
+      !items.some((item) =>
+        /bitcoin|crypto exposure/i.test(item.label),
+      )
+    ) {
+      items.push({
+        id: "crypto-structure",
+        kind: "exposure",
+        label: cryptoLine,
+        detail:
+          cryptoProfile.cryptoPortfolioWeightPercent >= 5
+            ? `Crypto ≈ ${Math.round(cryptoProfile.cryptoPortfolioWeightPercent)}% of portfolio`
+            : null,
+        whyItMatters: "Describes your crypto sleeve — not a recommendation.",
+        portfolioWeightPercent: cryptoProfile.cryptoPortfolioWeightPercent,
+        materiality:
+          cryptoProfile.cryptoPortfolioWeightPercent >= 25 ? "medium" : "low",
+        source: "derived",
+      });
+    }
+  }
+
   return items;
 }
 
@@ -242,6 +277,7 @@ export function buildPersonalIntelligenceToday(
           intelligence: input.intelligence,
           goals: input.goals,
           daily,
+          holdings: input.holdings,
         });
 
   const dataNotes: string[] = [];
