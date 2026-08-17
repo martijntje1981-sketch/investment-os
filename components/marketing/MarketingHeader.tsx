@@ -14,12 +14,16 @@ import {
 
 const navigationItems = [
   {
-    label: "Features",
-    href: "#features",
+    label: "Four Questions",
+    href: "/#four-questions",
   },
   {
     label: "How it works",
-    href: "#how-it-works",
+    href: "/#how-it-works",
+  },
+  {
+    label: "Products",
+    href: "/#products",
   },
   {
     label: "Pricing",

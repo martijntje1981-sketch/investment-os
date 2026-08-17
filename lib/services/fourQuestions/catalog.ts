@@ -50,6 +50,10 @@ export type FourQuestionDefinition = {
   navHint: string;
   /** Analysis section intro. */
   analysisIntro: string;
+  /** Public marketing promise (not a personal answer). */
+  publicPromise: string;
+  /** Optional one-line public detail revealed on interaction. */
+  publicDetail: string;
   hubPath: string;
   analysisSectionId: "what-happened" | "what-matters" | "on-track" | "whats-ahead";
   visual: FourQuestionVisual;
@@ -68,6 +72,10 @@ export const FOUR_QUESTIONS: readonly FourQuestionDefinition[] = [
     navHint: "Performance & attribution",
     analysisIntro:
       "See what moved your portfolio and which holdings drove the result.",
+    publicPromise:
+      "Understand how your portfolio performed and what drove the result.",
+    publicDetail:
+      "Period performance and the holdings that contributed or detracted — calmly, without trading instructions.",
     hubPath: WHAT_HAPPENED_HUB_PATH,
     analysisSectionId: "what-happened",
     visual: FOUR_QUESTION_VISUAL.what_happened,
@@ -86,6 +94,10 @@ export const FOUR_QUESTIONS: readonly FourQuestionDefinition[] = [
     meaning: "Present / attention / intelligence",
     navHint: "Exposure & intelligence",
     analysisIntro: "Understand structure and what deserves attention today.",
+    publicPromise:
+      "See the developments that actually matter to what you own.",
+    publicDetail:
+      "Personal relevance first — news and signals linked to your holdings, not a generic market dump.",
     hubPath: WHAT_MATTERS_HUB_PATH,
     analysisSectionId: "what-matters",
     visual: FOUR_QUESTION_VISUAL.what_matters_now,
@@ -106,6 +118,10 @@ export const FOUR_QUESTIONS: readonly FourQuestionDefinition[] = [
     navHint: "Goals & progress",
     analysisIntro:
       "Check progress against your plan — full goal editing stays on Goals.",
+    publicPromise:
+      "Understand progress toward your goals and the assumptions behind them.",
+    publicDetail:
+      "Goal progress, Reality Check assumptions and contribution pace — estimates, not guarantees.",
     hubPath: ON_TRACK_HUB_PATH,
     analysisSectionId: "on-track",
     visual: FOUR_QUESTION_VISUAL.am_i_on_track,
@@ -129,6 +145,10 @@ export const FOUR_QUESTIONS: readonly FourQuestionDefinition[] = [
     navHint: "Scenarios & resilience",
     analysisIntro:
       "See where your portfolio is sensitive — models, not predictions.",
+    publicPromise:
+      "Understand scenarios, risks and what could matter next.",
+    publicDetail:
+      "Scenario stress and resilience context — models of sensitivity, not forecasts.",
     hubPath: WHATS_AHEAD_HUB_PATH,
     analysisSectionId: "whats-ahead",
     visual: FOUR_QUESTION_VISUAL.whats_ahead,

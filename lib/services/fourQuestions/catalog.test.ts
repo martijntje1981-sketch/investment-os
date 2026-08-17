@@ -21,9 +21,18 @@ describe("Four Questions central catalog", () => {
     expect(FOUR_QUESTION_HUB_PATHS.whats_ahead).toBe("/whats-ahead");
     for (const q of FOUR_QUESTIONS) {
       expect(q.visual.panel.length).toBeGreaterThan(0);
+      expect(q.visual.onDark.length).toBeGreaterThan(0);
       expect(q.hubPath).toBe(FOUR_QUESTION_HUB_PATHS[q.id]);
       expect(q.shortNavLabel.length).toBeGreaterThan(0);
       expect(q.humanQuestion.length).toBeGreaterThan(0);
+      expect(q.publicPromise.length).toBeGreaterThan(0);
+      expect(q.publicDetail.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("keeps public promise copy separate from personal dashboard answers", () => {
+    for (const q of FOUR_QUESTIONS) {
+      expect(q.publicPromise).not.toMatch(/€|%|your portfolio was/i);
     }
   });
 

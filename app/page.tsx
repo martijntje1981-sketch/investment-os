@@ -2,72 +2,28 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
   ArrowRight,
-  BellRing,
-  BrainCircuit,
-  BriefcaseBusiness,
   Check,
   ChevronRight,
-  FileUp,
   Gauge,
   Goal,
   Layers3,
   LockKeyhole,
   Mail,
-  Newspaper,
-  PieChart,
   ShieldCheck,
   Sparkles,
-  Target,
-  TrendingUp,
   Upload,
 } from "lucide-react";
 
 import MarketingHeader from "@/components/marketing/MarketingHeader";
+import { PublicFourQuestionsSection } from "@/components/marketing/PublicFourQuestionsSection";
+import { PublicProductModelsSection } from "@/components/marketing/PublicProductModelsSection";
 import { TobaileyLogo } from "@/components/brand/TobaileyLogo";
 import {
   pricingAvailabilityNote,
   SUPPORTED_INSTRUMENTS_PATH,
 } from "@/lib/content/supportedInstrumentsContent";
+import { FOUR_QUESTIONS } from "@/lib/services/fourQuestions/catalog";
 import { createClient } from "@/lib/supabase/server";
-
-const features = [
-  {
-    icon: BriefcaseBusiness,
-    title: "Understand your portfolio at a glance",
-    description:
-      "See value, movements and holdings on a calm Dashboard — then open History, Analysis or Your Review when you want more.",
-  },
-  {
-    icon: Newspaper,
-    title: "Relevant market intelligence",
-    description:
-      "Markets Today, Market Pulse and Perspectives connect broader context to your holdings — without trading instructions.",
-  },
-  {
-    icon: Target,
-    title: "Track goals with clear estimates",
-    description:
-      "Set a target and monitor progress from your portfolio and history. Estimates are informational — not guarantees.",
-  },
-  {
-    icon: BrainCircuit,
-    title: "Weekly and monthly reviews",
-    description:
-      "Short summaries of performance, contributions and progress. Save monthly reviews in the app; optionally get a notification when ready.",
-  },
-  {
-    icon: PieChart,
-    title: "Portfolio Scorecard and structure",
-    description:
-      "See concentration, diversification and resilience signals from available data — calmly, without advice.",
-  },
-  {
-    icon: FileUp,
-    title: "Import, history and Export Portfolio",
-    description:
-      "Add holdings manually or import a file. Track contributions over time. Export one Excel workbook with organised sheets anytime.",
-  },
-];
 
 const workflowSteps = [
   {
@@ -86,15 +42,15 @@ const workflowSteps = [
   },
   {
     number: "03",
-    title: "Monitor what matters",
+    title: "Answer the four questions daily",
     description:
-      "Use Dashboard, Your Review and Analysis to stay informed — on your terms.",
+      "Dashboard for a quick glance, question hubs for the story, Analysis when you want the deep dive.",
     icon: Gauge,
   },
 ];
 
 const benefits = [
-  "Smart Dashboard for today’s portfolio conclusion",
+  "Smart Dashboard for today’s four-question glance",
   "Your Review for today, this week and this month",
   "Portfolio History, Goals and Portfolio Scorecard",
   "Export Portfolio — one Excel workbook, organised sheets",
@@ -112,6 +68,11 @@ const faqItems = [
     question: "How does Tobailey receive my portfolio?",
     answer:
       "Tobailey supports manual entry and CSV or Excel import, followed by a review step. You remain in control of which holdings are saved.",
+  },
+  {
+    question: "What is the difference between Demo and personal trial?",
+    answer:
+      "Demo is a ready-made, read-only portfolio so you can explore. Personal trial starts empty and editable — you import or add your own holdings. Demo data never becomes your personal portfolio.",
   },
   {
     question: "Are market prices always real time?",
@@ -189,8 +150,9 @@ export default async function MarketingHomePage({
       <MarketingHeader />
 
       <main>
+        {/* HERO */}
         <section className="relative overflow-hidden border-b border-slate-200 bg-slate-50">
-          <div className="absolute left-1/2 top-0 h-[560px] w-[860px] -translate-x-1/2 rounded-full bg-gradient-to-br from-brand/30 via-sky-100/40 to-transparent blur-3xl" />
+          <div className="absolute left-1/2 top-0 h-[560px] w-[860px] -translate-x-1/2 rounded-full bg-gradient-to-br from-brand/25 via-cyan-100/30 to-transparent blur-3xl" />
 
           <div className="relative mx-auto grid max-w-7xl gap-14 px-5 pb-20 pt-16 sm:px-8 sm:pb-28 sm:pt-24 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
             <div>
@@ -200,20 +162,20 @@ export default async function MarketingHomePage({
               </div>
 
               <h1 className="mt-7 max-w-4xl text-5xl font-black leading-[0.98] tracking-[-0.065em] text-brand-navy sm:text-7xl">
-                Take control of your
-                <span className="block text-brand">investment journey</span>
+                Understand your money
+                <span className="block text-brand">in four questions</span>
               </h1>
 
               <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-600 sm:text-xl">
-                Tobailey is a portfolio intelligence platform that helps
-                investors understand their portfolio, track progress and stay
-                informed — not a broker, trading platform or financial adviser.
+                Tobailey connects portfolio, markets, news, goals, risk and
+                intelligence into a simple daily view — not a broker, trading
+                platform or financial adviser.
               </p>
 
               <div className="mt-9 flex flex-col gap-3 sm:flex-row">
                 <Link
                   href="/signup?intent=trial"
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand px-6 py-4 text-sm font-bold text-brand-navy shadow-lg transition hover:-translate-y-0.5 hover:bg-brand-hover"
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-brand px-6 py-4 text-sm font-bold text-brand-navy shadow-lg transition hover:-translate-y-0.5 hover:bg-brand-hover"
                 >
                   Start your 7-day trial
                   <ArrowRight className="h-4 w-4" />
@@ -221,15 +183,15 @@ export default async function MarketingHomePage({
 
                 <Link
                   href="/explore"
-                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-4 text-sm font-bold text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-50"
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-4 text-sm font-bold text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-50"
                 >
                   Explore Demo Portfolio
                   <ChevronRight className="h-4 w-4" />
                 </Link>
               </div>
               <p className="mt-3 max-w-xl text-sm leading-6 text-slate-500">
-                Start with your own empty portfolio, or explore a ready-made
-                read-only Demo Portfolio.
+                Personal trial starts with your own empty portfolio. Demo is a
+                separate read-only showroom.
               </p>
 
               <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3">
@@ -237,126 +199,34 @@ export default async function MarketingHomePage({
                 <TrustPoint text="Portfolio-first intelligence" />
                 <TrustPoint text="Built for private investors" />
               </div>
-
-              <div className="mt-10 grid max-w-xl gap-3 sm:grid-cols-2">
-                <CadenceCard
-                  title="Every day"
-                  body="Understand your portfolio at a glance."
-                />
-                <CadenceCard
-                  title="Every week"
-                  body="Review performance, contributors and progress."
-                />
-                <CadenceCard
-                  title="Every month"
-                  body="Save a structured review. Optionally get a notification when it is ready."
-                />
-                <CadenceCard
-                  title="Anytime"
-                  body="History, goals, market context and Export Portfolio in one Excel workbook."
-                />
-              </div>
             </div>
 
             <div className="relative">
               <div className="rounded-[32px] border border-slate-200 bg-white p-4 shadow-2xl shadow-slate-300/50 sm:p-6">
-                <div className="overflow-hidden rounded-[26px] bg-slate-950 p-6 text-white sm:p-8">
-                  <div className="mb-6 rounded-2xl border border-blue-400/20 bg-blue-400/10 px-4 py-3">
-                    <p className="text-xs font-black uppercase tracking-[0.14em] text-blue-200">
-                      Illustrative product preview
-                    </p>
-                    <p className="mt-1 text-xs leading-5 text-slate-300">
-                      Fixed example data — this is not your portfolio and does
-                      not change with your account.
-                    </p>
-                  </div>
-
-                  <div className="flex items-start justify-between gap-5">
-                    <div>
-                      <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
-                        Investment control centre
-                      </p>
-
-                      <p className="mt-3 text-4xl font-black tracking-[-0.05em]">
-                        €100,000
-                      </p>
-
-                      <p className="mt-2 text-sm text-slate-400">
-                        Example portfolio value
-                      </p>
-                    </div>
-
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-300">
-                      <TrendingUp className="h-6 w-6" />
-                    </div>
-                  </div>
-
-                  <div className="mt-7 grid grid-cols-2 gap-3">
-                    <PreviewMetric label="Goal progress" value="10.0%" />
-
-                    <PreviewMetric label="Portfolio Scorecard" value="70/100" />
-
-                    <PreviewMetric label="Active holdings" value="8" />
-
-                    <PreviewMetric label="Main risk" value="Concentration" />
-                  </div>
-
-                  <div className="mt-6 rounded-2xl bg-white/10 p-5">
-                    <div className="flex items-center justify-between gap-4">
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
-                          Example goal
+                <div className="rounded-[26px] border border-slate-200 bg-slate-950 p-6 text-white sm:p-7">
+                  <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">
+                    The four questions
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-slate-300">
+                    Illustrative product language — the same structure you will
+                    see after signup.
+                  </p>
+                  <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                    {FOUR_QUESTIONS.map((question) => (
+                      <div
+                        key={question.id}
+                        className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3"
+                      >
+                        <p
+                          className={`text-[11px] font-black uppercase tracking-[0.14em] ${question.visual.onDark}`}
+                        >
+                          {question.numberLabel} · {question.shortNavLabel}
                         </p>
-
-                        <p className="mt-2 text-xl font-bold">
-                          €1,000,000 target
+                        <p className="mt-1.5 text-sm font-bold text-white">
+                          {question.question}
                         </p>
                       </div>
-
-                      <Goal className="h-7 w-7 text-violet-300" />
-                    </div>
-
-                    <div className="mt-5 h-2.5 overflow-hidden rounded-full bg-white/10">
-                      <div className="h-full w-[10%] rounded-full bg-gradient-to-r from-blue-500 to-violet-500" />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-4 grid gap-4 sm:grid-cols-3">
-                  <MiniPreviewCard
-                    icon={BriefcaseBusiness}
-                    title="Portfolio"
-                    text="Holdings and allocation"
-                  />
-
-                  <MiniPreviewCard
-                    icon={Newspaper}
-                    title="Analysis"
-                    text="AI insights & market intelligence"
-                  />
-
-                  <MiniPreviewCard
-                    icon={Target}
-                    title="Goals"
-                    text="Track long-term progress"
-                  />
-                </div>
-
-                <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
-                      <BellRing className="h-5 w-5" />
-                    </div>
-
-                    <div>
-                      <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">
-                        Daily intelligence
-                      </p>
-
-                      <p className="mt-1 text-sm font-bold">
-                        Today&apos;s portfolio analysis is ready
-                      </p>
-                    </div>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -364,62 +234,29 @@ export default async function MarketingHomePage({
           </div>
         </section>
 
-        <section
-          id="features"
-          className="scroll-mt-24 px-5 py-20 sm:px-8 sm:py-28"
-        >
-          <div className="mx-auto max-w-7xl">
-            <SectionHeading
-              eyebrow="One investment system"
-              title="Everything you need to understand your portfolio"
-              description="Replace scattered spreadsheets, generic market news and disconnected goal calculations with one organised investment workspace."
-            />
+        {/* FOUR QUESTIONS */}
+        <PublicFourQuestionsSection />
 
-            <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-              {features.map((feature) => {
-                const Icon = feature.icon;
-
-                return (
-                  <article
-                    key={feature.title}
-                    className="rounded-[28px] border border-slate-200 bg-white p-7 shadow-sm transition hover:-translate-y-1 hover:shadow-xl"
-                  >
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-white">
-                      <Icon className="h-6 w-6" />
-                    </div>
-
-                    <h3 className="mt-6 text-xl font-bold tracking-[-0.02em]">
-                      {feature.title}
-                    </h3>
-
-                    <p className="mt-3 text-sm leading-7 text-slate-600">
-                      {feature.description}
-                    </p>
-                  </article>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-
+        {/* HOW TOBAILEY WORKS */}
         <section
           id="how-it-works"
-          className="scroll-mt-24 bg-brand-navy px-5 py-20 text-white sm:px-8 sm:py-28"
+          className="scroll-mt-24 bg-brand-navy px-5 py-20 text-white sm:px-8 sm:py-24"
         >
           <div className="mx-auto max-w-7xl">
             <div className="grid gap-12 lg:grid-cols-[0.75fr_1.25fr] lg:items-start">
               <div>
                 <p className="text-sm font-bold uppercase tracking-[0.18em] text-blue-300">
-                  How it works
+                  How Tobailey works
                 </p>
 
                 <h2 className="mt-4 text-4xl font-black tracking-[-0.045em] sm:text-5xl">
-                  From portfolio setup to daily decision support
+                  From portfolio setup to four clear answers
                 </h2>
 
                 <p className="mt-5 text-lg leading-8 text-slate-300">
-                  Tobailey is designed to remove friction. Start with what you
-                  already have and build a clearer investment process around it.
+                  Start with what you already own. Tobailey turns it into a
+                  calm daily view — glance, question, then deep dive when you
+                  need it.
                 </p>
               </div>
 
@@ -455,75 +292,19 @@ export default async function MarketingHomePage({
           </div>
         </section>
 
-        <section className="px-5 py-20 sm:px-8 sm:py-28">
-          <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-2 lg:items-center">
-            <div className="rounded-[32px] bg-gradient-to-br from-blue-600 to-violet-700 p-8 text-white shadow-xl sm:p-10">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15">
-                <Newspaper className="h-7 w-7" />
-              </div>
+        {/* CHOOSE HOW YOU INVEST */}
+        <PublicProductModelsSection />
 
-              <p className="mt-7 text-sm font-bold uppercase tracking-[0.16em] text-blue-100">
-                AI Portfolio Analysis
-              </p>
-
-              <h2 className="mt-3 text-3xl font-black tracking-[-0.04em] sm:text-4xl">
-                Understand what today&apos;s market means for your portfolio
-              </h2>
-
-              <p className="mt-5 leading-8 text-blue-100">
-                AI combines macro developments, analyst consensus, company news
-                and portfolio exposure into one clear daily analysis.
-              </p>
-
-              <div className="mt-8 grid gap-3 sm:grid-cols-2">
-                <BriefingPoint text="Executive Summary" />
-                <BriefingPoint text="Portfolio Risks" />
-                <BriefingPoint text="Analyst Consensus" />
-                <BriefingPoint text="Portfolio context" />
-              </div>
-            </div>
-
-            <div>
-              <p className="text-sm font-bold uppercase tracking-[0.18em] text-violet-600">
-                Built around your portfolio
-              </p>
-
-              <h2 className="mt-4 text-4xl font-black tracking-[-0.045em] sm:text-5xl">
-                Clear portfolio intelligence.
-              </h2>
-
-              <p className="mt-5 text-lg leading-8 text-slate-600">
-                Generic financial news leaves the most important question
-                unanswered: what does this mean for your investments?
-              </p>
-
-              <div className="mt-8 space-y-4">
-                <BenefitRow text="Focus on developments connected to your holdings" />
-                <BenefitRow text="Separate short-term volatility from thesis-changing news" />
-                <BenefitRow text="See which positions are most affected" />
-                <BenefitRow text="Keep your long-term goal visible during market moves" />
-              </div>
-
-              <Link
-                href="/analysis"
-                className="mt-8 inline-flex items-center gap-2 text-sm font-bold text-violet-700"
-              >
-                Preview portfolio analysis
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
-          </div>
-        </section>
-
+        {/* DEMO / TRIAL + PRICING PRESENTATION */}
         <section
           id="pricing"
-          className="scroll-mt-24 border-y border-slate-200 bg-slate-50 px-5 py-20 sm:px-8 sm:py-28"
+          className="scroll-mt-24 border-y border-slate-200 bg-slate-50 px-5 py-20 sm:px-8 sm:py-24"
         >
           <div className="mx-auto max-w-6xl">
             <SectionHeading
-              eyebrow="Simple pricing"
-              title="One plan. Complete clarity with Tobailey."
-              description="Monitor your portfolio, understand what is moving it and stay focused on your long-term financial goal."
+              eyebrow="Demo or personal trial"
+              title="Explore first, or start with your portfolio"
+              description="Demo is read-only showroom. Personal trial is your empty, editable path. Pricing presentation below uses the existing public plan — billing is not automated here."
             />
 
             <div className="mx-auto mt-12 max-w-2xl overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-xl">
@@ -538,7 +319,8 @@ export default async function MarketingHomePage({
 
                     <p className="mt-3 max-w-lg leading-7 text-slate-300">
                       Portfolio monitoring, personalised analysis and goal
-                      tracking in one clear platform.
+                      tracking in one clear platform — organised around four
+                      questions.
                     </p>
                   </div>
 
@@ -569,14 +351,14 @@ export default async function MarketingHomePage({
 
                 <Link
                   href="/signup?intent=trial"
-                  className="mt-9 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand px-6 py-4 text-sm font-bold text-brand-navy transition hover:bg-brand-hover"
+                  className="mt-9 inline-flex w-full min-h-11 items-center justify-center gap-2 rounded-xl bg-brand px-6 py-4 text-sm font-bold text-brand-navy transition hover:bg-brand-hover"
                 >
                   Start your 7-day trial
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link
                   href="/explore"
-                  className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3.5 text-sm font-bold text-slate-800 transition hover:bg-slate-50"
+                  className="mt-3 inline-flex w-full min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3.5 text-sm font-bold text-slate-800 transition hover:bg-slate-50"
                 >
                   Explore Demo Portfolio
                 </Link>
@@ -590,12 +372,13 @@ export default async function MarketingHomePage({
           </div>
         </section>
 
-        <section id="faq" className="scroll-mt-24 px-5 py-20 sm:px-8 sm:py-28">
+        {/* FAQ */}
+        <section id="faq" className="scroll-mt-24 px-5 py-20 sm:px-8 sm:py-24">
           <div className="mx-auto max-w-5xl">
             <SectionHeading
               eyebrow="Frequently asked questions"
               title="Clear answers before you get started"
-              description="Everything you need to know about portfolio uploads, market data, privacy and your subscription."
+              description="Everything you need to know about portfolio uploads, Demo vs trial, privacy and your subscription."
             />
 
             <div className="mt-12 space-y-4">
@@ -621,6 +404,7 @@ export default async function MarketingHomePage({
           </div>
         </section>
 
+        {/* TRUST / IMPACT PLACEHOLDER / DISCLAIMERS */}
         <section className="bg-brand-navy px-5 py-20 text-white sm:px-8 sm:py-24">
           <div className="mx-auto max-w-7xl">
             <div className="grid gap-5 md:grid-cols-3">
@@ -645,49 +429,55 @@ export default async function MarketingHomePage({
                 );
               })}
             </div>
+
+            <p className="mx-auto mt-10 max-w-3xl text-center text-sm leading-7 text-slate-400">
+              Future impact: Tobailey plans to allocate a fixed amount per paid
+              user to a verified environmental partner. Partner details and
+              tracking are not live yet — no trees planted or donations claimed
+              today.
+            </p>
           </div>
         </section>
 
         <section
           id="contact"
-          className="scroll-mt-24 px-5 py-20 sm:px-8 sm:py-28"
+          className="scroll-mt-24 px-5 py-20 sm:px-8 sm:py-24"
         >
-          <div className="mx-auto max-w-5xl overflow-hidden rounded-[36px] bg-gradient-to-br from-blue-600 via-violet-600 to-fuchsia-600 p-8 text-white shadow-2xl sm:p-12">
+          <div className="mx-auto max-w-5xl overflow-hidden rounded-[36px] border border-slate-200 bg-slate-950 p-8 text-white shadow-2xl sm:p-12">
             <div className="flex flex-col justify-between gap-10 lg:flex-row lg:items-center">
               <div>
-                <p className="text-sm font-bold uppercase tracking-[0.17em] text-blue-100">
-                  Start building clarity
+                <p className="text-sm font-bold uppercase tracking-[0.17em] text-slate-400">
+                  Start with clarity
                 </p>
 
                 <h2 className="mt-4 max-w-3xl text-4xl font-black tracking-[-0.05em] sm:text-5xl">
-                  Your investments deserve more than a collection of
-                  disconnected tools
+                  Four questions. One portfolio intelligence layer.
                 </h2>
 
-                <p className="mt-5 max-w-2xl text-lg leading-8 text-blue-100">
+                <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-300">
                   Bring your portfolio, market context and financial goal
-                  together in one Your investments. Understood.
+                  together — then see the same four answers inside Tobailey.
                 </p>
               </div>
 
               <div className="flex shrink-0 flex-col gap-3">
                 <Link
                   href="/signup?intent=trial"
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-6 py-4 text-sm font-bold text-slate-950 shadow-lg"
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-brand px-6 py-4 text-sm font-bold text-brand-navy shadow-lg"
                 >
                   Start your 7-day trial
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link
                   href="/explore"
-                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/10 px-6 py-3.5 text-sm font-bold text-white"
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/10 px-6 py-3.5 text-sm font-bold text-white"
                 >
                   Explore Demo Portfolio
                 </Link>
 
                 <a
                   href="mailto:hello@investmentos.app"
-                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/10 px-6 py-4 text-sm font-bold text-white"
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/10 px-6 py-4 text-sm font-bold text-white"
                 >
                   <Mail className="h-4 w-4" />
                   Contact us
@@ -705,7 +495,8 @@ export default async function MarketingHomePage({
           </div>
 
           <nav className="flex flex-wrap gap-x-6 gap-y-3 text-sm font-semibold text-slate-600">
-            <Link href="#features">Features</Link>
+            <Link href="#four-questions">Four Questions</Link>
+            <Link href="#products">Products</Link>
             <Link href="#pricing">Pricing</Link>
             <Link href="#faq">FAQ</Link>
             <Link href={SUPPORTED_INSTRUMENTS_PATH}>Supported instruments</Link>
@@ -749,72 +540,11 @@ function SectionHeading({
   );
 }
 
-function CadenceCard({ title, body }: { title: string; body: string }) {
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 shadow-sm">
-      <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-brand-navy">
-        {title}
-      </p>
-      <p className="mt-1 text-[13px] font-medium leading-snug text-slate-600">
-        {body}
-      </p>
-    </div>
-  );
-}
-
 function TrustPoint({ text }: { text: string }) {
   return (
     <div className="flex items-center gap-2 text-sm font-semibold text-slate-600">
       <Check className="h-4 w-4 text-emerald-600" />
       {text}
-    </div>
-  );
-}
-
-function PreviewMetric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl bg-white/5 p-4">
-      <p className="text-xs font-semibold text-slate-400">{label}</p>
-
-      <p className="mt-2 font-bold text-white">{value}</p>
-    </div>
-  );
-}
-
-function MiniPreviewCard({
-  icon: Icon,
-  title,
-  text,
-}: {
-  icon: React.ElementType;
-  title: string;
-  text: string;
-}) {
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-      <Icon className="h-5 w-5 text-slate-700" />
-
-      <p className="mt-3 text-sm font-bold text-slate-950">{title}</p>
-
-      <p className="mt-1 text-xs leading-5 text-slate-500">{text}</p>
-    </div>
-  );
-}
-
-function BriefingPoint({ text }: { text: string }) {
-  return (
-    <div className="flex items-center gap-3 rounded-2xl bg-white/10 p-4">
-      <CheckCircleIcon />
-
-      <span className="text-sm font-semibold">{text}</span>
-    </div>
-  );
-}
-
-function CheckCircleIcon() {
-  return (
-    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-violet-700">
-      <Check className="h-4 w-4" />
     </div>
   );
 }

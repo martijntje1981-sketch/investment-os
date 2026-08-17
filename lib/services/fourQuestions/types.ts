@@ -56,6 +56,8 @@ export const FOUR_QUESTION_VISUAL: Record<
     eyebrow: string;
     hover: string;
     ring: string;
+    /** Dark-surface accent for public previews. */
+    onDark: string;
   }
 > = {
   what_happened: {
@@ -65,6 +67,7 @@ export const FOUR_QUESTION_VISUAL: Record<
     eyebrow: "text-cyan-900/55",
     hover: "hover:bg-cyan-50/50",
     ring: "focus-visible:ring-cyan-400/40",
+    onDark: "text-cyan-300",
   },
   what_matters_now: {
     panel:
@@ -73,6 +76,7 @@ export const FOUR_QUESTION_VISUAL: Record<
     eyebrow: "text-violet-900/55",
     hover: "hover:bg-violet-50/45",
     ring: "focus-visible:ring-violet-400/40",
+    onDark: "text-violet-300",
   },
   am_i_on_track: {
     panel:
@@ -81,6 +85,7 @@ export const FOUR_QUESTION_VISUAL: Record<
     eyebrow: "text-amber-950/50",
     hover: "hover:bg-amber-50/45",
     ring: "focus-visible:ring-amber-400/40",
+    onDark: "text-amber-300",
   },
   whats_ahead: {
     panel:
@@ -89,5 +94,6 @@ export const FOUR_QUESTION_VISUAL: Record<
     eyebrow: "text-teal-900/55",
     hover: "hover:bg-teal-50/45",
     ring: "focus-visible:ring-teal-400/40",
+    onDark: "text-teal-300",
   },
 };
