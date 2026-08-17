@@ -251,7 +251,7 @@ export default function PortfolioAnalysisPage() {
 
             <PortfolioXRaySection holdings={holdings} />
 
-            <CryptoIntelligenceSection holdings={holdings} />
+            <CryptoIntelligenceSection holdings={holdings} userSub={userSub} />
 
             <ScenarioStressSection
               holdings={holdings}

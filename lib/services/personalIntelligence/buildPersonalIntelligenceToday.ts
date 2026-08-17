@@ -14,6 +14,7 @@ import {
 } from "@/lib/services/personalIntelligence/contribution";
 import {
   buildCryptoIntelligenceProfile,
+  buildCryptoMarketContext,
   selectDashboardCryptoConclusion,
 } from "@/lib/services/cryptoIntelligence";
 import type {
@@ -197,11 +198,20 @@ function buildAttentionItems(input: {
       : (input.daily?.performers.map((row) => row.holding) ?? []);
   if (cryptoHoldings.length > 0 && items.length < 4) {
     const cryptoProfile = buildCryptoIntelligenceProfile(cryptoHoldings);
-    const cryptoLine = selectDashboardCryptoConclusion(cryptoProfile);
+    const cryptoContext = buildCryptoMarketContext({
+      profile: cryptoProfile,
+      holdings: cryptoHoldings,
+    });
+    const cryptoLine = selectDashboardCryptoConclusion(
+      cryptoProfile,
+      cryptoContext,
+    );
     if (
       cryptoLine &&
       !items.some((item) =>
-        /bitcoin|crypto exposure/i.test(item.label),
+        /bitcoin|crypto exposure|crypto sleeve|crypto move|crypto is responsible/i.test(
+          item.label,
+        ),
       )
     ) {
       items.push({

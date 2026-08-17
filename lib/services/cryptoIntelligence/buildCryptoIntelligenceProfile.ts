@@ -1,5 +1,5 @@
 /**
- * Phase 4A — Crypto Intelligence profile (deterministic, existing data only).
+ * Phase 4A/4B — Crypto Intelligence profile (deterministic, existing data only).
  */
 
 import { getHoldingMarketValue } from "@/lib/client/portfolioAnalysis";
@@ -8,6 +8,8 @@ import {
   isCryptoIntelligenceHolding,
   isEthereumHolding,
 } from "@/lib/services/classification/cryptoInstrumentIdentity";
+import type { CryptoMarketContext } from "@/lib/services/cryptoIntelligence/buildCryptoMarketContext";
+import { personalizeCryptoMarketIntelligence } from "@/lib/services/cryptoIntelligence/personalizeCryptoMarketIntelligence";
 import { isCryptoHolding } from "@/lib/services/portfolio/cryptoHolding";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
@@ -25,6 +27,36 @@ export type CryptoPulseBand = "up" | "down" | "flat" | "unavailable";
 export type CryptoIntelligenceConclusion = {
   id: string;
   text: string;
+};
+
+export type CryptoPulsePeriodUnavailable = {
+  available: false;
+  reason: string;
+};
+
+export type CryptoPulsePeriodAvailable = {
+  available: true;
+  direction: CryptoPulseBand;
+  returnPercent: number;
+  coveredHoldingCount?: number;
+  skippedHoldingCount?: number;
+};
+
+export type CryptoPulsePeriod =
+  | CryptoPulsePeriodUnavailable
+  | CryptoPulsePeriodAvailable;
+
+export type CryptoPeriodHistoryOptions = {
+  weekReturnPercent?: number | null;
+  weekAvailable?: boolean;
+  weekReason?: string;
+  weekCoveredHoldingCount?: number;
+  weekSkippedHoldingCount?: number;
+  monthReturnPercent?: number | null;
+  monthAvailable?: boolean;
+  monthReason?: string;
+  monthCoveredHoldingCount?: number;
+  monthSkippedHoldingCount?: number;
 };
 
 export type CryptoIntelligenceProfile = {
@@ -63,7 +95,10 @@ export type CryptoIntelligenceProfile = {
     complete: boolean;
   };
   conclusions: CryptoIntelligenceConclusion[];
-  /** Daily pulse foundation — weekly/monthly unavailable without verified history. */
+  /**
+   * Crypto Pulse — Daily from 24h holdings data.
+   * Weekly/Monthly only when verified history is supplied (never substitute 24h).
+   */
   pulse: {
     daily: {
       available: boolean;
@@ -73,8 +108,8 @@ export type CryptoIntelligenceProfile = {
       breadthDown: number;
       assetsWithData: number;
     };
-    weekly: { available: false; reason: string };
-    monthly: { available: false; reason: string };
+    weekly: CryptoPulsePeriod;
+    monthly: CryptoPulsePeriod;
   };
 };
 
@@ -197,8 +232,41 @@ function buildConclusions(profile: {
   return out.slice(0, 2);
 }
 
+function directionFromReturnPercent(pct: number): CryptoPulseBand {
+  if (Math.abs(pct) < 0.05) return "flat";
+  return pct > 0 ? "up" : "down";
+}
+
+function resolvePulsePeriod(input: {
+  available?: boolean;
+  returnPercent?: number | null;
+  reason?: string;
+  coveredHoldingCount?: number;
+  skippedHoldingCount?: number;
+  missingReason: string;
+}): CryptoPulsePeriod {
+  if (
+    input.available === true &&
+    typeof input.returnPercent === "number" &&
+    Number.isFinite(input.returnPercent)
+  ) {
+    return {
+      available: true,
+      direction: directionFromReturnPercent(input.returnPercent),
+      returnPercent: input.returnPercent,
+      coveredHoldingCount: input.coveredHoldingCount,
+      skippedHoldingCount: input.skippedHoldingCount,
+    };
+  }
+  return {
+    available: false,
+    reason: input.reason ?? input.missingReason,
+  };
+}
+
 export function buildCryptoIntelligenceProfile(
   holdings: StoredPortfolioHolding[],
+  periodHistory?: CryptoPeriodHistoryOptions | null,
 ): CryptoIntelligenceProfile {
   let totalPortfolioValue = 0;
   const cryptoRows: Array<{
@@ -351,16 +419,24 @@ export function buildCryptoIntelligenceProfile(
         breadthDown,
         assetsWithData: movesAvailable.length,
       },
-      weekly: {
-        available: false,
-        reason:
-          "Verified crypto weekly history is not wired for Crypto Intelligence yet.",
-      },
-      monthly: {
-        available: false,
-        reason:
-          "Verified crypto monthly history is not wired for Crypto Intelligence yet.",
-      },
+      weekly: resolvePulsePeriod({
+        available: periodHistory?.weekAvailable,
+        returnPercent: periodHistory?.weekReturnPercent,
+        reason: periodHistory?.weekReason,
+        coveredHoldingCount: periodHistory?.weekCoveredHoldingCount,
+        skippedHoldingCount: periodHistory?.weekSkippedHoldingCount,
+        missingReason:
+          "Verified crypto weekly history is not available for this sleeve.",
+      }),
+      monthly: resolvePulsePeriod({
+        available: periodHistory?.monthAvailable,
+        returnPercent: periodHistory?.monthReturnPercent,
+        reason: periodHistory?.monthReason,
+        coveredHoldingCount: periodHistory?.monthCoveredHoldingCount,
+        skippedHoldingCount: periodHistory?.monthSkippedHoldingCount,
+        missingReason:
+          "Verified crypto monthly history is not available for this sleeve.",
+      }),
     },
   };
 }
@@ -368,8 +444,16 @@ export function buildCryptoIntelligenceProfile(
 /** Pick one Dashboard-safe conclusion when crypto structure is material. */
 export function selectDashboardCryptoConclusion(
   profile: CryptoIntelligenceProfile,
+  marketContext?: CryptoMarketContext | null,
 ): string | null {
   if (!profile.hasMaterialCrypto) return null;
+  if (marketContext) {
+    const personalized = personalizeCryptoMarketIntelligence(
+      profile,
+      marketContext,
+    );
+    if (personalized.dashboardLine) return personalized.dashboardLine;
+  }
   const structural = profile.conclusions.find(
     (row) => row.id === "btc-share" || row.id === "largest-crypto",
   );

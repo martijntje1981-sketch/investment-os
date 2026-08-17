@@ -16,7 +16,16 @@ import {
 } from "@/components/layout/appSurface";
 import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 import { formatPortfolioPercent } from "@/lib/client/portfolioAnalysis";
-import { buildCryptoIntelligenceProfile } from "@/lib/services/cryptoIntelligence";
+import { useDashboardMarketPulsePreview } from "@/lib/client/useDashboardMarketPulsePreview";
+import { useInvestmentIntelligence } from "@/lib/client/useInvestmentIntelligence";
+import { usePortfolioPerformanceHistory } from "@/lib/client/usePortfolioPerformanceHistory";
+import { isCryptoIntelligenceHolding } from "@/lib/services/classification/cryptoInstrumentIdentity";
+import {
+  buildCryptoIntelligenceProfile,
+  buildCryptoMarketContext,
+  cryptoMajorsFromMarketPulse,
+  personalizeCryptoMarketIntelligence,
+} from "@/lib/services/cryptoIntelligence";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
 function CompositionBar({
@@ -57,29 +66,146 @@ function CompositionBar({
   );
 }
 
+function pulseDirectionLabel(direction: string): string {
+  if (direction === "up") return "Up";
+  if (direction === "down") return "Down";
+  if (direction === "flat") return "Flat";
+  return "Unavailable";
+}
+
 /**
- * Analysis — Crypto Intelligence (Phase 4A foundation).
- * Shown only when the user has material crypto / named BTC-ETH exposure.
+ * Analysis — Crypto Intelligence (Phase 4B).
+ * Simple default → expandable depth. Shown only for material crypto.
  */
 export function CryptoIntelligenceSection({
   holdings,
+  userSub = null,
 }: {
   holdings: StoredPortfolioHolding[];
+  userSub?: string | null;
 }) {
   const { formatEur } = useBaseCurrencyDisplay();
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const profile = useMemo(
-    () => buildCryptoIntelligenceProfile(holdings),
+
+  const cryptoHoldings = useMemo(
+    () => holdings.filter(isCryptoIntelligenceHolding),
     [holdings],
+  );
+  const materialPreview = useMemo(() => {
+    const preview = buildCryptoIntelligenceProfile(holdings);
+    return preview.hasMaterialCrypto;
+  }, [holdings]);
+
+  const { snapshot: marketPulse } = useDashboardMarketPulsePreview(
+    holdings,
+    materialPreview,
+  );
+  const { payload } = useInvestmentIntelligence(
+    holdings,
+    userSub,
+    materialPreview,
+  );
+  const weekHistory = usePortfolioPerformanceHistory(
+    materialPreview ? cryptoHoldings : [],
+    "1W",
+  );
+  const monthHistory = usePortfolioPerformanceHistory(
+    materialPreview ? cryptoHoldings : [],
+    "1M",
+  );
+
+  const periodHistory = useMemo(() => {
+    const weekOk =
+      weekHistory.data?.success === true &&
+      typeof weekHistory.data.investmentReturnPercent === "number" &&
+      Number.isFinite(weekHistory.data.investmentReturnPercent) &&
+      (weekHistory.data.coveredHoldingCount ?? 0) > 0;
+    const monthOk =
+      monthHistory.data?.success === true &&
+      typeof monthHistory.data.investmentReturnPercent === "number" &&
+      Number.isFinite(monthHistory.data.investmentReturnPercent) &&
+      (monthHistory.data.coveredHoldingCount ?? 0) > 0;
+
+    return {
+      weekAvailable: weekOk,
+      weekReturnPercent: weekOk
+        ? weekHistory.data!.investmentReturnPercent
+        : null,
+      weekReason: weekOk
+        ? undefined
+        : (weekHistory.error ??
+          weekHistory.data?.availabilityMessage ??
+          "Verified crypto weekly history is not available for this sleeve."),
+      weekCoveredHoldingCount: weekHistory.data?.coveredHoldingCount,
+      weekSkippedHoldingCount: weekHistory.data?.skippedHoldingCount,
+      monthAvailable: monthOk,
+      monthReturnPercent: monthOk
+        ? monthHistory.data!.investmentReturnPercent
+        : null,
+      monthReason: monthOk
+        ? undefined
+        : (monthHistory.error ??
+          monthHistory.data?.availabilityMessage ??
+          "Verified crypto monthly history is not available for this sleeve."),
+      monthCoveredHoldingCount: monthHistory.data?.coveredHoldingCount,
+      monthSkippedHoldingCount: monthHistory.data?.skippedHoldingCount,
+    };
+  }, [weekHistory.data, weekHistory.error, monthHistory.data, monthHistory.error]);
+
+  const profile = useMemo(
+    () => buildCryptoIntelligenceProfile(holdings, periodHistory),
+    [holdings, periodHistory],
+  );
+
+  const newsItems = useMemo(
+    () => [
+      ...(payload.portfolioNews ?? []),
+      ...(payload.macroNews ?? []),
+      ...(payload.dividendNews ?? []),
+      ...(payload.analystNews ?? []),
+    ],
+    [payload],
+  );
+
+  const marketContext = useMemo(() => {
+    const majors = cryptoMajorsFromMarketPulse(marketPulse?.crypto);
+    return buildCryptoMarketContext({
+      profile,
+      holdings,
+      marketMajors: majors,
+      newsItems: newsItems.length > 0 ? newsItems : null,
+      weekReturn: {
+        available: profile.pulse.weekly.available,
+        returnPercent: profile.pulse.weekly.available
+          ? profile.pulse.weekly.returnPercent
+          : null,
+        reason: profile.pulse.weekly.available
+          ? undefined
+          : profile.pulse.weekly.reason,
+      },
+      monthReturn: {
+        available: profile.pulse.monthly.available,
+        returnPercent: profile.pulse.monthly.available
+          ? profile.pulse.monthly.returnPercent
+          : null,
+        reason: profile.pulse.monthly.available
+          ? undefined
+          : profile.pulse.monthly.reason,
+      },
+    });
+  }, [profile, holdings, marketPulse, newsItems]);
+
+  const personalized = useMemo(
+    () => personalizeCryptoMarketIntelligence(profile, marketContext),
+    [profile, marketContext],
   );
 
   if (!profile.hasMaterialCrypto) {
     return null;
   }
 
-  const primary = profile.conclusions[0]?.text ?? null;
-  const secondary = profile.conclusions[1]?.text ?? null;
   const daily = profile.pulse.daily;
+  const whatMatters = personalized.whatMatters;
 
   return (
     <section
@@ -104,110 +230,227 @@ export function CryptoIntelligenceSection({
         <p
           className={`mt-2 max-w-2xl ${appAnalysisDarkHeaderCopyClass} text-amber-50/95`}
         >
-          How your crypto sleeve is structured from verified holdings — not a
-          market forecast.
+          Deep market reading for your crypto sleeve — conclusions first, detail
+          on demand.
         </p>
       </div>
 
-      <div className={`${appCardPaddingClass} space-y-4`}>
-        {primary ? (
-          <p className="text-[15px] font-semibold leading-snug text-slate-950">
-            {primary}
+      <div className={`${appCardPaddingClass} space-y-5`}>
+        <div>
+          <p className={appSectionLabelClass}>Market regime</p>
+          <p className={`mt-1 ${appCardValueClass}`}>
+            {marketContext.regime ?? "Unavailable"}
           </p>
-        ) : null}
-        {secondary ? (
-          <p className={appSectionBodyClass}>{secondary}</p>
-        ) : null}
-
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
-            <p className={appSectionLabelClass}>Crypto share</p>
-            <p className={`mt-1 ${appCardValueClass}`}>
-              {formatPortfolioPercent(profile.cryptoPortfolioWeightPercent)}
-            </p>
+          {marketContext.regimeSummary ? (
             <p className={`mt-1 ${appSectionMetaClass}`}>
-              {formatEur(profile.cryptoValue)} · {profile.cryptoInstrumentCount}{" "}
-              instrument{profile.cryptoInstrumentCount === 1 ? "" : "s"}
+              {marketContext.regimeSummary}
             </p>
-          </div>
-          <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
-            <p className={appSectionLabelClass}>Today (crypto)</p>
-            <p className={`mt-1 ${appCardValueClass}`}>
-              {daily.available
-                ? daily.direction === "up"
-                  ? "Up"
-                  : daily.direction === "down"
-                    ? "Down"
-                    : "Flat"
-                : "Unavailable"}
-            </p>
-            <p className={`mt-1 ${appSectionMetaClass}`}>
-              {daily.contributionPp != null
-                ? `${daily.contributionPp > 0 ? "+" : ""}${daily.contributionPp.toFixed(1)}pp portfolio contribution`
-                : daily.available
-                  ? "Contribution not estimable"
-                  : "24h move data incomplete"}
-            </p>
-          </div>
+          ) : null}
         </div>
 
-        <div className="space-y-2">
-          <p className={appSectionLabelClass}>BTC / ETH / Other</p>
-          <CompositionBar
-            bitcoin={profile.bitcoinValue}
-            ethereum={profile.ethereumValue}
-            other={profile.otherCryptoValue}
-          />
-          <div className="flex flex-wrap gap-x-4 gap-y-1 text-[12px] font-medium text-slate-600">
-            <span>
-              BTC{" "}
-              {profile.bitcoinOfCryptoPercent != null
-                ? formatPortfolioPercent(profile.bitcoinOfCryptoPercent)
-                : "—"}
-            </span>
-            <span>
-              ETH{" "}
-              {profile.ethereumOfCryptoPercent != null
-                ? formatPortfolioPercent(profile.ethereumOfCryptoPercent)
-                : "—"}
-            </span>
-            <span>
-              Other{" "}
-              {profile.otherOfCryptoPercent != null
-                ? formatPortfolioPercent(profile.otherOfCryptoPercent)
-                : "—"}
-            </span>
+        {personalized.personalConclusion ? (
+          <div>
+            <p className={appSectionLabelClass}>Your crypto today</p>
+            <p className="mt-1 text-[15px] font-semibold leading-snug text-slate-950">
+              {personalized.personalConclusion}
+            </p>
           </div>
-        </div>
+        ) : null}
+
+        {personalized.marketStructureLine ? (
+          <div>
+            <p className={appSectionLabelClass}>Market structure</p>
+            <p className={`mt-1 ${appSectionBodyClass}`}>
+              {personalized.marketStructureLine}
+            </p>
+          </div>
+        ) : null}
+
+        {whatMatters.length > 0 ? (
+          <div>
+            <p className={appSectionLabelClass}>What matters now</p>
+            <ul className="mt-2 space-y-2">
+              {whatMatters.map((item) => (
+                <li
+                  key={item.id}
+                  className="text-[14px] leading-snug text-slate-800"
+                >
+                  {item.text}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
 
         <div>
           <button
             type="button"
-            className="inline-flex min-h-11 items-center text-sm font-semibold text-sky-800 underline-offset-2 hover:underline"
+            className="inline-flex min-h-11 min-w-[44px] items-center text-sm font-semibold text-sky-800 underline-offset-2 hover:underline"
             aria-expanded={detailsOpen}
             onClick={() => setDetailsOpen((open) => !open)}
           >
             {detailsOpen ? "Hide detail" : "Show detail"}
           </button>
           {detailsOpen ? (
-            <div className="mt-3 space-y-2 rounded-2xl border border-slate-200 bg-white px-4 py-3">
-              <p className={appSectionMetaClass}>
-                Shape: {profile.portfolioShape.replace(/_/g, " ")}
-              </p>
-              <p className={appSectionMetaClass}>
-                Native crypto: {profile.nativeCryptoCount} · Named BTC/ETH
-                exposure: {profile.etpOrNamedExposureCount}
-              </p>
-              <p className={appSectionMetaClass}>
-                Move coverage: {profile.dataCoverage.moveDataCount}/
-                {profile.dataCoverage.valuedCryptoCount}
-              </p>
-              <p className={appSectionMetaClass}>
-                Weekly pulse: {profile.pulse.weekly.reason}
-              </p>
-              <p className={appSectionMetaClass}>
-                Monthly pulse: {profile.pulse.monthly.reason}
-              </p>
+            <div className="mt-3 space-y-4 rounded-2xl border border-slate-200 bg-white px-4 py-4">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <p className={appSectionLabelClass}>Crypto share</p>
+                  <p className={`mt-1 ${appCardValueClass}`}>
+                    {formatPortfolioPercent(profile.cryptoPortfolioWeightPercent)}
+                  </p>
+                  <p className={`mt-1 ${appSectionMetaClass}`}>
+                    {formatEur(profile.cryptoValue)} ·{" "}
+                    {profile.cryptoInstrumentCount} instrument
+                    {profile.cryptoInstrumentCount === 1 ? "" : "s"}
+                  </p>
+                </div>
+                <div>
+                  <p className={appSectionLabelClass}>Today (crypto)</p>
+                  <p className={`mt-1 ${appCardValueClass}`}>
+                    {daily.available
+                      ? pulseDirectionLabel(daily.direction)
+                      : "Unavailable"}
+                  </p>
+                  <p className={`mt-1 ${appSectionMetaClass}`}>
+                    {daily.contributionPp != null
+                      ? `${daily.contributionPp > 0 ? "+" : ""}${daily.contributionPp.toFixed(1)}pp portfolio contribution`
+                      : daily.available
+                        ? "Contribution not estimable"
+                        : "24h move data incomplete"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <p className={appSectionLabelClass}>BTC / ETH / Other</p>
+                <CompositionBar
+                  bitcoin={profile.bitcoinValue}
+                  ethereum={profile.ethereumValue}
+                  other={profile.otherCryptoValue}
+                />
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-[12px] font-medium text-slate-600">
+                  <span>
+                    BTC{" "}
+                    {profile.bitcoinOfCryptoPercent != null
+                      ? formatPortfolioPercent(profile.bitcoinOfCryptoPercent)
+                      : "—"}
+                  </span>
+                  <span>
+                    ETH{" "}
+                    {profile.ethereumOfCryptoPercent != null
+                      ? formatPortfolioPercent(profile.ethereumOfCryptoPercent)
+                      : "—"}
+                  </span>
+                  <span>
+                    Other{" "}
+                    {profile.otherOfCryptoPercent != null
+                      ? formatPortfolioPercent(profile.otherOfCryptoPercent)
+                      : "—"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <p className={appSectionLabelClass}>Crypto Pulse</p>
+                <p className={appSectionMetaClass}>
+                  Daily:{" "}
+                  {daily.available
+                    ? pulseDirectionLabel(daily.direction)
+                    : "Unavailable"}
+                  {daily.breadthUp + daily.breadthDown > 0
+                    ? ` · breadth ${daily.breadthUp} up / ${daily.breadthDown} down`
+                    : ""}
+                </p>
+                <p className={appSectionMetaClass}>
+                  Weekly:{" "}
+                  {profile.pulse.weekly.available
+                    ? `${pulseDirectionLabel(profile.pulse.weekly.direction)} (${profile.pulse.weekly.returnPercent > 0 ? "+" : ""}${profile.pulse.weekly.returnPercent.toFixed(1)}%)`
+                    : profile.pulse.weekly.reason}
+                </p>
+                <p className={appSectionMetaClass}>
+                  Monthly:{" "}
+                  {profile.pulse.monthly.available
+                    ? `${pulseDirectionLabel(profile.pulse.monthly.direction)} (${profile.pulse.monthly.returnPercent > 0 ? "+" : ""}${profile.pulse.monthly.returnPercent.toFixed(1)}%)`
+                    : profile.pulse.monthly.reason}
+                </p>
+              </div>
+
+              <div className="space-y-1">
+                <p className={appSectionLabelClass}>Market signals</p>
+                <p className={appSectionMetaClass}>
+                  BTC{" "}
+                  {marketContext.btc.changePercent != null
+                    ? `${marketContext.btc.changePercent > 0 ? "+" : ""}${marketContext.btc.changePercent.toFixed(1)}%`
+                    : "—"}{" "}
+                  · ETH{" "}
+                  {marketContext.eth.changePercent != null
+                    ? `${marketContext.eth.changePercent > 0 ? "+" : ""}${marketContext.eth.changePercent.toFixed(1)}%`
+                    : "—"}{" "}
+                  · Other{" "}
+                  {marketContext.other.changePercent != null
+                    ? `${marketContext.other.changePercent > 0 ? "+" : ""}${marketContext.other.changePercent.toFixed(1)}%`
+                    : "—"}
+                </p>
+                <p className={appSectionMetaClass}>
+                  Breadth: {marketContext.breadth.up} up /{" "}
+                  {marketContext.breadth.down} down · magnitude{" "}
+                  {marketContext.moveMagnitude}
+                </p>
+                <p className={appSectionMetaClass}>
+                  Leadership:{" "}
+                  {marketContext.leadership.summary ?? "Unavailable"}
+                </p>
+                <p className={appSectionMetaClass}>
+                  BTC dominance: unavailable
+                </p>
+                <p className={appSectionMetaClass}>
+                  Bitcoin ETF flows: unavailable
+                </p>
+                <p className={appSectionMetaClass}>
+                  Liquidity / total market: unavailable
+                </p>
+              </div>
+
+              {marketContext.news.length > 0 ? (
+                <div className="space-y-2">
+                  <p className={appSectionLabelClass}>Relevant news</p>
+                  <ul className="space-y-2">
+                    {marketContext.news.slice(0, 4).map((story) => (
+                      <li key={story.id} className="min-h-11">
+                        <a
+                          href={story.canonicalUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-[14px] font-medium text-sky-900 underline-offset-2 hover:underline"
+                        >
+                          {story.title}
+                        </a>
+                        <p className={appSectionMetaClass}>{story.reason}</p>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+
+              <div className="space-y-1">
+                <p className={appSectionLabelClass}>Data quality</p>
+                <p className={appSectionMetaClass}>
+                  Shape: {profile.portfolioShape.replace(/_/g, " ")}
+                </p>
+                <p className={appSectionMetaClass}>
+                  Move coverage: {profile.dataCoverage.moveDataCount}/
+                  {profile.dataCoverage.valuedCryptoCount}
+                  {marketContext.dataCoverage.marketMajorsUsed > 0
+                    ? ` · market majors ${marketContext.dataCoverage.marketMajorsUsed}`
+                    : ""}
+                </p>
+                {marketContext.freshness.newestQuoteAt ? (
+                  <p className={appSectionMetaClass}>
+                    Newest market quote: {marketContext.freshness.newestQuoteAt}
+                  </p>
+                ) : null}
+              </div>
             </div>
           ) : null}
         </div>

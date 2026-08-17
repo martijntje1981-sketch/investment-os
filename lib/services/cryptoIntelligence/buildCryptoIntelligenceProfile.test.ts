@@ -187,6 +187,8 @@ describe("Crypto Intelligence Analysis wiring", () => {
       "utf8",
     );
     expect(analysis).toContain("CryptoIntelligenceSection");
-    expect(analysis).toContain("<CryptoIntelligenceSection holdings={holdings} />");
+    expect(analysis).toContain(
+      "<CryptoIntelligenceSection holdings={holdings} userSub={userSub} />",
+    );
   });
 });
