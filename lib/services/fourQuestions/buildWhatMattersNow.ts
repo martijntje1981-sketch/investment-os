@@ -6,7 +6,7 @@ import {
   buildPersonalIntelligenceConclusion,
   selectDashboardActionPlanItems,
 } from "@/lib/client/dashboardConclusions";
-import { NEWS_HUB_PATH } from "@/lib/navigation/newsHubRoutes";
+import { fourQuestionHubPath } from "@/lib/services/fourQuestions/catalog";
 import type { IntelligenceScopeId } from "@/lib/services/intelligenceScope";
 import { buildMarketCalmer } from "@/lib/services/marketCalmer";
 import { buildPersonalActionPlan } from "@/lib/services/personalIntelligence/buildPersonalActionPlan";
@@ -40,7 +40,7 @@ export function buildWhatMattersNowQuestion(input: {
       disclosures: [],
       explore: {
         label: "Full intelligence",
-        href: NEWS_HUB_PATH,
+        href: fourQuestionHubPath("what_matters_now"),
       },
       quiet: true,
       scope,
@@ -129,7 +129,7 @@ export function buildWhatMattersNowQuestion(input: {
     disclosures: [],
     explore: {
       label: "Full intelligence",
-      href: NEWS_HUB_PATH,
+      href: fourQuestionHubPath("what_matters_now"),
     },
     quiet,
     scope,

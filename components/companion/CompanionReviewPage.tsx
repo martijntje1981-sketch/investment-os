@@ -10,6 +10,7 @@ import {
   PageContainer,
 } from "@/components/layout/PageContainer";
 import { PageHero } from "@/components/layout/PageHero";
+import { AuthenticatedFourQuestionsNav } from "@/components/fourQuestions/AuthenticatedFourQuestionsNav";
 import {
   CompanionEmptyTrialState,
   CompanionReviewPanel,
@@ -345,6 +346,8 @@ function CompanionReviewContent() {
             <ExportPortfolioButton onExport={() => void handleExport()} />
           }
         />
+
+        <AuthenticatedFourQuestionsNav />
 
         {emptySetup ? (
           <CompanionEmptyTrialState />

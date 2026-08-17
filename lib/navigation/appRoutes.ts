@@ -19,6 +19,12 @@ export const UPLOAD_PATH = "/upload";
 export const HELP_CENTRE_PATH = "/faq";
 export const SUPPORTED_INSTRUMENTS_PATH = "/supported-instruments";
 
+/** Four Questions authenticated hubs. */
+export const WHAT_HAPPENED_HUB_PATH = "/what-happened";
+export const WHAT_MATTERS_HUB_PATH = "/what-matters";
+export const ON_TRACK_HUB_PATH = "/on-track";
+export const WHATS_AHEAD_HUB_PATH = "/whats-ahead";
+
 /** Holding detail — shared by Portfolio list and Dashboard movers. */
 export function holdingDetailPath(symbol: string): string {
   const normalized = symbol.trim();

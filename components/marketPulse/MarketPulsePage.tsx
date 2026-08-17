@@ -7,6 +7,7 @@ import { ArrowRight, RefreshCw } from "lucide-react";
 import { BackButton } from "@/components/layout/BackButton";
 import BottomNavigation from "@/components/home/BottomNav";
 import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer";
+import { AuthenticatedFourQuestionsNav } from "@/components/fourQuestions/AuthenticatedFourQuestionsNav";
 import {
   appHeroMetricLabelClass,
   appHeroShellClass,
@@ -522,6 +523,8 @@ export default function MarketPulsePage() {
             </p>
           </div>
         </section>
+
+        <AuthenticatedFourQuestionsNav />
 
         {audience !== "authenticated_holdings" ? (
           <MakeTobaileyYoursCard audience={audience} />

@@ -33,6 +33,12 @@ import {
   UPLOAD_PATH,
 } from "@/lib/navigation/appRoutes";
 import { NEWS_MARKETS_TODAY_HREF } from "@/lib/navigation/discoverDestinations";
+import {
+  ON_TRACK_HUB_PATH,
+  WHAT_HAPPENED_HUB_PATH,
+  WHAT_MATTERS_HUB_PATH,
+  WHATS_AHEAD_HUB_PATH,
+} from "@/lib/navigation/appRoutes";
 
 export type ArchitectureLink = {
   href: string;
@@ -98,6 +104,30 @@ export const APP_ARCHITECTURE_GROUPS: readonly ArchitectureGroup[] = [
     id: "understand",
     title: "Understand",
     links: [
+      {
+        href: WHAT_HAPPENED_HUB_PATH,
+        label: "What happened?",
+        description: "Performance and what moved your portfolio",
+        icon: History,
+      },
+      {
+        href: WHAT_MATTERS_HUB_PATH,
+        label: "What matters now?",
+        description: "Attention and portfolio-linked intelligence",
+        icon: Sparkles,
+      },
+      {
+        href: ON_TRACK_HUB_PATH,
+        label: "Am I on track?",
+        description: "Goals, progress and Reality Check",
+        icon: Target,
+      },
+      {
+        href: WHATS_AHEAD_HUB_PATH,
+        label: "What’s ahead?",
+        description: "Scenarios, resilience and consensus",
+        icon: ListChecks,
+      },
       {
         href: PORTFOLIO_HEALTH_PATH,
         label: "Portfolio Scorecard",

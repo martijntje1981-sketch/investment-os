@@ -10,6 +10,7 @@ import { DashboardSummary } from "@/components/dashboard/DashboardSummary";
 import { DashboardExploreTools } from "@/components/dashboard/DashboardExploreTools";
 import { DashboardPortfolioHistorySection } from "@/components/dashboard/DashboardPortfolioHistorySection";
 import { FourQuestionsSection } from "@/components/dashboard/fourQuestions/FourQuestionsSection";
+import { AuthenticatedFourQuestionsNav } from "@/components/fourQuestions/AuthenticatedFourQuestionsNav";
 import { DashboardFirstRunCue } from "@/components/dashboard/DashboardFirstRunCue";
 import { DemoHoldingsCallout } from "@/components/example/DemoHoldingsCallout";
 import { TrialStepsCard } from "@/components/example/TrialStepsCard";
@@ -414,6 +415,8 @@ export default function DashboardPage() {
               liveRefreshAt,
             }}
           />
+
+          <AuthenticatedFourQuestionsNav className="mt-1" />
 
           {fourQuestions ? (
             <FourQuestionsSection bundle={fourQuestions} />

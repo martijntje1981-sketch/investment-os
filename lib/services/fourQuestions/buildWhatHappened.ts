@@ -5,6 +5,7 @@
 import { summarizeDailyPerformance } from "@/lib/client/dailyPerformance";
 import { holdingDetailPath } from "@/lib/navigation/appRoutes";
 import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
+import { fourQuestionHubPath } from "@/lib/services/fourQuestions/catalog";
 import type { IntelligenceScopeId } from "@/lib/services/intelligenceScope";
 import {
   buildAttributionConclusions,
@@ -193,7 +194,7 @@ export function buildWhatHappenedQuestion(input: {
     disclosures,
     explore: {
       label: "Full performance",
-      href: DASHBOARD_DEEP_LINKS.portfolioPerformance,
+      href: fourQuestionHubPath("what_happened"),
     },
     quiet,
     scope,

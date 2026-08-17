@@ -31,6 +31,7 @@ import {
 } from "@/components/layout/PageContainer";
 import { PageHero } from "@/components/layout/PageHero";
 import { PageRelatedLinks } from "@/components/layout/PageRelatedLinks";
+import { AuthenticatedFourQuestionsNav } from "@/components/fourQuestions/AuthenticatedFourQuestionsNav";
 import { GoalHeroProgressVisual } from "@/components/goals/GoalHeroProgressVisual";
 import {
   ExpectedReturnAssumptionEditor,
@@ -440,6 +441,8 @@ export default function GoalsPage() {
             </div>
           }
         />
+
+        <AuthenticatedFourQuestionsNav />
 
         {holdings.length === 0 ? (
           <EmptyPortfolioGuide

@@ -6,6 +6,7 @@ import { Sparkles } from "lucide-react";
 import BottomNavigation from "@/components/home/BottomNav";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHero } from "@/components/layout/PageHero";
+import { AuthenticatedFourQuestionsNav } from "@/components/fourQuestions/AuthenticatedFourQuestionsNav";
 import { PageRelatedLinks } from "@/components/layout/PageRelatedLinks";
 import {
   MARKET_PULSE_PATH,
@@ -178,6 +179,8 @@ export default function PerspectivesPage() {
             ) : null
           }
         />
+
+        <AuthenticatedFourQuestionsNav />
 
         <PageRelatedLinks
           purpose={PAGE_PURPOSE.perspectives}

@@ -142,7 +142,7 @@ describe("Four Questions builders", () => {
     });
     expect(q.scope).toBe("invest");
     expect(q.answer.toLowerCase()).toContain("investment");
-    expect(q.explore.href).toContain("/analysis");
+    expect(q.explore.href).toContain("what-happened");
   });
 
   it("filters Q1 to crypto assets only", () => {
@@ -216,7 +216,7 @@ describe("Four Questions builders", () => {
         realityCheck: null,
       });
       expect(q.answer.length).toBeGreaterThan(0);
-      expect(q.explore.href).toContain("goal");
+      expect(q.explore.href).toContain("on-track");
       expect(q.answer).not.toMatch(/upgrade|complete to use goals/i);
     }
   });
@@ -237,7 +237,7 @@ describe("Four Questions builders", () => {
       goal,
       hasSavedGoal: true,
     });
-    expect(q.explore.href).toContain("scenario");
+    expect(q.explore.href).toContain("whats-ahead");
     expect(q.answer.length).toBeGreaterThan(0);
   });
 
@@ -288,6 +288,7 @@ describe("Four Questions builders", () => {
       "/goals#goal-reality-check",
     );
     expect(q3.explore.label).toBe("Full goal view");
+    expect(q3.explore.href).toContain("on-track");
 
     const q4 = buildWhatsAheadQuestion({
       scope: "complete",
@@ -310,6 +311,7 @@ describe("Four Questions builders", () => {
       "/events",
     );
     expect(q4.explore.label).toBe("Full outlook");
+    expect(q4.explore.href).toContain("whats-ahead");
   });
 
   it("leaves expand rows without destinations non-clickable", () => {

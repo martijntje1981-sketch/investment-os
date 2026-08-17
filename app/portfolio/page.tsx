@@ -31,6 +31,7 @@ import {
 } from "@/components/layout/PageContainer";
 import { PageHero } from "@/components/layout/PageHero";
 import { PageRelatedLinks } from "@/components/layout/PageRelatedLinks";
+import { AuthenticatedFourQuestionsNav } from "@/components/fourQuestions/AuthenticatedFourQuestionsNav";
 import { EmptyPortfolioGuide } from "@/components/onboarding/EmptyPortfolioGuide";
 import { ExportPortfolioButton } from "@/components/export/ExportPortfolioButton";
 import {
@@ -611,6 +612,8 @@ export default function PortfolioPage() {
             { href: MARKET_PULSE_PATH, label: "Market Pulse" },
           ]}
         />
+
+        <AuthenticatedFourQuestionsNav />
 
         <PortfolioSyncBanner
           syncState={syncState}

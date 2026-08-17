@@ -10,7 +10,11 @@
 import {
   ANALYSIS_PATH,
   GOALS_PATH,
+  ON_TRACK_HUB_PATH,
   PORTFOLIO_HEALTH_PATH,
+  WHAT_HAPPENED_HUB_PATH,
+  WHAT_MATTERS_HUB_PATH,
+  WHATS_AHEAD_HUB_PATH,
 } from "@/lib/navigation/appRoutes";
 import { NEWS_HUB_PATH } from "@/lib/navigation/newsHubRoutes";
 
@@ -64,6 +68,10 @@ export const DASHBOARD_DEEP_LINKS = {
   whatMatters: `${ANALYSIS_PATH}#${SECTION_IDS.whatMatters}`,
   onTrack: `${ANALYSIS_PATH}#${SECTION_IDS.onTrack}`,
   whatsAhead: `${ANALYSIS_PATH}#${SECTION_IDS.whatsAhead}`,
+  whatHappenedHub: WHAT_HAPPENED_HUB_PATH,
+  whatMattersHub: WHAT_MATTERS_HUB_PATH,
+  onTrackHub: ON_TRACK_HUB_PATH,
+  whatsAheadHub: WHATS_AHEAD_HUB_PATH,
   portfolioMomentum: `${SCORECARD_PATH}#${SECTION_IDS.scorecardMomentum}`,
   portfolioReadiness: `${SCORECARD_PATH}#${SECTION_IDS.scorecardReadiness}`,
   goalProgress: `${GOALS_PATH}#${SECTION_IDS.goalProgress}`,

@@ -5,6 +5,7 @@ import BottomNavigation from "@/components/home/BottomNav";
 import { MakeTobaileyYoursCard } from "@/components/conversion/MakeTobaileyYoursCard";
 import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer";
 import { PageHero } from "@/components/layout/PageHero";
+import { AuthenticatedFourQuestionsNav } from "@/components/fourQuestions/AuthenticatedFourQuestionsNav";
 import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
 import { resolveAudienceState } from "@/lib/auth/routeAccess";
 import {
@@ -56,6 +57,8 @@ export default function NewsPage() {
             </p>
           }
         />
+
+        <AuthenticatedFourQuestionsNav />
 
         {audience !== "authenticated_holdings" ? (
           <MakeTobaileyYoursCard audience={audience} />

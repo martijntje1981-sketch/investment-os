@@ -3,6 +3,7 @@
  */
 
 import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
+import { fourQuestionHubPath } from "@/lib/services/fourQuestions/catalog";
 import type { IntelligenceScopeId } from "@/lib/services/intelligenceScope";
 import { buildResilienceProfile } from "@/lib/services/resilience";
 import { selectRelevantPortfolioScenarios } from "@/lib/services/scenarioRelevance";
@@ -48,7 +49,7 @@ export function buildWhatsAheadQuestion(input: {
       disclosures: [],
       explore: {
         label: "Full outlook",
-        href: DASHBOARD_DEEP_LINKS.scenarioStress,
+        href: fourQuestionHubPath("whats_ahead"),
       },
       quiet: true,
       scope,
@@ -151,7 +152,7 @@ export function buildWhatsAheadQuestion(input: {
     ],
     explore: {
       label: "Full outlook",
-      href: DASHBOARD_DEEP_LINKS.scenarioStress,
+      href: fourQuestionHubPath("whats_ahead"),
     },
     quiet,
     scope,

@@ -12,6 +12,7 @@ import {
   PageContainer,
 } from "@/components/layout/PageContainer";
 import { PageHero } from "@/components/layout/PageHero";
+import { AuthenticatedFourQuestionsNav } from "@/components/fourQuestions/AuthenticatedFourQuestionsNav";
 import { PageRelatedLinks } from "@/components/layout/PageRelatedLinks";
 import {
   appCardValueClass,
@@ -308,6 +309,8 @@ export default function PortfolioHistoryPage() {
             { href: ANALYSIS_PATH, label: "Open Analysis" },
           ]}
         />
+
+        <AuthenticatedFourQuestionsNav />
 
         {exportError ? (
           <p className={appSectionBodyClass} role="alert">

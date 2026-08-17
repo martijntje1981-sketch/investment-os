@@ -21,6 +21,7 @@ import { TopPerformersByCategorySection } from "@/components/analysis/TopPerform
 import { AnalysisFourQuestionsNav } from "@/components/analysis/fourQuestions/AnalysisFourQuestionsNav";
 import { AnalysisOnTrackGateway } from "@/components/analysis/fourQuestions/AnalysisOnTrackGateway";
 import { AnalysisQuestionSection } from "@/components/analysis/fourQuestions/AnalysisQuestionSection";
+import { AuthenticatedFourQuestionsNav } from "@/components/fourQuestions/AuthenticatedFourQuestionsNav";
 import { buildPortfolioExposureAllocation } from "@/lib/services/classification";
 import BottomNavigation from "@/components/home/BottomNav";
 import {
@@ -208,6 +209,8 @@ export default function PortfolioAnalysisPage() {
             { href: REVIEW_PATH, label: "Your Review" },
           ]}
         />
+
+        <AuthenticatedFourQuestionsNav className="mt-4" />
 
         <PortfolioRecoveryBanner
           offer={recoveryOffer}

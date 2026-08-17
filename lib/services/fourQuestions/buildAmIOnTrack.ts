@@ -5,7 +5,7 @@
 import { formatExpectedReturnAssumptionContext } from "@/lib/client/expectedReturnAssumption";
 import { buildGoalConclusion } from "@/lib/client/dashboardConclusions";
 import { GOALS_PATH, PORTFOLIO_HISTORY_PATH } from "@/lib/navigation/appRoutes";
-import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
+import { fourQuestionHubPath } from "@/lib/services/fourQuestions/catalog";
 import type { IntelligenceScopeId } from "@/lib/services/intelligenceScope";
 import type { GoalRealityCheck } from "@/lib/services/goals/buildGoalRealityCheck";
 import type { GoalProgress } from "@/lib/services/goals/goalProgressEngine";
@@ -62,7 +62,7 @@ export function buildAmIOnTrackQuestion(input: {
       disclosures: [],
       explore: {
         label: "Full goal view",
-        href: DASHBOARD_DEEP_LINKS.goals,
+        href: fourQuestionHubPath("am_i_on_track"),
       },
       quiet: true,
       scope,
@@ -147,7 +147,7 @@ export function buildAmIOnTrackQuestion(input: {
     disclosures,
     explore: {
       label: "Full goal view",
-      href: DASHBOARD_DEEP_LINKS.goalProgress,
+      href: fourQuestionHubPath("am_i_on_track"),
     },
     quiet: false,
     scope,

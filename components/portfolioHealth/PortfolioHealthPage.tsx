@@ -22,6 +22,7 @@ import {
   AppPageLoading,
   PageContainer,
 } from "@/components/layout/PageContainer";
+import { AuthenticatedFourQuestionsNav } from "@/components/fourQuestions/AuthenticatedFourQuestionsNav";
 import {
   appAnalysisDarkBodyClass,
   appCardClass,
@@ -313,6 +314,8 @@ export default function PortfolioHealthPage() {
   return (
     <>
       <PageContainer stackClassName="gap-6 md:gap-8">
+        <AuthenticatedFourQuestionsNav className="mt-0" />
+
         {recoveryOffer ? (
           <PortfolioRecoveryBanner
             offer={recoveryOffer}

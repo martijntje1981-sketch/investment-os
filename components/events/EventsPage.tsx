@@ -6,6 +6,7 @@ import { CalendarDays } from "lucide-react";
 import { BackButton } from "@/components/layout/BackButton";
 import BottomNavigation from "@/components/home/BottomNav";
 import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer";
+import { AuthenticatedFourQuestionsNav } from "@/components/fourQuestions/AuthenticatedFourQuestionsNav";
 import {
   appCardClass,
   appHeroMetricLabelClass,
@@ -184,6 +185,8 @@ export default function EventsPage() {
             current week and beyond.
           </p>
         </section>
+
+        <AuthenticatedFourQuestionsNav />
 
         <div className="flex flex-wrap gap-2" role="group" aria-label="Event categories">
           <button
