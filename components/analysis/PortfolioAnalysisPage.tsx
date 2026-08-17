@@ -12,6 +12,7 @@ import {
 import { DividendIntelligenceSection } from "@/components/analysis/DividendIntelligenceSection";
 import { CashIntelligenceSection } from "@/components/analysis/CashIntelligenceSection";
 import { PortfolioExposureSection } from "@/components/analysis/PortfolioExposureSection";
+import { PortfolioXRaySection } from "@/components/analysis/PortfolioXRaySection";
 import { ScenarioStressSection } from "@/components/analysis/ScenarioStressSection";
 import { PortfolioPerformanceSection } from "@/components/analysis/performance/PortfolioPerformanceSection";
 import { MarketConsensusSection } from "@/components/analysis/marketConsensus/MarketConsensusSection";
@@ -246,6 +247,8 @@ export default function PortfolioAnalysisPage() {
             </div>
 
             <PortfolioExposureSection allocation={exposureAllocation} />
+
+            <PortfolioXRaySection holdings={holdings} />
 
             <ScenarioStressSection
               holdings={holdings}
