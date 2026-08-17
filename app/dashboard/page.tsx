@@ -417,7 +417,7 @@ export default function DashboardPage() {
               goal={goal}
               hasSavedGoal={hasSavedGoal}
             />
-            <DashboardGoalConclusionCard progress={goalProgress} />
+            <DashboardGoalConclusionCard progress={goalProgress} goal={goal} />
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 md:items-stretch md:gap-5">

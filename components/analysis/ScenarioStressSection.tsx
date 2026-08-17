@@ -36,6 +36,11 @@ import {
   personalChoiceClass,
   scenarioChoiceClass,
 } from "@/components/analysis/scenarioStressControls";
+import {
+  ExpectedReturnAssumptionCompact,
+  ExpectedReturnAssumptionEditor,
+} from "@/components/goals/ExpectedReturnAssumption";
+import { getExpectedReturnAssumption } from "@/lib/client/expectedReturnAssumption";
 import type {
   GoalSettings,
   StoredPortfolioHolding,
@@ -205,12 +210,14 @@ function GoalSensitivityPanel({
   goal,
   hasSavedGoal,
   formatEur,
+  onEditAssumption,
 }: {
   holdingsValue: number;
   scenarioResult: ScenarioResult;
   goal: GoalSettings | null;
   hasSavedGoal: boolean;
   formatEur: (value: number) => string;
+  onEditAssumption?: () => void;
 }) {
   const [contributionDelta, setContributionDelta] =
     useState<ContributionDeltaEuro>(0);
@@ -253,6 +260,7 @@ function GoalSensitivityPanel({
     ) ?? contributionSensitivity.rows.find((row) => row.deltaEuro === 0);
 
   const delayCopy = formatDelayMonths(marketSensitivity.estimatedDelayMonths);
+  const assumptionPercent = getExpectedReturnAssumption(goal);
 
   return (
     <div className="space-y-5 border-t border-slate-200 pt-5">
@@ -262,9 +270,20 @@ function GoalSensitivityPanel({
           What could this mean for your goal?
         </h3>
         <p className={`mt-1.5 ${appSectionMetaClass}`}>
-          Illustrative goal impact from the selected market scenario — based on
-          current assumptions.
+          Illustrative goal impact from the selected market scenario. Market
+          shock is a deterministic portfolio estimate; goal projection uses your
+          expected-return assumption.
         </p>
+        {hasSavedGoal &&
+        assumptionPercent != null &&
+        onEditAssumption ? (
+          <div className="mt-2">
+            <ExpectedReturnAssumptionCompact
+              percent={assumptionPercent}
+              onEdit={onEditAssumption}
+            />
+          </div>
+        ) : null}
       </div>
 
       {marketSensitivity.status === "no_goal" ? (
@@ -351,8 +370,20 @@ function GoalSensitivityPanel({
             </h3>
             <p className={`mt-1.5 ${appSectionMetaClass}`}>
               Separate from market scenarios — temporary contribution and timing
-              illustrations using your saved goal assumptions.
+              illustrations. Projection uses your{" "}
+              {assumptionPercent != null
+                ? `${assumptionPercent}% p.a.`
+                : "saved"}{" "}
+              expected-return assumption.
             </p>
+            {assumptionPercent != null && onEditAssumption ? (
+              <div className="mt-2">
+                <ExpectedReturnAssumptionCompact
+                  percent={assumptionPercent}
+                  onEdit={onEditAssumption}
+                />
+              </div>
+            ) : null}
           </div>
 
           {contributionSensitivity.status === "ok" ? (
@@ -648,10 +679,12 @@ export function ScenarioStressSection({
   holdings,
   goal = null,
   hasSavedGoal = false,
+  onPersistGoal,
 }: {
   holdings: StoredPortfolioHolding[];
   goal?: GoalSettings | null;
   hasSavedGoal?: boolean;
+  onPersistGoal?: (nextGoal: GoalSettings) => void;
 }) {
   const { formatEur } = useBaseCurrencyDisplay();
   const relevant = useMemo(
@@ -659,6 +692,7 @@ export function ScenarioStressSection({
     [holdings],
   );
   const [selectedId, setSelectedId] = useState<ScenarioId | null>(null);
+  const [assumptionEditorOpen, setAssumptionEditorOpen] = useState(false);
 
   const effectiveId =
     selectedId &&
@@ -795,6 +829,11 @@ export function ScenarioStressSection({
           goal={goal}
           hasSavedGoal={hasSavedGoal}
           formatEur={formatEur}
+          onEditAssumption={
+            onPersistGoal && hasSavedGoal && goal
+              ? () => setAssumptionEditorOpen(true)
+              : undefined
+          }
         />
 
         <ResiliencePanel
@@ -804,6 +843,15 @@ export function ScenarioStressSection({
           formatEur={formatEur}
         />
       </div>
+      {hasSavedGoal && goal && onPersistGoal ? (
+        <ExpectedReturnAssumptionEditor
+          open={assumptionEditorOpen}
+          onClose={() => setAssumptionEditorOpen(false)}
+          goal={goal}
+          currentPortfolioValue={result.portfolioTotalValue}
+          onSave={onPersistGoal}
+        />
+      ) : null}
     </section>
   );
 }

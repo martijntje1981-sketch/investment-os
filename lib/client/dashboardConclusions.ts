@@ -10,9 +10,11 @@ import type { PersonalActionPlan } from "@/lib/services/personalIntelligence/bui
 import type { ThirtySecondsBriefingView } from "@/lib/services/personalIntelligence/thirtySecondsBriefing";
 import type { PersonalIntelligenceToday } from "@/lib/services/personalIntelligence/types";
 import type { GoalProgress } from "@/lib/services/goals/goalProgressEngine";
+import { formatExpectedReturnAssumptionContext } from "@/lib/client/expectedReturnAssumption";
 import type { ResilienceProfile } from "@/lib/services/resilience";
 import type { DashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
 import type { PortfolioPulseResult } from "@/lib/services/portfolio/periodScores/types";
+import type { GoalSettings } from "@/lib/types/portfolioStorage";
 
 export const DASHBOARD_ACTION_PLAN_MAX_ITEMS = 2;
 
@@ -22,6 +24,8 @@ export type DashboardConclusionCard = {
   conclusion: string;
   ctaLabel: string;
   ctaHref: string;
+  /** Optional compact context under the conclusion (e.g. user return assumption). */
+  contextLine?: string;
 };
 
 function clipWords(text: string, maxWords: number): string {
@@ -188,6 +192,7 @@ function formatGoalTargetShort(value: number): string {
 
 export function buildGoalConclusion(
   progress: GoalProgress,
+  goal?: GoalSettings | null,
 ): DashboardConclusionCard | null {
   if (!progress.hasGoal) return null;
 
@@ -204,6 +209,14 @@ export function buildGoalConclusion(
         ? `On track for ${targetLabel}`
         : progress.status;
 
+  const showsProjectionDate =
+    !progress.goalReached &&
+    !needsAttention &&
+    Boolean(
+      progress.estimatedCompletionLabel &&
+        progress.estimatedCompletionLabel !== "Insufficient history",
+    );
+
   let conclusion: string;
   if (progress.goalReached) {
     conclusion = "Your portfolio has reached the saved target value.";
@@ -213,13 +226,19 @@ export function buildGoalConclusion(
       14,
     );
   } else {
-    const datePart =
-      progress.estimatedCompletionLabel &&
-      progress.estimatedCompletionLabel !== "Insufficient history"
-        ? `Current projection: ${progress.estimatedCompletionLabel}.`
-        : `${Math.round(progress.currentProgressPercent)}% of target so far.`;
+    const datePart = showsProjectionDate
+      ? `Current projection: ${progress.estimatedCompletionLabel}.`
+      : `${Math.round(progress.currentProgressPercent)}% of target so far.`;
     conclusion = clipWords(datePart, 12);
   }
+
+  const assumption = goal?.expectedAnnualReturn;
+  const contextLine =
+    showsProjectionDate &&
+    typeof assumption === "number" &&
+    Number.isFinite(assumption)
+      ? formatExpectedReturnAssumptionContext(assumption)
+      : undefined;
 
   return {
     eyebrow: "Goal",
@@ -227,6 +246,7 @@ export function buildGoalConclusion(
     conclusion,
     ctaLabel: needsAttention ? "Review goal" : "View goal",
     ctaHref: DASHBOARD_DEEP_LINKS.goalProgress,
+    ...(contextLine ? { contextLine } : {}),
   };
 }
 

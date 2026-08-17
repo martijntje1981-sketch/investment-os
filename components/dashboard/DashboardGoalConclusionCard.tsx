@@ -6,6 +6,7 @@ import { useMemo } from "react";
 import { DashboardConclusionModule } from "@/components/dashboard/DashboardConclusionModule";
 import { buildGoalConclusion } from "@/lib/client/dashboardConclusions";
 import type { GoalProgress } from "@/lib/services/goals/goalProgressEngine";
+import type { GoalSettings } from "@/lib/types/portfolioStorage";
 
 function GoalProgressMicroRing({ percent }: { percent: number }) {
   const clamped = Math.max(0, Math.min(100, percent));
@@ -56,10 +57,15 @@ function GoalProgressMicroRing({ percent }: { percent: number }) {
  */
 export function DashboardGoalConclusionCard({
   progress,
+  goal = null,
 }: {
   progress: GoalProgress;
+  goal?: GoalSettings | null;
 }) {
-  const card = useMemo(() => buildGoalConclusion(progress), [progress]);
+  const card = useMemo(
+    () => buildGoalConclusion(progress, goal),
+    [progress, goal],
+  );
   if (!card) return null;
 
   const needsAttention =

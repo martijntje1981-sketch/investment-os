@@ -7,6 +7,7 @@ import {
   CalendarDays,
   Check,
   Download,
+  Percent,
   PiggyBank,
   Save,
   Scale,
@@ -31,6 +32,10 @@ import {
 import { PageHero } from "@/components/layout/PageHero";
 import { PageRelatedLinks } from "@/components/layout/PageRelatedLinks";
 import { GoalHeroProgressVisual } from "@/components/goals/GoalHeroProgressVisual";
+import {
+  ExpectedReturnAssumptionEditor,
+  ExpectedReturnAssumptionPanel,
+} from "@/components/goals/ExpectedReturnAssumption";
 import { EmptyPortfolioGuide } from "@/components/onboarding/EmptyPortfolioGuide";
 import NumericInput from "@/components/NumericInput";
 import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
@@ -41,6 +46,13 @@ import {
   FX_UNAVAILABLE_EDIT_MESSAGE,
   FX_UNAVAILABLE_SAVE_MESSAGE,
 } from "@/lib/client/baseCurrencyInput";
+import {
+  EXPECTED_ANNUAL_RETURN_MAX,
+  EXPECTED_ANNUAL_RETURN_MIN,
+  formatExpectedReturnPa,
+  getExpectedReturnAssumption,
+  isValidExpectedAnnualReturnInput,
+} from "@/lib/client/expectedReturnAssumption";
 import {
   buildPortfolioAnalysis,
   buildValuedPositions,
@@ -212,6 +224,7 @@ export default function GoalsPage() {
   const [fxFormError, setFxFormError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [assumptionEditorOpen, setAssumptionEditorOpen] = useState(false);
 
   useEffect(() => {
     if (formDirty) {
@@ -285,13 +298,16 @@ export default function GoalsPage() {
       return;
     }
 
+    if (!isValidExpectedAnnualReturnInput(converted.value.expectedAnnualReturn)) {
+      setFxFormError(
+        `Expected annual return must be between ${EXPECTED_ANNUAL_RETURN_MIN} and ${EXPECTED_ANNUAL_RETURN_MAX}% p.a.`,
+      );
+      return;
+    }
+
     const normalized = sanitizeGoalForSave({
       ...converted.value,
-      // Keep a calm default return assumption — not a primary form field.
-      expectedAnnualReturn:
-        converted.value.expectedAnnualReturn > 0
-          ? converted.value.expectedAnnualReturn
-          : GOAL_FORM_DEFAULT.expectedAnnualReturn,
+      expectedAnnualReturn: converted.value.expectedAnnualReturn,
       name: goal.name?.trim() || undefined,
     });
     if (!normalized) return;
@@ -377,15 +393,42 @@ export default function GoalsPage() {
                 hasSavedGoal={hasSavedGoal}
               />
               {hasSavedGoal ? (
-                <p className="text-[13px] font-medium text-white/65">
-                  Estimated completion:{" "}
-                  <span className="text-white/90">
-                    {intelligence.forecast.estimatedCompletionLabel}
-                  </span>
-                  {intelligence.forecast.isEstimate ? (
-                    <span className="text-white/45"> · estimate</span>
+                <div className="space-y-3">
+                  <p className="text-[13px] font-medium text-white/65">
+                    Estimated completion:{" "}
+                    <span className="text-white/90">
+                      {intelligence.forecast.estimatedCompletionLabel}
+                    </span>
+                    {intelligence.forecast.isEstimate ? (
+                      <span className="text-white/45"> · estimate</span>
+                    ) : null}
+                  </p>
+                  {getExpectedReturnAssumption(savedGoal) != null ? (
+                    <div className="rounded-2xl border border-white/15 bg-white/10 px-3.5 py-3">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/55">
+                        Expected return
+                      </p>
+                      <p className="mt-1 text-lg font-bold text-white">
+                        {formatExpectedReturnPa(
+                          getExpectedReturnAssumption(savedGoal)!,
+                        )}
+                      </p>
+                      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <p className="text-[13px] font-medium text-white/65">
+                          Your assumption
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setAssumptionEditorOpen(true)}
+                          className="inline-flex min-h-11 items-center text-[13px] font-semibold text-white underline-offset-2 hover:underline"
+                          data-testid="expected-return-assumption-edit"
+                        >
+                          Edit
+                        </button>
+                      </div>
+                    </div>
                   ) : null}
-                </p>
+                </div>
               ) : null}
             </div>
           }
@@ -434,6 +477,14 @@ export default function GoalsPage() {
             <div className="border-t border-slate-100 px-4 py-3 sm:px-6">
               <ConversionDetailsDisclosure compactTrigger />
             </div>
+            {getExpectedReturnAssumption(savedGoal) != null ? (
+              <div className="border-t border-slate-100 px-4 py-4 sm:px-6">
+                <ExpectedReturnAssumptionPanel
+                  percent={getExpectedReturnAssumption(savedGoal)!}
+                  onEdit={() => setAssumptionEditorOpen(true)}
+                />
+              </div>
+            ) : null}
           </section>
         ) : null}
 
@@ -556,6 +607,17 @@ export default function GoalsPage() {
                 updateGoalNumber("monthlyContribution", value)
               }
             />
+            <GoalInput
+              label="Expected annual return (% p.a.)"
+              icon={<Percent className="h-4 w-4" />}
+              value={goal.expectedAnnualReturn}
+              min={EXPECTED_ANNUAL_RETURN_MIN}
+              max={EXPECTED_ANNUAL_RETURN_MAX}
+              onChange={(value) =>
+                updateGoalNumber("expectedAnnualReturn", value)
+              }
+              hint="Your assumption used for projections — not a Tobailey forecast."
+            />
 
             {fxFormError ? (
               <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
@@ -617,6 +679,20 @@ export default function GoalsPage() {
           ]}
         />
       </PageContainer>
+      {hasSavedGoal && savedGoal ? (
+        <ExpectedReturnAssumptionEditor
+          open={assumptionEditorOpen}
+          onClose={() => setAssumptionEditorOpen(false)}
+          goal={savedGoal}
+          currentPortfolioValue={goalProgress.currentValue}
+          portfolioHistory={timelineToGoalHistoryPoints(timeline)}
+          onSave={(nextGoal) => {
+            persistGoal(nextGoal);
+            setSaved(true);
+            setFormDirty(false);
+          }}
+        />
+      ) : null}
       <BottomNavigation />
     </>
   );
@@ -639,6 +715,8 @@ function GoalInput({
   prefix,
   value,
   min,
+  max: _max,
+  hint,
   onChange,
 }: {
   label: string;
@@ -646,8 +724,11 @@ function GoalInput({
   prefix?: string;
   value: number;
   min: number;
+  max?: number;
+  hint?: string;
   onChange: (value: string) => void;
 }) {
+  void _max;
   return (
     <label className="block">
       <span className="flex items-center gap-2 text-sm font-bold text-slate-700">
@@ -667,6 +748,7 @@ function GoalInput({
           className="min-w-0 flex-1 bg-transparent px-2 py-3.5 text-base font-bold outline-none"
         />
       </span>
+      {hint ? <p className={`mt-1.5 ${appSectionMetaClass}`}>{hint}</p> : null}
     </label>
   );
 }

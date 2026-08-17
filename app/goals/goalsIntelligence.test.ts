@@ -42,7 +42,9 @@ describe("Phase 3B Goals Intelligence wiring", () => {
     expect(page).toContain("Target amount");
     expect(page).toContain("Target year");
     expect(page).toContain("Monthly contribution");
-    expect(page).not.toContain("Expected annual return");
+    expect(page).toContain("Expected annual return");
+    expect(page).toContain("Your assumption");
+    expect(page).toContain("ExpectedReturnAssumptionEditor");
     expect(page).not.toContain("GoalCoachCard");
     expect(page).not.toContain("GoalWhatIfCard");
     expect(page).not.toMatch(/overflow-x-auto|overflow-x-scroll/);

@@ -147,6 +147,14 @@ export function DashboardConclusionModule({
           >
             {card.conclusion}
           </p>
+          {card.contextLine ? (
+            <p
+              className={`mt-1 line-clamp-1 ${appSectionMetaClass} text-[12px] text-slate-500`}
+              data-testid="dashboard-goal-assumption-context"
+            >
+              {card.contextLine}
+            </p>
+          ) : null}
           <Link
             href={card.ctaHref}
             className={`mt-3 inline-flex min-h-11 items-center gap-1.5 ${appTextLinkClass}`}

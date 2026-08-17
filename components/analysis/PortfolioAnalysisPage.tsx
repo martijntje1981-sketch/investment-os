@@ -113,7 +113,7 @@ export default function PortfolioAnalysisPage() {
     saveHoldings,
   } = useUserPortfolio();
 
-  const { goal, hasSavedGoal } = useUserGoal();
+  const { goal, hasSavedGoal, persistGoal } = useUserGoal();
 
   const { quotes, isLoading: dividendsLoading } = usePortfolioDividends(
     holdings,
@@ -254,6 +254,7 @@ export default function PortfolioAnalysisPage() {
               holdings={holdings}
               goal={goal}
               hasSavedGoal={hasSavedGoal}
+              onPersistGoal={persistGoal}
             />
 
             <MarketConsensusSection

@@ -9,6 +9,7 @@ import {
   isValidUserSub,
 } from "@/lib/client/portfolioStorageKeys";
 import { normalizePassiveIncomeTarget } from "@/lib/client/goalPassiveIncome";
+import { isValidExpectedAnnualReturnInput } from "@/lib/client/expectedReturnAssumption";
 import type { GoalSettings } from "@/lib/types/portfolioStorage";
 
 export const GOAL_UPDATED_EVENT = "investment-os-goal-updated";
@@ -59,7 +60,12 @@ function normalizeGoal(parsed: Partial<GoalSettings>): GoalSettings | null {
 }
 
 export function sanitizeGoalForSave(goal: GoalSettings): GoalSettings | null {
-  return normalizeGoal(goal);
+  const normalized = normalizeGoal(goal);
+  if (!normalized) return null;
+  if (!isValidExpectedAnnualReturnInput(normalized.expectedAnnualReturn)) {
+    return null;
+  }
+  return normalized;
 }
 
 export function readSavedUserGoal(userSub: string): GoalSettings | null {
