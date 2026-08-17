@@ -10,18 +10,13 @@ function holding(
     Pick<StoredPortfolioHolding, "symbol">,
 ): StoredPortfolioHolding {
   return {
-    id: overrides.id ?? `${overrides.symbol}-id`,
-    symbol: overrides.symbol,
-    name: overrides.name ?? overrides.symbol,
-    quantity: overrides.quantity ?? 1,
-    purchasePrice: overrides.purchasePrice ?? 100,
-    currentPrice: overrides.currentPrice ?? 100,
+    id: `${overrides.symbol}-id`,
+    name: overrides.symbol,
+    quantity: 1,
+    purchasePrice: 100,
+    currentPrice: 100,
     currency: "EUR",
-    assetType: overrides.assetType ?? "crypto",
-    changePercent: overrides.changePercent,
-    change24hPercent: overrides.change24hPercent,
-    change24hAmount: overrides.change24hAmount,
-    providerSymbol: overrides.providerSymbol,
+    assetType: "crypto",
     ...overrides,
   };
 }
