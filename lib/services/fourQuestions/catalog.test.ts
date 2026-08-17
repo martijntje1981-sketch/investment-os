@@ -22,6 +22,10 @@ describe("Four Questions central catalog", () => {
     for (const q of FOUR_QUESTIONS) {
       expect(q.visual.panel.length).toBeGreaterThan(0);
       expect(q.visual.onDark.length).toBeGreaterThan(0);
+      expect(q.visual.hubHero).toMatch(/gradient/);
+      expect(q.visual.hubAnswer).toMatch(/border-l/);
+      expect(q.visual.navActive).toMatch(/gradient/);
+      expect(q.visual.navIdle).not.toMatch(/bg-white(?![/\w])/);
       expect(q.hubPath).toBe(FOUR_QUESTION_HUB_PATHS[q.id]);
       expect(q.shortNavLabel.length).toBeGreaterThan(0);
       expect(q.humanQuestion.length).toBeGreaterThan(0);

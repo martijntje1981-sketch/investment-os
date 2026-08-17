@@ -20,6 +20,7 @@ type FourQuestionsCompactNavProps = {
 
 /**
  * Shared compact Four Questions navigation for authenticated product pages.
+ * Each question keeps its color identity; active is richer, not white-only.
  */
 export function FourQuestionsCompactNav({
   pathname: pathnameProp,
@@ -64,28 +65,27 @@ function QuestionNavLink({
   item: FourQuestionDefinition;
   isActive: boolean;
 }) {
+  const v = item.visual;
   return (
     <Link
       href={item.hubPath}
       aria-current={isActive ? "page" : undefined}
       data-testid={`four-questions-nav-${item.id}`}
       data-active={isActive ? "true" : "false"}
-      className={`flex min-h-11 flex-col items-start justify-center rounded-xl border px-1.5 py-1.5 transition sm:px-2.5 sm:py-2 focus-visible:outline-none focus-visible:ring-2 ${item.visual.ring} ${
-        isActive
-          ? `${item.visual.panel} ring-1 ring-inset ring-slate-900/10`
-          : "border-slate-200/80 bg-white/90 hover:bg-slate-50"
+      className={`flex min-h-11 flex-col items-start justify-center rounded-xl border px-1.5 py-1.5 transition sm:px-2.5 sm:py-2 focus-visible:outline-none focus-visible:ring-2 ${v.ring} ${
+        isActive ? v.navActive : `${v.navIdle} ${v.hover}`
       }`}
     >
       <span
-        className={`text-[10px] font-semibold tabular-nums tracking-[0.08em] ${
-          isActive ? item.visual.number : "text-slate-400"
+        className={`text-[10px] font-bold tabular-nums tracking-[0.08em] ${
+          isActive ? v.navNumberActive : v.navNumberIdle
         }`}
       >
         {item.numberLabel}
       </span>
       <span
         className={`mt-0.5 truncate text-[11px] font-semibold leading-tight tracking-[-0.02em] sm:text-[12px] ${
-          isActive ? "text-slate-950" : "text-slate-600"
+          isActive ? v.navLabelActive : v.navLabelIdle
         }`}
       >
         {item.shortNavLabel}

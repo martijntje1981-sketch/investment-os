@@ -51,6 +51,8 @@ describe("Four Questions product architecture Phase 1 wiring", () => {
     expect(hub).toContain("Deep dive");
     expect(hub).toContain('rel="noopener noreferrer"');
     expect(hub).toContain("resolveIntelligenceScope");
+    expect(hub).toContain("QuestionHubBrandBar");
+    expect(hub).toContain("hubHero");
   });
 
   it("Dashboard Explore destinations point at hubs via builders", () => {

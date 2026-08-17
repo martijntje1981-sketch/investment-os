@@ -5,17 +5,14 @@ import { ArrowUpRight } from "lucide-react";
 import { useMemo } from "react";
 
 import { FourQuestionsCompactNav } from "@/components/fourQuestions/FourQuestionsCompactNav";
+import { QuestionHubBrandBar } from "@/components/fourQuestions/QuestionHubBrandBar";
+import { TobaileyMarkWatermark } from "@/components/fourQuestions/TobaileyMarkWatermark";
 import BottomNavigation from "@/components/home/BottomNav";
 import {
   AppPageLoading,
   PageContainer,
 } from "@/components/layout/PageContainer";
-import {
-  appCardClass,
-  appCardPaddingClass,
-  appSectionMetaClass,
-  appTextLinkClass,
-} from "@/components/layout/appSurface";
+import { appSectionMetaClass } from "@/components/layout/appSurface";
 import { EmptyPortfolioGuide } from "@/components/onboarding/EmptyPortfolioGuide";
 import { useGoalProgress } from "@/lib/client/useGoalProgress";
 import { useGoalRealityCheck } from "@/lib/client/useGoalRealityCheck";
@@ -43,6 +40,7 @@ type QuestionHubPageProps = {
 
 /**
  * Orchestration hub for one Four Question — reuses existing engines only.
+ * Visual system is shared; only the question identity tokens change.
  */
 export function QuestionHubPage({ questionId }: QuestionHubPageProps) {
   const definition = getFourQuestionDefinition(questionId);
@@ -148,9 +146,16 @@ export function QuestionHubPage({ questionId }: QuestionHubPageProps) {
     return <AppPageLoading />;
   }
 
+  const v = definition.visual;
+
   return (
     <>
-      <PageContainer>
+      <PageContainer
+        className={`${v.hubPageWash} !pt-4 sm:!pt-5`}
+        stackClassName="gap-4 md:gap-5"
+      >
+        <QuestionHubBrandBar />
+
         <FourQuestionsCompactNav />
 
         <HubHero definition={definition} />
@@ -161,34 +166,44 @@ export function QuestionHubPage({ questionId }: QuestionHubPageProps) {
             body="Import or add holdings so Tobailey can build this answer from your portfolio."
           />
         ) : answer ? (
-          <div className="mt-5 space-y-5" data-testid={`question-hub-${questionId}`}>
+          <div
+            className="space-y-4 sm:space-y-5"
+            data-testid={`question-hub-${questionId}`}
+          >
             <section
-              className={`rounded-2xl border px-4 py-4 sm:px-5 sm:py-5 ${definition.visual.panel}`}
+              className={`rounded-2xl px-4 py-4 sm:px-5 sm:py-5 ${v.hubAnswer}`}
               data-testid="question-hub-conclusion"
             >
               <p
-                className={`text-[11px] font-bold uppercase tracking-[0.14em] ${definition.visual.eyebrow}`}
+                className={`text-[11px] font-bold uppercase tracking-[0.14em] ${v.hubAnswerEyebrow}`}
               >
                 Answer
               </p>
-              <h2 className="mt-2 text-[1.2rem] font-bold tracking-[-0.03em] text-slate-950 sm:text-[1.35rem]">
+              <h2 className="mt-2 text-[1.25rem] font-black tracking-[-0.03em] text-slate-950 sm:text-[1.45rem]">
                 {answer.answer}
               </h2>
               {answer.support ? (
-                <p className="mt-1.5 text-[14px] leading-snug text-slate-600">
+                <p className="mt-2 text-[14px] leading-snug text-slate-700">
                   {answer.support}
                 </p>
               ) : null}
             </section>
 
             {answer.expandItems.length > 0 ? (
-              <section className={`${appCardClass} ${appCardPaddingClass}`}>
+              <section className="rounded-2xl border border-slate-200/90 bg-white px-4 py-4 shadow-sm sm:px-5 sm:py-5">
                 <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
                   Important evidence
                 </p>
-                <ul className="mt-3 space-y-1">
+                <ul className="mt-3 divide-y divide-slate-100">
                   {answer.expandItems.map((item) => (
-                    <EvidenceRow key={item.id} item={item} />
+                    <EvidenceRow
+                      key={item.id}
+                      item={item}
+                      accentIcon={v.hubAccentIcon}
+                      rowHover={v.hubRowHover}
+                      focusRing={v.ring}
+                      dot={v.hubDot}
+                    />
                   ))}
                 </ul>
               </section>
@@ -200,19 +215,26 @@ export function QuestionHubPage({ questionId }: QuestionHubPageProps) {
               </p>
             ))}
 
-            <section className={`${appCardClass} ${appCardPaddingClass}`}>
-              <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
+            <section
+              className={`rounded-2xl px-4 py-4 sm:px-5 sm:py-5 ${v.hubTintSection}`}
+            >
+              <p
+                className={`text-[11px] font-bold uppercase tracking-[0.12em] ${v.hubAccentText}`}
+              >
                 Deep dive
               </p>
-              <ul className="mt-3 space-y-2">
+              <ul className="mt-3 space-y-1.5">
                 {definition.deepDives.map((dive) => (
                   <li key={dive.href}>
                     <Link
                       href={dive.href}
-                      className={`inline-flex min-h-11 items-center gap-1.5 text-[14px] font-semibold ${appTextLinkClass}`}
+                      className={`inline-flex min-h-11 w-full items-center justify-between gap-2 rounded-xl px-2 py-2 text-[14px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 ${v.hubAccentText} ${v.hubRowHover} ${v.ring}`}
                     >
-                      {dive.label}
-                      <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
+                      <span>{dive.label}</span>
+                      <ArrowUpRight
+                        className={`h-4 w-4 shrink-0 ${v.hubAccentIcon}`}
+                        aria-hidden
+                      />
                     </Link>
                   </li>
                 ))}
@@ -221,8 +243,11 @@ export function QuestionHubPage({ questionId }: QuestionHubPageProps) {
           </div>
         ) : null}
 
-        <p className="mt-8 text-center text-[13px] text-slate-500">
-          <Link href={DASHBOARD_PATH} className={appTextLinkClass}>
+        <p className="mt-4 text-center text-[13px] text-slate-500">
+          <Link
+            href={DASHBOARD_PATH}
+            className={`font-semibold underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 ${v.hubAccentText} ${v.ring}`}
+          >
             Back to Dashboard
           </Link>
         </p>
@@ -233,28 +258,37 @@ export function QuestionHubPage({ questionId }: QuestionHubPageProps) {
 }
 
 function HubHero({ definition }: { definition: FourQuestionDefinition }) {
+  const v = definition.visual;
+  const title = definition.question.replace(/\?$/, "").toUpperCase();
+
   return (
     <header
-      className={`mt-5 rounded-[24px] border px-4 py-5 sm:px-6 sm:py-6 ${definition.visual.panel}`}
+      className={`relative overflow-hidden rounded-[24px] px-4 py-6 sm:px-6 sm:py-7 ${v.hubHero}`}
       data-testid="question-hub-hero"
     >
-      <p
-        className={`text-[11px] font-semibold tabular-nums tracking-[0.1em] ${definition.visual.number}`}
-      >
-        {definition.numberLabel} · {definition.question}
-      </p>
-      <h1 className="mt-2 text-[1.5rem] font-bold tracking-[-0.035em] text-slate-950 sm:text-[1.75rem]">
-        {definition.humanQuestion}
-      </h1>
-      <p className="mt-1.5 max-w-xl text-[14px] leading-snug text-slate-600">
-        {definition.meaning}
-      </p>
+      <TobaileyMarkWatermark className="-right-8 top-1/2 -translate-y-1/2 sm:-right-6" />
+
+      <div className="relative z-10 max-w-[min(100%,28rem)] sm:max-w-xl">
+        <p className="text-[11px] font-bold tabular-nums tracking-[0.14em] text-white/80">
+          {definition.numberLabel} · {title}?
+        </p>
+        <h1 className="mt-2.5 text-[1.55rem] font-black leading-tight tracking-[-0.04em] text-white sm:text-[1.9rem]">
+          {definition.humanQuestion}
+        </h1>
+        <p className="mt-2 max-w-xl text-[14px] leading-snug text-white/80">
+          {definition.meaning}
+        </p>
+      </div>
     </header>
   );
 }
 
 function EvidenceRow({
   item,
+  accentIcon,
+  rowHover,
+  focusRing,
+  dot,
 }: {
   item: {
     id: string;
@@ -263,9 +297,14 @@ function EvidenceRow({
     href?: string | null;
     hrefExternal?: boolean;
   };
+  accentIcon: string;
+  rowHover: string;
+  focusRing: string;
+  dot: string;
 }) {
   const body = (
     <>
+      <span className={`mt-2 h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} aria-hidden />
       <span className="min-w-0 flex-1">
         <span className="block text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
           {item.label}
@@ -277,13 +316,16 @@ function EvidenceRow({
         ) : null}
       </span>
       {item.href ? (
-        <ArrowUpRight className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" aria-hidden />
+        <ArrowUpRight
+          className={`mt-0.5 h-4 w-4 shrink-0 ${accentIcon}`}
+          aria-hidden
+        />
       ) : null}
     </>
   );
 
   const className =
-    "flex min-h-11 w-full items-start gap-2 rounded-xl px-2 py-2 text-left";
+    "flex min-h-11 w-full items-start gap-2.5 rounded-xl px-1.5 py-2.5 text-left";
 
   if (!item.href) {
     return <div className={className}>{body}</div>;
@@ -295,7 +337,7 @@ function EvidenceRow({
         href={item.href}
         target="_blank"
         rel="noopener noreferrer"
-        className={`${className} cursor-pointer transition hover:bg-black/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/35`}
+        className={`${className} cursor-pointer transition ${rowHover} focus-visible:outline-none focus-visible:ring-2 ${focusRing}`}
         aria-label={`${item.label}. Opens in a new tab.`}
       >
         {body}
@@ -306,7 +348,7 @@ function EvidenceRow({
   return (
     <Link
       href={item.href}
-      className={`${className} cursor-pointer transition hover:bg-black/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/35`}
+      className={`${className} cursor-pointer transition ${rowHover} focus-visible:outline-none focus-visible:ring-2 ${focusRing}`}
     >
       {body}
     </Link>
