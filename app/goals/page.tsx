@@ -36,6 +36,7 @@ import {
   ExpectedReturnAssumptionEditor,
   ExpectedReturnAssumptionPanel,
 } from "@/components/goals/ExpectedReturnAssumption";
+import { GoalRealityCheckPanel } from "@/components/goals/GoalRealityCheckPanel";
 import { EmptyPortfolioGuide } from "@/components/onboarding/EmptyPortfolioGuide";
 import NumericInput from "@/components/NumericInput";
 import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
@@ -68,6 +69,7 @@ import {
   sanitizeGoalForSave,
 } from "@/lib/client/userGoalStorage";
 import { useGoalProgress } from "@/lib/client/useGoalProgress";
+import { useGoalRealityCheck } from "@/lib/client/useGoalRealityCheck";
 import { usePortfolioContributions } from "@/lib/client/usePortfolioContributions";
 import { usePortfolioPerformanceHistory } from "@/lib/client/usePortfolioPerformanceHistory";
 import { useUserGoal } from "@/lib/client/useUserGoal";
@@ -119,6 +121,11 @@ export default function GoalsPage() {
   const { goal: savedGoal, hasSavedGoal, persistGoal } = useUserGoal();
 
   const history = usePortfolioPerformanceHistory(holdings, "1Y");
+  const { realityCheck, isLoading: realityCheckLoading } = useGoalRealityCheck(
+    holdings,
+    hasSavedGoal ? savedGoal : null,
+    hasSavedGoal && holdings.length > 0,
+  );
   const analysis = useMemo(() => buildPortfolioAnalysis(holdings), [holdings]);
   const performance = useMemo(
     () => buildPortfolioPerformance(holdings),
@@ -478,10 +485,14 @@ export default function GoalsPage() {
               <ConversionDetailsDisclosure compactTrigger />
             </div>
             {getExpectedReturnAssumption(savedGoal) != null ? (
-              <div className="border-t border-slate-100 px-4 py-4 sm:px-6">
+              <div className="space-y-3 border-t border-slate-100 px-4 py-4 sm:px-6">
                 <ExpectedReturnAssumptionPanel
                   percent={getExpectedReturnAssumption(savedGoal)!}
                   onEdit={() => setAssumptionEditorOpen(true)}
+                />
+                <GoalRealityCheckPanel
+                  realityCheck={realityCheck}
+                  isLoading={realityCheckLoading}
                 />
               </div>
             ) : null}

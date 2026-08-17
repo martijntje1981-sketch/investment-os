@@ -277,11 +277,20 @@ function GoalSensitivityPanel({
         {hasSavedGoal &&
         assumptionPercent != null &&
         onEditAssumption ? (
-          <div className="mt-2">
+          <div className="mt-2 space-y-1">
             <ExpectedReturnAssumptionCompact
               percent={assumptionPercent}
               onEdit={onEditAssumption}
             />
+            <p className={appSectionMetaClass}>
+              <a
+                href="/goals#goal-reality-check"
+                className="font-semibold text-sky-800 underline-offset-2 hover:underline"
+              >
+                Goal Reality Check
+              </a>
+              {" — compare this assumption with your verified portfolio pace."}
+            </p>
           </div>
         ) : null}
       </div>
