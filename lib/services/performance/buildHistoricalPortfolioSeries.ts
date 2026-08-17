@@ -14,6 +14,7 @@
  */
 
 import type { PortfolioPerformancePoint } from "@/lib/client/performance/types";
+import { buildHoldingPeriodMovesFromEod } from "@/lib/services/performanceAttribution/buildHoldingMovesFromEod";
 import type {
   BuildHistoricalPortfolioSeriesInput,
   EodHistoryPoint,
@@ -350,6 +351,7 @@ export function buildHistoricalPortfolioSeries(
   );
 
   const partial = skippedHoldingCount > 0;
+  const holdingMoves = buildHoldingPeriodMovesFromEod(input);
 
   return {
     period: window.period,
@@ -366,5 +368,6 @@ export function buildHistoricalPortfolioSeries(
     coveredHoldingCount: covered.length,
     skippedHoldingCount,
     earliestAvailableDate,
+    holdingMoves,
   };
 }

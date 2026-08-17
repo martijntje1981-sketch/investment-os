@@ -12,6 +12,7 @@ import type {
   PortfolioPerformancePoint,
 } from "@/lib/client/performance/types";
 import type { PriceCurrency } from "@/lib/services/prices/types";
+import type { HoldingPeriodMove } from "@/lib/services/performanceAttribution/buildHoldingMovesFromEod";
 
 /** Periods that require EOD history (1D stays client-side previousClose). */
 export type PerformanceHistoryPeriodId = Exclude<PerformancePeriodId, "1D">;
@@ -76,6 +77,11 @@ export type HistoricalPortfolioSeriesResult = {
   coveredHoldingCount: number;
   skippedHoldingCount: number;
   earliestAvailableDate: string | null;
+  /**
+   * Per-holding start/end EUR moves for Phase 3A attribution.
+   * Same constant-holdings / no-flow semantics as the portfolio series.
+   */
+  holdingMoves?: HoldingPeriodMove[];
 };
 
 export type PortfolioPerformanceHistoryRequest = {
@@ -96,5 +102,6 @@ export type PortfolioPerformanceHistoryApiResponse = {
   historicalFxApproximate: boolean;
   coveredHoldingCount: number;
   skippedHoldingCount: number;
+  holdingMoves?: HoldingPeriodMove[];
   error?: string;
 };

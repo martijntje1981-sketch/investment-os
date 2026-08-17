@@ -53,6 +53,10 @@ import { buildPortfolioExposureAllocation } from "@/lib/services/classification"
 import { buildPortfolioPulse } from "@/lib/services/portfolio/periodScores";
 import { buildPersonalIntelligenceToday } from "@/lib/services/personalIntelligence";
 import { buildResilienceProfile } from "@/lib/services/resilience";
+import {
+  buildPortfolioPerformanceAttribution,
+  buildPulseAttributionEnrichment,
+} from "@/lib/services/performanceAttribution";
 import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 import { logDashboardProductionDiagnostics } from "@/lib/client/investmentOsProductionDebug";
 
@@ -180,6 +184,45 @@ export default function DashboardPage() {
     snapshot.concentrationWeightPercent,
     weekHistory.data,
   ]);
+
+  const pulseAttributionEnrichment = useMemo(() => {
+    if (holdings.length === 0) return null;
+
+    const dailyAttr = buildPortfolioPerformanceAttribution({
+      period: "1D",
+      holdings,
+    });
+    const weeklyAttr = weekHistory.data?.holdingMoves
+      ? buildPortfolioPerformanceAttribution({
+          period: "1W",
+          holdings,
+          holdingMoves: weekHistory.data.holdingMoves,
+          startingPortfolioValue: weekHistory.data.startingValue,
+          endingPortfolioValue: weekHistory.data.endingValue,
+          totalReturnPercent: weekHistory.data.investmentReturnPercent,
+          totalReturnAmount: weekHistory.data.investmentReturn,
+          historicalFxApproximate: weekHistory.data.historicalFxApproximate,
+        })
+      : null;
+    const monthlyAttr = monthHistory.data?.holdingMoves
+      ? buildPortfolioPerformanceAttribution({
+          period: "1M",
+          holdings,
+          holdingMoves: monthHistory.data.holdingMoves,
+          startingPortfolioValue: monthHistory.data.startingValue,
+          endingPortfolioValue: monthHistory.data.endingValue,
+          totalReturnPercent: monthHistory.data.investmentReturnPercent,
+          totalReturnAmount: monthHistory.data.investmentReturn,
+          historicalFxApproximate: monthHistory.data.historicalFxApproximate,
+        })
+      : null;
+
+    return {
+      daily: buildPulseAttributionEnrichment(dailyAttr),
+      weekly: buildPulseAttributionEnrichment(weeklyAttr),
+      monthly: buildPulseAttributionEnrichment(monthlyAttr),
+    };
+  }, [holdings, weekHistory.data, monthHistory.data]);
 
   const smartDashboard = useMemo(() => {
     const usesPreviousClose =
@@ -348,6 +391,7 @@ export default function DashboardPage() {
             smart={smartDashboard}
             weekPerformancePoints={weekHistory.data?.chartPoints ?? null}
             monthPerformancePoints={monthHistory.data?.chartPoints ?? null}
+            pulseAttributionEnrichment={pulseAttributionEnrichment}
             refresh={{
               onRefresh: () => void refreshPrices(),
               isRefreshing,

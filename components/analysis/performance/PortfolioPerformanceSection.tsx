@@ -7,6 +7,7 @@ import { ConversionDetailsDisclosure } from "@/components/currency/ConversionDet
 import { PerformanceHoldingLeaders } from "@/components/analysis/performance/PerformanceHoldingLeaders";
 import { PerformanceKpiGrid } from "@/components/analysis/performance/PerformanceKpiGrid";
 import { PerformancePeriodSelector } from "@/components/analysis/performance/PerformancePeriodSelector";
+import { PerformanceAttributionSection } from "@/components/analysis/performance/PerformanceAttributionSection";
 import {
   PORTFOLIO_PERFORMANCE_CHART_EMPTY_MESSAGE,
   PortfolioPerformanceChart,
@@ -373,6 +374,8 @@ export function PortfolioPerformanceSection({
           available={performance.holdingLeadersAvailable}
           periodLabel={performance.periodLabel}
         />
+
+        <PerformanceAttributionSection holdings={holdings} />
       </div>
     </section>
   );

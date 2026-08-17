@@ -111,6 +111,7 @@ export function PortfolioValueCard({
   performancePoints = null,
   weekPerformancePoints = null,
   monthPerformancePoints = null,
+  pulseAttributionEnrichment = null,
 }: {
   snapshot: DashboardPortfolioSnapshot;
   pulse?: PortfolioPulseResult | null;
@@ -119,6 +120,11 @@ export function PortfolioValueCard({
   performancePoints?: PortfolioPerformancePoint[] | null;
   weekPerformancePoints?: PortfolioPerformancePoint[] | null;
   monthPerformancePoints?: PortfolioPerformancePoint[] | null;
+  pulseAttributionEnrichment?: {
+    daily?: string[];
+    weekly?: string[];
+    monthly?: string[];
+  } | null;
   refresh?: {
     onRefresh: () => void;
     isRefreshing: boolean;
@@ -286,7 +292,10 @@ export function PortfolioValueCard({
 
           {pulse ? (
             <div className="lg:mt-4 lg:border-t lg:border-white/10 lg:pt-4">
-              <HeroPortfolioPulse pulse={pulse} />
+              <HeroPortfolioPulse
+                pulse={pulse}
+                attributionEnrichment={pulseAttributionEnrichment}
+              />
             </div>
           ) : null}
 

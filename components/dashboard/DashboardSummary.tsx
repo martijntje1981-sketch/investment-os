@@ -24,6 +24,7 @@ export function DashboardSummary({
   performancePoints = null,
   weekPerformancePoints = null,
   monthPerformancePoints = null,
+  pulseAttributionEnrichment = null,
 }: {
   snapshot: DashboardPortfolioSnapshot;
   isLoading?: boolean;
@@ -35,6 +36,11 @@ export function DashboardSummary({
   performancePoints?: PortfolioPerformancePoint[] | null;
   weekPerformancePoints?: PortfolioPerformancePoint[] | null;
   monthPerformancePoints?: PortfolioPerformancePoint[] | null;
+  pulseAttributionEnrichment?: {
+    daily?: string[];
+    weekly?: string[];
+    monthly?: string[];
+  } | null;
 }) {
   if (isLoading) {
     return <DashboardSummarySkeleton />;
@@ -50,6 +56,7 @@ export function DashboardSummary({
         performancePoints={performancePoints}
         weekPerformancePoints={weekPerformancePoints}
         monthPerformancePoints={monthPerformancePoints}
+        pulseAttributionEnrichment={pulseAttributionEnrichment}
       />
     </section>
   );

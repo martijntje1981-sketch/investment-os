@@ -259,6 +259,7 @@ export async function POST(request: Request) {
       historicalFxApproximate: series.historicalFxApproximate,
       coveredHoldingCount: series.coveredHoldingCount,
       skippedHoldingCount: series.skippedHoldingCount,
+      holdingMoves: series.holdingMoves,
     };
 
     seriesCache.set(key, {

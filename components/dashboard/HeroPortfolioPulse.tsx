@@ -17,10 +17,25 @@ import type {
  */
 export function HeroPortfolioPulse({
   pulse,
+  attributionEnrichment = null,
 }: {
   pulse: PortfolioPulseResult;
+  attributionEnrichment?: {
+    daily?: string[];
+    weekly?: string[];
+    monthly?: string[];
+  } | null;
 }) {
   const [active, setActive] = useState<DynamicPortfolioScore | null>(null);
+
+  const notes =
+    active?.id === "daily"
+      ? (attributionEnrichment?.daily ?? [])
+      : active?.id === "weekly"
+        ? (attributionEnrichment?.weekly ?? [])
+        : active?.id === "monthly"
+          ? (attributionEnrichment?.monthly ?? [])
+          : [];
 
   return (
     <div
@@ -67,6 +82,7 @@ export function HeroPortfolioPulse({
         score={active}
         open={active != null}
         onClose={() => setActive(null)}
+        attributionNotes={notes}
       />
     </div>
   );

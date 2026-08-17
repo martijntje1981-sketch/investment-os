@@ -37,10 +37,13 @@ export function PortfolioPulseDetailSheet({
   score,
   open,
   onClose,
+  attributionNotes = [],
 }: {
   score: DynamicPortfolioScore | null;
   open: boolean;
   onClose: () => void;
+  /** Optional Phase 3A attribution enrichment — explanatory only. */
+  attributionNotes?: string[];
 }) {
   const titleId = useId();
 
@@ -97,6 +100,22 @@ export function PortfolioPulseDetailSheet({
         </div>
 
         <p className={`mt-4 ${appSectionBodyClass}`}>{score.summary}</p>
+
+        {attributionNotes.length > 0 ? (
+          <div className="mt-4 space-y-2">
+            <p className={appSectionLabelClass}>Performance drivers</p>
+            <ul className="space-y-2">
+              {attributionNotes.map((note) => (
+                <li
+                  key={note}
+                  className="rounded-2xl border border-slate-200/80 bg-slate-50/80 px-3 py-2.5 text-sm font-medium text-slate-900"
+                >
+                  {note}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
 
         {shaping.length > 0 ? (
           <div className="mt-4 space-y-2">
