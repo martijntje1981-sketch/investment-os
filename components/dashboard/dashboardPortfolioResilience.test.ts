@@ -113,24 +113,15 @@ describe("Dashboard Portfolio Resilience summary", () => {
     expect(buildResilienceConclusion(empty)).toBeNull();
   });
 
-  it("deep-links to Analysis scenario stress and sits after Personal Intelligence", () => {
+  it("deep-links to Analysis scenario stress via Four Questions outlook", () => {
     expect(DASHBOARD_DEEP_LINKS.scenarioStress).toBe("/analysis#scenario-stress");
     expect(conclusionsSource).toContain("DASHBOARD_DEEP_LINKS.scenarioStress");
     expect(conclusionsSource).toContain("Explore scenarios & resilience");
 
-    const piIdx = dashboardSource.indexOf("<PortfolioThirtySeconds");
-    const resilienceIdx = dashboardSource.indexOf(
-      "<DashboardPortfolioResilienceCard",
-    );
-    const goalIdx = dashboardSource.indexOf("<DashboardGoalConclusionCard");
-    const marketsIdx = dashboardSource.indexOf("<DashboardTodaysMarketBriefing");
-    const reviewIdx = dashboardSource.indexOf("<DashboardReviewConclusionCard");
+    const fourIdx = dashboardSource.indexOf("<FourQuestionsSection");
     const holdingsIdx = dashboardSource.indexOf("<HoldingsToday");
-    expect(piIdx).toBeGreaterThan(-1);
-    expect(resilienceIdx).toBeGreaterThan(piIdx);
-    expect(goalIdx).toBeGreaterThan(resilienceIdx);
-    expect(marketsIdx).toBeGreaterThan(goalIdx);
-    expect(reviewIdx).toBeGreaterThan(marketsIdx);
-    expect(holdingsIdx).toBeGreaterThan(reviewIdx);
+    expect(fourIdx).toBeGreaterThan(-1);
+    expect(holdingsIdx).toBeGreaterThan(fourIdx);
+    expect(dashboardSource).toContain("buildFourQuestions");
   });
 });

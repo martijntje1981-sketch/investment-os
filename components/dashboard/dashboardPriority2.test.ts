@@ -24,11 +24,7 @@ describe("Priority 2 Dashboard progressive disclosure", () => {
   it("keeps conclusion-first Dashboard section order", () => {
     const order = [
       "<DashboardSummary",
-      "<PortfolioThirtySeconds",
-      "<DashboardPortfolioResilienceCard",
-      "<DashboardGoalConclusionCard",
-      "<DashboardTodaysMarketBriefing",
-      "<DashboardReviewConclusionCard",
+      "<FourQuestionsSection",
       "<HoldingsToday",
       "<DashboardMarketPulseCard",
       "<DashboardPerspectivesWidget",
@@ -62,7 +58,7 @@ describe("Priority 2 Dashboard progressive disclosure", () => {
     expect(dashboard).not.toContain("DashboardUpcomingEventsWidget");
   });
 
-  it("keeps Market Briefing as one lead story without portfolio-context duplication", () => {
+  it("keeps Market Briefing module available for Explore destinations", () => {
     expect(marketBriefing).toContain("mustWatch");
     expect(marketBriefing).toContain("leadTitle");
     expect(marketBriefing).not.toContain("Portfolio context");

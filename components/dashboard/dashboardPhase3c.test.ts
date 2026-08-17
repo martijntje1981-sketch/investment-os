@@ -20,11 +20,7 @@ describe("Phase 3C Smart Dashboard Intelligence wiring", () => {
   it("keeps conclusion-first Dashboard section order without remounting Goal Progress card", () => {
     const order = [
       "<DashboardSummary",
-      "<PortfolioThirtySeconds",
-      "<DashboardPortfolioResilienceCard",
-      "<DashboardGoalConclusionCard",
-      "<DashboardTodaysMarketBriefing",
-      "<DashboardReviewConclusionCard",
+      "<FourQuestionsSection",
       "<HoldingsToday",
       "<DashboardMarketPulseCard",
       "<DashboardPerspectivesWidget",

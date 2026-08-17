@@ -67,12 +67,12 @@ describe("dashboard phase 2 compact previews", () => {
     expect(dashboardSource).not.toContain("DashboardGoalProgressCard");
   });
 
-  it("keeps Today’s Decision logic available for the merged briefing card", () => {
-    expect(dashboardSource).toContain("DashboardTodaysMarketBriefing");
+  it("keeps Today’s Decision logic available for Market Briefing Explore destination", () => {
     expect(decisionSource).toContain("TodaysDecisionBlock");
     expect(decisionBlockSource).toContain("resolveDestination");
     expect(decisionBlockSource).toContain("INTERACTIVE_STYLES");
     expect(decisionBlockSource).toContain("destinationHref");
+    expect(briefingSource).toContain("Markets today");
   });
 
   it("renders Markets today with one lead conclusion", () => {
@@ -90,19 +90,13 @@ describe("dashboard phase 2 compact previews", () => {
     expect(briefingSource).not.toContain("macroHighlights");
   });
 
-  it("places conclusion modules before holdings; hero pulse remains in DashboardSummary", () => {
+  it("places Four Questions before holdings; hero pulse remains in DashboardSummary", () => {
     const pulseIdx = dashboardSource.indexOf("pulse={portfolioPulse}");
-    const resilienceIdx = dashboardSource.indexOf(
-      "<DashboardPortfolioResilienceCard",
-    );
-    const briefingIdx = dashboardSource.indexOf(
-      "<DashboardTodaysMarketBriefing",
-    );
+    const fourIdx = dashboardSource.indexOf("<FourQuestionsSection");
     const holdingsIdx = dashboardSource.indexOf("<HoldingsToday");
     expect(pulseIdx).toBeGreaterThan(-1);
-    expect(resilienceIdx).toBeGreaterThan(pulseIdx);
-    expect(briefingIdx).toBeGreaterThan(resilienceIdx);
-    expect(holdingsIdx).toBeGreaterThan(briefingIdx);
+    expect(fourIdx).toBeGreaterThan(pulseIdx);
+    expect(holdingsIdx).toBeGreaterThan(fourIdx);
     expect(dashboardSource).not.toContain("DashboardTodaysDecision");
     expect(dashboardSource).not.toContain("DashboardIntelligencePreview");
     expect(dashboardSource).not.toMatch(/overflow-x-auto|overflow-x-scroll/);

@@ -37,8 +37,9 @@ describe("Phase 1 dashboard UI refinement", () => {
     );
   });
 
-  it("merges Today’s Decision and Market Briefing into one card", () => {
-    expect(dashboard).toContain("<DashboardTodaysMarketBriefing");
+  it("places Four Questions under hero pulse; Market Briefing remains as Explore destination module", () => {
+    expect(dashboard).toContain("<FourQuestionsSection");
+    expect(dashboard).not.toContain("<DashboardTodaysMarketBriefing");
     expect(dashboard).not.toContain("<DashboardTodaysDecision");
     expect(dashboard).not.toContain("<DashboardIntelligencePreview");
     expect(briefing).toContain("Markets today");

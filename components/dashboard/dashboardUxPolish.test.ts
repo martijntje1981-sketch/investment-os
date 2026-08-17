@@ -178,10 +178,10 @@ describe("Dashboard UX polish phase", () => {
     expect(cash).toContain("Allocation");
   });
 
-  it("orders hero, conclusions, markets, holdings, then secondary modules", () => {
+  it("orders hero, Four Questions, holdings, then secondary modules", () => {
     const summaryIdx = dashboard.indexOf("<DashboardSummary");
     const pulseIdx = dashboard.indexOf("pulse={portfolioPulse}");
-    const briefingIdx = dashboard.indexOf("<DashboardTodaysMarketBriefing");
+    const fourIdx = dashboard.indexOf("<FourQuestionsSection");
     const holdingsIdx = dashboard.indexOf("<HoldingsToday");
     const marketPulseIdx = dashboard.indexOf(
       "<DashboardMarketPulseCard",
@@ -189,12 +189,8 @@ describe("Dashboard UX polish phase", () => {
     );
     const cashIdx = dashboard.indexOf("<DashboardCashIntelligenceCard");
     expect(summaryIdx).toBeLessThan(pulseIdx);
-    expect(pulseIdx).toBeLessThan(briefingIdx);
-    expect(briefingIdx).toBeLessThan(marketPulseIdx);
-    // Holdings sits with primary conclusions; Review is paired beside Markets on desktop.
-    expect(dashboard.indexOf("<DashboardReviewConclusionCard")).toBeLessThan(
-      holdingsIdx,
-    );
+    expect(pulseIdx).toBeLessThan(fourIdx);
+    expect(fourIdx).toBeLessThan(holdingsIdx);
     expect(holdingsIdx).toBeLessThan(marketPulseIdx);
     expect(marketPulseIdx).toBeLessThan(cashIdx);
   });

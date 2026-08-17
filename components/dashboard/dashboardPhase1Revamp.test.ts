@@ -150,9 +150,9 @@ describe("dashboard phase 1 revamp", () => {
     expect(movers.lowestMover?.changePeriodLabel).toBe("24h");
   });
 
-  it("keeps Market Briefing, Portfolio Pulse and Trading Hours without Dashboard insight card", () => {
+  it("keeps Portfolio Pulse and Trading Hours; Four Questions replace stacked briefing cards", () => {
     expect(dashboardSource).toContain("pulse={portfolioPulse}");
-    expect(dashboardSource).toContain("DashboardTodaysMarketBriefing");
+    expect(dashboardSource).toContain("FourQuestionsSection");
     expect(dashboardSource).not.toContain("DashboardPortfolioScorecard");
     expect(dashboardSource).not.toContain("DashboardIntelligencePreview");
     expect(dashboardSource).not.toContain("DashboardInsightCard");

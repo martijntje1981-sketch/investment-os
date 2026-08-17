@@ -5,15 +5,11 @@ import { usePathname } from "next/navigation";
 import { DashboardEmptyState } from "@/components/dashboard/DashboardEmptyState";
 import { DashboardCashIntelligenceCard } from "@/components/dashboard/DashboardCashIntelligenceCard";
 import { DashboardContributionsCard } from "@/components/contributions/DashboardContributionsCard";
-import { DashboardTodaysMarketBriefing } from "@/components/dashboard/DashboardTodaysMarketBriefing";
 import { DashboardMarketPulseCard } from "@/components/dashboard/DashboardMarketPulseCard";
 import { DashboardSummary } from "@/components/dashboard/DashboardSummary";
 import { DashboardExploreTools } from "@/components/dashboard/DashboardExploreTools";
 import { DashboardPortfolioHistorySection } from "@/components/dashboard/DashboardPortfolioHistorySection";
-import { PortfolioThirtySeconds } from "@/components/dashboard/PortfolioThirtySeconds";
-import { DashboardPortfolioResilienceCard } from "@/components/dashboard/DashboardPortfolioResilienceCard";
-import { DashboardGoalConclusionCard } from "@/components/dashboard/DashboardGoalConclusionCard";
-import { DashboardReviewConclusionCard } from "@/components/dashboard/DashboardReviewConclusionCard";
+import { FourQuestionsSection } from "@/components/dashboard/fourQuestions/FourQuestionsSection";
 import { DashboardFirstRunCue } from "@/components/dashboard/DashboardFirstRunCue";
 import { DemoHoldingsCallout } from "@/components/example/DemoHoldingsCallout";
 import { TrialStepsCard } from "@/components/example/TrialStepsCard";
@@ -32,15 +28,14 @@ import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
 import PortfolioSyncBanner from "@/components/PortfolioSyncBanner";
 import {
   buildPortfolioAnalysis,
-  buildValuedPositions,
 } from "@/lib/client/portfolioAnalysis";
-import { summarizeDailyPerformance } from "@/lib/client/dailyPerformance";
 import { buildDashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
 import { previousClosePhraseFromContextLine } from "@/lib/client/dailyPortfolioBriefing";
 import { areMajorMarketsClosed } from "@/lib/client/todaysDecision";
 import { useAuthenticatedFirstName } from "@/lib/client/useAuthenticatedFirstName";
 import { useInvestmentIntelligence } from "@/lib/client/useInvestmentIntelligence";
 import { useGoalProgress } from "@/lib/client/useGoalProgress";
+import { useGoalRealityCheck } from "@/lib/client/useGoalRealityCheck";
 import { useUserGoal } from "@/lib/client/useUserGoal";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 import { useMarketSnapshotMetadata } from "@/lib/client/useMarketSnapshotMetadata";
@@ -51,12 +46,16 @@ import { buildSmartDashboardIntelligence } from "@/lib/client/smartDashboardInte
 import { buildPortfolioHealthProfile } from "@/lib/services/portfolio/portfolioHealthProfile";
 import { buildPortfolioExposureAllocation } from "@/lib/services/classification";
 import { buildPortfolioPulse } from "@/lib/services/portfolio/periodScores";
-import { buildPersonalIntelligenceToday } from "@/lib/services/personalIntelligence";
 import { buildResilienceProfile } from "@/lib/services/resilience";
 import {
   buildPortfolioPerformanceAttribution,
   buildPulseAttributionEnrichment,
 } from "@/lib/services/performanceAttribution";
+import { buildFourQuestions } from "@/lib/services/fourQuestions";
+import {
+  filterHoldingsByIntelligenceScope,
+  resolveIntelligenceScope,
+} from "@/lib/services/intelligenceScope";
 import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 import { logDashboardProductionDiagnostics } from "@/lib/client/investmentOsProductionDebug";
 
@@ -94,12 +93,31 @@ export default function DashboardPage() {
     idleMessage: "Dashboard prices use the latest available market data.",
   });
   const { goal, hasSavedGoal } = useUserGoal();
-  const goalProgress = useGoalProgress({ holdings, goal, hasSavedGoal });
+
+  // Product-level scope foundation — current app defaults to complete.
+  const intelligenceScope = useMemo(
+    () => resolveIntelligenceScope().scope,
+    [],
+  );
+  const scopedHoldings = useMemo(
+    () => filterHoldingsByIntelligenceScope(holdings, intelligenceScope),
+    [holdings, intelligenceScope],
+  );
+
+  const goalProgress = useGoalProgress({
+    holdings: scopedHoldings,
+    goal,
+    hasSavedGoal,
+  });
+  const { realityCheck } = useGoalRealityCheck(
+    scopedHoldings,
+    goal,
+    scopedHoldings.length > 0 && hasSavedGoal,
+  );
 
   const {
     intelligence,
     payload,
-    isStale: intelligenceFromCache,
   } = useInvestmentIntelligence(holdings, userSub, holdings.length > 0);
   const { lastRefreshedAt: snapshotRefreshedAt } = useMarketSnapshotMetadata(
     portfolioReady && holdings.length > 0,
@@ -270,40 +288,33 @@ export default function DashboardPage() {
     snapshot,
   ]);
 
-  /** Phase 1B — compact personal briefing above the Dashboard motor. */
-  const personalIntelligenceToday = useMemo(() => {
+  /** Four Questions — existing engines only; scope defaults to complete. */
+  const fourQuestions = useMemo(() => {
     if (holdings.length === 0) return null;
-    const daily = summarizeDailyPerformance(holdings);
-    const { valuedPositions } = buildValuedPositions(holdings);
-    return buildPersonalIntelligenceToday({
-      daily,
+    const nextEvent = payload.upcomingEvents?.[0];
+    const nextEventLabel = nextEvent?.title?.trim() || null;
+    return buildFourQuestions({
       holdings,
-      holdingsWeights: valuedPositions.map((position) => ({
-        symbol: position.holding.symbol,
-        name: position.holding.name,
-        weightPercent: position.weightPercent,
-      })),
-      exposure: exposureAllocation,
+      preferredScope: intelligenceScope,
+      goal,
+      hasSavedGoal,
+      goalProgress,
+      realityCheck,
       intelligence,
-      goals: goalProgress.hasGoal
-        ? {
-            hasGoal: true,
-            status: goalProgress.status,
-            goalReached: goalProgress.goalReached,
-            currentProgressPercent: goalProgress.currentProgressPercent,
-          }
-        : null,
+      pulse: portfolioPulse,
+      nextEventLabel,
     });
   }, [
-    exposureAllocation,
-    goalProgress.currentProgressPercent,
-    goalProgress.goalReached,
-    goalProgress.hasGoal,
-    goalProgress.status,
+    goal,
+    goalProgress,
+    hasSavedGoal,
     holdings,
     intelligence,
+    intelligenceScope,
+    payload.upcomingEvents,
+    portfolioPulse,
+    realityCheck,
   ]);
-
 
   const exampleActive = useExampleActiveStatus(
     portfolioReady && Boolean(userSub),
@@ -403,41 +414,9 @@ export default function DashboardPage() {
             }}
           />
 
-          {personalIntelligenceToday ? (
-            <PortfolioThirtySeconds
-              intelligence={personalIntelligenceToday}
-              holdings={holdings}
-              goal={goal}
-              hasSavedGoal={hasSavedGoal}
-            />
+          {fourQuestions ? (
+            <FourQuestionsSection bundle={fourQuestions} />
           ) : null}
-
-          <div className="grid gap-4 md:grid-cols-2 md:items-stretch md:gap-5 [&>*:only-child]:md:col-span-2">
-            <DashboardPortfolioResilienceCard
-              holdings={holdings}
-              goal={goal}
-              hasSavedGoal={hasSavedGoal}
-            />
-            <DashboardGoalConclusionCard progress={goalProgress} goal={goal} />
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2 md:items-stretch md:gap-5">
-            <DashboardTodaysMarketBriefing
-              intelligence={intelligence}
-              intelligenceFromCache={intelligenceFromCache}
-              goalProgress={goalProgress}
-              upcomingEvents={payload.upcomingEvents}
-              marketsClosed={marketsClosed}
-              heroBriefingText={smartDashboard.briefing.text}
-            />
-            <DashboardReviewConclusionCard
-              pulse={portfolioPulse}
-              isQuietDay={
-                personalIntelligenceToday?.attention ===
-                "nothing_requires_attention"
-              }
-            />
-          </div>
 
           <HoldingsToday snapshot={snapshot} />
 

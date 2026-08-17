@@ -1,0 +1,113 @@
+/**
+ * Orchestrate Four Questions answers for a resolved intelligence scope.
+ */
+
+import { summarizeDailyPerformance } from "@/lib/client/dailyPerformance";
+import { buildValuedPositions } from "@/lib/client/portfolioAnalysis";
+import {
+  filterHoldingsByIntelligenceScope,
+  resolveIntelligenceScope,
+  type IntelligenceScopeId,
+} from "@/lib/services/intelligenceScope";
+import { buildAmIOnTrackQuestion } from "@/lib/services/fourQuestions/buildAmIOnTrack";
+import { buildWhatHappenedQuestion } from "@/lib/services/fourQuestions/buildWhatHappened";
+import { buildWhatMattersNowQuestion } from "@/lib/services/fourQuestions/buildWhatMattersNow";
+import { buildWhatsAheadQuestion } from "@/lib/services/fourQuestions/buildWhatsAhead";
+import type { FourQuestionsBundle } from "@/lib/services/fourQuestions/types";
+import type { GoalRealityCheck } from "@/lib/services/goals/buildGoalRealityCheck";
+import type { GoalProgress } from "@/lib/services/goals/goalProgressEngine";
+import type { InvestmentIntelligence } from "@/lib/services/news/investmentIntelligence";
+import { buildPersonalIntelligenceToday } from "@/lib/services/personalIntelligence";
+import type { PortfolioPulseResult } from "@/lib/services/portfolio/periodScores/types";
+import { buildPortfolioExposureAllocation } from "@/lib/services/classification";
+import type {
+  GoalSettings,
+  StoredPortfolioHolding,
+} from "@/lib/types/portfolioStorage";
+
+export type BuildFourQuestionsInput = {
+  holdings: StoredPortfolioHolding[];
+  /** Defaults to complete when omitted. */
+  preferredScope?: IntelligenceScopeId | null;
+  goal: GoalSettings | null;
+  hasSavedGoal: boolean;
+  /** Goal progress already computed on scoped holdings. */
+  goalProgress: GoalProgress;
+  realityCheck?: GoalRealityCheck | null;
+  intelligence?: InvestmentIntelligence | null;
+  pulse?: PortfolioPulseResult | null;
+  cryptoDashboardLine?: string | null;
+  contributionSummaryLine?: string | null;
+  nextEventLabel?: string | null;
+};
+
+export function buildFourQuestions(
+  input: BuildFourQuestionsInput,
+): FourQuestionsBundle {
+  const resolution = resolveIntelligenceScope({
+    preferred: input.preferredScope,
+  });
+  const scope = resolution.scope;
+  const scopedHoldings = filterHoldingsByIntelligenceScope(
+    input.holdings,
+    scope,
+  );
+
+  const exposure = buildPortfolioExposureAllocation(scopedHoldings);
+  const daily = summarizeDailyPerformance(scopedHoldings);
+  const { valuedPositions } = buildValuedPositions(scopedHoldings);
+
+  const personalIntelligence =
+    scopedHoldings.length > 0
+      ? buildPersonalIntelligenceToday({
+          daily,
+          holdings: scopedHoldings,
+          holdingsWeights: valuedPositions.map((position) => ({
+            symbol: position.holding.symbol,
+            name: position.holding.name,
+            weightPercent: position.weightPercent,
+          })),
+          exposure,
+          intelligence: input.intelligence ?? null,
+          goals: input.goalProgress.hasGoal
+            ? {
+                hasGoal: true,
+                status: input.goalProgress.status,
+                goalReached: input.goalProgress.goalReached,
+                currentProgressPercent:
+                  input.goalProgress.currentProgressPercent,
+              }
+            : null,
+        })
+      : null;
+
+  const questions = [
+    buildWhatHappenedQuestion({
+      scope,
+      holdings: scopedHoldings,
+      pulse: input.pulse,
+    }),
+    buildWhatMattersNowQuestion({
+      scope,
+      holdings: scopedHoldings,
+      intelligence: personalIntelligence,
+      cryptoDashboardLine: input.cryptoDashboardLine,
+    }),
+    buildAmIOnTrackQuestion({
+      scope,
+      progress: input.goalProgress,
+      goal: input.goal,
+      realityCheck: input.realityCheck ?? null,
+      contributionSummaryLine: input.contributionSummaryLine,
+    }),
+    buildWhatsAheadQuestion({
+      scope,
+      holdings: scopedHoldings,
+      goal: input.goal,
+      hasSavedGoal: input.hasSavedGoal,
+      nextEventLabel: input.nextEventLabel,
+    }),
+  ];
+
+  return { scope, questions };
+}
