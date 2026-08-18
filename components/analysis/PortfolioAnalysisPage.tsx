@@ -23,6 +23,7 @@ import { AnalysisOnTrackGateway } from "@/components/analysis/fourQuestions/Anal
 import { AnalysisQuestionSection } from "@/components/analysis/fourQuestions/AnalysisQuestionSection";
 import { AuthenticatedFourQuestionsNav } from "@/components/fourQuestions/AuthenticatedFourQuestionsNav";
 import { buildPortfolioExposureAllocation } from "@/lib/services/classification";
+import { useProductAccess } from "@/lib/client/useProductAccess";
 import BottomNavigation from "@/components/home/BottomNav";
 import {
   AppPageLoading,
@@ -124,6 +125,7 @@ export default function PortfolioAnalysisPage() {
     dismissRecovery,
     saveHoldings,
   } = useUserPortfolio();
+  const productAccess = useProductAccess(portfolioReady && Boolean(userSub));
 
   const { goal, hasSavedGoal, persistGoal } = useUserGoal();
   const goalProgress = useGoalProgress({ holdings, goal, hasSavedGoal });
@@ -269,7 +271,10 @@ export default function PortfolioAnalysisPage() {
             </AnalysisQuestionSection>
 
             <AnalysisQuestionSection item={Q2}>
-              <PortfolioExposureSection allocation={exposureAllocation} />
+              <PortfolioExposureSection
+                allocation={exposureAllocation}
+                showSubgroups={productAccess.intelligenceDepth === "complete"}
+              />
               <PortfolioXRaySection holdings={holdings} />
               <CryptoIntelligenceSection holdings={holdings} userSub={userSub} />
 

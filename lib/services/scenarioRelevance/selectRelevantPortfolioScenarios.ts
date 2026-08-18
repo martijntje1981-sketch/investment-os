@@ -55,6 +55,7 @@ export type PortfolioScenarioExposureProfile = {
   bitcoinWeightPercent: number;
   cryptoWeightPercent: number;
   cashWeightPercent: number;
+  fixedIncomeWeightPercent: number;
   unclassifiedWeightPercent: number;
   totalValue: number;
 };
@@ -79,6 +80,7 @@ export function buildPortfolioScenarioExposureProfile(
   let bitcoin = 0;
   let crypto = 0;
   let cash = 0;
+  let fixedIncome = 0;
   let unclassified = 0;
 
   for (const holding of holdings) {
@@ -95,6 +97,10 @@ export function buildPortfolioScenarioExposureProfile(
       if (isBitcoinHolding(holding)) bitcoin += value;
       continue;
     }
+    if (classification.normalizedGroupId === "fixed_income") {
+      fixedIncome += value;
+      continue;
+    }
     if (EQUITY_EXPOSURE_GROUP_ID_SET.has(classification.normalizedGroupId)) {
       equity += value;
       continue;
@@ -109,6 +115,7 @@ export function buildPortfolioScenarioExposureProfile(
     bitcoinWeightPercent: pct(bitcoin),
     cryptoWeightPercent: pct(crypto),
     cashWeightPercent: pct(cash),
+    fixedIncomeWeightPercent: pct(fixedIncome),
     unclassifiedWeightPercent: pct(unclassified),
     totalValue: total,
   };
@@ -212,11 +219,26 @@ export function selectRelevantPortfolioScenarios(
   const modeled = filtered.slice(0, SCENARIO_RELEVANCE_MAX_PRIMARY);
 
   const unavailableRelevant: RelevantUnavailableScenario[] = [];
+  const fiWeight = profile.fixedIncomeWeightPercent;
+  if (fiWeight >= SCENARIO_RELEVANCE_MIN_WEIGHT_PERCENT) {
+    const hasInflationLinked = Boolean(
+      exposure.fixedIncome?.subgroups.some((row) => row.type === "inflation_linked"),
+    );
+    for (const note of DEFERRED_SCENARIO_NOTES) {
+      if (note.id === "eur_plus_10_vs_usd") continue;
+      if (note.id === "inflation_shock" && !hasInflationLinked) continue;
+      unavailableRelevant.push({
+        id: note.id,
+        name: note.name,
+        relevanceScore: round1(fiWeight),
+        affectedWeightPercent: fiWeight,
+        reason: `${note.reason} Classified fixed income is about ${fiWeight}% of the portfolio.`,
+        availability: "unavailable",
+        dataQuality: "insufficient",
+      });
+    }
+  }
 
-  // Rates: only when research/classification someday marks fixed income.
-  // Current taxonomy has no reliable bond sleeve — do not invent relevance.
-  void exposure;
-  void DEFERRED_SCENARIO_NOTES;
   void getScenarioDefinition;
 
   const defaultScenarioId =

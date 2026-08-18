@@ -85,6 +85,7 @@ export const DIVERSIFICATION_COUNTABLE_GROUPS = [
   "financials_real_estate",
   "industrials_resources",
   "diversified_equity",
+  "fixed_income",
   "crypto",
   "cash",
 ] as const;

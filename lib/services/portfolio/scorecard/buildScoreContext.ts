@@ -13,7 +13,10 @@ import {
   resolvePortfolioMovePeriod,
   type PerformancePeriodKind,
 } from "@/lib/client/performancePeriod";
-import type { PortfolioExposureAllocation } from "@/lib/services/classification";
+import {
+  EXPOSURE_GROUP_IDS,
+  type PortfolioExposureAllocation,
+} from "@/lib/services/classification";
 import type { GoalProgress } from "@/lib/services/goals/goalProgressEngine";
 import type { GoalSettings, StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 import type { PortfolioHealthScoreResult } from "@/lib/services/portfolio/healthScore";
@@ -26,7 +29,7 @@ import type { BuildMomentumScoreInput } from "@/lib/services/portfolio/scorecard
 import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 import { GOALS_PATH, PORTFOLIO_PATH } from "@/lib/navigation/appRoutes";
 
-const EXPOSURE_GROUP_TOTAL = 9;
+const EXPOSURE_GROUP_TOTAL = EXPOSURE_GROUP_IDS.length;
 const CONCENTRATION_PRIMARY_THRESHOLD = 35;
 const GROUP_DOMINANCE_THRESHOLD = 35;
 const UNCLASSIFIED_ATTENTION_THRESHOLD = 10;

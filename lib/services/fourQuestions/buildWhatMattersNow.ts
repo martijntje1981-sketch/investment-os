@@ -196,6 +196,17 @@ export function buildWhatMattersNowQuestion(input: {
       : !quiet && structural && /concentration/i.test(answer)
         ? structural.support
         : !quiet &&
+            depth === "complete" &&
+            intelligence.exposure?.fixedIncome &&
+            intelligence.exposure.fixedIncome.weightPercent >= 15 &&
+            intelligence.exposure.fixedIncome.majorityIsLongDuration &&
+            intelligence.exposure.fixedIncome.majorityIsGovernment
+          ? "Most of your bond exposure is concentrated in long-duration government debt."
+          : !quiet &&
+              intelligence.exposure?.fixedIncome &&
+              intelligence.exposure.fixedIncome.weightPercent >= 15
+            ? `Fixed income now represents ${formatWeightPercent(intelligence.exposure.fixedIncome.weightPercent)} of your portfolio.`
+        : !quiet &&
             conclusion.attentionLine &&
             !isDailyDriverWording(conclusion.attentionLine)
           ? conclusion.attentionLine

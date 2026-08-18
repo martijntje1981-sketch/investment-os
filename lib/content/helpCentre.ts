@@ -156,9 +156,9 @@ export const HELP_CENTRE_SECTIONS: HelpCentreSection[] = [
       {
         question: "Review emails",
         answer:
-          "You can opt in to a short email when your monthly review is ready. Opt-in is off by default. Demo accounts do not receive personal emails.",
+          "Complete users can opt in to a weekly or monthly personal investment review email. Both are off by default. Demo accounts are never emailed.",
         link: { href: `${SETTINGS_PATH}#reports-email`, label: "Email preferences" },
-        keywords: ["notification", "opt-in", "monthly_review_email"],
+        keywords: ["notification", "opt-in", "monthly_review_email", "weekly_review_email"],
       },
       {
         question: "Email privacy",
@@ -168,7 +168,7 @@ export const HELP_CENTRE_SECTIONS: HelpCentreSection[] = [
       {
         question: "PDF review",
         answer:
-          "Optional PDF download for a saved monthly review. The web review remains the primary reading experience.",
+          "Optional PDF download for weekly and monthly reviews in Tobailey. Emails link to that download and do not attach a PDF.",
       },
     ],
   },

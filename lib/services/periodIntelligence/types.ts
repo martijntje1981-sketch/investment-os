@@ -58,6 +58,27 @@ export type PeriodIntelligencePeriod = {
   comparisonCurrentKey: string | null;
 };
 
+export type PeriodReportHeroMetric = {
+  id: string;
+  label: string;
+  value: string;
+};
+
+export type PeriodReportHero = {
+  kicker: "Your week" | "Your month";
+  conclusion: string;
+  dateRangeLabel: string;
+  metrics: PeriodReportHeroMetric[];
+};
+
+export type PeriodReportExploreHrefs = {
+  happened: string;
+  changed: string;
+  matters: string;
+  goal: string | null;
+  ahead: string;
+};
+
 /**
  * Surface-agnostic weekly/monthly review object.
  * Later renderers (in-app, email, PDF) should consume this without recalculating.
@@ -69,6 +90,11 @@ export type PeriodIntelligenceReview = {
   period: PeriodIntelligencePeriod;
   headline: string | null;
   summary: string | null;
+  /** Cover metrics already formatted by Companion — not recalculated in the renderer. */
+  hero: PeriodReportHero | null;
+  /** Max 3 supporting points. Omit empty. */
+  executiveSummary: string[];
+  explore: PeriodReportExploreHrefs;
   happened: PeriodIntelligenceSection | null;
   changed: PeriodIntelligenceSection | null;
   matters: PeriodIntelligenceSection | null;

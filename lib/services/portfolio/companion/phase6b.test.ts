@@ -3,10 +3,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 
 import { buildCompanionReview } from "@/lib/services/portfolio/companion";
-import {
-  buildMonthlyReviewEmailContent,
-  snapshotEligibleForEmail,
-} from "@/lib/services/portfolio/companion/monthlyReviewEmail";
+import { snapshotEligibleForEmail } from "@/lib/services/portfolio/companion/monthlyReviewEmail";
 import {
   buildMonthlyReviewPdfBytes,
   monthlyReviewPdfFilename,
@@ -113,18 +110,15 @@ describe("Phase 6B email privacy", () => {
     ).toBe(true);
   });
 
-  it("builds a privacy-safe subject and body", () => {
-    const content = buildMonthlyReviewEmailContent("2026-07");
-    expect(content.subject).toMatch(/July Portfolio Review is ready/i);
-    expect(content.previewText).not.toMatch(/€|EUR|\d{2,}/);
-    expect(content.html).not.toMatch(/Bitcoin|\+€|€\d/i);
-    expect(content.html).toMatch(/no portfolio values or holdings/i);
-    expect(content.text).toContain("View monthly review");
-    expect(content.text).toContain("/settings#reports-email");
-    expect(content.html).toContain("Manage email preference");
+  it("scheduled monthly delivery uses the canonical personal review", () => {
+    const cron = read("app/api/cron/monthly-review/route.ts");
+    expect(cron).toContain("deliverPeriodReviewEmails");
+    expect(cron).toContain("isCronAuthorized");
+    expect(cron).not.toContain("sendMonthlyReviewReadyEmail");
+    expect(cron).not.toContain("buildMonthlyReviewEmailContent");
   });
 
-  it("only emails ready snapshots once", () => {
+  it("only emails ready snapshots once (legacy emailed_at + send ledger)", () => {
     expect(
       snapshotEligibleForEmail({ status: "ready", emailed_at: null }),
     ).toBe(true);
@@ -140,7 +134,7 @@ describe("Phase 6B email privacy", () => {
 describe("Phase 6B PDF", () => {
   it("uses a deterministic filename and omits email addresses", () => {
     expect(monthlyReviewPdfFilename("2026-07")).toBe(
-      "Tobailey_Monthly_Review_2026-07.pdf",
+      "tobailey-monthly-review-2026-07.pdf",
     );
     const review = buildCompanionReview("monthly", {
       now: new Date("2026-08-06T12:00:00.000Z"),
@@ -162,7 +156,7 @@ describe("Phase 6B PDF", () => {
     const text = Buffer.from(bytes).toString("latin1");
     expect(text).toContain("%PDF");
     expect(text).not.toMatch(/@/);
-    expect(text).toMatch(/informational only/i);
+    expect(text).toMatch(/not financial advice/i);
   });
 });
 
@@ -202,14 +196,14 @@ describe("Phase 6B surfaces", () => {
 
     expect(migration).toContain("monthly_review_snapshots");
     expect(migration).toContain("UNIQUE (user_id, portfolio_id, year_month)");
-    expect(cron).toContain("CRON_SECRET");
-    expect(cron).toContain("sendMonthlyReviewReadyEmail");
+    expect(cron).toContain("isCronAuthorized");
+    expect(cron).toContain("deliverPeriodReviewEmails");
     expect(vercel).toContain("/api/cron/monthly-review");
     expect(reviewPage).toContain("MonthlyReviewArchive");
-    expect(reviewPage).toContain("Download PDF");
+    expect(reviewPage).toContain("PeriodReportPdfAction");
     expect(reviewPage).toContain("ExportPortfolioButton");
     expect(settings).toContain("Reports");
-    expect(settings).toContain("MonthlyReviewEmailToggle");
+    expect(settings).toContain("PeriodReviewEmailPreferences");
     expect(exportButton).toContain("Export Portfolio as Excel workbook");
     expect(envExample).toContain("RESEND_API_KEY");
     expect(envExample).toContain("EMAIL_FROM");

@@ -11,6 +11,20 @@ import type {
   PeriodIntelligenceSection,
 } from "@/lib/services/periodIntelligence/types";
 
+function freeExecutiveSummary(review: PeriodIntelligenceReview): string[] {
+  const contributor = review.executiveSummary.find((point) =>
+    /was the largest (detractor|contributor)\./i.test(point),
+  );
+  const points: string[] = [];
+  if (contributor) points.push(contributor);
+  const changePoint =
+    review.firstHistory || review.noMaterialChange
+      ? review.changed?.headline
+      : review.freeHeadline;
+  if (changePoint && changePoint !== contributor) points.push(changePoint);
+  return points.slice(0, 2);
+}
+
 function trimSection(
   section: PeriodIntelligenceSection | null,
   evidenceLimit: number,
@@ -32,11 +46,14 @@ export function applyPeriodIntelligenceDepth(
     return { ...review, intelligenceDepth: "complete", completeTease: null };
   }
 
-  const freeChanged = review.freeHeadline
+  const freeChanged = review.changed
     ? {
         id: "changed" as const,
         title: "What changed",
-        headline: review.freeHeadline,
+        headline:
+          review.firstHistory || review.noMaterialChange
+            ? review.changed.headline
+            : (review.freeHeadline ?? review.changed.headline),
         whyItMatters: null,
         evidence: [] as string[],
         confidenceNotes: [] as string[],
@@ -59,6 +76,13 @@ export function applyPeriodIntelligenceDepth(
     ...review,
     intelligenceDepth: "free",
     headline: review.happened?.headline ?? review.headline,
+    hero: review.hero
+      ? {
+          ...review.hero,
+          conclusion: review.happened?.headline ?? review.hero.conclusion,
+        }
+      : review.hero,
+    executiveSummary: freeExecutiveSummary(review),
     happened: trimSection(review.happened, 2),
     changed: freeChanged,
     matters: null,

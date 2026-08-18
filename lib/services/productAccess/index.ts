@@ -17,3 +17,4 @@ export {
   resolveProductAccess,
   resolveProductAccessFromMetadata,
 } from "./types";
+export { resolveProductAccessFromAuthUser } from "./resolveFromAuthUser";

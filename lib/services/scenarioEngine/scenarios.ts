@@ -58,9 +58,27 @@ export const DEFERRED_SCENARIO_NOTES: readonly DeferredScenarioNote[] = [
   },
   {
     id: "rates_plus_1",
-    name: "Rates +1%",
+    name: "Interest rates +1%",
     reason:
-      "No reliable duration / fixed-income rate sensitivity is available for current holdings.",
+      "No reliable duration is available, so a precise bond-price impact is not calculated.",
+  },
+  {
+    id: "rates_minus_1",
+    name: "Interest rates −1%",
+    reason:
+      "No reliable duration is available, so a precise bond-price impact is not calculated.",
+  },
+  {
+    id: "credit_spreads_widen",
+    name: "Credit spreads widen",
+    reason:
+      "Credit quality is not reliably known for current fixed-income holdings, so a spread-widening impact is not calculated.",
+  },
+  {
+    id: "inflation_shock",
+    name: "Inflation shock",
+    reason:
+      "Inflation-linked coverage is only identified from conservative metadata, and no inflation beta is modeled.",
   },
 ] as const;
 

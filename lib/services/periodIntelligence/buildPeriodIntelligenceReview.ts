@@ -20,6 +20,11 @@ import {
 } from "@/lib/services/periodIntelligence/config";
 import { selectPeriodPrimaryInsight } from "@/lib/services/periodIntelligence/selectPeriodPrimaryInsight";
 import { selectPeriodReviewContext } from "@/lib/services/periodIntelligence/selectPeriodReviewContext";
+import {
+  buildPeriodExecutiveSummary,
+  buildPeriodReportHero,
+} from "@/lib/services/periodIntelligence/buildPeriodReportPresentation";
+import { periodReportExploreHrefs } from "@/lib/services/periodIntelligence/reportExplore";
 import type {
   PeriodIntelligenceKind,
   PeriodIntelligenceReview,
@@ -119,8 +124,11 @@ function changedSection(
   insightHeadline: string,
   insightEvidence: string[],
 ): PeriodIntelligenceSection | null {
-  if (firstHistory || change.status === "insufficient_history") {
+  if (firstHistory) {
     return makeSection("changed", PERIOD_FIRST_HISTORY_COPY);
+  }
+  if (change.status === "insufficient_history") {
+    return null;
   }
   if (change.noMaterialChange || !change.freeHeadline) {
     return makeSection("changed", PERIOD_NO_MATERIAL_CHANGE_COPY);
@@ -367,6 +375,20 @@ export function buildPeriodIntelligenceReview(
         ? happened?.headline ?? insight.headline
         : insight.headline;
 
+  const hero = buildPeriodReportHero({
+    kind,
+    companion,
+    conclusion: completeHeadline,
+  });
+  const executiveSummary = buildPeriodExecutiveSummary({
+    kind,
+    companion,
+    changed,
+    goal,
+    firstHistory,
+    heroConclusion: completeHeadline,
+  });
+
   return {
     kind,
     ready: companion.ready,
@@ -383,6 +405,9 @@ export function buildPeriodIntelligenceReview(
     },
     headline: completeHeadline,
     summary: summaryParts.join(" ") || null,
+    hero,
+    executiveSummary,
+    explore: periodReportExploreHrefs(Boolean(goal)),
     happened,
     changed,
     matters,

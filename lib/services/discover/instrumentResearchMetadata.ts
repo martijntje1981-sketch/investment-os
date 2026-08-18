@@ -6,7 +6,7 @@
 export type InstrumentResearchProfile = {
   providerSymbol: string;
   symbol: string;
-  assetClass: "cash" | "equity_etf" | "thematic_etf" | "digital_assets" | "income_etp";
+  assetClass: "cash" | "equity_etf" | "thematic_etf" | "digital_assets" | "income_etp" | "fixed_income";
   fundCategory: string;
   sectorExposure: string[];
   regionExposure: string[];
@@ -161,7 +161,7 @@ export const RESEARCH_COVERAGE_DIMENSIONS: ResearchCoverageDimension[] = [
     id: "fixed_income",
     label: "Bonds / fixed income",
     description: "Direct bond or fixed-income fund exposure.",
-    matchesProfile: () => false,
+    matchesProfile: (profile) => profile.assetClass === "fixed_income",
   },
   {
     id: "healthcare",

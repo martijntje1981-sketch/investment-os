@@ -1,8 +1,13 @@
 /**
  * Deterministic whole-instrument exposure classifier.
- * Zero provider calls — assetType + verified research profiles only.
+ * Zero provider calls — assetType, verified research profiles, then conservative
+ * fixed-income name/type heuristics.
  */
 
+import {
+  classifyFixedIncomeHolding,
+  type FixedIncomeClassification,
+} from "@/lib/services/classification/classifyFixedIncome";
 import {
   lookupInstrumentResearchProfile,
   type InstrumentResearchProfile,
@@ -16,7 +21,12 @@ import {
 
 export type ExposureClassificationHolding = Pick<
   StoredPortfolioHolding,
-  "assetType" | "providerSymbol" | "symbol" | "name"
+  | "assetType"
+  | "providerSymbol"
+  | "symbol"
+  | "name"
+  | "instrumentName"
+  | "providerInstrumentType"
 >;
 
 function result(
@@ -26,7 +36,7 @@ function result(
   reason: string,
   extras?: Pick<
     HoldingExposureClassification,
-    "researchExposure" | "fundCategory"
+    "researchExposure" | "fundCategory" | "fixedIncome"
   >,
 ): HoldingExposureClassification {
   return {
@@ -37,7 +47,24 @@ function result(
     researchExposure: extras?.researchExposure ?? null,
     fundCategory: extras?.fundCategory ?? null,
     reason,
+    fixedIncome: extras?.fixedIncome ?? null,
   };
+}
+
+function mapFiSource(
+  classification: FixedIncomeClassification,
+): HoldingExposureClassification["classificationSource"] {
+  if (classification.source === "provider_type") return "provider_type";
+  if (classification.source === "research_profile") return "research_profile";
+  return "name_heuristic";
+}
+
+function mapFiConfidence(
+  classification: FixedIncomeClassification,
+): HoldingExposureClassification["confidence"] {
+  if (classification.confidence.assetClass === "known") return "high";
+  if (classification.confidence.assetClass === "inferred") return "medium";
+  return "low";
 }
 
 function exposureText(profile: InstrumentResearchProfile): string {
@@ -152,6 +179,34 @@ function mapResearchProfile(
     );
   }
 
+  if (profile.assetClass === "fixed_income") {
+    const fixedIncome = classifyFixedIncomeHolding({
+      assetType: "investment",
+      symbol: profile.symbol,
+      name: profile.fundCategory,
+      fundCategory: profile.fundCategory,
+    });
+    return result(
+      "fixed_income",
+      "research_profile",
+      "high",
+      "Verified fixed_income research profile",
+      {
+        ...extras,
+        fixedIncome: {
+          ...fixedIncome,
+          isFixedIncome: true,
+          source: "research_profile",
+          confidence: {
+            ...fixedIncome.confidence,
+            assetClass: "known",
+          },
+          reason: "Verified fixed_income research profile",
+        },
+      },
+    );
+  }
+
   if (profile.assetClass === "income_etp") {
     // Income is a strategy, not a sector. Map only via verified underlying exposure.
     if (isAmbiguousStrategyProfile(profile)) {
@@ -211,10 +266,27 @@ export function classifyHoldingExposure(
     return mapResearchProfile(profile);
   }
 
+  const fixedIncome = classifyFixedIncomeHolding({
+    assetType: holding.assetType,
+    symbol: holding.symbol,
+    name: holding.name,
+    instrumentName: holding.instrumentName,
+    providerInstrumentType: holding.providerInstrumentType,
+  });
+  if (fixedIncome.isFixedIncome) {
+    return result(
+      "fixed_income",
+      mapFiSource(fixedIncome),
+      mapFiConfidence(fixedIncome),
+      fixedIncome.reason,
+      { fixedIncome },
+    );
+  }
+
   return result(
     "other_unclassified",
     "unclassified",
     "low",
-    "No verified assetType special-case or research profile",
+    "No verified assetType special-case, research profile, or conservative fixed-income match",
   );
 }

@@ -157,6 +157,14 @@ export function buildIntelligenceStatePayload(
           displayLabel: group.displayLabel,
           weightPercent: round1(group.rawPercent),
         })),
+      subgroups: (exposure.fixedIncome?.subgroups ?? [])
+        .filter((row) => row.rawPercent > 0)
+        .map((row) => ({
+          parentGroupId: "fixed_income" as const,
+          subgroupId: row.subgroupId,
+          displayLabel: row.displayLabel,
+          weightPercent: round1(row.rawPercent),
+        })),
       classifiedHoldingCount: exposure.classifiedHoldingCount,
       unclassifiedHoldingCount: exposure.unclassifiedHoldingCount,
       coverageLabel: exposure.coverageLabel,

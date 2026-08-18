@@ -1,21 +1,30 @@
-import { NextResponse } from "next/server";
-
 import { createClient } from "@/lib/supabase/server";
 import { getMonthlyReviewSnapshot } from "@/lib/services/portfolio/companion/monthlySnapshotRepository";
 import {
-  buildMonthlyReviewPdfBytes,
-  monthlyReviewPdfFilename,
-} from "@/lib/services/portfolio/companion/monthlyReviewPdf";
+  buildArchivedMonthlyPeriodIntelligenceReview,
+  monthlyArchivePdfFilename,
+  renderPeriodReportPdf,
+  resolvePeriodReportPdfAccess,
+  resolveProductAccessForPdfRequest,
+} from "@/lib/services/periodIntelligence/pdf";
+import {
+  periodReportPdfError,
+  periodReportPdfHttpResponse,
+} from "@/lib/services/periodIntelligence/pdf/http";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 type RouteParams = { params: Promise<{ yearMonth: string }> };
 
+/**
+ * Archived monthly PDF from the saved snapshot only.
+ * Does not mix live Change Intelligence into a historical month.
+ */
 export async function GET(_request: Request, context: RouteParams) {
   const { yearMonth } = await context.params;
   if (!/^\d{4}-\d{2}$/.test(yearMonth)) {
-    return NextResponse.json({ error: "Invalid month." }, { status: 400 });
+    return periodReportPdfError(400, "Invalid month.");
   }
 
   const supabase = await createClient();
@@ -23,35 +32,48 @@ export async function GET(_request: Request, context: RouteParams) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return periodReportPdfError(401, "Unauthorized");
   }
 
+  const access = await resolveProductAccessForPdfRequest(user);
   try {
     const row = await getMonthlyReviewSnapshot(supabase, user.id, yearMonth);
     if (!row || row.status !== "ready" || !row.payload?.review) {
-      return NextResponse.json({ error: "Review not found." }, { status: 404 });
+      return periodReportPdfError(404, "Review not found.");
     }
 
-    const bytes = buildMonthlyReviewPdfBytes(
-      yearMonth,
-      row.payload,
-      row.generated_at,
-    );
-    const filename = monthlyReviewPdfFilename(yearMonth);
-
-    return new NextResponse(Buffer.from(bytes), {
-      status: 200,
-      headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="${filename}"`,
-        "Cache-Control": "private, no-store",
-      },
+    const review = buildArchivedMonthlyPeriodIntelligenceReview(row.payload);
+    const gate = resolvePeriodReportPdfAccess({
+      access,
+      reviewReady: review.ready,
+      reviewIsDemo: review.isDemo,
     });
+    if (!gate.allowed) {
+      if (gate.reason === "free") {
+        return periodReportPdfError(
+          403,
+          "PDF download is included with Complete.",
+        );
+      }
+      if (gate.reason === "demo_mix") {
+        return periodReportPdfError(
+          403,
+          "Demo reports stay isolated from personal data.",
+        );
+      }
+      return periodReportPdfError(400, "This review is not ready to download.");
+    }
+
+    const bytes = renderPeriodReportPdf(review);
+    return periodReportPdfHttpResponse(
+      bytes,
+      monthlyArchivePdfFilename(yearMonth),
+    );
   } catch {
     console.info("[monthly-review-pdf] failed", { yearMonth });
-    return NextResponse.json(
-      { error: "The PDF could not be created. Your review is still available in the app." },
-      { status: 500 },
+    return periodReportPdfError(
+      500,
+      "The PDF could not be created. Your review is still available in the app.",
     );
   }
 }

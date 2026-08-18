@@ -250,7 +250,7 @@ function freeHeadlineFor(
   return `Your portfolio composition changed this ${period}.`;
 }
 
-function meaningFor(signal: ChangeSignal): string {
+function meaningFor(signal: ChangeSignal, related: ChangeSignal[] = []): string {
   if (signal.category === "concentration") {
     if (/changed from/i.test(signal.headline)) {
       return "The largest position in the stored snapshots is now a different holding.";
@@ -262,6 +262,24 @@ function meaningFor(signal: ChangeSignal): string {
   }
   if (signal.category === "exposure") {
     const label = signal.headline.split(" exposure")[0] ?? "This group";
+    const equityDown = related.some(
+      (row) =>
+        row.category === "exposure" &&
+        (row.subject === "diversified_equity" ||
+          row.subject === "technology_communication" ||
+          row.subject === "healthcare" ||
+          row.subject === "consumer" ||
+          row.subject === "financials_real_estate" ||
+          row.subject === "industrials_resources") &&
+        (row.delta ?? 0) < 0,
+    );
+    if (
+      signal.subject === "fixed_income" &&
+      (signal.delta ?? 0) > 0 &&
+      equityDown
+    ) {
+      return "Your portfolio is less dependent on equities than in the previous snapshot.";
+    }
     if ((signal.delta ?? 0) > 0) {
       return `${label} now represents a larger share of the portfolio.`;
     }
@@ -401,7 +419,7 @@ function buildStory(input: {
     freeHeadline: freeHeadlineFor(signal, window),
     supportingLine: supporting,
     relatedLines: related.map(relatedLine),
-    meaning: meaningFor(signal),
+    meaning: meaningFor(signal, related),
     evidence: evidenceFor(signal, related),
     whyAvailable: whyAvailable(window),
     limitations,
@@ -516,7 +534,11 @@ export function buildChangeIntelligenceSummary(input: {
       if (candidate.category === "goal_progress") continue;
       let relates = false;
       if (candidate.category === "exposure") {
-        relates = exposureRelatesToHolding(candidate, lead, current);
+        relates =
+          exposureRelatesToHolding(candidate, lead, current) ||
+          (lead.category === "exposure" &&
+            candidate.id !== lead.id &&
+            (lead.delta ?? 0) * (candidate.delta ?? 0) < 0);
       } else if (candidate.category === "holding_weight") {
         relates = namesOverlap(candidate.subject, lead.subject);
       } else if (candidate.category === "scenario_sensitivity") {

@@ -46,6 +46,13 @@ export type IntelligenceExposureGroupState = {
   weightPercent: number;
 };
 
+export type IntelligenceExposureSubgroupState = {
+  parentGroupId: ExposureGroupId;
+  subgroupId: string;
+  displayLabel: string;
+  weightPercent: number;
+};
+
 export type IntelligenceConcentrationState = {
   largestHoldingId: string | null;
   largestHoldingSymbol: string | null;
@@ -101,9 +108,10 @@ export type IntelligenceStatePayload = {
     coverage: IntelligenceCoverage;
   };
   holdings: IntelligenceHoldingState[];
-  exposure: {
-    groups: IntelligenceExposureGroupState[];
-    classifiedHoldingCount: number;
+    exposure: {
+      groups: IntelligenceExposureGroupState[];
+      subgroups?: IntelligenceExposureSubgroupState[];
+      classifiedHoldingCount: number;
     unclassifiedHoldingCount: number;
     coverageLabel: string | null;
   };

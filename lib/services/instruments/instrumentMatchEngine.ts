@@ -152,6 +152,7 @@ function rowToResolved(
     exchange,
     isin: normalizeIsin(row.ISIN) ?? inputIsin,
     quoteCurrency,
+    providerInstrumentType: row.Type?.trim() || null,
     matchMethod,
     confidence: providerSymbol && !quoteCurrency
       ? Math.min(confidence, CONFIRMATION_THRESHOLD - 0.01)

@@ -132,12 +132,18 @@ export function scoreDiversificationFactor(input: ResilienceInputs): ResilienceF
       ? ` Your portfolio spans ${input.distinctGroupCount} classified exposure group${input.distinctGroupCount === 1 ? "" : "s"}, but ${input.largestGroupLabel} remains dominant at ${input.largestGroupWeightPercent.toFixed(0)}%.`
       : ` Your portfolio spans ${input.distinctGroupCount} classified exposure group${input.distinctGroupCount === 1 ? "" : "s"} at meaningful weight.`;
 
+  const fi = input.exposure.groups.find((group) => group.groupId === "fixed_income");
+  const fiNote =
+    fi && fi.displayPercent >= 8
+      ? " Classified fixed income counts as a distinct group; it is not treated as cash or as a modeled shock absorber."
+      : "";
+
   return {
     id: "diversification",
     label: "Diversification",
     score: roundScore(score),
     applicable: true,
-    explanation: dominantNote.trim(),
+    explanation: `${dominantNote.trim()}${fiNote}`,
   };
 }
 

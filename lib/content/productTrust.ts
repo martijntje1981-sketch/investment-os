@@ -17,7 +17,7 @@ export const TRUST_GOALS_ESTIMATE =
   "Goal status is an estimate from your inputs and available history — not a promise of outcomes.";
 
 export const TRUST_EMAIL_PRIVACY =
-  "Emails contain a notification and link to your review. They do not include your portfolio values or holdings.";
+  "Opt-in emails include a short personal review summary and a link to the full review in Tobailey. They are off by default."
 
 export const TRUST_EXPORT_OWNERSHIP =
   "Your portfolio data is always yours. Export it anytime.";

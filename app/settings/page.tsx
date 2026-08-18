@@ -16,7 +16,7 @@ import {
   appSectionTitleClass,
 } from "@/components/layout/appSurface";
 import { PortfolioBaseCurrencySetting } from "@/components/settings/PortfolioBaseCurrencySetting";
-import { MonthlyReviewEmailToggle } from "@/components/companion/MonthlyReviewEmailToggle";
+import { PeriodReviewEmailPreferences } from "@/components/companion/PeriodReviewEmailPreferences";
 import { ExportPortfolioButton } from "@/components/export/ExportPortfolioButton";
 import { createClient } from "@/lib/supabase/client";
 import { REVIEW_PATH } from "@/lib/navigation/appRoutes";
@@ -120,7 +120,10 @@ export default function SettingsPage() {
             {TRUST_EMAIL_PRIVACY}
           </p>
           <div className="mt-4 space-y-4">
-            <MonthlyReviewEmailToggle disabledForDemo={Boolean(exampleActive)} />
+            <PeriodReviewEmailPreferences
+              access={productAccess}
+              disabledForDemo={Boolean(exampleActive)}
+            />
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <Link
                 href={`${REVIEW_PATH}?period=monthly`}

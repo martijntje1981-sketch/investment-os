@@ -432,6 +432,9 @@ describe("Phase 2A scenario catalog", () => {
     expect(DEFERRED_SCENARIO_NOTES.map((row) => row.id)).toEqual([
       "eur_plus_10_vs_usd",
       "rates_plus_1",
+      "rates_minus_1",
+      "credit_spreads_widen",
+      "inflation_shock",
     ]);
   });
 });

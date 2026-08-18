@@ -6,6 +6,9 @@ export type {
   PeriodIntelligenceReview,
   PeriodIntelligenceSection,
   PeriodIntelligenceSectionId,
+  PeriodReportExploreHrefs,
+  PeriodReportHero,
+  PeriodReportHeroMetric,
 } from "@/lib/services/periodIntelligence/types";
 
 export {
@@ -30,3 +33,29 @@ export {
 
 export { selectPeriodPrimaryInsight } from "@/lib/services/periodIntelligence/selectPeriodPrimaryInsight";
 export { selectPeriodReviewContext } from "@/lib/services/periodIntelligence/selectPeriodReviewContext";
+export { toPersonalReportViewModel } from "@/lib/services/periodIntelligence/reportViewModel";
+export type {
+  PersonalReportAccent,
+  PersonalReportSectionView,
+  PersonalReportViewModel,
+} from "@/lib/services/periodIntelligence/reportViewModel";
+export { periodReportExploreHrefs } from "@/lib/services/periodIntelligence/reportExplore";
+export {
+  buildArchivedMonthlyPeriodIntelligenceReview,
+  canDownloadPeriodReportPdf,
+  extractPdfPlainText,
+  periodReportFilePeriodId,
+  periodReportPdfFilename,
+  renderPeriodReportPdf,
+  resolvePeriodReportPdfAccess,
+} from "@/lib/services/periodIntelligence/pdf";
+
+export {
+  buildTrustedMonthlyPeriodReview,
+  buildTrustedWeeklyPeriodReview,
+  deliverPeriodReviewEmails,
+  evaluatePeriodReportEmailDelivery,
+  isEligibleForPeriodReportEmail,
+  renderPeriodReportEmail,
+  toPeriodReportEmailView,
+} from "@/lib/services/periodIntelligence/email";

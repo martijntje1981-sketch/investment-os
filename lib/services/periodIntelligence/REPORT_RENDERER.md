@@ -1,33 +1,61 @@
-# PeriodIntelligenceReview — future renderer note
+# PeriodIntelligenceReview — renderer boundary
 
-This object is the canonical weekly/monthly review. In-app Review already renders it. Later weekly email, monthly email, and PDF should consume the **same JSON** without recalculating intelligence.
+`PeriodIntelligenceReview` is the canonical weekly/monthly review object.
 
-## Do not recalculate
+```
+PeriodIntelligenceReview
+  → toPersonalReportViewModel()   // field mapping only
+  → InAppReportRenderer           // in-app
+  → renderPeriodReportPdf()       // downloadable PDF
+  → toPeriodReportEmailView()     // shorter email mapping
+  → renderPeriodReportEmail()     // HTML + plain text
 
-A renderer should not call `compareIntelligenceStates()`, Four Questions builders, EODHD, or OpenAI. It should receive a `PeriodIntelligenceReview` already produced by `buildPeriodIntelligenceReview` + `applyPeriodIntelligenceDepth`.
+Email is built server-side from trusted stored state. Never send client JSON.
+```
+
+Do not recalculate intelligence in any renderer. Later weekly email, monthly email, and PDF should consume the same JSON without recalculating. Do not call `compareIntelligenceStates()`, Four Questions builders, Companion math, EODHD, or OpenAI from a renderer.
+
+PDF generation is on-demand. Do not persist generated files.
+
+## In-app
+
+`InAppReportRenderer` consumes `PeriodIntelligenceReview` (via `toPersonalReportViewModel`). Presentation rules that differ by weekly vs monthly, or Free vs Complete, live in:
+
+- `buildPeriodIntelligenceReview` / `buildPeriodReportPresentation` (canonical fields)
+- `applyPeriodIntelligenceDepth` (Free vs Complete)
+- `toPersonalReportViewModel` (evidence length, section order, accents)
+
+React components in `components/report/` are presentational.
+
+## PDF
+
+`renderPeriodReportPdf(review)` maps the same view model into a printable PDF.
+
+- Live weekly/monthly: POST `/api/review/pdf` with the already-built review.
+- Archived monthly: GET `/api/review/monthly/[yearMonth]/pdf` builds the canonical object from the **saved** Companion snapshot only (`summarizeStoredChangeIntelligence([])`). Never mix live Change Intelligence into a historical month.
+- Complete / Complete trial / active Demo: download allowed.
+- Free: in-app report remains; PDF is gated with `period_briefings`.
+- Demo payloads must not mix with personal access.
 
 ## Map
 
-| Renderer field | Object field |
+| Report block | Canonical field |
 | --- | --- |
-| Title (Your week / Your month) | `period.label` |
-| One conclusion | `headline` |
-| Short overview | `summary` |
-| What happened | `happened` (omit if null) |
+| Cover kicker (Your week / Your month) | `hero.kicker` |
+| One conclusion | `hero.conclusion` / `headline` |
+| Start → end / return tiles | `hero.metrics` (Companion-formatted strings) |
+| At a glance (max 3) | `executiveSummary` |
+| What happened | `happened` |
 | What changed | `changed` |
-| What matters | `matters` |
-| Goal | `goal` |
+| What matters now | `matters` |
+| Am I on track? | `goal` |
 | Looking ahead | `ahead` |
-| Optional context (Complete only) | `context` — use `channelLabel` so news is never shown as a Perspective |
-| Footer confidence | `confidence.notes` only when present |
-| As-of | `dataAsOf` |
+| Optional context | `context` — always use `channelLabel` |
+| Data confidence | `confidence.notes` |
+| Explore destinations | `explore` (in-app only) |
 
-Each section is `{ title, headline, whyItMatters, evidence[] }`. Skip a section when the field is `null`. Do not invent copy for omitted sections.
+Skip a block when the field is `null` or an empty array. Do not invent copy.
 
 ## Free vs Complete
 
-Call `applyPeriodIntelligenceDepth(review, access.intelligenceDepth)` once. Complete trial uses `"complete"`. Free keeps period performance + one change headline; exact deltas, resilience, context, and looking-ahead stay Complete.
-
-## Honesty
-
-`firstHistory` and `noMaterialChange` already carry the approved empty-state sentences. Never fill those with reconstructed history.
+Call `applyPeriodIntelligenceDepth(review, access.intelligenceDepth)` once. Complete trial uses `"complete"`. Capability keys already in product access: `period_briefings`, `change_intelligence`.

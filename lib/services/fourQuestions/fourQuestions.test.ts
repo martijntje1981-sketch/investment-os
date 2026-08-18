@@ -324,6 +324,7 @@ describe("Four Questions builders", () => {
         includedHoldingCount: 3,
         hasAnyValue: true,
         coverageLabel: null,
+        fixedIncome: null,
       },
       news: null,
       goals: null,

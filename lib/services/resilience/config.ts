@@ -76,6 +76,7 @@ export const RESILIENCE_LIMITATIONS = [
   "Most-sensitive scenario is only among currently supported modeled shocks.",
   "Does not include historical volatility or drawdown statistics.",
   "Does not recommend trades, rebalancing, or portfolio changes.",
+  "Fixed income is classified when identifiable, but interest-rate and credit shocks are not numerically modeled without reliable duration or credit inputs.",
 ] as const;
 
 export function bandFromScore(score: number): {

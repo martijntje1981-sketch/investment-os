@@ -211,7 +211,6 @@ describe("selectRelevantPortfolioScenarios", () => {
     expect(
       selected.modeled.every((row) => row.scenarioId !== ("rates_plus_1" as never)),
     ).toBe(true);
-    // No invented rates modeled result — only equity/crypto Scenario Engine IDs exist.
     expect(
       selected.modeled.every((row) =>
         [
@@ -220,6 +219,12 @@ describe("selectRelevantPortfolioScenarios", () => {
           "crypto_minus_20",
         ].includes(row.scenarioId),
       ),
+    ).toBe(true);
+    expect(
+      selected.unavailableRelevant.some((row) => row.id === "rates_plus_1"),
+    ).toBe(true);
+    expect(
+      selected.unavailableRelevant.every((row) => row.availability === "unavailable"),
     ).toBe(true);
   });
 

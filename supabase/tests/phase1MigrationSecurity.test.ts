@@ -29,6 +29,7 @@ const userOwnedTables = [
   "portfolio_contributions",
   "monthly_review_snapshots",
   "intelligence_state_snapshots",
+  "period_review_email_sends",
 ];
 
 describe("Phase 1 migration security verification", () => {

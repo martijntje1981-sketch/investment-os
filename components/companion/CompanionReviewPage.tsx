@@ -17,7 +17,7 @@ import {
 } from "@/components/companion/CompanionReviewPanel";
 import { CompanionPeriodTabs } from "@/components/companion/CompanionPeriodTabs";
 import { MonthlyReviewArchive } from "@/components/companion/MonthlyReviewArchive";
-import { MonthlyReviewEmailToggle } from "@/components/companion/MonthlyReviewEmailToggle";
+import { PeriodReviewEmailPreferences } from "@/components/companion/PeriodReviewEmailPreferences";
 import { ExportPortfolioButton } from "@/components/export/ExportPortfolioButton";
 import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
@@ -36,6 +36,7 @@ import { needsPortfolioSetup } from "@/lib/client/portfolioSetup";
 import { useExampleActiveStatus } from "@/lib/client/useExampleActiveStatus";
 import { useProductAccess } from "@/lib/client/useProductAccess";
 import { useChangeIntelligence } from "@/lib/client/useChangeIntelligence";
+import { summarizeStoredChangeIntelligence } from "@/lib/services/changeIntelligence";
 import {
   applyPeriodIntelligenceDepth,
   buildPeriodIntelligenceReview,
@@ -43,10 +44,10 @@ import {
 import { buildResilienceProfile } from "@/lib/services/resilience";
 import type { MonthlyReviewArchiveItem } from "@/lib/services/portfolio/companion/snapshotTypes";
 import { runPortfolioExport } from "@/lib/client/runPortfolioExport";
-import { appGhostButtonClass } from "@/components/layout/appSurface";
 import { areMajorMarketsClosed } from "@/lib/client/todaysDecision";
 import { buildPortfolioPulse } from "@/lib/services/portfolio/periodScores";
 import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
+import { PeriodReportPdfAction } from "@/components/report/PeriodReportPdfAction";
 
 function parsePeriodParam(value: string | null): CompanionPeriod | null {
   if (value === "daily" || value === "weekly" || value === "monthly") {
@@ -182,7 +183,6 @@ function CompanionReviewContent() {
   const [archive, setArchive] = useState<MonthlyReviewArchiveItem[]>([]);
   const [archiveLoading, setArchiveLoading] = useState(false);
   const [savedReview, setSavedReview] = useState<CompanionReview | null>(null);
-  const [pdfError, setPdfError] = useState<string | null>(null);
 
   const activePeriod = requested ?? period;
 
@@ -313,24 +313,29 @@ function CompanionReviewContent() {
   }, [goal, hasSavedGoal, holdings]);
 
   const periodIntelligence = useMemo(() => {
-    if (savedReview) return null;
     if (activePeriod !== "weekly" && activePeriod !== "monthly") return null;
+    const isArchiveMonth = Boolean(savedReview);
     const built = buildPeriodIntelligenceReview({
       kind: activePeriod,
       companion: review,
-      change: changeIntelligence.summary,
-      snapshotCount: changeIntelligence.snapshotCount,
+      change: isArchiveMonth
+        ? summarizeStoredChangeIntelligence([])
+        : changeIntelligence.summary,
+      snapshotCount: isArchiveMonth ? 0 : changeIntelligence.snapshotCount,
       intelligenceDepth: "complete",
       weeklyPulse:
-        activePeriod === "weekly" && !savedReview ? weeklyPulse : null,
-      concentrationWeightPercent: snapshot.concentrationWeightPercent,
-      largestHoldingName:
-        snapshot.concentrationSymbol ??
-        snapshot.heroTopMover?.holding.name ??
-        snapshot.topDailyDriver?.name ??
-        null,
-      resilienceProfile,
-      holdings,
+        activePeriod === "weekly" && !isArchiveMonth ? weeklyPulse : null,
+      concentrationWeightPercent: isArchiveMonth
+        ? null
+        : snapshot.concentrationWeightPercent,
+      largestHoldingName: isArchiveMonth
+        ? null
+        : snapshot.concentrationSymbol ??
+          snapshot.heroTopMover?.holding.name ??
+          snapshot.topDailyDriver?.name ??
+          null,
+      resilienceProfile: isArchiveMonth ? null : resilienceProfile,
+      holdings: isArchiveMonth ? [] : holdings,
     });
     return applyPeriodIntelligenceDepth(
       built,
@@ -368,43 +373,6 @@ function CompanionReviewContent() {
     });
   }
 
-  async function handlePdf() {
-    setPdfError(null);
-    const yearMonth =
-      monthParam ||
-      (review.startDate ? review.startDate.slice(0, 7) : null);
-    if (!yearMonth) {
-      setPdfError("Save a completed monthly review before downloading a PDF.");
-      return;
-    }
-    try {
-      const response = await fetch(`/api/review/monthly/${yearMonth}/pdf`, {
-        credentials: "same-origin",
-      });
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => null)) as {
-          error?: string;
-        } | null;
-        setPdfError(
-          payload?.error ??
-            "The PDF could not be created. Your review is still available here.",
-        );
-        return;
-      }
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
-      anchor.href = url;
-      anchor.download = `Tobailey_Monthly_Review_${yearMonth}.pdf`;
-      anchor.click();
-      URL.revokeObjectURL(url);
-    } catch {
-      setPdfError(
-        "The PDF could not be created. Your review is still available here.",
-      );
-    }
-  }
-
   if (!portfolioReady) {
     return <AppPageLoading />;
   }
@@ -414,7 +382,11 @@ function CompanionReviewContent() {
       <PageContainer>
         <PageHero
           title="Your Review"
-          subtitle="What happened, what mattered, and how your portfolio progressed."
+          subtitle={
+            activePeriod === "weekly" || activePeriod === "monthly"
+              ? "Your personal investment review"
+              : "What happened, what mattered, and how your portfolio progressed."
+          }
           backToDashboard
           actions={
             <ExportPortfolioButton onExport={() => void handleExport()} />
@@ -465,20 +437,16 @@ function CompanionReviewContent() {
             </div>
 
             {activePeriod === "weekly" || activePeriod === "monthly" ? (
-              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
                 <ExportPortfolioButton
                   onExport={() => void handleExport()}
                   variant="ghost"
                 />
-                {activePeriod === "monthly" && review.ready ? (
-                  <button
-                    type="button"
-                    onClick={() => void handlePdf()}
-                    className={appGhostButtonClass}
-                  >
-                    Download PDF
-                  </button>
-                ) : null}
+                <PeriodReportPdfAction
+                  review={periodIntelligence}
+                  access={productAccess}
+                  archiveYearMonth={savedReview ? monthParam : null}
+                />
                 <Link
                   href="/portfolio-history"
                   className="inline-flex min-h-[44px] items-center text-sm font-semibold text-brand-navy underline-offset-2 hover:underline"
@@ -488,21 +456,19 @@ function CompanionReviewContent() {
               </div>
             ) : null}
 
-            {pdfError ? (
-              <p className="text-sm font-semibold text-rose-700" role="alert">
-                {pdfError}
-              </p>
+            {activePeriod === "weekly" || activePeriod === "monthly" ? (
+              <PeriodReviewEmailPreferences
+                access={productAccess}
+                disabledForDemo={Boolean(exampleActive)}
+              />
             ) : null}
 
             {activePeriod === "monthly" ? (
-              <>
-                <MonthlyReviewArchive
-                  items={archive}
-                  selectedYearMonth={monthParam}
-                  loading={archiveLoading}
-                />
-                <MonthlyReviewEmailToggle disabledForDemo={Boolean(exampleActive)} />
-              </>
+              <MonthlyReviewArchive
+                items={archive}
+                selectedYearMonth={monthParam}
+                loading={archiveLoading}
+              />
             ) : null}
           </div>
         )}

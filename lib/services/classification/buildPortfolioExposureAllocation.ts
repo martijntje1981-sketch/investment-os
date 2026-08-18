@@ -6,12 +6,19 @@
 import { getHoldingMarketValue } from "@/lib/client/portfolioAnalysis";
 import { classifyHoldingExposure } from "@/lib/services/classification/classifyHoldingExposure";
 import {
+  FIXED_INCOME_TYPE_LABELS,
+  type FixedIncomeClassification,
+  type FixedIncomeType,
+} from "@/lib/services/classification/classifyFixedIncome";
+import {
   EXPOSURE_GROUP_IDS,
   EXPOSURE_GROUP_LABELS,
   type ExposureGroupId,
   type PortfolioExposureAllocation,
   type PortfolioExposureGroupSlice,
   type PortfolioExposureHoldingContribution,
+  type PortfolioExposureSubgroupSlice,
+  type PortfolioFixedIncomeSleeve,
 } from "@/lib/services/classification/types";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
@@ -22,9 +29,18 @@ const GROUP_SORT_INDEX: Record<ExposureGroupId, number> = {
   financials_real_estate: 3,
   industrials_resources: 4,
   diversified_equity: 5,
-  other_unclassified: 6,
-  crypto: 7,
-  cash: 8,
+  fixed_income: 6,
+  other_unclassified: 7,
+  crypto: 8,
+  cash: 9,
+};
+
+const FI_TYPE_ORDER: Record<FixedIncomeType, number> = {
+  government: 0,
+  corporate: 1,
+  inflation_linked: 2,
+  mixed_aggregate: 3,
+  unknown: 4,
 };
 
 /**
@@ -79,6 +95,7 @@ export function buildPortfolioExposureAllocation(
       includedHoldingCount: 0,
       hasAnyValue: false,
       coverageLabel: null,
+      fixedIncome: null,
     };
   }
 
@@ -98,6 +115,10 @@ export function buildPortfolioExposureAllocation(
   let classifiedHoldingCount = 0;
   let unclassifiedHoldingCount = 0;
   let includedHoldingCount = 0;
+  const fiRows: Array<{
+    value: number;
+    classification: FixedIncomeClassification;
+  }> = [];
 
   for (const holding of holdings) {
     const marketValue = getHoldingMarketValue(holding);
@@ -129,6 +150,16 @@ export function buildPortfolioExposureAllocation(
       value: marketValue,
       assetType: holding.assetType,
     });
+
+    if (
+      classification.normalizedGroupId === "fixed_income" &&
+      classification.fixedIncome?.isFixedIncome
+    ) {
+      fiRows.push({
+        value: marketValue,
+        classification: classification.fixedIncome,
+      });
+    }
   }
 
   const nonEmpty = EXPOSURE_GROUP_IDS.map((groupId) => {
@@ -160,6 +191,8 @@ export function buildPortfolioExposureAllocation(
     nonEmpty.map((row) => row.value),
   );
 
+  const fixedIncome = buildFixedIncomeSleeve(fiRows, totalValue);
+
   const groups: PortfolioExposureGroupSlice[] = nonEmpty.map((row, index) => ({
     groupId: row.groupId,
     displayLabel: row.displayLabel,
@@ -168,6 +201,8 @@ export function buildPortfolioExposureAllocation(
     displayPercent: displayPercents[index] ?? 0,
     holdingCount: row.holdingCount,
     holdings: row.holdings,
+    subgroups:
+      row.groupId === "fixed_income" ? (fixedIncome?.subgroups ?? []) : undefined,
   }));
 
   let coverageLabel: string | null = null;
@@ -197,5 +232,92 @@ export function buildPortfolioExposureAllocation(
     includedHoldingCount,
     hasAnyValue: totalValue > 0,
     coverageLabel,
+    fixedIncome,
   };
 }
+
+function buildFixedIncomeSleeve(
+  rows: Array<{ value: number; classification: FixedIncomeClassification }>,
+  portfolioTotal: number,
+): PortfolioFixedIncomeSleeve | null {
+  if (rows.length === 0 || !(portfolioTotal > 0)) return null;
+
+  const sleeveValue = rows.reduce((sum, row) => sum + row.value, 0);
+  const byType = new Map<
+    FixedIncomeType,
+    { value: number; holdingCount: number; confidence: "known" | "inferred" | "unknown" }
+  >();
+  let durationKnown = 0;
+  let creditKnown = 0;
+  let governmentValue = 0;
+  let longDurationValue = 0;
+
+  for (const row of rows) {
+    const type = row.classification.type;
+    const existing = byType.get(type);
+    const confidence = row.classification.confidence.type;
+    if (!existing) {
+      byType.set(type, { value: row.value, holdingCount: 1, confidence });
+    } else {
+      existing.value += row.value;
+      existing.holdingCount += 1;
+      if (confidence === "unknown") existing.confidence = "unknown";
+      else if (confidence === "inferred" && existing.confidence === "known") {
+        existing.confidence = "inferred";
+      }
+    }
+    if (row.classification.confidence.duration !== "unknown") {
+      durationKnown += row.value;
+    }
+    if (row.classification.confidence.creditQuality !== "unknown") {
+      creditKnown += row.value;
+    }
+    if (type === "government" || row.classification.sovereignTreasury) {
+      governmentValue += row.value;
+    }
+    if (row.classification.durationBucket === "long") {
+      longDurationValue += row.value;
+    }
+  }
+
+  const typeRows = [...byType.entries()].sort(
+    (left, right) => FI_TYPE_ORDER[left[0]] - FI_TYPE_ORDER[right[0]],
+  );
+  const displayPercents = allocateDisplayPercents(
+    typeRows.map(([, row]) => row.value),
+  );
+
+  const subgroups: PortfolioExposureSubgroupSlice[] = typeRows.map(
+    ([type, row], index) => ({
+      subgroupId: `fi_${type}`,
+      displayLabel:
+        type === "unknown"
+          ? "Fixed Income · classification incomplete"
+          : FIXED_INCOME_TYPE_LABELS[type],
+      type,
+      value: row.value,
+      rawPercent: (row.value / portfolioTotal) * 100,
+      displayPercent: displayPercents[index] ?? 0,
+      holdingCount: row.holdingCount,
+      confidence: row.confidence,
+    }),
+  );
+
+  const dominant = [...subgroups].sort((left, right) => right.value - left.value)[0];
+  const classificationIncomplete =
+    rows.some((row) => row.classification.classificationIncomplete) ||
+    (dominant?.type === "unknown" && subgroups.length === 1);
+
+  return {
+    weightPercent: (sleeveValue / portfolioTotal) * 100,
+    classificationIncomplete,
+    subgroups,
+    durationKnownSharePercent: (durationKnown / sleeveValue) * 100,
+    creditKnownSharePercent: (creditKnown / sleeveValue) * 100,
+    dominantType: dominant?.type ?? null,
+    majorityIsGovernment: governmentValue / sleeveValue >= 0.5,
+    majorityIsLongDuration:
+      durationKnown > 0 && longDurationValue / durationKnown >= 0.5,
+  };
+}
+

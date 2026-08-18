@@ -24,6 +24,7 @@ export function applyResolvedToHolding<
     providerSymbol?: string | null;
     instrumentName?: string | null;
     quoteCurrency?: ResolvedInstrument["quoteCurrency"];
+    providerInstrumentType?: string | null;
     matchMethod?: ResolvedInstrument["matchMethod"];
     matchConfidence?: number;
     requiresConfirmation?: boolean;
@@ -57,6 +58,8 @@ export function applyResolvedToHolding<
     providerSymbol: resolved.providerSymbol,
     instrumentName: resolved.instrumentName ?? holding.instrumentName ?? null,
     quoteCurrency: resolved.quoteCurrency ?? holding.quoteCurrency ?? null,
+    providerInstrumentType:
+      resolved.providerInstrumentType ?? holding.providerInstrumentType ?? null,
     pricingExchange: nextPricing,
     matchMethod: resolved.matchMethod,
     matchConfidence: resolved.confidence,

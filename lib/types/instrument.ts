@@ -43,6 +43,8 @@ export type ResolvedInstrument = {
   pricingExchange?: string | null;
   /** EODHD quote denomination for this listing (not portfolio base currency). */
   quoteCurrency?: PriceCurrency | null;
+  /** EODHD search / id-mapping Type when already fetched (e.g. "ETF", "Bond"). */
+  providerInstrumentType?: string | null;
   /** Alternative listings when multiple matches exist. */
   candidates?: ResolvedInstrument[];
 };

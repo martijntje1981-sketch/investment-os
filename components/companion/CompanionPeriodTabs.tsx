@@ -4,8 +4,8 @@ import type { CompanionPeriod } from "@/lib/services/portfolio/companion";
 
 const TABS: Array<{ id: CompanionPeriod; label: string }> = [
   { id: "daily", label: "Today" },
-  { id: "weekly", label: "This week" },
-  { id: "monthly", label: "This month" },
+  { id: "weekly", label: "Your week" },
+  { id: "monthly", label: "Your month" },
 ];
 
 type CompanionPeriodTabsProps = {

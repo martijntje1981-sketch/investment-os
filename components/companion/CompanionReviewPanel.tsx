@@ -70,12 +70,12 @@ export function CompanionReviewPanel({
   ) {
     return (
       <section
-        className={`${appCardClass} ${appCardPaddingClass}`}
+        className={`${appCardClass} p-0`}
         aria-labelledby="companion-review-heading"
       >
         <PeriodIntelligenceReviewView review={periodIntelligence} />
         <nav
-          className="mt-6 flex flex-col gap-2 sm:flex-row sm:flex-wrap"
+          className="flex flex-col gap-2 px-5 pb-6 sm:flex-row sm:flex-wrap sm:px-7"
           aria-label="Related portfolio pages"
         >
           {review.links.map((link) => (

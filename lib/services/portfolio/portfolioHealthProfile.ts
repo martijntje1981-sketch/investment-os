@@ -122,6 +122,7 @@ export type PortfolioHealthProfile = {
     equityWeight: number;
     cashWeight: number;
     otherWeight: number;
+    fixedIncomeWeight: number;
     bitcoinWeight: number;
     altcoinWeight: number;
     stablecoinWeight: number;
@@ -210,11 +211,12 @@ const THEMATIC_GROUPS = new Set<ExposureGroupId>([
 
 const EQUITY_GROUP_IDS = EQUITY_EXPOSURE_GROUP_ID_SET;
 
-const ASSET_COLORS = {
+  const ASSET_COLORS = {
   crypto: "bg-violet-500",
   equity: "bg-sky-500",
   cash: "bg-slate-400",
   other: "bg-slate-300",
+  fixed_income: "bg-teal-700",
   bitcoin: "bg-amber-500",
   altcoins: "bg-violet-600",
   stablecoins: "bg-emerald-600",
@@ -347,7 +349,9 @@ function analyzeCryptoStructure(input: {
   }
 
   const nonCrypto =
-    classification.equityWeight + classification.otherWeight;
+    classification.equityWeight +
+    classification.otherWeight +
+    classification.fixedIncomeWeight;
   const isCryptoOnly =
     classification.cryptoWeight >= 85 ||
     (classification.cryptoWeight >= 70 && nonCrypto < 8);
@@ -356,7 +360,8 @@ function analyzeCryptoStructure(input: {
   let assetClassBreadth: AssetClassBreadth = "Single class";
   const sleeves = [
     classification.cryptoWeight,
-    classification.equityWeight + classification.otherWeight,
+    classification.equityWeight,
+    classification.fixedIncomeWeight,
     classification.cashWeight,
   ].filter((weight) => weight >= 12).length;
   if (sleeves >= 2) assetClassBreadth = "Multi-asset";
@@ -401,20 +406,24 @@ export function buildSharedClassification(
   equityWeight: number;
   cashWeight: number;
   otherWeight: number;
+  fixedIncomeWeight: number;
   cryptoValue: number;
   equityValue: number;
   cashValue: number;
   otherValue: number;
+  fixedIncomeValue: number;
   totalValue: number;
 } {
   let cryptoValue = 0;
   let equityValue = 0;
   let cashValue = 0;
   let otherValue = 0;
+  let fixedIncomeValue = 0;
 
   for (const group of exposure.groups) {
     if (group.groupId === "crypto") cryptoValue += group.value;
     else if (group.groupId === "cash") cashValue += group.value;
+    else if (group.groupId === "fixed_income") fixedIncomeValue += group.value;
     else if (EQUITY_GROUP_IDS.has(group.groupId)) equityValue += group.value;
     else otherValue += group.value;
   }
@@ -427,11 +436,13 @@ export function buildSharedClassification(
     equityValue,
     cashValue,
     otherValue,
+    fixedIncomeValue,
     totalValue,
     cryptoWeight: pct(cryptoValue),
     equityWeight: pct(equityValue),
     cashWeight: pct(cashValue),
     otherWeight: pct(otherValue),
+    fixedIncomeWeight: pct(fixedIncomeValue),
   };
 }
 
@@ -518,6 +529,7 @@ function classifyIdentity(input: {
   equityWeight: number;
   otherWeight: number;
   cashWeight: number;
+  fixedIncomeWeight: number;
   crypto: CryptoStructure;
   analysis: PortfolioAnalysisSnapshot;
   exposure: PortfolioExposureAllocation;
@@ -528,20 +540,25 @@ function classifyIdentity(input: {
     equityWeight,
     otherWeight,
     cashWeight,
+    fixedIncomeWeight,
     crypto,
     analysis,
     exposure,
     incomeFocused,
   } = input;
 
-  const investedNonCrypto = equityWeight + otherWeight;
+  const investedNonCrypto = equityWeight + otherWeight + fixedIncomeWeight;
 
   if (incomeFocused && investedNonCrypto >= 40 && cryptoWeight < 40) {
     return "Income Builder";
   }
 
-  // Crypto-only / crypto-dominant — evaluate within digital assets, not vs stocks/bonds.
-  if (crypto.isCryptoOnly || cryptoWeight >= 70) {
+  // Crypto-only / crypto-dominant — evaluate within digital assets, not vs stocks and bonds.
+  if (
+    (crypto.isCryptoOnly || cryptoWeight >= 70) &&
+    fixedIncomeWeight < 12 &&
+    equityWeight + otherWeight < 12
+  ) {
     const altcoinLike =
       crypto.ethereumOfCrypto +
       crypto.largeCapAltOfCrypto +
@@ -580,8 +597,9 @@ function classifyIdentity(input: {
   }
 
   const multiAsset =
-    [cryptoWeight, equityWeight + otherWeight, cashWeight].filter((w) => w >= 15)
-      .length >= 2;
+    [cryptoWeight, equityWeight, fixedIncomeWeight, cashWeight].filter(
+      (w) => w >= 15,
+    ).length >= 2;
 
   if (multiAsset && cryptoWeight >= 15 && investedNonCrypto >= 15) {
     return "Multi-Asset Growth Portfolio";
@@ -1028,7 +1046,10 @@ export function buildHiddenDrivers(input: {
   const candidates: Candidate[] = [];
 
   // Crypto-only / crypto-dominant: drive behaviour from crypto categories, not equity sectors.
-  if (crypto.isCryptoOnly || classification.cryptoWeight >= 70) {
+  if (
+    (crypto.isCryptoOnly || classification.cryptoWeight >= 70) &&
+    classification.fixedIncomeWeight < 12
+  ) {
     if (crypto.bitcoinPortfolioWeight >= 2) {
       candidates.push({
         id: "bitcoin",
@@ -1170,6 +1191,16 @@ export function buildHiddenDrivers(input: {
       });
     }
 
+    if (classification.fixedIncomeWeight >= 5) {
+      candidates.push({
+        id: "fixed_income",
+        label: "Fixed income",
+        weight: classification.fixedIncomeWeight,
+        multiplier: 0.75,
+        colorClass: ASSET_COLORS.fixed_income,
+      });
+    }
+
     if (classification.otherWeight >= 5) {
       candidates.push({
         id: "other",
@@ -1245,7 +1276,11 @@ function buildExposure(input: {
   }
 
   // Crypto-heavy / crypto-only: Bitcoin / Altcoins / Stablecoins — never empty equity sectors
-  if (classification.cryptoWeight >= 70 || (classification.cryptoWeight >= 55 && classification.equityWeight < 8)) {
+  if (
+    (classification.cryptoWeight >= 70 ||
+      (classification.cryptoWeight >= 55 && classification.equityWeight < 8)) &&
+    classification.fixedIncomeWeight < 12
+  ) {
     const slices: CompositionSlice[] = [];
     const cryptoValue = classification.cryptoValue;
     if (cryptoBuckets.bitcoin > 0.5) {
@@ -1293,6 +1328,15 @@ function buildExposure(input: {
         percent: round1(classification.equityWeight),
         value: classification.equityValue,
         colorClass: ASSET_COLORS.equity,
+      });
+    }
+    if (classification.fixedIncomeWeight >= 5) {
+      slices.push({
+        id: "fixed_income",
+        label: "Fixed income",
+        percent: round1(classification.fixedIncomeWeight),
+        value: classification.fixedIncomeValue,
+        colorClass: ASSET_COLORS.fixed_income,
       });
     }
 
@@ -1351,6 +1395,26 @@ function buildExposure(input: {
       percent: round1(classification.cashWeight),
       value: classification.cashValue,
       colorClass: ASSET_COLORS.cash,
+    });
+  }
+  if (classification.fixedIncomeWeight >= 3) {
+    slices.push({
+      id: "fixed_income",
+      label: "Fixed income",
+      percent: round1(classification.fixedIncomeWeight),
+      value: classification.fixedIncomeValue,
+      colorClass: ASSET_COLORS.fixed_income,
+      children:
+        exposure.fixedIncome &&
+        exposure.fixedIncome.subgroups.some((row) => row.type !== "unknown")
+          ? exposure.fixedIncome.subgroups.map((row) => ({
+              id: row.subgroupId,
+              label: row.displayLabel,
+              percent: round1(row.rawPercent),
+              value: row.value,
+              colorClass: ASSET_COLORS.fixed_income,
+            }))
+          : undefined,
     });
   }
   if (classification.otherWeight >= 3) {
@@ -1782,6 +1846,7 @@ export function buildPortfolioHealthProfile(
     equityWeight: 0,
     cashWeight: 0,
     otherWeight: 0,
+    fixedIncomeWeight: 0,
     bitcoinWeight: 0,
     altcoinWeight: 0,
     stablecoinWeight: 0,
@@ -1888,6 +1953,7 @@ export function buildPortfolioHealthProfile(
     equityWeight: classification.equityWeight,
     otherWeight: classification.otherWeight,
     cashWeight: classification.cashWeight,
+    fixedIncomeWeight: classification.fixedIncomeWeight,
     crypto,
     analysis,
     exposure,
@@ -1926,6 +1992,7 @@ export function buildPortfolioHealthProfile(
       equityWeight: round1(classification.equityWeight),
       cashWeight: round1(classification.cashWeight),
       otherWeight: round1(classification.otherWeight),
+      fixedIncomeWeight: round1(classification.fixedIncomeWeight),
       bitcoinWeight: round1(bitcoinPortfolioWeight),
       altcoinWeight: round1(
         crypto.ethereumPortfolioWeight +

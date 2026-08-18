@@ -11,6 +11,7 @@ import {
 } from "@/lib/services/intelligenceTrace";
 import type { IntelligenceTraceLayer } from "@/lib/services/intelligenceTrace";
 import { buildPortfolioPerformanceAttribution } from "@/lib/services/performanceAttribution";
+import { EQUITY_EXPOSURE_GROUP_ID_SET } from "@/lib/services/classification";
 import type { PortfolioPulseResult } from "@/lib/services/portfolio/periodScores/types";
 import type {
   FourQuestionAnswer,
@@ -22,6 +23,38 @@ function formatSignedPercent(value: number): string {
   const rounded = Math.round(value * 10) / 10;
   const sign = rounded > 0 ? "+" : "";
   return `${sign}${rounded.toFixed(1)}%`;
+}
+
+function fixedIncomeOffsetSupport(input: {
+  dailyPercent: number;
+  attribution: ReturnType<typeof buildPortfolioPerformanceAttribution>;
+}): string | null {
+  if (input.dailyPercent >= 0 || input.attribution.status !== "supported") {
+    return null;
+  }
+  const fi = input.attribution.assetClasses.find(
+    (row) => row.groupId === "fixed_income",
+  );
+  if (fi == null || (fi.contributionPp ?? 0) <= 0.05) return null;
+  const equityPp = input.attribution.assetClasses
+    .filter((row) => EQUITY_EXPOSURE_GROUP_ID_SET.has(row.groupId))
+    .reduce((sum, row) => sum + (row.contributionPp ?? 0), 0);
+  if (equityPp >= 0) return null;
+
+  const government =
+    /\bgovernment\b/i.test(fi.label) === false &&
+    input.attribution.holdings.some(
+      (row) =>
+        row.included &&
+        row.exposureGroupId === "fixed_income" &&
+        /\bgovernment|treasury|gilt|bund|sovereign/i.test(
+          `${row.name} ${row.symbol}`,
+        ) &&
+        (row.contributionPp ?? 0) > 0,
+    );
+  return government
+    ? "Your government-bond holdings offset part of today’s equity decline."
+    : "Your fixed-income holdings offset part of today’s equity decline.";
 }
 
 export function buildWhatHappenedQuestion(input: {
@@ -80,6 +113,13 @@ export function buildWhatHappenedQuestion(input: {
     } else if (Math.abs(daily.todayPercent) < 0.15) {
       support = "No single holding stood out.";
       quiet = true;
+    }
+    const offset = fixedIncomeOffsetSupport({
+      dailyPercent: daily.todayPercent,
+      attribution,
+    });
+    if (offset) {
+      support = support ? `${support} ${offset}` : offset;
     }
   }
 

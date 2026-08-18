@@ -30,8 +30,10 @@ const HOLDINGS_PREVIEW_LIMIT = 5;
  */
 export function PortfolioExposureSection({
   allocation,
+  showSubgroups = false,
 }: {
   allocation: PortfolioExposureAllocation;
+  showSubgroups?: boolean;
 }) {
   const { formatEur } = useBaseCurrencyDisplay();
 
@@ -89,6 +91,7 @@ export function PortfolioExposureSection({
                 key={group.groupId}
                 group={group}
                 formatEur={formatEur}
+                showSubgroups={showSubgroups}
               />
             ))}
           </ul>
@@ -105,9 +108,11 @@ export function PortfolioExposureSection({
 function ExposureCategoryRow({
   group,
   formatEur,
+  showSubgroups,
 }: {
   group: PortfolioExposureGroupSlice;
   formatEur: (value: number) => string;
+  showSubgroups: boolean;
 }) {
   return (
     <li className="min-w-0 border-t border-slate-100 pt-5 first:border-t-0 first:pt-0">
@@ -130,6 +135,24 @@ function ExposureCategoryRow({
           <p className={`mt-1 ${appCardValueClass}`}>{formatEur(group.value)}</p>
         </div>
       </div>
+
+      {showSubgroups && group.subgroups && group.subgroups.length > 0 ? (
+        <ul className="mt-3 space-y-1.5 pl-5">
+          {group.subgroups.map((row) => (
+            <li
+              key={row.subgroupId}
+              className={`flex min-w-0 items-baseline justify-between gap-3 ${appSectionBodyClass}`}
+            >
+              <span className="min-w-0 truncate text-slate-600">
+                {row.displayLabel}
+              </span>
+              <span className={`shrink-0 tabular-nums ${appSectionLabelClass}`}>
+                {row.displayPercent}%
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
 
       <CategoryHoldingsList
         groupId={group.groupId}

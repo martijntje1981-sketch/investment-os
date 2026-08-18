@@ -261,6 +261,44 @@ function compareExposure(
   return signals;
 }
 
+function compareExposureSubgroups(
+  previous: IntelligenceStateSnapshot,
+  current: IntelligenceStateSnapshot,
+  window: ChangeSignalWindow,
+): ChangeSignal[] {
+  const prevRows = new Map(
+    (previous.payload.exposure.subgroups ?? []).map((row) => [
+      `${row.parentGroupId}:${row.subgroupId}`,
+      row,
+    ]),
+  );
+  const signals: ChangeSignal[] = [];
+
+  for (const row of current.payload.exposure.subgroups ?? []) {
+    const prev = prevRows.get(`${row.parentGroupId}:${row.subgroupId}`);
+    if (!prev) continue;
+    const delta = round1(row.weightPercent - prev.weightPercent);
+    if (absDelta(delta) < THRESHOLDS.exposureGroupPp) continue;
+    const verb = delta > 0 ? "increased" : "decreased";
+    signals.push(
+      signal({
+        category: "exposure",
+        metric: "exposure_subgroup_weight_percent",
+        subject: row.subgroupId,
+        previousValue: prev.weightPercent,
+        currentValue: row.weightPercent,
+        unit: "percentage_points",
+        window,
+        materiality: "material",
+        headline: `${row.displayLabel} exposure ${verb} by ${formatSignedPp(delta)} (${formatPp(prev.weightPercent)}% → ${formatPp(row.weightPercent)}%).`,
+        explanation: `Stored ${row.displayLabel} weight was ${formatPp(prev.weightPercent)}% in ${previous.periodKey} and ${formatPp(row.weightPercent)}% in ${current.periodKey}.`,
+      }),
+    );
+  }
+
+  return signals;
+}
+
 function goalDefinitionChanged(
   previous: NonNullable<IntelligenceStateSnapshot["payload"]["goal"]>,
   current: NonNullable<IntelligenceStateSnapshot["payload"]["goal"]>,
@@ -496,6 +534,7 @@ export function compareIntelligenceStates(input: {
   const signals: ChangeSignal[] = [];
   if (concentration) signals.push(concentration);
   signals.push(...compareExposure(previous, current, window));
+  signals.push(...compareExposureSubgroups(previous, current, window));
   const goal = compareGoal(previous, current, window);
   if (goal) signals.push(goal);
   const resilience = compareResilience(previous, current, window);

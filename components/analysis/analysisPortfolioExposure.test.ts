@@ -93,8 +93,10 @@ describe("Analysis portfolio exposure section", () => {
 
   it("renders the portfolio-exposure section with shared allocation wiring", () => {
     expect(analysisPageSource).toContain("buildPortfolioExposureAllocation");
+    expect(analysisPageSource).toContain("<PortfolioExposureSection");
+    expect(analysisPageSource).toContain("allocation={exposureAllocation}");
     expect(analysisPageSource).toContain(
-      "<PortfolioExposureSection allocation={exposureAllocation}",
+      'showSubgroups={productAccess.intelligenceDepth === "complete"}',
     );
     expect(exposureSectionSource).toContain('id="portfolio-exposure"');
     expect(exposureSectionSource).toContain("scroll-mt-24");

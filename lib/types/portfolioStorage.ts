@@ -31,6 +31,11 @@ export type StoredPortfolioHolding = {
   currentPrice: number;
   currency: "EUR";
   assetType?: "investment" | "cash" | "crypto";
+  /**
+   * EODHD search / id-mapping Type when already resolved (e.g. "ETF", "Bond").
+   * Optional — never fetched here.
+   */
+  providerInstrumentType?: string | null;
   isin?: string | null;
   exchange?: string | null;
   /** EODHD exchange used for live quotes when purchase venue differs (e.g. Tradegate). */
