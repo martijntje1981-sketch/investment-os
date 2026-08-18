@@ -8,6 +8,10 @@ import {
 } from "@/lib/client/dashboardConclusions";
 import { fourQuestionHubPath } from "@/lib/services/fourQuestions/catalog";
 import {
+  buildChangeTrace,
+} from "@/lib/services/changeIntelligence/buildChangeTrace";
+import type { ChangeIntelligenceSummary } from "@/lib/services/changeIntelligence/types";
+import {
   buildWhatMattersTrace,
   traceToExpandItems,
 } from "@/lib/services/intelligenceTrace";
@@ -19,6 +23,7 @@ import type { PersonalIntelligenceToday } from "@/lib/services/personalIntellige
 import type {
   FourQuestionAnswer,
   FourQuestionExpandItem,
+  FourQuestionsIntelligenceDepth,
 } from "@/lib/services/fourQuestions/types";
 import type { IntelligenceTraceLayer } from "@/lib/services/intelligenceTrace";
 import type { ResilienceProfile } from "@/lib/services/resilience";
@@ -83,6 +88,8 @@ export function buildWhatMattersNowQuestion(input: {
   resilienceProfile: ResilienceProfile | null;
   avoidDailyDriverSymbol?: string | null;
   relevantContext?: IntelligenceTraceLayer | null;
+  changeIntelligence?: ChangeIntelligenceSummary | null;
+  intelligenceDepth?: FourQuestionsIntelligenceDepth;
 }): FourQuestionAnswer {
   const { scope, holdings, intelligence, cryptoDashboardLine } = input;
 
@@ -170,31 +177,55 @@ export function buildWhatMattersNowQuestion(input: {
     }
   }
 
+  const structuralChange =
+    input.changeIntelligence?.status === "ready"
+      ? input.changeIntelligence.primaryStory
+      : null;
+  const depth = input.intelligenceDepth === "free" ? "free" : "complete";
+  if (structuralChange) {
+    answer =
+      depth === "free" ? structuralChange.freeHeadline : structuralChange.headline;
+    quiet = false;
+  }
+
   const support =
-    !quiet && structural && /concentration/i.test(answer)
-      ? structural.support
-      : !quiet &&
-          conclusion.attentionLine &&
-          !isDailyDriverWording(conclusion.attentionLine)
-        ? conclusion.attentionLine
+    !quiet && structuralChange
+      ? depth === "complete"
+        ? structuralChange.relatedLines[0] ?? structuralChange.meaning
+        : null
+      : !quiet && structural && /concentration/i.test(answer)
+        ? structural.support
         : !quiet &&
-            planItems[0] &&
-            !isDailyDriverWording(planItems[0].headline)
-          ? planItems[0].headline
-          : null;
+            conclusion.attentionLine &&
+            !isDailyDriverWording(conclusion.attentionLine)
+          ? conclusion.attentionLine
+          : !quiet &&
+              planItems[0] &&
+              !isDailyDriverWording(planItems[0].headline)
+            ? planItems[0].headline
+            : null;
 
   const exploreHref = fourQuestionHubPath("what_matters_now");
-  const trace = buildWhatMattersTrace({
-    insight: answer,
-    intelligence,
-    view,
-    holdings,
-    // Phase 7A scope: only one goal-impact connection (Resilience / Sleep Well).
-    goal: input.goal,
-    hasSavedGoal: false,
-    resilienceProfile: input.resilienceProfile,
-    relevantContext: input.relevantContext,
-  });
+  const changeTrace = structuralChange
+    ? buildChangeTrace({
+        insight: answer,
+        story: structuralChange,
+        extraLayers: input.relevantContext ? [input.relevantContext] : [],
+      })
+    : null;
+  const trace =
+    changeTrace ??
+    buildWhatMattersTrace({
+      insight: answer,
+      intelligence,
+      view,
+      holdings,
+      // Phase 7A scope: only one goal-impact connection (Resilience / Sleep Well).
+      goal: input.goal,
+      hasSavedGoal: false,
+      resilienceProfile: input.resilienceProfile,
+      relevantContext: input.relevantContext,
+    });
 
   const expandItems: FourQuestionExpandItem[] =
     traceToExpandItems({

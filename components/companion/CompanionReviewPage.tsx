@@ -34,6 +34,8 @@ import {
 } from "@/lib/services/portfolio/companion";
 import { needsPortfolioSetup } from "@/lib/client/portfolioSetup";
 import { useExampleActiveStatus } from "@/lib/client/useExampleActiveStatus";
+import { useProductAccess } from "@/lib/client/useProductAccess";
+import { useChangeIntelligence } from "@/lib/client/useChangeIntelligence";
 import type { MonthlyReviewArchiveItem } from "@/lib/services/portfolio/companion/snapshotTypes";
 import { runPortfolioExport } from "@/lib/client/runPortfolioExport";
 import { appGhostButtonClass } from "@/components/layout/appSurface";
@@ -72,6 +74,7 @@ function CompanionReviewContent() {
   const exampleActive = useExampleActiveStatus(
     portfolioReady && Boolean(userSub),
   );
+  const productAccess = useProductAccess(portfolioReady && Boolean(userSub));
 
   const emptySetup = needsPortfolioSetup({
     authenticated: Boolean(userSub),
@@ -177,6 +180,26 @@ function CompanionReviewContent() {
   const [pdfError, setPdfError] = useState<string | null>(null);
 
   const activePeriod = requested ?? period;
+
+  const changeIntelligence = useChangeIntelligence({
+    enabled: Boolean(userSub) && holdings.length > 0 && !emptySetup,
+    isDemo: Boolean(exampleActive) || productAccess.isDemo,
+    preferredKind:
+      activePeriod === "weekly" || activePeriod === "monthly"
+        ? activePeriod
+        : null,
+    capture:
+      exampleActive || productAccess.isDemo
+        ? null
+        : {
+            holdings,
+            goal,
+            hasSavedGoal,
+            weeklyReady: bundle.weekly.ready,
+            monthlyReady: bundle.monthly.ready,
+            monthlyPeriodKind: bundle.monthly.periodKind,
+          },
+  });
 
   useEffect(() => {
     if (activePeriod !== "monthly" || !userSub || exampleActive) return;
@@ -383,6 +406,9 @@ function CompanionReviewContent() {
                     ? weeklyPulse
                     : null
                 }
+                changeIntelligence={changeIntelligence.summary}
+                changeFirstHistoryCopy={changeIntelligence.firstHistoryCopy}
+                intelligenceDepth={productAccess.intelligenceDepth}
               />
             </div>
 

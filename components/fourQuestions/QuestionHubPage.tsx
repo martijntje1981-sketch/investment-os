@@ -20,6 +20,8 @@ import { useInvestmentIntelligence } from "@/lib/client/useInvestmentIntelligenc
 import { usePortfolioPerformanceHistory } from "@/lib/client/usePortfolioPerformanceHistory";
 import { useUserGoal } from "@/lib/client/useUserGoal";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
+import { useProductAccess } from "@/lib/client/useProductAccess";
+import { useChangeIntelligence } from "@/lib/client/useChangeIntelligence";
 import { DASHBOARD_PATH } from "@/lib/navigation/appRoutes";
 import { buildFourQuestions } from "@/lib/services/fourQuestions";
 import {
@@ -46,6 +48,11 @@ export function QuestionHubPage({ questionId }: QuestionHubPageProps) {
   const definition = getFourQuestionDefinition(questionId);
   const { holdings, portfolioReady, userSub } = useUserPortfolio();
   const { goal, hasSavedGoal } = useUserGoal();
+  const productAccess = useProductAccess(portfolioReady && Boolean(userSub));
+  const changeIntelligence = useChangeIntelligence({
+    enabled: portfolioReady && Boolean(userSub) && holdings.length > 0,
+    isDemo: productAccess.isDemo,
+  });
   const goalProgress = useGoalProgress({ holdings, goal, hasSavedGoal });
   const { realityCheck } = useGoalRealityCheck(
     holdings,
@@ -119,6 +126,7 @@ export function QuestionHubPage({ questionId }: QuestionHubPageProps) {
     const bundle = buildFourQuestions({
       holdings,
       preferredScope: intelligenceScope,
+      intelligenceDepth: productAccess.intelligenceDepth,
       goal,
       hasSavedGoal,
       goalProgress,
@@ -131,9 +139,11 @@ export function QuestionHubPage({ questionId }: QuestionHubPageProps) {
       pulse: portfolioPulse,
       nextEventLabel: nextEvent?.title?.trim() || null,
       nextEventHref: nextEvent?.title ? "/events" : null,
+      changeIntelligence: changeIntelligence.summary,
     });
     return bundle.questions.find((row) => row.id === questionId) ?? null;
   }, [
+    changeIntelligence.summary,
     goal,
     goalProgress,
     hasSavedGoal,
@@ -144,6 +154,7 @@ export function QuestionHubPage({ questionId }: QuestionHubPageProps) {
     payload.portfolioNews,
     payload.upcomingEvents,
     portfolioPulse,
+    productAccess.intelligenceDepth,
     questionId,
     realityCheck,
   ]);

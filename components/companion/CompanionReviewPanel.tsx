@@ -5,6 +5,9 @@ import {
   ReviewAtAGlance,
   type ReviewGlancePulse,
 } from "@/components/companion/ReviewAtAGlance";
+import { WhatChangedSection } from "@/components/companion/WhatChangedSection";
+import type { ChangeIntelligenceSummary } from "@/lib/services/changeIntelligence/types";
+import type { FourQuestionsIntelligenceDepth } from "@/lib/services/fourQuestions/types";
 import {
   appCardClass,
   appCardPaddingClass,
@@ -16,6 +19,9 @@ import { TRUST_NOT_ADVICE_SHORT } from "@/lib/content/productTrust";
 type CompanionReviewPanelProps = {
   review: CompanionReview;
   weeklyPulse?: ReviewGlancePulse;
+  changeIntelligence?: ChangeIntelligenceSummary | null;
+  changeFirstHistoryCopy?: string | null;
+  intelligenceDepth?: FourQuestionsIntelligenceDepth;
 };
 
 function toneClass(tone: CompanionReview["supportingFacts"][number]["tone"]): string {
@@ -28,6 +34,9 @@ function toneClass(tone: CompanionReview["supportingFacts"][number]["tone"]): st
 export function CompanionReviewPanel({
   review,
   weeklyPulse = null,
+  changeIntelligence = null,
+  changeFirstHistoryCopy = null,
+  intelligenceDepth = "complete",
 }: CompanionReviewPanelProps) {
   if (!review.ready) {
     return (
@@ -83,6 +92,15 @@ export function CompanionReviewPanel({
       <div className="mt-5">
         <ReviewAtAGlance review={review} weeklyPulse={weeklyPulse} />
       </div>
+
+      {changeIntelligence ? (
+        <WhatChangedSection
+          summary={changeIntelligence}
+          firstHistoryCopy={changeFirstHistoryCopy}
+          intelligenceDepth={intelligenceDepth}
+          visible={review.period === "weekly" || review.period === "monthly"}
+        />
+      ) : null}
 
       {review.supportingFacts.length > 0 ? (
         <dl className="mt-5 divide-y divide-slate-100">

@@ -4,11 +4,17 @@
 
 import { fourQuestionHubPath } from "@/lib/services/fourQuestions/catalog";
 import type { IntelligenceScopeId } from "@/lib/services/intelligenceScope";
+import {
+  buildChangeTrace,
+  mergeChangeIntoTrace,
+} from "@/lib/services/changeIntelligence/buildChangeTrace";
+import type { ChangeIntelligenceSummary } from "@/lib/services/changeIntelligence/types";
 import { buildResilienceProfile } from "@/lib/services/resilience";
 import { buildResilienceTrace, traceToExpandItems } from "@/lib/services/intelligenceTrace";
 import type {
   FourQuestionAnswer,
   FourQuestionExpandItem,
+  FourQuestionsIntelligenceDepth,
 } from "@/lib/services/fourQuestions/types";
 import type {
   GoalSettings,
@@ -28,6 +34,8 @@ export function buildWhatsAheadQuestion(input: {
   nextEventLabel?: string | null;
   /** Existing events destination when the label is trustworthy. */
   nextEventHref?: string | null;
+  changeIntelligence?: ChangeIntelligenceSummary | null;
+  intelligenceDepth?: FourQuestionsIntelligenceDepth;
 }): FourQuestionAnswer {
   const {
     scope,
@@ -88,10 +96,32 @@ export function buildWhatsAheadQuestion(input: {
     quiet = false;
   }
 
-  const trace =
+  const depth = input.intelligenceDepth === "free" ? "free" : "complete";
+  const resilienceChange =
+    input.changeIntelligence?.status === "ready"
+      ? input.changeIntelligence.resilienceChange
+      : null;
+  const usableForwardChange =
+    Boolean(resilienceChange) &&
+    depth === "complete" &&
+    resilienceChange?.signal.materiality === "material";
+  if (usableForwardChange && resilienceChange) {
+    answer = resilienceChange.headline;
+    support = resilienceChange.relatedLines[0] ?? resilienceChange.meaning;
+    quiet = false;
+  }
+
+  const baseTrace =
     resilience.status === "ok"
       ? buildResilienceTrace({ profile: resilience, insight: answer })
       : null;
+  const trace =
+    usableForwardChange && resilienceChange
+      ? mergeChangeIntoTrace(
+          baseTrace,
+          buildChangeTrace({ insight: answer, story: resilienceChange }),
+        )
+      : baseTrace;
 
   const expandItems: FourQuestionExpandItem[] = [
     ...traceToExpandItems({

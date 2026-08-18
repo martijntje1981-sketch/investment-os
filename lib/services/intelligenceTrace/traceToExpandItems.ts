@@ -16,30 +16,31 @@ import type {
 } from "./types";
 
 const EXPAND_LAYER_ORDER: IntelligenceTraceLayer["id"][] = [
+  "change",
   "meaning",
   "relevant_context",
   "perspective",
   "sensitivity",
   "goal_impact",
   "evidence",
-  "change",
   "calculation",
   "confidence",
 ];
 
 const DEFAULT_EMPHASIS: Record<IntelligenceTraceLayerId, IntelligenceTraceEmphasis> = {
+  change: "high",
   meaning: "high",
   relevant_context: "high",
   perspective: "high",
   sensitivity: "high",
   goal_impact: "high",
   evidence: "supporting",
-  change: "supporting",
   calculation: "supporting",
   confidence: "low",
 };
 
 const FREE_TEASE_CATEGORIES: Partial<Record<string, string>> = {
+  "trace-change": "See what changed and why it matters",
   "trace-meaning": "What this move means",
   "trace-relevant_context": "Relevant market context",
   "trace-perspective": "A related Perspective",

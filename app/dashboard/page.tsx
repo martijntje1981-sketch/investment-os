@@ -53,6 +53,7 @@ import {
 } from "@/lib/services/performanceAttribution";
 import { buildFourQuestions } from "@/lib/services/fourQuestions";
 import { useProductAccess } from "@/lib/client/useProductAccess";
+import { useChangeIntelligence } from "@/lib/client/useChangeIntelligence";
 import {
   CompleteTrialIndicator,
   FreeIntelligenceNote,
@@ -304,6 +305,19 @@ export default function DashboardPage() {
     portfolioReady && Boolean(userSub),
   );
 
+  const changeIntelligence = useChangeIntelligence({
+    enabled: portfolioReady && Boolean(userSub) && holdings.length > 0,
+    isDemo: productAccess.isDemo,
+    dashboardCapture:
+      productAccess.isDemo || !portfolioReady
+        ? null
+        : {
+            holdings,
+            goal,
+            hasSavedGoal,
+          },
+  });
+
   const fourQuestions = useMemo(() => {
     if (holdings.length === 0) return null;
     const nextEvent = payload.upcomingEvents?.[0];
@@ -325,8 +339,10 @@ export default function DashboardPage() {
       pulse: portfolioPulse,
       nextEventLabel,
       nextEventHref: nextEventLabel ? "/events" : null,
+      changeIntelligence: changeIntelligence.summary,
     });
   }, [
+    changeIntelligence.summary,
     goal,
     goalProgress,
     hasSavedGoal,

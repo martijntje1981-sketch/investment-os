@@ -19,6 +19,7 @@ import type {
   FourQuestionsBundle,
   FourQuestionsIntelligenceDepth,
 } from "@/lib/services/fourQuestions/types";
+import type { ChangeIntelligenceSummary } from "@/lib/services/changeIntelligence/types";
 import type { GoalRealityCheck } from "@/lib/services/goals/buildGoalRealityCheck";
 import type { GoalProgress } from "@/lib/services/goals/goalProgressEngine";
 import type { InvestmentIntelligence } from "@/lib/services/news/investmentIntelligence";
@@ -57,6 +58,7 @@ export type BuildFourQuestionsInput = {
   contributionSummaryLine?: string | null;
   nextEventLabel?: string | null;
   nextEventHref?: string | null;
+  changeIntelligence?: ChangeIntelligenceSummary | null;
 };
 
 export function buildFourQuestions(
@@ -150,6 +152,9 @@ export function buildFourQuestions(
     prefer: "perspective",
   });
 
+  const intelligenceDepth: FourQuestionsIntelligenceDepth =
+    input.intelligenceDepth === "free" ? "free" : "complete";
+
   const questions = [
     buildWhatHappenedQuestion({
       scope,
@@ -167,6 +172,8 @@ export function buildFourQuestions(
       resilienceProfile,
       avoidDailyDriverSymbol: dominantToday?.symbol ?? null,
       relevantContext: q2Context?.layer ?? null,
+      changeIntelligence: input.changeIntelligence,
+      intelligenceDepth,
     }),
     buildAmIOnTrackQuestion({
       scope,
@@ -175,6 +182,8 @@ export function buildFourQuestions(
       realityCheck: input.realityCheck ?? null,
       contributionSummaryLine: input.contributionSummaryLine,
       resilienceProfile,
+      changeIntelligence: input.changeIntelligence,
+      intelligenceDepth,
     }),
     buildWhatsAheadQuestion({
       scope,
@@ -184,11 +193,10 @@ export function buildFourQuestions(
       resilienceProfile,
       nextEventLabel: input.nextEventLabel,
       nextEventHref: input.nextEventHref,
+      changeIntelligence: input.changeIntelligence,
+      intelligenceDepth,
     }),
   ];
-
-  const intelligenceDepth: FourQuestionsIntelligenceDepth =
-    input.intelligenceDepth === "free" ? "free" : "complete";
 
   const bundle: FourQuestionsBundle = {
     scope,

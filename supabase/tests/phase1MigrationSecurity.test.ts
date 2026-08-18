@@ -27,6 +27,8 @@ const userOwnedTables = [
   "saved_import_mappings",
   "portfolio_sync_events",
   "portfolio_contributions",
+  "monthly_review_snapshots",
+  "intelligence_state_snapshots",
 ];
 
 describe("Phase 1 migration security verification", () => {

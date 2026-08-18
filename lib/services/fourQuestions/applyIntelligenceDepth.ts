@@ -37,6 +37,7 @@ function preferredFreeItemIds(
 }
 
 const TEASE_CATEGORIES: Partial<Record<string, string>> = {
+  "trace-change": "See what changed and why it matters",
   "trace-meaning": "What this move means",
   "trace-relevant_context": "Relevant market context",
   "trace-perspective": "A related Perspective",
@@ -57,6 +58,22 @@ function teaseCategories(items: FourQuestionExpandItem[]): string[] {
 function selectFreeExpandItems(
   question: FourQuestionAnswer,
 ): FourQuestionExpandItem[] {
+  const hasChange = question.expandItems.some((item) => item.id === "trace-change");
+  if (hasChange) {
+    const withheld = question.expandItems;
+    const categories = teaseCategories(withheld);
+    return [
+      {
+        id: "complete-preview",
+        label: "Complete analysis",
+        detail: "See what changed and why it matters",
+        bullets: categories.length > 0 ? categories : ["See what changed and why it matters"],
+        href: question.explore.href,
+        emphasis: "high",
+      },
+    ];
+  }
+
   const limit = FREE_EXPAND_LIMIT[question.id];
   const preferred = preferredFreeItemIds(question.id);
   const evidenceFirst = [

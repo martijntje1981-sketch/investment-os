@@ -78,6 +78,10 @@ describe("product access resolver", () => {
     });
     expect(canUseCompleteCapability(free, "full_xray")).toBe(false);
     expect(canUseCompleteCapability(trial, "full_xray")).toBe(true);
+    expect(canUseCompleteCapability(free, "change_intelligence")).toBe(false);
+    expect(canUseCompleteCapability(trial, "change_intelligence")).toBe(true);
+    expect(canUseCompleteCapability(free, "period_briefings")).toBe(false);
+    expect(canUseCompleteCapability(trial, "period_briefings")).toBe(true);
   });
 });
 
