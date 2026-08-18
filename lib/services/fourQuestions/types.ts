@@ -3,6 +3,7 @@
  */
 
 import type { IntelligenceScopeId } from "@/lib/services/intelligenceScope";
+import type { IntelligenceTrace } from "@/lib/services/intelligenceTrace";
 
 /**
  * Presentation depth for Four Questions intelligence.
@@ -26,6 +27,8 @@ export type FourQuestionExpandItem = {
   id: string;
   label: string;
   detail?: string | null;
+  /** Optional measurable evidence bullets for trace layers. */
+  bullets?: string[];
   /** Trustworthy destination only — omit when none exists. */
   href?: string | null;
   /** True when href is a verified external article URL. */
