@@ -12,6 +12,13 @@ import {
   type FourQuestionsBundle,
   type FourQuestionsIntelligenceDepth,
 } from "@/lib/services/fourQuestions";
+import {
+  appFourQuestionAnswerClass,
+  appFourQuestionLabelClass,
+  appFourQuestionSupportClass,
+  appSectionLabelClass,
+  appSectionMetaClass,
+} from "@/components/layout/appSurface";
 
 type FourQuestionsSectionProps = {
   bundle: FourQuestionsBundle;
@@ -60,19 +67,19 @@ function ExpandIntelligenceRow({
     <>
       <span className="min-w-0 flex-1">
         <span
-          className={`block text-[11px] font-semibold uppercase tracking-[0.1em] ${labelClass}`}
+          className={`${appSectionLabelClass} ${labelClass}`}
         >
           {item.label}
         </span>
         {item.detail ? (
           <span
-            className={`mt-0.5 block text-[14px] leading-snug sm:text-[15px] ${detailClass}`}
+            className={`mt-0.5 block text-[15px] leading-relaxed sm:text-[16px] ${detailClass}`}
           >
             {item.detail}
           </span>
         ) : null}
         {item.bullets && item.bullets.length > 0 ? (
-          <ul className={`mt-2 space-y-0.5 pl-4 text-[13px] leading-snug ${bulletClass}`}>
+          <ul className={`mt-2 space-y-0.5 pl-4 text-[15px] leading-relaxed ${bulletClass}`}>
             {item.bullets.map((b) => (
               <li key={b}>{b}</li>
             ))}
@@ -193,7 +200,7 @@ function QuestionPanel({
         data-testid={`four-question-toggle-${question.id}`}
       >
         <span
-          className={`mt-1 w-8 shrink-0 text-[12px] font-semibold tabular-nums tracking-[0.08em] ${visual.number}`}
+          className={`mt-1 w-8 shrink-0 text-[13px] font-semibold tabular-nums tracking-[0.06em] ${visual.number}`}
           aria-hidden
         >
           {question.numberLabel}
@@ -201,19 +208,19 @@ function QuestionPanel({
         <span className="min-w-0 flex-1">
           <span
             id={headingId}
-            className={`block text-[12px] font-semibold tracking-[-0.01em] text-slate-500 sm:text-[13px]`}
+            className={appFourQuestionLabelClass}
           >
             {question.question}
           </span>
           <span
-            className={`mt-1.5 block text-[1.125rem] font-semibold leading-snug tracking-[-0.03em] sm:text-[1.2rem] ${
+            className={`${appFourQuestionAnswerClass} ${
               question.quiet ? "text-slate-600" : "text-slate-950"
             }`}
           >
             {question.answer}
           </span>
           {question.support ? (
-            <span className="mt-1 block text-[13px] leading-snug text-slate-600 sm:text-[14px]">
+            <span className={appFourQuestionSupportClass}>
               {question.support}
             </span>
           ) : null}
@@ -249,7 +256,7 @@ function QuestionPanel({
             {question.disclosures.map((line) => (
               <p
                 key={line}
-                className="px-2.5 text-[12px] leading-relaxed text-slate-500"
+                className={appSectionMetaClass}
               >
                 {line}
               </p>

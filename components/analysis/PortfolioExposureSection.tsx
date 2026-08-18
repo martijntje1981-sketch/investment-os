@@ -17,10 +17,12 @@ import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 import {
   EXPOSURE_GROUP_BAR_CLASS,
   EXPOSURE_GROUP_DOT_CLASS,
+  formatFixedIncomeSubtypeLabel,
   type PortfolioExposureAllocation,
   type PortfolioExposureGroupSlice,
   type PortfolioExposureHoldingContribution,
 } from "@/lib/services/classification";
+import { buildFixedIncomeRateEducation } from "@/lib/services/classification/fixedIncomeEducation";
 
 const HOLDINGS_PREVIEW_LIMIT = 5;
 
@@ -36,6 +38,9 @@ export function PortfolioExposureSection({
   showSubgroups?: boolean;
 }) {
   const { formatEur } = useBaseCurrencyDisplay();
+  const rateEducation = allocation.fixedIncome
+    ? buildFixedIncomeRateEducation(allocation.fixedIncome)
+    : null;
 
   return (
     <section
@@ -99,6 +104,21 @@ export function PortfolioExposureSection({
           {allocation.coverageLabel ? (
             <p className={appSectionMetaClass}>{allocation.coverageLabel}</p>
           ) : null}
+
+          {rateEducation ? (
+            <aside
+              className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3.5"
+              data-testid="fixed-income-rate-education"
+            >
+              <p className={appSectionLabelClass}>{rateEducation.headline}</p>
+              <p className={`mt-1.5 ${appSectionBodyClass}`}>{rateEducation.body}</p>
+              {rateEducation.durationNote ? (
+                <p className={`mt-2 ${appSectionMetaClass}`}>
+                  {rateEducation.durationNote}
+                </p>
+              ) : null}
+            </aside>
+          ) : null}
         </div>
       )}
     </section>
@@ -144,7 +164,7 @@ function ExposureCategoryRow({
               className={`flex min-w-0 items-baseline justify-between gap-3 ${appSectionBodyClass}`}
             >
               <span className="min-w-0 truncate text-slate-600">
-                {row.displayLabel}
+                {formatFixedIncomeSubtypeLabel(row)}
               </span>
               <span className={`shrink-0 tabular-nums ${appSectionLabelClass}`}>
                 {row.displayPercent}%

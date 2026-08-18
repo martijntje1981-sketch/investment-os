@@ -114,6 +114,27 @@ describe("news feed normalization", () => {
     expect(parseYouTubeAtomFeed(MALFORMED_FEED)).toEqual([]);
     expect(parseYouTubeAtomFeed("")).toEqual([]);
   });
+
+  it("omits truncated or unusable YouTube titles", () => {
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns:yt="http://www.youtube.com/xml/schemas/2015" xmlns:media="http://search.yahoo.com/mrss/">
+  <entry>
+    <yt:videoId>bad123</yt:videoId>
+    <title>It's Not Looking Great for The Dollar: 3.</title>
+    <link rel="alternate" href="https://www.youtube.com/watch?v=bad123"/>
+    <published>2026-07-18T10:00:00+00:00</published>
+  </entry>
+  <entry>
+    <yt:videoId>ok456</yt:videoId>
+    <title>Federal Reserve signals patience on rate cuts</title>
+    <link rel="alternate" href="https://www.youtube.com/watch?v=ok456"/>
+    <published>2026-07-18T11:00:00+00:00</published>
+  </entry>
+</feed>`;
+    const parsed = parseYouTubeAtomFeed(xml);
+    expect(parsed).toHaveLength(1);
+    expect(parsed[0]?.title).toBe("Federal Reserve signals patience on rate cuts");
+  });
 });
 
 describe("news URL and text sanitization", () => {

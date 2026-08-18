@@ -1120,7 +1120,7 @@ export default function HoldingDetailPage() {
               icon={<Newspaper className="h-5 w-5" />}
               eyebrow="Holding intelligence"
               title="Latest news"
-              description="Verified holding-specific news will appear here after the news provider is connected."
+              description="Holding-matched news appears on News when a verified match exists. Tobailey does not invent a headline for every position."
               action="Open insights"
               href="/news"
             />

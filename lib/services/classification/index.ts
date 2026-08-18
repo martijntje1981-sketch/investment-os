@@ -6,6 +6,7 @@ export {
 export {
   classifyFixedIncomeHolding,
   isFixedIncomeHolding,
+  formatFixedIncomeSubtypeLabel,
   FIXED_INCOME_CREDIT_LABELS,
   FIXED_INCOME_DURATION_LABELS,
   FIXED_INCOME_TYPE_LABELS,
@@ -17,6 +18,11 @@ export {
   type FixedIncomeHoldingInput,
   type FixedIncomeType,
 } from "@/lib/services/classification/classifyFixedIncome";
+export {
+  buildFixedIncomeRateEducation,
+  FIXED_INCOME_RATE_EDUCATION_BODY,
+  FIXED_INCOME_DURATION_UNAVAILABLE_NOTE,
+} from "@/lib/services/classification/fixedIncomeEducation";
 export {
   allocateDisplayPercents,
   buildPortfolioExposureAllocation,

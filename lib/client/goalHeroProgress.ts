@@ -28,7 +28,7 @@ function formatPercent(value: number) {
 export function buildGoalHeroProgressState(input: {
   progress: Pick<
     GoalProgress,
-    "currentValue" | "targetValue" | "hasGoal" | "goalReached"
+    "currentValue" | "targetValue" | "hasGoal" | "goalReached" | "portfolioValueAvailable"
   >;
   hasSavedGoal: boolean;
   formatCurrency?: (value: number) => string;
@@ -64,6 +64,17 @@ export function buildGoalHeroProgressState(input: {
       currentValue,
       targetValue,
       ariaLabel: "Goal progress unavailable because the target amount is invalid.",
+    };
+  }
+
+  if (progress.portfolioValueAvailable === false) {
+    return {
+      status: "unavailable",
+      fillPercent: 0,
+      displayPercent: null,
+      currentValue: null,
+      targetValue,
+      ariaLabel: "Goal progress unavailable because portfolio value is unavailable.",
     };
   }
 

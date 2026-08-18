@@ -5,6 +5,7 @@ import { Activity, ArrowUpRight, ScanLine, Target } from "lucide-react";
 
 import {
   appCardPaddingCompactClass,
+  appSectionMetaClass,
   appSectionSubtitleClass,
   appSectionTitleClass,
   appTintedPanelClass,
@@ -93,7 +94,7 @@ export function DashboardExploreTools({
                   <span className="block text-[14px] font-bold text-slate-950">
                     {title}
                   </span>
-                  <span className="mt-0.5 block text-[12px] font-medium leading-snug text-slate-500">
+                  <span className={`mt-0.5 block ${appSectionMetaClass}`}>
                     {highlight ? "Progress milestone available." : benefit}
                   </span>
                 </span>

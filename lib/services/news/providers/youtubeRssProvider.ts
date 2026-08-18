@@ -1,5 +1,6 @@
 import type { CuratedYouTubeSource } from "@/lib/services/news/newsSources";
 import {
+  isUsableNewsTitle,
   sanitizeNewsText,
   sanitizeNewsUrl,
 } from "@/lib/services/news/sanitizeNewsUrl";
@@ -82,7 +83,7 @@ export function parseYouTubeAtomFeed(xml: string): ParsedYouTubeEntry[] {
       const entryChannelId = extractTag(block, "yt:channelId");
       const entryAuthor = extractAuthorName(block);
 
-      if (!videoId || !title || !canonicalUrl || !publishedAt) {
+      if (!videoId || !title || !isUsableNewsTitle(title) || !canonicalUrl || !publishedAt) {
         return null;
       }
 

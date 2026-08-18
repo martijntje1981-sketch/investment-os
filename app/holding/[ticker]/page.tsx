@@ -96,7 +96,7 @@ function priceQualityLabel(
     return "Stale price";
   }
 
-  return "Live price";
+  return "Latest available price";
 }
 
 export default function HoldingPage() {

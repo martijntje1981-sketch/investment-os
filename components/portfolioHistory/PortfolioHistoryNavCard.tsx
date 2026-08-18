@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { Download, History } from "lucide-react";
+import { History } from "lucide-react";
 
 import { PortfolioPerformanceChart } from "@/components/analysis/performance/PortfolioPerformanceChart";
 import { ExpandableDashboardSection } from "@/components/dashboard/ExpandableDashboardSection";
+import { ExportPortfolioButton } from "@/components/export/ExportPortfolioButton";
 import {
   appSectionBodyClass,
   appSectionLabelClass,
@@ -85,18 +86,11 @@ export function PortfolioHistoryNavCard({
 
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             {onExportPortfolio ? (
-              <button
-                type="button"
-                onClick={onExportPortfolio}
+              <ExportPortfolioButton
+                variant="text"
                 disabled={isExporting}
-                aria-busy={isExporting}
-                data-testid="dashboard-export-portfolio"
-                aria-label="Export Portfolio as Excel workbook"
-                className="inline-flex min-h-[40px] items-center gap-1.5 text-sm font-semibold text-blue-700 transition hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:opacity-70"
-              >
-                <Download className="h-4 w-4" aria-hidden />
-                {isExporting ? "Exporting…" : "Export Portfolio"}
-              </button>
+                onExport={onExportPortfolio}
+              />
             ) : null}
             <Link href={PORTFOLIO_HISTORY_PATH} className={appTextLinkClass}>
               View Portfolio History

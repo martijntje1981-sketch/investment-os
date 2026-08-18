@@ -16,7 +16,7 @@ export function DashboardGoalCard({ summary }: { summary: DashboardSummary }) {
   const { formatEur } = useBaseCurrencyDisplay();
   const progressWidth = summary.goalCompleted
     ? 100
-    : summary.hasSavedGoal
+    : summary.hasSavedGoal && summary.portfolioValueAvailable
       ? Math.max(summary.goalProgress, 1)
       : 0;
 
@@ -30,9 +30,11 @@ export function DashboardGoalCard({ summary }: { summary: DashboardSummary }) {
           <h2 className={`mt-2 ${appCardValueClass}`}>
             {summary.goalCompleted
               ? "Goal achieved"
-              : summary.hasSavedGoal
-                ? formatPortfolioPercent(summary.goalProgress)
-                : "No goal saved yet"}
+              : !summary.portfolioValueAvailable && summary.hasSavedGoal
+                ? "Unavailable"
+                : summary.hasSavedGoal
+                  ? formatPortfolioPercent(summary.goalProgress)
+                  : "No goal saved yet"}
           </h2>
         </div>
         <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-50 text-violet-700">
@@ -50,7 +52,11 @@ export function DashboardGoalCard({ summary }: { summary: DashboardSummary }) {
       <div className="mt-4 grid gap-2.5 md:mt-5 md:gap-3 sm:grid-cols-3">
         <GoalStat
           label="Current value"
-          value={formatEur(summary.portfolioValue)}
+          value={
+            summary.portfolioValueAvailable
+              ? formatEur(summary.portfolioValue)
+              : "Unavailable"
+          }
         />
         <GoalStat
           label="Goal"
@@ -65,9 +71,11 @@ export function DashboardGoalCard({ summary }: { summary: DashboardSummary }) {
           value={
             summary.goalCompleted
               ? "100%"
-              : summary.hasSavedGoal
-                ? formatPortfolioPercent(summary.goalProgress)
-                : "—"
+              : !summary.portfolioValueAvailable && summary.hasSavedGoal
+                ? "Unavailable"
+                : summary.hasSavedGoal
+                  ? formatPortfolioPercent(summary.goalProgress)
+                  : "—"
           }
         />
       </div>

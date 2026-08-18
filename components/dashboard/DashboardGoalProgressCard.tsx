@@ -66,13 +66,39 @@ export function DashboardGoalProgressCard({
               Set a target to track progress from your current portfolio value.
             </p>
             <p className={`truncate ${appCardValueClass}`}>
-              {formatEur(progress.currentValue)}
+              {progress.portfolioValueAvailable
+                ? formatEur(progress.currentValue)
+                : "Unavailable"}
             </p>
             <Link
               href={DASHBOARD_DEEP_LINKS.goalProgress}
               className="inline-flex min-h-[40px] items-center text-sm font-semibold text-blue-700 transition hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
             >
               Set your goal
+            </Link>
+          </>
+        ) : progress.portfolioValueAvailable === false ? (
+          <>
+            <p className={appSectionBodyClass}>
+              Portfolio value is unavailable, so goal progress cannot be shown yet.
+            </p>
+            <div className="grid min-w-0 grid-cols-2 gap-3">
+              <div className="min-w-0">
+                <p className={appSectionLabelClass}>Current</p>
+                <p className={`mt-1 truncate ${appCardValueClass}`}>Unavailable</p>
+              </div>
+              <div className="min-w-0">
+                <p className={appSectionLabelClass}>Target</p>
+                <p className={`mt-1 truncate ${appCardValueClass}`}>
+                  {formatEur(progress.targetValue)}
+                </p>
+              </div>
+            </div>
+            <Link
+              href={DASHBOARD_DEEP_LINKS.goalProgress}
+              className="inline-flex min-h-[40px] items-center text-sm font-semibold text-blue-700 transition hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+            >
+              Open Goals
             </Link>
           </>
         ) : (

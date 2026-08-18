@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 
 import type { AnalysisFourQuestionNavItem } from "@/lib/services/fourQuestions/analysisSections";
+import { appSectionBodyClass } from "@/components/layout/appSurface";
 
 type AnalysisQuestionSectionProps = {
   item: AnalysisFourQuestionNavItem;
@@ -29,7 +30,7 @@ export function AnalysisQuestionSection({
       >
         <div className="flex items-start gap-3">
           <span
-            className={`mt-0.5 w-8 shrink-0 text-[12px] font-semibold tabular-nums tracking-[0.08em] ${item.visual.number}`}
+            className={`mt-0.5 w-8 shrink-0 text-[13px] font-semibold tabular-nums tracking-[0.06em] ${item.visual.number}`}
             aria-hidden
           >
             {item.numberLabel}
@@ -41,7 +42,7 @@ export function AnalysisQuestionSection({
             >
               {item.question}
             </h2>
-            <p className="mt-1 text-[13px] leading-snug text-slate-600 sm:text-[14px]">
+            <p className={`mt-1 ${appSectionBodyClass}`}>
               {item.intro}
             </p>
           </div>

@@ -68,6 +68,24 @@ describe("buildGoalHeroProgressState", () => {
     expect(state.fillPercent).toBe(0);
   });
 
+  it("does not present unavailable portfolio value as 0% of target", () => {
+    const state = buildGoalHeroProgressState({
+      hasSavedGoal: true,
+      progress: {
+        hasGoal: true,
+        goalReached: false,
+        currentValue: 0,
+        targetValue: 1_000_000,
+        portfolioValueAvailable: false,
+      },
+    });
+
+    expect(state.status).toBe("unavailable");
+    expect(state.currentValue).toBeNull();
+    expect(state.displayPercent).toBeNull();
+    expect(state.fillPercent).toBe(0);
+  });
+
   it("handles zero or invalid targets safely", () => {
     const state = buildGoalHeroProgressState({
       hasSavedGoal: true,

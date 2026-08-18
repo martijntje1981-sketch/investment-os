@@ -29,7 +29,8 @@ describe("Phase 3B Goals Intelligence wiring", () => {
   });
 
   it("reuses Export Portfolio instead of a separate Goals export", () => {
-    expect(page).toContain("Export Portfolio");
+    expect(page).toContain("ExportPortfolioButton");
+    expect(page).toContain('variant="hero"');
     expect(page).toContain("downloadPortfolioWorkbook");
     expect(page).not.toContain("Export Excel");
     expect(page).not.toContain("downloadPortfolioHistoryWorkbook");

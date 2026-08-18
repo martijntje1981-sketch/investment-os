@@ -284,3 +284,27 @@ describe("portfolioMovementFormat", () => {
     expect(formatHoldingTodayChange(null, null)).toBe("Change unavailable");
   });
 });
+
+describe("dashboard snapshot trust", () => {
+  it("does not treat missing prices as a €0 portfolio or 0% goal", () => {
+    const snapshot = buildDashboardPortfolioSnapshot(
+      [
+        holding({
+          symbol: "VWCE",
+          currentPrice: 0,
+          purchasePrice: 0,
+          previousClose: undefined,
+          quantity: 10,
+        }),
+      ],
+      savedGoal,
+      true,
+    );
+
+    expect(snapshot.portfolioValueAvailable).toBe(false);
+    expect(snapshot.portfolioValue).toBe(0);
+    expect(snapshot.goalProgress).toBe(0);
+    expect(snapshot.goalCompleted).toBe(false);
+    expect(snapshot.concentrationWeightPercent).toBeNull();
+  });
+});

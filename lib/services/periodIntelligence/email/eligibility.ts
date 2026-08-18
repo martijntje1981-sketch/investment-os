@@ -13,6 +13,18 @@ export function isEligibleForPeriodReportEmail(access: ProductAccess): boolean {
   return canUseCompleteCapability(access, "period_briefings");
 }
 
+/**
+ * Visual checked state for Settings/Review email toggles.
+ * Stored opt-in must never look enabled when the user is not eligible
+ * (Free, demo, or otherwise gated). Server authorization remains separate.
+ */
+export function visiblePeriodReviewEmailOptIn(
+  eligible: boolean,
+  storedOptIn: boolean,
+): boolean {
+  return eligible && storedOptIn;
+}
+
 export type PeriodReportEmailSkipReason =
   | "email_not_configured"
   | "not_eligible"

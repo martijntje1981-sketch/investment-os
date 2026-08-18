@@ -44,12 +44,21 @@ function buildDriverSentence(summary: DashboardSummary): string {
 }
 
 function buildRiskSentence(summary: DashboardSummary): string {
-  if (summary.concentrationSymbol && summary.concentrationWeightPercent >= 30) {
-    return `The main risk is concentration: ${summary.concentrationSymbol} represents ${summary.concentrationWeightPercent.toFixed(1)}% of valued holdings.`;
+  const concentrationWeight = summary.concentrationWeightPercent;
+  if (
+    summary.concentrationSymbol &&
+    concentrationWeight != null &&
+    concentrationWeight >= 30
+  ) {
+    return `The main risk is concentration: ${summary.concentrationSymbol} represents ${concentrationWeight.toFixed(1)}% of valued holdings.`;
   }
 
-  if (summary.concentrationSymbol && summary.concentrationWeightPercent >= 20) {
-    return `Portfolio risk is moderately shaped by ${summary.concentrationSymbol}, your largest position at ${summary.concentrationWeightPercent.toFixed(1)}%.`;
+  if (
+    summary.concentrationSymbol &&
+    concentrationWeight != null &&
+    concentrationWeight >= 20
+  ) {
+    return `Portfolio risk is moderately shaped by ${summary.concentrationSymbol}, your largest position at ${concentrationWeight.toFixed(1)}%.`;
   }
 
   if (summary.observations[0]) {
@@ -64,7 +73,11 @@ function buildOpportunitySentence(summary: DashboardSummary): string {
     return "Opportunity: your saved goal has been reached — review whether to reset the target or rebalance proceeds.";
   }
 
-  if (summary.hasSavedGoal && summary.goalProgress >= 50) {
+  if (
+    summary.hasSavedGoal &&
+    summary.portfolioValueAvailable &&
+    summary.goalProgress >= 50
+  ) {
     return `Opportunity: you are ${summary.goalProgress.toFixed(1)}% toward your goal, so consistent contributions can compound from a stronger base.`;
   }
 

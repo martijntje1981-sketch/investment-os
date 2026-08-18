@@ -72,11 +72,11 @@ export function DashboardGoalConclusionCard({
     progress.status === "Slightly behind" ||
     progress.status === "Behind schedule";
 
-  const leadingVisual: ReactNode | undefined = Number.isFinite(
-    progress.currentProgressPercent,
-  ) ? (
-    <GoalProgressMicroRing percent={progress.currentProgressPercent} />
-  ) : undefined;
+  const leadingVisual: ReactNode | undefined =
+    progress.portfolioValueAvailable !== false &&
+    Number.isFinite(progress.currentProgressPercent) ? (
+      <GoalProgressMicroRing percent={progress.currentProgressPercent} />
+    ) : undefined;
 
   return (
     <DashboardConclusionModule

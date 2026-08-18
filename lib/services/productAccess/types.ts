@@ -6,6 +6,7 @@
  *
  * Billing/Stripe is out of scope: `converted` maps to Complete until
  * real subscriptions exist. Standard / no-entitlement accounts are Free.
+ * Owner/test Complete uses the same converted entitlement — see conversion.ts.
  */
 
 import type { FourQuestionsIntelligenceDepth } from "@/lib/services/fourQuestions/types";

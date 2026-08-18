@@ -6,7 +6,6 @@ import {
   ArrowRight,
   CalendarDays,
   Check,
-  Download,
   Percent,
   PiggyBank,
   Save,
@@ -14,8 +13,10 @@ import {
   Target,
 } from "lucide-react";
 
+import { ExportPortfolioButton } from "@/components/export/ExportPortfolioButton";
 import {
   appCardValueClass,
+  appHeroMetricLabelClass,
   appSectionBodyClass,
   appSectionLabelClass,
   appSectionMetaClass,
@@ -373,19 +374,11 @@ export default function GoalsPage() {
           subtitle="Am I on track — and when might I get there?"
           backToDashboard
           actions={
-            <button
-              type="button"
-              onClick={handleExport}
+            <ExportPortfolioButton
+              variant="hero"
               disabled={isExporting}
-              aria-busy={isExporting}
-              aria-label="Export Portfolio as Excel workbook"
-              title="Excel workbook"
-              data-testid="export-portfolio-button"
-              className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-navy-hero disabled:opacity-70"
-            >
-              <Download className="h-4 w-4" aria-hidden />
-              {isExporting ? "Exporting…" : "Export Portfolio"}
-            </button>
+              onExport={handleExport}
+            />
           }
           visual={
             <div className="space-y-4">
@@ -413,7 +406,7 @@ export default function GoalsPage() {
                   </p>
                   {getExpectedReturnAssumption(savedGoal) != null ? (
                     <div className="rounded-2xl border border-white/15 bg-white/10 px-3.5 py-3">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/55">
+                      <p className={appHeroMetricLabelClass}>
                         Expected return
                       </p>
                       <p className="mt-1 text-lg font-bold text-white">

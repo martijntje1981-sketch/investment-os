@@ -23,6 +23,7 @@ import {
   buildPortfolioExposureAllocation,
   classifyFixedIncomeHolding,
   classifyHoldingExposure,
+  formatFixedIncomeSubtypeLabel,
 } from "@/lib/services/classification";
 import { buildPeriodIntelligenceReview } from "@/lib/services/periodIntelligence";
 import { applyPeriodIntelligenceDepth } from "@/lib/services/periodIntelligence/applyPeriodIntelligenceDepth";
@@ -609,5 +610,31 @@ describe("fixed-income cost and honesty guards", () => {
       holding({ symbol: "STRC", providerSymbol: "STRC.AS" }),
     );
     expect(result.normalizedGroupId).toBe("other_unclassified");
+  });
+
+  it("does not present inferred duration or subtype as known", () => {
+    const allocation = buildPortfolioExposureAllocation([
+      holding({
+        symbol: "TLT",
+        name: "iShares USD Treasury Bond 20-30yr UCITS ETF",
+        quantity: 10,
+        currentPrice: 100,
+      }),
+    ]);
+    expect(allocation.fixedIncome?.majorityIsLongDuration).toBe(false);
+    expect(allocation.fixedIncome?.durationKnownSharePercent).toBe(0);
+    const subtype = allocation.fixedIncome?.subgroups[0];
+    expect(subtype?.confidence).toBe("inferred");
+    expect(formatFixedIncomeSubtypeLabel(subtype!)).toMatch(/inferred/i);
+    const exposureUi = read(
+      "components/analysis/PortfolioExposureSection.tsx",
+    );
+    expect(exposureUi).toContain("formatFixedIncomeSubtypeLabel");
+    expect(exposureUi).toContain("buildFixedIncomeRateEducation");
+    expect(exposureUi).toContain('data-testid="fixed-income-rate-education"');
+    expect(exposureUi).not.toContain("fetch(");
+    expect(read("components/dashboard/DashboardPortfolioExposureCard.tsx")).not.toContain(
+      "buildFixedIncomeRateEducation",
+    );
   });
 });

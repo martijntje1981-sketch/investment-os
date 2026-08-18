@@ -109,6 +109,10 @@ describe("Analysis portfolio exposure section", () => {
     expect(exposureSectionSource).toContain("group.displayPercent");
     expect(exposureSectionSource).toContain("formatEur(group.value)");
     expect(exposureSectionSource).toContain("coverageLabel");
+    expect(exposureSectionSource).toContain("buildFixedIncomeRateEducation");
+    expect(exposureSectionSource).toContain(
+      'data-testid="fixed-income-rate-education"',
+    );
     expect(exposureSectionSource).not.toContain("classifyHoldingExposure");
     expect(exposureSectionSource).not.toContain(
       "buildPortfolioExposureAllocation",

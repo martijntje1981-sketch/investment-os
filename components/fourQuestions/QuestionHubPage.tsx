@@ -12,7 +12,12 @@ import {
   AppPageLoading,
   PageContainer,
 } from "@/components/layout/PageContainer";
-import { appSectionMetaClass } from "@/components/layout/appSurface";
+import {
+  appFourQuestionAnswerClass,
+  appFourQuestionSupportClass,
+  appSectionLabelClass,
+  appSectionMetaClass,
+} from "@/components/layout/appSurface";
 import { EmptyPortfolioGuide } from "@/components/onboarding/EmptyPortfolioGuide";
 import { useGoalProgress } from "@/lib/client/useGoalProgress";
 import { useGoalRealityCheck } from "@/lib/client/useGoalRealityCheck";
@@ -191,16 +196,14 @@ export function QuestionHubPage({ questionId }: QuestionHubPageProps) {
               className={`rounded-2xl px-4 py-4 sm:px-5 sm:py-5 ${v.hubAnswer}`}
               data-testid="question-hub-conclusion"
             >
-              <p
-                className={`text-[11px] font-bold uppercase tracking-[0.14em] ${v.hubAnswerEyebrow}`}
-              >
+              <p className={`${appSectionLabelClass} ${v.hubAnswerEyebrow}`}>
                 Answer
               </p>
-              <h2 className="mt-2 text-[1.25rem] font-black tracking-[-0.03em] text-slate-950 sm:text-[1.45rem]">
+              <h2 className={`${appFourQuestionAnswerClass} font-black text-slate-950`}>
                 {answer.answer}
               </h2>
               {answer.support ? (
-                <p className="mt-2 text-[14px] leading-snug text-slate-700">
+                <p className={`mt-2 ${appFourQuestionSupportClass}`}>
                   {answer.support}
                 </p>
               ) : null}
@@ -208,7 +211,7 @@ export function QuestionHubPage({ questionId }: QuestionHubPageProps) {
 
             {answer.expandItems.length > 0 ? (
               <section className={`rounded-2xl px-4 py-4 shadow-sm sm:px-5 sm:py-5 ${v.expandPanel}`}>
-                <p className={`text-[11px] font-bold uppercase tracking-[0.12em] ${v.expandLabel}`}>
+                <p className={`${appSectionLabelClass} ${v.expandLabel}`}>
                   Important evidence
                 </p>
                 <ul className="mt-3 space-y-2">
@@ -224,7 +227,7 @@ export function QuestionHubPage({ questionId }: QuestionHubPageProps) {
             ) : null}
 
             {answer.disclosures.map((line) => (
-              <p key={line} className={`text-[12px] ${appSectionMetaClass}`}>
+              <p key={line} className={appSectionMetaClass}>
                 {line}
               </p>
             ))}
@@ -233,7 +236,7 @@ export function QuestionHubPage({ questionId }: QuestionHubPageProps) {
               className={`rounded-2xl px-4 py-4 sm:px-5 sm:py-5 ${v.hubTintSection}`}
             >
               <p
-                className={`text-[11px] font-bold uppercase tracking-[0.12em] ${v.hubAccentText}`}
+                className={`${appSectionLabelClass} ${v.hubAccentText}`}
               >
                 Deep dive
               </p>
@@ -283,13 +286,13 @@ function HubHero({ definition }: { definition: FourQuestionDefinition }) {
       <TobaileyMarkWatermark className="-right-8 top-1/2 -translate-y-1/2 sm:-right-6" />
 
       <div className="relative z-10 max-w-[min(100%,28rem)] sm:max-w-xl">
-        <p className="text-[11px] font-bold tabular-nums tracking-[0.14em] text-white/80">
+        <p className="text-[13px] font-semibold tabular-nums tracking-[0.08em] text-white/80">
           {definition.numberLabel} · {title}?
         </p>
         <h1 className="mt-2.5 text-[1.55rem] font-black leading-tight tracking-[-0.04em] text-white sm:text-[1.9rem]">
           {definition.humanQuestion}
         </h1>
-        <p className="mt-2 max-w-xl text-[14px] leading-snug text-white/80">
+        <p className="mt-2 max-w-xl text-[15px] leading-relaxed text-white/80 sm:text-[16px]">
           {definition.meaning}
         </p>
       </div>

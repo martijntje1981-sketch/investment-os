@@ -266,10 +266,10 @@ function buildFixedIncomeSleeve(
         existing.confidence = "inferred";
       }
     }
-    if (row.classification.confidence.duration !== "unknown") {
+    if (row.classification.confidence.duration === "known") {
       durationKnown += row.value;
     }
-    if (row.classification.confidence.creditQuality !== "unknown") {
+    if (row.classification.confidence.creditQuality === "known") {
       creditKnown += row.value;
     }
     if (type === "government" || row.classification.sovereignTreasury) {

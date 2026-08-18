@@ -4,7 +4,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 
 import { appSectionMetaClass, appTextLinkClass } from "@/components/layout/appSurface";
-import { isEligibleForPeriodReportEmail } from "@/lib/services/periodIntelligence/email/eligibility";
+import {
+  isEligibleForPeriodReportEmail,
+  visiblePeriodReviewEmailOptIn,
+} from "@/lib/services/periodIntelligence/email/eligibility";
 import type { ProductAccess } from "@/lib/services/productAccess";
 
 type PeriodReviewEmailPreferencesProps = {
@@ -29,7 +32,7 @@ function Toggle({
 }) {
   return (
     <div className="flex items-start justify-between gap-4 py-3">
-      <p className="min-w-0 text-[14px] font-semibold text-slate-900">{label}</p>
+      <p className="min-w-0 text-[15px] font-semibold text-slate-900">{label}</p>
       <label
         className={`relative inline-flex min-h-[44px] min-w-[52px] items-center ${
           disabled ? "cursor-not-allowed" : "cursor-pointer"
@@ -45,11 +48,15 @@ function Toggle({
           data-testid={testId}
         />
         <span
-          className="h-7 w-12 rounded-full bg-slate-200 transition peer-checked:bg-brand peer-focus-visible:ring-2 peer-focus-visible:ring-brand peer-disabled:opacity-40"
+          className={`h-7 w-12 rounded-full bg-slate-200 transition peer-focus-visible:ring-2 peer-focus-visible:ring-brand peer-disabled:opacity-50 ${
+            disabled ? "" : "peer-checked:bg-brand"
+          }`}
           aria-hidden
         />
         <span
-          className="absolute left-1 top-1/2 h-5 w-5 -translate-y-1/2 rounded-full bg-white shadow transition peer-checked:translate-x-5"
+          className={`absolute left-1 top-1/2 h-5 w-5 -translate-y-1/2 rounded-full bg-white shadow transition ${
+            disabled ? "" : "peer-checked:translate-x-5"
+          }`}
           aria-hidden
         />
       </label>
@@ -185,7 +192,7 @@ export function PeriodReviewEmailPreferences({
           <Toggle
             label="Weekly personal review"
             srLabel="Weekly personal review email"
-            checked={weeklyOptIn}
+            checked={visiblePeriodReviewEmailOptIn(eligible, weeklyOptIn)}
             disabled={controlDisabled}
             testId="weekly-review-email-checkbox"
             onChange={(next) => void save({ weeklyOptIn: next })}
@@ -198,7 +205,7 @@ export function PeriodReviewEmailPreferences({
           <Toggle
             label="Monthly personal review"
             srLabel="Monthly personal review email"
-            checked={monthlyOptIn}
+            checked={visiblePeriodReviewEmailOptIn(eligible, monthlyOptIn)}
             disabled={controlDisabled}
             testId="monthly-review-email-checkbox"
             onChange={(next) => void save({ monthlyOptIn: next })}

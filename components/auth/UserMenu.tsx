@@ -423,7 +423,7 @@ export default function UserMenu() {
                   key={link.href}
                   href={link.href}
                   aria-current={active ? "page" : undefined}
-                  className={`rounded-lg px-2.5 py-2 text-[13px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 ${
+                  className={`rounded-lg px-2.5 py-2 text-[14px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 ${
                     active
                       ? "bg-brand/15 text-brand-navy"
                       : "text-slate-600 hover:bg-slate-100 hover:text-brand-navy"
@@ -455,7 +455,7 @@ export default function UserMenu() {
               <span className="block max-w-[8.5rem] truncate text-[13px] font-bold leading-tight text-white">
                 {fullName}
               </span>
-              <span className="mt-0.5 block max-w-[8.5rem] truncate text-[11px] font-medium text-white/50">
+              <span className="mt-0.5 block max-w-[8.5rem] truncate text-[13px] font-medium text-white/75">
                 {productAccess.isDemo ? "Demo" : "Signed in"}
               </span>
             </span>

@@ -1,6 +1,7 @@
 export {
   evaluatePeriodReportEmailDelivery,
   isEligibleForPeriodReportEmail,
+  visiblePeriodReviewEmailOptIn,
 } from "@/lib/services/periodIntelligence/email/eligibility";
 export {
   buildTrustedMonthlyPeriodReview,

@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Download, History, Plus, Wallet } from "lucide-react";
+import { ExportPortfolioButton } from "@/components/export/ExportPortfolioButton";
+import { Plus, History, Wallet } from "lucide-react";
 
 import { PortfolioPerformanceChart } from "@/components/analysis/performance/PortfolioPerformanceChart";
 import { ManageContributionsDialog } from "@/components/contributions/ManageContributionsDialog";
@@ -285,19 +286,11 @@ export default function PortfolioHistoryPage() {
                 <Plus className="h-4 w-4" aria-hidden />
                 Add activity
               </button>
-              <button
-                type="button"
-                onClick={handleExport}
+              <ExportPortfolioButton
+                variant="hero"
                 disabled={isExporting}
-                aria-busy={isExporting}
-                aria-label="Export Portfolio as Excel workbook"
-                title="Excel workbook"
-                data-testid="export-portfolio-button"
-                className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-navy-hero disabled:cursor-wait disabled:opacity-70"
-              >
-                <Download className="h-4 w-4" aria-hidden />
-                {isExporting ? "Exporting…" : "Export Portfolio"}
-              </button>
+                onExport={handleExport}
+              />
             </div>
           }
         />

@@ -440,7 +440,7 @@ function CompanionReviewContent() {
               <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
                 <ExportPortfolioButton
                   onExport={() => void handleExport()}
-                  variant="ghost"
+                  variant="secondary"
                 />
                 <PeriodReportPdfAction
                   review={periodIntelligence}

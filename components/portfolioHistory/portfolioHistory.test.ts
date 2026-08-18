@@ -39,7 +39,8 @@ describe("portfolio history UI", () => {
     expect(page).toContain("Timeline");
     expect(page).toContain("Current holdings");
     expect(page).toContain("Add activity");
-    expect(page).toContain("Export Portfolio");
+    expect(page).toContain("ExportPortfolioButton");
+    expect(page).toContain('variant="hero"');
     expect(page).toContain("PortfolioPerformanceChart");
     expect(page).toContain("PortfolioTimelineList");
     expect(page).toContain("ManageContributionsDialog");

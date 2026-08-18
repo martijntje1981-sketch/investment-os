@@ -5,6 +5,7 @@ import Link from "next/link";
 
 import { DynamicScoreRing } from "@/components/dashboard/DynamicScoreRing";
 import { PortfolioPulseDetailSheet } from "@/components/dashboard/PortfolioPulseDetailSheet";
+import { appHeroMetricLabelClass } from "@/components/layout/appSurface";
 import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 import type {
   DynamicPortfolioScore,
@@ -44,12 +45,12 @@ export function HeroPortfolioPulse({
       data-testid="hero-portfolio-pulse"
     >
       <div className="flex items-center justify-between gap-2">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-white/55">
+        <p className={appHeroMetricLabelClass}>
           Portfolio Pulse
         </p>
         <Link
           href={DASHBOARD_DEEP_LINKS.scorecard}
-          className="text-[11px] font-semibold text-brand hover:text-brand-hover"
+          className="inline-flex min-h-11 items-center text-[15px] font-semibold text-brand hover:text-brand-hover"
         >
           Scorecard
         </Link>

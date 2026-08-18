@@ -65,7 +65,7 @@ export type DashboardSummary = {
   goalTarget: number | null;
   topDailyDriver: { symbol: string; name: string; move: number } | null;
   concentrationSymbol: string | null;
-  concentrationWeightPercent: number;
+  concentrationWeightPercent: number | null;
   observations: string[];
 };
 
@@ -108,9 +108,13 @@ export function buildDashboardSummary(
   )[0];
 
   const goalProgress =
-    goal && hasSavedGoal ? computeGoalProgress(snapshot.totalValue, goal) : 0;
+    goal && hasSavedGoal && snapshot.totalValueAvailable
+      ? computeGoalProgress(snapshot.totalValue, goal)
+      : 0;
   const goalCompleted =
-    goal && hasSavedGoal ? isGoalAchieved(snapshot.totalValue, goal) : false;
+    goal && hasSavedGoal && snapshot.totalValueAvailable
+      ? isGoalAchieved(snapshot.totalValue, goal)
+      : false;
 
   return {
     portfolioValue: performance.totalValueAvailable ? performance.totalValue : 0,
@@ -165,7 +169,7 @@ export function buildDashboardSummary(
       : null,
     concentrationSymbol: analysis.largestPosition?.holding.symbol ?? null,
     concentrationWeightPercent:
-      analysis.largestPosition?.weightPercent ?? 0,
+      analysis.largestPosition?.weightPercent ?? null,
     observations: analysis.observations,
   };
 }

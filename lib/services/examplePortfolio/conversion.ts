@@ -4,6 +4,12 @@
  * Stripe Checkout + webhooks are not implemented in this codebase yet.
  * When they land, call `convertExampleEntitlementForUser` from the verified
  * webhook handler only — never from the client.
+ *
+ * Owner/test Complete (until Stripe): set `example_portfolio_entitlements.converted_at`
+ * for the auth user (insert the row with converted_at if none exists). That is the
+ * same server-side Complete path as a real conversion. Do not hardcode emails in UI.
+ * Remove later by clearing converted_at (and matching user_metadata.example_converted_at)
+ * without leaving an active example trial clock.
  */
 
 import type { SupabaseClient, User } from "@supabase/supabase-js";

@@ -4,14 +4,17 @@ import { useState } from "react";
 import { Download } from "lucide-react";
 
 import {
-  appGhostButtonClass,
+  appControlDisabledClass,
+  appHeroSecondaryButtonClass,
+  appSecondaryButtonClass,
   appSolidButtonClass,
+  appTextLinkClass,
 } from "@/components/layout/appSurface";
 
 type ExportPortfolioButtonProps = {
   onExport: () => void | boolean | Promise<void | boolean>;
   disabled?: boolean;
-  variant?: "solid" | "ghost" | "text";
+  variant?: "solid" | "secondary" | "hero" | "text" | "ghost";
   className?: string;
 };
 
@@ -22,7 +25,7 @@ type ExportPortfolioButtonProps = {
 export function ExportPortfolioButton({
   onExport,
   disabled = false,
-  variant = "ghost",
+  variant = "secondary",
   className = "",
 }: ExportPortfolioButtonProps) {
   const [busy, setBusy] = useState(false);
@@ -40,9 +43,11 @@ export function ExportPortfolioButton({
   const base =
     variant === "solid"
       ? appSolidButtonClass
-      : variant === "text"
-        ? "inline-flex min-h-[44px] items-center gap-2 text-sm font-semibold text-brand-navy underline-offset-2 hover:underline disabled:opacity-40"
-        : appGhostButtonClass;
+      : variant === "hero"
+        ? appHeroSecondaryButtonClass
+        : variant === "text"
+          ? `${appTextLinkClass} ${appControlDisabledClass}`
+          : appSecondaryButtonClass;
 
   return (
     <button
@@ -51,7 +56,7 @@ export function ExportPortfolioButton({
       disabled={busy || disabled}
       aria-label="Export Portfolio as Excel workbook"
       title="Excel workbook"
-      className={`${base} disabled:opacity-40 ${className}`.trim()}
+      className={`${base} ${className}`.trim()}
       data-testid="export-portfolio-button"
     >
       <Download className="h-4 w-4" aria-hidden />

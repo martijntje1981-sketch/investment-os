@@ -84,6 +84,17 @@ export const FIXED_INCOME_DURATION_LABELS: Record<
   unknown: "Unknown",
 };
 
+/** User-facing subtype label — inferred metadata is not presented as confirmed. */
+export function formatFixedIncomeSubtypeLabel(input: {
+  displayLabel: string;
+  confidence: FixedIncomeFieldConfidence;
+}): string {
+  if (input.confidence === "inferred") {
+    return `${input.displayLabel} · inferred`;
+  }
+  return input.displayLabel;
+}
+
 export const NOT_FIXED_INCOME: FixedIncomeClassification = {
   isFixedIncome: false,
   type: "unknown",

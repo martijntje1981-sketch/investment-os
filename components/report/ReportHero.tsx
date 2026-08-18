@@ -1,3 +1,8 @@
+import {
+  appDashboardDarkMetaClass,
+  appDashboardDarkMutedClass,
+  appHeroMetricLabelClass,
+} from "@/components/layout/appSurface";
 import { ReportMetricRow } from "@/components/report/ReportMetric";
 import type { PersonalReportViewModel } from "@/lib/services/periodIntelligence";
 
@@ -8,7 +13,7 @@ type ReportHeroProps = {
 export function ReportHero({ report }: ReportHeroProps) {
   return (
     <header className="bg-slate-950 px-5 py-6 text-white sm:px-7 sm:py-8">
-      <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/60">
+      <p className={appHeroMetricLabelClass}>
         {report.kicker}
       </p>
       <h2
@@ -17,12 +22,12 @@ export function ReportHero({ report }: ReportHeroProps) {
       >
         {report.conclusion}
       </h2>
-      <p className="mt-3 text-[13px] font-medium text-white/55">
+      <p className={`mt-3 ${appDashboardDarkMutedClass}`}>
         {report.dateRangeLabel}
       </p>
       <ReportMetricRow metrics={report.metrics} onDark />
       {report.dataAsOf ? (
-        <p className="mt-4 text-[12px] font-medium text-white/45">{report.dataAsOf}</p>
+        <p className={`mt-4 ${appDashboardDarkMetaClass}`}>{report.dataAsOf}</p>
       ) : null}
       {report.isDemo ? (
         <p className="mt-3 text-[13px] font-semibold text-amber-200">

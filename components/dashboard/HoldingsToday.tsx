@@ -57,13 +57,13 @@ export function HoldingsToday({
         <DashboardSectionHeader
           variant="holdings"
           title="Your holdings"
-          subtitle="Live values and latest movement"
+          subtitle="Latest available values and movement"
           icon={<Wallet className="h-5 w-5" />}
           bordered={false}
         />
         <div className={appCardPaddingClass}>
           <p className={appSectionBodyClass}>
-            Add market-priced holdings to see live values and latest movement.
+            Add market-priced holdings to see latest available values and movement.
           </p>
           <Link href="/upload" className={`mt-5 ${appSolidButtonClass}`}>
             <Upload className="h-4 w-4" aria-hidden />

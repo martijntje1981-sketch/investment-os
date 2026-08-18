@@ -33,7 +33,7 @@ export function DashboardUpcomingEventsCard({
     >
       <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-4 py-4 sm:px-5">
         <div className="min-w-0">
-          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-brand-navy/60">
+          <p className="text-[13px] font-semibold uppercase tracking-[0.06em] text-brand-navy/75">
             This week
           </p>
           <h2
@@ -68,7 +68,7 @@ export function DashboardUpcomingEventsCard({
                 className="flex min-w-0 items-start gap-3 py-2.5 first:pt-0 last:pb-0"
               >
                 <div className="w-[3.25rem] shrink-0 pt-0.5">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-brand-navy/55">
+                  <p className="text-[13px] font-semibold uppercase tracking-[0.06em] text-brand-navy/75">
                     {event.timeLabel.split(" ")[0]}
                   </p>
                   <p className="mt-0.5 text-[13px] font-semibold tabular-nums text-brand-navy">

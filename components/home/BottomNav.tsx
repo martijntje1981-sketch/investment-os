@@ -15,7 +15,11 @@ import {
   Sparkles,
 } from "lucide-react";
 
-import { appBottomNavLabelClass } from "@/components/layout/appSurface";
+import {
+  appBottomNavLabelClass,
+  appSectionLabelClass,
+  appSectionMetaClass,
+} from "@/components/layout/appSurface";
 import { isBottomNavItemActive } from "@/components/home/bottomNavActive";
 import { useDismissibleMenu } from "@/lib/client/useDismissibleMenu";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
@@ -118,7 +122,7 @@ function MoreMenuPanel({
       data-testid="bottom-nav-more-panel"
     >
       <div className="border-b border-slate-100 px-4 py-3">
-        <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
+        <p className={appSectionLabelClass}>
           More
         </p>
         <p className="mt-0.5 text-sm font-semibold text-slate-800">
@@ -131,7 +135,7 @@ function MoreMenuPanel({
             {index > 0 ? (
               <div className="mx-2 my-2 border-t border-slate-100" />
             ) : null}
-            <p className="px-2 pb-1 pt-1 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
+            <p className={`px-2 pb-1 pt-1 ${appSectionLabelClass}`}>
               {group.title}
             </p>
             <div className="space-y-0.5">
@@ -159,7 +163,7 @@ function MoreMenuPanel({
                         {item.label}
                       </span>
                       {item.description ? (
-                        <span className="mt-0.5 block text-[12px] font-medium text-slate-500">
+                        <span className={`mt-0.5 block ${appSectionMetaClass}`}>
                           {item.description}
                         </span>
                       ) : null}

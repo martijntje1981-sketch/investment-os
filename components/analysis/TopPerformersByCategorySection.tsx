@@ -54,7 +54,7 @@ export function TopPerformersByCategorySection({
       {model.overallWinner ? (
         <div className="mt-3 flex min-w-0 items-center justify-between gap-3 rounded-lg border border-emerald-200/70 bg-emerald-50/60 px-3 py-2">
           <div className="min-w-0">
-            <p className={`${appSectionLabelClass} text-[11px] text-emerald-800`}>
+            <p className={`${appSectionLabelClass} text-emerald-800`}>
               Portfolio leader
             </p>
             <p className="mt-0.5 truncate text-sm font-semibold text-slate-950">
@@ -64,7 +64,7 @@ export function TopPerformersByCategorySection({
                 · {model.overallWinner.name}
               </span>
             </p>
-            <p className={`${appSectionMetaClass} mt-0.5 text-[12px]`}>
+            <p className={`${appSectionMetaClass} mt-0.5`}>
               {model.overallWinner.displayLabel}
             </p>
           </div>
@@ -101,11 +101,11 @@ export function TopPerformersByCategorySection({
                 key={group.groupId}
                 className="min-w-0 rounded-lg border border-slate-100 bg-slate-50/80 px-2.5 py-2"
               >
-                <p className={`${appSectionLabelClass} text-[11px]`}>
+                <p className={appSectionLabelClass}>
                   {group.displayLabel}
                 </p>
                 {comparison ? (
-                  <p className={`mt-0.5 ${appSectionMetaClass} text-[11px] text-slate-500`}>
+                  <p className={`mt-0.5 ${appSectionMetaClass}`}>
                     {comparison}
                   </p>
                 ) : null}
@@ -135,7 +135,7 @@ export function TopPerformersByCategorySection({
                             <p className="truncate text-sm font-semibold text-slate-950">
                               {holding.symbol}
                             </p>
-                            <p className="truncate text-[11px] font-medium text-slate-500">
+                            <p className={`truncate ${appSectionMetaClass}`}>
                               {holding.name}
                             </p>
                           </div>

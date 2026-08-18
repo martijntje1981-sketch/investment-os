@@ -1,3 +1,7 @@
+import {
+  appHeroMetricLabelClass,
+  appSectionLabelClass,
+} from "@/components/layout/appSurface";
 import type { PeriodReportHeroMetric } from "@/lib/services/periodIntelligence";
 
 type ReportMetricProps = {
@@ -9,11 +13,7 @@ type ReportMetricProps = {
 export function ReportMetric({ label, value, onDark = false }: ReportMetricProps) {
   return (
     <div className="min-w-0">
-      <p
-        className={`text-[11px] font-semibold uppercase tracking-[0.08em] ${
-          onDark ? "text-white/55" : "text-slate-500"
-        }`}
-      >
+      <p className={onDark ? appHeroMetricLabelClass : appSectionLabelClass}>
         {label}
       </p>
       <p

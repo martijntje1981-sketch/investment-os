@@ -36,7 +36,7 @@ describe("Phase 3A Portfolio Intelligence foundation wiring", () => {
     expect(exportSource).toContain("Dashboard Summary");
     expect(exportSource).toContain("buildPortfolioWorkbook");
     expect(exportSource).toContain("downloadPortfolioWorkbook");
-    expect(historyPage).toContain("Export Portfolio");
+    expect(historyPage).toContain("ExportPortfolioButton");
     expect(navCard).toContain("Export Portfolio");
     expect(historyPage).not.toContain("Export Excel");
     expect(navCard).not.toContain("Export Excel");

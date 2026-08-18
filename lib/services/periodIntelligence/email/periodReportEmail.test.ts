@@ -27,6 +27,7 @@ import {
   deliverPeriodReviewEmails,
   evaluatePeriodReportEmailDelivery,
   isEligibleForPeriodReportEmail,
+  visiblePeriodReviewEmailOptIn,
   renderPeriodReportEmail,
   toPeriodReportEmailView,
 } from "@/lib/services/periodIntelligence/email";
@@ -505,6 +506,13 @@ describe("Phase 9C period review email", () => {
         access: freeAccess(),
       }).reason,
     ).toBe("not_eligible");
+    expect(visiblePeriodReviewEmailOptIn(false, true)).toBe(false);
+    expect(visiblePeriodReviewEmailOptIn(true, true)).toBe(true);
+    expect(visiblePeriodReviewEmailOptIn(true, false)).toBe(false);
+    const prefs = read("components/companion/PeriodReviewEmailPreferences.tsx");
+    expect(prefs).toContain("visiblePeriodReviewEmailOptIn(eligible, weeklyOptIn)");
+    expect(prefs).toContain("visiblePeriodReviewEmailOptIn(eligible, monthlyOptIn)");
+    expect(prefs).toContain('disabled ? "" : "peer-checked:bg-brand"');
   });
 
   it("5. Complete is eligible", () => {

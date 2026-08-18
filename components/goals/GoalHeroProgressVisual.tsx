@@ -17,7 +17,11 @@ export function GoalHeroProgressVisual({
 }: {
   progress: Pick<
     GoalProgress,
-    "currentValue" | "targetValue" | "hasGoal" | "goalReached"
+    | "currentValue"
+    | "targetValue"
+    | "hasGoal"
+    | "goalReached"
+    | "portfolioValueAvailable"
   >;
   hasSavedGoal: boolean;
 }) {

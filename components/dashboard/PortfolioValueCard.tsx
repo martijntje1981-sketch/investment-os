@@ -23,6 +23,7 @@ import type { PortfolioPerformancePoint } from "@/lib/client/performance/types";
 import type { SmartDashboardIntelligence } from "@/lib/client/smartDashboardIntelligence";
 import {
   appDarkInsetClass,
+  appDashboardDarkMetaClass,
   appDisplayClass,
   appHeroMatchedKpiClass,
   appHeroMetricLabelClass,
@@ -86,7 +87,7 @@ function SnapshotMover({
       aria-label={`${label}: ${displayName}, ${signedPercent(mover.changePercent)}. ${mover.changePeriodAccessibleDescription}`}
     >
       <p className={appHeroMetricLabelClass}>{label}</p>
-      <p className="mt-0.5 truncate text-[12px] font-semibold leading-tight text-white sm:mt-1 sm:text-[13px]">
+      <p className="mt-0.5 truncate text-[13px] font-semibold leading-tight text-white sm:mt-1 sm:text-[15px]">
         {displayName}
       </p>
       <div className={`mt-0.5 flex min-w-0 items-center gap-1 ${accentClass}`}>
@@ -227,7 +228,7 @@ export function PortfolioValueCard({
               <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
                 <ConversionDetailsDisclosure compactTrigger tone="dark" />
                 {snapshot.portfolioValueCoverageMessage ? (
-                  <p className="text-[12px] font-medium text-white/50">
+                  <p className={appDashboardDarkMetaClass}>
                     {snapshot.portfolioValueCoverageMessage}
                   </p>
                 ) : null}
@@ -256,7 +257,7 @@ export function PortfolioValueCard({
                   <span className="opacity-90">{percentLabel}</span>
                 ) : null}
               </p>
-              <p className="mt-1 text-[12px] font-medium leading-snug text-white/50">
+              <p className={`mt-1 ${appDashboardDarkMetaClass}`}>
                 {priceBasisLabel}
               </p>
             </div>
@@ -271,7 +272,7 @@ export function PortfolioValueCard({
           </div>
 
           <div className="mt-2.5 flex flex-wrap items-center gap-2">
-            <p className="text-[12px] font-medium text-white/50">
+            <p className={appDashboardDarkMetaClass}>
               {isStaleDisplay ? (
                 <span className="text-amber-200/90">Previous close · </span>
               ) : null}
@@ -284,7 +285,7 @@ export function PortfolioValueCard({
             refresh.status === "error" ||
             refresh.status === "loading") ? (
             <p
-              className="mt-1.5 text-[12px] font-medium text-white/55"
+              className={`mt-1.5 ${appDashboardDarkMetaClass}`}
               role="status"
               aria-live="polite"
               data-refresh-feedback={refresh.status}
@@ -327,17 +328,17 @@ export function PortfolioValueCard({
                   {focus.href ? (
                     <Link
                       href={focus.href}
-                      className="mt-0.5 block truncate text-[12px] font-semibold text-white underline-offset-2 hover:underline sm:mt-1 sm:text-[13px]"
+                      className="mt-0.5 block truncate text-[13px] font-semibold text-white underline-offset-2 hover:underline sm:mt-1 sm:text-[15px]"
                     >
                       {focus.label}
                     </Link>
                   ) : (
-                    <p className="mt-0.5 truncate text-[12px] font-semibold text-white sm:mt-1 sm:text-[13px]">
+                    <p className="mt-0.5 truncate text-[13px] font-semibold text-white sm:mt-1 sm:text-[15px]">
                       {focus.label}
                     </p>
                   )}
                   {concentrationLabel && focus.kind === "concentration" ? (
-                    <p className="mt-0.5 text-[11px] font-medium text-white/45">
+                    <p className={`mt-0.5 ${appDashboardDarkMetaClass}`}>
                       {concentrationLabel}
                     </p>
                   ) : null}
@@ -347,7 +348,7 @@ export function PortfolioValueCard({
                   className={`${appDarkInsetClass} col-span-2 min-h-[56px] px-2.5 py-2 sm:min-h-[64px] sm:px-3 sm:py-2.5 lg:col-span-1`}
                 >
                   <p className={appHeroMetricLabelClass}>Portfolio structure</p>
-                  <p className="mt-0.5 text-[12px] font-semibold text-white sm:mt-1 sm:text-[13px]">
+                  <p className="mt-0.5 text-[13px] font-semibold text-white sm:mt-1 sm:text-[15px]">
                     Largest holding {concentrationLabel}
                   </p>
                 </div>

@@ -3,6 +3,10 @@
 import Link from "next/link";
 
 import {
+  appFourQuestionSupportClass,
+  appSectionLabelClass,
+} from "@/components/layout/appSurface";
+import {
   ANALYSIS_FOUR_QUESTION_NAV,
   type AnalysisFourQuestionNavItem,
 } from "@/lib/services/fourQuestions/analysisSections";
@@ -18,7 +22,7 @@ export function AnalysisFourQuestionsNav() {
       className="mt-6"
       data-testid="analysis-four-questions-nav"
     >
-      <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-brand/80">
+      <p className={`${appSectionLabelClass} text-brand-navy`}>
         Explore your portfolio
       </p>
       <ul className="mt-3 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
@@ -40,14 +44,14 @@ function NavCard({ item }: { item: AnalysisFourQuestionNavItem }) {
       data-testid={`analysis-four-nav-${item.id}`}
     >
       <span
-        className={`text-[11px] font-semibold tabular-nums tracking-[0.08em] ${item.visual.number}`}
+        className={`text-[13px] font-semibold tabular-nums tracking-[0.08em] ${item.visual.number}`}
       >
         {item.numberLabel}
       </span>
-      <span className="mt-1 block text-[14px] font-semibold tracking-[-0.02em] text-slate-950">
+      <span className="mt-1 block text-[15px] font-semibold tracking-[-0.02em] text-slate-950 sm:text-[16px]">
         {item.question}
       </span>
-      <span className="mt-0.5 block text-[12px] leading-snug text-slate-600">
+      <span className={`mt-0.5 ${appFourQuestionSupportClass}`}>
         {item.navHint}
       </span>
     </Link>

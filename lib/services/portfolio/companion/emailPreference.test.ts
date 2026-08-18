@@ -91,6 +91,7 @@ describe("period review email preferences", () => {
     expect(prefs).toContain("Monthly personal review");
     expect(prefs).toContain("You can change this anytime");
     expect(prefs).toContain("Personal review emails are included with Complete");
+    expect(prefs).toContain("visiblePeriodReviewEmailOptIn");
     expect(prefs).not.toContain("!configured");
   });
 

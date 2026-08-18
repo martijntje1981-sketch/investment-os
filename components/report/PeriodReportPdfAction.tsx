@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Download } from "lucide-react";
 
 import {
-  appGhostButtonClass,
+  appSecondaryButtonClass,
   appTextLinkClass,
 } from "@/components/layout/appSurface";
 import { canDownloadPeriodReportPdf } from "@/lib/services/periodIntelligence/pdf/pdfAccess";
@@ -36,7 +36,7 @@ export function PeriodReportPdfAction({
 
   if (!canDownloadPeriodReportPdf(access)) {
     return (
-      <p className="text-[13px] font-medium text-slate-500">
+      <p className="text-[15px] font-medium leading-relaxed text-slate-600">
         PDF download is included with Complete.{" "}
         <Link href={access.upgradeHref} className={appTextLinkClass}>
           {access.upgradeCtaLabel}
@@ -100,7 +100,7 @@ export function PeriodReportPdfAction({
         type="button"
         onClick={() => void handleDownload()}
         disabled={busy}
-        className={`${appGhostButtonClass} disabled:opacity-40`}
+        className={appSecondaryButtonClass}
         data-testid="period-report-pdf-download"
       >
         <Download className="h-4 w-4" aria-hidden />

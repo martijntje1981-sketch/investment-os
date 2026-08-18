@@ -45,6 +45,24 @@ export function GoalProgressCard({
     );
   }
 
+  if (!snapshot.portfolioValueAvailable) {
+    return (
+      <article className={`${appDashboardLightCardClass} ${appCardPaddingClass}`}>
+        <p className={appSectionLabelClass}>Goal progress</p>
+        <p className={`mt-2.5 ${appCardValueClass}`}>Portfolio value unavailable</p>
+        <p className={`mt-2 ${appSectionSubtitleClass}`}>
+          Target {formatEur(snapshot.goalTarget)}
+          {snapshot.goalTargetYear ? (
+            <span className="hidden min-[390px]:inline">
+              {" · "}
+              {snapshot.goalTargetYear}
+            </span>
+          ) : null}
+        </p>
+      </article>
+    );
+  }
+
   return (
     <article className={`${appDashboardLightCardClass} ${appCardPaddingClass}`}>
       <p className={appSectionLabelClass}>Goal progress</p>

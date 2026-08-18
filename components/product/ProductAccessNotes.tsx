@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 
+import { appSectionLabelClass, appSecondaryButtonClass } from "@/components/layout/appSurface";
 import type { ProductAccess } from "@/lib/services/productAccess";
 
 export function formatPlanLabel(access: ProductAccess): string {
@@ -30,7 +31,7 @@ export function PlanStatusBadge({
 
   return (
     <span
-      className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold ${tone}`}
+      className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[13px] font-semibold ${tone}`}
       data-testid="plan-status-badge"
       data-tier={access.tier}
     >
@@ -51,7 +52,7 @@ export function CompleteTrialIndicator({
 
   return (
     <div
-      className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200/80 bg-white px-3.5 py-2.5 text-[13px] text-slate-600 sm:px-4"
+      className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200/80 bg-white px-3.5 py-2.5 text-[15px] text-slate-700 sm:px-4"
       data-testid="complete-trial-indicator"
       data-tier={access.tier}
     >
@@ -80,7 +81,7 @@ export function FreeIntelligenceNote({
 
   return (
     <div
-      className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200/70 bg-slate-50/80 px-3.5 py-2.5 text-[13px] text-slate-600 sm:px-4"
+      className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200/70 bg-slate-50/80 px-3.5 py-2.5 text-[15px] text-slate-700 sm:px-4"
       data-testid="free-intelligence-note"
       data-tier="free"
     >
@@ -138,19 +139,19 @@ export function PlanStatusCard({
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+          <p className={appSectionLabelClass}>
             Your plan
           </p>
           <h2 className="mt-1 text-[1.05rem] font-semibold tracking-[-0.02em] text-slate-950">
             {title}
           </h2>
-          <p className="mt-1 text-[14px] text-slate-700">{detail}</p>
-          <p className="mt-2 text-[13px] text-slate-500">{followUp}</p>
+          <p className="mt-1 text-[15px] leading-relaxed text-slate-700">{detail}</p>
+          <p className="mt-2 text-[15px] leading-relaxed text-slate-600">{followUp}</p>
         </div>
         {!access.isDemo && access.tier !== "complete" ? (
           <Link
             href={access.upgradeHref}
-            className="inline-flex min-h-[44px] items-center rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-50"
+            className={`${appSecondaryButtonClass} shrink-0`}
           >
             {access.upgradeCtaLabel}
           </Link>

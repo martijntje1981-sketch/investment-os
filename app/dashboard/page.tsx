@@ -279,7 +279,9 @@ export default function DashboardPage() {
       ),
       ledByName,
       goalProgressPercent: goalProgress.hasGoal
-        ? goalProgress.currentProgressPercent
+        ? goalProgress.portfolioValueAvailable
+          ? goalProgress.currentProgressPercent
+          : null
         : snapshot.goalProgress,
       goalReached: goalProgress.goalReached || snapshot.goalCompleted,
       hasSavedGoal,
@@ -293,6 +295,7 @@ export default function DashboardPage() {
     goalProgress.currentProgressPercent,
     goalProgress.goalReached,
     goalProgress.hasGoal,
+    goalProgress.portfolioValueAvailable,
     goalProgress.status,
     hasSavedGoal,
     intelligence,
