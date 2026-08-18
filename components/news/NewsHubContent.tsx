@@ -40,24 +40,29 @@ import {
   type NewsSearchScopeFilter,
 } from "@/lib/services/news/newsSearchFilter";
 import {
-  countHoldingsMentionedInPortfolioCards,
+  countHoldingsInNewsHubRows,
   PORTFOLIO_NEWS_SECTION_ID,
 } from "@/lib/services/news/portfolioNewsNav";
+import { useProductAccess } from "@/lib/client/useProductAccess";
 import type { NewsApiResponse, NewsContentItem } from "@/lib/types/newsContent";
+import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
 export function NewsHubContent({
   payload,
   intelligence,
+  holdings = [],
   isStale,
   onRefresh,
   isRefreshing,
 }: {
   payload: NewsApiResponse;
   intelligence: InvestmentIntelligence;
+  holdings?: StoredPortfolioHolding[];
   isStale: boolean;
   onRefresh: () => void;
   isRefreshing: boolean;
 }) {
+  const productAccess = useProductAccess(Boolean(holdings.length));
   const [searchQuery, setSearchQuery] = useState("");
   const [searchScope, setSearchScope] = useState<NewsSearchScopeFilter>("all");
 
@@ -73,8 +78,12 @@ export function NewsHubContent({
   );
 
   const preliminaryBriefing = useMemo(
-    () => buildNewsBriefingLayout(payload),
-    [payload],
+    () =>
+      buildNewsBriefingLayout(payload, {
+        holdings,
+        intelligenceDepth: productAccess.intelligenceDepth,
+      }),
+    [payload, holdings, productAccess.intelligenceDepth],
   );
 
   const pageDedupSeed = useMemo(() => {
@@ -121,20 +130,22 @@ export function NewsHubContent({
   }, [payload, intelligence, preliminaryBriefing.allPortfolioItems]);
 
   const briefing = useMemo(
-    () => buildNewsBriefingLayout(payload, { pageDedupSeed }),
-    [payload, pageDedupSeed],
+    () =>
+      buildNewsBriefingLayout(payload, {
+        pageDedupSeed,
+        holdings,
+        intelligenceDepth: productAccess.intelligenceDepth,
+      }),
+    [payload, pageDedupSeed, holdings, productAccess.intelligenceDepth],
   );
 
   const portfolioNewsNav = useMemo(() => {
-    if (briefing.portfolioCards.length === 0) {
-      return null;
-    }
-    const count = countHoldingsMentionedInPortfolioCards(briefing.portfolioCards);
+    const count = countHoldingsInNewsHubRows(briefing.holdingIntelligenceRows);
     if (count <= 0) {
       return null;
     }
     return { count, sectionId: PORTFOLIO_NEWS_SECTION_ID };
-  }, [briefing.portfolioCards]);
+  }, [briefing.holdingIntelligenceRows]);
 
   const verifiedItemCount = useMemo(
     () => countNewsHubVerifiedItems(payload),
@@ -143,6 +154,7 @@ export function NewsHubContent({
 
   const hasBriefingContent =
     briefing.marketBriefHeadlines.length > 0 ||
+    briefing.holdingIntelligenceRows.length > 0 ||
     briefing.portfolioCards.length > 0 ||
     briefing.macroGroups.length > 0 ||
     briefing.marketsToday.length > 0 ||
@@ -231,7 +243,7 @@ export function NewsHubContent({
       {!isSearchActive && hasBriefingContent && !isRefreshing ? (
         <div className="min-w-0 space-y-6 sm:space-y-7">
           <NewsMarketBriefSection headlines={briefing.marketBriefHeadlines} />
-          <NewsForPortfolioSection cards={briefing.portfolioCards} />
+          <NewsForPortfolioSection rows={briefing.holdingIntelligenceRows} />
           <NewsMacroGroupsSection groups={briefing.macroGroups} />
 
           <NewsBriefingSection

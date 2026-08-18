@@ -14,7 +14,6 @@ import {
   Gauge,
   Home,
   Clock3,
-  Newspaper,
   CalendarDays,
   LineChart,
   Layers3,
@@ -39,6 +38,13 @@ import { resolveHoldingChangePercent } from "@/lib/client/dailyPerformance";
 import { resolveHoldingMovePeriod } from "@/lib/client/performancePeriod";
 import { formatSmartPrice } from "@/lib/client/smartPriceFormat";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
+import { usePortfolioNews } from "@/lib/client/usePortfolioNews";
+import { useProductAccess } from "@/lib/client/useProductAccess";
+import {
+  buildHoldingIntelligenceCandidates,
+  findHoldingIntelligenceCandidate,
+} from "@/lib/services/holdingIntelligence";
+import { HoldingMoveContextCard } from "@/components/holding/HoldingMoveContextCard";
 
 type Currency = "EUR" | "USD" | "GBP";
 
@@ -624,7 +630,9 @@ function getScoreClasses(score: number) {
 export default function HoldingDetailPage() {
   const router = useRouter();
   const params = useParams<{ symbol: string }>();
-  const { holdings, portfolioReady } = useUserPortfolio();
+  const { holdings, portfolioReady, userSub } = useUserPortfolio();
+  const news = usePortfolioNews(holdings, userSub, portfolioReady);
+  const productAccess = useProductAccess(portfolioReady && Boolean(userSub));
 
   const symbol = decodeURIComponent(params.symbol ?? "").toUpperCase();
 
@@ -645,6 +653,23 @@ export default function HoldingDetailPage() {
   }, [holdings]);
 
   const intelligence = holdingIntelligence[symbol] ?? defaultIntelligence;
+
+  const candidates = useMemo(
+    () =>
+      buildHoldingIntelligenceCandidates({
+        holdings,
+        newsItems: [
+          ...news.payload.portfolioNews,
+          ...news.payload.macroNews,
+        ],
+      }),
+    [holdings, news.payload.macroNews, news.payload.portfolioNews],
+  );
+
+  const moveContext = useMemo(
+    () => findHoldingIntelligenceCandidate(candidates, symbol),
+    [candidates, symbol],
+  );
 
   if (!portfolioReady) {
     return (
@@ -1116,13 +1141,10 @@ export default function HoldingDetailPage() {
           </section>
 
           <section className="mt-7 grid gap-6 lg:grid-cols-2">
-            <PlaceholderFeedCard
-              icon={<Newspaper className="h-5 w-5" />}
-              eyebrow="Holding intelligence"
-              title="Latest news"
-              description="Holding-matched news appears on News when a verified match exists. Tobailey does not invent a headline for every position."
-              action="Open insights"
-              href="/news"
+            <HoldingMoveContextCard
+              candidate={moveContext}
+              newsLoading={news.isLoading}
+              intelligenceDepth={productAccess.intelligenceDepth}
             />
             <PlaceholderFeedCard
               icon={<CalendarDays className="h-5 w-5" />}

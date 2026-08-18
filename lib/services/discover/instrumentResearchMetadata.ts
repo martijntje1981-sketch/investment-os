@@ -105,6 +105,17 @@ export function lookupInstrumentResearchProfile(
   return byProviderSymbol.get(normalized) ?? null;
 }
 
+export function lookupInstrumentResearchProfileBySymbol(
+  symbol: string | null | undefined,
+): InstrumentResearchProfile | null {
+  const normalized = symbol?.trim().toUpperCase();
+  if (!normalized) return null;
+  return (
+    PROFILES.find((profile) => profile.symbol.toUpperCase() === normalized) ??
+    null
+  );
+}
+
 export function listVerifiedResearchProfiles(): readonly InstrumentResearchProfile[] {
   return PROFILES;
 }

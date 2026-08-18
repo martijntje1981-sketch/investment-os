@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 
+import { HoldingMoveContextCard } from "@/components/holding/HoldingMoveContextCard";
 import { HoldingPositionHistory } from "@/components/holding/HoldingPositionHistory";
 import { AppPageLoading } from "@/components/layout/PageContainer";
 import {
@@ -18,7 +19,13 @@ import {
   resolveHoldingDisplayPrice,
 } from "@/lib/client/holdingValuation";
 import { formatSmartPrice } from "@/lib/client/smartPriceFormat";
+import { usePortfolioNews } from "@/lib/client/usePortfolioNews";
+import { useProductAccess } from "@/lib/client/useProductAccess";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
+import {
+  buildHoldingIntelligenceCandidates,
+  findHoldingIntelligenceCandidate,
+} from "@/lib/services/holdingIntelligence";
 
 const euro = new Intl.NumberFormat("en-GB", {
   style: "currency",
@@ -102,7 +109,9 @@ function priceQualityLabel(
 export default function HoldingPage() {
   const router = useRouter();
   const params = useParams<{ ticker: string }>();
-  const { holdings, portfolioReady, syncState } = useUserPortfolio();
+  const { holdings, portfolioReady, syncState, userSub } = useUserPortfolio();
+  const news = usePortfolioNews(holdings, userSub, portfolioReady);
+  const productAccess = useProductAccess(portfolioReady && Boolean(userSub));
 
   const rawTicker = params.ticker ?? "";
   const ticker = (() => {
@@ -116,6 +125,23 @@ export default function HoldingPage() {
   const holding = useMemo(
     () => holdings.find((item) => item.symbol.trim().toUpperCase() === ticker),
     [holdings, ticker],
+  );
+
+  const candidates = useMemo(
+    () =>
+      buildHoldingIntelligenceCandidates({
+        holdings,
+        newsItems: [
+          ...news.payload.portfolioNews,
+          ...news.payload.macroNews,
+        ],
+      }),
+    [holdings, news.payload.macroNews, news.payload.portfolioNews],
+  );
+
+  const moveContext = useMemo(
+    () => findHoldingIntelligenceCandidate(candidates, ticker),
+    [candidates, ticker],
   );
 
   const valuation = useMemo(() => {
@@ -402,6 +428,14 @@ export default function HoldingPage() {
               </div>
             </article>
           </section>
+
+          <div className="mt-6">
+            <HoldingMoveContextCard
+              candidate={moveContext}
+              newsLoading={news.isLoading}
+              intelligenceDepth={productAccess.intelligenceDepth}
+            />
+          </div>
 
           <section className="mt-6 flex flex-wrap gap-3">
             <button

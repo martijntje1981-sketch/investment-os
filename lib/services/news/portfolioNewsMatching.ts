@@ -5,7 +5,9 @@
 import { resolveBriefingPortfolio } from "@/lib/services/briefing/briefingPortfolio";
 import {
   buildHoldingMatchProfiles,
+  isContextualPortfolioMatch,
   isStrongPortfolioMatch,
+  CONTEXTUAL_PORTFOLIO_MATCH_SCORE,
   STRONG_PORTFOLIO_MATCH_SCORE,
 } from "@/lib/services/news/relevanceMatching";
 import type { NewsContentItem, NewsMatchedHolding } from "@/lib/types/newsContent";
@@ -18,6 +20,7 @@ export type NewsHoldingProfile = {
   providerSymbol: string | null;
   isin: string | null;
   strongKeywords: string[];
+  contextualKeywords?: string[];
 };
 
 const PROVIDER_SYMBOL_MATCH_SCORE = 25;
@@ -51,6 +54,7 @@ export async function resolveNewsHoldingProfiles(
       providerSymbol: resolved[index]?.providerSymbol ?? null,
       isin: resolved[index]?.isin ?? null,
       strongKeywords: profile.strongKeywords,
+      contextualKeywords: profile.contextualKeywords,
     }));
   } catch {
     return keywordProfiles.map((profile) => {
@@ -62,6 +66,7 @@ export async function resolveNewsHoldingProfiles(
         providerSymbol: holding?.providerSymbol ?? null,
         isin: holding?.isin ?? null,
         strongKeywords: profile.strongKeywords,
+        contextualKeywords: profile.contextualKeywords,
       };
     });
   }
@@ -98,7 +103,10 @@ function matchProfilesForItem(
       return true;
     }
 
-    return isStrongPortfolioMatch(haystack, profile);
+    return (
+      isStrongPortfolioMatch(haystack, profile) ||
+      isContextualPortfolioMatch(haystack, profile)
+    );
   });
 }
 
@@ -136,6 +144,10 @@ function scoreMatch(
 
   if (isStrongPortfolioMatch(haystack, profile)) {
     return STRONG_PORTFOLIO_MATCH_SCORE;
+  }
+
+  if (isContextualPortfolioMatch(haystack, profile)) {
+    return CONTEXTUAL_PORTFOLIO_MATCH_SCORE;
   }
 
   return 0;

@@ -26,11 +26,7 @@ function normalizeTitleKey(title: string): string {
 }
 
 export function isStrongPortfolioItem(item: NewsContentItem): boolean {
-  return (
-    item.relevanceScore >= STRONG_PORTFOLIO_MATCH_SCORE ||
-    item.matchedHoldings.length > 0 ||
-    item.matchedSymbols.length > 0
-  );
+  return item.relevanceScore >= STRONG_PORTFOLIO_MATCH_SCORE;
 }
 
 export function isStrongMacroItem(item: NewsContentItem): boolean {

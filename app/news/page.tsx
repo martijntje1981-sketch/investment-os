@@ -75,6 +75,7 @@ export default function NewsPage() {
         <NewsHubContent
           payload={payload ?? EMPTY_NEWS_RESPONSE}
           intelligence={intelligence}
+          holdings={holdings}
           isStale={isStale}
           onRefresh={() => void reload()}
           isRefreshing={isLoading}

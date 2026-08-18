@@ -1,3 +1,4 @@
+import type { NewsHubHoldingRow } from "@/lib/services/holdingIntelligence/newsHubRows";
 import type { PortfolioNewsCard } from "@/lib/services/news/newsBriefingLayout";
 
 export const PORTFOLIO_NEWS_SECTION_ID = "portfolio-news";
@@ -22,6 +23,10 @@ export function countHoldingsMentionedInPortfolioCards(
   }
 
   return symbols.size;
+}
+
+export function countHoldingsInNewsHubRows(rows: NewsHubHoldingRow[]): number {
+  return rows.filter((row) => row.candidate.symbol.trim()).length;
 }
 
 export function buildHoldingsMentionedSummary(count: number): string | null {

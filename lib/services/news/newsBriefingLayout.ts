@@ -28,6 +28,13 @@ import { selectTrustedNewsThumbnail } from "@/lib/services/news/newsThumbnail";
 import { isNavigableNewsUrl } from "@/lib/services/news/sanitizeNewsUrl";
 import { resolveNewsMediaTypeFromItem } from "@/lib/services/news/newsMediaType";
 import { mergePortfolioSectionItems } from "@/lib/services/news/newsHubModel";
+import { buildHoldingIntelligenceCandidates } from "@/lib/services/holdingIntelligence/buildHoldingIntelligenceCandidates";
+import {
+  buildNewsHubHoldingRows,
+  type NewsHubHoldingRow,
+} from "@/lib/services/holdingIntelligence/newsHubRows";
+import type { FourQuestionsIntelligenceDepth } from "@/lib/services/fourQuestions/types";
+import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 import type {
   NewsApiResponse,
   NewsContentItem,
@@ -85,11 +92,15 @@ export type NewsBriefingLayoutOptions = {
   now?: number;
   /** Items already shown in Today's Portfolio Intelligence (Top Story + Supporting). */
   pageDedupSeed?: NewsContentItem[];
+  /** Eligible holdings for portfolio-first ranking. No extra fetch. */
+  holdings?: StoredPortfolioHolding[];
+  intelligenceDepth?: FourQuestionsIntelligenceDepth;
 };
 
 export type NewsBriefingLayout = {
   marketBriefHeadlines: NewsBriefHeadline[];
   portfolioCards: PortfolioNewsCard[];
+  holdingIntelligenceRows: NewsHubHoldingRow[];
   macroGroups: MacroTopicGroup[];
   marketsToday: MarketsTodayRegion[];
   portfolioNews: NewsBriefingSection<NewsContentItem>;
@@ -429,6 +440,20 @@ export function buildNewsBriefingLayout(
     dividendItems: payload.dividendNews ?? [],
   });
 
+  const holdingIntelligenceRows =
+    (resolvedOptions.holdings?.length ?? 0) > 0
+      ? buildNewsHubHoldingRows(
+          buildHoldingIntelligenceCandidates({
+            holdings: resolvedOptions.holdings ?? [],
+            newsItems: [
+              ...portfolioMerged,
+              ...payload.macroNews,
+            ],
+          }),
+          resolvedOptions.intelligenceDepth === "free" ? "free" : "complete",
+        )
+      : [];
+
   const events = [...payload.upcomingEvents]
     .filter((event) => event.date >= new Date(now).toISOString().slice(0, 10))
     .sort((left, right) => {
@@ -442,6 +467,7 @@ export function buildNewsBriefingLayout(
   return {
     marketBriefHeadlines,
     portfolioCards,
+    holdingIntelligenceRows,
     macroGroups,
     marketsToday,
     portfolioNews: toSection(portfolioItems),

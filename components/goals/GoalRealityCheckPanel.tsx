@@ -39,7 +39,7 @@ export function GoalRealityCheckPanel({
           data-testid="goal-reality-check-loading"
         >
           <p className={appSectionLabelClass}>Goal reality check</p>
-          <p className={`mt-2 ${appSectionMetaClass}`}>
+          <p className={`mt-2 ${appSectionBodyClass}`}>
             Comparing your assumption with verified portfolio history…
           </p>
         </div>
@@ -91,13 +91,13 @@ export function GoalRealityCheckPanel({
       <p className={`mt-2 ${appSectionBodyClass}`}>{realityCheck.conclusion}</p>
 
       {realityCheck.qualityNote ? (
-        <p className={`mt-2 ${appSectionMetaClass}`}>{realityCheck.qualityNote}</p>
+        <p className={`mt-2 ${appSectionBodyClass}`}>{realityCheck.qualityNote}</p>
       ) : null}
 
-      <p className={`mt-3 ${appSectionMetaClass}`}>
+      <p className={`mt-3 ${appSectionBodyClass}`}>
         {realityCheck.methodologyNote}
       </p>
-      <p className={`mt-1 ${appSectionMetaClass}`}>{realityCheck.disclaimer}</p>
+      <p className={`mt-1 ${appSectionBodyClass}`}>{realityCheck.disclaimer}</p>
     </section>
   );
 }
@@ -113,7 +113,7 @@ export function GoalRealityCheckCompactLink({
 
   return (
     <p
-      className={`${appSectionMetaClass} mt-1`}
+      className={`${appSectionBodyClass} mt-1`}
       data-testid="goal-reality-check-compact-link"
     >
       <a

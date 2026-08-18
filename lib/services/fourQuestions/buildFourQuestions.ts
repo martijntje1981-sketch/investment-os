@@ -26,6 +26,9 @@ import type { InvestmentIntelligence } from "@/lib/services/news/investmentIntel
 import { buildPersonalIntelligenceToday } from "@/lib/services/personalIntelligence";
 import type { PortfolioPulseResult } from "@/lib/services/portfolio/periodScores/types";
 import { buildPortfolioExposureAllocation } from "@/lib/services/classification";
+import { buildHoldingIntelligenceCandidates } from "@/lib/services/holdingIntelligence/buildHoldingIntelligenceCandidates";
+import { findHoldingIntelligenceCandidate } from "@/lib/services/holdingIntelligence/rankHoldingIntelligence";
+import { buildQ1HoldingContextLayer, q1StoryExcludeHrefs } from "@/lib/services/holdingIntelligence/q1HoldingContext";
 import { selectRelevantContext } from "@/lib/services/intelligenceTrace";
 import type { PerspectiveVideo } from "@/lib/services/perspectives/types";
 import type { NewsContentItem } from "@/lib/types/newsContent";
@@ -134,21 +137,23 @@ export function buildFourQuestions(
     names: leadingWeight?.name ? [leadingWeight.name] : q1Subject.names,
   };
 
-  const q1Context = selectRelevantContext({
-    subject: q1Subject,
-    newsItems: input.newsItems,
-    intelligence: input.intelligence ?? null,
-    perspectiveVideos: input.perspectiveVideos,
-    holdings: scopedHoldings,
-    prefer: "news",
-  });
+  const q1Candidate = dominantToday?.symbol
+    ? findHoldingIntelligenceCandidate(
+        buildHoldingIntelligenceCandidates({
+          holdings: scopedHoldings,
+          newsItems: input.newsItems,
+        }),
+        dominantToday.symbol,
+      )
+    : null;
+  const q1ContextLayer = buildQ1HoldingContextLayer(q1Candidate);
   const q2Context = selectRelevantContext({
     subject: q2Subject,
     newsItems: input.newsItems,
     intelligence: input.intelligence ?? null,
     perspectiveVideos: input.perspectiveVideos,
     holdings: scopedHoldings,
-    excludeHrefs: q1Context?.layer.href ? [q1Context.layer.href] : [],
+    excludeHrefs: q1StoryExcludeHrefs(q1Candidate),
     prefer: "perspective",
   });
 
@@ -160,7 +165,7 @@ export function buildFourQuestions(
       scope,
       holdings: scopedHoldings,
       pulse: input.pulse,
-      relevantContext: q1Context?.layer ?? null,
+      relevantContext: q1ContextLayer,
     }),
     buildWhatMattersNowQuestion({
       scope,
