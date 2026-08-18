@@ -120,6 +120,7 @@ function scoreNewsItem(
   item: NewsContentItem,
   subject: RelevantContextSubject,
   nowMs: number,
+  maxNewsAgeMs: number,
 ): number | null {
   if (!itemMatchesSubject(item, subject)) return null;
   if (isGenericAssetMention(item, subject)) return null;
@@ -130,7 +131,7 @@ function scoreNewsItem(
   if (sourceQuality < MIN_SOURCE_QUALITY) return null;
 
   const ageHours = hoursAgo(item.publishedAt, nowMs);
-  if (ageHours == null || ageHours * 3_600_000 > MAX_NEWS_AGE_MS) return null;
+  if (ageHours == null || ageHours * 3_600_000 > maxNewsAgeMs) return null;
 
   const titleHit = titleMentionsSubject(item.title, subject) ? 40 : 0;
   if (titleHit < MIN_SUBJECT_TITLE_HITS * 40) return null;
@@ -197,6 +198,7 @@ function scorePerspective(
   subject: RelevantContextSubject,
   holdings: StoredPortfolioHolding[],
   nowMs: number,
+  maxPerspectiveAgeHours: number,
 ): number | null {
   if (!video.isTrustedSource) return null;
   if (!perspectiveMatchesSubject(video, subject)) return null;
@@ -207,7 +209,7 @@ function scorePerspective(
   if (!relevance.relevant) return null;
 
   const ageHours = hoursAgo(video.publishedAt, nowMs);
-  if (ageHours == null || ageHours > 14 * 24) return null;
+  if (ageHours == null || ageHours > maxPerspectiveAgeHours) return null;
 
   const titleHit = titleMentionsSubject(video.title, subject) ? 32 : 10;
   const recency = Math.max(0, 28 - ageHours / 12);
@@ -243,6 +245,10 @@ export function selectRelevantContext(input: {
   excludeHrefs?: string[] | null;
   nowMs?: number;
   prefer?: "news" | "perspective" | "either";
+  /** Defaults to seven days. Period reviews may widen this to the labelled window. */
+  maxNewsAgeMs?: number;
+  /** Defaults to 14 days. */
+  maxPerspectiveAgeHours?: number;
 }): RelevantContextPick | null {
   const subject: RelevantContextSubject = {
     symbols: uniqueNormalized(input.subject.symbols),
@@ -251,6 +257,8 @@ export function selectRelevantContext(input: {
   if (subject.symbols.length === 0 && subject.names.length === 0) return null;
 
   const nowMs = input.nowMs ?? Date.now();
+  const maxNewsAgeMs = input.maxNewsAgeMs ?? MAX_NEWS_AGE_MS;
+  const maxPerspectiveAgeHours = input.maxPerspectiveAgeHours ?? 14 * 24;
   const exclude = new Set((input.excludeHrefs ?? []).map((href) => href.trim()).filter(Boolean));
   const prefer = input.prefer ?? "either";
   const label = subjectLabel(subject);
@@ -258,7 +266,7 @@ export function selectRelevantContext(input: {
   let bestNews: { score: number; item: NewsContentItem } | null = null;
   for (const item of input.newsItems ?? []) {
     if (exclude.has(item.canonicalUrl)) continue;
-    const score = scoreNewsItem(item, subject, nowMs);
+    const score = scoreNewsItem(item, subject, nowMs, maxNewsAgeMs);
     if (score == null) continue;
     if (!bestNews || score > bestNews.score) {
       bestNews = { score, item };
@@ -294,7 +302,7 @@ export function selectRelevantContext(input: {
       fetchedAt: new Date(nowMs).toISOString(),
       relevanceScore: STRONG_PORTFOLIO_MATCH_SCORE + 5,
     };
-    const score = scoreNewsItem(synthetic, subject, nowMs);
+    const score = scoreNewsItem(synthetic, subject, nowMs, maxNewsAgeMs);
     if (score != null && (!bestNews || score > bestNews.score)) {
       bestNews = { score, item: synthetic };
     }
@@ -304,7 +312,13 @@ export function selectRelevantContext(input: {
   for (const video of input.perspectiveVideos ?? []) {
     const href = video.url || PERSPECTIVES_PATH;
     if (exclude.has(href)) continue;
-    const score = scorePerspective(video, subject, input.holdings, nowMs);
+    const score = scorePerspective(
+      video,
+      subject,
+      input.holdings,
+      nowMs,
+      maxPerspectiveAgeHours,
+    );
     if (score == null) continue;
     if (!bestPerspective || score > bestPerspective.score) {
       bestPerspective = { score, video };

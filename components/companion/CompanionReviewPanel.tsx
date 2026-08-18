@@ -6,7 +6,9 @@ import {
   type ReviewGlancePulse,
 } from "@/components/companion/ReviewAtAGlance";
 import { WhatChangedSection } from "@/components/companion/WhatChangedSection";
+import { PeriodIntelligenceReviewView } from "@/components/companion/PeriodIntelligenceReviewView";
 import type { ChangeIntelligenceSummary } from "@/lib/services/changeIntelligence/types";
+import type { PeriodIntelligenceReview } from "@/lib/services/periodIntelligence";
 import type { FourQuestionsIntelligenceDepth } from "@/lib/services/fourQuestions/types";
 import {
   appCardClass,
@@ -22,6 +24,7 @@ type CompanionReviewPanelProps = {
   changeIntelligence?: ChangeIntelligenceSummary | null;
   changeFirstHistoryCopy?: string | null;
   intelligenceDepth?: FourQuestionsIntelligenceDepth;
+  periodIntelligence?: PeriodIntelligenceReview | null;
 };
 
 function toneClass(tone: CompanionReview["supportingFacts"][number]["tone"]): string {
@@ -37,6 +40,7 @@ export function CompanionReviewPanel({
   changeIntelligence = null,
   changeFirstHistoryCopy = null,
   intelligenceDepth = "complete",
+  periodIntelligence = null,
 }: CompanionReviewPanelProps) {
   if (!review.ready) {
     return (
@@ -56,6 +60,34 @@ export function CompanionReviewPanel({
         {review.isDemo ? (
           <p className={`mt-3 ${appSectionMetaClass}`}>Demo Portfolio example.</p>
         ) : null}
+      </section>
+    );
+  }
+
+  if (
+    periodIntelligence &&
+    (review.period === "weekly" || review.period === "monthly")
+  ) {
+    return (
+      <section
+        className={`${appCardClass} ${appCardPaddingClass}`}
+        aria-labelledby="companion-review-heading"
+      >
+        <PeriodIntelligenceReviewView review={periodIntelligence} />
+        <nav
+          className="mt-6 flex flex-col gap-2 sm:flex-row sm:flex-wrap"
+          aria-label="Related portfolio pages"
+        >
+          {review.links.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="inline-flex min-h-[44px] items-center text-sm font-semibold text-brand-navy underline-offset-2 hover:underline"
+            >
+              {link.label}
+            </Link>
+          ))}
+        </nav>
       </section>
     );
   }

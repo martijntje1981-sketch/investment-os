@@ -36,6 +36,11 @@ import { needsPortfolioSetup } from "@/lib/client/portfolioSetup";
 import { useExampleActiveStatus } from "@/lib/client/useExampleActiveStatus";
 import { useProductAccess } from "@/lib/client/useProductAccess";
 import { useChangeIntelligence } from "@/lib/client/useChangeIntelligence";
+import {
+  applyPeriodIntelligenceDepth,
+  buildPeriodIntelligenceReview,
+} from "@/lib/services/periodIntelligence";
+import { buildResilienceProfile } from "@/lib/services/resilience";
 import type { MonthlyReviewArchiveItem } from "@/lib/services/portfolio/companion/snapshotTypes";
 import { runPortfolioExport } from "@/lib/client/runPortfolioExport";
 import { appGhostButtonClass } from "@/components/layout/appSurface";
@@ -298,6 +303,52 @@ function CompanionReviewContent() {
   const review =
     activePeriod === "monthly" && savedReview ? savedReview : liveReview;
 
+  const resilienceProfile = useMemo(() => {
+    if (holdings.length === 0) return null;
+    return buildResilienceProfile({
+      holdings,
+      goal,
+      hasSavedGoal,
+    });
+  }, [goal, hasSavedGoal, holdings]);
+
+  const periodIntelligence = useMemo(() => {
+    if (savedReview) return null;
+    if (activePeriod !== "weekly" && activePeriod !== "monthly") return null;
+    const built = buildPeriodIntelligenceReview({
+      kind: activePeriod,
+      companion: review,
+      change: changeIntelligence.summary,
+      snapshotCount: changeIntelligence.snapshotCount,
+      intelligenceDepth: "complete",
+      weeklyPulse:
+        activePeriod === "weekly" && !savedReview ? weeklyPulse : null,
+      concentrationWeightPercent: snapshot.concentrationWeightPercent,
+      largestHoldingName:
+        snapshot.concentrationSymbol ??
+        snapshot.heroTopMover?.holding.name ??
+        snapshot.topDailyDriver?.name ??
+        null,
+      resilienceProfile,
+      holdings,
+    });
+    return applyPeriodIntelligenceDepth(
+      built,
+      productAccess.intelligenceDepth,
+    );
+  }, [
+    activePeriod,
+    changeIntelligence.snapshotCount,
+    changeIntelligence.summary,
+    holdings,
+    productAccess.intelligenceDepth,
+    resilienceProfile,
+    review,
+    savedReview,
+    snapshot,
+    weeklyPulse,
+  ]);
+
   function handleExport() {
     runPortfolioExport({
       holdings,
@@ -409,6 +460,7 @@ function CompanionReviewContent() {
                 changeIntelligence={changeIntelligence.summary}
                 changeFirstHistoryCopy={changeIntelligence.firstHistoryCopy}
                 intelligenceDepth={productAccess.intelligenceDepth}
+                periodIntelligence={periodIntelligence}
               />
             </div>
 
