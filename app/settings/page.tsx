@@ -28,6 +28,11 @@ import { useUserGoal } from "@/lib/client/useUserGoal";
 import { runPortfolioExport } from "@/lib/client/runPortfolioExport";
 import { useExampleActiveStatus } from "@/lib/client/useExampleActiveStatus";
 import { TRUST_EMAIL_PRIVACY } from "@/lib/content/productTrust";
+import { useProductAccess } from "@/lib/client/useProductAccess";
+import {
+  PlanStatusBadge,
+  PlanStatusCard,
+} from "@/components/product/ProductAccessNotes";
 
 export default function SettingsPage() {
   const supabase = useMemo(() => createClient(), []);
@@ -47,6 +52,7 @@ export default function SettingsPage() {
     holdings.length > 0,
     holdings,
   );
+  const productAccess = useProductAccess(ready);
 
   useEffect(() => {
     let active = true;
@@ -92,9 +98,14 @@ export default function SettingsPage() {
                 {fullName}
               </p>
               <p className={`mt-0.5 truncate ${appSectionMetaClass}`}>{email}</p>
+              <div className="mt-3">
+                <PlanStatusBadge access={productAccess} />
+              </div>
             </div>
           </div>
         </section>
+
+        <PlanStatusCard access={productAccess} />
 
         <section
           id="reports-email"

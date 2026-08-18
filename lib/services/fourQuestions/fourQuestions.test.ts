@@ -13,6 +13,7 @@ import {
 } from "@/lib/services/fourQuestions";
 import { deriveGoalProgress } from "@/lib/client/useGoalProgress";
 import { buildResilienceProfile } from "@/lib/services/resilience";
+import type { PersonalIntelligenceToday } from "@/lib/services/personalIntelligence";
 import type { GoalSettings, StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
 function holding(
@@ -200,6 +201,61 @@ describe("Four Questions builders", () => {
     expect(q.answer).toMatch(/nothing requires special attention/i);
   });
 
+  it("Q2 avoids repeating Q1 same-purpose daily driver wording when structure offers more meaning", () => {
+    const intelligence: PersonalIntelligenceToday = {
+      generatedAt: "2026-08-01T12:00:00.000Z",
+      version: "pi-today-v1",
+      attention: "watch",
+      headline: "Bitcoin is today's main driver.",
+      portfolioMove: {
+        todayChange: -1700,
+        todayPercent: -2.7,
+        hasDailyData: true,
+        coverageComplete: true,
+        validPerformanceCount: 2,
+        eligibleMarketHoldingCount: 2,
+        previousPortfolioValue: 62000,
+      },
+      topContributors: [],
+      topDetractors: [
+        {
+          symbol: "BTC",
+          name: "Bitcoin",
+          move: -1700,
+          changePercent: -2.8,
+          contributionPp: -2.7,
+          weightPercent: 96.8,
+          assetType: "crypto",
+          periodLabel: "24h",
+        },
+      ],
+      holdingsWeights: [
+        { symbol: "AAPL", name: "Apple", weightPercent: 3.2 },
+        { symbol: "BTC", name: "Bitcoin", weightPercent: 96.8 },
+      ],
+      exposure: null,
+      news: null,
+      goals: null,
+      attentionItems: [],
+      dataNotes: [],
+    };
+    const q2 = buildWhatMattersNowQuestion({
+      scope: "complete",
+      holdings: [invest, crypto],
+      intelligence,
+      cryptoDashboardLine: null,
+      goal,
+      hasSavedGoal: true,
+      resilienceProfile: buildResilienceProfile({
+        holdings: [invest, crypto],
+        goal,
+        hasSavedGoal: true,
+      }),
+      avoidDailyDriverSymbol: "BTC",
+    });
+    expect(q2.answer.toLowerCase()).toMatch(/concentration risk|dominant concentration/);
+  });
+
   it("Goals work for invest, crypto, and complete scopes", () => {
     for (const scope of ["invest", "crypto", "complete"] as const) {
       const scoped = filterHoldingsByIntelligenceScope(
@@ -252,18 +308,50 @@ describe("Four Questions builders", () => {
     expect(q.answer.length).toBeGreaterThan(0);
   });
 
+  it("Q1 trace expands through evidence and calculation", () => {
+    const q = buildWhatHappenedQuestion({
+      scope: "complete",
+      holdings: [invest, crypto],
+    });
+    expect(q.expandItems.some((row) => row.id === "trace-evidence")).toBe(true);
+    expect(q.expandItems.some((row) => row.id === "trace-calculation")).toBe(true);
+    expect(q.expandItems.some((row) => row.id === "trace-confidence")).toBe(true);
+  });
+
+  it("Q3 trace expands through evidence, calculation, and confidence", () => {
+    const progress = deriveGoalProgress({
+      currentPortfolioValue: 62_000,
+      goal,
+      hasSavedGoal: true,
+    });
+    const q = buildAmIOnTrackQuestion({
+      scope: "complete",
+      progress,
+      goal,
+      realityCheck: null,
+      resilienceProfile: buildResilienceProfile({
+        holdings: [invest, crypto],
+        goal,
+        hasSavedGoal: true,
+      }),
+    });
+    expect(q.expandItems.some((row) => row.id === "trace-evidence")).toBe(true);
+    expect(q.expandItems.some((row) => row.id === "trace-calculation")).toBe(true);
+    expect(q.expandItems.some((row) => row.id === "trace-confidence")).toBe(true);
+  });
+
   it("attaches trustworthy click destinations for expand rows", () => {
     const q1 = buildWhatHappenedQuestion({
       scope: "complete",
       holdings: [invest, crypto],
     });
     expect(q1.explore.label).toBe("Explore full analysis");
-    const period = q1.expandItems.find((row) => row.id === "period-return");
-    expect(period?.href).toContain("#portfolio-performance");
-    const top = q1.expandItems.find(
-      (row) => row.id === "top-positive" || row.id === "top-negative",
+    const evidence = q1.expandItems.find((row) => row.id === "trace-evidence");
+    const calculation = q1.expandItems.find(
+      (row) => row.id === "trace-calculation",
     );
-    expect(top?.href).toMatch(/\/holding\/|portfolio-performance/);
+    expect(evidence?.href).toContain("#portfolio-performance");
+    expect(calculation?.href).toContain("#portfolio-performance");
 
     const progress = deriveGoalProgress({
       currentPortfolioValue: 200_000,
@@ -292,12 +380,10 @@ describe("Four Questions builders", () => {
       },
     });
     expect(q3.support).toBe(
-      "Under your 20% assumption · recent pace -0.1%",
+      "Under your saved 20% planning assumption · recent pace -0.1%",
     );
     expect(q3.support).not.toMatch(/forecast|will return|expected future/i);
-    expect(q3.expandItems.find((row) => row.id === "reality")?.href).toBe(
-      "/goals#goal-reality-check",
-    );
+    expect(q3.expandItems.some((row) => row.id === "trace-confidence")).toBe(true);
     expect(q3.explore.label).toBe("Explore full analysis");
     expect(q3.explore.href).toContain("on-track");
 

@@ -37,6 +37,7 @@ export function buildWhatMattersNowQuestion(input: {
   goal: GoalSettings | null;
   hasSavedGoal: boolean;
   resilienceProfile: ResilienceProfile | null;
+  avoidDailyDriverSymbol?: string | null;
 }): FourQuestionAnswer {
   const { scope, holdings, intelligence, cryptoDashboardLine } = input;
 
@@ -98,11 +99,26 @@ export function buildWhatMattersNowQuestion(input: {
     answer = QUIET_ANSWER;
   }
 
+  const leadingWeight = intelligence.holdingsWeights
+    .slice()
+    .sort((a, b) => b.weightPercent - a.weightPercent)[0];
+  const avoidSymbol = input.avoidDailyDriverSymbol?.trim().toUpperCase() || null;
+  const sameAsQ1Driver =
+    avoidSymbol &&
+    leadingWeight?.symbol.trim().toUpperCase() === avoidSymbol &&
+    (/main driver|largest driver/i.test(answer) ||
+      /larger-than-usual move|larger than usual move|portfolio/i.test(answer));
+  if (sameAsQ1Driver && leadingWeight.weightPercent >= 35) {
+    answer = `${leadingWeight.name} is now your portfolio's dominant concentration risk.`;
+  }
+
   const support =
     !quiet && conclusion.attentionLine
       ? conclusion.attentionLine
       : !quiet && planItems[0]
         ? planItems[0].headline
+        : sameAsQ1Driver && leadingWeight
+          ? `${leadingWeight.weightPercent.toFixed(1)}% of portfolio value currently sits in one holding.`
         : null;
 
   const trace = buildWhatMattersTrace({

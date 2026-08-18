@@ -2,26 +2,20 @@
  * Q3 — Am I on track? (Goals + Reality Check — no new math)
  */
 
-import { formatExpectedReturnAssumptionContext } from "@/lib/client/expectedReturnAssumption";
 import { buildGoalConclusion } from "@/lib/client/dashboardConclusions";
-import { GOALS_PATH, PORTFOLIO_HISTORY_PATH } from "@/lib/navigation/appRoutes";
+import { getExpectedReturnAssumption } from "@/lib/client/expectedReturnAssumption";
+import { PORTFOLIO_HISTORY_PATH } from "@/lib/navigation/appRoutes";
 import { fourQuestionHubPath } from "@/lib/services/fourQuestions/catalog";
 import type { IntelligenceScopeId } from "@/lib/services/intelligenceScope";
+import { buildOnTrackTrace, traceToExpandItems } from "@/lib/services/intelligenceTrace";
 import type { GoalRealityCheck } from "@/lib/services/goals/buildGoalRealityCheck";
 import type { GoalProgress } from "@/lib/services/goals/goalProgressEngine";
 import type {
   FourQuestionAnswer,
   FourQuestionExpandItem,
 } from "@/lib/services/fourQuestions/types";
+import type { ResilienceProfile } from "@/lib/services/resilience";
 import type { GoalSettings } from "@/lib/types/portfolioStorage";
-
-const GOAL_REALITY_HREF = `${GOALS_PATH}#goal-reality-check`;
-
-function formatGap(gapPp: number): string {
-  const rounded = Math.round(gapPp * 10) / 10;
-  const sign = rounded > 0 ? "+" : "";
-  return `${sign}${rounded.toFixed(1)} pp`;
-}
 
 function formatPacePercent(value: number): string {
   const rounded = Math.round(value * 10) / 10;
@@ -37,7 +31,7 @@ export function formatOnTrackSupportLine(input: {
   expectedAnnualReturnPercent: number;
   recentAnnualizedPacePercent: number;
 }): string {
-  return `Under your ${input.expectedAnnualReturnPercent}% assumption · recent pace ${formatPacePercent(input.recentAnnualizedPacePercent)}`;
+  return `Under your saved ${input.expectedAnnualReturnPercent}% planning assumption · recent pace ${formatPacePercent(input.recentAnnualizedPacePercent)}`;
 }
 
 export function buildAmIOnTrackQuestion(input: {
@@ -46,6 +40,7 @@ export function buildAmIOnTrackQuestion(input: {
   goal: GoalSettings | null;
   realityCheck: GoalRealityCheck | null;
   contributionSummaryLine?: string | null;
+  resilienceProfile?: ResilienceProfile | null;
 }): FourQuestionAnswer {
   const { scope, progress, goal, realityCheck, contributionSummaryLine } =
     input;
@@ -72,54 +67,31 @@ export function buildAmIOnTrackQuestion(input: {
   const answer = card.status;
   let support = card.contextLine ?? card.conclusion;
 
-  if (realityCheck?.available) {
+  const savedAssumption = getExpectedReturnAssumption(goal);
+
+  if (realityCheck?.available && savedAssumption !== null) {
     support = formatOnTrackSupportLine({
       expectedAnnualReturnPercent: realityCheck.expectedAnnualReturnPercent,
       recentAnnualizedPacePercent: realityCheck.comparableAnnualPercent,
     });
   }
 
-  const expandItems: FourQuestionExpandItem[] = [
-    {
-      id: "progress",
-      label: "Progress",
-      detail: `${Math.round(progress.currentProgressPercent)}% of ${card.status.includes("€") ? "target" : "goal"} · ${progress.status}`,
-      href: GOALS_PATH,
-    },
-  ];
-
+  const trace = buildOnTrackTrace({
+    insight: answer,
+    progress,
+    goal,
+    realityCheck,
+    resilienceProfile: input.resilienceProfile,
+  });
+  const expandItems: FourQuestionExpandItem[] = traceToExpandItems({
+    trace,
+    questionId: "am_i_on_track",
+    depth: "complete",
+  });
   if (
-    progress.estimatedCompletionLabel &&
-    progress.estimatedCompletionLabel !== "Insufficient history" &&
-    !progress.goalReached
+    contributionSummaryLine?.trim() &&
+    expandItems.every((item) => item.id !== "contributions")
   ) {
-    expandItems.push({
-      id: "projection",
-      label: "Projected completion",
-      detail: progress.estimatedCompletionLabel,
-      href: GOALS_PATH,
-    });
-  }
-
-  if (typeof goal?.expectedAnnualReturn === "number") {
-    expandItems.push({
-      id: "assumption",
-      label: "Expected return",
-      detail: formatExpectedReturnAssumptionContext(goal.expectedAnnualReturn),
-      href: GOAL_REALITY_HREF,
-    });
-  }
-
-  if (realityCheck?.available) {
-    expandItems.push({
-      id: "reality",
-      label: "Reality check",
-      detail: `${realityCheck.comparableAnnualPercent.toFixed(1)}% ${realityCheck.sourcePeriodLabel} · gap ${formatGap(realityCheck.gapPp)}`,
-      href: GOAL_REALITY_HREF,
-    });
-  }
-
-  if (contributionSummaryLine?.trim()) {
     expandItems.push({
       id: "contributions",
       label: "Contributions",
@@ -133,7 +105,9 @@ export function buildAmIOnTrackQuestion(input: {
     disclosures.push(realityCheck.disclaimer);
   } else {
     disclosures.push(
-      "Goal progress uses your saved target and return assumption. It is not a forecast.",
+      savedAssumption !== null
+        ? "Goal progress uses your saved target and planning assumption. It is not a forecast."
+        : "Goal progress uses your saved target and available portfolio inputs. It is not a forecast.",
     );
   }
 

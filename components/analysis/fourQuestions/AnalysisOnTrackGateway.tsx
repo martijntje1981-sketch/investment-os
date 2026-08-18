@@ -62,8 +62,8 @@ export function AnalysisOnTrackGateway({
           {realityCheck?.available ? (
             <p className={`mt-2 ${appSectionMetaClass}`}>
               Reality Check: {realityCheck.comparableAnnualPercent.toFixed(1)}%{" "}
-              recent pace vs {realityCheck.expectedAnnualReturnPercent}%
-              assumption
+              recent pace vs your saved {realityCheck.expectedAnnualReturnPercent}%
+              planning assumption
               {realityCheck.gapPp != null
                 ? ` (${realityCheck.gapPp > 0 ? "+" : ""}${realityCheck.gapPp.toFixed(1)} pp)`
                 : null}

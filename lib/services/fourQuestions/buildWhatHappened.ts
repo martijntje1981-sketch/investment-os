@@ -3,14 +3,13 @@
  */
 
 import { summarizeDailyPerformance } from "@/lib/client/dailyPerformance";
-import { holdingDetailPath } from "@/lib/navigation/appRoutes";
-import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 import { fourQuestionHubPath } from "@/lib/services/fourQuestions/catalog";
 import type { IntelligenceScopeId } from "@/lib/services/intelligenceScope";
 import {
-  buildAttributionConclusions,
-  buildPortfolioPerformanceAttribution,
-} from "@/lib/services/performanceAttribution";
+  buildWhatHappenedTrace,
+  traceToExpandItems,
+} from "@/lib/services/intelligenceTrace";
+import { buildPortfolioPerformanceAttribution } from "@/lib/services/performanceAttribution";
 import type { PortfolioPulseResult } from "@/lib/services/portfolio/periodScores/types";
 import type {
   FourQuestionAnswer,
@@ -22,18 +21,6 @@ function formatSignedPercent(value: number): string {
   const rounded = Math.round(value * 10) / 10;
   const sign = rounded > 0 ? "+" : "";
   return `${sign}${rounded.toFixed(1)}%`;
-}
-
-function clipWords(text: string, maxWords: number): string {
-  const words = text.trim().split(/\s+/).filter(Boolean);
-  if (words.length <= maxWords) return text.trim();
-  return `${words.slice(0, maxWords).join(" ")}…`;
-}
-
-function holdingHref(symbol: string | null | undefined): string | null {
-  const trimmed = symbol?.trim();
-  if (!trimmed) return null;
-  return holdingDetailPath(trimmed);
 }
 
 export function buildWhatHappenedQuestion(input: {
@@ -94,86 +81,20 @@ export function buildWhatHappenedQuestion(input: {
     }
   }
 
-  const conclusions = buildAttributionConclusions({
-    period: "1D",
-    totalReturnPercent: attribution.totalReturnPercent,
-    holdings: attribution.holdings,
-    coveragePercent: attribution.dataQuality.coveragePercent,
-    quantitiesHeldConstant: attribution.dataQuality.quantitiesHeldConstant,
-    maxConclusions: 2,
+  void topPos;
+  void topNeg;
+  void pulse;
+
+  const trace = buildWhatHappenedTrace({
+    insight: `${answer}${support ? ` · ${support}` : ""}`,
+    daily,
+    attribution,
   });
-
-  const expandItems: FourQuestionExpandItem[] = [
-    {
-      id: "period-return",
-      label: "Today",
-      detail: daily.hasDailyData
-        ? formatSignedPercent(daily.todayPercent)
-        : "Unavailable",
-      href: DASHBOARD_DEEP_LINKS.portfolioPerformance,
-    },
-  ];
-
-  if (topPos) {
-    expandItems.push({
-      id: "top-positive",
-      label: "Top positive",
-      detail: `${topPos.name || topPos.symbol}${
-        topPos.contributionPp != null
-          ? ` · ${topPos.contributionPp > 0 ? "+" : ""}${topPos.contributionPp.toFixed(1)} pp`
-          : ""
-      }`,
-      href:
-        holdingHref(topPos.symbol) ?? DASHBOARD_DEEP_LINKS.portfolioPerformance,
-    });
-  }
-  if (topNeg) {
-    expandItems.push({
-      id: "top-negative",
-      label: "Top negative",
-      detail: `${topNeg.name || topNeg.symbol}${
-        topNeg.contributionPp != null
-          ? ` · ${topNeg.contributionPp > 0 ? "+" : ""}${topNeg.contributionPp.toFixed(1)} pp`
-          : ""
-      }`,
-      href:
-        holdingHref(topNeg.symbol) ?? DASHBOARD_DEEP_LINKS.portfolioPerformance,
-    });
-  }
-
-  if (pulse?.daily?.summary) {
-    expandItems.push({
-      id: "pulse-daily",
-      label: "Daily pulse",
-      detail: clipWords(pulse.daily.summary, 14),
-      href: pulse.daily.href || DASHBOARD_DEEP_LINKS.portfolioPerformance,
-    });
-  }
-  if (pulse?.weekly?.summary) {
-    expandItems.push({
-      id: "pulse-weekly",
-      label: "Weekly pulse",
-      detail: clipWords(pulse.weekly.summary, 12),
-      href: pulse.weekly.href || DASHBOARD_DEEP_LINKS.portfolioPerformance,
-    });
-  }
-  if (pulse?.monthly?.summary) {
-    expandItems.push({
-      id: "pulse-monthly",
-      label: "Monthly pulse",
-      detail: clipWords(pulse.monthly.summary, 12),
-      href: pulse.monthly.href || DASHBOARD_DEEP_LINKS.portfolioPerformance,
-    });
-  }
-
-  for (const conclusion of conclusions.slice(0, 1)) {
-    expandItems.push({
-      id: `attr-${conclusion.id}`,
-      label: "Driver",
-      detail: clipWords(conclusion.text, 18),
-      href: DASHBOARD_DEEP_LINKS.portfolioPerformance,
-    });
-  }
+  const expandItems: FourQuestionExpandItem[] = traceToExpandItems({
+    trace,
+    questionId: "what_happened",
+    depth: "complete",
+  });
 
   const disclosures: string[] = [];
   if (attribution.dataQuality.warnings.length > 0) {

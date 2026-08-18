@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { buildResilienceProfile } from "@/lib/services/resilience";
 import { buildResilienceTrace } from "@/lib/services/intelligenceTrace";
+import { buildOnTrackTrace } from "@/lib/services/intelligenceTrace";
 import { buildWhatMattersTrace } from "@/lib/services/intelligenceTrace/buildWhatMattersTrace";
 import type { PersonalIntelligenceToday } from "@/lib/services/personalIntelligence";
 import type { ThirtySecondsBriefingView } from "@/lib/services/personalIntelligence/thirtySecondsBriefing";
@@ -265,5 +266,38 @@ describe("Phase 7A intelligence trace quality", () => {
 
     expect(master).toContain(expectedWeighted.toFixed(1));
     expect(calculation?.detail).toContain(`${profile.score}/100`);
+  });
+
+  it("omits planning-assumption wording when no reliable saved assumption exists", () => {
+    const progress = {
+      currentProgressPercent: 20,
+      currentValue: 200_000,
+      targetValue: 1_000_000,
+      remainingAmount: 800_000,
+      estimatedCompletionDate: null,
+      estimatedCompletionLabel: "Insufficient history",
+      requiredMonthlyGrowth: null,
+      currentTrajectory: "Unknown",
+      status: "Unknown",
+      summary: "Goal progress is available, but recent pace cannot yet be compared reliably.",
+      generatedAt: "2026-08-01T12:00:00.000Z",
+      hasGoal: true,
+      goalReached: false,
+      portfolioValueAvailable: true,
+    } as const;
+    const trace = buildOnTrackTrace({
+      insight: "On track",
+      progress,
+      goal: {
+        ...goal,
+        expectedAnnualReturn: Number.NaN,
+      } as GoalSettings,
+      realityCheck: null,
+      resilienceProfile: null,
+    });
+
+    const calculation = trace?.layers.find((layer) => layer.id === "calculation");
+    const blob = `${calculation?.detail ?? ""} ${(calculation?.bullets ?? []).join(" ")}`;
+    expect(blob).not.toMatch(/saved planning assumption|expected return assumption/i);
   });
 });

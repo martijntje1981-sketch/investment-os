@@ -58,6 +58,8 @@ import {
   DISCOVER_DESTINATIONS,
   isDiscoverHrefActive,
 } from "@/lib/navigation/discoverDestinations";
+import { useProductAccess } from "@/lib/client/useProductAccess";
+import { PlanStatusBadge } from "@/components/product/ProductAccessNotes";
 import { createClient } from "@/lib/supabase/client";
 
 type MenuLink = {
@@ -337,6 +339,7 @@ export default function UserMenu() {
       ),
     [upcomingEventsNavVisible],
   );
+  const productAccess = useProductAccess(Boolean(user));
 
   const showHeader = shouldShowAppHeader(pathname);
 
@@ -452,8 +455,8 @@ export default function UserMenu() {
               <span className="block max-w-[8.5rem] truncate text-[13px] font-bold leading-tight text-white">
                 {fullName}
               </span>
-              <span className="block max-w-[8.5rem] truncate text-[11px] font-medium text-white/50">
-                Signed in
+              <span className="mt-0.5 block max-w-[8.5rem] truncate text-[11px] font-medium text-white/50">
+                {productAccess.isDemo ? "Demo" : "Signed in"}
               </span>
             </span>
           </button>
@@ -477,6 +480,9 @@ export default function UserMenu() {
                         <p className="truncate text-[13px] font-bold text-white">
                           {fullName}
                         </p>
+                        <div className="mt-1">
+                          <PlanStatusBadge access={productAccess} />
+                        </div>
                       </div>
                     </div>
                   </div>

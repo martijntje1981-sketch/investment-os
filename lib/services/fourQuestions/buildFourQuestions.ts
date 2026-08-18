@@ -102,6 +102,15 @@ export function buildFourQuestions(
         })
       : null;
 
+  const dominantToday =
+    personalIntelligence &&
+    [...personalIntelligence.topContributors, ...personalIntelligence.topDetractors]
+      .filter((row) => row.contributionPp != null)
+      .sort(
+        (left, right) =>
+          Math.abs(right.contributionPp ?? 0) - Math.abs(left.contributionPp ?? 0),
+      )[0];
+
   const questions = [
     buildWhatHappenedQuestion({
       scope,
@@ -116,6 +125,7 @@ export function buildFourQuestions(
       goal: input.goal,
       hasSavedGoal: input.hasSavedGoal,
       resilienceProfile,
+      avoidDailyDriverSymbol: dominantToday?.symbol ?? null,
     }),
     buildAmIOnTrackQuestion({
       scope,
@@ -123,6 +133,7 @@ export function buildFourQuestions(
       goal: input.goal,
       realityCheck: input.realityCheck ?? null,
       contributionSummaryLine: input.contributionSummaryLine,
+      resilienceProfile,
     }),
     buildWhatsAheadQuestion({
       scope,
