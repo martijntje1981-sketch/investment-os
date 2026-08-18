@@ -78,7 +78,7 @@ describe("Phase 2 public homepage Four Questions + products", () => {
   it("preserves Demo vs Trial CTAs without billing or scope gating", () => {
     const home = read("app/page.tsx");
     const products = read("components/marketing/PublicProductModelsSection.tsx");
-    expect(home).toContain("Start your 7-day trial");
+    expect(home).toContain("Start your 14-day trial");
     expect(home).toContain("Explore Demo Portfolio");
     expect(home).toContain("/signup?intent=trial");
     expect(home).toContain("/explore");

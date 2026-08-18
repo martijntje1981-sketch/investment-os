@@ -9,6 +9,10 @@ import {
   getExampleDaysRemaining,
 } from "@/lib/services/examplePortfolio/types";
 import type { ExampleStatusKind } from "@/lib/services/examplePortfolio/resolveExampleStatus";
+import {
+  COMPLETE_UPGRADE_HREF,
+  formatCompleteTrialIndicatorLabel,
+} from "@/lib/services/productAccess";
 
 export const TRIAL_UPGRADE_HREF = EXAMPLE_KEEP_PORTFOLIO_HREF;
 export const TRIAL_FINAL_WINDOW_MS = 48 * 60 * 60 * 1000;
@@ -51,34 +55,25 @@ export function formatPremiumTrialIndicatorLabel(
   now = new Date(),
   options?: { hasDemoHoldings?: boolean },
 ): string {
-  const prefix = options?.hasDemoHoldings
-    ? "Demo Portfolio"
-    : "7-day Personal Trial";
-
-  if (!expiresAtIso) {
-    return prefix;
-  }
-  const expires = Date.parse(expiresAtIso);
-  if (!Number.isFinite(expires)) {
-    return prefix;
-  }
-  if (expires <= now.getTime()) {
-    return `${prefix} ended · Upgrade to continue`;
-  }
-
-  const expiresLocal = new Date(expires);
-  if (expiresLocal.toDateString() === now.toDateString()) {
-    return `${prefix} · Expires today`;
+  if (options?.hasDemoHoldings) {
+    const prefix = "Demo Portfolio";
+    if (!expiresAtIso) return prefix;
+    const expires = Date.parse(expiresAtIso);
+    if (!Number.isFinite(expires)) return prefix;
+    if (expires <= now.getTime()) {
+      return `${prefix} ended · Upgrade to continue`;
+    }
+    const expiresLocal = new Date(expires);
+    if (expiresLocal.toDateString() === now.toDateString()) {
+      return `${prefix} · Expires today`;
+    }
+    const days = getExampleDaysRemaining(expiresAtIso, now);
+    if (days <= 0) return `${prefix} ended · Upgrade to continue`;
+    if (days === 1) return `${prefix} · 1 day remaining`;
+    return `${prefix} · ${days} days remaining`;
   }
 
-  const days = getExampleDaysRemaining(expiresAtIso, now);
-  if (days <= 0) {
-    return `${prefix} ended · Upgrade to continue`;
-  }
-  if (days === 1) {
-    return `${prefix} · 1 day remaining`;
-  }
-  return `${prefix} · ${days} days remaining`;
+  return formatCompleteTrialIndicatorLabel(expiresAtIso, now);
 }
 
 export function buildTrialExperienceView(input: {
@@ -90,7 +85,7 @@ export function buildTrialExperienceView(input: {
   now?: Date;
 }): TrialExperienceView {
   const now = input.now ?? new Date();
-  const upgradeHref = TRIAL_UPGRADE_HREF;
+  const upgradeHref = COMPLETE_UPGRADE_HREF;
   const hasDemoHoldings = Boolean(input.hasDemoHoldings);
 
   if (input.kind === "converted") {
@@ -111,7 +106,7 @@ export function buildTrialExperienceView(input: {
       daysRemaining: 0,
       indicatorLabel: hasDemoHoldings
         ? "Demo Portfolio ended · Upgrade to continue"
-        : "7-day Personal Trial ended · Upgrade to continue",
+        : "Complete trial ended · Continue on Free or get Complete",
       isFinal48Hours: false,
       showTrialMessaging: true,
       showDemoHoldingsMessaging: false,

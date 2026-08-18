@@ -222,7 +222,7 @@ export default function ExplorePage() {
               </h1>
               <p className={`mt-2 ${appSectionSubtitleClass}`}>
                 A ready-made, read-only example. It never becomes your personal
-                portfolio or starts a 7-day Personal Trial.
+                portfolio or starts a 14-day Complete trial.
               </p>
             </div>
           </div>
@@ -312,7 +312,7 @@ export default function ExplorePage() {
               className={appSolidButtonClass}
               data-testid="start-trial-cta"
             >
-              Start your 7-day trial
+              Start your 14-day trial
               <ArrowRight className="h-4 w-4" aria-hidden />
             </Link>
             <button
@@ -325,7 +325,7 @@ export default function ExplorePage() {
             </button>
           </div>
           <p className={`mt-3 ${appSectionMetaClass}`}>
-            7-day Personal Trial starts empty and editable. Demo Portfolio stays
+            14-day Complete trial starts empty and editable. Demo Portfolio stays
             a separate read-only example.
           </p>
         </section>
@@ -339,7 +339,7 @@ export default function ExplorePage() {
             Create your own portfolio
           </h2>
           <p className={`mt-2 ${appSectionSubtitleClass}`}>
-            Start a 7-day Personal Trial with an empty portfolio, then import or
+            Start a 14-day Complete trial with an empty portfolio, then import or
             add investments yourself.
           </p>
           <Link
@@ -347,7 +347,7 @@ export default function ExplorePage() {
             className={`mt-4 ${appSolidButtonClass}`}
             data-testid="create-own-portfolio-cta"
           >
-            Start your 7-day trial
+            Start your 14-day trial
             <ArrowRight className="h-4 w-4" aria-hidden />
           </Link>
         </section>
@@ -513,7 +513,7 @@ export default function ExplorePage() {
                     href={PERSONAL_TRIAL_SIGNUP_HREF}
                     className="font-semibold text-blue-700 hover:text-blue-900"
                   >
-                    Start your 7-day trial
+                    Start your 14-day trial
                   </Link>
                 </p>
               </div>

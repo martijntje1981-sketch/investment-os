@@ -18,13 +18,10 @@ import { parseYouTubeAtomFeed } from "@/lib/services/news/providers/youtubeRssPr
 
 /** Cache duration: 45 minutes. Schema version invalidates old creator stamps. */
 const CACHE_SECONDS = 45 * 60;
-const FEED_TIMEOUT_MS = 12_000;
+const FEED_TIMEOUT_MS = 8_000;
 const PER_CREATOR_LIMIT = 3;
 /** Bound parallel YouTube RSS calls to reduce timeout storms on cold starts. */
 const FEED_CONCURRENCY = 5;
-
-const FEED_USER_AGENT =
-  "TobaileyPerspectives/1.0 (+https://www.tobailey.nl; RSS reader)";
 
 type CreatorFeedResult = {
   creator: PerspectiveCreator;
@@ -82,10 +79,11 @@ async function fetchCreatorFeed(
       signal: controller.signal,
       headers: {
         Accept: "application/atom+xml, application/xml, text/xml, */*",
-        "User-Agent": FEED_USER_AGENT,
       },
-      // Avoid Next data-cache coalescing failures across creators.
-      cache: "no-store",
+      // Per-channel URL + revalidate: successful Atom is reused for 45 minutes
+      // (same pattern as news YouTube RSS). Do not send a custom User-Agent —
+      // YouTube rejects bot UAs from Vercel and fails every creator at once.
+      next: { revalidate: CACHE_SECONDS },
     });
 
     if (!response.ok) {
@@ -109,6 +107,26 @@ async function fetchCreatorFeed(
     }
 
     const xml = await response.text();
+    if (!xml.includes("<feed")) {
+      const error = "Unexpected feed body";
+      console.warn("[perspectives] feed failed", {
+        creatorId: creator.id,
+        creatorName: creator.name,
+        channelId: creator.channelId,
+        feedUrl: creator.feedUrl,
+        status: response.status,
+        error,
+        durationMs: Date.now() - started,
+      });
+      return {
+        creator,
+        entries: [],
+        error,
+        status: response.status,
+        durationMs: Date.now() - started,
+      };
+    }
+
     const entries = parseYouTubeAtomFeed(xml);
     return {
       creator,

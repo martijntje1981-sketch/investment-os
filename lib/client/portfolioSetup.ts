@@ -57,7 +57,7 @@ export const PORTFOLIO_SETUP_STEPS = [
 ] as const;
 
 export const PORTFOLIO_SETUP_COPY = {
-  welcomeEyebrow: "7-day Personal Trial",
+  welcomeEyebrow: "14-day Complete trial",
   returningEyebrow: "Portfolio empty",
   headline: "Your portfolio is ready.",
   returningHeadline: "Add holdings to continue",

@@ -95,7 +95,8 @@ export function isExampleExpiredAllowedPath(pathname: string): boolean {
 
 /**
  * Expired example users are blocked from normal app surfaces until they
- * subscribe/convert. Enforced in middleware (server-side).
+ * subscribe/convert — except personal Complete trial expiry, which becomes
+ * Free access (Phase 6B) and must keep portfolio routes available.
  */
 export function shouldBlockExpiredExampleUser(input: {
   pathname: string;
@@ -103,6 +104,8 @@ export function shouldBlockExpiredExampleUser(input: {
   now?: Date;
 }): boolean {
   if (!isExampleExpired(input.userMetadata, input.now)) return false;
+  // Personal trial → Free: do not hard-block the app.
+  if (input.userMetadata?.example_trial_kind === "personal") return false;
   if (isExampleExpiredAllowedPath(input.pathname)) return false;
   if (isMarketingPath(input.pathname)) return false;
   if (

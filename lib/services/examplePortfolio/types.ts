@@ -2,7 +2,7 @@
  * Example portfolio — shared types, email normalization, and period helpers.
  */
 
-export const EXAMPLE_PORTFOLIO_DAYS = 7;
+export const EXAMPLE_PORTFOLIO_DAYS = 14;
 
 export type ExamplePortfolioTemplate = "global" | "income";
 
@@ -19,7 +19,7 @@ export type ExamplePortfolioUserMetadata = {
   example_expires_at?: string | null;
   example_converted_at?: string | null;
   pending_example_template?: ExamplePortfolioTemplate | null;
-  /** Set on signup when starting a clean 7-day trial (no demo seed). */
+  /** Set on signup when starting a clean 14-day Complete trial (no demo seed). */
   pending_personal_trial?: boolean | null;
   /**
    * demo = seeded showroom holdings; personal = trial clock without demo seed.
@@ -34,9 +34,9 @@ export type ExamplePortfolioEntitlement = {
   email_normalized: string;
   user_id: string | null;
   template: ExamplePortfolioTemplate;
-  /** Null until activation starts the 7-day clock. */
+  /** Null until activation starts the 14-day clock. */
   started_at: string | null;
-  /** Null until activation starts the 7-day clock. */
+  /** Null until activation starts the 14-day clock. */
   expires_at: string | null;
   seeded_at: string | null;
   converted_at: string | null;
@@ -101,27 +101,27 @@ export function formatExampleBannerLabel(
   expiresAtIso: string | null | undefined,
   now = new Date(),
 ): string {
-  // Shared 7-day Personal Trial wording — keep countdown math in getExampleDaysRemaining.
-  if (!expiresAtIso) return "7-day Personal Trial";
+  // Shared Complete trial wording — countdown math stays in getExampleDaysRemaining.
+  if (!expiresAtIso) return "Complete trial";
   const expires = Date.parse(expiresAtIso);
-  if (!Number.isFinite(expires)) return "7-day Personal Trial";
+  if (!Number.isFinite(expires)) return "Complete trial";
   if (expires <= now.getTime()) {
-    return "7-day Personal Trial ended · Upgrade to continue";
+    return "Complete trial ended · Upgrade to continue";
   }
 
   const expiresLocal = new Date(expires);
   if (expiresLocal.toDateString() === now.toDateString()) {
-    return "7-day Personal Trial · Expires today";
+    return "Complete trial · Expires today";
   }
 
   const days = getExampleDaysRemaining(expiresAtIso, now);
   if (days <= 0) {
-    return "7-day Personal Trial ended · Upgrade to continue";
+    return "Complete trial ended · Upgrade to continue";
   }
   if (days === 1) {
-    return "7-day Personal Trial · 1 day remaining";
+    return "Complete trial · 1 day remaining";
   }
-  return `7-day Personal Trial · ${days} days remaining`;
+  return `Complete trial · ${days} days remaining`;
 }
 
 /**

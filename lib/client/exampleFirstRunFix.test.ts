@@ -73,24 +73,24 @@ describe("example portfolio banner in shared layout", () => {
         "2026-08-11T10:00:00.000Z",
         new Date("2026-08-04T10:00:00.000Z"),
       ),
-    ).toBe("7-day Personal Trial · 7 days remaining");
+    ).toBe("Complete trial · 7 days remaining");
     expect(
       formatExampleBannerLabel(
         "2026-08-07T10:00:00.000Z",
         new Date("2026-08-04T10:00:00.000Z"),
       ),
-    ).toBe("7-day Personal Trial · 3 days remaining");
+    ).toBe("Complete trial · 3 days remaining");
     expect(
       formatExampleBannerLabel(
         "2026-08-05T10:00:00.000Z",
         new Date("2026-08-04T10:00:00.000Z"),
       ),
-    ).toBe("7-day Personal Trial · 1 day remaining");
+    ).toBe("Complete trial · 1 day remaining");
     const sameLocalDay = new Date(2026, 7, 4, 10, 0, 0);
     const laterSameLocalDay = new Date(2026, 7, 4, 22, 0, 0);
     expect(
       formatExampleBannerLabel(laterSameLocalDay.toISOString(), sameLocalDay),
-    ).toBe("7-day Personal Trial · Expires today");
+    ).toBe("Complete trial · Expires today");
   });
 
   it("dispatches a shared status-changed event helpers", () => {

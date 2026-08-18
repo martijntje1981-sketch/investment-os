@@ -79,7 +79,7 @@ describe("example banner root cause: sync remaps ids then repair deleted entitle
     });
     expect(status.kind).toBe("active");
     expect(shouldShowExampleBanner(status)).toBe(true);
-    expect(status.bannerLabel).toMatch(/7-day Personal Trial ·/);
+    expect(status.bannerLabel).toMatch(/Complete trial ·/);
   });
 
   it("still repairs unseeded false stamps on real portfolios", () => {

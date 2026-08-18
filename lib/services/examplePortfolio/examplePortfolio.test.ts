@@ -46,7 +46,7 @@ describe("example portfolio entry surface", () => {
     expect(explore).toContain("Recommended");
     expect(explore).toContain('id: "global"');
     expect(explore).toContain("Create your own portfolio");
-    expect(explore).toContain("Start your 7-day trial");
+    expect(explore).toContain("Start your 14-day trial");
     expect(explore).toContain("/signup?intent=trial");
     expect(explore).toContain("Open Demo Portfolio");
     expect(explore).toContain("No credit card required");
@@ -71,10 +71,10 @@ describe("example email + period helpers", () => {
     expect(isValidExampleEmail("not-an-email")).toBe(false);
   });
 
-  it("computes a 7-day window and banner labels", () => {
+  it("computes a 14-day window and banner labels", () => {
     const start = new Date("2026-08-01T10:00:00.000Z");
     const expires = computeExampleExpiry(start);
-    expect(expires.toISOString()).toBe("2026-08-08T10:00:00.000Z");
+    expect(expires.toISOString()).toBe("2026-08-15T10:00:00.000Z");
 
     const meta = {
       account_mode: "example" as const,
@@ -97,19 +97,19 @@ describe("example email + period helpers", () => {
         "2026-08-03T20:00:00.000Z",
         new Date("2026-08-03T10:00:00.000Z"),
       ),
-    ).toBe("7-day Personal Trial · Expires today");
+    ).toBe("Complete trial · Expires today");
     expect(
       formatExampleBannerLabel(
         "2026-08-04T08:00:00.000Z",
         new Date("2026-08-03T10:00:00.000Z"),
       ),
-    ).toBe("7-day Personal Trial · 1 day remaining");
+    ).toBe("Complete trial · 1 day remaining");
     expect(
       formatExampleBannerLabel(
         "2026-08-07T10:00:00.000Z",
         new Date("2026-08-03T10:00:00.000Z"),
       ),
-    ).toBe("7-day Personal Trial · 4 days remaining");
+    ).toBe("Complete trial · 4 days remaining");
     expect(
       formatExampleBannerLabel(
         "2026-08-01T10:00:00.000Z",
@@ -322,13 +322,13 @@ describe("example expiry enforcement", () => {
     expect(banner).toContain("TRIAL_UPGRADE_HREF");
     expect(banner).toContain("/api/example-portfolio/status");
     expect(banner).toContain('cache: "no-store"');
-    expect(header).toContain("Start your 7-day trial");
+    expect(header).toContain("Start your 14-day trial");
     expect(header).toContain("/signup?intent=trial");
     expect(header).not.toMatch(/24-?hour|24h trial/i);
-    expect(home).toContain("Start your 7-day trial");
+    expect(home).toContain("Start your 14-day trial");
     expect(home).toContain("Explore Demo Portfolio");
     expect(home).not.toMatch(/24-?hour free trial/i);
-    expect(expired).toContain("Your 7-day Personal Trial has ended");
+    expect(expired).toContain("Your 14-day Complete trial has ended");
     expect(expired).toContain("Export Portfolio History");
     expect(expired).toContain("EXAMPLE_KEEP_PORTFOLIO_HREF");
     expect(expired).toContain("Browse without signing in");

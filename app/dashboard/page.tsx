@@ -51,6 +51,11 @@ import {
   buildPulseAttributionEnrichment,
 } from "@/lib/services/performanceAttribution";
 import { buildFourQuestions } from "@/lib/services/fourQuestions";
+import { useProductAccess } from "@/lib/client/useProductAccess";
+import {
+  CompleteTrialIndicator,
+  FreeIntelligenceNote,
+} from "@/components/product/ProductAccessNotes";
 import {
   filterHoldingsByIntelligenceScope,
   resolveIntelligenceScope,
@@ -284,7 +289,11 @@ export default function DashboardPage() {
     snapshot,
   ]);
 
-  /** Four Questions — existing engines only; scope defaults to complete. */
+  /** Four Questions — depth from central product access (Free vs Complete). */
+  const productAccess = useProductAccess(
+    portfolioReady && Boolean(userSub),
+  );
+
   const fourQuestions = useMemo(() => {
     if (holdings.length === 0) return null;
     const nextEvent = payload.upcomingEvents?.[0];
@@ -292,6 +301,7 @@ export default function DashboardPage() {
     return buildFourQuestions({
       holdings,
       preferredScope: intelligenceScope,
+      intelligenceDepth: productAccess.intelligenceDepth,
       goal,
       hasSavedGoal,
       goalProgress,
@@ -310,6 +320,7 @@ export default function DashboardPage() {
     intelligenceScope,
     payload.upcomingEvents,
     portfolioPulse,
+    productAccess.intelligenceDepth,
     realityCheck,
   ]);
 
@@ -391,10 +402,14 @@ export default function DashboardPage() {
           />
 
           {fourQuestions ? (
-            <FourQuestionsSection
-              bundle={fourQuestions}
-              intelligenceDepth="complete"
-            />
+            <>
+              <CompleteTrialIndicator access={productAccess} />
+              <FreeIntelligenceNote access={productAccess} />
+              <FourQuestionsSection
+                bundle={fourQuestions}
+                intelligenceDepth={productAccess.intelligenceDepth}
+              />
+            </>
           ) : null}
 
           <AuthenticatedFourQuestionsNav className="mt-1" />

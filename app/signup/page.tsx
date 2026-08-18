@@ -258,7 +258,7 @@ export default async function SignupPage({
 
             <p className="mt-6 text-center text-xs leading-5 text-slate-500">
               {isPersonalTrial
-                ? "Personal trial starts empty — import or add holdings yourself. Then €7.99 per month."
+                ? "Personal trial starts empty — import or add holdings yourself. Then €5.99 per month."
                 : "Prefer a read-only example first? Explore Demo Portfolio. Personal trial starts empty."}
             </p>
             {!isPersonalTrial ? (

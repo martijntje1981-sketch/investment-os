@@ -33,6 +33,10 @@ export type {
 
 export { buildFourQuestions } from "./buildFourQuestions";
 export type { BuildFourQuestionsInput } from "./buildFourQuestions";
+export {
+  applyFourQuestionsIntelligenceDepth,
+  applyFourQuestionsProductAccess,
+} from "./applyIntelligenceDepth";
 export { buildWhatHappenedQuestion } from "./buildWhatHappened";
 export { buildWhatMattersNowQuestion } from "./buildWhatMattersNow";
 export {

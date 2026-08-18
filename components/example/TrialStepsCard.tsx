@@ -10,19 +10,20 @@ import {
 } from "@/components/layout/appSurface";
 import { PORTFOLIO_SETUP_ROUTES } from "@/lib/client/portfolioSetup";
 import { TRIAL_UPGRADE_HREF } from "@/lib/client/trialExperience";
+import { COMPLETE_UPGRADE_CTA_LABEL } from "@/lib/services/productAccess";
 import { PORTFOLIO_HISTORY_PATH } from "@/lib/navigation/appRoutes";
 
 const STEPS = [
   {
     title: "Create your account",
-    body: "Start your 7-day Personal Trial with an empty portfolio.",
+    body: "Start your 14-day Complete trial with an empty portfolio.",
   },
   {
     title: "Import or build your portfolio",
     body: "Upload a supported file or add holdings manually. You can edit everything.",
   },
   {
-    title: "Explore Premium features",
+    title: "Explore Complete features",
     body: "Use Tobailey with your own investments before deciding.",
   },
 ] as const;
@@ -67,7 +68,7 @@ export function TrialStepsCard({
       <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
         {showCreateCta ? (
           <Link href="/signup?intent=trial" className={appSolidButtonClass}>
-            Start your 7-day trial
+            Start your 14-day trial
           </Link>
         ) : (
           <Link href={PORTFOLIO_SETUP_ROUTES.import} className={appSolidButtonClass}>
@@ -84,7 +85,7 @@ export function TrialStepsCard({
           href={TRIAL_UPGRADE_HREF}
           className="inline-flex min-h-[44px] items-center text-sm font-semibold text-slate-600 underline-offset-2 hover:underline"
         >
-          Upgrade
+          {COMPLETE_UPGRADE_CTA_LABEL}
         </Link>
       </div>
     </section>

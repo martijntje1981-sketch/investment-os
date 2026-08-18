@@ -38,7 +38,7 @@ describe("public explore discovery", () => {
     expect(explorePage).toContain("Browse without signing in");
     expect(explorePage).toContain("Demo Portfolio");
     expect(explorePage).toContain("Create your own portfolio");
-    expect(explorePage).toContain("Start your 7-day trial");
+    expect(explorePage).toContain("Start your 14-day trial");
   });
 
   it("keeps guest bottom navigation on public app routes only", () => {

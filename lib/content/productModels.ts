@@ -41,7 +41,7 @@ export const PRODUCT_MODELS: readonly ProductModelDefinition[] = [
       "Goals and scenarios for a traditional portfolio",
     ],
     ctaHref: PRODUCT_MODEL_TRIAL_HREF,
-    ctaLabel: "Start your 7-day trial",
+    ctaLabel: "Start your 14-day trial",
   },
   {
     id: "crypto",
@@ -57,7 +57,7 @@ export const PRODUCT_MODELS: readonly ProductModelDefinition[] = [
       "The same four questions, for crypto",
     ],
     ctaHref: PRODUCT_MODEL_TRIAL_HREF,
-    ctaLabel: "Start your 7-day trial",
+    ctaLabel: "Start your 14-day trial",
   },
   {
     id: "complete",
@@ -73,7 +73,7 @@ export const PRODUCT_MODELS: readonly ProductModelDefinition[] = [
       "The same four questions across your whole portfolio",
     ],
     ctaHref: PRODUCT_MODEL_TRIAL_HREF,
-    ctaLabel: "Start your 7-day trial",
+    ctaLabel: "Start your 14-day trial",
   },
 ] as const;
 

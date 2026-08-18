@@ -40,7 +40,11 @@ export function assertExamplePortfolioApiAccess(
   }
 
   const meta = (user.user_metadata ?? {}) as ExamplePortfolioUserMetadata;
-  if (isExampleExpired(meta, options?.now)) {
+  // Personal Complete trial expiry → Free (portfolio APIs stay available).
+  if (
+    isExampleExpired(meta, options?.now) &&
+    meta.example_trial_kind !== "personal"
+  ) {
     return {
       ok: false,
       response: NextResponse.json(

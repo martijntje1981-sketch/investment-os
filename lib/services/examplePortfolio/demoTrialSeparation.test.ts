@@ -42,12 +42,12 @@ describe("Explore Demo showroom", () => {
     expect(explore).toContain('"/signup?intent=trial"');
     expect(explore).toContain("Create your own portfolio");
     expect(explore).toContain("create-own-portfolio-cta");
-    expect(explore).toContain("Start your 7-day trial");
+    expect(explore).toContain("Start your 14-day trial");
     expect(explore).toContain("start-trial-cta");
 
     const steps = read("components/example/TrialStepsCard.tsx");
     expect(steps).toContain("/signup?intent=trial");
-    expect(steps).toContain("Start your 7-day trial");
+    expect(steps).toContain("Start your 14-day trial");
   });
 });
 
@@ -143,7 +143,7 @@ describe("trial countdown, export, and isolation", () => {
     const now = new Date("2026-08-04T12:00:00.000Z");
     const expiresAt = "2026-08-09T12:00:00.000Z";
     expect(formatPremiumTrialIndicatorLabel(expiresAt, now)).toBe(
-      "7-day Personal Trial · 5 days remaining",
+      "Complete trial · 5 days remaining",
     );
     expect(
       formatPremiumTrialIndicatorLabel(expiresAt, now, {

@@ -57,7 +57,8 @@ describe("Four Questions Dashboard UI wiring", () => {
     expect(summaryIdx).toBeGreaterThan(-1);
     expect(fourIdx).toBeGreaterThan(summaryIdx);
     expect(holdingsIdx).toBeGreaterThan(fourIdx);
-    expect(dashboard).toContain('intelligenceDepth="complete"');
+    expect(dashboard).toContain("productAccess.intelligenceDepth");
+    expect(dashboard).toContain("useProductAccess");
   });
 
   it("retires redundant conclusion cards once Four Questions exist", () => {

@@ -187,4 +187,72 @@ describe("fetchPerspectivesUncached resilience", () => {
     warn.mockRestore();
     info.mockRestore();
   });
+
+  it("treats a non-Atom body as one failed feed without blanking the rest", async () => {
+    const creators = getActivePerspectiveCreators();
+    const htmlCreator = creators[0]!;
+    const okCreator = creators[1]!;
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes(htmlCreator.channelId)) {
+          return new Response("<!doctype html><html><body>consent</body></html>", {
+            status: 200,
+            headers: { "Content-Type": "text/html" },
+          });
+        }
+        if (url.includes(okCreator.channelId)) {
+          return new Response(
+            atomFeed({
+              channelId: okCreator.channelId,
+              author: okCreator.name,
+              videoId: "okVideo0002",
+              title: "Working creator upload",
+            }),
+            { status: 200, headers: { "Content-Type": "application/atom+xml" } },
+          );
+        }
+        return new Response(
+          `<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom" xmlns:yt="http://www.youtube.com/xml/schemas/2015"><yt:channelId>x</yt:channelId><title>Empty</title></feed>`,
+          { status: 200 },
+        );
+      }),
+    );
+
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const info = vi.spyOn(console, "info").mockImplementation(() => {});
+
+    const payload = await fetchPerspectivesUncached();
+    expect(payload.state).toBe("live");
+    expect(payload.videos.length).toBeGreaterThan(0);
+    expect(payload.unavailableCreatorIds).toContain(htmlCreator.id);
+    expect(payload.unavailableCreatorIds).not.toContain(okCreator.id);
+
+    warn.mockRestore();
+    info.mockRestore();
+  });
+
+  it("does not send a custom bot User-Agent that YouTube blocks from Vercel", async () => {
+    const fetchMock = vi.fn(async () => {
+      return new Response(
+        `<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom"><title>Empty</title></feed>`,
+        { status: 200 },
+      );
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.spyOn(console, "info").mockImplementation(() => {});
+
+    await fetchPerspectivesUncached();
+
+    expect(fetchMock).toHaveBeenCalled();
+    for (const call of fetchMock.mock.calls) {
+      const init = call[1] as RequestInit | undefined;
+      const headers = new Headers(init?.headers);
+      const ua = headers.get("User-Agent") ?? "";
+      expect(ua).not.toMatch(/TobaileyPerspectives/i);
+    }
+  });
 });

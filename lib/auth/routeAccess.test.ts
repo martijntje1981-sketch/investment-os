@@ -133,8 +133,8 @@ describe("middleware and private API wiring", () => {
     expect(explore).toContain("/signup?intent=trial");
     expect(marketingHeader).toContain("Explore");
     expect(marketingHeader).toContain("PUBLIC_EXPLORE_DESTINATIONS");
-    expect(marketingHeader).toContain("Start your 7-day trial");
-    expect(landing).toContain("Start your 7-day trial");
+    expect(marketingHeader).toContain("Start your 14-day trial");
+    expect(landing).toContain("Start your 14-day trial");
     expect(landing).toContain("Explore Demo Portfolio");
     expect(landing).toContain('href="/explore"');
     expect(landing).not.toContain("Explore the dashboard");

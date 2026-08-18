@@ -62,7 +62,7 @@ export default function PricingPage() {
                     </p>
                   </div>
                   <div className="text-left sm:text-right">
-                    <p className="text-4xl font-black">€7.99</p>
+                    <p className="text-4xl font-black">€5.99</p>
                     <p className="mt-1 text-sm text-slate-400">per month</p>
                   </div>
                 </div>
@@ -103,7 +103,7 @@ export default function PricingPage() {
                 </Link>
 
                 <p className="mt-4 text-center text-xs leading-5 text-slate-500">
-                  €7.99 per month after your example period. Cancel anytime.
+                  €5.99 per month after your example period. Cancel anytime.
                   Automatic checkout is coming soon.
                 </p>
               </div>

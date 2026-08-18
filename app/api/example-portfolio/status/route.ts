@@ -11,6 +11,8 @@ import {
 import { repairFalseExampleActivation } from "@/lib/services/examplePortfolio/repairFalseExample";
 import { restoreWipedExampleEntitlement } from "@/lib/services/examplePortfolio/restoreWipedExampleEntitlement";
 import { normalizeExampleEmail } from "@/lib/services/examplePortfolio/types";
+import type { ExamplePortfolioUserMetadata } from "@/lib/services/examplePortfolio/types";
+import { resolveProductAccessFromMetadata } from "@/lib/services/productAccess";
 import { createPortfolioRepository } from "@/lib/services/portfolio/repository";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -121,10 +123,20 @@ export async function GET() {
 
   const resolved = resolveExampleStatusForUser({ user, entitlement });
   const showBanner = shouldShowExampleBanner(resolved);
+  const meta = (user.user_metadata ?? {}) as ExamplePortfolioUserMetadata;
+  const trialKind = meta.example_trial_kind ?? null;
+  const productAccess = resolveProductAccessFromMetadata({
+    exampleKind: resolved.kind,
+    metadata: meta,
+    expiresAt: resolved.expiresAt,
+    daysRemaining: resolved.daysRemaining,
+  });
 
   console.info("[example-status]", {
     reason: "resolved",
     kind: resolved.kind,
+    trialKind,
+    productTier: productAccess.tier,
     showBanner,
     daysRemaining: resolved.daysRemaining,
     started_at: resolved.startedAt,
@@ -174,6 +186,17 @@ export async function GET() {
       bannerLabel: resolved.bannerLabel,
       showBanner,
       staleMetadata: resolved.staleMetadata,
+      trialKind,
+      productAccess: {
+        tier: productAccess.tier,
+        intelligenceDepth: productAccess.intelligenceDepth,
+        isCompleteTrial: productAccess.isCompleteTrial,
+        daysRemaining: productAccess.daysRemaining,
+        trialIndicatorLabel: productAccess.trialIndicatorLabel,
+        upgradeHref: productAccess.upgradeHref,
+        upgradeCtaLabel: productAccess.upgradeCtaLabel,
+        isDemo: productAccess.isDemo,
+      },
     },
   });
 }

@@ -13,6 +13,7 @@ import { buildAmIOnTrackQuestion } from "@/lib/services/fourQuestions/buildAmIOn
 import { buildWhatHappenedQuestion } from "@/lib/services/fourQuestions/buildWhatHappened";
 import { buildWhatMattersNowQuestion } from "@/lib/services/fourQuestions/buildWhatMattersNow";
 import { buildWhatsAheadQuestion } from "@/lib/services/fourQuestions/buildWhatsAhead";
+import { applyFourQuestionsIntelligenceDepth } from "@/lib/services/fourQuestions/applyIntelligenceDepth";
 import type {
   FourQuestionsBundle,
   FourQuestionsIntelligenceDepth,
@@ -122,5 +123,11 @@ export function buildFourQuestions(
   const intelligenceDepth: FourQuestionsIntelligenceDepth =
     input.intelligenceDepth === "free" ? "free" : "complete";
 
-  return { scope, intelligenceDepth, questions };
+  const bundle: FourQuestionsBundle = {
+    scope,
+    intelligenceDepth: "complete",
+    questions,
+  };
+
+  return applyFourQuestionsIntelligenceDepth(bundle, intelligenceDepth);
 }

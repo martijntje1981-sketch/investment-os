@@ -177,7 +177,7 @@ export default async function MarketingHomePage({
                   href="/signup?intent=trial"
                   className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-brand px-6 py-4 text-sm font-bold text-brand-navy shadow-lg transition hover:-translate-y-0.5 hover:bg-brand-hover"
                 >
-                  Start your 7-day trial
+                  Start your 14-day trial
                   <ArrowRight className="h-4 w-4" />
                 </Link>
 
@@ -325,7 +325,7 @@ export default async function MarketingHomePage({
                   </div>
 
                   <div className="text-left sm:text-right">
-                    <p className="text-4xl font-black">€7.99</p>
+                    <p className="text-4xl font-black">€5.99</p>
 
                     <p className="mt-1 text-sm text-slate-400">per month</p>
                   </div>
@@ -353,7 +353,7 @@ export default async function MarketingHomePage({
                   href="/signup?intent=trial"
                   className="mt-9 inline-flex w-full min-h-11 items-center justify-center gap-2 rounded-xl bg-brand px-6 py-4 text-sm font-bold text-brand-navy transition hover:bg-brand-hover"
                 >
-                  Start your 7-day trial
+                  Start your 14-day trial
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link
@@ -364,7 +364,7 @@ export default async function MarketingHomePage({
                 </Link>
 
                 <p className="mt-4 text-center text-xs leading-5 text-slate-500">
-                  Demo is read-only. Personal trial starts empty. Then €7.99 per
+                  Demo is read-only. Personal trial starts empty. Then €5.99 per
                   month. Cancel anytime.
                 </p>
               </div>
@@ -465,7 +465,7 @@ export default async function MarketingHomePage({
                   href="/signup?intent=trial"
                   className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-brand px-6 py-4 text-sm font-bold text-brand-navy shadow-lg"
                 >
-                  Start your 7-day trial
+                  Start your 14-day trial
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link

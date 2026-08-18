@@ -62,7 +62,7 @@ export const HELP_CENTRE_SECTIONS: HelpCentreSection[] = [
         answer:
           "Demo is a ready-made, read-only experience with sample holdings. Personal trial is your own empty, editable account — import or add holdings yourself. Demo data never becomes your personal portfolio.",
         link: { href: "/explore", label: "Explore Demo Portfolio" },
-        keywords: ["demo", "trial", "7-day", "example"],
+        keywords: ["demo", "trial", "14-day", "example"],
       },
       {
         question: "How do I add holdings manually?",
@@ -251,8 +251,8 @@ export const HELP_CENTRE_SECTIONS: HelpCentreSection[] = [
       {
         question: "Personal trial",
         answer:
-          "A 7-day editable trial of your own account. Starts empty — add or import holdings yourself.",
-        link: { href: "/signup?intent=trial", label: "Start 7-day trial" },
+          "A 14-day Complete trial of your own account. Starts empty — add or import holdings yourself.",
+        link: { href: "/signup?intent=trial", label: "Start 14-day trial" },
       },
       {
         question: "Subscription and expired access",

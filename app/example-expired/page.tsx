@@ -27,13 +27,13 @@ export default function ExampleExpiredPage() {
           data-testid="example-expired-panel"
         >
           <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
-            7-day Personal Trial
+            14-day Complete trial
           </p>
           <h1
             id="example-expired-heading"
             className="mt-2 text-2xl font-bold tracking-[-0.03em] text-slate-950"
           >
-            Your 7-day Personal Trial has ended
+            Your 14-day Complete trial has ended
           </h1>
           <p className={`mt-3 ${appSectionSubtitleClass}`}>
             Upgrade to continue using Tobailey&apos;s Premium features. Your
