@@ -143,13 +143,13 @@ export const appSectionSubtitleClass =
 
 /** Compact uppercase label — 13px floor so metadata stays readable. */
 export const appSectionLabelClass =
-  "text-[13px] font-semibold uppercase tracking-[0.06em] text-slate-600";
+  "text-[13px] font-semibold uppercase tracking-[0.06em] text-slate-700";
 
 export const appSectionMetaClass =
-  "text-[13px] font-medium leading-relaxed text-slate-600";
+  "text-[13px] font-medium leading-relaxed text-slate-700";
 
 export const appTickerClass =
-  "text-[13px] font-medium uppercase tracking-[0.06em] text-slate-600";
+  "text-[13px] font-medium uppercase tracking-[0.06em] text-slate-700";
 
 export const appTableNameClass = "min-w-0 break-words text-[15px] font-semibold text-slate-950";
 
@@ -177,7 +177,7 @@ export const appDashboardDarkMutedClass =
   "text-[14px] font-medium leading-relaxed text-white/80";
 
 export const appDashboardDarkMetaClass =
-  "text-[13px] font-medium leading-relaxed text-white/70";
+  "text-[13px] font-medium leading-relaxed text-white/80";
 
 export const appAnalysisDarkTitleClass =
   "text-xl font-bold tracking-[-0.02em] text-white";
@@ -219,7 +219,7 @@ export const appFourQuestionAnswerClass =
   "mt-1.5 block break-words text-[1.125rem] font-semibold leading-snug tracking-[-0.03em] sm:text-[1.25rem]";
 
 export const appFourQuestionSupportClass =
-  "mt-1 block break-words text-[15px] leading-relaxed text-slate-600";
+  "mt-1 block break-words text-[15px] leading-relaxed text-slate-700 sm:text-[16px]";
 
 /**
  * Secondary dark feature shell — aligned to navy hierarchy

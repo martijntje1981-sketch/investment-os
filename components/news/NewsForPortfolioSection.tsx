@@ -44,7 +44,7 @@ export function NewsForPortfolioSection({
       </div>
 
       {rows.length === 0 ? (
-        <p className="rounded-[16px] border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm text-slate-600">
+        <p className={`rounded-[16px] border border-slate-200 bg-slate-50/80 px-4 py-3 ${appSectionBodyClass}`}>
           No holdings had a material portfolio impact in the current brief.
         </p>
       ) : (

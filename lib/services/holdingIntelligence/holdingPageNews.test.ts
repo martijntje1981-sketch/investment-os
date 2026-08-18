@@ -4,6 +4,10 @@ import { describe, expect, it } from "vitest";
 
 import {
   NEWS_HUB_NO_CATALYST,
+  HOLDING_PAGE_DIRECT_NEWS_LABEL,
+  HOLDING_PAGE_SECTOR_NEWS_LABEL,
+  partitionHoldingPageNews,
+  selectHoldingPageComponentNews,
   selectHoldingPageNewsItems,
 } from "@/lib/services/holdingIntelligence";
 import {
@@ -150,6 +154,7 @@ describe("Phase 11I holding page news", () => {
     expect(card).toContain('data-testid="holding-page-news-empty"');
     expect(card).not.toMatch(CAUSAL);
     expect(NEWS_HUB_NO_CATALYST).toBe("No clear holding-specific catalyst found.");
+    expect(card.match(/data-testid="holding-page-news-empty"/g)?.length).toBe(1);
   });
 
   it("labels sector/theme NUKL context as context, not cause", () => {
@@ -168,9 +173,73 @@ describe("Phase 11I holding page news", () => {
     expect(selected[0]?.item.title).toBe("Uranium sector outlook improves");
 
     const card = read("components/holding/HoldingMoveContextCard.tsx");
-    expect(card).toContain("Sector context");
+    expect(card).toContain("HOLDING_PAGE_SECTOR_NEWS_LABEL");
     expect(card).toContain("Sector context, not a proven cause.");
     expect(card).not.toMatch(CAUSAL);
+  });
+
+  it("labels ETF direct news separately from sector context", () => {
+    const items = [
+      newsItem({
+        id: "direct",
+        title: "NUKL extends gain as nuclear names outperform",
+        matchedSymbols: ["NUKL"],
+        matchedHoldingIds: ["NUKL-id"],
+        relevanceScore: STRONG_PORTFOLIO_MATCH_SCORE + 8,
+      }),
+      newsItem({
+        id: "sector",
+        title: "Uranium miners rally on supply tightness",
+        matchedSymbols: ["NUKL"],
+        matchedHoldingIds: ["NUKL-id"],
+        relevanceScore: CONTEXTUAL_PORTFOLIO_MATCH_SCORE,
+      }),
+    ];
+    const selected = selectHoldingPageNewsItems(items, nukl);
+    const groups = partitionHoldingPageNews(selected);
+    expect(groups.direct[0]?.matchRole).toBe("direct");
+    expect(groups.sector[0]?.matchRole).toBe("sector_context");
+    expect(HOLDING_PAGE_DIRECT_NEWS_LABEL).toBe("Direct ETF news");
+    expect(HOLDING_PAGE_SECTOR_NEWS_LABEL).toBe("Sector / theme context");
+    const card = read("components/holding/HoldingMoveContextCard.tsx");
+    expect(card).toContain("HOLDING_PAGE_DIRECT_NEWS_LABEL");
+    expect(card).toContain("HOLDING_PAGE_SECTOR_NEWS_LABEL");
+  });
+
+  it("never shows guessed constituents or a component-news section", () => {
+    expect(selectHoldingPageComponentNews()).toEqual([]);
+    const pageNews = read("lib/services/holdingIntelligence/holdingPageNews.ts");
+    const card = read("components/holding/HoldingMoveContextCard.tsx");
+    for (const source of [pageNews, card]) {
+      expect(source).not.toMatch(/Cameco|NexGen|CCJ|NXE/i);
+      expect(source).not.toMatch(/Underlying company/i);
+      expect(source).not.toMatch(/executeEodhdApiCall|ETF_Data/);
+    }
+  });
+
+  it("deduplicates repeated headlines in the cached pool", () => {
+    const selected = selectHoldingPageNewsItems(
+      [
+        newsItem({
+          id: "a",
+          title: "NUKL uranium update",
+          canonicalUrl: "https://example.test/same-story",
+          matchedSymbols: ["NUKL"],
+          matchedHoldingIds: ["NUKL-id"],
+          relevanceScore: STRONG_PORTFOLIO_MATCH_SCORE + 8,
+        }),
+        newsItem({
+          id: "b",
+          title: "NUKL uranium update",
+          canonicalUrl: "https://example.test/same-story",
+          matchedSymbols: ["NUKL"],
+          matchedHoldingIds: ["NUKL-id"],
+          relevanceScore: STRONG_PORTFOLIO_MATCH_SCORE + 7,
+        }),
+      ],
+      nukl,
+    );
+    expect(selected).toHaveLength(1);
   });
 
   it("does not fill Bitcoin pages with generic crypto stories", () => {

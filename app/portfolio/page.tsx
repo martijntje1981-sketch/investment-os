@@ -847,7 +847,7 @@ export default function PortfolioPage() {
                           ) : null}
                           <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1.5">
                             <div className="min-w-0">
-                              <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-slate-400">
+                              <p className={appSectionLabelClass}>
                                 Value
                               </p>
                               <p className="truncate text-[14px] font-bold tabular-nums text-slate-950">
@@ -862,7 +862,7 @@ export default function PortfolioPage() {
                               </p>
                             </div>
                             <div className="min-w-0">
-                              <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-slate-400">
+                              <p className={appSectionLabelClass}>
                                 Gain / loss
                               </p>
                               <p
@@ -876,7 +876,7 @@ export default function PortfolioPage() {
                               </p>
                             </div>
                             <div className="min-w-0">
-                              <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-slate-400">
+                              <p className={appSectionLabelClass}>
                                 Qty
                               </p>
                               <p className="truncate text-[13px] font-semibold tabular-nums text-slate-700">
@@ -884,7 +884,7 @@ export default function PortfolioPage() {
                               </p>
                             </div>
                             <div className="min-w-0">
-                              <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-slate-400">
+                              <p className={appSectionLabelClass}>
                                 Allocation
                               </p>
                               <p className="truncate text-[13px] font-semibold tabular-nums text-slate-700">

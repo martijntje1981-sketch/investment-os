@@ -5,6 +5,7 @@ import BottomNavigation from "@/components/home/BottomNav";
 import { MakeTobaileyYoursCard } from "@/components/conversion/MakeTobaileyYoursCard";
 import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer";
 import { PageHero } from "@/components/layout/PageHero";
+import { appNewsEyebrowClass } from "@/components/layout/appSurface";
 import { AuthenticatedFourQuestionsNav } from "@/components/fourQuestions/AuthenticatedFourQuestionsNav";
 import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
 import { resolveAudienceState } from "@/lib/auth/routeAccess";
@@ -48,7 +49,7 @@ export default function NewsPage() {
           }
           backToDashboard={Boolean(userSub)}
           stats={
-            <p className="mt-2 inline-flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.12em] text-brand">
+            <p className={`mt-2 inline-flex items-center gap-2 ${appNewsEyebrowClass}`}>
               <span
                 className="h-2 w-2 rounded-full bg-brand"
                 aria-hidden

@@ -49,7 +49,12 @@ export {
 } from "@/lib/services/holdingIntelligence/q1HoldingContext";
 export {
   HOLDING_PAGE_NEWS_MAX,
+  HOLDING_PAGE_DIRECT_NEWS_LABEL,
+  HOLDING_PAGE_DIRECT_HOLDING_NEWS_LABEL,
+  HOLDING_PAGE_SECTOR_NEWS_LABEL,
   isDisplayableHoldingPageNewsMatch,
+  partitionHoldingPageNews,
+  selectHoldingPageComponentNews,
   selectHoldingPageNewsItems,
 } from "@/lib/services/holdingIntelligence/holdingPageNews";
 export type {

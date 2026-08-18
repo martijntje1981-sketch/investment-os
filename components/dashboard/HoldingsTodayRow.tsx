@@ -10,6 +10,7 @@ import { formatHoldingTodayChange } from "@/lib/client/portfolioMovementFormat";
 import { formatCrypto24hChange } from "@/lib/client/cryptoPriceDisplay";
 import { resolveSmartMoneyFractionDigits } from "@/lib/client/smartPriceFormat";
 import {
+  appSectionMetaClass,
   appTableChangeClass,
   appTableNameClass,
   appTableValueClass,
@@ -200,7 +201,7 @@ export function HoldingsTodayRow({
         >
           <p className="whitespace-nowrap">{changeLabel}</p>
           {periodMeta ? (
-            <p className="mt-0.5 text-[11px] font-medium text-slate-500">
+            <p className={`mt-0.5 ${appSectionMetaClass}`}>
               {periodMeta}
             </p>
           ) : null}
@@ -234,7 +235,7 @@ export function HoldingsTodayRow({
             {changeLabel}
           </p>
           {periodMeta ? (
-            <p className="mt-0.5 text-[11px] font-medium text-slate-500">
+            <p className={`mt-0.5 ${appSectionMetaClass}`}>
               {periodMeta}
             </p>
           ) : null}
@@ -264,7 +265,7 @@ export function HoldingsTodayRow({
           {changeLabel}
         </p>
         {periodMeta ? (
-          <p className="mt-0.5 text-[11px] font-medium text-slate-500">
+          <p className={`mt-0.5 ${appSectionMetaClass}`}>
             {periodMeta}
           </p>
         ) : null}

@@ -22,7 +22,9 @@ function read(relativePath: string) {
 describe("shared readability tokens", () => {
   it("keeps a coherent type scale and prevents page overflow", () => {
     expect(appSectionLabelClass).toContain("text-[13px]");
+    expect(appSectionLabelClass).toContain("text-slate-700");
     expect(appSectionMetaClass).toContain("text-[13px]");
+    expect(appSectionMetaClass).toContain("text-slate-700");
     expect(appSectionBodyClass).toContain("text-[15px]");
     expect(appSectionBodyClass).toContain("sm:text-[16px]");
     expect(appFourQuestionAnswerClass).toContain("text-[1.125rem]");
@@ -53,5 +55,11 @@ describe("shared readability tokens", () => {
     const hub = read("components/fourQuestions/QuestionHubPage.tsx");
     expect(dashboard).toContain("appFourQuestionAnswerClass");
     expect(hub).toContain("appFourQuestionAnswerClass");
+  });
+
+  it("keeps Goals reality-check copy on the body token", () => {
+    const goals = read("components/goals/GoalRealityCheckPanel.tsx");
+    expect(goals).toContain("appSectionBodyClass");
+    expect(goals).not.toMatch(/text-\[1[12]px\]/);
   });
 });

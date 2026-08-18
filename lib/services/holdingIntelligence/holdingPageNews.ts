@@ -17,6 +17,10 @@ import type { HoldingNewsMatchType } from "@/lib/services/holdingIntelligence/ty
 
 export const HOLDING_PAGE_NEWS_MAX = 4;
 
+export const HOLDING_PAGE_DIRECT_NEWS_LABEL = "Direct ETF news";
+export const HOLDING_PAGE_DIRECT_HOLDING_NEWS_LABEL = "Direct holding news";
+export const HOLDING_PAGE_SECTOR_NEWS_LABEL = "Sector / theme context";
+
 export type HoldingPageNewsMatchRole = "direct" | "alias" | "sector_context";
 
 export type HoldingPageNewsItem = {
@@ -103,4 +107,21 @@ export function selectHoldingPageNewsItems(
     if (selected.length >= limit) break;
   }
   return selected;
+}
+
+export function partitionHoldingPageNews(items: HoldingPageNewsItem[]): {
+  direct: HoldingPageNewsItem[];
+  sector: HoldingPageNewsItem[];
+} {
+  return {
+    direct: items.filter(
+      (row) => row.matchRole === "direct" || row.matchRole === "alias",
+    ),
+    sector: items.filter((row) => row.matchRole === "sector_context"),
+  };
+}
+
+/** Constituents are not connected — never invent component stories. */
+export function selectHoldingPageComponentNews(): [] {
+  return [];
 }

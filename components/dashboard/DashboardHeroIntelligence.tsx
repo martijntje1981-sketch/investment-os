@@ -4,6 +4,10 @@ import Link from "next/link";
 import { useState } from "react";
 import { Newspaper } from "lucide-react";
 
+import {
+  appDashboardDarkMetaClass,
+  appHeroMetricLabelClass,
+} from "@/components/layout/appSurface";
 import type {
   HeroHealthPreview,
   HeroTopStoryPreview,
@@ -148,10 +152,10 @@ export function HeroHealthRing({ preview }: { preview: HeroHealthPreview }) {
         />
       </svg>
       <span className="min-w-0">
-        <span className="block text-[10px] font-bold uppercase tracking-[0.1em] text-white/55">
+        <span className={`block ${appHeroMetricLabelClass}`}>
           {preview.label}
         </span>
-        <span className="mt-0.5 block truncate text-[12px] font-semibold text-white/85">
+        <span className={`mt-0.5 block truncate ${appDashboardDarkMetaClass} font-semibold text-white/85`}>
           {preview.detail}
         </span>
       </span>
@@ -194,10 +198,10 @@ export function HeroTopStoryPreviewCard({
           <Newspaper className="h-4 w-4" aria-hidden />
         </span>
         <span className="min-w-0">
-          <span className="block text-[10px] font-bold uppercase tracking-[0.1em] text-white/55">
+          <span className={`block ${appHeroMetricLabelClass}`}>
             Top story
           </span>
-          <span className="mt-0.5 block text-[12px] font-medium text-white/55">
+          <span className={`mt-0.5 block ${appDashboardDarkMetaClass}`}>
             No story available
           </span>
         </span>
@@ -215,13 +219,13 @@ export function HeroTopStoryPreviewCard({
     >
       <StoryThumb url={story.thumbnailUrl} />
       <span className="min-w-0">
-        <span className="block text-[10px] font-bold uppercase tracking-[0.1em] text-white/55">
+        <span className={`block ${appHeroMetricLabelClass}`}>
           Top story
         </span>
-        <span className="mt-0.5 line-clamp-2 text-[12px] font-semibold leading-snug text-white">
+        <span className="mt-0.5 line-clamp-2 text-[13px] font-semibold leading-snug text-white">
           {story.title}
         </span>
-        <span className="mt-0.5 hidden truncate text-[11px] text-white/50 sm:block">
+        <span className={`mt-0.5 hidden truncate sm:block ${appDashboardDarkMetaClass}`}>
           {story.meta}
         </span>
       </span>
