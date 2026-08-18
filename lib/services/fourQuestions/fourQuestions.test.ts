@@ -253,7 +253,124 @@ describe("Four Questions builders", () => {
       }),
       avoidDailyDriverSymbol: "BTC",
     });
-    expect(q2.answer.toLowerCase()).toMatch(/concentration risk|dominant concentration/);
+    expect(q2.answer.toLowerCase()).toMatch(/concentration/);
+    expect(q2.answer).not.toMatch(/main driver/i);
+  });
+
+  it("Q2 does not call a different holding today's main driver when Q1 already owns the day", () => {
+    const intelligence: PersonalIntelligenceToday = {
+      generatedAt: "2026-08-01T12:00:00.000Z",
+      version: "pi-today-v1",
+      attention: "watch",
+      headline: "Blackrock Bitcoin is today's main driver.",
+      portfolioMove: {
+        todayChange: -180,
+        todayPercent: -0.3,
+        hasDailyData: true,
+        coverageComplete: true,
+        validPerformanceCount: 3,
+        eligibleMarketHoldingCount: 3,
+        previousPortfolioValue: 60_000,
+      },
+      topContributors: [
+        {
+          symbol: "IBIT",
+          name: "Blackrock Bitcoin",
+          move: 80,
+          changePercent: 0.3,
+          contributionPp: 0.13,
+          weightPercent: 52,
+        },
+      ],
+      topDetractors: [
+        {
+          symbol: "NUKL",
+          name: "VanEck Uranium and Nuclear ETF",
+          move: -400,
+          changePercent: -8,
+          contributionPp: -0.67,
+          weightPercent: 18,
+        },
+      ],
+      holdingsWeights: [
+        { symbol: "IBIT", name: "Blackrock Bitcoin", weightPercent: 52 },
+        { symbol: "NUKL", name: "VanEck Uranium and Nuclear ETF", weightPercent: 18 },
+        { symbol: "AAPL", name: "Apple", weightPercent: 30 },
+      ],
+      exposure: {
+        groups: [
+          {
+            groupId: "crypto",
+            displayLabel: "Crypto",
+            value: 31_200,
+            rawPercent: 52,
+            displayPercent: 52,
+            holdingCount: 1,
+            holdings: [
+              {
+                id: "IBIT",
+                symbol: "IBIT",
+                name: "Blackrock Bitcoin",
+                value: 31_200,
+                assetType: "crypto",
+              },
+            ],
+          },
+        ],
+        totalValue: 60_000,
+        classifiedHoldingCount: 3,
+        unclassifiedHoldingCount: 0,
+        excludedHoldingCount: 0,
+        includedHoldingCount: 3,
+        hasAnyValue: true,
+        coverageLabel: null,
+      },
+      news: null,
+      goals: null,
+      attentionItems: [],
+      dataNotes: [],
+    };
+    const nukl = holding({
+      symbol: "NUKL",
+      name: "VanEck Uranium and Nuclear ETF",
+      quantity: 100,
+      currentPrice: 40,
+      previousClose: 48,
+    });
+    const ibit = holding({
+      symbol: "IBIT",
+      name: "Blackrock Bitcoin",
+      assetType: "crypto",
+      quantity: 0.52,
+      currentPrice: 100_000,
+      previousClose: 100_100,
+    });
+    const q1 = buildWhatHappenedQuestion({
+      scope: "complete",
+      holdings: [nukl, ibit, invest],
+    });
+    expect(`${q1.answer} ${q1.support ?? ""}`).toMatch(/Uranium|NUKL/i);
+
+    const q2 = buildWhatMattersNowQuestion({
+      scope: "complete",
+      holdings: [invest, crypto],
+      intelligence,
+      cryptoDashboardLine: null,
+      goal,
+      hasSavedGoal: true,
+      resilienceProfile: buildResilienceProfile({
+        holdings: [invest, crypto],
+        goal,
+        hasSavedGoal: true,
+      }),
+      avoidDailyDriverSymbol: "NUKL",
+    });
+    expect(q2.answer).not.toMatch(/main driver/i);
+    expect(q2.answer).not.toMatch(/explains most/i);
+    expect(q2.answer).toMatch(/Blackrock Bitcoin/i);
+    expect(q2.answer).toMatch(/concentration/i);
+    expect(q2.support).toMatch(/52%/);
+    expect(q2.support).toMatch(/crypto exposure/i);
   });
 
   it("Goals work for invest, crypto, and complete scopes", () => {
@@ -371,7 +488,7 @@ describe("Four Questions builders", () => {
         sourcePeriodLabel: "the last year",
         yearsRepresented: 1,
         gapPp: -20.1,
-        historyQuality: "moderate",
+        historyQuality: "strong",
         conclusion: "Pace trails assumption.",
         qualityNote: null,
         methodologyNote: "Constant-holdings EOD.",

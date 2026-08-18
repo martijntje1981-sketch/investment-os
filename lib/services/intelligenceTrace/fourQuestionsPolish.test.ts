@@ -302,6 +302,7 @@ describe("Phase 7 polish — meaning, clickability, Q3, Free", () => {
       avoidDailyDriverSymbol: "BTC",
     });
     expect(q2.answer.toLowerCase()).toMatch(/concentration|weight|attention/);
+    expect(q2.answer).not.toMatch(/main driver/i);
     const q1Meaning = q1.expandItems.find((row) => row.id === "trace-meaning")?.detail ?? "";
     const q2Meaning = q2.expandItems.find((row) => row.id === "trace-meaning")?.detail ?? "";
     expect(q1Meaning).not.toBe(q2Meaning);
@@ -368,6 +369,60 @@ describe("Phase 7 polish — meaning, clickability, Q3, Free", () => {
     expect(q3.support).toMatch(/Based on your saved 20% growth assumption/);
     expect(q3.support).toContain("last 12-month return");
     expect(q3.support).not.toMatch(/recent pace /i);
+  });
+
+  it("omits annualized comparison when Reality Check history is only moderate", () => {
+    const progress = deriveGoalProgress({
+      currentPortfolioValue: 200_000,
+      goal,
+      hasSavedGoal: true,
+    });
+    const q3 = buildAmIOnTrackQuestion({
+      scope: "complete",
+      progress,
+      goal,
+      realityCheck: {
+        available: true,
+        expectedAnnualReturnPercent: 20,
+        comparableAnnualPercent: 0,
+        comparableKind: "annualized_performance",
+        periodId: "ALL",
+        sourcePeriodLabel: "available portfolio history",
+        yearsRepresented: 0.4,
+        gapPp: -20,
+        historyQuality: "moderate",
+        conclusion:
+          "Your planning assumption is 20 percentage points above your annualized performance.",
+        qualityNote: "A longer history would strengthen this comparison.",
+        methodologyNote: "Constant-holdings EOD.",
+        disclaimer: "Not a forecast.",
+      },
+    });
+    expect(q3.support).toMatch(/Based on your saved 20% growth assumption/);
+    expect(q3.support).toMatch(/isn’t yet sufficient|isn't yet sufficient/i);
+    expect(q3.support).not.toMatch(/annualized performance/i);
+    expect(q3.support).not.toMatch(/20 percentage points/i);
+  });
+
+  it("does not fabricate a growth percentage when no saved assumption exists", () => {
+    const progress = deriveGoalProgress({
+      currentPortfolioValue: 200_000,
+      goal: { ...goal, expectedAnnualReturn: Number.NaN },
+      hasSavedGoal: true,
+    });
+    const q3 = buildAmIOnTrackQuestion({
+      scope: "complete",
+      progress,
+      goal: { ...goal, expectedAnnualReturn: Number.NaN },
+      realityCheck: {
+        available: false,
+        reason: "No saved expected annual return assumption.",
+      },
+    });
+    expect(q3.support).not.toMatch(/saved .* growth assumption/i);
+    expect(q3.support).not.toMatch(/(?:^|[^0-9])10%/);
+    expect(q3.support).not.toMatch(/annualized performance/i);
+    expect(q3.support).not.toMatch(/planning assumption is/i);
   });
 
   it("Free does not receive the full Complete interpretation", () => {

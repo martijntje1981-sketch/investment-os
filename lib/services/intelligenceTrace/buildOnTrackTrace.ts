@@ -3,7 +3,10 @@ import {
   getExpectedReturnAssumption,
 } from "@/lib/client/expectedReturnAssumption";
 import { buildGoalSensitivityFromScenario } from "@/lib/services/goalSensitivity";
-import type { GoalRealityCheck } from "@/lib/services/goals/buildGoalRealityCheck";
+import {
+  isMeaningfulRecentPace,
+  type GoalRealityCheck,
+} from "@/lib/services/goals/buildGoalRealityCheck";
 import type { GoalProgress } from "@/lib/services/goals/goalProgressEngine";
 import type { ResilienceProfile } from "@/lib/services/resilience";
 import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
@@ -135,11 +138,11 @@ export function buildOnTrackTrace(input: {
       "Portfolio value is unavailable, so progress cannot be calculated reliably.",
     );
   }
-  if (realityCheck?.available) {
+  if (isMeaningfulRecentPace(realityCheck)) {
     confidenceBullets.push(realityCheck.disclaimer);
   } else {
     confidenceBullets.push(
-      "Recent portfolio pace can’t yet be compared reliably.",
+      "Recent portfolio history isn’t yet sufficient for a meaningful pace comparison.",
     );
   }
   if (

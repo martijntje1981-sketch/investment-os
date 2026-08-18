@@ -28,6 +28,49 @@ import type {
 } from "@/lib/types/portfolioStorage";
 
 const QUIET_ANSWER = "Nothing requires special attention right now.";
+const CONCENTRATION_WEIGHT_THRESHOLD = 35;
+
+function isDailyDriverWording(text: string): boolean {
+  return /main driver|largest driver|explains most of|today’s largest contributor|today's largest contributor|today’s largest detractor|today's largest detractor/i.test(
+    text,
+  );
+}
+
+function isPortfolioMoveHeadline(text: string): boolean {
+  return /larger-than-usual|larger than usual|portfolio moved/i.test(text);
+}
+
+function formatWeightPercent(value: number): string {
+  const rounded = Math.round(value);
+  if (Math.abs(value - rounded) < 0.05) return `${rounded}%`;
+  return `${value.toFixed(1)}%`;
+}
+
+function buildStructuralAttention(input: {
+  intelligence: PersonalIntelligenceToday;
+}): { answer: string; support: string } | null {
+  const leadingWeight = input.intelligence.holdingsWeights
+    .slice()
+    .sort((left, right) => right.weightPercent - left.weightPercent)[0];
+  if (!leadingWeight || leadingWeight.weightPercent < CONCENTRATION_WEIGHT_THRESHOLD) {
+    return null;
+  }
+
+  const symbol = leadingWeight.symbol.trim().toUpperCase();
+  const group = input.intelligence.exposure?.groups.find((row) =>
+    row.holdings.some((holding) => holding.symbol.trim().toUpperCase() === symbol),
+  );
+
+  const support =
+    group && group.displayPercent >= 20
+      ? `About ${formatWeightPercent(group.displayPercent)} of portfolio value is linked to ${group.displayLabel.toLowerCase()} exposure.`
+      : `About ${formatWeightPercent(leadingWeight.weightPercent)} of portfolio value currently sits in one holding.`;
+
+  return {
+    answer: `${leadingWeight.name} remains your largest portfolio concentration.`,
+    support,
+  };
+}
 
 export function buildWhatMattersNowQuestion(input: {
   scope: IntelligenceScopeId;
@@ -101,27 +144,44 @@ export function buildWhatMattersNowQuestion(input: {
     answer = QUIET_ANSWER;
   }
 
-  const leadingWeight = intelligence.holdingsWeights
-    .slice()
-    .sort((a, b) => b.weightPercent - a.weightPercent)[0];
+  const structural = buildStructuralAttention({ intelligence });
   const avoidSymbol = input.avoidDailyDriverSymbol?.trim().toUpperCase() || null;
-  const sameAsQ1Driver =
+  const repeatsQ1Driver = Boolean(
     avoidSymbol &&
-    leadingWeight?.symbol.trim().toUpperCase() === avoidSymbol &&
-    (/main driver|largest driver/i.test(answer) ||
-      /larger-than-usual move|larger than usual move|portfolio/i.test(answer));
-  if (sameAsQ1Driver && leadingWeight.weightPercent >= 35) {
-    answer = `${leadingWeight.name} is now your portfolio's dominant concentration risk.`;
+      new RegExp(
+        `\\b${avoidSymbol.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`,
+        "i",
+      ).test(answer) &&
+      /today|driver|contributor|detractor|explains/i.test(answer),
+  );
+
+  // Q1 owns today's realized driver. Never leave Q2 on daily-driver wording,
+  // even when the concentrated holding is a different name from Q1's mover.
+  if (
+    isDailyDriverWording(answer) ||
+    repeatsQ1Driver ||
+    (isPortfolioMoveHeadline(answer) && structural)
+  ) {
+    if (structural) {
+      answer = structural.answer;
+      quiet = false;
+    } else {
+      answer = "Nothing else requires special attention beyond today’s move.";
+    }
   }
 
   const support =
-    !quiet && conclusion.attentionLine
-      ? conclusion.attentionLine
-      : !quiet && planItems[0]
-        ? planItems[0].headline
-        : sameAsQ1Driver && leadingWeight
-          ? `${leadingWeight.weightPercent.toFixed(1)}% of portfolio value currently sits in one holding.`
-        : null;
+    !quiet && structural && /concentration/i.test(answer)
+      ? structural.support
+      : !quiet &&
+          conclusion.attentionLine &&
+          !isDailyDriverWording(conclusion.attentionLine)
+        ? conclusion.attentionLine
+        : !quiet &&
+            planItems[0] &&
+            !isDailyDriverWording(planItems[0].headline)
+          ? planItems[0].headline
+          : null;
 
   const exploreHref = fourQuestionHubPath("what_matters_now");
   const trace = buildWhatMattersTrace({

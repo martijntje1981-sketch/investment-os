@@ -8,7 +8,10 @@ import { PORTFOLIO_HISTORY_PATH } from "@/lib/navigation/appRoutes";
 import { fourQuestionHubPath } from "@/lib/services/fourQuestions/catalog";
 import type { IntelligenceScopeId } from "@/lib/services/intelligenceScope";
 import { buildOnTrackTrace, traceToExpandItems } from "@/lib/services/intelligenceTrace";
-import type { GoalRealityCheck } from "@/lib/services/goals/buildGoalRealityCheck";
+import {
+  isMeaningfulRecentPace,
+  type GoalRealityCheck,
+} from "@/lib/services/goals/buildGoalRealityCheck";
 import type { GoalProgress } from "@/lib/services/goals/goalProgressEngine";
 import type {
   FourQuestionAnswer,
@@ -25,15 +28,7 @@ function formatAssumptionPercent(value: number): string {
   return `${rounded}%`;
 }
 
-/** True when Reality Check history is long enough to show a pace comparison. */
-export function isMeaningfulRecentPace(
-  realityCheck: GoalRealityCheck | null | undefined,
-): boolean {
-  if (!realityCheck?.available) return false;
-  if (realityCheck.historyQuality === "short") return false;
-  if (realityCheck.yearsRepresented < 0.25) return false;
-  return true;
-}
+export { isMeaningfulRecentPace };
 
 /**
  * Glance support: saved planning assumption first; recent pace only when meaningful.

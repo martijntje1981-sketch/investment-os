@@ -108,6 +108,20 @@ export function classifyHistoryQuality(
   return "short";
 }
 
+/**
+ * Glance-safe pace comparison. Uses the existing quality bands only:
+ * "strong" (>= 1 year) may show an annualized/recent comparison.
+ * "moderate" and "short" are not reliable enough for Four Questions glance copy.
+ */
+export function isMeaningfulRecentPace(
+  realityCheck: GoalRealityCheck | null | undefined,
+): realityCheck is Extract<GoalRealityCheck, { available: true }> {
+  if (!realityCheck?.available) return false;
+  if (realityCheck.historyQuality !== "strong") return false;
+  if (realityCheck.yearsRepresented < 1) return false;
+  return true;
+}
+
 function round1(value: number): number {
   return Math.round(value * 10) / 10;
 }
