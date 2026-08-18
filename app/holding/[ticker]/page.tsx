@@ -25,6 +25,7 @@ import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 import {
   buildHoldingIntelligenceCandidates,
   findHoldingIntelligenceCandidate,
+  selectHoldingPageNewsItems,
 } from "@/lib/services/holdingIntelligence";
 
 const euro = new Intl.NumberFormat("en-GB", {
@@ -143,6 +144,20 @@ export default function HoldingPage() {
     () => findHoldingIntelligenceCandidate(candidates, ticker),
     [candidates, ticker],
   );
+
+  const relatedNews = useMemo(() => {
+    if (!holding) return [];
+    return selectHoldingPageNewsItems(
+      [...news.payload.portfolioNews, ...news.payload.macroNews],
+      holding,
+      { isBitcoin: moveContext?.isBitcoin },
+    );
+  }, [
+    holding,
+    moveContext?.isBitcoin,
+    news.payload.macroNews,
+    news.payload.portfolioNews,
+  ]);
 
   const valuation = useMemo(() => {
     if (!holding) {
@@ -351,6 +366,15 @@ export default function HoldingPage() {
             />
           </section>
 
+          <div className="mt-6">
+            <HoldingMoveContextCard
+              candidate={moveContext}
+              relatedNews={relatedNews}
+              newsLoading={news.isLoading}
+              intelligenceDepth={productAccess.intelligenceDepth}
+            />
+          </div>
+
           <section className="mt-6 grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
             <article className="rounded-3xl bg-white p-7 shadow-sm md:p-8">
               <p className="text-sm font-semibold uppercase tracking-wider text-blue-600">
@@ -428,14 +452,6 @@ export default function HoldingPage() {
               </div>
             </article>
           </section>
-
-          <div className="mt-6">
-            <HoldingMoveContextCard
-              candidate={moveContext}
-              newsLoading={news.isLoading}
-              intelligenceDepth={productAccess.intelligenceDepth}
-            />
-          </div>
 
           <section className="mt-6 flex flex-wrap gap-3">
             <button

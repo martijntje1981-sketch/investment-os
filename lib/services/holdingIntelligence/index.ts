@@ -47,3 +47,12 @@ export {
   buildQ1HoldingContextLayer,
   q1StoryExcludeHrefs,
 } from "@/lib/services/holdingIntelligence/q1HoldingContext";
+export {
+  HOLDING_PAGE_NEWS_MAX,
+  isDisplayableHoldingPageNewsMatch,
+  selectHoldingPageNewsItems,
+} from "@/lib/services/holdingIntelligence/holdingPageNews";
+export type {
+  HoldingPageNewsItem,
+  HoldingPageNewsMatchRole,
+} from "@/lib/services/holdingIntelligence/holdingPageNews";

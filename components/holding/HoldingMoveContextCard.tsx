@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ArrowUpRight } from "lucide-react";
 
 import {
   appSectionBodyClass,
@@ -14,6 +15,7 @@ import {
   CONFIDENCE_LABEL_BY_STATUS,
   NEWS_HUB_NO_CATALYST,
   type HoldingIntelligenceCandidate,
+  type HoldingPageNewsItem,
 } from "@/lib/services/holdingIntelligence";
 import type { FourQuestionsIntelligenceDepth } from "@/lib/services/fourQuestions/types";
 import { NEWS_PATH } from "@/lib/navigation/appRoutes";
@@ -30,12 +32,26 @@ function signedPercent(value: number): string {
   return `${sign}${value.toFixed(2)}%`;
 }
 
+function formatNewsTime(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export function HoldingMoveContextCard({
   candidate,
+  relatedNews,
   newsLoading = false,
   intelligenceDepth = "complete",
 }: {
   candidate: HoldingIntelligenceCandidate | null;
+  relatedNews?: HoldingPageNewsItem[];
   newsLoading?: boolean;
   intelligenceDepth?: FourQuestionsIntelligenceDepth;
 }) {
@@ -56,9 +72,11 @@ export function HoldingMoveContextCard({
     candidate.explanationStatus === "probable_contextual";
   const contextLine = hasReliableContext
     ? candidate.explanationNote
-    : candidate.explanationStatus === "insufficient_evidence"
-      ? NEWS_HUB_NO_CATALYST
-      : candidate.explanationNote;
+    : NEWS_HUB_NO_CATALYST;
+  const newsItems = relatedNews ?? [];
+  const isSectorContext =
+    candidate.matchType === "sector_theme" ||
+    (candidate.isEtfLike && candidate.matchType !== "direct_instrument");
 
   return (
     <section
@@ -94,12 +112,10 @@ export function HoldingMoveContextCard({
           </dd>
         </div>
         <div className="min-w-0">
-          <dt className={appSectionLabelClass}>
-            {isComplete ? "Explanation" : "Context"}
-          </dt>
+          <dt className={appSectionLabelClass}>Confidence</dt>
           <dd className="mt-1 text-[15px] font-semibold text-slate-950">
-            {isComplete
-              ? STATUS_LABEL[candidate.explanationStatus]
+            {isComplete && confidenceLabel
+              ? confidenceLabel
               : hasReliableContext
                 ? "Related context"
                 : "No clear catalyst"}
@@ -109,44 +125,70 @@ export function HoldingMoveContextCard({
 
       <p className={`mt-4 ${appSectionBodyClass}`}>{contextLine}</p>
 
-      {isComplete && confidenceLabel ? (
+      {isComplete && hasReliableContext ? (
         <p className={`mt-2 ${appSectionMetaClass}`}>
-          Confidence: {confidenceLabel}
-          {candidate.matchType === "sector_theme" || candidate.isEtfLike
+          {STATUS_LABEL[candidate.explanationStatus]}
+          {isSectorContext
             ? " · Sector context, not a proven cause."
-            : candidate.explanationStatus === "supported" ||
-                candidate.explanationStatus === "probable_contextual"
-              ? " · Related context, not a proven cause."
-              : ""}
+            : " · Related context, not a proven cause."}
         </p>
       ) : null}
 
-      {newsLoading && candidate.explanationStatus === "unavailable" ? (
+      {newsLoading && newsItems.length === 0 ? (
         <p className={`mt-3 ${appSectionMetaClass}`}>
           Checking the shared news pool for a holding match…
         </p>
-      ) : null}
-
-      {isComplete && candidate.newsItem && hasReliableContext ? (
-        <p className={`mt-3 ${appSectionBodyClass}`}>
-          Relevant news:{" "}
-          <a
-            href={candidate.newsItem.canonicalUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="font-semibold text-brand-navy underline-offset-2 hover:underline"
-          >
-            {candidate.newsItem.title}
-          </a>
-          <span className={`mt-1 block ${appSectionMetaClass}`}>
-            {candidate.newsItem.sourceName}
-            {candidate.evidenceTimestamp
-              ? ` · ${new Date(candidate.evidenceTimestamp).toLocaleString("en-GB")}`
-              : ""}
-            {` · ${candidate.matchType.replaceAll("_", " ")}`}
-          </span>
-        </p>
-      ) : null}
+      ) : (
+        <div className="mt-4 min-w-0" data-testid="holding-page-news">
+          <p className={appSectionLabelClass}>Latest relevant news</p>
+          {newsItems.length > 0 ? (
+            <ul className="mt-2 space-y-2.5">
+              {newsItems.map((row) => {
+                const published = formatNewsTime(
+                  row.item.publishedAt || candidate.evidenceTimestamp,
+                );
+                return (
+                  <li
+                    key={row.item.id}
+                    data-testid="holding-page-news-item"
+                    data-match-role={row.matchRole}
+                  >
+                    {row.matchRole === "sector_context" ? (
+                      <p className={appSectionMetaClass}>Sector context</p>
+                    ) : null}
+                    <a
+                      href={row.item.canonicalUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`${appSectionBodyClass} font-semibold text-brand-navy underline-offset-2 hover:underline`}
+                    >
+                      {row.item.title}
+                      <ArrowUpRight
+                        className="ml-1 inline h-3.5 w-3.5 align-text-top"
+                        aria-hidden
+                      />
+                    </a>
+                    <p className={`mt-0.5 ${appSectionMetaClass}`}>
+                      {row.item.sourceName}
+                      {published ? ` · ${published}` : ""}
+                      {row.matchRole === "sector_context"
+                        ? " · Sector context, not a proven cause."
+                        : " · Related context, not a proven cause."}
+                    </p>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p
+              className={`mt-1 ${appSectionBodyClass}`}
+              data-testid="holding-page-news-empty"
+            >
+              {NEWS_HUB_NO_CATALYST}
+            </p>
+          )}
+        </div>
+      )}
 
       <Link href={NEWS_PATH} className={`mt-4 ${appTextLinkClass}`}>
         Open News

@@ -43,6 +43,7 @@ import { useProductAccess } from "@/lib/client/useProductAccess";
 import {
   buildHoldingIntelligenceCandidates,
   findHoldingIntelligenceCandidate,
+  selectHoldingPageNewsItems,
 } from "@/lib/services/holdingIntelligence";
 import { HoldingMoveContextCard } from "@/components/holding/HoldingMoveContextCard";
 
@@ -671,6 +672,20 @@ export default function HoldingDetailPage() {
     [candidates, symbol],
   );
 
+  const relatedNews = useMemo(() => {
+    if (!holding) return [];
+    return selectHoldingPageNewsItems(
+      [...news.payload.portfolioNews, ...news.payload.macroNews],
+      holding,
+      { isBitcoin: moveContext?.isBitcoin },
+    );
+  }, [
+    holding,
+    moveContext?.isBitcoin,
+    news.payload.macroNews,
+    news.payload.portfolioNews,
+  ]);
+
   if (!portfolioReady) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-50">
@@ -993,6 +1008,15 @@ export default function HoldingDetailPage() {
             />
           </section>
 
+          <div className="mt-6">
+            <HoldingMoveContextCard
+              candidate={moveContext}
+              relatedNews={relatedNews}
+              newsLoading={news.isLoading}
+              intelligenceDepth={productAccess.intelligenceDepth}
+            />
+          </div>
+
           <section className="mt-7 grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
             <article className="rounded-[28px] bg-slate-950 p-7 text-white shadow-lg sm:p-8">
               <div className="flex items-center gap-3">
@@ -1140,12 +1164,7 @@ export default function HoldingDetailPage() {
             />
           </section>
 
-          <section className="mt-7 grid gap-6 lg:grid-cols-2">
-            <HoldingMoveContextCard
-              candidate={moveContext}
-              newsLoading={news.isLoading}
-              intelligenceDepth={productAccess.intelligenceDepth}
-            />
+          <section className="mt-7">
             <PlaceholderFeedCard
               icon={<CalendarDays className="h-5 w-5" />}
               eyebrow="Forward calendar"

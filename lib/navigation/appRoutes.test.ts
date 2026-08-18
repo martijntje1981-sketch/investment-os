@@ -65,9 +65,11 @@ describe("canonical Portfolio navigation", () => {
     expect(holdings).toContain("PORTFOLIO_PATH");
     expect(holdingsRow).toContain("holdingDetailPath");
     expect(holdingsRow).toContain('row.assetType !== "cash"');
+    expect(holdingsRow).toContain("ViewHoldingCue");
     expect(movers).toContain("holdingDetailPath");
     expect(movers).not.toContain("`/portfolio/${");
     expect(portfolio).toContain("holdingDetailPath");
+    expect(portfolio).toContain("View holding");
     expect(portfolio).not.toContain("`/holding/${holding.symbol}`");
     expect(deadMovers).toContain("holdingDetailPath");
     expect(deadMovers).not.toContain("`/portfolio/${");

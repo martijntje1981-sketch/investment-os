@@ -270,6 +270,7 @@ describe("holding intelligence foundation", () => {
       "lib/services/holdingIntelligence/newsHubRows.ts",
       "lib/services/holdingIntelligence/storyIdentity.ts",
       "lib/services/holdingIntelligence/q1HoldingContext.ts",
+      "lib/services/holdingIntelligence/holdingPageNews.ts",
     ];
     for (const file of files) {
       const source = readFileSync(

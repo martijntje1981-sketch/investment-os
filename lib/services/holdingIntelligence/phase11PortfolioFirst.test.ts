@@ -484,6 +484,8 @@ describe("Phase 11C–11H portfolio-first news", () => {
       "lib/services/news/relevanceMatching.ts",
       "components/news/NewsForPortfolioSection.tsx",
       "components/holding/HoldingMoveContextCard.tsx",
+      "lib/services/holdingIntelligence/holdingPageNews.ts",
+      "app/holding/[ticker]/page.tsx",
     ];
     for (const file of files) {
       const source = readFileSync(path.resolve(process.cwd(), file), "utf8");

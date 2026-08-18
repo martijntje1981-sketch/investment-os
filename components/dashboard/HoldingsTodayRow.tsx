@@ -17,6 +17,7 @@ import {
 } from "@/components/layout/appSurface";
 import type { DashboardHoldingRow } from "@/lib/client/dashboardPortfolioSnapshot";
 import { holdingDetailPath } from "@/lib/navigation/appRoutes";
+import { ViewHoldingCue } from "@/components/holding/ViewHoldingCue";
 
 function changeToneClass(row: DashboardHoldingRow): string {
   if (row.assetType === "cash") {
@@ -185,6 +186,7 @@ export function HoldingsTodayRow({
             <p className={`mt-0.5 ${appTickerClass}`}>
               {holdingSecondaryLabel(row)}
             </p>
+            {href ? <ViewHoldingCue className="mt-1 block" /> : null}
           </div>
         </td>
         <td
@@ -219,6 +221,7 @@ export function HoldingsTodayRow({
           <p className={`mt-0.5 ${appTickerClass}`}>
             {holdingSecondaryLabel(row)}
           </p>
+          <ViewHoldingCue className="mt-1 block" />
         </div>
         <div
           className="shrink-0 text-right"

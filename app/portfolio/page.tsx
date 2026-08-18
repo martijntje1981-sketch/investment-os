@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import {
   Banknote,
   BarChart3,
-  ChevronRight,
   CircleDollarSign,
   Coins,
   History,
@@ -131,6 +130,7 @@ import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 import { formatPortfolioHeroRefreshLabel } from "@/lib/client/marketSnapshotSync";
 import { useMarketSnapshotMetadata } from "@/lib/client/useMarketSnapshotMetadata";
 import { holdingDetailPath } from "@/lib/navigation/appRoutes";
+import { ViewHoldingCue } from "@/components/holding/ViewHoldingCue";
 
 type AssetType = "investment" | "cash";
 type Holding = StoredPortfolioHolding;
@@ -842,6 +842,9 @@ export default function PortfolioPage() {
                               {holding.name}
                             </p>
                           </div>
+                          {detailHref ? (
+                            <ViewHoldingCue className="mt-1 block" />
+                          ) : null}
                           <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1.5">
                             <div className="min-w-0">
                               <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-slate-400">
@@ -1008,19 +1011,12 @@ export default function PortfolioPage() {
                           {detailHref ? (
                             <Link
                               href={detailHref}
-                              aria-label={`View ${holding.name}`}
-                              className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
+                              aria-label={`View ${holding.name} holding`}
+                              className="inline-flex items-center rounded-lg px-2 py-2 text-[13px] font-semibold text-brand-navy hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
                             >
-                              <ChevronRight className="h-5 w-5" />
+                              View holding →
                             </Link>
-                          ) : (
-                            <span
-                              className="pointer-events-none rounded-lg p-2 opacity-0"
-                              aria-hidden="true"
-                            >
-                              <ChevronRight className="h-5 w-5" />
-                            </span>
-                          )}
+                          ) : null}
                           <button
                             type="button"
                             onClick={() => openEdit(holding)}

@@ -12,6 +12,7 @@ import { NEWS_HUB_NO_CATALYST } from "@/lib/services/holdingIntelligence";
 import type { NewsHubHoldingRow } from "@/lib/services/holdingIntelligence";
 import { NewsExpandableList } from "@/components/news/NewsBriefingSection";
 import { holdingDetailPath } from "@/lib/navigation/appRoutes";
+import { ViewHoldingCue } from "@/components/holding/ViewHoldingCue";
 import { NewsMediaThumbnail } from "@/components/news/NewsMediaThumbnail";
 import { buildNewsMediaPresentation } from "@/lib/services/news/newsMediaType";
 
@@ -77,6 +78,7 @@ export function NewsForPortfolioSection({
                       <span className={`ml-2 ${appSectionMetaClass}`}>
                         {row.candidate.symbol}
                       </span>
+                      <ViewHoldingCue className="mt-1 block" />
                     </Link>
                   </div>
                   {item && presentation ? (

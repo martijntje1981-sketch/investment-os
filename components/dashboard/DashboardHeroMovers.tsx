@@ -44,16 +44,15 @@ function MoverTile({
   const displayName = mover.holding.name || mover.holding.symbol;
 
   return (
-    <article
-      className={`min-w-0 rounded-xl border bg-white/[0.03] px-3 py-2.5 ${borderClass}`}
+    <Link
+      href={resolveHoldingHref(mover)}
+      className={`block min-w-0 rounded-xl border bg-white/[0.03] px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 ${borderClass}`}
+      aria-label={`Open ${displayName} holding details`}
+      title={displayName}
     >
       <p className={appHeroMetricLabelClass}>{label}</p>
       <div className="mt-1.5 flex min-w-0 items-start justify-between gap-2">
-        <Link
-          href={resolveHoldingHref(mover)}
-          className="min-w-0 flex-1 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
-          title={displayName}
-        >
+        <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-bold text-white">
             {mover.holding.symbol}
           </p>
@@ -62,7 +61,10 @@ function MoverTile({
               {displayName}
             </p>
           ) : null}
-        </Link>
+          <p className="mt-1 text-[13px] font-semibold text-white/80">
+            View holding →
+          </p>
+        </div>
         <div
           className={`flex shrink-0 flex-col items-end gap-0.5 ${accentClass}`}
         >
@@ -81,7 +83,7 @@ function MoverTile({
           </span>
         </div>
       </div>
-    </article>
+    </Link>
   );
 }
 
