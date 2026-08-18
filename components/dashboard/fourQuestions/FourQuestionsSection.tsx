@@ -26,20 +26,53 @@ function stopToggle(event: MouseEvent) {
   event.stopPropagation();
 }
 
-function ExpandIntelligenceRow({ item }: { item: FourQuestionExpandItem }) {
+function ExpandIntelligenceRow({
+  item,
+  questionId,
+}: {
+  item: FourQuestionExpandItem;
+  questionId: FourQuestionId;
+}) {
+  const visual = FOUR_QUESTION_VISUAL[questionId];
+  const emphasis = item.emphasis ?? (item.id === "complete-preview" ? "high" : "supporting");
+  const isComplete = item.id === "complete-preview";
+  const surface = isComplete
+    ? visual.completeTease
+    : emphasis === "high"
+      ? visual.expandHigh
+      : emphasis === "low"
+        ? visual.expandLow
+        : visual.expandSupporting;
+  const labelClass = isComplete
+    ? "text-white/80"
+    : emphasis === "high"
+      ? visual.expandLabel
+      : "text-slate-500";
+  const detailClass = isComplete
+    ? "text-white"
+    : emphasis === "low"
+      ? "text-slate-600"
+      : "text-slate-800";
+  const bulletClass = isComplete ? "text-white/90" : "text-slate-700";
+  const iconClass = isComplete ? "text-white/90" : visual.hubAccentIcon;
+
   const body = (
     <>
       <span className="min-w-0 flex-1">
-        <span className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-500">
+        <span
+          className={`block text-[11px] font-semibold uppercase tracking-[0.1em] ${labelClass}`}
+        >
           {item.label}
         </span>
         {item.detail ? (
-          <span className="mt-0.5 block text-[14px] leading-snug text-slate-800 sm:text-[15px]">
+          <span
+            className={`mt-0.5 block text-[14px] leading-snug sm:text-[15px] ${detailClass}`}
+          >
             {item.detail}
           </span>
         ) : null}
         {item.bullets && item.bullets.length > 0 ? (
-          <ul className="mt-2 space-y-0.5 pl-4 text-[13px] leading-snug text-slate-700">
+          <ul className={`mt-2 space-y-0.5 pl-4 text-[13px] leading-snug ${bulletClass}`}>
             {item.bullets.map((b) => (
               <li key={b}>{b}</li>
             ))}
@@ -48,15 +81,14 @@ function ExpandIntelligenceRow({ item }: { item: FourQuestionExpandItem }) {
       </span>
       {item.href ? (
         <ArrowUpRight
-          className="mt-0.5 h-4 w-4 shrink-0 text-slate-400"
+          className={`mt-0.5 h-4 w-4 shrink-0 ${iconClass}`}
           aria-hidden
         />
       ) : null}
     </>
   );
 
-  const baseClass =
-    "flex min-h-11 w-full items-start gap-2 rounded-xl px-2.5 py-2.5 text-left";
+  const baseClass = `flex min-h-11 w-full items-start gap-2 rounded-xl px-3 py-3 text-left ${surface}`;
 
   if (!item.href) {
     return (
@@ -64,11 +96,16 @@ function ExpandIntelligenceRow({ item }: { item: FourQuestionExpandItem }) {
         className={baseClass}
         data-testid={`four-question-item-${item.id}`}
         data-clickable="false"
+        data-emphasis={emphasis}
       >
         {body}
       </div>
     );
   }
+
+  const clickableClass = `${baseClass} cursor-pointer transition ${
+    isComplete ? "hover:brightness-110" : visual.expandClickable
+  } focus-visible:outline-none focus-visible:ring-2 ${visual.ring}`;
 
   if (item.hrefExternal) {
     return (
@@ -76,10 +113,11 @@ function ExpandIntelligenceRow({ item }: { item: FourQuestionExpandItem }) {
         href={item.href}
         target="_blank"
         rel="noopener noreferrer"
-        className={`${baseClass} cursor-pointer transition hover:bg-black/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/35`}
+        className={clickableClass}
         data-testid={`four-question-item-${item.id}`}
         data-clickable="true"
         data-external="true"
+        data-emphasis={emphasis}
         aria-label={`${item.label}: ${item.detail ?? ""}. Opens in a new tab.`}
         onClick={stopToggle}
       >
@@ -91,9 +129,10 @@ function ExpandIntelligenceRow({ item }: { item: FourQuestionExpandItem }) {
   return (
     <Link
       href={item.href}
-      className={`${baseClass} cursor-pointer transition hover:bg-black/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/35`}
+      className={clickableClass}
       data-testid={`four-question-item-${item.id}`}
       data-clickable="true"
+      data-emphasis={emphasis}
       aria-label={`${item.label}: ${item.detail ?? ""}`}
       onClick={stopToggle}
     >
@@ -102,15 +141,20 @@ function ExpandIntelligenceRow({ item }: { item: FourQuestionExpandItem }) {
   );
 }
 
-function ExploreLink({ question }: { question: FourQuestionAnswer }) {
+function ExploreLink({
+  question,
+}: {
+  question: FourQuestionAnswer;
+}) {
+  const visual = FOUR_QUESTION_VISUAL[question.id];
   return (
     <Link
       href={question.explore.href}
-      className="inline-flex min-h-11 items-center gap-1.5 text-[14px] font-semibold text-slate-900 underline-offset-4 transition hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
+      className={`inline-flex min-h-11 w-full items-center justify-between gap-1.5 rounded-xl px-3 py-2.5 text-[14px] font-semibold ${visual.completeTease} transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 ${visual.ring}`}
       data-testid={`four-question-explore-${question.id}`}
       onClick={stopToggle}
     >
-      {question.explore.label}
+      <span>{question.explore.label}</span>
       <span aria-hidden>→</span>
     </Link>
   );
@@ -187,16 +231,16 @@ function QuestionPanel({
         role="region"
         aria-labelledby={headingId}
         hidden={!expanded}
-        className="space-y-3 px-4 pb-4 sm:px-5 sm:pb-5"
+        className={`space-y-3 px-4 pb-4 sm:px-5 sm:pb-5 ${expanded ? visual.expandPanel : ""}`}
         data-testid={`four-question-expand-${question.id}`}
       >
         {expanded ? (
           <>
             {question.expandItems.length > 0 ? (
-              <ul className="space-y-0.5 border-t border-slate-100 pt-2">
+              <ul className="space-y-2 pt-2">
                 {question.expandItems.map((item) => (
                   <li key={item.id} className="min-w-0">
-                    <ExpandIntelligenceRow item={item} />
+                    <ExpandIntelligenceRow item={item} questionId={question.id} />
                   </li>
                 ))}
               </ul>
@@ -211,7 +255,7 @@ function QuestionPanel({
               </p>
             ))}
 
-            <div className="flex justify-end px-2.5 pt-1">
+            <div className="pt-1">
               <ExploreLink question={question} />
             </div>
           </>

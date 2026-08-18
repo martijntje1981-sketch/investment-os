@@ -79,6 +79,8 @@ function buildEvidenceLayer(profile: ResilienceProfile): IntelligenceTraceLayer 
     detail: `Resilience score ${profile.score}/100${profile.bandLabel ? ` · ${profile.bandLabel}` : ""} is built from ${applicable.length} structural factor${applicable.length === 1 ? "" : "s"}.`,
     bullets,
     presentation: "expand",
+    href: DASHBOARD_DEEP_LINKS.resilienceSleep,
+    emphasis: "supporting",
   };
 }
 
@@ -89,6 +91,8 @@ function buildMeaningLayer(profile: ResilienceProfile): IntelligenceTraceLayer |
       title: "What it means",
       detail: profile.primaryDriverExplanation,
       presentation: "expand",
+      href: DASHBOARD_DEEP_LINKS.resilienceSleep,
+      emphasis: "high",
     };
   }
   return null;
@@ -109,6 +113,7 @@ function buildSensitivityLayer(profile: ResilienceProfile): IntelligenceTraceLay
     detail: `${most.scenarioName} → estimated direct portfolio impact approximately ${most.estimatedPortfolioImpactPercent.toFixed(1)}%${affected}.`,
     presentation: "explore",
     href: DASHBOARD_DEEP_LINKS.scenarioStress,
+    emphasis: "high",
   };
 }
 
@@ -120,6 +125,7 @@ function buildGoalImpactLayer(profile: ResilienceProfile): IntelligenceTraceLaye
     detail: profile.goalContext.summary,
     presentation: "explore",
     href: "/goals",
+    emphasis: "high",
   };
 }
 
@@ -163,6 +169,7 @@ function buildCalculationLayer(profile: ResilienceProfile): IntelligenceTraceLay
     bullets: bullets.length > 0 ? bullets : undefined,
     presentation: "explore",
     href: DASHBOARD_DEEP_LINKS.resilienceSleep,
+    emphasis: "supporting",
   };
 }
 
@@ -181,6 +188,7 @@ function buildConfidenceLayer(profile: ResilienceProfile): IntelligenceTraceLaye
     detail: bullets[0] ?? "Based on currently valued holdings and supported scenarios.",
     bullets: bullets.length > 1 ? bullets.slice(1) : undefined,
     presentation: "explore",
+    emphasis: "low",
   };
 }
 

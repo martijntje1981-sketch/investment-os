@@ -379,9 +379,9 @@ describe("Four Questions builders", () => {
           "Recent pace is historical and is not a forecast of future returns.",
       },
     });
-    expect(q3.support).toBe(
-      "Under your saved 20% planning assumption · recent pace -0.1%",
-    );
+    expect(q3.support).toMatch(/Based on your saved 10% growth assumption/);
+    expect(q3.support).toContain("Pace trails assumption.");
+    expect(q3.support).not.toMatch(/recent pace /i);
     expect(q3.support).not.toMatch(/forecast|will return|expected future/i);
     expect(q3.expandItems.some((row) => row.id === "trace-confidence")).toBe(true);
     expect(q3.explore.label).toBe("Explore full analysis");

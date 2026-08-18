@@ -124,6 +124,10 @@ export function QuestionHubPage({ questionId }: QuestionHubPageProps) {
       goalProgress,
       realityCheck,
       intelligence,
+      newsItems: [
+        ...(payload.portfolioNews ?? []),
+        ...(payload.macroNews ?? []),
+      ],
       pulse: portfolioPulse,
       nextEventLabel: nextEvent?.title?.trim() || null,
       nextEventHref: nextEvent?.title ? "/events" : null,
@@ -136,6 +140,8 @@ export function QuestionHubPage({ questionId }: QuestionHubPageProps) {
     holdings,
     intelligence,
     intelligenceScope,
+    payload.macroNews,
+    payload.portfolioNews,
     payload.upcomingEvents,
     portfolioPulse,
     questionId,
@@ -190,19 +196,16 @@ export function QuestionHubPage({ questionId }: QuestionHubPageProps) {
             </section>
 
             {answer.expandItems.length > 0 ? (
-              <section className="rounded-2xl border border-slate-200/90 bg-white px-4 py-4 shadow-sm sm:px-5 sm:py-5">
-                <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
+              <section className={`rounded-2xl px-4 py-4 shadow-sm sm:px-5 sm:py-5 ${v.expandPanel}`}>
+                <p className={`text-[11px] font-bold uppercase tracking-[0.12em] ${v.expandLabel}`}>
                   Important evidence
                 </p>
-                <ul className="mt-3 divide-y divide-slate-100">
+                <ul className="mt-3 space-y-2">
                   {answer.expandItems.map((item) => (
                     <EvidenceRow
                       key={item.id}
                       item={item}
-                      accentIcon={v.hubAccentIcon}
-                      rowHover={v.hubRowHover}
-                      focusRing={v.ring}
-                      dot={v.hubDot}
+                      visual={v}
                     />
                   ))}
                 </ul>
@@ -285,10 +288,7 @@ function HubHero({ definition }: { definition: FourQuestionDefinition }) {
 
 function EvidenceRow({
   item,
-  accentIcon,
-  rowHover,
-  focusRing,
-  dot,
+  visual,
 }: {
   item: {
     id: string;
@@ -297,26 +297,50 @@ function EvidenceRow({
     bullets?: string[];
     href?: string | null;
     hrefExternal?: boolean;
+    emphasis?: "high" | "supporting" | "low";
   };
-  accentIcon: string;
-  rowHover: string;
-  focusRing: string;
-  dot: string;
+  visual: FourQuestionDefinition["visual"];
 }) {
+  const emphasis =
+    item.emphasis ?? (item.id === "complete-preview" ? "high" : "supporting");
+  const isComplete = item.id === "complete-preview";
+  const surface = isComplete
+    ? visual.completeTease
+    : emphasis === "high"
+      ? visual.expandHigh
+      : emphasis === "low"
+        ? visual.expandLow
+        : visual.expandSupporting;
+  const labelClass = isComplete
+    ? "text-white/80"
+    : emphasis === "high"
+      ? visual.expandLabel
+      : "text-slate-500";
+  const detailClass = isComplete
+    ? "text-white"
+    : emphasis === "low"
+      ? "text-slate-600"
+      : "text-slate-800";
+  const bulletClass = isComplete ? "text-white/90" : "text-slate-600";
+  const iconClass = isComplete ? "text-white/90" : visual.hubAccentIcon;
+
   const body = (
     <>
-      <span className={`mt-2 h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} aria-hidden />
+      <span
+        className={`mt-2 h-1.5 w-1.5 shrink-0 rounded-full ${isComplete ? "bg-white/80" : visual.hubDot}`}
+        aria-hidden
+      />
       <span className="min-w-0 flex-1">
-        <span className="block text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
+        <span className={`block text-[10px] font-bold uppercase tracking-[0.12em] ${labelClass}`}>
           {item.label}
         </span>
         {item.detail ? (
-          <span className="mt-0.5 block text-[14px] leading-snug text-slate-800">
+          <span className={`mt-0.5 block text-[14px] leading-snug ${detailClass}`}>
             {item.detail}
           </span>
         ) : null}
         {item.bullets && item.bullets.length > 0 ? (
-          <ul className="mt-2 space-y-1 pl-4 text-[13px] leading-snug text-slate-600">
+          <ul className={`mt-2 space-y-1 pl-4 text-[13px] leading-snug ${bulletClass}`}>
             {item.bullets.map((b) => (
               <li key={b}>{b}</li>
             ))}
@@ -325,19 +349,26 @@ function EvidenceRow({
       </span>
       {item.href ? (
         <ArrowUpRight
-          className={`mt-0.5 h-4 w-4 shrink-0 ${accentIcon}`}
+          className={`mt-0.5 h-4 w-4 shrink-0 ${iconClass}`}
           aria-hidden
         />
       ) : null}
     </>
   );
 
-  const className =
-    "flex min-h-11 w-full items-start gap-2.5 rounded-xl px-1.5 py-2.5 text-left";
+  const className = `flex min-h-11 w-full items-start gap-2.5 rounded-xl px-2.5 py-3 text-left ${surface}`;
 
   if (!item.href) {
-    return <div className={className}>{body}</div>;
+    return (
+      <div className={className} data-clickable="false">
+        {body}
+      </div>
+    );
   }
+
+  const clickable = `${className} cursor-pointer transition ${
+    isComplete ? "hover:brightness-110" : visual.expandClickable
+  } focus-visible:outline-none focus-visible:ring-2 ${visual.ring}`;
 
   if (item.hrefExternal) {
     return (
@@ -345,8 +376,9 @@ function EvidenceRow({
         href={item.href}
         target="_blank"
         rel="noopener noreferrer"
-        className={`${className} cursor-pointer transition ${rowHover} focus-visible:outline-none focus-visible:ring-2 ${focusRing}`}
+        className={clickable}
         aria-label={`${item.label}. Opens in a new tab.`}
+        data-clickable="true"
       >
         {body}
       </a>
@@ -354,10 +386,7 @@ function EvidenceRow({
   }
 
   return (
-    <Link
-      href={item.href}
-      className={`${className} cursor-pointer transition ${rowHover} focus-visible:outline-none focus-visible:ring-2 ${focusRing}`}
-    >
+    <Link href={item.href} className={clickable} data-clickable="true">
       {body}
     </Link>
   );

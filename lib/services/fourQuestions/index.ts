@@ -42,5 +42,6 @@ export { buildWhatMattersNowQuestion } from "./buildWhatMattersNow";
 export {
   buildAmIOnTrackQuestion,
   formatOnTrackSupportLine,
+  isMeaningfulRecentPace,
 } from "./buildAmIOnTrack";
 export { buildWhatsAheadQuestion } from "./buildWhatsAhead";

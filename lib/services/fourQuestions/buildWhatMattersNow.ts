@@ -20,6 +20,7 @@ import type {
   FourQuestionAnswer,
   FourQuestionExpandItem,
 } from "@/lib/services/fourQuestions/types";
+import type { IntelligenceTraceLayer } from "@/lib/services/intelligenceTrace";
 import type { ResilienceProfile } from "@/lib/services/resilience";
 import type {
   GoalSettings,
@@ -38,6 +39,7 @@ export function buildWhatMattersNowQuestion(input: {
   hasSavedGoal: boolean;
   resilienceProfile: ResilienceProfile | null;
   avoidDailyDriverSymbol?: string | null;
+  relevantContext?: IntelligenceTraceLayer | null;
 }): FourQuestionAnswer {
   const { scope, holdings, intelligence, cryptoDashboardLine } = input;
 
@@ -121,6 +123,7 @@ export function buildWhatMattersNowQuestion(input: {
           ? `${leadingWeight.weightPercent.toFixed(1)}% of portfolio value currently sits in one holding.`
         : null;
 
+  const exploreHref = fourQuestionHubPath("what_matters_now");
   const trace = buildWhatMattersTrace({
     insight: answer,
     intelligence,
@@ -130,6 +133,7 @@ export function buildWhatMattersNowQuestion(input: {
     goal: input.goal,
     hasSavedGoal: false,
     resilienceProfile: input.resilienceProfile,
+    relevantContext: input.relevantContext,
   });
 
   const expandItems: FourQuestionExpandItem[] =
@@ -137,6 +141,7 @@ export function buildWhatMattersNowQuestion(input: {
       trace,
       questionId: "what_matters_now",
       depth: "complete",
+      exploreHref,
     }) ?? [];
 
   return {
@@ -149,7 +154,7 @@ export function buildWhatMattersNowQuestion(input: {
     disclosures: [],
     explore: {
       label: "Explore full analysis",
-      href: fourQuestionHubPath("what_matters_now"),
+      href: exploreHref,
     },
     quiet,
     scope,

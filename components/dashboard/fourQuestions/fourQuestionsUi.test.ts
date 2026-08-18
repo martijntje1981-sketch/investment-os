@@ -31,7 +31,9 @@ describe("Four Questions Dashboard UI wiring", () => {
     expect(section).toContain("data-visual={question.id}");
     expect(section).toContain('data-testid="four-questions-stack"');
     expect(section).toContain("Your portfolio in four questions");
-    expect(section).toContain("data-intelligence-depth={depth}");
+    expect(section).toContain("expandHigh");
+    expect(section).toContain("completeTease");
+    expect(section).toContain("data-emphasis");
   });
 
   it("keeps Explore inside the expanded state with hub deep links", () => {

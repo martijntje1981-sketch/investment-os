@@ -9,6 +9,7 @@ import {
   buildWhatHappenedTrace,
   traceToExpandItems,
 } from "@/lib/services/intelligenceTrace";
+import type { IntelligenceTraceLayer } from "@/lib/services/intelligenceTrace";
 import { buildPortfolioPerformanceAttribution } from "@/lib/services/performanceAttribution";
 import type { PortfolioPulseResult } from "@/lib/services/portfolio/periodScores/types";
 import type {
@@ -27,6 +28,7 @@ export function buildWhatHappenedQuestion(input: {
   scope: IntelligenceScopeId;
   holdings: StoredPortfolioHolding[];
   pulse?: PortfolioPulseResult | null;
+  relevantContext?: IntelligenceTraceLayer | null;
 }): FourQuestionAnswer {
   const { scope, holdings, pulse } = input;
   const daily = summarizeDailyPerformance(holdings);
@@ -85,15 +87,18 @@ export function buildWhatHappenedQuestion(input: {
   void topNeg;
   void pulse;
 
+  const exploreHref = fourQuestionHubPath("what_happened");
   const trace = buildWhatHappenedTrace({
     insight: `${answer}${support ? ` · ${support}` : ""}`,
     daily,
     attribution,
+    relevantContext: input.relevantContext,
   });
   const expandItems: FourQuestionExpandItem[] = traceToExpandItems({
     trace,
     questionId: "what_happened",
     depth: "complete",
+    exploreHref,
   });
 
   const disclosures: string[] = [];
@@ -115,7 +120,7 @@ export function buildWhatHappenedQuestion(input: {
     disclosures,
     explore: {
       label: "Explore full analysis",
-      href: fourQuestionHubPath("what_happened"),
+      href: exploreHref,
     },
     quiet,
     scope,

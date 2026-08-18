@@ -50,12 +50,15 @@ export function buildOnTrackTrace(input: {
       bullets: evidenceBullets,
       presentation: "expand",
       href: "/goals",
+      emphasis: "supporting",
     },
     {
       id: "meaning",
       title: "What it means",
       detail: progress.summary,
       presentation: "expand",
+      href: "/goals",
+      emphasis: "high",
     },
   ];
 
@@ -70,6 +73,7 @@ export function buildOnTrackTrace(input: {
       detail: `Under your current assumptions, estimated completion is ${progress.estimatedCompletionLabel}.`,
       presentation: "expand",
       href: "/goals",
+      emphasis: "high",
     });
   }
 
@@ -95,6 +99,7 @@ export function buildOnTrackTrace(input: {
           detail: `Under ${resilienceProfile.mostSensitive.scenarioName}, goal progress would move from approximately ${goalSensitivity.currentProgressPercent.toFixed(1)}% to ${goalSensitivity.stressedProgressPercent.toFixed(1)}%.`,
           presentation: "explore",
           href: DASHBOARD_DEEP_LINKS.scenarioStress,
+          emphasis: "high",
         });
       }
     }
@@ -121,6 +126,7 @@ export function buildOnTrackTrace(input: {
     bullets: calcBullets,
     presentation: "explore",
     href: "/goals",
+    emphasis: "supporting",
   });
 
   const confidenceBullets: string[] = [];
@@ -150,6 +156,7 @@ export function buildOnTrackTrace(input: {
     detail: confidenceBullets[0],
     bullets: confidenceBullets.length > 1 ? confidenceBullets.slice(1) : undefined,
     presentation: "explore",
+    emphasis: "low",
   });
 
   return {

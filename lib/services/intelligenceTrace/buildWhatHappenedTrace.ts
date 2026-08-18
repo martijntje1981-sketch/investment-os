@@ -9,10 +9,109 @@ function formatSignedPercent(value: number): string {
   return `${sign}${rounded.toFixed(1)}%`;
 }
 
+function formatContributionPp(value: number): string {
+  const rounded = Math.round(value * 10) / 10;
+  const sign = rounded > 0 ? "+" : "";
+  return `${sign}${rounded.toFixed(1)} pp`;
+}
+
+function buildWhatHappenedMeaning(input: {
+  dailyPercent: number;
+  dominant: PortfolioPerformanceAttribution["contributors"][number] | null;
+  positiveCount: number;
+  negativeCount: number;
+  includedCount: number;
+  totalReturnPercent: number | null;
+}): IntelligenceTraceLayer | null {
+  const { dailyPercent, dominant, positiveCount, negativeCount, includedCount } =
+    input;
+  const name = dominant?.name || dominant?.symbol || null;
+  const contribution = dominant?.contributionPp ?? null;
+  const share =
+    contribution != null &&
+    input.totalReturnPercent != null &&
+    Math.abs(input.totalReturnPercent) >= 0.05
+      ? Math.abs(contribution) / Math.abs(input.totalReturnPercent)
+      : null;
+  const concentrated = share != null && share >= 0.5;
+  const holdingsLabel =
+    includedCount > 0
+      ? `${includedCount} holding${includedCount === 1 ? "" : "s"}`
+      : "your holdings";
+
+  if (Math.abs(dailyPercent) < 0.15 && positiveCount > 0 && negativeCount > 0) {
+    const gainer = name && (contribution ?? 0) > 0 ? name : null;
+    return {
+      id: "meaning",
+      title: "What it means",
+      detail: gainer
+        ? `Your portfolio barely moved, but this was not a quiet day: gains in ${gainer} offset losses elsewhere.`
+        : `Your portfolio barely moved, but this was not a quiet day: gains and losses across ${holdingsLabel} largely offset each other.`,
+      presentation: "expand",
+      href: DASHBOARD_DEEP_LINKS.portfolioPerformance,
+      emphasis: "high",
+    };
+  }
+
+  if (
+    concentrated &&
+    name &&
+    contribution != null &&
+    negativeCount >= 2 &&
+    dailyPercent <= 0 &&
+    contribution > 0
+  ) {
+    return {
+      id: "meaning",
+      title: "What it means",
+      detail: `${name} added ${formatContributionPp(contribution)}, but ${negativeCount} of ${holdingsLabel} fell. The portfolio’s small overall ${formatSignedPercent(dailyPercent)} therefore masks broader weakness beneath the headline number.`,
+      presentation: "expand",
+      href: DASHBOARD_DEEP_LINKS.portfolioPerformance,
+      emphasis: "high",
+    };
+  }
+
+  if (concentrated && name && contribution != null) {
+    return {
+      id: "meaning",
+      title: "What it means",
+      detail: `The move is concentrated rather than broad: ${name} contributed ${formatContributionPp(contribution)}, so today’s ${formatSignedPercent(dailyPercent)} is being driven by one exposure rather than the overall book.`,
+      presentation: "expand",
+      href: DASHBOARD_DEEP_LINKS.portfolioPerformance,
+      emphasis: "high",
+    };
+  }
+
+  if (positiveCount > 0 && negativeCount > 0) {
+    return {
+      id: "meaning",
+      title: "What it means",
+      detail: `Today’s ${formatSignedPercent(dailyPercent)} came from a mixed book — ${positiveCount} holding${positiveCount === 1 ? "" : "s"} up and ${negativeCount} down — rather than one isolated exposure.`,
+      presentation: "expand",
+      href: DASHBOARD_DEEP_LINKS.portfolioPerformance,
+      emphasis: "high",
+    };
+  }
+
+  if (share != null && share < 0.5) {
+    return {
+      id: "meaning",
+      title: "What it means",
+      detail: "Today's result came from a mix of contributors rather than one isolated holding.",
+      presentation: "expand",
+      href: DASHBOARD_DEEP_LINKS.portfolioPerformance,
+      emphasis: "high",
+    };
+  }
+
+  return null;
+}
+
 export function buildWhatHappenedTrace(input: {
   insight: string;
   daily: DailyPerformanceSnapshot;
   attribution: PortfolioPerformanceAttribution;
+  relevantContext?: IntelligenceTraceLayer | null;
 }): IntelligenceTrace | null {
   const { daily, attribution, insight } = input;
   if (!daily.hasDailyData || attribution.status !== "supported") return null;
@@ -34,6 +133,7 @@ export function buildWhatHappenedTrace(input: {
   const negativeCount = attribution.holdings.filter(
     (row) => (row.contributionPp ?? 0) < 0,
   ).length;
+  const includedCount = attribution.holdings.filter((row) => row.included).length;
 
   const evidenceBullets = [
     `Portfolio move: ${formatSignedPercent(daily.todayPercent)}`,
@@ -59,39 +159,28 @@ export function buildWhatHappenedTrace(input: {
     `Breadth: ${positiveCount} positive contributor${positiveCount === 1 ? "" : "s"}, ${negativeCount} negative contributor${negativeCount === 1 ? "" : "s"}`,
   );
 
-  const layers: IntelligenceTraceLayer[] = [
-    {
-      id: "evidence",
-      title: "Evidence",
-      detail: "Today's move is traced directly to holding-level attribution from the currently priced portfolio.",
-      bullets: evidenceBullets,
-      presentation: "expand",
-      href: DASHBOARD_DEEP_LINKS.portfolioPerformance,
-    },
-  ];
+  const meaning = buildWhatHappenedMeaning({
+    dailyPercent: daily.todayPercent,
+    dominant,
+    positiveCount,
+    negativeCount,
+    includedCount,
+    totalReturnPercent: attribution.totalReturnPercent,
+  });
 
-  if (dominant?.contributionPp != null && attribution.totalReturnPercent != null) {
-    const share =
-      Math.abs(attribution.totalReturnPercent) >= 0.05
-        ? Math.abs(dominant.contributionPp) /
-          Math.abs(attribution.totalReturnPercent)
-        : null;
-    if (share != null && share >= 0.5) {
-      layers.push({
-        id: "meaning",
-        title: "What it means",
-        detail: "Most of today's portfolio move came from one exposure rather than a broad move across the portfolio.",
-        presentation: "expand",
-      });
-    } else {
-      layers.push({
-        id: "meaning",
-        title: "What it means",
-        detail: "Today's result came from a mix of contributors rather than one isolated holding.",
-        presentation: "expand",
-      });
-    }
-  }
+  const layers: IntelligenceTraceLayer[] = [];
+  if (meaning) layers.push(meaning);
+  if (input.relevantContext) layers.push(input.relevantContext);
+
+  layers.push({
+    id: "evidence",
+    title: "Evidence",
+    detail: "Today's move is traced directly to holding-level attribution from the currently priced portfolio.",
+    bullets: evidenceBullets,
+    presentation: "expand",
+    href: DASHBOARD_DEEP_LINKS.portfolioPerformance,
+    emphasis: "supporting",
+  });
 
   layers.push({
     id: "calculation",
@@ -104,6 +193,7 @@ export function buildWhatHappenedTrace(input: {
     ],
     presentation: "explore",
     href: DASHBOARD_DEEP_LINKS.portfolioPerformance,
+    emphasis: "supporting",
   });
 
   const confidenceBullets: string[] = [];
@@ -127,6 +217,7 @@ export function buildWhatHappenedTrace(input: {
       "Attribution is based on currently priced holdings only.",
     bullets: confidenceBullets.length > 1 ? confidenceBullets.slice(1) : undefined,
     presentation: "explore",
+    emphasis: "low",
   });
 
   return {

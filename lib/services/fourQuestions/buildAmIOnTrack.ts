@@ -17,21 +17,47 @@ import type {
 import type { ResilienceProfile } from "@/lib/services/resilience";
 import type { GoalSettings } from "@/lib/types/portfolioStorage";
 
-function formatPacePercent(value: number): string {
-  const rounded = Math.round(value * 10) / 10;
-  const sign = rounded > 0 ? "+" : "";
-  return `${sign}${rounded.toFixed(1)}%`;
+function formatAssumptionPercent(value: number): string {
+  const rounded =
+    Number.isInteger(value) || Math.abs(value - Math.round(value)) < 1e-9
+      ? String(Math.round(value))
+      : (Math.round(value * 10) / 10).toFixed(1);
+  return `${rounded}%`;
+}
+
+/** True when Reality Check history is long enough to show a pace comparison. */
+export function isMeaningfulRecentPace(
+  realityCheck: GoalRealityCheck | null | undefined,
+): boolean {
+  if (!realityCheck?.available) return false;
+  if (realityCheck.historyQuality === "short") return false;
+  if (realityCheck.yearsRepresented < 0.25) return false;
+  return true;
 }
 
 /**
- * Glance support: keep on-track status separate from realized pace wording.
- * Does not change goal mathematics — only clarifies that pace ≠ assumption.
+ * Glance support: saved planning assumption first; recent pace only when meaningful.
  */
 export function formatOnTrackSupportLine(input: {
-  expectedAnnualReturnPercent: number;
-  recentAnnualizedPacePercent: number;
-}): string {
-  return `Under your saved ${input.expectedAnnualReturnPercent}% planning assumption · recent pace ${formatPacePercent(input.recentAnnualizedPacePercent)}`;
+  expectedAnnualReturnPercent: number | null;
+  realityCheck: GoalRealityCheck | null;
+}): string | null {
+  const parts: string[] = [];
+  if (input.expectedAnnualReturnPercent != null) {
+    parts.push(
+      `Based on your saved ${formatAssumptionPercent(input.expectedAnnualReturnPercent)} growth assumption.`,
+    );
+  }
+
+  if (isMeaningfulRecentPace(input.realityCheck) && input.realityCheck?.available) {
+    parts.push(input.realityCheck.conclusion);
+  } else if (input.expectedAnnualReturnPercent != null) {
+    parts.push(
+      "Recent portfolio history isn’t yet sufficient for a meaningful pace comparison.",
+    );
+  }
+
+  return parts.length > 0 ? parts.join(" ") : null;
 }
 
 export function buildAmIOnTrackQuestion(input: {
@@ -65,17 +91,14 @@ export function buildAmIOnTrackQuestion(input: {
   }
 
   const answer = card.status;
-  let support = card.contextLine ?? card.conclusion;
-
   const savedAssumption = getExpectedReturnAssumption(goal);
+  const polished = formatOnTrackSupportLine({
+    expectedAnnualReturnPercent: savedAssumption,
+    realityCheck,
+  });
+  const support = polished ?? card.contextLine ?? card.conclusion;
 
-  if (realityCheck?.available && savedAssumption !== null) {
-    support = formatOnTrackSupportLine({
-      expectedAnnualReturnPercent: realityCheck.expectedAnnualReturnPercent,
-      recentAnnualizedPacePercent: realityCheck.comparableAnnualPercent,
-    });
-  }
-
+  const exploreHref = fourQuestionHubPath("am_i_on_track");
   const trace = buildOnTrackTrace({
     insight: answer,
     progress,
@@ -87,6 +110,7 @@ export function buildAmIOnTrackQuestion(input: {
     trace,
     questionId: "am_i_on_track",
     depth: "complete",
+    exploreHref,
   });
   if (
     contributionSummaryLine?.trim() &&
@@ -97,11 +121,12 @@ export function buildAmIOnTrackQuestion(input: {
       label: "Contributions",
       detail: contributionSummaryLine.trim(),
       href: PORTFOLIO_HISTORY_PATH,
+      emphasis: "supporting",
     });
   }
 
   const disclosures: string[] = [];
-  if (realityCheck?.available) {
+  if (isMeaningfulRecentPace(realityCheck) && realityCheck?.available) {
     disclosures.push(realityCheck.disclaimer);
   } else {
     disclosures.push(
@@ -121,7 +146,7 @@ export function buildAmIOnTrackQuestion(input: {
     disclosures,
     explore: {
       label: "Explore full analysis",
-      href: fourQuestionHubPath("am_i_on_track"),
+      href: exploreHref,
     },
     quiet: false,
     scope,

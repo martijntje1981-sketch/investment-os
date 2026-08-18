@@ -33,6 +33,7 @@ import { previousClosePhraseFromContextLine } from "@/lib/client/dailyPortfolioB
 import { areMajorMarketsClosed } from "@/lib/client/todaysDecision";
 import { useAuthenticatedFirstName } from "@/lib/client/useAuthenticatedFirstName";
 import { useInvestmentIntelligence } from "@/lib/client/useInvestmentIntelligence";
+import { usePerspectivesFeed } from "@/lib/client/usePerspectivesFeed";
 import { useGoalProgress } from "@/lib/client/useGoalProgress";
 import { useGoalRealityCheck } from "@/lib/client/useGoalRealityCheck";
 import { useUserGoal } from "@/lib/client/useUserGoal";
@@ -120,6 +121,15 @@ export default function DashboardPage() {
     intelligence,
     payload,
   } = useInvestmentIntelligence(holdings, userSub, holdings.length > 0);
+  const perspectivesHoldingsKey = useMemo(
+    () =>
+      holdings
+        .map((holding) => holding.symbol)
+        .sort()
+        .join("|"),
+    [holdings],
+  );
+  const perspectivesFeed = usePerspectivesFeed(perspectivesHoldingsKey);
   const { lastRefreshedAt: snapshotRefreshedAt } = useMarketSnapshotMetadata(
     portfolioReady && holdings.length > 0,
   );
@@ -307,6 +317,11 @@ export default function DashboardPage() {
       goalProgress,
       realityCheck,
       intelligence,
+      newsItems: [
+        ...(payload.portfolioNews ?? []),
+        ...(payload.macroNews ?? []),
+      ],
+      perspectiveVideos: perspectivesFeed.videos,
       pulse: portfolioPulse,
       nextEventLabel,
       nextEventHref: nextEventLabel ? "/events" : null,
@@ -318,7 +333,10 @@ export default function DashboardPage() {
     holdings,
     intelligence,
     intelligenceScope,
+    payload.macroNews,
+    payload.portfolioNews,
     payload.upcomingEvents,
+    perspectivesFeed.videos,
     portfolioPulse,
     productAccess.intelligenceDepth,
     realityCheck,

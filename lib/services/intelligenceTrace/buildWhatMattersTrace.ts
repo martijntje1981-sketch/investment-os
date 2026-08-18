@@ -147,8 +147,10 @@ function resolveQ2Subject(input: {
 function buildMeaningLayer(input: {
   subject: Q2Subject;
   portfolioMovePercent: number | null;
+  holdingCount: number;
+  weakerCount: number;
 }): IntelligenceTraceLayer | null {
-  const { subject, portfolioMovePercent } = input;
+  const { subject, portfolioMovePercent, holdingCount, weakerCount } = input;
 
   if (subject.kind === "portfolio_move") {
     if (subject.movePercent == null || !Number.isFinite(subject.movePercent)) {
@@ -159,36 +161,68 @@ function buildMeaningLayer(input: {
       title: "What it means",
       detail: `Today's portfolio move is large enough to stand out from a normal day, so the overall portfolio deserves attention rather than a single isolated holding.`,
       presentation: "expand",
+      href: DASHBOARD_DEEP_LINKS.portfolioExposure,
+      emphasis: "high",
     };
   }
 
   const { name, weightPercent, contributionPp } = subject;
-  if (weightPercent == null || contributionPp == null) return null;
+  if (weightPercent == null) return null;
 
-  const absPp = Math.abs(contributionPp);
+  const absPp = contributionPp != null ? Math.abs(contributionPp) : null;
+  const structural =
+    weightPercent >= 35
+      ? `${name}’s ${formatPercent(weightPercent)} portfolio weight means a modest ${name} move can dominate the daily result`
+      : weightPercent >= 20
+        ? `${name} is a large enough position (${formatPercent(weightPercent)}) that it can shape the day’s headline`
+        : null;
+
+  if (structural && weakerCount >= 2 && holdingCount >= 3) {
+    return {
+      id: "meaning",
+      title: "What it means",
+      detail: `${structural}; ${weakerCount} of your ${holdingCount} holdings were weaker underneath.`,
+      presentation: "expand",
+      href: DASHBOARD_DEEP_LINKS.portfolioExposure,
+      emphasis: "high",
+    };
+  }
+
+  if (structural) {
+    return {
+      id: "meaning",
+      title: "What it means",
+      detail: `${structural}.`,
+      presentation: "expand",
+      href: DASHBOARD_DEEP_LINKS.portfolioExposure,
+      emphasis: "high",
+    };
+  }
+
   const moveAbs =
     portfolioMovePercent != null && Number.isFinite(portfolioMovePercent)
       ? Math.abs(portfolioMovePercent)
       : null;
 
-  if (moveAbs != null && moveAbs >= 0.05) {
-    const share = absPp / moveAbs;
-    if (share >= 0.45) {
-      return {
-        id: "meaning",
-        title: "What it means",
-        detail: `${name} is explaining a large share of today's portfolio move while representing ${weightPercent.toFixed(1)}% of portfolio value.`,
-        presentation: "expand",
-      };
-    }
-  }
-
-  if (weightPercent >= 20 && absPp >= 0.12) {
+  if (absPp != null && moveAbs != null && moveAbs >= 0.05 && absPp / moveAbs >= 0.45) {
     return {
       id: "meaning",
       title: "What it means",
-      detail: `${name} combines meaningful portfolio weight (${weightPercent.toFixed(1)}%) with a material move contribution today (${formatContributionPp(contributionPp)}).`,
+      detail: `${name} is explaining a large share of today's portfolio move while representing ${formatPercent(weightPercent)} of portfolio value.`,
       presentation: "expand",
+      href: DASHBOARD_DEEP_LINKS.portfolioExposure,
+      emphasis: "high",
+    };
+  }
+
+  if (weightPercent >= 20 && absPp != null && absPp >= 0.12) {
+    return {
+      id: "meaning",
+      title: "What it means",
+      detail: `${name} combines meaningful portfolio weight (${formatPercent(weightPercent)}) with a material move contribution today (${formatContributionPp(contributionPp ?? 0)}).`,
+      presentation: "expand",
+      href: DASHBOARD_DEEP_LINKS.portfolioExposure,
+      emphasis: "high",
     };
   }
 
@@ -227,6 +261,7 @@ function buildSensitivityLayer(
     detail: `In Tobailey's ${most.scenarioName} scenario, the estimated direct portfolio impact is approximately ${impact.toFixed(1)}%${affected}.`,
     presentation: "explore",
     href: DASHBOARD_DEEP_LINKS.scenarioStress,
+    emphasis: "high",
   };
 }
 
@@ -246,6 +281,7 @@ function buildGoalImpactLayer(input: {
       detail: context.summary,
       presentation: "explore",
       href: "/goals",
+      emphasis: "high",
     };
   }
 
@@ -278,6 +314,7 @@ function buildGoalImpactLayer(input: {
     detail: `Under ${input.resilience.mostSensitive.scenarioName}, goal progress would move from approximately ${sensitivity.currentProgressPercent.toFixed(1)}% to ${sensitivity.stressedProgressPercent.toFixed(1)}%.`,
     presentation: "explore",
     href: "/goals",
+    emphasis: "high",
   };
 }
 
@@ -317,6 +354,7 @@ function buildConfidenceLayer(
     detail: bullets[0] ?? "Based on currently priced holdings.",
     bullets: bullets.length > 1 ? bullets.slice(1) : undefined,
     presentation: "explore",
+    emphasis: "low",
   };
 }
 
@@ -329,6 +367,7 @@ export function buildWhatMattersTrace(input: {
   hasSavedGoal?: boolean;
   /** Pre-built profile avoids duplicate scenario runs when caller already has one. */
   resilienceProfile?: ResilienceProfile | null;
+  relevantContext?: IntelligenceTraceLayer | null;
 }): IntelligenceTrace | null {
   const { intelligence, view, insight } = input;
   const subject = resolveQ2Subject({ insight, intelligence, view });
@@ -382,6 +421,19 @@ export function buildWhatMattersTrace(input: {
     }
   }
 
+  const weakerCount =
+    subject.kind === "holding" && (subject.contributionPp ?? 0) >= 0
+      ? intelligence.topDetractors.length
+      : intelligence.topContributors.length;
+  const meaning = buildMeaningLayer({
+    subject,
+    portfolioMovePercent: intelligence.portfolioMove?.todayPercent ?? null,
+    holdingCount: Math.max(input.holdings.length, intelligence.holdingsWeights.length),
+    weakerCount,
+  });
+  if (meaning) layers.push(meaning);
+  if (input.relevantContext) layers.push(input.relevantContext);
+
   if (evidenceBullets.length > 0) {
     layers.push({
       id: "evidence",
@@ -392,14 +444,10 @@ export function buildWhatMattersTrace(input: {
           : "The portfolio-level move is supported by measurable portfolio facts today.",
       bullets: evidenceBullets,
       presentation: "expand",
+      href: DASHBOARD_DEEP_LINKS.portfolioExposure,
+      emphasis: "supporting",
     });
   }
-
-  const meaning = buildMeaningLayer({
-    subject,
-    portfolioMovePercent: intelligence.portfolioMove?.todayPercent ?? null,
-  });
-  if (meaning) layers.push(meaning);
 
   const resilience =
     input.resilienceProfile ??
@@ -431,6 +479,7 @@ export function buildWhatMattersTrace(input: {
     ],
     presentation: "explore",
     href: DASHBOARD_DEEP_LINKS.portfolioPerformance,
+    emphasis: "supporting",
   });
 
   layers.push(buildConfidenceLayer(intelligence, view));

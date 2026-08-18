@@ -22,6 +22,8 @@ export type FourQuestionExploreLink = {
   href: string;
 };
 
+export type FourQuestionExpandEmphasis = "high" | "supporting" | "low";
+
 export type FourQuestionExpandItem = {
   id: string;
   label: string;
@@ -32,6 +34,8 @@ export type FourQuestionExpandItem = {
   href?: string | null;
   /** True when href is a verified external article URL. */
   hrefExternal?: boolean;
+  /** Visual scan weight. Defaults to supporting. */
+  emphasis?: FourQuestionExpandEmphasis;
 };
 
 export type FourQuestionAnswer = {
@@ -94,6 +98,14 @@ export const FOUR_QUESTION_VISUAL: Record<
     hubAccentIcon: string;
     hubRowHover: string;
     hubDot: string;
+    /** Expanded-state wash behind trace rows. */
+    expandPanel: string;
+    expandHigh: string;
+    expandSupporting: string;
+    expandLow: string;
+    expandClickable: string;
+    expandLabel: string;
+    completeTease: string;
   }
 > = {
   what_happened: {
@@ -125,6 +137,17 @@ export const FOUR_QUESTION_VISUAL: Record<
     hubAccentIcon: "text-cyan-600",
     hubRowHover: "hover:bg-cyan-50/90",
     hubDot: "bg-cyan-500",
+    expandPanel:
+      "border-t border-cyan-200/60 bg-gradient-to-b from-cyan-50/90 via-white to-white",
+    expandHigh:
+      "border border-cyan-300/55 bg-gradient-to-br from-cyan-100/95 via-cyan-50/70 to-white border-l-[4px] border-l-cyan-700",
+    expandSupporting:
+      "border-l-[3px] border-l-cyan-400/80 bg-cyan-50/45",
+    expandLow: "border-l-2 border-l-slate-300 bg-slate-50/70",
+    expandClickable: "hover:bg-cyan-100/75 hover:shadow-sm",
+    expandLabel: "text-cyan-800",
+    completeTease:
+      "border border-cyan-700/30 bg-gradient-to-r from-cyan-800 via-cyan-700 to-sky-600 text-white shadow-sm shadow-cyan-900/20",
   },
   what_matters_now: {
     panel:
@@ -155,6 +178,17 @@ export const FOUR_QUESTION_VISUAL: Record<
     hubAccentIcon: "text-violet-600",
     hubRowHover: "hover:bg-violet-50/90",
     hubDot: "bg-violet-500",
+    expandPanel:
+      "border-t border-violet-200/60 bg-gradient-to-b from-violet-50/90 via-white to-white",
+    expandHigh:
+      "border border-violet-300/55 bg-gradient-to-br from-violet-100/95 via-violet-50/70 to-white border-l-[4px] border-l-violet-700",
+    expandSupporting:
+      "border-l-[3px] border-l-violet-400/80 bg-violet-50/45",
+    expandLow: "border-l-2 border-l-slate-300 bg-slate-50/70",
+    expandClickable: "hover:bg-violet-100/75 hover:shadow-sm",
+    expandLabel: "text-violet-800",
+    completeTease:
+      "border border-violet-700/30 bg-gradient-to-r from-violet-800 via-violet-700 to-fuchsia-600 text-white shadow-sm shadow-violet-900/20",
   },
   am_i_on_track: {
     panel:
@@ -185,6 +219,17 @@ export const FOUR_QUESTION_VISUAL: Record<
     hubAccentIcon: "text-amber-700",
     hubRowHover: "hover:bg-amber-50/90",
     hubDot: "bg-amber-500",
+    expandPanel:
+      "border-t border-amber-200/60 bg-gradient-to-b from-amber-50/90 via-white to-white",
+    expandHigh:
+      "border border-amber-300/55 bg-gradient-to-br from-amber-100/95 via-amber-50/70 to-white border-l-[4px] border-l-amber-700",
+    expandSupporting:
+      "border-l-[3px] border-l-amber-400/80 bg-amber-50/45",
+    expandLow: "border-l-2 border-l-slate-300 bg-slate-50/70",
+    expandClickable: "hover:bg-amber-100/75 hover:shadow-sm",
+    expandLabel: "text-amber-900",
+    completeTease:
+      "border border-amber-700/30 bg-gradient-to-r from-amber-800 via-amber-600 to-yellow-500 text-white shadow-sm shadow-amber-900/20",
   },
   whats_ahead: {
     panel:
@@ -215,5 +260,16 @@ export const FOUR_QUESTION_VISUAL: Record<
     hubAccentIcon: "text-teal-600",
     hubRowHover: "hover:bg-teal-50/90",
     hubDot: "bg-teal-500",
+    expandPanel:
+      "border-t border-teal-200/60 bg-gradient-to-b from-teal-50/90 via-white to-white",
+    expandHigh:
+      "border border-teal-300/55 bg-gradient-to-br from-teal-100/95 via-teal-50/70 to-white border-l-[4px] border-l-teal-700",
+    expandSupporting:
+      "border-l-[3px] border-l-teal-400/80 bg-teal-50/45",
+    expandLow: "border-l-2 border-l-slate-300 bg-slate-50/70",
+    expandClickable: "hover:bg-teal-100/75 hover:shadow-sm",
+    expandLabel: "text-teal-800",
+    completeTease:
+      "border border-teal-700/30 bg-gradient-to-r from-teal-800 via-teal-600 to-emerald-500 text-white shadow-sm shadow-teal-900/20",
   },
 };

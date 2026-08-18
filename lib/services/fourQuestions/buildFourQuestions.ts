@@ -25,6 +25,9 @@ import type { InvestmentIntelligence } from "@/lib/services/news/investmentIntel
 import { buildPersonalIntelligenceToday } from "@/lib/services/personalIntelligence";
 import type { PortfolioPulseResult } from "@/lib/services/portfolio/periodScores/types";
 import { buildPortfolioExposureAllocation } from "@/lib/services/classification";
+import { selectRelevantContext } from "@/lib/services/intelligenceTrace";
+import type { PerspectiveVideo } from "@/lib/services/perspectives/types";
+import type { NewsContentItem } from "@/lib/types/newsContent";
 import type {
   GoalSettings,
   StoredPortfolioHolding,
@@ -45,6 +48,10 @@ export type BuildFourQuestionsInput = {
   goalProgress: GoalProgress;
   realityCheck?: GoalRealityCheck | null;
   intelligence?: InvestmentIntelligence | null;
+  /** Already-fetched news items only — never fetched here. */
+  newsItems?: NewsContentItem[] | null;
+  /** Already-fetched Perspective videos only — never fetched here. */
+  perspectiveVideos?: PerspectiveVideo[] | null;
   pulse?: PortfolioPulseResult | null;
   cryptoDashboardLine?: string | null;
   contributionSummaryLine?: string | null;
@@ -111,11 +118,44 @@ export function buildFourQuestions(
           Math.abs(right.contributionPp ?? 0) - Math.abs(left.contributionPp ?? 0),
       )[0];
 
+  const q1Subject = {
+    symbols: dominantToday?.symbol ? [dominantToday.symbol] : [],
+    names: dominantToday?.name ? [dominantToday.name] : [],
+  };
+  const leadingWeight = personalIntelligence?.holdingsWeights
+    .slice()
+    .sort((left, right) => right.weightPercent - left.weightPercent)[0];
+  const q2Subject = {
+    symbols: leadingWeight?.symbol
+      ? [leadingWeight.symbol]
+      : q1Subject.symbols,
+    names: leadingWeight?.name ? [leadingWeight.name] : q1Subject.names,
+  };
+
+  const q1Context = selectRelevantContext({
+    subject: q1Subject,
+    newsItems: input.newsItems,
+    intelligence: input.intelligence ?? null,
+    perspectiveVideos: input.perspectiveVideos,
+    holdings: scopedHoldings,
+    prefer: "news",
+  });
+  const q2Context = selectRelevantContext({
+    subject: q2Subject,
+    newsItems: input.newsItems,
+    intelligence: input.intelligence ?? null,
+    perspectiveVideos: input.perspectiveVideos,
+    holdings: scopedHoldings,
+    excludeHrefs: q1Context?.layer.href ? [q1Context.layer.href] : [],
+    prefer: "perspective",
+  });
+
   const questions = [
     buildWhatHappenedQuestion({
       scope,
       holdings: scopedHoldings,
       pulse: input.pulse,
+      relevantContext: q1Context?.layer ?? null,
     }),
     buildWhatMattersNowQuestion({
       scope,
@@ -126,6 +166,7 @@ export function buildFourQuestions(
       hasSavedGoal: input.hasSavedGoal,
       resilienceProfile,
       avoidDailyDriverSymbol: dominantToday?.symbol ?? null,
+      relevantContext: q2Context?.layer ?? null,
     }),
     buildAmIOnTrackQuestion({
       scope,

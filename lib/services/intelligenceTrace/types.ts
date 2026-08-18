@@ -7,6 +7,8 @@ export type IntelligenceTraceLayerId =
   | "evidence"
   | "change"
   | "meaning"
+  | "relevant_context"
+  | "perspective"
   | "sensitivity"
   | "goal_impact"
   | "calculation"
@@ -14,6 +16,9 @@ export type IntelligenceTraceLayerId =
 
 /** Where the layer appears in the Four Questions stack. */
 export type IntelligenceTracePresentation = "expand" | "explore";
+
+/** Visual scan weight in expand/hub rows. */
+export type IntelligenceTraceEmphasis = "high" | "supporting" | "low";
 
 export type IntelligenceTraceLayer = {
   id: IntelligenceTraceLayerId;
@@ -24,6 +29,7 @@ export type IntelligenceTraceLayer = {
   presentation: IntelligenceTracePresentation;
   href?: string | null;
   hrefExternal?: boolean;
+  emphasis?: IntelligenceTraceEmphasis;
 };
 
 export type IntelligenceTrace = {

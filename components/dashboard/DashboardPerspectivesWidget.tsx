@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 
 import { DashboardPerspectivesCard } from "@/components/perspectives/DashboardPerspectivesCard";
+import { usePerspectivesFeed } from "@/lib/client/usePerspectivesFeed";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 import {
   buildPerspectiveRelevance,
@@ -10,20 +11,9 @@ import {
   selectDashboardPerspectivesForAudience,
 } from "@/lib/services/perspectives/relevance";
 import type { PerspectiveRelevance } from "@/lib/services/perspectives/relevance";
-import type { PerspectiveVideo } from "@/lib/services/perspectives/types";
 
 export function DashboardPerspectivesWidget() {
   const { holdings } = useUserPortfolio();
-  const [videos, setVideos] = useState<PerspectiveVideo[]>([]);
-  const [state, setState] = useState<
-    "live" | "empty" | "provider_unavailable" | "loading"
-  >("loading");
-
-  const signals = useMemo(
-    () => derivePerspectivePortfolioSignals(holdings),
-    [holdings],
-  );
-
   const holdingsKey = useMemo(
     () =>
       holdings
@@ -32,52 +22,16 @@ export function DashboardPerspectivesWidget() {
         .join("|"),
     [holdings],
   );
+  const feed = usePerspectivesFeed(holdingsKey);
+  const signals = useMemo(
+    () => derivePerspectivePortfolioSignals(holdings),
+    [holdings],
+  );
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function load() {
-      setState("loading");
-      try {
-        const response = await fetch("/api/perspectives");
-        const data = (await response.json()) as {
-          success?: boolean;
-          videos?: PerspectiveVideo[];
-          state?: "live" | "empty" | "provider_unavailable";
-        };
-        if (!response.ok || data.success === false) {
-          throw new Error("Failed");
-        }
-        if (cancelled) return;
-        const nextSignals = derivePerspectivePortfolioSignals(holdings);
-        const selected = selectDashboardPerspectivesForAudience(
-          data.videos ?? [],
-          nextSignals,
-          5,
-        );
-        setVideos(selected);
-        setState(
-          selected.length > 0
-            ? "live"
-            : data.state === "provider_unavailable"
-              ? "provider_unavailable"
-              : "empty",
-        );
-      } catch {
-        if (!cancelled) {
-          setVideos([]);
-          setState("provider_unavailable");
-        }
-      }
-    }
-
-    void load();
-    return () => {
-      cancelled = true;
-    };
-    // Re-rank when portfolio composition changes; avoid refetch on every holdings identity churn.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [holdingsKey]);
+  const videos = useMemo(
+    () => selectDashboardPerspectivesForAudience(feed.videos, signals, 5),
+    [feed.videos, signals],
+  );
 
   const relevanceById = useMemo(() => {
     const map: Record<string, PerspectiveRelevance> = {};
@@ -86,6 +40,13 @@ export function DashboardPerspectivesWidget() {
     }
     return map;
   }, [videos, signals]);
+
+  const state =
+    feed.state === "loading"
+      ? "loading"
+      : videos.length > 0
+        ? "live"
+        : feed.state;
 
   return (
     <DashboardPerspectivesCard

@@ -16,6 +16,7 @@ import { GOALS_PATH } from "@/lib/navigation/appRoutes";
 import type { GoalRealityCheck } from "@/lib/services/goals/buildGoalRealityCheck";
 import type { GoalProgress } from "@/lib/services/goals/goalProgressEngine";
 import type { GoalSettings } from "@/lib/types/portfolioStorage";
+import { isMeaningfulRecentPace } from "@/lib/services/fourQuestions/buildAmIOnTrack";
 
 const GOAL_REALITY_HREF = `${GOALS_PATH}#goal-reality-check`;
 
@@ -59,15 +60,14 @@ export function AnalysisOnTrackGateway({
             · {progress.status}
             {card.contextLine ? ` · ${card.contextLine}` : null}
           </p>
-          {realityCheck?.available ? (
+          {isMeaningfulRecentPace(realityCheck) && realityCheck?.available ? (
             <p className={`mt-2 ${appSectionMetaClass}`}>
-              Reality Check: {realityCheck.comparableAnnualPercent.toFixed(1)}%{" "}
-              recent pace vs your saved {realityCheck.expectedAnnualReturnPercent}%
-              planning assumption
-              {realityCheck.gapPp != null
-                ? ` (${realityCheck.gapPp > 0 ? "+" : ""}${realityCheck.gapPp.toFixed(1)} pp)`
-                : null}
-              .
+              {realityCheck.conclusion}
+            </p>
+          ) : progress.hasGoal ? (
+            <p className={`mt-2 ${appSectionMetaClass}`}>
+              Recent portfolio history isn’t yet sufficient for a meaningful pace
+              comparison.
             </p>
           ) : null}
         </>

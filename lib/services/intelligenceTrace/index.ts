@@ -1,5 +1,6 @@
 export type {
   IntelligenceTrace,
+  IntelligenceTraceEmphasis,
   IntelligenceTraceLayer,
   IntelligenceTraceLayerId,
   IntelligenceTracePresentation,
@@ -12,4 +13,9 @@ export {
   buildResilienceTrace,
   resilienceGlanceContextLine,
 } from "./buildResilienceTrace";
+export { selectRelevantContext } from "./selectRelevantContext";
+export type {
+  RelevantContextPick,
+  RelevantContextSubject,
+} from "./selectRelevantContext";
 export { traceToExpandItems } from "./traceToExpandItems";
