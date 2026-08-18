@@ -258,7 +258,7 @@ export default async function SignupPage({
 
             <p className="mt-6 text-center text-xs leading-5 text-slate-500">
               {isPersonalTrial
-                ? "Personal trial starts empty — import or add holdings yourself. Then €5.99 per month."
+                ? "Personal trial starts empty — import or add holdings yourself. Try Complete free for 14 days, then continue with Complete for €5.99/month or keep using Tobailey Free."
                 : "Prefer a read-only example first? Explore Demo Portfolio. Personal trial starts empty."}
             </p>
             {!isPersonalTrial ? (
@@ -309,14 +309,14 @@ export default async function SignupPage({
 
           <div className="relative rounded-[28px] border border-white/10 bg-white/5 p-6">
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
-              Complete access
+              14-day Complete trial
             </p>
 
-            <p className="mt-3 text-xl font-bold">Start with Tobailey</p>
+            <p className="mt-3 text-xl font-bold">Start with everything</p>
 
             <p className="mt-3 text-sm leading-6 text-slate-300">
-              Monitor your portfolio, receive personalised briefings and track
-              progress towards your long-term financial goal.
+              Try Tobailey Complete free for 14 days. After that, continue with
+              Complete for €5.99/month or keep using Tobailey Free.
             </p>
           </div>
         </section>

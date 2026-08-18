@@ -14,6 +14,7 @@ import { buildWhatHappenedQuestion } from "@/lib/services/fourQuestions/buildWha
 import { buildWhatMattersNowQuestion } from "@/lib/services/fourQuestions/buildWhatMattersNow";
 import { buildWhatsAheadQuestion } from "@/lib/services/fourQuestions/buildWhatsAhead";
 import { applyFourQuestionsIntelligenceDepth } from "@/lib/services/fourQuestions/applyIntelligenceDepth";
+import { buildResilienceProfile } from "@/lib/services/resilience";
 import type {
   FourQuestionsBundle,
   FourQuestionsIntelligenceDepth,
@@ -91,6 +92,16 @@ export function buildFourQuestions(
         })
       : null;
 
+  // Reused by Q2/Q4 for traceable resilience sensitivity & (optionally) goal impact.
+  const resilienceProfile =
+    scopedHoldings.length > 0
+      ? buildResilienceProfile({
+          holdings: scopedHoldings,
+          goal: input.goal,
+          hasSavedGoal: input.hasSavedGoal,
+        })
+      : null;
+
   const questions = [
     buildWhatHappenedQuestion({
       scope,
@@ -102,6 +113,9 @@ export function buildFourQuestions(
       holdings: scopedHoldings,
       intelligence: personalIntelligence,
       cryptoDashboardLine: input.cryptoDashboardLine,
+      goal: input.goal,
+      hasSavedGoal: input.hasSavedGoal,
+      resilienceProfile,
     }),
     buildAmIOnTrackQuestion({
       scope,
@@ -115,6 +129,7 @@ export function buildFourQuestions(
       holdings: scopedHoldings,
       goal: input.goal,
       hasSavedGoal: input.hasSavedGoal,
+      resilienceProfile,
       nextEventLabel: input.nextEventLabel,
       nextEventHref: input.nextEventHref,
     }),

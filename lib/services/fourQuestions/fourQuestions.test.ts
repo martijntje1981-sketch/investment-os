@@ -12,6 +12,7 @@ import {
   buildWhatsAheadQuestion,
 } from "@/lib/services/fourQuestions";
 import { deriveGoalProgress } from "@/lib/client/useGoalProgress";
+import { buildResilienceProfile } from "@/lib/services/resilience";
 import type { GoalSettings, StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
 function holding(
@@ -191,6 +192,9 @@ describe("Four Questions builders", () => {
       scope: "complete",
       holdings: [],
       intelligence: null,
+      goal: null,
+      hasSavedGoal: false,
+      resilienceProfile: null,
     });
     expect(q.quiet).toBe(true);
     expect(q.answer).toMatch(/nothing requires special attention/i);
@@ -226,6 +230,7 @@ describe("Four Questions builders", () => {
     const q = buildWhatsAheadQuestion({
       scope: "complete",
       holdings: [],
+      resilienceProfile: null,
     });
     expect(q.quiet).toBe(true);
     expect(q.answer).toMatch(/no major portfolio-specific forward signal/i);
@@ -237,6 +242,11 @@ describe("Four Questions builders", () => {
       holdings: [invest, crypto],
       goal,
       hasSavedGoal: true,
+      resilienceProfile: buildResilienceProfile({
+        holdings: [invest, crypto],
+        goal,
+        hasSavedGoal: true,
+      }),
     });
     expect(q.explore.href).toContain("whats-ahead");
     expect(q.answer.length).toBeGreaterThan(0);
@@ -296,18 +306,22 @@ describe("Four Questions builders", () => {
       holdings: [invest, crypto],
       goal,
       hasSavedGoal: true,
+      resilienceProfile: buildResilienceProfile({
+        holdings: [invest, crypto],
+        goal,
+        hasSavedGoal: true,
+      }),
       nextEventLabel: "CPI release",
       nextEventHref: "/events",
     });
-    const scenario = q4.expandItems.find((row) => row.id === "scenario");
-    const resilience = q4.expandItems.find((row) => row.id === "resilience");
-    if (scenario) {
-      expect(scenario.href).toContain("scenario-stress");
-    }
-    if (resilience) {
-      expect(resilience.href).toContain("resilience-sleep");
-    }
-    expect(scenario || resilience).toBeTruthy();
+    const scenarioRow = q4.expandItems.find(
+      (row) => row.href?.includes("scenario-stress"),
+    );
+    const resilienceRow = q4.expandItems.find(
+      (row) => row.href?.includes("resilience-sleep"),
+    );
+    expect(scenarioRow).toBeTruthy();
+    expect(resilienceRow).toBeTruthy();
     expect(q4.expandItems.find((row) => row.id === "event")?.href).toBe(
       "/events",
     );
@@ -320,6 +334,9 @@ describe("Four Questions builders", () => {
       scope: "complete",
       holdings: [],
       intelligence: null,
+      goal: null,
+      hasSavedGoal: false,
+      resilienceProfile: null,
     });
     expect(q.expandItems.every((row) => !row.href)).toBe(true);
   });

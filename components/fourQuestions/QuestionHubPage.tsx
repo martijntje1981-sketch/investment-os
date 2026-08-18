@@ -294,6 +294,7 @@ function EvidenceRow({
     id: string;
     label: string;
     detail?: string | null;
+    bullets?: string[];
     href?: string | null;
     hrefExternal?: boolean;
   };
@@ -313,6 +314,13 @@ function EvidenceRow({
           <span className="mt-0.5 block text-[14px] leading-snug text-slate-800">
             {item.detail}
           </span>
+        ) : null}
+        {item.bullets && item.bullets.length > 0 ? (
+          <ul className="mt-2 space-y-1 pl-4 text-[13px] leading-snug text-slate-600">
+            {item.bullets.map((b) => (
+              <li key={b}>{b}</li>
+            ))}
+          </ul>
         ) : null}
       </span>
       {item.href ? (

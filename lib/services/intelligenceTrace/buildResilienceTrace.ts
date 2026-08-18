@@ -8,6 +8,15 @@ import { RESILIENCE_FACTOR_WEIGHTS } from "@/lib/services/resilience/config";
 import type { ResilienceFactor, ResilienceProfile } from "@/lib/services/resilience/types";
 import type { IntelligenceTrace, IntelligenceTraceLayer } from "./types";
 
+function formatPercent(value: number, digits = 1): string {
+  return `${value.toFixed(digits)}%`;
+}
+
+function firstSentence(text: string): string {
+  const match = text.match(/^.*?(?:\.(?=\s+[A-Z])|$)/);
+  return (match?.[0] ?? text).trim();
+}
+
 export function resilienceGlanceContextLine(
   profile: ResilienceProfile,
 ): string | null {
@@ -60,7 +69,7 @@ function buildEvidenceLayer(profile: ResilienceProfile): IntelligenceTraceLayer 
   const bullets = applicable.map((factor) => {
     const scoreText =
       factor.score != null ? `${factor.score}/100` : "unavailable";
-    const summary = factor.explanation.split(".")[0]?.trim();
+    const summary = firstSentence(factor.explanation);
     return `${factor.label} (${scoreText})${summary ? `: ${summary}.` : "."}`;
   });
 
@@ -91,7 +100,7 @@ function buildSensitivityLayer(profile: ResilienceProfile): IntelligenceTraceLay
 
   const affected =
     most.affectedPortfolioWeightPercent != null
-      ? ` · about ${most.affectedPortfolioWeightPercent.toFixed(0)}% of portfolio weight affected`
+      ? ` · about ${formatPercent(most.affectedPortfolioWeightPercent, 0)} of portfolio weight affected`
       : "";
 
   return {
@@ -115,18 +124,42 @@ function buildGoalImpactLayer(profile: ResilienceProfile): IntelligenceTraceLaye
 }
 
 function buildCalculationLayer(profile: ResilienceProfile): IntelligenceTraceLayer {
-  const bullets = profile.factors
-    .filter((factor) => factor.applicable && factor.score !== null)
-    .map(
-      (factor) =>
-        `${factor.label}: ${factor.score}/100 × ${formatFactorWeight(factor.id)} weight`,
-    );
+  const applicable = profile.factors.filter(
+    (factor) => factor.applicable && factor.score !== null,
+  );
+  const weightedParts = applicable.map((factor) => {
+    const weight = RESILIENCE_FACTOR_WEIGHTS[factor.id];
+    const contribution = (factor.score ?? 0) * weight;
+    return {
+      id: factor.id,
+      label: factor.label,
+      score: factor.score ?? 0,
+      weight,
+      contribution,
+    };
+  });
+
+  const weightedTotal = weightedParts.reduce(
+    (sum, part) => sum + part.contribution,
+    0,
+  );
+
+  const bullets = weightedParts.map(
+    (part) =>
+      `${part.label}: ${part.score}/100 × ${formatFactorWeight(
+        part.id,
+      )} = ${part.contribution.toFixed(1)} points`,
+  );
+  bullets.push(
+    `Master score: ${weightedParts
+      .map((part) => part.contribution.toFixed(1))
+      .join(" + ")} = ${weightedTotal.toFixed(1)} → ${profile.score}/100`,
+  );
 
   return {
     id: "calculation",
     title: "How Tobailey calculated this",
-    detail:
-      "Master resilience score is a weighted blend of concentration, diversification, cash buffer, and supported scenario sensitivity.",
+    detail: `Master resilience score is a weighted blend of concentration, diversification, cash buffer, and supported scenario sensitivity, resulting in ${profile.score}/100.`,
     bullets: bullets.length > 0 ? bullets : undefined,
     presentation: "explore",
     href: DASHBOARD_DEEP_LINKS.resilienceSleep,

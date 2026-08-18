@@ -60,7 +60,7 @@ export const HELP_CENTRE_SECTIONS: HelpCentreSection[] = [
       {
         question: "Demo vs personal trial",
         answer:
-          "Demo is a ready-made, read-only experience with sample holdings. Personal trial is your own empty, editable account — import or add holdings yourself. Demo data never becomes your personal portfolio.",
+          "Demo is a ready-made, read-only experience with sample holdings. Personal trial is 14 days of Tobailey Complete with your own empty, editable account. After that you can subscribe to Complete or continue with Tobailey Free. Demo data never becomes your personal portfolio.",
         link: { href: "/explore", label: "Explore Demo Portfolio" },
         keywords: ["demo", "trial", "14-day", "example"],
       },
@@ -251,13 +251,13 @@ export const HELP_CENTRE_SECTIONS: HelpCentreSection[] = [
       {
         question: "Personal trial",
         answer:
-          "A 14-day Complete trial of your own account. Starts empty — add or import holdings yourself.",
+          "A 14-day Complete trial of your own account. Starts empty — add or import holdings yourself. After 14 days you can subscribe to Tobailey Complete (€5.99/month) or continue with Tobailey Free.",
         link: { href: "/signup?intent=trial", label: "Start 14-day trial" },
       },
       {
         question: "Subscription and expired access",
         answer:
-          "Pricing and renewal terms are shown before checkout. Expired accounts follow product access rules; your data remains yours to export when policy allows.",
+          "Tobailey has two plans: Free (€0) and Complete (€5.99/month). New eligible users start with a 14-day Complete trial, then subscribe to Complete or continue with Free. There are no ads. Automatic checkout is not live yet.",
         link: { href: "/pricing", label: "View pricing" },
       },
       {

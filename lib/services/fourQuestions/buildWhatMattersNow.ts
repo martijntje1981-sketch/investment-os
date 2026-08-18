@@ -7,6 +7,10 @@ import {
   selectDashboardActionPlanItems,
 } from "@/lib/client/dashboardConclusions";
 import { fourQuestionHubPath } from "@/lib/services/fourQuestions/catalog";
+import {
+  buildWhatMattersTrace,
+  traceToExpandItems,
+} from "@/lib/services/intelligenceTrace";
 import type { IntelligenceScopeId } from "@/lib/services/intelligenceScope";
 import { buildMarketCalmer } from "@/lib/services/marketCalmer";
 import { buildPersonalActionPlan } from "@/lib/services/personalIntelligence/buildPersonalActionPlan";
@@ -16,7 +20,11 @@ import type {
   FourQuestionAnswer,
   FourQuestionExpandItem,
 } from "@/lib/services/fourQuestions/types";
-import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
+import type { ResilienceProfile } from "@/lib/services/resilience";
+import type {
+  GoalSettings,
+  StoredPortfolioHolding,
+} from "@/lib/types/portfolioStorage";
 
 const QUIET_ANSWER = "Nothing requires special attention right now.";
 
@@ -26,6 +34,9 @@ export function buildWhatMattersNowQuestion(input: {
   intelligence: PersonalIntelligenceToday | null;
   /** Optional crypto-scoped one-liner when already computed. */
   cryptoDashboardLine?: string | null;
+  goal: GoalSettings | null;
+  hasSavedGoal: boolean;
+  resilienceProfile: ResilienceProfile | null;
 }): FourQuestionAnswer {
   const { scope, holdings, intelligence, cryptoDashboardLine } = input;
 
@@ -94,30 +105,23 @@ export function buildWhatMattersNowQuestion(input: {
         ? planItems[0].headline
         : null;
 
-  const expandItems: FourQuestionExpandItem[] = planItems
-    .slice(0, 2)
-    .map((item, index) => ({
-      id: `matter-${index}`,
-      label: item.categoryLabel,
-      detail: item.headline,
-      href: item.href?.trim() || null,
-      hrefExternal: Boolean(item.hrefExternal),
-    }));
+  const trace = buildWhatMattersTrace({
+    insight: answer,
+    intelligence,
+    view,
+    holdings,
+    // Phase 7A scope: only one goal-impact connection (Resilience / Sleep Well).
+    goal: input.goal,
+    hasSavedGoal: false,
+    resilienceProfile: input.resilienceProfile,
+  });
 
-  if (
-    !quiet &&
-    intelligence.headline &&
-    expandItems.every((row) => row.detail !== intelligence.headline)
-  ) {
-    if (expandItems.length < 2) {
-      expandItems.push({
-        id: "context",
-        label: "Context",
-        detail: intelligence.headline,
-        href: null,
-      });
-    }
-  }
+  const expandItems: FourQuestionExpandItem[] =
+    traceToExpandItems({
+      trace,
+      questionId: "what_matters_now",
+      depth: "complete",
+    }) ?? [];
 
   return {
     id: "what_matters_now",

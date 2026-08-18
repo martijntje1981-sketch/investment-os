@@ -38,6 +38,13 @@ function ExpandIntelligenceRow({ item }: { item: FourQuestionExpandItem }) {
             {item.detail}
           </span>
         ) : null}
+        {item.bullets && item.bullets.length > 0 ? (
+          <ul className="mt-2 space-y-0.5 pl-4 text-[13px] leading-snug text-slate-700">
+            {item.bullets.map((b) => (
+              <li key={b}>{b}</li>
+            ))}
+          </ul>
+        ) : null}
       </span>
       {item.href ? (
         <ArrowUpRight

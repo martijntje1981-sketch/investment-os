@@ -3,7 +3,6 @@
  */
 
 import type { IntelligenceScopeId } from "@/lib/services/intelligenceScope";
-import type { IntelligenceTrace } from "@/lib/services/intelligenceTrace";
 
 /**
  * Presentation depth for Four Questions intelligence.

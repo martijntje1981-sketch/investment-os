@@ -70,6 +70,11 @@ const faqItems = [
       "Tobailey supports manual entry and CSV or Excel import, followed by a review step. You remain in control of which holdings are saved.",
   },
   {
+    question: "What is the difference between Free and Complete?",
+    answer:
+      "Tobailey Free (€0) includes portfolio tracking, the Four Questions and headline intelligence with limited depth. Tobailey Complete (€5.99/month) includes everything in Free plus full intelligence depth and deeper analysis where your data supports it. New eligible users start with a 14-day Complete trial, then choose Complete or Free. There are no ads.",
+  },
+  {
     question: "What is the difference between Demo and personal trial?",
     answer:
       "Demo is a ready-made, read-only portfolio so you can explore. Personal trial starts empty and editable — you import or add your own holdings. Demo data never becomes your personal portfolio.",
@@ -292,10 +297,10 @@ export default async function MarketingHomePage({
           </div>
         </section>
 
-        {/* CHOOSE HOW YOU INVEST */}
+        {/* FREE VS COMPLETE */}
         <PublicProductModelsSection />
 
-        {/* DEMO / TRIAL + PRICING PRESENTATION */}
+        {/* DEMO / TRIAL */}
         <section
           id="pricing"
           className="scroll-mt-24 border-y border-slate-200 bg-slate-50 px-5 py-20 sm:px-8 sm:py-24"
@@ -304,70 +309,44 @@ export default async function MarketingHomePage({
             <SectionHeading
               eyebrow="Demo or personal trial"
               title="Explore first, or start with your portfolio"
-              description="Demo is read-only showroom. Personal trial is your empty, editable path. Pricing presentation below uses the existing public plan — billing is not automated here."
+              description="Demo is a read-only showroom. Personal trial is 14 days of Tobailey Complete with your empty, editable portfolio. After that, continue with Complete for €5.99/month or keep using Tobailey Free."
             />
 
-            <div className="mx-auto mt-12 max-w-2xl overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-xl">
-              <div className="bg-slate-950 p-8 text-white sm:p-10">
-                <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-start">
-                  <div>
-                    <p className="text-sm font-bold uppercase tracking-[0.16em] text-violet-300">
-                      Complete access
-                    </p>
-
-                    <h3 className="mt-3 text-3xl font-black">Tobailey</h3>
-
-                    <p className="mt-3 max-w-lg leading-7 text-slate-300">
-                      Portfolio monitoring, personalised analysis and goal
-                      tracking in one clear platform — organised around four
-                      questions.
-                    </p>
-                  </div>
-
-                  <div className="text-left sm:text-right">
-                    <p className="text-4xl font-black">€5.99</p>
-
-                    <p className="mt-1 text-sm text-slate-400">per month</p>
-                  </div>
-                </div>
+            <div className="mx-auto mt-12 max-w-2xl overflow-hidden rounded-[32px] border border-slate-200 bg-white p-8 shadow-xl sm:p-10">
+              <div className="grid gap-4 sm:grid-cols-2">
+                {benefits.map((benefit) => (
+                  <BenefitRow key={benefit} text={benefit} />
+                ))}
               </div>
 
-              <div className="p-8 sm:p-10">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  {benefits.map((benefit) => (
-                    <BenefitRow key={benefit} text={benefit} />
-                  ))}
-                </div>
-
-                <p className="mt-6 text-sm leading-6 text-slate-600">
-                  {pricingAvailabilityNote.text}{" "}
-                  <Link
-                    href={SUPPORTED_INSTRUMENTS_PATH}
-                    className="font-bold text-blue-700 hover:text-blue-800"
-                  >
-                    {pricingAvailabilityNote.linkLabel}
-                  </Link>
-                </p>
-
+              <p className="mt-6 text-sm leading-6 text-slate-600">
+                {pricingAvailabilityNote.text}{" "}
                 <Link
-                  href="/signup?intent=trial"
-                  className="mt-9 inline-flex w-full min-h-11 items-center justify-center gap-2 rounded-xl bg-brand px-6 py-4 text-sm font-bold text-brand-navy transition hover:bg-brand-hover"
+                  href={SUPPORTED_INSTRUMENTS_PATH}
+                  className="font-bold text-blue-700 hover:text-blue-800"
                 >
-                  Start your 14-day trial
-                  <ArrowRight className="h-4 w-4" />
+                  {pricingAvailabilityNote.linkLabel}
                 </Link>
-                <Link
-                  href="/explore"
-                  className="mt-3 inline-flex w-full min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3.5 text-sm font-bold text-slate-800 transition hover:bg-slate-50"
-                >
-                  Explore Demo Portfolio
-                </Link>
+              </p>
 
-                <p className="mt-4 text-center text-xs leading-5 text-slate-500">
-                  Demo is read-only. Personal trial starts empty. Then €5.99 per
-                  month. Cancel anytime.
-                </p>
-              </div>
+              <Link
+                href="/signup?intent=trial"
+                className="mt-9 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-brand px-6 py-4 text-sm font-bold text-brand-navy transition hover:bg-brand-hover"
+              >
+                Start your 14-day trial
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link
+                href="/explore"
+                className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3.5 text-sm font-bold text-slate-800 transition hover:bg-slate-50"
+              >
+                Explore Demo Portfolio
+              </Link>
+
+              <p className="mt-4 text-center text-xs leading-5 text-slate-500">
+                Demo is read-only. Personal trial starts empty. After 14 days:
+                Complete for €5.99/month, or Tobailey Free. Cancel anytime.
+              </p>
             </div>
           </div>
         </section>
@@ -496,7 +475,7 @@ export default async function MarketingHomePage({
 
           <nav className="flex flex-wrap gap-x-6 gap-y-3 text-sm font-semibold text-slate-600">
             <Link href="#four-questions">Four Questions</Link>
-            <Link href="#products">Products</Link>
+            <Link href="#plans">Plans</Link>
             <Link href="#pricing">Pricing</Link>
             <Link href="#faq">FAQ</Link>
             <Link href={SUPPORTED_INSTRUMENTS_PATH}>Supported instruments</Link>

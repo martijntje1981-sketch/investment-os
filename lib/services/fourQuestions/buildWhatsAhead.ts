@@ -2,11 +2,10 @@
  * Q4 — What's ahead? (existing scenarios + resilience only; no forecasts)
  */
 
-import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 import { fourQuestionHubPath } from "@/lib/services/fourQuestions/catalog";
 import type { IntelligenceScopeId } from "@/lib/services/intelligenceScope";
 import { buildResilienceProfile } from "@/lib/services/resilience";
-import { selectRelevantPortfolioScenarios } from "@/lib/services/scenarioRelevance";
+import { buildResilienceTrace, traceToExpandItems } from "@/lib/services/intelligenceTrace";
 import type {
   FourQuestionAnswer,
   FourQuestionExpandItem,
@@ -24,6 +23,7 @@ export function buildWhatsAheadQuestion(input: {
   holdings: StoredPortfolioHolding[];
   goal?: GoalSettings | null;
   hasSavedGoal?: boolean;
+  resilienceProfile: ReturnType<typeof buildResilienceProfile> | null;
   /** Only include when already available from existing intelligence payload. */
   nextEventLabel?: string | null;
   /** Existing events destination when the label is trustworthy. */
@@ -34,6 +34,7 @@ export function buildWhatsAheadQuestion(input: {
     holdings,
     goal,
     hasSavedGoal,
+    resilienceProfile,
     nextEventLabel,
     nextEventHref,
   } = input;
@@ -56,34 +57,29 @@ export function buildWhatsAheadQuestion(input: {
     };
   }
 
-  const resilience = buildResilienceProfile({
-    holdings,
-    goal,
-    hasSavedGoal,
-  });
-  const scenarios = selectRelevantPortfolioScenarios(holdings);
-  const top = scenarios.modeled[0] ?? null;
+  const resilience =
+    resilienceProfile ??
+    buildResilienceProfile({
+      holdings,
+      goal,
+      hasSavedGoal,
+    });
 
   let answer = QUIET_ANSWER;
   let support: string | null = null;
   let quiet = true;
 
-  if (top) {
-    answer = `Your portfolio is most sensitive to ${top.scenarioName}.`;
-    support =
-      top.result.estimatedPortfolioImpactPercent != null
-        ? `Modeled impact about ${top.result.estimatedPortfolioImpactPercent.toFixed(1)}% on affected holdings.`
-        : top.reason;
-    quiet = false;
-  } else if (
+  if (
     resilience.status === "ok" &&
     resilience.mostSensitive?.scenarioName
   ) {
     answer = `Your portfolio is most sensitive to ${resilience.mostSensitive.scenarioName}.`;
     support =
-      resilience.score != null
-        ? `Resilience ${resilience.score}/100${resilience.bandLabel ? ` · ${resilience.bandLabel}` : ""}`
-        : null;
+      resilience.mostSensitive.estimatedPortfolioImpactPercent != null
+        ? `Modeled impact about ${resilience.mostSensitive.estimatedPortfolioImpactPercent.toFixed(1)}% under the most sensitive modeled scenario.`
+        : resilience.score != null
+          ? `Resilience ${resilience.score}/100${resilience.bandLabel ? ` · ${resilience.bandLabel}` : ""}`
+          : null;
     quiet = false;
   } else if (resilience.status === "ok" && resilience.summary) {
     answer = resilience.summary;
@@ -92,35 +88,18 @@ export function buildWhatsAheadQuestion(input: {
     quiet = false;
   }
 
-  const expandItems: FourQuestionExpandItem[] = [];
+  const trace =
+    resilience.status === "ok"
+      ? buildResilienceTrace({ profile: resilience, insight: answer })
+      : null;
 
-  if (top) {
-    expandItems.push({
-      id: "scenario",
-      label: "Top scenario",
-      detail: `${top.scenarioName}${
-        top.affectedWeightPercent != null
-          ? ` · ${Math.round(top.affectedWeightPercent)}% of portfolio affected`
-          : ""
-      }`,
-      href: DASHBOARD_DEEP_LINKS.scenarioStress,
-    });
-  }
-
-  if (resilience.status === "ok" && resilience.score != null) {
-    expandItems.push({
-      id: "resilience",
-      label: "Resilience",
-      detail: `${resilience.score}/100${
-        resilience.bandLabel ? ` · ${resilience.bandLabel}` : ""
-      }${
-        resilience.primaryDriverExplanation
-          ? ` — ${resilience.primaryDriverExplanation.split(".")[0]}.`
-          : ""
-      }`,
-      href: DASHBOARD_DEEP_LINKS.resilienceSleep,
-    });
-  }
+  const expandItems: FourQuestionExpandItem[] = [
+    ...traceToExpandItems({
+      trace,
+      questionId: "whats_ahead",
+      depth: "complete",
+    }),
+  ];
 
   if (nextEventLabel?.trim()) {
     expandItems.push({

@@ -22,8 +22,8 @@ const navigationItems = [
     href: "/#how-it-works",
   },
   {
-    label: "Products",
-    href: "/#products",
+    label: "Plans",
+    href: "/#plans",
   },
   {
     label: "Pricing",

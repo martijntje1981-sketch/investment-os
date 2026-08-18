@@ -325,8 +325,9 @@ export default function ExplorePage() {
             </button>
           </div>
           <p className={`mt-3 ${appSectionMetaClass}`}>
-            14-day Complete trial starts empty and editable. Demo Portfolio stays
-            a separate read-only example.
+            14-day Complete trial starts empty and editable. After that you can
+            keep Complete or continue with Tobailey Free. Demo Portfolio stays a
+            separate read-only example.
           </p>
         </section>
 
@@ -340,7 +341,8 @@ export default function ExplorePage() {
           </h2>
           <p className={`mt-2 ${appSectionSubtitleClass}`}>
             Start a 14-day Complete trial with an empty portfolio, then import or
-            add investments yourself.
+            add investments yourself. After the trial, continue with Complete or
+            Tobailey Free.
           </p>
           <Link
             href={PERSONAL_TRIAL_SIGNUP_HREF}

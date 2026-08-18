@@ -13,6 +13,22 @@ import type { ResilienceProfile } from "@/lib/services/resilience";
 import type { GoalSettings, StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 import type { IntelligenceTrace, IntelligenceTraceLayer } from "./types";
 
+type Q2Subject =
+  | {
+      kind: "holding";
+      name: string;
+      symbol: string;
+      weightPercent: number | null;
+      contributionPp: number | null;
+      changePercent: number | null;
+    }
+  | {
+      kind: "portfolio_move";
+      name: "Portfolio";
+      movePercent: number | null;
+      moveAmount: number | null;
+    };
+
 function findDriverContribution(
   intelligence: PersonalIntelligenceToday,
   symbol: string,
@@ -65,13 +81,88 @@ function exposureBullets(
   return bullets;
 }
 
+function formatPercent(value: number, digits = 1): string {
+  return `${value.toFixed(digits)}%`;
+}
+
+function formatSignedPercent(value: number, digits = 1): string {
+  return `${value > 0 ? "+" : ""}${value.toFixed(digits)}%`;
+}
+
+function resolveQ2Subject(input: {
+  insight: string;
+  intelligence: PersonalIntelligenceToday;
+  view: ThirtySecondsBriefingView;
+}): Q2Subject | null {
+  const { insight, intelligence, view } = input;
+  const driver = view.drivers[0] ?? null;
+  const normalizedInsight = insight.trim().toLowerCase();
+
+  if (driver) {
+    const mentionsDriver =
+      normalizedInsight.includes(driver.name.trim().toLowerCase()) ||
+      normalizedInsight.includes(driver.symbol.trim().toLowerCase()) ||
+      normalizedInsight.includes("driver");
+
+    if (mentionsDriver) {
+      const stats = findDriverContribution(intelligence, driver.symbol);
+      return {
+        kind: "holding",
+        name: driver.name,
+        symbol: driver.symbol,
+        weightPercent: stats?.weightPercent ?? null,
+        contributionPp: stats?.contributionPp ?? null,
+        changePercent: stats?.changePercent ?? null,
+      };
+    }
+  }
+
+  if (
+    intelligence.portfolioMove &&
+    /portfolio|move|larger-than-usual|larger than usual|attention/i.test(insight)
+  ) {
+    return {
+      kind: "portfolio_move",
+      name: "Portfolio",
+      movePercent: intelligence.portfolioMove.todayPercent,
+      moveAmount: intelligence.portfolioMove.todayChange,
+    };
+  }
+
+  if (driver) {
+    const stats = findDriverContribution(intelligence, driver.symbol);
+    return {
+      kind: "holding",
+      name: driver.name,
+      symbol: driver.symbol,
+      weightPercent: stats?.weightPercent ?? null,
+      contributionPp: stats?.contributionPp ?? null,
+      changePercent: stats?.changePercent ?? null,
+    };
+  }
+
+  return null;
+}
+
 function buildMeaningLayer(input: {
-  name: string;
-  weightPercent: number | null;
-  contributionPp: number | null;
+  subject: Q2Subject;
   portfolioMovePercent: number | null;
 }): IntelligenceTraceLayer | null {
-  const { name, weightPercent, contributionPp, portfolioMovePercent } = input;
+  const { subject, portfolioMovePercent } = input;
+
+  if (subject.kind === "portfolio_move") {
+    if (subject.movePercent == null || !Number.isFinite(subject.movePercent)) {
+      return null;
+    }
+    return {
+      id: "meaning",
+      title: "What it means",
+      detail: `Today's portfolio move is large enough to stand out from a normal day, so the overall portfolio deserves attention rather than a single isolated holding.`,
+      presentation: "expand",
+    };
+  }
+
+  const { name, weightPercent, contributionPp } = subject;
   if (weightPercent == null || contributionPp == null) return null;
 
   const absPp = Math.abs(contributionPp);
@@ -106,16 +197,28 @@ function buildMeaningLayer(input: {
 
 function buildSensitivityLayer(
   resilience: ResilienceProfile,
+  subject: Q2Subject,
 ): IntelligenceTraceLayer | null {
+  if (subject.kind !== "holding") return null;
+
   const most = resilience.mostSensitive;
   if (!most) return null;
+  const normalized = subject.symbol.trim().toUpperCase();
+  const scenarioName = most.scenarioName.toUpperCase();
+
+  const scenarioMatchesSubject =
+    scenarioName.includes(normalized) ||
+    (normalized === "BTC" && scenarioName.includes("BITCOIN"));
+  if (!scenarioMatchesSubject) {
+    return null;
+  }
 
   const impact = most.estimatedPortfolioImpactPercent;
   if (impact == null || !Number.isFinite(impact)) return null;
 
   const affected =
     most.affectedPortfolioWeightPercent != null
-      ? ` · about ${most.affectedPortfolioWeightPercent.toFixed(0)}% of portfolio affected`
+      ? ` · about ${formatPercent(most.affectedPortfolioWeightPercent, 0)} of portfolio affected`
       : "";
 
   return {
@@ -132,6 +235,9 @@ function buildGoalImpactLayer(input: {
   goal: GoalSettings | null;
   hasSavedGoal: boolean;
 }): IntelligenceTraceLayer | null {
+  // Phase 7A: only show one goal-impact connection where the UI model intends it.
+  if (!input.hasSavedGoal) return null;
+
   const context = input.resilience.goalContext;
   if (context) {
     return {
@@ -225,58 +331,72 @@ export function buildWhatMattersTrace(input: {
   resilienceProfile?: ResilienceProfile | null;
 }): IntelligenceTrace | null {
   const { intelligence, view, insight } = input;
-  const driver = view.drivers[0] ?? null;
-  const attention = intelligence.attentionItems[0] ?? null;
-
-  if (!driver && !attention) {
-    return null;
-  }
-
-  const subjectName = driver?.name ?? attention?.label ?? "Portfolio";
-  const subjectSymbol = driver?.symbol ?? "";
-  const stats = subjectSymbol
-    ? findDriverContribution(intelligence, subjectSymbol)
-    : null;
+  const subject = resolveQ2Subject({ insight, intelligence, view });
+  if (!subject) return null;
 
   const layers: IntelligenceTraceLayer[] = [];
   const omittedLayerIds: IntelligenceTraceLayer["id"][] = ["change"];
 
   const evidenceBullets: string[] = [];
-  if (stats?.weightPercent != null) {
-    evidenceBullets.push(
-      `${subjectName} portfolio weight: ${stats.weightPercent.toFixed(1)}%`,
-    );
+  if (subject.kind === "holding") {
+    if (subject.weightPercent != null) {
+      evidenceBullets.push(
+        `${subject.name} portfolio weight: ${formatPercent(subject.weightPercent)}`,
+      );
+    }
+    if (subject.contributionPp != null) {
+      evidenceBullets.push(
+        `Estimated contribution to today's move: ${formatContributionPp(subject.contributionPp)}`,
+      );
+    }
+    if (
+      subject.changePercent != null &&
+      Number.isFinite(subject.changePercent)
+    ) {
+      evidenceBullets.push(
+        `${subject.name} price move: ${formatSignedPercent(subject.changePercent)}`,
+      );
+    }
+    evidenceBullets.push(...exposureBullets(intelligence, subject.symbol));
+  } else {
+    if (
+      subject.movePercent != null &&
+      Number.isFinite(subject.movePercent)
+    ) {
+      evidenceBullets.push(
+        `Today's portfolio move: ${formatSignedPercent(subject.movePercent)}`,
+      );
+    }
+    if (
+      subject.moveAmount != null &&
+      Number.isFinite(subject.moveAmount)
+    ) {
+      evidenceBullets.push(
+        `Today's portfolio value change: ${subject.moveAmount > 0 ? "+" : ""}${subject.moveAmount.toFixed(2)}`,
+      );
+    }
+    if (intelligence.portfolioMove) {
+      evidenceBullets.push(
+        `Coverage: ${intelligence.portfolioMove.validPerformanceCount} of ${intelligence.portfolioMove.eligibleMarketHoldingCount} eligible holdings priced`,
+      );
+    }
   }
-  if (stats?.contributionPp != null) {
-    evidenceBullets.push(
-      `Estimated contribution to today's move: ${formatContributionPp(stats.contributionPp)}`,
-    );
-  } else if (driver?.contributionLabel) {
-    evidenceBullets.push(
-      `Estimated contribution to today's move: ${driver.contributionLabel}`,
-    );
-  }
-  if (stats?.changePercent != null && Number.isFinite(stats.changePercent)) {
-    evidenceBullets.push(
-      `${subjectName} price move: ${stats.changePercent >= 0 ? "+" : ""}${stats.changePercent.toFixed(1)}%`,
-    );
-  }
-  evidenceBullets.push(...exposureBullets(intelligence, subjectSymbol));
 
   if (evidenceBullets.length > 0) {
     layers.push({
       id: "evidence",
       title: "Evidence",
-      detail: `${subjectName} is supported by measurable portfolio facts today.`,
+      detail:
+        subject.kind === "holding"
+          ? `${subject.name} is supported by measurable portfolio facts today.`
+          : "The portfolio-level move is supported by measurable portfolio facts today.",
       bullets: evidenceBullets,
       presentation: "expand",
     });
   }
 
   const meaning = buildMeaningLayer({
-    name: subjectName,
-    weightPercent: stats?.weightPercent ?? null,
-    contributionPp: stats?.contributionPp ?? null,
+    subject,
     portfolioMovePercent: intelligence.portfolioMove?.todayPercent ?? null,
   });
   if (meaning) layers.push(meaning);
@@ -289,7 +409,7 @@ export function buildWhatMattersTrace(input: {
       hasSavedGoal: input.hasSavedGoal,
     });
 
-  const sensitivity = buildSensitivityLayer(resilience);
+  const sensitivity = buildSensitivityLayer(resilience, subject);
   if (sensitivity) layers.push(sensitivity);
 
   const goalImpact = buildGoalImpactLayer({
