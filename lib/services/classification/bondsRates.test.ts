@@ -98,9 +98,13 @@ const PHASE14_FILES = [
   "lib/services/classification/fixedIncomeEducation.ts",
   "components/analysis/BondsRatesSection.tsx",
   "components/analysis/BondsRatesRelationshipVisual.tsx",
+  "components/analysis/OfficialRatesBoard.tsx",
   "components/holding/HoldingFixedIncomeCard.tsx",
   "lib/services/fourQuestions/buildWhatsAhead.ts",
   "lib/services/periodIntelligence/buildPeriodIntelligenceReview.ts",
+  "lib/services/officialRates/fetchOfficialRates.ts",
+  "lib/client/useOfficialRates.ts",
+  "app/api/official-rates/route.ts",
 ];
 
 describe("Phase 14 bonds and rates intelligence", () => {

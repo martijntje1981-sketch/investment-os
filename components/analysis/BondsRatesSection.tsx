@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ChevronDown, Scale } from "lucide-react";
 
 import { BondsRatesRelationshipVisual } from "@/components/analysis/BondsRatesRelationshipVisual";
+import { OfficialRatesBoard } from "@/components/analysis/OfficialRatesBoard";
 import {
   appSectionBodyClass,
   appSectionLabelClass,
@@ -20,6 +21,7 @@ import {
   appKpiFutureClass,
 } from "@/components/layout/semanticIdentity";
 import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
+import { useOfficialRates } from "@/lib/client/useOfficialRates";
 import {
   BONDS_RATES_OFFICIAL_CONTEXT_LABEL,
   BONDS_RATES_SECTION_ID,
@@ -93,11 +95,13 @@ export function BondsRatesSection({
   intelligenceDepth?: FourQuestionsIntelligenceDepth;
 }) {
   const { formatEur } = useBaseCurrencyDisplay();
+  const { snapshot: officialRates, isLoading: ratesLoading } = useOfficialRates(true);
   const view = buildBondsRatesView({
     allocation,
     holdings,
     ratePolicyContext,
     intelligenceDepth,
+    officialRates,
   });
   const asOf = formatAsOf(view.officialContext?.publishedAt ?? null);
 
@@ -125,6 +129,13 @@ export function BondsRatesSection({
           </p>
         </div>
       </div>
+
+      <OfficialRatesBoard
+        groups={view.rateGroups}
+        showChanges={view.showRateChanges}
+        isStale={view.ratesAreStale}
+        isLoading={ratesLoading}
+      />
 
       {view.hasFixedIncome ? (
         <>
@@ -216,6 +227,13 @@ export function BondsRatesSection({
                 {view.officialContext.sourceName}
                 {asOf ? ` · as of ${asOf}` : ""}
               </p>
+            </div>
+          ) : null}
+
+          {view.whyRatesMatter ? (
+            <div className="mt-5 min-w-0">
+              <p className={appSectionLabelClass}>Why this matters to your bonds</p>
+              <p className={`mt-1.5 ${appSectionBodyClass}`}>{view.whyRatesMatter}</p>
             </div>
           ) : null}
 

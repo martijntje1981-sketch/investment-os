@@ -1,11 +1,19 @@
 /**
  * Presentation model for Analysis → Bonds & Rates.
- * Reuses existing classification + official RSS context.
- * No yields, duration math, provider calls, or numeric policy rates.
+ * Reuses existing classification, official RSS context, and the canonical
+ * official-rates service. No duration math and no invented yields.
  */
 
 import { holdingDetailPath, portfolioAddPath } from "@/lib/navigation/appRoutes";
 import { classifyHoldingExposure } from "@/lib/services/classification/classifyHoldingExposure";
+import {
+  buildWhyRatesMatterCopy,
+  selectVisibleOfficialRates,
+} from "@/lib/services/officialRates/interpretFixedIncomeRates";
+import type {
+  OfficialRatesRegionGroup,
+  OfficialRatesSnapshot,
+} from "@/lib/services/officialRates/types";
 import {
   FIXED_INCOME_CREDIT_LABELS,
   FIXED_INCOME_DURATION_LABELS,
@@ -76,6 +84,10 @@ export type BondsRatesView = {
   subtypeRows: Array<{ id: string; label: string; percent: number }>;
   officialContext: BondsRatesOfficialContext | null;
   limitations: string[];
+  rateGroups: OfficialRatesRegionGroup[];
+  ratesAreStale: boolean;
+  showRateChanges: boolean;
+  whyRatesMatter: string | null;
 };
 
 const MATERIAL_WEIGHT_PERCENT = 1;
@@ -313,6 +325,7 @@ export function buildBondsRatesView(input: {
     "title" | "canonicalUrl" | "sourceName" | "publishedAt"
   > | null;
   intelligenceDepth?: "free" | "complete";
+  officialRates?: OfficialRatesSnapshot | null;
 }): BondsRatesView {
   const sleeve = input.allocation.fixedIncome;
   const fiGroup = input.allocation.groups.find(
@@ -361,9 +374,38 @@ export function buildBondsRatesView(input: {
         }
       : null;
 
+  const depth = input.intelligenceDepth === "free" ? "free" : "complete";
+  const visibleRates = selectVisibleOfficialRates(
+    (input.officialRates?.groups ?? []).flatMap((group) => group.rates),
+    depth,
+  );
+  const rateGroups = (input.officialRates?.groups ?? [])
+    .map((group) => ({
+      ...group,
+      rates: group.rates.filter((rate) =>
+        visibleRates.some((visible) => visible.id === rate.id),
+      ),
+    }))
+    .filter((group) => group.rates.length > 0);
+  const fiHolding = (input.holdings ?? []).find((row) =>
+    fiSymbols.has(row.symbol.trim().toUpperCase()),
+  );
+  const whyRatesMatter =
+    depth === "complete"
+      ? buildWhyRatesMatterCopy({
+          hasFixedIncome,
+          subtype: typeRow?.type ?? null,
+          durationUnknown: !sleeve || classifiedShare(sleeve) <= 0,
+          currencyHedge: fiHolding
+            ? inferFixedIncomeShareClassContext(fiHolding).currencyHedge
+            : null,
+          rates: visibleRates,
+        })
+      : null;
+
   const limitations = hasFixedIncome
     ? [
-        "Yields, coupons and live policy-rate values are not invented here.",
+        "Official policy and overnight rates come from the ECB and New York Fed. Coupons, yields and duration are not invented.",
         education.durationNote,
         BONDS_RATES_OFFICIAL_NOT_CAUSE,
       ].filter((row): row is string => Boolean(row))
@@ -409,6 +451,10 @@ export function buildBondsRatesView(input: {
       : [],
     officialContext: official,
     limitations,
+    rateGroups,
+    ratesAreStale: Boolean(input.officialRates?.isStale),
+    showRateChanges: depth === "complete",
+    whyRatesMatter,
   };
 }
 
