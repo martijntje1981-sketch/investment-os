@@ -1,5 +1,9 @@
 "use client";
 
+import { useId, useState } from "react";
+import { ChevronDown } from "lucide-react";
+
+import { BondsRatesRelationshipVisual } from "@/components/analysis/BondsRatesRelationshipVisual";
 import {
   appSectionBodyClass,
   appSectionLabelClass,
@@ -9,41 +13,105 @@ import {
 import {
   appIdentityAheadCardClass,
   appIdentityAheadMetricClass,
+  appKpiFutureClass,
+  appKpiNegativeClass,
+  appKpiPositiveClass,
 } from "@/components/layout/semanticIdentity";
+import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 import {
   BONDS_RATES_OFFICIAL_CONTEXT_LABEL,
-  BONDS_RATES_OFFICIAL_NOT_CAUSE,
   buildFixedIncomeHoldingProfile,
-  buildFixedIncomeRateEducation,
   classifyHoldingExposure,
 } from "@/lib/services/classification";
 import type { FourQuestionsIntelligenceDepth } from "@/lib/services/fourQuestions/types";
 import type { HoldingPageNewsItem } from "@/lib/services/holdingIntelligence";
-import { selectOfficialRatePolicyContext } from "@/lib/services/news/officialMacro";
+import { officialMacroWhyRelevant, selectOfficialRatePolicyContext } from "@/lib/services/news/officialMacro";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
+
+function signedPercent(value: number): string {
+  const sign = value > 0 ? "+" : "";
+  return `${sign}${value.toFixed(2)}%`;
+}
 
 export function HoldingFixedIncomeCard({
   holding,
   relatedNews = [],
   intelligenceDepth = "complete",
   weightPercent = null,
+  marketValue = null,
+  changePercent = null,
+  contributionPp = null,
 }: {
   holding: StoredPortfolioHolding;
   relatedNews?: HoldingPageNewsItem[];
   intelligenceDepth?: FourQuestionsIntelligenceDepth;
   weightPercent?: number | null;
+  marketValue?: number | null;
+  changePercent?: number | null;
+  contributionPp?: number | null;
 }) {
+  const { formatEur } = useBaseCurrencyDisplay();
+  const panelId = useId();
+  const buttonId = useId();
+  const [open, setOpen] = useState(false);
   const classification = classifyHoldingExposure(holding).fixedIncome ?? null;
   const profile = buildFixedIncomeHoldingProfile(classification);
   if (!profile || !classification) return null;
 
   const isComplete = intelligenceDepth === "complete";
-  const education = buildFixedIncomeRateEducation({
-    durationKnownSharePercent: profile.durationUnknown ? 0 : 100,
-  });
   const official = selectOfficialRatePolicyContext(
     relatedNews.map((row) => row.item),
   );
+  const currency = holding.quoteCurrency?.trim().toUpperCase() || null;
+
+  const metrics: Array<{ id: string; label: string; value: string; tone?: "pos" | "neg" }> =
+    [];
+  if (marketValue != null && Number.isFinite(marketValue)) {
+    metrics.push({ id: "value", label: "Position value", value: formatEur(marketValue) });
+  }
+  if (weightPercent != null && Number.isFinite(weightPercent)) {
+    metrics.push({
+      id: "weight",
+      label: "Portfolio weight",
+      value: `${weightPercent.toFixed(1)}%`,
+    });
+  }
+  if (changePercent != null && Number.isFinite(changePercent)) {
+    metrics.push({
+      id: "move",
+      label: "Day move",
+      value: signedPercent(changePercent),
+      tone: changePercent > 0 ? "pos" : changePercent < 0 ? "neg" : undefined,
+    });
+  }
+  if (isComplete && contributionPp != null && Number.isFinite(contributionPp)) {
+    metrics.push({
+      id: "impact",
+      label: "Portfolio impact",
+      value: `${contributionPp > 0 ? "+" : ""}${contributionPp.toFixed(2)} pp`,
+    });
+  }
+  if (profile.typeLabel) {
+    metrics.push({ id: "type", label: "Bond type", value: profile.typeLabel });
+  }
+  if (isComplete && profile.durationLabel) {
+    metrics.push({ id: "duration", label: "Duration", value: profile.durationLabel });
+  }
+  if (isComplete && profile.creditLabel) {
+    metrics.push({ id: "credit", label: "Credit profile", value: profile.creditLabel });
+  }
+  if (isComplete && currency) {
+    metrics.push({ id: "currency", label: "Currency", value: currency });
+  }
+
+  const limitations = [
+    profile.durationUnknown
+      ? "Duration is unknown for this holding, so no numeric rate shock is shown."
+      : "Duration is a bucket, not a modeled sensitivity.",
+    official
+      ? "Official headlines are macro context, not proof that this holding moved."
+      : null,
+  ].filter((row): row is string => Boolean(row));
 
   return (
     <section
@@ -52,55 +120,40 @@ export function HoldingFixedIncomeCard({
       data-testid="holding-fixed-income"
       data-intelligence-depth={intelligenceDepth}
     >
-      <p className={appSectionLabelClass}>Fixed Income</p>
+      <p className={appSectionLabelClass}>Fixed Income intelligence</p>
       <h2 id="holding-fixed-income-heading" className={`mt-1 ${appSectionTitleClass}`}>
-        Bond holding profile
+        Bond holding
       </h2>
-      <p className={`mt-1.5 ${appSectionMetaClass}`}>
-        Classification uses existing holding metadata. Tobailey does not invent
-        yields, coupons, or duration numbers.
-      </p>
 
       <dl className="mt-4 grid min-w-0 gap-3 sm:grid-cols-2">
-        {weightPercent != null && Number.isFinite(weightPercent) ? (
-          <div className={appIdentityAheadMetricClass}>
-            <dt className={appSectionLabelClass}>Portfolio weight</dt>
-            <dd className={`mt-1 ${appSectionBodyClass}`}>
-              {weightPercent.toFixed(1)}%
+        {metrics.map((metric) => (
+          <div key={metric.id} className={appIdentityAheadMetricClass}>
+            <dt className={appSectionLabelClass}>{metric.label}</dt>
+            <dd
+              className={`mt-1 ${appSectionBodyClass} ${
+                metric.tone === "pos"
+                  ? appKpiPositiveClass
+                  : metric.tone === "neg"
+                    ? appKpiNegativeClass
+                    : metric.id === "weight" || metric.id === "value"
+                      ? appKpiFutureClass
+                      : ""
+              }`}
+            >
+              {metric.value}
             </dd>
           </div>
-        ) : null}
-        <div className={appIdentityAheadMetricClass}>
-          <dt className={appSectionLabelClass}>Bond type</dt>
-          <dd className={`mt-1 ${appSectionBodyClass}`}>{profile.typeLabel}</dd>
-        </div>
-        {isComplete ? (
-          <>
-            <div className={appIdentityAheadMetricClass}>
-              <dt className={appSectionLabelClass}>Duration</dt>
-              <dd className={`mt-1 ${appSectionBodyClass}`}>
-                {profile.durationLabel}
-              </dd>
-            </div>
-            <div className={appIdentityAheadMetricClass}>
-              <dt className={appSectionLabelClass}>Credit quality</dt>
-              <dd className={`mt-1 ${appSectionBodyClass}`}>
-                {profile.creditLabel}
-              </dd>
-            </div>
-          </>
-        ) : null}
+        ))}
       </dl>
 
       <aside
         className="mt-4 rounded-2xl border border-teal-200 bg-white/80 px-4 py-3.5"
         data-testid="holding-fixed-income-education"
       >
-        <p className={appSectionLabelClass}>{education.headline}</p>
-        <p className={`mt-1.5 ${appSectionBodyClass}`}>{education.body}</p>
-        {education.durationNote ? (
-          <p className={`mt-2 ${appSectionMetaClass}`}>{education.durationNote}</p>
-        ) : null}
+        <p className={appSectionLabelClass}>How rates relate</p>
+        <div className="mt-3">
+          <BondsRatesRelationshipVisual showDurationGuide={Boolean(profile.durationLabel)} />
+        </div>
       </aside>
 
       {official ? (
@@ -117,17 +170,39 @@ export function HoldingFixedIncomeCard({
             {official.title}
           </a>
           <p className={`mt-1 ${appSectionMetaClass}`}>
-            {official.sourceName}. {BONDS_RATES_OFFICIAL_NOT_CAUSE}
+            {official.sourceName}. {officialMacroWhyRelevant("fixed_income")}
           </p>
         </div>
       ) : null}
 
-      <p className={`mt-4 ${appSectionMetaClass}`}>
-        Move and portfolio impact stay in the holding intelligence card above.
-        {profile.durationUnknown
-          ? " Duration is unknown, so no numeric rate shock is shown."
-          : " Duration is classified only as a bucket, not as a modeled sensitivity."}
-      </p>
+      {limitations.length > 0 ? (
+        <div className="mt-4 min-w-0">
+          <button
+            id={buttonId}
+            type="button"
+            aria-expanded={open}
+            aria-controls={panelId}
+            onClick={() => setOpen((value) => !value)}
+            className="inline-flex min-h-11 w-full items-center justify-between gap-3 rounded-xl border border-teal-200 bg-white/70 px-4 font-semibold text-teal-950"
+          >
+            <span className={appSectionBodyClass}>Data & limitations</span>
+            <ChevronDown
+              className={`h-4 w-4 shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
+              aria-hidden="true"
+            />
+          </button>
+          {open ? (
+            <ul
+              id={panelId}
+              className={`mt-2 space-y-1.5 rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 ${appSectionMetaClass}`}
+            >
+              {limitations.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+      ) : null}
     </section>
   );
 }

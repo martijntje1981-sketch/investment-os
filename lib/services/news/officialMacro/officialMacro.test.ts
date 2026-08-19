@@ -289,6 +289,7 @@ describe("official macro RSS layer", () => {
       "components/holding/HoldingMoveContextCard.tsx",
       "components/analysis/PortfolioExposureSection.tsx",
       "components/analysis/BondsRatesSection.tsx",
+      "components/analysis/BondsRatesRelationshipVisual.tsx",
       "components/holding/HoldingFixedIncomeCard.tsx",
       "lib/services/classification/bondsRatesView.ts",
     ];

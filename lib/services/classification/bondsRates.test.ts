@@ -97,6 +97,7 @@ const PHASE14_FILES = [
   "lib/services/classification/bondsRatesView.ts",
   "lib/services/classification/fixedIncomeEducation.ts",
   "components/analysis/BondsRatesSection.tsx",
+  "components/analysis/BondsRatesRelationshipVisual.tsx",
   "components/holding/HoldingFixedIncomeCard.tsx",
   "lib/services/fourQuestions/buildWhatsAhead.ts",
   "lib/services/periodIntelligence/buildPeriodIntelligenceReview.ts",
@@ -117,7 +118,7 @@ describe("Phase 14 bonds and rates intelligence", () => {
     expect(view.weightPercent).toBeGreaterThan(0);
     expect(view.allocationLine).toMatch(/Fixed income now represents \d+% of your portfolio/);
     expect(read("components/analysis/BondsRatesSection.tsx")).toContain(
-      "Fixed Income allocation",
+      "Fixed Income",
     );
     expect(read("components/analysis/PortfolioAnalysisPage.tsx")).toContain(
       "<BondsRatesSection",
@@ -171,7 +172,7 @@ describe("Phase 14 bonds and rates intelligence", () => {
       classifyHoldingExposure(unknownDuration).fixedIncome,
     );
     expect(unknownProfile?.durationUnknown).toBe(true);
-    expect(unknownProfile?.durationLabel).toMatch(/not available/i);
+    expect(unknownProfile?.durationLabel).toBeNull();
     const knownProfile = buildFixedIncomeHoldingProfile(
       classifyHoldingExposure(government).fixedIncome,
     );
@@ -283,7 +284,7 @@ describe("Phase 14 bonds and rates intelligence", () => {
     const unknownRates = q4Unknown.expandItems.find(
       (row) => row.id === "fixed-income-rates",
     );
-    expect(unknownRates?.detail).toMatch(/does not estimate a numeric rate shock/i);
+    expect(unknownRates?.detail).toMatch(/duration is unavailable|exact rate sensitivity/i);
     expect(unknownRates?.detail).not.toMatch(/\d+(\.\d+)?\s?%/);
 
     const q4 = buildWhatsAheadQuestion({
@@ -335,7 +336,8 @@ describe("Phase 14 bonds and rates intelligence", () => {
     });
     expect(complete.showBreakdown).toBe(true);
     expect(complete.subtypeRows.length).toBeGreaterThan(0);
-    expect(complete.durationHonesty).toBeTruthy();
+    expect(complete.whatMatters).toBeTruthy();
+    expect(complete.metrics.some((row) => row.id === "type")).toBe(true);
     expect(free.showBreakdown).toBe(false);
     expect(free.subtypeRows).toEqual([]);
     expect(free.educationBody).toBe(complete.educationBody);
@@ -417,5 +419,85 @@ describe("Phase 14 bonds and rates intelligence", () => {
     expect(reviewSource).toContain("attachFixedIncomeAheadContext");
     expect(reviewSource).toContain("buildFixedIncomeReportContext");
     expect(reviewSource).not.toMatch(/bond-specific report|bonds report/i);
+  });
+
+  it("shows a useful empty state without duration-unavailable copy", () => {
+    const view = buildBondsRatesView({
+      allocation: buildPortfolioExposureAllocation([equity]),
+    });
+    expect(view.hasFixedIncome).toBe(false);
+    expect(view.emptyHeadline).toBe("No Fixed Income holdings in this portfolio.");
+    expect(view.emptyBody).toMatch(/Add a bond or bond ETF/i);
+    expect(view.addHoldingHref).toBe("/portfolio?add=investment");
+    expect(view.durationNote).toBeNull();
+    expect(view.limitations.join(" ")).not.toMatch(
+      /Duration is not available for this portfolio/i,
+    );
+    expect(read("components/analysis/BondsRatesSection.tsx")).toContain(
+      "Add Fixed Income holding",
+    );
+  });
+
+  it("classifies realistic bond ETF fixtures without inventing yield or ratings", () => {
+    const aggregate = holding({
+      symbol: "AGGH",
+      name: "iShares Core Global Aggregate Bond UCITS ETF",
+    });
+    const highYield = holding({
+      symbol: "IHYA",
+      name: "iShares EUR High Yield Corporate Bond UCITS ETF",
+    });
+    const inflation = holding({
+      symbol: "ITPS",
+      name: "iShares USD TIPS UCITS ETF",
+    });
+    const ambiguous = holding({
+      symbol: "FLEX",
+      name: "Flexible Strategy Fund",
+    });
+
+    expect(classifyHoldingExposure(aggregate).fixedIncome?.type).toBe(
+      "mixed_aggregate",
+    );
+    expect(classifyHoldingExposure(government).fixedIncome?.type).toBe("government");
+    expect(classifyHoldingExposure(corporate).fixedIncome?.type).toBe("corporate");
+    expect(classifyHoldingExposure(highYield).fixedIncome?.creditQuality).toBe(
+      "high_yield",
+    );
+    expect(classifyHoldingExposure(inflation).fixedIncome?.type).toBe(
+      "inflation_linked",
+    );
+    expect(classifyHoldingExposure(ambiguous).fixedIncome?.isFixedIncome).toBeFalsy();
+
+    const allocation = buildPortfolioExposureAllocation([
+      aggregate,
+      government,
+      corporate,
+      highYield,
+      inflation,
+    ]);
+    expect(allocation.fixedIncome?.durationKnownSharePercent).toBe(0);
+    expect(allocation.fixedIncome?.durationClassifiedSharePercent).toBeGreaterThan(
+      0,
+    );
+    const blob = JSON.stringify(buildBondsRatesView({ allocation, holdings: [
+      aggregate, government, corporate, highYield, inflation,
+    ], intelligenceDepth: "complete" }));
+    expect(blob).not.toMatch(/yield of|coupon of|duration of \d/i);
+    expect(blob).not.toMatch(/AAA|BBB\+|rating: /i);
+    expect(blob).toMatch(/inferred/i);
+  });
+
+  it("keeps add-holding compatible with bonds without a new provider path", () => {
+    const match = read("lib/services/instruments/instrumentMatchEngine.ts");
+    expect(match).toContain("safeFetchSearch");
+    expect(match).not.toMatch(/type:\s*"stock"/);
+    expect(read("app/portfolio/page.tsx")).toMatch(/Bond ETFs and individual bonds/);
+    expect(read("lib/services/instruments/listingConfirmation.ts")).toContain(
+      "providerInstrumentType",
+    );
+    expect(read("components/dashboard/DashboardQuickActions.tsx")).toContain(
+      "/portfolio?add=investment",
+    );
   });
 });

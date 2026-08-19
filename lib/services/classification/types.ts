@@ -129,10 +129,16 @@ export type PortfolioFixedIncomeSleeve = {
   classificationIncomplete: boolean;
   subgroups: PortfolioExposureSubgroupSlice[];
   durationKnownSharePercent: number;
+  /** Share with a duration bucket (known or inferred), not a precise duration. */
+  durationClassifiedSharePercent: number;
   creditKnownSharePercent: number;
+  creditClassifiedSharePercent: number;
   dominantType: FixedIncomeType | null;
   majorityIsGovernment: boolean;
   majorityIsLongDuration: boolean;
+  /** Majority of classified (not only known) duration is long. */
+  majorityIsClassifiedLongDuration: boolean;
+  majorityIsClassifiedShortDuration: boolean;
 };
 
 export type PortfolioExposureAllocation = {

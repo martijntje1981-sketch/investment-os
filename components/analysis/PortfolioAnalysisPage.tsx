@@ -291,6 +291,7 @@ export default function PortfolioAnalysisPage() {
               />
               <BondsRatesSection
                 allocation={exposureAllocation}
+                holdings={holdings}
                 ratePolicyContext={ratePolicyContext}
                 intelligenceDepth={productAccess.intelligenceDepth}
               />

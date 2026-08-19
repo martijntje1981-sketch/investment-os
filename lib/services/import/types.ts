@@ -38,6 +38,8 @@ export type ImportRow = {
   matchWarnings?: string[];
   /** Provider quote denomination captured at match/confirm time. */
   quoteCurrency?: PriceCurrency | null;
+  /** EODHD Type from match (ETF, Bond, etc.) — not a new provider call. */
+  providerInstrumentType?: string | null;
   candidates?: ResolvedInstrument[];
   /** Set when the user explicitly confirms or picks an alternative. */
   userConfirmed?: boolean;

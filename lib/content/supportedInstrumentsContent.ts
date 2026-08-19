@@ -90,9 +90,9 @@ export const cryptoSectionCopy = {
 } as const;
 
 export const stocksEtfsSectionCopy = {
-  title: "Stocks, ETFs and ETCs",
+  title: "Stocks, ETFs, bond ETFs and ETCs",
   paragraphs: [
-    "Most listed European and US stocks, ETFs and ETCs can be matched using ticker, ISIN and exchange information.",
+    "Most listed European and US stocks, ETFs, bond ETFs and ETCs can be matched using ticker, ISIN and exchange information.",
     "Live pricing depends on the instrument and market-data coverage.",
     "The same security may trade on multiple exchanges; Tobailey uses a reference exchange where appropriate.",
     "An unsupported or unmatched holding can still be saved for manual review.",

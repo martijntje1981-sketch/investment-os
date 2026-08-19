@@ -15,20 +15,35 @@ export const FIXED_INCOME_DURATION_UNAVAILABLE_NOTE =
   "Duration is not available for this portfolio’s bond holdings, so Tobailey does not estimate how much prices might move if rates change.";
 
 export function buildFixedIncomeRateEducation(
-  sleeve: Pick<PortfolioFixedIncomeSleeve, "durationKnownSharePercent"> | null,
+  sleeve:
+    | Pick<
+        PortfolioFixedIncomeSleeve,
+        "durationKnownSharePercent" | "durationClassifiedSharePercent"
+      >
+    | Pick<PortfolioFixedIncomeSleeve, "durationKnownSharePercent">
+    | null,
 ): {
   headline: string;
   body: string;
   durationNote: string | null;
 } {
-  const durationKnown =
-    sleeve != null &&
-    Number.isFinite(sleeve.durationKnownSharePercent) &&
-    sleeve.durationKnownSharePercent > 0;
+  if (sleeve == null) {
+    return {
+      headline: FIXED_INCOME_RATE_EDUCATION_HEADLINE,
+      body: FIXED_INCOME_RATE_EDUCATION_BODY,
+      durationNote: null,
+    };
+  }
+  const classifiedShare =
+    "durationClassifiedSharePercent" in sleeve
+      ? sleeve.durationClassifiedSharePercent
+      : sleeve.durationKnownSharePercent;
+  const durationClassified =
+    Number.isFinite(classifiedShare) && classifiedShare > 0;
 
   return {
     headline: FIXED_INCOME_RATE_EDUCATION_HEADLINE,
     body: FIXED_INCOME_RATE_EDUCATION_BODY,
-    durationNote: durationKnown ? null : FIXED_INCOME_DURATION_UNAVAILABLE_NOTE,
+    durationNote: durationClassified ? null : FIXED_INCOME_DURATION_UNAVAILABLE_NOTE,
   };
 }

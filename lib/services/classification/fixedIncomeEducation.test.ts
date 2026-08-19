@@ -33,9 +33,15 @@ describe("fixed-income rate education", () => {
     expect(education.durationNote).toMatch(/does not estimate/i);
   });
 
-  it("omits the duration-unavailable note when some duration is known, still without numbers", () => {
+  it("does not claim duration is unavailable when there are no bond holdings", () => {
+    const education = buildFixedIncomeRateEducation(null);
+    expect(education.durationNote).toBeNull();
+  });
+
+  it("omits the duration-unavailable note when some duration is classified, still without numbers", () => {
     const education = buildFixedIncomeRateEducation({
-      durationKnownSharePercent: 40,
+      durationKnownSharePercent: 0,
+      durationClassifiedSharePercent: 40,
     });
     expect(education.body).toBe(FIXED_INCOME_RATE_EDUCATION_BODY);
     expect(education.durationNote).toBeNull();

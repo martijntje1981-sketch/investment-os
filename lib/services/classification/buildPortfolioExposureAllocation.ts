@@ -248,9 +248,13 @@ function buildFixedIncomeSleeve(
     { value: number; holdingCount: number; confidence: "known" | "inferred" | "unknown" }
   >();
   let durationKnown = 0;
+  let durationClassified = 0;
   let creditKnown = 0;
+  let creditClassified = 0;
   let governmentValue = 0;
   let longDurationValue = 0;
+  let longClassifiedValue = 0;
+  let shortClassifiedValue = 0;
 
   for (const row of rows) {
     const type = row.classification.type;
@@ -269,14 +273,24 @@ function buildFixedIncomeSleeve(
     if (row.classification.confidence.duration === "known") {
       durationKnown += row.value;
     }
+    if (row.classification.durationBucket !== "unknown") {
+      durationClassified += row.value;
+    }
     if (row.classification.confidence.creditQuality === "known") {
       creditKnown += row.value;
+    }
+    if (row.classification.creditQuality !== "mixed_unknown") {
+      creditClassified += row.value;
     }
     if (type === "government" || row.classification.sovereignTreasury) {
       governmentValue += row.value;
     }
     if (row.classification.durationBucket === "long") {
       longDurationValue += row.value;
+      longClassifiedValue += row.value;
+    }
+    if (row.classification.durationBucket === "short") {
+      shortClassifiedValue += row.value;
     }
   }
 
@@ -313,11 +327,17 @@ function buildFixedIncomeSleeve(
     classificationIncomplete,
     subgroups,
     durationKnownSharePercent: (durationKnown / sleeveValue) * 100,
+    durationClassifiedSharePercent: (durationClassified / sleeveValue) * 100,
     creditKnownSharePercent: (creditKnown / sleeveValue) * 100,
+    creditClassifiedSharePercent: (creditClassified / sleeveValue) * 100,
     dominantType: dominant?.type ?? null,
     majorityIsGovernment: governmentValue / sleeveValue >= 0.5,
     majorityIsLongDuration:
       durationKnown > 0 && longDurationValue / durationKnown >= 0.5,
+    majorityIsClassifiedLongDuration:
+      durationClassified > 0 && longClassifiedValue / durationClassified >= 0.5,
+    majorityIsClassifiedShortDuration:
+      durationClassified > 0 && shortClassifiedValue / durationClassified >= 0.5,
   };
 }
 

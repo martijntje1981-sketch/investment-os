@@ -379,6 +379,9 @@ export default function HoldingPage() {
               relatedNews={relatedNews}
               intelligenceDepth={productAccess.intelligenceDepth}
               weightPercent={valuation.portfolioWeightPercent}
+              marketValue={valuation.marketValue}
+              changePercent={dailyChangePercent}
+              contributionPp={moveContext?.contributionPp ?? null}
             />
           </div>
 

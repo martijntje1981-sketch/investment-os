@@ -147,7 +147,9 @@ export function buildWhatsAheadQuestion(input: {
   const rateOutlook = buildQualitativeRateOutlook({
     weightPercent: sleeve?.weightPercent ?? null,
     durationKnownSharePercent: sleeve?.durationKnownSharePercent ?? 0,
+    durationClassifiedSharePercent: sleeve?.durationClassifiedSharePercent,
     majorityIsLongDuration: sleeve?.majorityIsLongDuration ?? false,
+    majorityIsClassifiedLongDuration: sleeve?.majorityIsClassifiedLongDuration,
   });
   if (rateOutlook) {
     expandItems.push({

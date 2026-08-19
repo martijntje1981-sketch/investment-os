@@ -27,7 +27,7 @@ const actions = [
     icon: Goal,
   },
   {
-    href: "/portfolio",
+    href: "/portfolio?add=investment",
     label: "Add Holding",
     icon: BriefcaseBusiness,
   },

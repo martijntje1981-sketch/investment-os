@@ -104,6 +104,7 @@ export function finalizeImportRowForSave(row: ImportRow): StoredPortfolioHolding
     requiresConfirmation: ready ? false : row.requiresConfirmation ?? true,
     matchWarnings: row.matchWarnings,
     quoteCurrency: row.quoteCurrency ?? null,
+    providerInstrumentType: row.providerInstrumentType ?? null,
   });
 }
 

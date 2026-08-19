@@ -24,6 +24,9 @@ export {
   FIXED_INCOME_DURATION_UNAVAILABLE_NOTE,
 } from "@/lib/services/classification/fixedIncomeEducation";
 export {
+  BONDS_RATES_ADD_HOLDING_HREF,
+  BONDS_RATES_EMPTY_BODY,
+  BONDS_RATES_EMPTY_HEADLINE,
   BONDS_RATES_OFFICIAL_CONTEXT_LABEL,
   BONDS_RATES_OFFICIAL_NOT_CAUSE,
   BONDS_RATES_SECTION_ID,
@@ -33,6 +36,8 @@ export {
   buildFixedIncomeReportContext,
   buildQualitativeRateOutlook,
   formatFixedIncomeHoldingField,
+  type BondsRatesHoldingRow,
+  type BondsRatesMetric,
   type BondsRatesOfficialContext,
   type BondsRatesView,
 } from "@/lib/services/classification/bondsRatesView";

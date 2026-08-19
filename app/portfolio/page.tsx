@@ -1206,6 +1206,11 @@ export default function PortfolioPage() {
                     )}
                     Find listing
                   </button>
+                  <p className="text-[15px] leading-relaxed text-slate-600">
+                    Bond ETFs and individual bonds use this same flow. Prefer
+                    ISIN or ticker plus exchange (for example IBTM.LSE), then
+                    Find listing.
+                  </p>
 
                   {listingWarnings.length > 0 ? (
                     <div className="space-y-3">

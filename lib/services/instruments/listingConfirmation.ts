@@ -191,6 +191,7 @@ export function draftToImportRow(
     requiresConfirmation: draft.requiresConfirmation,
     matchWarnings: draft.matchWarnings,
     quoteCurrency: draft.quoteCurrency ?? null,
+    providerInstrumentType: draft.providerInstrumentType ?? null,
     confirmationSource: draft.confirmationSource as
       | ListingConfirmationSource
       | undefined,
@@ -221,6 +222,7 @@ export function importRowToStoredHolding(
     requiresConfirmation: row.requiresConfirmation,
     matchWarnings: row.matchWarnings,
     quoteCurrency: row.quoteCurrency ?? null,
+    providerInstrumentType: row.providerInstrumentType ?? null,
     confirmationSource: row.confirmationSource,
   };
 }
