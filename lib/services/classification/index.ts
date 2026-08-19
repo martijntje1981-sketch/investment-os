@@ -6,6 +6,7 @@ export {
 export {
   classifyFixedIncomeHolding,
   isFixedIncomeHolding,
+  inferFixedIncomeShareClassContext,
   formatFixedIncomeSubtypeLabel,
   FIXED_INCOME_CREDIT_LABELS,
   FIXED_INCOME_DURATION_LABELS,

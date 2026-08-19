@@ -11,6 +11,7 @@ import {
   FIXED_INCOME_DURATION_LABELS,
   FIXED_INCOME_TYPE_LABELS,
   formatFixedIncomeSubtypeLabel,
+  inferFixedIncomeShareClassContext,
   type FixedIncomeClassification,
   type FixedIncomeFieldConfidence,
 } from "@/lib/services/classification/classifyFixedIncome";
@@ -112,10 +113,12 @@ export function formatFixedIncomeHoldingField(
 
 export function buildFixedIncomeHoldingProfile(
   classification: FixedIncomeClassification | null | undefined,
+  holding?: Pick<StoredPortfolioHolding, "name" | "instrumentName">,
 ): {
   typeLabel: string | null;
   durationLabel: string | null;
   creditLabel: string | null;
+  hedgeLabel: string | null;
   durationUnknown: boolean;
   typeUnknown: boolean;
   creditUnknown: boolean;
@@ -124,6 +127,9 @@ export function buildFixedIncomeHoldingProfile(
   const typeUnknown = classification.type === "unknown";
   const durationUnknown = classification.durationBucket === "unknown";
   const creditUnknown = classification.creditQuality === "mixed_unknown";
+  const hedge = holding
+    ? inferFixedIncomeShareClassContext(holding).currencyHedge
+    : null;
   return {
     typeLabel: typeUnknown
       ? null
@@ -143,6 +149,9 @@ export function buildFixedIncomeHoldingProfile(
           FIXED_INCOME_CREDIT_LABELS[classification.creditQuality],
           classification.confidence.creditQuality,
         ),
+    hedgeLabel: hedge
+      ? formatFixedIncomeHoldingField(hedge, "inferred")
+      : null,
     durationUnknown,
     typeUnknown,
     creditUnknown,
@@ -221,6 +230,27 @@ function rateSensitivityMetric(
   };
 }
 
+function hedgeMetric(
+  holdings: StoredPortfolioHolding[],
+  fiSymbols: Set<string>,
+  showBreakdown: boolean,
+): BondsRatesMetric | null {
+  if (!showBreakdown) return null;
+  const labels = holdings
+    .filter((row) => fiSymbols.has(row.symbol.trim().toUpperCase()))
+    .map((row) => inferFixedIncomeShareClassContext(row).currencyHedge)
+    .filter((row): row is string => Boolean(row));
+  if (labels.length === 0) return null;
+  const unique = [...new Set(labels)];
+  if (unique.length !== 1 || !unique[0]) return null;
+  return {
+    id: "hedge",
+    label: "Share class",
+    value: unique[0],
+    detail: "Inferred",
+  };
+}
+
 function currencyMetric(
   holdings: StoredPortfolioHolding[],
   fiSymbols: Set<string>,
@@ -288,7 +318,7 @@ export function buildBondsRatesView(input: {
   const fiGroup = input.allocation.groups.find(
     (group) => group.groupId === "fixed_income",
   );
-  const hasFixedIncome = Boolean(sleeve && sleeve.weightPercent >= MATERIAL_WEIGHT_PERCENT);
+  const hasFixedIncome = Boolean(sleeve);
   const education = buildFixedIncomeRateEducation(hasFixedIncome ? sleeve : null);
   const showBreakdown = input.intelligenceDepth !== "free" && hasFixedIncome;
   const typeRow = dominantSubtype(input.allocation);
@@ -315,6 +345,8 @@ export function buildBondsRatesView(input: {
     if (sensitivity) metrics.push(sensitivity);
     const credit = creditMetric(input.holdings ?? [], showBreakdown);
     if (credit) metrics.push(credit);
+    const hedge = hedgeMetric(input.holdings ?? [], fiSymbols, showBreakdown);
+    if (hedge) metrics.push(hedge);
     const currency = currencyMetric(input.holdings ?? [], fiSymbols, showBreakdown);
     if (currency) metrics.push(currency);
   }

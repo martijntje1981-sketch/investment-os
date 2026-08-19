@@ -56,4 +56,36 @@ describe("applyResolvedToHolding purchase vs pricing", () => {
     expect(next.pricingExchange).toBe("XETRA");
     expect(next.providerSymbol).toBe("4COP.XETRA");
   });
+
+  it("replaces a ticker-only name with the matched instrument name", () => {
+    const next = applyResolvedToHolding(
+      {
+        symbol: "EUNA",
+        name: "EUNA",
+        exchange: "XETRA",
+        pricingExchange: null as string | null,
+        providerSymbol: null as string | null,
+      },
+      {
+        providerSymbol: "EUNA.XETRA",
+        instrumentName:
+          "iShares Core Global Aggregate Bond UCITS ETF EUR Hedged (Acc)",
+        exchange: "XETRA",
+        isin: "IE00BDBRDM35",
+        quoteCurrency: "EUR",
+        matchMethod: "ticker_exchange",
+        confidence: 0.95,
+        requiresConfirmation: false,
+        warnings: [],
+        providerInstrumentType: "ETF",
+      },
+    );
+
+    expect(next.name).toBe(
+      "iShares Core Global Aggregate Bond UCITS ETF EUR Hedged (Acc)",
+    );
+    expect(next.instrumentName).toBe(
+      "iShares Core Global Aggregate Bond UCITS ETF EUR Hedged (Acc)",
+    );
+  });
 });

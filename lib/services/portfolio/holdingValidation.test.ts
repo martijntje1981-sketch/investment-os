@@ -98,6 +98,28 @@ describe("holdingValidation manual fallback", () => {
     expect(saved.exchange).toBe("XETRA");
   });
 
+  it("promotes a matched bond ETF name over a ticker-only label", () => {
+    const saved = prepareManualHoldingForSave(
+      holding({
+        symbol: "EUNA",
+        name: "EUNA",
+        instrumentName:
+          "iShares Core Global Aggregate Bond UCITS ETF EUR Hedged (Acc)",
+        providerSymbol: "EUNA.XETRA",
+        providerInstrumentType: "ETF",
+        quantity: 2,
+        purchasePrice: 10,
+      }),
+    );
+
+    expect(saved.name).toBe(
+      "iShares Core Global Aggregate Bond UCITS ETF EUR Hedged (Acc)",
+    );
+    expect(saved.instrumentName).toBe(
+      "iShares Core Global Aggregate Bond UCITS ETF EUR Hedged (Acc)",
+    );
+  });
+
   it("keeps free-text exchange values when no alias exists", () => {
     const saved = prepareManualHoldingForSave(
       holding({ symbol: "ABC", exchange: "Custom venue", quantity: 1, purchasePrice: 10 }),

@@ -55,7 +55,7 @@ export function HoldingFixedIncomeCard({
   const buttonId = useId();
   const [open, setOpen] = useState(false);
   const classification = classifyHoldingExposure(holding).fixedIncome ?? null;
-  const profile = buildFixedIncomeHoldingProfile(classification);
+  const profile = buildFixedIncomeHoldingProfile(classification, holding);
   if (!profile || !classification) return null;
 
   const isComplete = intelligenceDepth === "complete";
@@ -102,6 +102,9 @@ export function HoldingFixedIncomeCard({
   }
   if (isComplete && currency) {
     metrics.push({ id: "currency", label: "Currency", value: currency });
+  }
+  if (isComplete && profile.hedgeLabel) {
+    metrics.push({ id: "hedge", label: "Share class", value: profile.hedgeLabel });
   }
 
   const limitations = [

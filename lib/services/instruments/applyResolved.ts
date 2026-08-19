@@ -6,6 +6,33 @@
 import { exchangesMatch } from "@/lib/services/instruments/exchangeNormalizer";
 import type { ResolvedInstrument } from "@/lib/types/instrument";
 
+function tickerLikeDisplayName(
+  name: string,
+  symbol: string,
+  providerSymbol: string | null | undefined,
+): boolean {
+  const normalized = name.trim().toUpperCase();
+  if (!normalized) return true;
+  const symbolKey = symbol.trim().toUpperCase();
+  const code = (providerSymbol?.split(".")[0] ?? "").trim().toUpperCase();
+  return normalized === symbolKey || (code !== "" && normalized === code);
+}
+
+/** Prefer the provider instrument name when the holding label is still just the ticker. */
+export function resolveDisplayNameFromListing(
+  currentName: string,
+  symbol: string,
+  instrumentName: string | null | undefined,
+  providerSymbol?: string | null,
+): string {
+  const trimmedName = currentName.trim();
+  const listingName = instrumentName?.trim() || "";
+  if (tickerLikeDisplayName(trimmedName, symbol, providerSymbol) && listingName) {
+    return listingName;
+  }
+  return trimmedName || listingName || currentName;
+}
+
 /**
  * Applies provider-resolved fields without inventing a ticker.
  * When the user ticker is empty and EODHD returns a Code, that Code is used
@@ -65,9 +92,11 @@ export function applyResolvedToHolding<
     matchConfidence: resolved.confidence,
     requiresConfirmation: resolved.requiresConfirmation,
     matchWarnings: resolved.warnings,
-    name:
-      holding.name.trim() ||
-      resolved.instrumentName ||
+    name: resolveDisplayNameFromListing(
       holding.name,
+      holding.symbol,
+      resolved.instrumentName,
+      resolved.providerSymbol ?? holding.providerSymbol,
+    ),
   };
 }

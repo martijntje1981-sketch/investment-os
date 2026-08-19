@@ -1,4 +1,5 @@
 import { normalizeExchange } from "@/lib/services/instruments/exchangeNormalizer";
+import { resolveDisplayNameFromListing } from "@/lib/services/instruments/applyResolved";
 import {
   isCryptoHolding,
   prepareCryptoHoldingForSave,
@@ -207,7 +208,13 @@ export function prepareManualHoldingForSave(
   }
 
   const symbol = resolvePrimarySymbol(holding);
-  const name = holding.name.trim() || holding.instrumentName?.trim() || symbol;
+  const name =
+    resolveDisplayNameFromListing(
+      holding.name,
+      symbol,
+      holding.instrumentName,
+      holding.providerSymbol,
+    ).trim() || symbol;
   const purchasePrice = Number.isFinite(holding.purchasePrice)
     ? holding.purchasePrice
     : 0;

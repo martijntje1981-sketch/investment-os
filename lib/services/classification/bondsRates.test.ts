@@ -438,6 +438,35 @@ describe("Phase 14 bonds and rates intelligence", () => {
     );
   });
 
+  it("never shows the empty state when a recognized Fixed Income holding exists", () => {
+    const euna = holding({
+      symbol: "EUNA",
+      name: "iShares Core Global Aggregate Bond UCITS ETF EUR Hedged (Acc)",
+      quantity: 2,
+      purchasePrice: 10,
+      currentPrice: 10,
+    });
+    const largeEquity = holding({
+      symbol: "VWCE",
+      providerSymbol: "VWCE.XETRA",
+      quantity: 400,
+      currentPrice: 120,
+    });
+    const allocation = buildPortfolioExposureAllocation([euna, largeEquity]);
+    expect(allocation.fixedIncome).not.toBeNull();
+    expect(allocation.fixedIncome!.weightPercent).toBeLessThan(1);
+    const view = buildBondsRatesView({
+      allocation,
+      holdings: [euna, largeEquity],
+      intelligenceDepth: "complete",
+    });
+    expect(view.hasFixedIncome).toBe(true);
+    expect(view.allocationLine).not.toBe(view.emptyHeadline);
+    expect(view.holdings.map((row) => row.symbol)).toContain("EUNA");
+    expect(view.metrics.some((row) => /aggregate/i.test(row.value))).toBe(true);
+    expect(view.metrics.some((row) => /EUR hedged/i.test(row.value))).toBe(true);
+  });
+
   it("classifies realistic bond ETF fixtures without inventing yield or ratings", () => {
     const aggregate = holding({
       symbol: "AGGH",

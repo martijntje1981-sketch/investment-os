@@ -121,13 +121,15 @@ const EQUITY_DOMINANT =
   /\b(?:equity|equities|stock|stocks|shares|common stock|preferred|reit|real estate|commodity|commodities|gold|silver|bitcoin|ethereum|crypto)\b/i;
 
 const BOND_CORE =
-  /\b(?:bond(?:s)?|fixed[\s-]?income|gilt(?:s)?|bund(?:s)?|treasur(?:y|ies)|sovereign(?:s)?|tips)\b/i;
+  /\b(?:bond(?:s)?|fixed[\s-]?income|gilt(?:s)?|bund(?:s)?|treasur(?:y|ies)|sovereign(?:s)?|tips|t-?bills?)\b/i;
+
+const BOND_ABBREV = /\b(?:bd|bds)\b/i;
 
 const DEBT_FUND =
   /\b(?:debt|credit|obligation(?:s)?)\b/i;
 
 const FUND_WRAPPER =
-  /\b(?:etf|etp|ucits|fund|fonds|index)\b/i;
+  /\b(?:etf|etp|etc|ucits|fund|fonds|index)\b/i;
 
 const INFLATION =
   /\b(?:tips|inflation[\s-]?link(?:ed)?|index[\s-]?link(?:ed)?|linker(?:s)?|inflation[\s-]?protected)\b/i;
@@ -187,12 +189,34 @@ function looksLikeDirectBondName(text: string): boolean {
   return hasCoupon && hasYear && hasIssuerCue;
 }
 
-function excludeAsNonBond(text: string): boolean {
-  if (MIXED_ALLOCATION.test(text)) return true;
-  if (EQUITY_DOMINANT.test(text) && !BOND_CORE.test(text) && !INFLATION.test(text)) {
+function hasBondLanguage(text: string): boolean {
+  return BOND_CORE.test(text) || INFLATION.test(text) || BOND_ABBREV.test(text);
+}
+
+function looksLikeBondFund(text: string): boolean {
+  if (BOND_CORE.test(text) || INFLATION.test(text)) return true;
+  if (BOND_ABBREV.test(text) && FUND_WRAPPER.test(text)) return true;
+  if (AGGREGATE.test(text) && (FUND_WRAPPER.test(text) || hasBondLanguage(text))) {
     return true;
   }
-  if (INCOME_ONLY.test(text) && !BOND_CORE.test(text) && !INFLATION.test(text) && !DEBT_FUND.test(text)) {
+  return (
+    /\b(?:government|govt|treasury|corporate|investment[\s-]?grade|high[\s-]?yield|inflation[\s-]?link(?:ed)?|short[\s-]?duration|long[\s-]?duration|global\s+aggregate)\s+bond/i.test(
+      text,
+    )
+  );
+}
+
+function excludeAsNonBond(text: string): boolean {
+  if (MIXED_ALLOCATION.test(text)) return true;
+  if (EQUITY_DOMINANT.test(text) && !hasBondLanguage(text) && !AGGREGATE.test(text)) {
+    return true;
+  }
+  if (
+    INCOME_ONLY.test(text) &&
+    !hasBondLanguage(text) &&
+    !DEBT_FUND.test(text) &&
+    !AGGREGATE.test(text)
+  ) {
     return true;
   }
   return false;
@@ -230,12 +254,14 @@ function detectAssetClass(input: FixedIncomeHoldingInput, text: string): {
     };
   }
 
-  if (BOND_CORE.test(text)) {
+  if (looksLikeBondFund(text)) {
     return {
       isFixedIncome: true,
       source: "name_heuristic",
       confidence: "inferred",
-      reason: "Bond / fixed-income name heuristic",
+      reason: AGGREGATE.test(text) && !BOND_CORE.test(text)
+        ? "Aggregate / mixed bond-fund name heuristic"
+        : "Bond / fixed-income name heuristic",
     };
   }
 
@@ -390,4 +416,16 @@ export function classifyFixedIncomeHolding(
 
 export function isFixedIncomeHolding(input: FixedIncomeHoldingInput): boolean {
   return classifyFixedIncomeHolding(input).isFixedIncome;
+}
+
+/** Share-class listing context from the instrument name. Never a yield or duration. */
+export function inferFixedIncomeShareClassContext(
+  input: Pick<FixedIncomeHoldingInput, "name" | "instrumentName" | "fundCategory">,
+): { currencyHedge: string | null } {
+  const text = normalizeHaystack(input);
+  const hedge = text.match(/\b(eur|usd|gbp|chf|jpy)\s*hedg(?:ed|ing)\b/i);
+  const currency = hedge?.[1]?.toUpperCase();
+  return {
+    currencyHedge: currency ? `${currency} hedged` : null,
+  };
 }

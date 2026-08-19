@@ -210,6 +210,82 @@ describe("fixed-income classification", () => {
     expect(result.fixedIncome?.durationBucket).toBe("unknown");
     expect(result.fixedIncome?.confidence.assetClass).toBe("known");
   });
+
+  it("classifies EUNA / Global Aggregate Bond ETF as inferred mixed aggregate", () => {
+    const euna = classifyHoldingExposure(
+      holding({
+        symbol: "EUNA",
+        name: "EUNA",
+        instrumentName:
+          "iShares Core Global Aggregate Bond UCITS ETF EUR Hedged (Acc)",
+        providerInstrumentType: "ETF",
+        providerSymbol: "EUNA.XETRA",
+      }),
+    );
+    expect(euna.normalizedGroupId).toBe("fixed_income");
+    expect(euna.fixedIncome?.isFixedIncome).toBe(true);
+    expect(euna.fixedIncome?.type).toBe("mixed_aggregate");
+    expect(euna.fixedIncome?.confidence.assetClass).toBe("inferred");
+    expect(euna.fixedIncome?.confidence.type).toBe("inferred");
+    expect(euna.fixedIncome?.durationBucket).toBe("unknown");
+    expect(euna.fixedIncome?.creditQuality).toBe("mixed_unknown");
+    expect(euna.fixedIncome?.confidence.duration).toBe("unknown");
+    expect(euna.fixedIncome?.confidence.creditQuality).toBe("unknown");
+  });
+
+  it("classifies abbreviated aggregate bond ETF names without inventing duration", () => {
+    const abbreviated = classifyHoldingExposure(
+      holding({
+        symbol: "EUNA",
+        name: "iShares Core Global Agg Bd UCITS ETF EUR Hdg Acc",
+        providerInstrumentType: "ETF",
+      }),
+    );
+    expect(abbreviated.normalizedGroupId).toBe("fixed_income");
+    expect(abbreviated.fixedIncome?.type).toBe("mixed_aggregate");
+    expect(abbreviated.fixedIncome?.durationBucket).toBe("unknown");
+  });
+
+  it("does not classify ticker-only or ambiguous names as Fixed Income", () => {
+    expect(
+      classifyHoldingExposure(holding({ symbol: "EUNA", name: "EUNA" }))
+        .fixedIncome?.isFixedIncome,
+    ).not.toBe(true);
+    expect(
+      classifyHoldingExposure(
+        holding({ symbol: "FLEX", name: "Flexible Strategy Fund" }),
+      ).fixedIncome?.isFixedIncome,
+    ).not.toBe(true);
+  });
+
+  it("does not classify equity or commodity ETFs/ETCs as Fixed Income", () => {
+    expect(
+      classifyHoldingExposure(
+        holding({
+          symbol: "CSPX",
+          name: "iShares Core S&P 500 UCITS ETF",
+        }),
+      ).normalizedGroupId,
+    ).not.toBe("fixed_income");
+    expect(
+      classifyHoldingExposure(
+        holding({
+          symbol: "IGLN",
+          name: "iShares Physical Gold ETC",
+        }),
+      ).normalizedGroupId,
+    ).not.toBe("fixed_income");
+    expect(
+      classifyHoldingExposure(
+        holding({ symbol: "VWCE", providerSymbol: "VWCE.XETRA" }),
+      ).normalizedGroupId,
+    ).toBe("diversified_equity");
+    expect(
+      classifyHoldingExposure(
+        holding({ symbol: "NUKL", providerSymbol: "NUKL.XETRA" }),
+      ).normalizedGroupId,
+    ).toBe("industrials_resources");
+  });
 });
 
 describe("fixed-income exposure, snapshots, and intelligence", () => {
