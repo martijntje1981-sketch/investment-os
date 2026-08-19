@@ -23,6 +23,8 @@ describe("Dashboard deep links", () => {
     expect(DASHBOARD_DEEP_LINKS.portfolioAllocation).toBe(
       "/analysis#portfolio-allocation",
     );
+    expect(DASHBOARD_DEEP_LINKS.bondsRates).toBe("/analysis#bonds-rates");
+    expect(SECTION_IDS.bondsRates).toBe("bonds-rates");
     expect(DASHBOARD_DEEP_LINKS.scenarioStress).toBe(
       "/analysis#scenario-stress",
     );
@@ -66,6 +68,12 @@ describe("Dashboard deep links", () => {
     );
     expect(read("components/goals/WhatIfExplorer.tsx")).toContain(
       `id="${SECTION_IDS.whatIf}"`,
+    );
+    expect(read("components/analysis/PortfolioXRaySection.tsx")).toContain(
+      `id="${SECTION_IDS.portfolioXray}"`,
+    );
+    expect(read("components/analysis/BondsRatesSection.tsx")).toContain(
+      `id={BONDS_RATES_SECTION_ID}`,
     );
     expect(read("components/analysis/PortfolioAnalysisPage.tsx")).toContain(
       `id="${SECTION_IDS.portfolioAllocation}"`,

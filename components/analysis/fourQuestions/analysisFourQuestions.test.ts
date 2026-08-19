@@ -75,6 +75,7 @@ describe("Analysis under the Four Questions", () => {
       page.indexOf("item={Q3}"),
     );
     expect(q2Block).toContain("<PortfolioExposureSection");
+    expect(q2Block).toContain("<BondsRatesSection");
     expect(q2Block).toContain("<PortfolioXRaySection");
     expect(q2Block).toContain("<CryptoIntelligenceSection");
     expect(q2Block).toContain('id="portfolio-allocation"');
@@ -115,6 +116,7 @@ describe("Analysis under the Four Questions", () => {
   it("preserves existing tool deep-link ids and does not remove engines", () => {
     expect(page).toContain("PortfolioPerformanceSection");
     expect(page).toContain("PortfolioExposureSection");
+    expect(page).toContain("BondsRatesSection");
     expect(page).toContain("PortfolioXRaySection");
     expect(page).toContain("CryptoIntelligenceSection");
     expect(page).toContain("ScenarioStressSection");

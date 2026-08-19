@@ -9,7 +9,7 @@ export const FIXED_INCOME_RATE_EDUCATION_HEADLINE =
   "Bonds and interest rates";
 
 export const FIXED_INCOME_RATE_EDUCATION_BODY =
-  "When market interest rates or yields rise, existing bond prices generally fall. When yields fall, existing bond prices generally rise. Individual bonds and bond funds do not all move equally — sensitivity depends partly on maturity and duration. This is educational context, not advice.";
+  "When market interest rates or yields rise, existing bond prices generally fall. When yields fall, existing bond prices generally rise. Individual bonds and bond funds do not all move equally — sensitivity depends partly on maturity and duration. Credit risk also matters: higher-yield bonds can move for reasons other than rates. This is educational context, not advice.";
 
 export const FIXED_INCOME_DURATION_UNAVAILABLE_NOTE =
   "Duration is not available for this portfolio’s bond holdings, so Tobailey does not estimate how much prices might move if rates change.";

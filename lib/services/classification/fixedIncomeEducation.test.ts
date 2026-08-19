@@ -25,6 +25,7 @@ describe("fixed-income rate education", () => {
     expect(education.body).toMatch(/bond prices generally rise/i);
     expect(education.body).toMatch(/do not all move equally/i);
     expect(education.body).toMatch(/maturity and duration/i);
+    expect(education.body).toMatch(/credit risk/i);
     expect(education.body).toMatch(/not advice/i);
     expect(education.body).not.toMatch(/\d+(\.\d+)?\s?%/);
     expect(education.body).not.toMatch(/basis points|duration of|yield of/i);

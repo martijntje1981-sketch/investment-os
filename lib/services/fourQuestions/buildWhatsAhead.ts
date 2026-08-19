@@ -11,6 +11,9 @@ import {
 import type { ChangeIntelligenceSummary } from "@/lib/services/changeIntelligence/types";
 import { buildResilienceProfile } from "@/lib/services/resilience";
 import { buildResilienceTrace, traceToExpandItems } from "@/lib/services/intelligenceTrace";
+import { buildPortfolioExposureAllocation } from "@/lib/services/classification";
+import { buildQualitativeRateOutlook } from "@/lib/services/classification/bondsRatesView";
+import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 import type {
   FourQuestionAnswer,
   FourQuestionExpandItem,
@@ -137,6 +140,21 @@ export function buildWhatsAheadQuestion(input: {
       label: "Upcoming",
       detail: nextEventLabel.trim(),
       href: nextEventHref?.trim() || null,
+    });
+  }
+
+  const sleeve = buildPortfolioExposureAllocation(holdings).fixedIncome;
+  const rateOutlook = buildQualitativeRateOutlook({
+    weightPercent: sleeve?.weightPercent ?? null,
+    durationKnownSharePercent: sleeve?.durationKnownSharePercent ?? 0,
+    majorityIsLongDuration: sleeve?.majorityIsLongDuration ?? false,
+  });
+  if (rateOutlook) {
+    expandItems.push({
+      id: "fixed-income-rates",
+      label: "Bonds and rates",
+      detail: rateOutlook,
+      href: DASHBOARD_DEEP_LINKS.bondsRates,
     });
   }
 

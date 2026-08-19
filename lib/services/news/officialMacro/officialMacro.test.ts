@@ -288,6 +288,9 @@ describe("official macro RSS layer", () => {
       "lib/services/news/officialMacro/classifyTopic.ts",
       "components/holding/HoldingMoveContextCard.tsx",
       "components/analysis/PortfolioExposureSection.tsx",
+      "components/analysis/BondsRatesSection.tsx",
+      "components/holding/HoldingFixedIncomeCard.tsx",
+      "lib/services/classification/bondsRatesView.ts",
     ];
     for (const file of files) {
       const source = read(file);

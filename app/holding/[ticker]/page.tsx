@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 
+import { HoldingFixedIncomeCard } from "@/components/holding/HoldingFixedIncomeCard";
 import { HoldingMoveContextCard } from "@/components/holding/HoldingMoveContextCard";
 import { HoldingPositionHistory } from "@/components/holding/HoldingPositionHistory";
 import { AppPageLoading } from "@/components/layout/PageContainer";
@@ -372,6 +373,12 @@ export default function HoldingPage() {
               relatedNews={relatedNews}
               newsLoading={news.isLoading}
               intelligenceDepth={productAccess.intelligenceDepth}
+            />
+            <HoldingFixedIncomeCard
+              holding={holding}
+              relatedNews={relatedNews}
+              intelligenceDepth={productAccess.intelligenceDepth}
+              weightPercent={valuation.portfolioWeightPercent}
             />
           </div>
 

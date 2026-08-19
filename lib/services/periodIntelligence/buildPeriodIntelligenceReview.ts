@@ -20,6 +20,9 @@ import {
 } from "@/lib/services/periodIntelligence/config";
 import { selectPeriodPrimaryInsight } from "@/lib/services/periodIntelligence/selectPeriodPrimaryInsight";
 import { selectPeriodReviewContext } from "@/lib/services/periodIntelligence/selectPeriodReviewContext";
+import { buildPortfolioExposureAllocation } from "@/lib/services/classification";
+import { buildFixedIncomeReportContext } from "@/lib/services/classification/bondsRatesView";
+import { selectOfficialRatePolicyContext } from "@/lib/services/news/officialMacro";
 import {
   buildPeriodExecutiveSummary,
   buildPeriodReportHero,
@@ -251,6 +254,33 @@ function aheadSection(
   return null;
 }
 
+function attachFixedIncomeAheadContext(
+  ahead: PeriodIntelligenceSection | null,
+  holdings: StoredPortfolioHolding[] | undefined,
+  newsItems: NewsContentItem[] | null | undefined,
+): PeriodIntelligenceSection | null {
+  if (!holdings?.length) return ahead;
+  const sleeve = buildPortfolioExposureAllocation(holdings).fixedIncome;
+  const extra = buildFixedIncomeReportContext({
+    weightPercent: sleeve?.weightPercent ?? null,
+    ratePolicyContext:
+      sleeve != null ? selectOfficialRatePolicyContext(newsItems ?? []) : null,
+  });
+  if (extra.length === 0) return ahead;
+  if (!ahead) {
+    return makeSection("ahead", extra[0] ?? null, {
+      whyItMatters:
+        extra[1] ??
+        "This is current allocation context for your bond holdings, not a forecast.",
+      evidence: extra.slice(1),
+    });
+  }
+  return {
+    ...ahead,
+    evidence: uniqueLines([...extra, ...ahead.evidence], 4),
+  };
+}
+
 function windowMismatchNote(
   companion: CompanionReview,
   change: ChangeIntelligenceSummary,
@@ -312,11 +342,15 @@ export function buildPeriodIntelligenceReview(
       ? null
       : makeSection("matters", insight.meaning);
   const goal = goalSection(companion, change);
-  const ahead = aheadSection(
-    kind,
-    input.resilienceProfile,
-    input.concentrationWeightPercent,
-    input.largestHoldingName,
+  const ahead = attachFixedIncomeAheadContext(
+    aheadSection(
+      kind,
+      input.resilienceProfile,
+      input.concentrationWeightPercent,
+      input.largestHoldingName,
+    ),
+    input.holdings,
+    input.newsItems,
   );
 
   const contextSubject = {

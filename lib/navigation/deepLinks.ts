@@ -25,6 +25,7 @@ export const SECTION_IDS = {
   portfolioAllocation: "portfolio-allocation",
   portfolioExposure: "portfolio-exposure",
   portfolioXray: "portfolio-xray",
+  bondsRates: "bonds-rates",
   scenarioStress: "scenario-stress",
   /** Goals What-if explorer (Phase 12). */
   whatIf: "what-if",
@@ -65,6 +66,7 @@ export const DASHBOARD_DEEP_LINKS = {
   portfolioAllocation: `${ANALYSIS_PATH}#${SECTION_IDS.portfolioAllocation}`,
   portfolioExposure: `${ANALYSIS_PATH}#${SECTION_IDS.portfolioExposure}`,
   portfolioXray: `${ANALYSIS_PATH}#${SECTION_IDS.portfolioXray}`,
+  bondsRates: `${ANALYSIS_PATH}#${SECTION_IDS.bondsRates}`,
   scenarioStress: `${ANALYSIS_PATH}#${SECTION_IDS.scenarioStress}`,
   whatIf: `${GOALS_PATH}#${SECTION_IDS.whatIf}`,
   resilienceSleep: `${ANALYSIS_PATH}#${SECTION_IDS.resilienceSleep}`,

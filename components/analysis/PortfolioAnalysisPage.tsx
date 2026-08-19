@@ -12,6 +12,7 @@ import {
 import { DividendIntelligenceSection } from "@/components/analysis/DividendIntelligenceSection";
 import { CashIntelligenceSection } from "@/components/analysis/CashIntelligenceSection";
 import { CryptoIntelligenceSection } from "@/components/analysis/CryptoIntelligenceSection";
+import { BondsRatesSection } from "@/components/analysis/BondsRatesSection";
 import { PortfolioExposureSection } from "@/components/analysis/PortfolioExposureSection";
 import { PortfolioXRaySection } from "@/components/analysis/PortfolioXRaySection";
 import { ScenarioStressSection } from "@/components/analysis/ScenarioStressSection";
@@ -287,6 +288,11 @@ export default function PortfolioAnalysisPage() {
                 allocation={exposureAllocation}
                 showSubgroups={productAccess.intelligenceDepth === "complete"}
                 ratePolicyContext={ratePolicyContext}
+              />
+              <BondsRatesSection
+                allocation={exposureAllocation}
+                ratePolicyContext={ratePolicyContext}
+                intelligenceDepth={productAccess.intelligenceDepth}
               />
               <PortfolioXRaySection holdings={holdings} />
               <CryptoIntelligenceSection holdings={holdings} userSub={userSub} />
