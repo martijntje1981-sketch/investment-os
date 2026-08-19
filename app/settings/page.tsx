@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, BriefcaseBusiness, Goal, UserRound } from "lucide-react";
+import { ArrowRight, BriefcaseBusiness, Goal, Mail, UserRound } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 
 import BottomNavigation from "@/components/home/BottomNav";
@@ -11,10 +11,15 @@ import { PageHero } from "@/components/layout/PageHero";
 import {
   appCardClass,
   appCardPaddingClass,
-  appSectionLabelClass,
+  appSectionBodyClass,
   appSectionMetaClass,
   appSectionTitleClass,
 } from "@/components/layout/appSurface";
+import {
+  appIdentityHappenedIconClass,
+  appIdentityMattersIconClass,
+  appIdentityOnTrackIconClass,
+} from "@/components/layout/semanticIdentity";
 import { PortfolioBaseCurrencySetting } from "@/components/settings/PortfolioBaseCurrencySetting";
 import { PeriodReviewEmailPreferences } from "@/components/companion/PeriodReviewEmailPreferences";
 import { ExportPortfolioButton } from "@/components/export/ExportPortfolioButton";
@@ -89,7 +94,7 @@ export default function SettingsPage() {
 
         <section className={`${appCardClass} ${appCardPaddingClass}`}>
           <div className="flex items-start gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-600">
+            <div className={appIdentityHappenedIconClass}>
               <UserRound className="h-5 w-5" aria-hidden />
             </div>
             <div className="min-w-0">
@@ -112,10 +117,13 @@ export default function SettingsPage() {
           className={`${appCardClass} ${appCardPaddingClass} scroll-mt-24`}
           aria-labelledby="reports-email-heading"
         >
-          <h2 id="reports-email-heading" className={appSectionTitleClass}>
+          <h2 id="reports-email-heading" className={`flex items-center gap-3 ${appSectionTitleClass}`}>
+            <span className={appIdentityMattersIconClass} aria-hidden>
+              <Mail className="h-5 w-5" />
+            </span>
             Reports &amp; email
           </h2>
-          <p className={`mt-2 ${appSectionMetaClass}`}>
+          <p className={`mt-2 ${appSectionBodyClass}`}>
             Your portfolio data is always yours. Export it anytime.{" "}
             {TRUST_EMAIL_PRIVACY}
           </p>
@@ -127,7 +135,7 @@ export default function SettingsPage() {
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <Link
                 href={`${REVIEW_PATH}?period=monthly`}
-                className="inline-flex min-h-[44px] items-center text-[15px] font-semibold text-brand-navy underline-offset-2 hover:underline"
+                className="inline-flex min-h-[44px] items-center text-[16px] font-semibold text-brand-navy underline-offset-2 hover:underline"
               >
                 Open latest Monthly Review
               </Link>
@@ -151,8 +159,11 @@ export default function SettingsPage() {
 
         <section className={appCardClass}>
           <h2
-            className={`border-b border-slate-100 px-4 py-4 md:px-6 ${appSectionLabelClass}`}
+            className={`flex items-center gap-3 border-b border-slate-100 px-4 py-4 md:px-6 ${appSectionTitleClass}`}
           >
+            <span className={appIdentityOnTrackIconClass} aria-hidden>
+              <Goal className="h-5 w-5" />
+            </span>
             Portfolio configuration
           </h2>
           <div className="border-b border-slate-100">
@@ -206,7 +217,7 @@ function SettingsLink({
           {icon}
         </span>
         <span className="min-w-0">
-          <span className="block text-[15px] font-semibold text-slate-950">
+          <span className="block text-[16px] font-semibold text-slate-950">
             {label}
           </span>
           <span className={`mt-0.5 block ${appSectionMetaClass}`}>{detail}</span>

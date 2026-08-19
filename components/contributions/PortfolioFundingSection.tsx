@@ -12,6 +12,17 @@ import {
   appSectionTitleClass,
 } from "@/components/layout/appSurface";
 import {
+  appIdentityAheadMetricClass,
+  appIdentityHappenedMetricClass,
+  appIdentityOnTrackCardClass,
+  appIdentityOnTrackIconClass,
+  appIdentityOnTrackMetricClass,
+  appKpiFutureClass,
+  appKpiIntelClass,
+  appKpiNegativeClass,
+  appKpiPositiveClass,
+} from "@/components/layout/semanticIdentity";
+import {
   CONTRIBUTIONS_INCOMPLETE_BASIS_COPY,
   CONTRIBUTIONS_MANAGE_LABEL,
   PORTFOLIO_FUNDING_DESCRIPTION,
@@ -112,12 +123,14 @@ export function PortfolioFundingSection({
     <>
       <section
         aria-labelledby="portfolio-funding-title"
-        className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm"
+        className={appIdentityOnTrackCardClass}
       >
-        <div className="flex flex-col gap-4 border-b border-slate-200 px-5 py-5 sm:flex-row sm:items-start sm:justify-between sm:px-7">
+        <div className="flex flex-col gap-4 border-b border-amber-200/80 px-5 py-5 sm:flex-row sm:items-start sm:justify-between sm:px-7">
           <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <PiggyBank className="h-5 w-5 text-slate-700" aria-hidden />
+            <div className="flex items-center gap-3">
+              <span className={appIdentityOnTrackIconClass} aria-hidden>
+                <PiggyBank className="h-5 w-5" />
+              </span>
               <h2 id="portfolio-funding-title" className={appSectionTitleClass}>
                 {PORTFOLIO_FUNDING_TITLE}
               </h2>
@@ -171,6 +184,8 @@ export function PortfolioFundingSection({
                   label="Net contributed"
                   value={formatContributionAmount(summary.netContributed)}
                   prominent
+                  surface={appIdentityHappenedMetricClass}
+                  valueClass={appKpiIntelClass}
                 />
                 <FundingMetric
                   label="Current portfolio value"
@@ -180,6 +195,8 @@ export function PortfolioFundingSection({
                       : "Unavailable"
                   }
                   prominent
+                  surface={appIdentityAheadMetricClass}
+                  valueClass={appKpiFutureClass}
                 />
                 <FundingMetric
                   label="Value above contributions"
@@ -206,6 +223,7 @@ export function PortfolioFundingSection({
                           : "neutral"
                       : "neutral"
                   }
+                  surface={appIdentityOnTrackMetricClass}
                 />
               </div>
 
@@ -323,24 +341,32 @@ function FundingMetric({
   value,
   prominent = false,
   tone = "neutral",
+  surface,
+  valueClass,
 }: {
   label: string;
   value: string;
   prominent?: boolean;
   tone?: "positive" | "negative" | "neutral";
+  surface?: string;
+  valueClass?: string;
 }) {
   const toneClass =
-    tone === "positive"
-      ? "text-emerald-700"
+    valueClass ??
+    (tone === "positive"
+      ? appKpiPositiveClass
       : tone === "negative"
-        ? "text-amber-800"
-        : "text-slate-900";
+        ? appKpiNegativeClass
+        : "text-slate-900");
 
   return (
     <div
-      className={`rounded-2xl border border-slate-200 ${
-        prominent ? "bg-slate-50 px-4 py-4" : "bg-white px-4 py-3"
-      }`}
+      className={
+        surface ??
+        `rounded-2xl border border-slate-200 ${
+          prominent ? "bg-slate-50 px-4 py-4" : "bg-white px-4 py-3"
+        }`
+      }
     >
       <p className={appSectionLabelClass}>{label}</p>
       <p

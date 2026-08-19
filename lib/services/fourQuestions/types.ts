@@ -70,6 +70,10 @@ export type FourQuestionsBundle = {
 export const FOUR_QUESTION_VISUAL: Record<
   FourQuestionId,
   {
+    /** Distinct intelligence-card surface — not a 1px accent. */
+    card: string;
+    iconWell: string;
+    answer: string;
     panel: string;
     number: string;
     eyebrow: string;
@@ -109,9 +113,13 @@ export const FOUR_QUESTION_VISUAL: Record<
   }
 > = {
   what_happened: {
+    card: "overflow-hidden rounded-[24px] border-2 border-cyan-300 bg-gradient-to-br from-cyan-100 via-sky-50 to-white shadow-[0_12px_32px_-16px_rgba(8,145,178,0.5)]",
+    iconWell:
+      "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-cyan-600 text-white shadow-md shadow-cyan-800/30",
+    answer: "text-cyan-950",
     panel:
-      "border-cyan-200/55 bg-gradient-to-br from-cyan-50/70 via-white to-white",
-    number: "text-cyan-700/75",
+      "border-2 border-cyan-300 bg-gradient-to-br from-cyan-100 via-sky-50 to-white",
+    number: "text-cyan-800",
     eyebrow: "text-cyan-900/55",
     hover: "hover:bg-cyan-50/50",
     ring: "focus-visible:ring-cyan-400/40",
@@ -150,9 +158,13 @@ export const FOUR_QUESTION_VISUAL: Record<
       "border border-cyan-700/30 bg-gradient-to-r from-cyan-800 via-cyan-700 to-sky-600 text-white shadow-sm shadow-cyan-900/20",
   },
   what_matters_now: {
+    card: "overflow-hidden rounded-[24px] border-2 border-violet-300 bg-gradient-to-br from-violet-100 via-fuchsia-50 to-white shadow-[0_12px_32px_-16px_rgba(91,33,182,0.42)]",
+    iconWell:
+      "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-violet-600 text-white shadow-md shadow-violet-800/30",
+    answer: "text-violet-950",
     panel:
-      "border-violet-200/55 bg-gradient-to-br from-violet-50/65 via-white to-white",
-    number: "text-violet-700/75",
+      "border-2 border-violet-300 bg-gradient-to-br from-violet-100 via-fuchsia-50 to-white",
+    number: "text-violet-800",
     eyebrow: "text-violet-900/55",
     hover: "hover:bg-violet-50/45",
     ring: "focus-visible:ring-violet-400/40",
@@ -191,9 +203,13 @@ export const FOUR_QUESTION_VISUAL: Record<
       "border border-violet-700/30 bg-gradient-to-r from-violet-800 via-violet-700 to-fuchsia-600 text-white shadow-sm shadow-violet-900/20",
   },
   am_i_on_track: {
+    card: "overflow-hidden rounded-[24px] border-2 border-amber-300 bg-gradient-to-br from-amber-100 via-orange-50 to-white shadow-[0_12px_32px_-16px_rgba(180,83,9,0.42)]",
+    iconWell:
+      "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-500 text-white shadow-md shadow-amber-800/30",
+    answer: "text-amber-950",
     panel:
-      "border-amber-200/55 bg-gradient-to-br from-amber-50/65 via-white to-white",
-    number: "text-amber-800/75",
+      "border-2 border-amber-300 bg-gradient-to-br from-amber-100 via-orange-50 to-white",
+    number: "text-amber-900",
     eyebrow: "text-amber-950/50",
     hover: "hover:bg-amber-50/45",
     ring: "focus-visible:ring-amber-400/40",
@@ -232,9 +248,13 @@ export const FOUR_QUESTION_VISUAL: Record<
       "border border-amber-700/30 bg-gradient-to-r from-amber-800 via-amber-600 to-yellow-500 text-white shadow-sm shadow-amber-900/20",
   },
   whats_ahead: {
+    card: "overflow-hidden rounded-[24px] border-2 border-teal-300 bg-gradient-to-br from-teal-100 via-emerald-50 to-white shadow-[0_12px_32px_-16px_rgba(15,118,110,0.45)]",
+    iconWell:
+      "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-teal-600 text-white shadow-md shadow-teal-800/30",
+    answer: "text-teal-950",
     panel:
-      "border-teal-200/55 bg-gradient-to-br from-teal-50/65 via-white to-white",
-    number: "text-teal-700/75",
+      "border-2 border-teal-300 bg-gradient-to-br from-teal-100 via-emerald-50 to-white",
+    number: "text-teal-800",
     eyebrow: "text-teal-900/55",
     hover: "hover:bg-teal-50/45",
     ring: "focus-visible:ring-teal-400/40",

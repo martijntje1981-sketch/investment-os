@@ -26,12 +26,16 @@ describe("Four Question hubs visual brand polish", () => {
   });
 
   it("uses rich shared hub visual tokens for all four questions", () => {
+    expect(types).toContain("iconWell");
+    expect(types).toContain("card:");
     for (const q of FOUR_QUESTIONS) {
       expect(q.visual.hubHero).toMatch(/from-/);
       expect(q.visual.hubAnswer).toMatch(/border-l-/);
       expect(q.visual.navActive).toMatch(/shadow/);
       expect(q.visual.navIdle).toMatch(/from-/);
       expect(q.visual.hubPageWash).toMatch(/gradient/);
+      expect(q.visual.card).toMatch(/border-2/);
+      expect(q.visual.iconWell).toMatch(/bg-/);
     }
     expect(types).toContain("hubHero");
     expect(types).toContain("navActive");

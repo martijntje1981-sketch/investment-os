@@ -24,16 +24,21 @@ describe("Four Questions Dashboard UI wiring", () => {
     expect(section).toContain("min-h-12");
   });
 
-  it("presents one coherent stack with restrained question accents", () => {
+  it("presents four distinct semantic intelligence cards", () => {
     expect(types).toContain("FOUR_QUESTION_VISUAL");
     expect(types).toContain("FourQuestionsIntelligenceDepth");
+    expect(types).toContain("iconWell");
     expect(section).toContain("FOUR_QUESTION_VISUAL");
+    expect(section).toContain("visual.card");
+    expect(section).toContain("visual.iconWell");
     expect(section).toContain("data-visual={question.id}");
     expect(section).toContain('data-testid="four-questions-stack"');
     expect(section).toContain("Your portfolio in four questions");
     expect(section).toContain("expandHigh");
     expect(section).toContain("completeTease");
     expect(section).toContain("data-emphasis");
+    expect(section).toContain("grid gap-3");
+    expect(section).not.toContain("bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]");
   });
 
   it("keeps Explore inside the expanded state with hub deep links", () => {

@@ -1,11 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { History } from "lucide-react";
+import { Download, History } from "lucide-react";
 
 import { PortfolioPerformanceChart } from "@/components/analysis/performance/PortfolioPerformanceChart";
 import { ExpandableDashboardSection } from "@/components/dashboard/ExpandableDashboardSection";
-import { ExportPortfolioButton } from "@/components/export/ExportPortfolioButton";
 import {
   appSectionBodyClass,
   appSectionLabelClass,
@@ -59,8 +58,9 @@ export function PortfolioHistoryNavCard({
       title={PORTFOLIO_HISTORY_LABEL}
       titleId="portfolio-history-preview-heading"
       subtitle={quietNote ?? "How your portfolio developed"}
-      icon={<History className="h-5 w-5" />}
-      iconToneClassName="bg-slate-100 text-slate-700 ring-1 ring-slate-200"
+        icon={<History className="h-5 w-5" />}
+        iconToneClassName="bg-cyan-600 text-white shadow-md shadow-cyan-800/30"
+        shellClassName="overflow-hidden rounded-[24px] border-2 border-cyan-300 bg-gradient-to-br from-cyan-100 via-sky-50 to-white shadow-[0_12px_32px_-16px_rgba(8,145,178,0.45)]"
       deepLink={{
         href: PORTFOLIO_HISTORY_PATH,
         label: "View Portfolio History",
@@ -73,7 +73,7 @@ export function PortfolioHistoryNavCard({
               <p className={appSectionLabelClass}>
                 {keyStatisticLabel ?? "Key figure"}
               </p>
-              <p className="mt-0.5 truncate text-[18px] font-bold tracking-[-0.03em] text-slate-950">
+              <p className="mt-0.5 break-words text-[20px] font-bold tracking-[-0.03em] text-cyan-950">
                 {keyStatisticValue}
               </p>
             </div>
@@ -86,11 +86,18 @@ export function PortfolioHistoryNavCard({
 
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             {onExportPortfolio ? (
-              <ExportPortfolioButton
-                variant="text"
+              <button
+                type="button"
+                onClick={onExportPortfolio}
                 disabled={isExporting}
-                onExport={onExportPortfolio}
-              />
+                aria-busy={isExporting}
+                data-testid="dashboard-export-portfolio"
+                aria-label="Export Portfolio as Excel workbook"
+                className="inline-flex min-h-[44px] items-center gap-1.5 text-[16px] font-semibold text-cyan-800 transition hover:text-cyan-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2 disabled:opacity-70"
+              >
+                <Download className="h-4 w-4" aria-hidden />
+                {isExporting ? "Exporting…" : "Export Portfolio"}
+              </button>
             ) : null}
             <Link href={PORTFOLIO_HISTORY_PATH} className={appTextLinkClass}>
               View Portfolio History

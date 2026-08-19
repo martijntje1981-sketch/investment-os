@@ -2,7 +2,15 @@
 
 import { useCallback, useId, useState, type MouseEvent } from "react";
 import Link from "next/link";
-import { ArrowUpRight, ChevronDown } from "lucide-react";
+import {
+  ArrowUpRight,
+  ChevronDown,
+  Compass,
+  Sparkles,
+  Target,
+  TrendingUp,
+  type LucideIcon,
+} from "lucide-react";
 
 import {
   FOUR_QUESTION_VISUAL,
@@ -19,6 +27,13 @@ import {
   appSectionLabelClass,
   appSectionMetaClass,
 } from "@/components/layout/appSurface";
+
+const QUESTION_ICONS: Record<FourQuestionId, LucideIcon> = {
+  what_happened: TrendingUp,
+  what_matters_now: Sparkles,
+  am_i_on_track: Target,
+  whats_ahead: Compass,
+};
 
 type FourQuestionsSectionProps = {
   bundle: FourQuestionsBundle;
@@ -157,7 +172,7 @@ function ExploreLink({
   return (
     <Link
       href={question.explore.href}
-      className={`inline-flex min-h-11 w-full items-center justify-between gap-1.5 rounded-xl px-3 py-2.5 text-[15px] font-semibold ${visual.completeTease} transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 ${visual.ring}`}
+      className={`inline-flex min-h-11 w-full items-center justify-between gap-1.5 rounded-xl px-3 py-2.5 text-[16px] font-semibold ${visual.completeTease} transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 ${visual.ring}`}
       data-testid={`four-question-explore-${question.id}`}
       onClick={stopToggle}
     >
@@ -171,20 +186,19 @@ function QuestionPanel({
   question,
   expanded,
   onToggle,
-  isLast,
 }: {
   question: FourQuestionAnswer;
   expanded: boolean;
   onToggle: () => void;
-  isLast: boolean;
 }) {
   const panelId = useId();
   const headingId = useId();
   const visual = FOUR_QUESTION_VISUAL[question.id];
+  const Icon = QUESTION_ICONS[question.id];
 
   return (
     <article
-      className={`min-w-0 ${isLast ? "" : "border-b border-slate-200/80"}`}
+      className={visual.card}
       data-testid={`four-question-${question.id}`}
       data-expanded={expanded ? "true" : "false"}
       data-quiet={question.quiet ? "true" : "false"}
@@ -193,28 +207,25 @@ function QuestionPanel({
     >
       <button
         type="button"
-        className={`flex w-full min-h-12 items-start gap-3 px-4 py-3.5 text-left transition sm:gap-4 sm:px-5 sm:py-4 ${visual.hover} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset ${visual.ring}`}
+        className={`flex w-full min-h-12 items-start gap-3 px-4 py-4 text-left transition sm:gap-4 sm:px-5 sm:py-5 ${visual.hover} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset ${visual.ring}`}
         aria-expanded={expanded}
         aria-controls={panelId}
         onClick={onToggle}
         data-testid={`four-question-toggle-${question.id}`}
       >
-        <span
-          className={`mt-1 w-8 shrink-0 text-[13px] font-semibold tabular-nums tracking-[0.06em] ${visual.number}`}
-          aria-hidden
-        >
-          {question.numberLabel}
+        <span className={visual.iconWell} aria-hidden>
+          <Icon className="h-5 w-5" />
         </span>
         <span className="min-w-0 flex-1">
-          <span
-            id={headingId}
-            className={appFourQuestionLabelClass}
-          >
-            {question.question}
+          <span className={`flex items-center gap-2 ${appFourQuestionLabelClass}`}>
+            <span className={`tabular-nums ${visual.number}`}>
+              {question.numberLabel}
+            </span>
+            <span id={headingId}>{question.question}</span>
           </span>
           <span
             className={`${appFourQuestionAnswerClass} ${
-              question.quiet ? "text-slate-600" : "text-slate-950"
+              question.quiet ? "text-slate-600" : visual.answer
             }`}
           >
             {question.answer}
@@ -226,7 +237,7 @@ function QuestionPanel({
           ) : null}
         </span>
         <ChevronDown
-          className={`mt-1.5 h-5 w-5 shrink-0 text-slate-400 transition-transform duration-200 ${
+          className={`mt-1.5 h-5 w-5 shrink-0 ${visual.hubAccentIcon} transition-transform duration-200 ${
             expanded ? "rotate-180" : ""
           }`}
           aria-hidden
@@ -298,22 +309,21 @@ export function FourQuestionsSection({
       data-expanded={expandedId ?? "none"}
     >
       <header className="px-0.5 sm:px-1">
-        <h2 className="text-[1.2rem] font-bold tracking-[-0.035em] text-slate-950 sm:text-[1.35rem]">
+        <h2 className="text-[1.375rem] font-bold tracking-[-0.03em] text-slate-950 sm:text-[1.625rem]">
           Your portfolio in four questions
         </h2>
       </header>
 
       <div
-        className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
+        className="grid gap-3"
         data-testid="four-questions-stack"
       >
-        {bundle.questions.map((question, index) => (
+        {bundle.questions.map((question) => (
           <QuestionPanel
             key={question.id}
             question={question}
             expanded={expandedId === question.id}
             onToggle={() => toggle(question.id)}
-            isLast={index === bundle.questions.length - 1}
           />
         ))}
       </div>

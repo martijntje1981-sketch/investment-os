@@ -26,19 +26,18 @@ export function AnalysisQuestionSection({
       data-question={item.id}
     >
       <header
-        className={`rounded-2xl border px-4 py-3.5 sm:px-5 sm:py-4 ${item.visual.panel}`}
+        className={`rounded-[24px] px-4 py-4 sm:px-5 sm:py-5 ${item.visual.card}`}
       >
         <div className="flex items-start gap-3">
-          <span
-            className={`mt-0.5 w-8 shrink-0 text-[13px] font-semibold tabular-nums tracking-[0.06em] ${item.visual.number}`}
-            aria-hidden
-          >
-            {item.numberLabel}
+          <span className={item.visual.iconWell} aria-hidden>
+            <span className="text-[13px] font-bold tabular-nums">
+              {item.numberLabel}
+            </span>
           </span>
           <div className="min-w-0">
             <h2
               id={`${item.sectionId}-heading`}
-              className="text-[1.15rem] font-bold tracking-[-0.03em] text-slate-950 sm:text-[1.25rem]"
+              className="text-[1.25rem] font-bold tracking-[-0.03em] text-slate-950 sm:text-[1.5rem]"
             >
               {item.question}
             </h2>

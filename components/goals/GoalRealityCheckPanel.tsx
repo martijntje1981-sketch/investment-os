@@ -5,6 +5,11 @@ import {
   appSectionLabelClass,
   appSectionMetaClass,
 } from "@/components/layout/appSurface";
+import {
+  appIdentityOnTrackCardClass,
+  appIdentityOnTrackMetricClass,
+  appKpiGoalClass,
+} from "@/components/layout/semanticIdentity";
 import { formatExpectedReturnPa } from "@/lib/client/expectedReturnAssumption";
 import type { GoalRealityCheck } from "@/lib/services/goals/buildGoalRealityCheck";
 
@@ -35,7 +40,7 @@ export function GoalRealityCheckPanel({
     if (isLoading) {
       return (
         <div
-          className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3.5"
+          className={`${appIdentityOnTrackCardClass} px-4 py-3.5`}
           data-testid="goal-reality-check-loading"
         >
           <p className={appSectionLabelClass}>Goal reality check</p>
@@ -53,26 +58,26 @@ export function GoalRealityCheckPanel({
   return (
     <section
       id="goal-reality-check"
-      className="scroll-mt-24 rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-4"
+      className={`scroll-mt-24 px-4 py-5 sm:px-5 ${appIdentityOnTrackCardClass}`}
       aria-labelledby="goal-reality-check-heading"
       data-testid="goal-reality-check-panel"
     >
       <p
         id="goal-reality-check-heading"
-        className={appSectionLabelClass}
+        className={`${appSectionLabelClass} text-amber-900`}
       >
         Goal reality check
       </p>
 
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
-        <div>
-          <p className={`text-xl font-semibold tracking-tight text-slate-950`}>
+        <div className={appIdentityOnTrackMetricClass}>
+          <p className={`text-[1.375rem] tracking-tight sm:text-[1.5rem] ${appKpiGoalClass}`}>
             {formatExpectedReturnPa(realityCheck.expectedAnnualReturnPercent)}
           </p>
           <p className={`mt-0.5 ${appSectionMetaClass}`}>Your expected return</p>
         </div>
-        <div>
-          <p className={`text-xl font-semibold tracking-tight text-slate-950`}>
+        <div className={appIdentityOnTrackMetricClass}>
+          <p className={`text-[1.375rem] tracking-tight sm:text-[1.5rem] ${appKpiGoalClass}`}>
             {realityCheck.comparableAnnualPercent.toFixed(1)}%
           </p>
           <p className={`mt-0.5 ${appSectionMetaClass}`}>
@@ -84,7 +89,7 @@ export function GoalRealityCheckPanel({
         </div>
       </div>
 
-      <p className={`mt-3 text-[15px] font-semibold text-slate-800`}>
+      <p className={`mt-4 text-[18px] font-bold ${appKpiGoalClass}`}>
         {gapDisplay}
       </p>
 

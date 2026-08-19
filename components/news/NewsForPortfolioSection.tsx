@@ -8,6 +8,13 @@ import {
   appSectionSubtitleClass,
   appSectionTitleClass,
 } from "@/components/layout/appSurface";
+import {
+  appIdentityAheadMetricClass,
+  appIdentityHappenedMetricClass,
+  appIdentityMattersMetricClass,
+  appIdentityOnTrackMetricClass,
+  appKpiIntelClass,
+} from "@/components/layout/semanticIdentity";
 import { NEWS_HUB_NO_CATALYST } from "@/lib/services/holdingIntelligence";
 import type { NewsHubHoldingRow } from "@/lib/services/holdingIntelligence";
 import { NewsExpandableList } from "@/components/news/NewsBriefingSection";
@@ -62,7 +69,7 @@ export function NewsForPortfolioSection({
               : null;
             return (
               <article
-                className="min-w-0 rounded-[16px] border border-slate-200 bg-white p-4 shadow-sm"
+                className="min-w-0 rounded-[20px] border-2 border-violet-200 bg-gradient-to-br from-violet-50 via-white to-white p-4 shadow-sm"
                 data-testid="news-hub-holding-row"
                 data-symbol={row.candidate.symbol}
                 data-match-role={row.matchRole}
@@ -93,19 +100,19 @@ export function NewsForPortfolioSection({
                 </div>
 
                 <dl className="mt-3 grid gap-3 sm:grid-cols-3">
-                  <div className="min-w-0">
+                  <div className={appIdentityHappenedMetricClass}>
                     <dt className={appSectionLabelClass}>Move</dt>
-                    <dd className="mt-1 text-[15px] font-semibold tabular-nums text-slate-950">
+                    <dd className={`mt-1 text-[16px] font-bold tabular-nums ${appKpiIntelClass}`}>
                       {row.moveLabel}
                     </dd>
                   </div>
-                  <div className="min-w-0">
+                  <div className={appIdentityAheadMetricClass}>
                     <dt className={appSectionLabelClass}>Portfolio impact</dt>
-                    <dd className="mt-1 text-[15px] font-semibold tabular-nums text-slate-950">
+                    <dd className="mt-1 text-[16px] font-bold tabular-nums text-teal-900">
                       {row.impactLabel}
                     </dd>
                   </div>
-                  <div className="min-w-0">
+                  <div className={appIdentityOnTrackMetricClass}>
                     <dt className={appSectionLabelClass}>Confidence</dt>
                     <dd className="mt-1">
                       {row.confidenceLabel ? (
@@ -121,7 +128,7 @@ export function NewsForPortfolioSection({
                   </div>
                 </dl>
 
-                <div className="mt-3 min-w-0">
+                <div className={`mt-3 min-w-0 ${appIdentityMattersMetricClass}`}>
                   <p className={appSectionLabelClass}>Relevant context</p>
                   {item ? (
                     <p className={`mt-1 ${appSectionBodyClass}`}>

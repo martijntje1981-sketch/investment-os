@@ -25,10 +25,9 @@ describe("shared readability tokens", () => {
     expect(appSectionLabelClass).toContain("text-slate-700");
     expect(appSectionMetaClass).toContain("text-[13px]");
     expect(appSectionMetaClass).toContain("text-slate-700");
-    expect(appSectionBodyClass).toContain("text-[15px]");
-    expect(appSectionBodyClass).toContain("sm:text-[16px]");
+    expect(appSectionBodyClass).toContain("text-[16px]");
     expect(appFourQuestionAnswerClass).toContain("text-[1.125rem]");
-    expect(appFourQuestionAnswerClass).toContain("sm:text-[1.25rem]");
+    expect(appFourQuestionAnswerClass).toContain("sm:text-[1.375rem]");
     expect(appPageCanvasClass).toContain("overflow-x-clip");
     expect(appPageCanvasClass).toContain("max-w-full");
   });
@@ -37,14 +36,14 @@ describe("shared readability tokens", () => {
     expect(appSecondaryButtonClass).toContain("border-slate-300");
     expect(appSecondaryButtonClass).toContain("bg-white");
     expect(appSecondaryButtonClass).toContain("text-slate-950");
-    expect(appSecondaryButtonClass).toContain("text-[15px]");
+    expect(appSecondaryButtonClass).toContain("text-[16px]");
     expect(appHeroSecondaryButtonClass).toContain("border-white/50");
     expect(appHeroSecondaryButtonClass).toContain("text-white");
     expect(appSolidButtonClass).toContain(appControlDisabledClass);
     expect(appSecondaryButtonClass).toContain(appControlDisabledClass);
     expect(appControlDisabledClass).toContain("disabled:opacity-50");
     expect(appControlDisabledClass).toContain("disabled:cursor-not-allowed");
-    expect(appTextLinkClass).toContain("text-[15px]");
+    expect(appTextLinkClass).toContain("text-[16px]");
     expect(appTextLinkClass).toContain("min-h-[44px]");
   });
 
@@ -74,7 +73,7 @@ describe("shared readability tokens", () => {
 
   it("keeps Four Questions hub evidence on the readable answer scale", () => {
     const hub = read("components/fourQuestions/QuestionHubPage.tsx");
-    expect(hub).toContain("text-[15px] leading-relaxed sm:text-[16px]");
+    expect(hub).toContain("text-[16px]");
     expect(hub).not.toContain('text-[10px] font-bold uppercase tracking-[0.12em]');
   });
 
@@ -82,5 +81,16 @@ describe("shared readability tokens", () => {
     const news = read("components/news/newsCardStyles.ts");
     expect(news).toContain("text-[13px]");
     expect(news).not.toMatch(/newsCompactMetaClass[\s\S]*text-xs/);
+  });
+
+  it("exposes a clearly visible Four Questions semantic identity", () => {
+    const identity = read("components/layout/semanticIdentity.ts");
+    expect(identity).toContain("border-2 border-cyan-300");
+    expect(identity).toContain("border-2 border-violet-300");
+    expect(identity).toContain("border-2 border-amber-300");
+    expect(identity).toContain("border-2 border-teal-300");
+    expect(identity).toContain("bg-cyan-600");
+    expect(identity).toContain("text-emerald-600");
+    expect(identity).toContain("text-rose-600");
   });
 });

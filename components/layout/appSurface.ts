@@ -32,7 +32,7 @@ export const appCardInteractiveClass =
  * Use sparingly — not on every card.
  */
 export const appTintedPanelClass =
-  "min-w-0 overflow-hidden rounded-[24px] border border-brand/20 bg-gradient-to-br from-brand-soft via-white to-[#f3f7fb] shadow-[var(--shadow-card)] md:rounded-[28px]";
+  "min-w-0 overflow-hidden rounded-[24px] border-2 border-cyan-200 bg-gradient-to-br from-cyan-100 via-sky-50 to-white shadow-[0_12px_32px_-16px_rgba(8,145,178,0.38)] md:rounded-[28px]";
 
 /** Soft section band behind stacked supporting content. */
 export const appSectionBandClass =
@@ -84,62 +84,62 @@ export const appControlDisabledClass =
   "disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none";
 
 export const appPrimaryButtonClass =
-  `inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-brand px-5 py-3 text-[15px] font-bold text-brand-navy transition hover:bg-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 ${appControlDisabledClass}`;
+  `inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-brand px-5 py-3 text-[16px] font-bold text-brand-navy transition hover:bg-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 ${appControlDisabledClass}`;
 
 /** Solid navy CTA for primary form actions on light surfaces. */
 export const appSolidButtonClass =
-  `inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-navy-hero px-5 py-3 text-[15px] font-bold text-white transition hover:bg-navy-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 ${appControlDisabledClass}`;
+  `inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-navy-hero px-5 py-3 text-[16px] font-bold text-white transition hover:bg-navy-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 ${appControlDisabledClass}`;
 
 export const appBrandSoftButtonClass =
-  `inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-brand/30 bg-brand-soft px-5 py-3 text-[15px] font-bold text-brand-navy transition hover:bg-brand/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 ${appControlDisabledClass}`;
+  `inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-brand/30 bg-brand-soft px-5 py-3 text-[16px] font-bold text-brand-navy transition hover:bg-brand/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 ${appControlDisabledClass}`;
 
 /** Visible secondary action on light surfaces — never as faint as body copy. */
 export const appSecondaryButtonClass =
-  `inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3 text-[15px] font-semibold text-slate-950 shadow-sm transition hover:border-slate-400 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 ${appControlDisabledClass}`;
+  `inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3 text-[16px] font-semibold text-slate-950 shadow-sm transition hover:border-slate-400 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 ${appControlDisabledClass}`;
 
 export const appGhostButtonClass =
-  `inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl px-3 py-2 text-[15px] font-semibold text-slate-800 transition hover:bg-slate-100 hover:text-brand-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 ${appControlDisabledClass}`;
+  `inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl px-3 py-2 text-[16px] font-semibold text-slate-800 transition hover:bg-slate-100 hover:text-brand-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 ${appControlDisabledClass}`;
 
 /** Secondary CTA on navy/near-black heroes — readable white, not brand-dominant. */
 export const appHeroSecondaryButtonClass =
-  `inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-white/50 bg-white/15 px-4 py-2.5 text-[15px] font-semibold text-white transition hover:bg-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-navy-hero ${appControlDisabledClass}`;
+  `inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-white/50 bg-white/15 px-4 py-2.5 text-[16px] font-semibold text-white transition hover:bg-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-navy-hero ${appControlDisabledClass}`;
 
 /** Ghost CTA on navy/near-black heroes. */
 export const appHeroGhostButtonClass = appHeroSecondaryButtonClass;
 
 export const appTextLinkClass =
-  "inline-flex min-h-[44px] items-center gap-1.5 text-[15px] font-semibold text-brand-navy underline-offset-2 transition hover:text-brand hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2";
+  "inline-flex min-h-[44px] items-center gap-1.5 text-[16px] font-semibold text-brand-navy underline-offset-2 transition hover:text-brand hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2";
 
 /* ── Titles ──────────────────────────────────────────────── */
 
 export const appPageTitleClass =
-  "text-xl font-bold tracking-[-0.02em] text-slate-950";
+  "text-[1.375rem] font-bold tracking-[-0.02em] text-slate-950 sm:text-[1.625rem]";
 
 export const appPageHeroTitleClass =
-  "break-words text-[1.625rem] font-bold tracking-[-0.03em] sm:text-[1.75rem] md:text-[1.875rem]";
+  "break-words text-[1.625rem] font-bold tracking-[-0.03em] sm:text-[1.75rem] md:text-[1.75rem]";
 
 export const appPageHeroSubtitleClass =
-  "mt-1.5 max-w-2xl break-words text-[15px] font-medium leading-relaxed tracking-[-0.01em] text-white/80 sm:text-[16px]";
+  "mt-1.5 max-w-2xl break-words text-[16px] font-medium leading-relaxed tracking-[-0.01em] text-white/85";
 
 export const appSectionTitleClass =
-  "text-lg font-bold tracking-[-0.02em] text-slate-950 md:text-xl";
+  "text-[1.25rem] font-bold tracking-[-0.02em] text-slate-950 md:text-[1.5rem]";
 
 export const appCardTitleClass =
-  "text-base font-bold tracking-[-0.015em] text-slate-950";
+  "text-[1.125rem] font-bold tracking-[-0.015em] text-slate-950";
 
 /* ── Body / labels ───────────────────────────────────────── */
 
 export const appSectionBodyMediumClass =
-  "text-[15px] font-medium leading-relaxed";
+  "text-[16px] font-medium leading-relaxed";
 
 export const appCardValueClass =
-  "text-lg font-bold tabular-nums text-slate-950";
+  "text-xl font-bold tabular-nums tracking-[-0.02em] text-slate-950";
 
 export const appSectionBodyClass =
-  "text-[15px] font-normal leading-relaxed text-slate-700 sm:text-[16px]";
+  "text-[16px] font-normal leading-relaxed text-slate-800";
 
 export const appSectionSubtitleClass =
-  "text-[15px] font-normal leading-relaxed text-slate-600";
+  "text-[15px] font-normal leading-relaxed text-slate-700 sm:text-[16px]";
 
 /** Compact uppercase label — 13px floor so metadata stays readable. */
 export const appSectionLabelClass =
@@ -151,12 +151,12 @@ export const appSectionMetaClass =
 export const appTickerClass =
   "text-[13px] font-medium uppercase tracking-[0.06em] text-slate-700";
 
-export const appTableNameClass = "min-w-0 break-words text-[15px] font-semibold text-slate-950";
+export const appTableNameClass = "min-w-0 break-words text-[16px] font-semibold text-slate-950";
 
 export const appTableValueClass =
-  "text-[15px] font-semibold tabular-nums text-slate-950 sm:text-[16px]";
+  "text-[16px] font-semibold tabular-nums text-slate-950";
 
-export const appTableChangeClass = "text-[15px] font-semibold tabular-nums";
+export const appTableChangeClass = "text-[16px] font-semibold tabular-nums";
 
 /** @deprecated Prefer appSectionLabelClass */
 export const appSectionEyebrowClass = appSectionLabelClass;
@@ -168,13 +168,13 @@ export const appSectionHeaderDividerClass = "border-b border-slate-100";
 /* ── Dark body copy ──────────────────────────────────────── */
 
 export const appDashboardDarkBodyClass =
-  "text-[15px] font-normal leading-relaxed text-white";
+  "text-[16px] font-normal leading-relaxed text-white";
 
 export const appDashboardDarkBodyMediumClass =
-  "text-[15px] font-medium leading-relaxed text-white/85";
+  "text-[16px] font-medium leading-relaxed text-white/90";
 
 export const appDashboardDarkMutedClass =
-  "text-[14px] font-medium leading-relaxed text-white/80";
+  "text-[15px] font-medium leading-relaxed text-white/85";
 
 export const appDashboardDarkMetaClass =
   "text-[13px] font-medium leading-relaxed text-white/80";
@@ -212,14 +212,14 @@ export const appNewsSectionDescriptionClass = appSectionSubtitleClass;
 
 /** Four Questions label (the question). */
 export const appFourQuestionLabelClass =
-  "block text-[13px] font-semibold tracking-[-0.01em] text-slate-600 sm:text-[14px]";
+  "block text-[14px] font-semibold tracking-[-0.01em] text-slate-700 sm:text-[15px]";
 
-/** Four Questions primary answer — glanceable, not a headline. */
+/** Four Questions primary answer — glanceable intelligence, 18–22px. */
 export const appFourQuestionAnswerClass =
-  "mt-1.5 block break-words text-[1.125rem] font-semibold leading-snug tracking-[-0.03em] sm:text-[1.25rem]";
+  "mt-1.5 block break-words text-[1.125rem] font-bold leading-snug tracking-[-0.03em] sm:text-[1.375rem]";
 
 export const appFourQuestionSupportClass =
-  "mt-1 block break-words text-[15px] leading-relaxed text-slate-700 sm:text-[16px]";
+  "mt-1.5 block break-words text-[16px] leading-relaxed text-slate-700";
 
 /**
  * Secondary dark feature shell — aligned to navy hierarchy

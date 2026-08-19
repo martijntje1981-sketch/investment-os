@@ -10,6 +10,16 @@ import {
   appSectionTitleClass,
   appTextLinkClass,
 } from "@/components/layout/appSurface";
+import {
+  appIdentityAheadMetricClass,
+  appIdentityHappenedMetricClass,
+  appIdentityMattersCardClass,
+  appIdentityMattersMetricClass,
+  appIdentityOnTrackMetricClass,
+  appKpiIntelClass,
+  appKpiNegativeClass,
+  appKpiPositiveClass,
+} from "@/components/layout/semanticIdentity";
 import { formatContributionPp } from "@/lib/services/personalIntelligence/attribution";
 import {
   CONFIDENCE_LABEL_BY_STATUS,
@@ -115,7 +125,7 @@ export function HoldingMoveContextCard({
 
   return (
     <section
-      className="min-w-0 rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6"
+      className={`min-w-0 p-5 shadow-sm sm:p-6 ${appIdentityMattersCardClass}`}
       aria-labelledby="holding-move-context-heading"
       data-testid="holding-move-context"
       data-explanation-status={candidate.explanationStatus}
@@ -134,22 +144,32 @@ export function HoldingMoveContextCard({
       </p>
 
       <dl className="mt-4 grid gap-3 sm:grid-cols-2">
-        <div className="min-w-0">
+        <div className={appIdentityHappenedMetricClass}>
           <dt className={appSectionLabelClass}>Move</dt>
-          <dd className="mt-1 text-[1.125rem] font-semibold tabular-nums text-slate-950">
+          <dd
+            className={`mt-1 text-[1.25rem] font-bold tabular-nums ${
+              candidate.changePercent == null
+                ? "text-slate-950"
+                : candidate.changePercent > 0
+                  ? appKpiPositiveClass
+                  : candidate.changePercent < 0
+                    ? appKpiNegativeClass
+                    : appKpiIntelClass
+            }`}
+          >
             {moveLabel}
           </dd>
         </div>
-        <div className="min-w-0">
+        <div className={appIdentityAheadMetricClass}>
           <dt className={appSectionLabelClass}>Portfolio impact</dt>
-          <dd className="mt-1 text-[1.125rem] font-semibold tabular-nums text-slate-950">
+          <dd className={`mt-1 text-[1.25rem] font-bold tabular-nums ${appKpiIntelClass}`}>
             {impactLabel}
           </dd>
         </div>
       </dl>
 
       {showWhy ? (
-        <div className="mt-4 min-w-0">
+        <div className={`mt-4 min-w-0 ${appIdentityMattersMetricClass}`}>
           <p className={appSectionLabelClass}>Why / context</p>
           <p className={`mt-1 ${appSectionBodyClass}`}>
             {candidate.explanationNote}
@@ -212,7 +232,7 @@ export function HoldingMoveContextCard({
         </div>
       )}
 
-      <div className="mt-4 min-w-0">
+      <div className={`mt-4 min-w-0 ${appIdentityOnTrackMetricClass}`}>
         <p className={appSectionLabelClass}>Confidence</p>
         <p className={`mt-1 ${appSectionBodyClass}`}>
           {isComplete && confidenceLabel

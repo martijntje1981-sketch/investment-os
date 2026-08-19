@@ -34,6 +34,8 @@ type ExpandableDashboardSectionProps = {
   expandable?: boolean;
   loading?: boolean;
   className?: string;
+  /** Replaces the default light card shell when a semantic identity is needed. */
+  shellClassName?: string;
 };
 
 /**
@@ -56,6 +58,7 @@ export function ExpandableDashboardSection({
   expandable = true,
   loading = false,
   className,
+  shellClassName,
 }: ExpandableDashboardSectionProps) {
   const contentId = useId();
   const resolvedTitleId = titleId ?? `${sectionKey}-heading`;
@@ -69,7 +72,7 @@ export function ExpandableDashboardSection({
     <section
       aria-labelledby={resolvedTitleId}
       aria-busy={loading || undefined}
-      className={`min-w-0 ${appDashboardLightCardClass} ${className ?? ""}`}
+      className={`min-w-0 ${shellClassName ?? appDashboardLightCardClass} ${className ?? ""}`}
       data-dashboard-section={sectionKey}
       data-expanded={canExpand ? expanded : undefined}
     >

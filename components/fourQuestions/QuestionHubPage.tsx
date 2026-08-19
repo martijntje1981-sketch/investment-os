@@ -349,7 +349,7 @@ function EvidenceRow({
           {item.label}
         </span>
         {item.detail ? (
-          <span className={`mt-0.5 block text-[15px] leading-relaxed sm:text-[16px] ${detailClass}`}>
+          <span className={`mt-0.5 block text-[16px] leading-relaxed ${detailClass}`}>
             {item.detail}
           </span>
         ) : null}

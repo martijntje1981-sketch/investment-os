@@ -10,6 +10,11 @@ import {
   appSectionTitleClass,
   appTableNameClass,
 } from "@/components/layout/appSurface";
+import {
+  appIdentityMattersCardClass,
+  appIdentityMattersIconClass,
+  appIdentityMattersMetricClass,
+} from "@/components/layout/semanticIdentity";
 import { TodaysDecisionBlock } from "@/components/investor/TodaysDecisionBlock";
 import { NewsCompactArticleRow } from "@/components/news/NewsCompactArticleRow";
 import { NewsMediaThumbnail } from "@/components/news/NewsMediaThumbnail";
@@ -115,11 +120,11 @@ export function NewsBriefingIntelligence({
     mustWatchDetail !== intelligence.mustWatch?.title;
 
   return (
-    <section className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm">
-      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 px-4 py-4 sm:px-6 sm:py-5">
+    <section className={appIdentityMattersCardClass}>
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-violet-200/80 px-4 py-4 sm:px-6 sm:py-5">
         <div className="min-w-0">
           <div className="flex min-w-0 items-start gap-3">
-            <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-brand-soft text-brand-navy">
+            <div className={appIdentityMattersIconClass}>
               <Sparkles className="h-5 w-5" aria-hidden />
             </div>
             <div className="min-w-0">
@@ -144,7 +149,7 @@ export function NewsBriefingIntelligence({
             type="button"
             onClick={onRefresh}
             disabled={isRefreshing}
-            className="inline-flex min-h-[44px] shrink-0 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-[15px] font-bold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+            className="inline-flex min-h-[44px] shrink-0 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
           >
             <Clock3
               className={`h-4 w-4 ${isRefreshing ? "animate-pulse" : ""}`}
@@ -156,19 +161,19 @@ export function NewsBriefingIntelligence({
       </div>
 
       <div className="space-y-3 px-4 py-4 sm:space-y-5 sm:px-6 sm:py-5">
-        <div className="rounded-[20px] border border-brand/20 bg-brand-soft/70 px-4 py-4 sm:px-5 sm:py-5">
-          <p className={`${appSectionBodyMediumClass} text-slate-700`}>
+        <div className="rounded-[20px] border-2 border-cyan-200 bg-gradient-to-br from-cyan-50 to-white px-4 py-4 sm:px-5 sm:py-5">
+          <p className={`${appSectionBodyMediumClass} text-cyan-900`}>
             Today&apos;s portfolio summary
           </p>
-          <p className={`mt-3 ${appSectionBodyMediumClass} text-slate-950`}>
+          <p className={`mt-3 text-[1.125rem] font-semibold leading-snug text-slate-950`}>
             {renderPortfolioSummaryMessage(summaryMessage, portfolioNewsNav)}
           </p>
         </div>
 
         <TodaysDecisionBlock decision={todaysDecision} variant="light" />
 
-        <div className="rounded-[18px] border border-slate-200 bg-slate-50/80 px-4 py-4">
-          <p className={`${appSectionBodyMediumClass} text-slate-700`}>
+        <div className={appIdentityMattersMetricClass}>
+          <p className={`${appSectionBodyMediumClass} text-violet-900`}>
             What matters for your portfolio
           </p>
           {topMatters.length > 0 ? (
@@ -210,11 +215,11 @@ export function NewsBriefingIntelligence({
                   {intelligence.mustWatch.reason}
                 </p>
                 {showMustWatchDetail ? (
-                  <p className={`mt-2 ${appSectionBodyClass} text-slate-700`}>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-600">
                     {mustWatchDetail}
                   </p>
                 ) : null}
-                <div className={`mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 ${appSectionMetaClass}`}>
+                <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
                   <span>{intelligence.mustWatch.sourceName}</span>
                   {mustWatchItem && mustWatchPresentation ? (
                     <>

@@ -77,14 +77,14 @@ function QuestionNavLink({
       }`}
     >
       <span
-        className={`text-[11px] font-bold tabular-nums tracking-[0.08em] ${
+        className={`text-[12px] font-bold tabular-nums tracking-[0.08em] ${
           isActive ? v.navNumberActive : v.navNumberIdle
         }`}
       >
         {item.numberLabel}
       </span>
       <span
-        className={`mt-0.5 truncate text-[11px] font-semibold leading-tight tracking-[-0.02em] sm:text-[12px] ${
+        className={`mt-0.5 truncate text-[12px] font-semibold leading-tight tracking-[-0.02em] sm:text-[13px] ${
           isActive ? v.navLabelActive : v.navLabelIdle
         }`}
       >
