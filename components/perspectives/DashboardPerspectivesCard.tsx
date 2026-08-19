@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
+import Link from "next/link";
 import { Sparkles } from "lucide-react";
 
 import { ExpandableDashboardSection } from "@/components/dashboard/ExpandableDashboardSection";
@@ -159,35 +160,57 @@ export function DashboardPerspectivesCard({
   const extraVideos = videos.slice(previewLimit);
   const canExpand = extraVideos.length > 0;
 
-  let preview: ReactNode;
   if (state === "loading") {
-    preview = (
-      <div className="space-y-2.5" aria-hidden>
-        <div className="h-14 animate-pulse rounded-xl bg-slate-100" />
-        <div className="h-14 animate-pulse rounded-xl bg-slate-100" />
-      </div>
-    );
-  } else if (videos.length === 0) {
-    preview = (
-      <p className={appSectionMetaClass}>
-        {state === "provider_unavailable"
-          ? "Creator perspectives are temporarily unavailable."
-          : "No recent perspectives from the curated set."}
-      </p>
-    );
-  } else {
-    preview = (
-      <ul className="divide-y divide-slate-100">
-        {previewVideos.map((video) => (
-          <PerspectiveRow
-            key={video.id}
-            video={video}
-            relevance={relevanceById[video.id]}
-          />
-        ))}
-      </ul>
+    return (
+      <section
+        className="min-w-0 rounded-[20px] border border-slate-200/80 bg-white/80 px-4 py-3"
+        data-testid="dashboard-perspectives-loading"
+        aria-busy="true"
+        aria-label="Latest Perspectives"
+      >
+        <div className="space-y-2" aria-hidden>
+          <div className="h-3 w-40 animate-pulse rounded bg-slate-100" />
+          <div className="h-10 animate-pulse rounded-xl bg-slate-100" />
+        </div>
+      </section>
     );
   }
+
+  if (videos.length === 0) {
+    return (
+      <section
+        className="min-w-0 rounded-[20px] border border-slate-200/70 bg-slate-50/80 px-4 py-3"
+        data-testid="dashboard-perspectives-compact-empty"
+        data-state={state}
+      >
+        <p className={`${appSectionMetaClass} flex flex-wrap items-center gap-x-2 gap-y-1`}>
+          <span>
+            {state === "provider_unavailable"
+              ? "Creator perspectives are temporarily unavailable."
+              : "No recent perspectives from the curated set."}
+          </span>
+          <Link
+            href="/perspectives"
+            className="inline-flex min-h-11 items-center text-[15px] font-semibold text-cyan-800 underline-offset-2 hover:underline"
+          >
+            Open Perspectives
+          </Link>
+        </p>
+      </section>
+    );
+  }
+
+  const preview = (
+    <ul className="divide-y divide-slate-100">
+      {previewVideos.map((video) => (
+        <PerspectiveRow
+          key={video.id}
+          video={video}
+          relevance={relevanceById[video.id]}
+        />
+      ))}
+    </ul>
+  );
 
   return (
     <ExpandableDashboardSection
@@ -198,7 +221,6 @@ export function DashboardPerspectivesCard({
       icon={<Sparkles className="h-5 w-5" />}
       iconToneClassName="bg-brand-soft text-brand-navy"
       deepLink={{ href: "/perspectives", label: "View all Perspectives" }}
-      loading={state === "loading"}
       expandable={canExpand}
       preview={preview}
       expandedContent={

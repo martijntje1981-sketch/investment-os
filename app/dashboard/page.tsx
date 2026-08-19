@@ -9,6 +9,7 @@ import { DashboardSummary } from "@/components/dashboard/DashboardSummary";
 import { DashboardExploreTools } from "@/components/dashboard/DashboardExploreTools";
 import { DashboardPortfolioHistorySection } from "@/components/dashboard/DashboardPortfolioHistorySection";
 import { FourQuestionsSection } from "@/components/dashboard/fourQuestions/FourQuestionsSection";
+import { SinceLastCheckSection } from "@/components/dashboard/SinceLastCheckSection";
 import { AuthenticatedFourQuestionsNav } from "@/components/fourQuestions/AuthenticatedFourQuestionsNav";
 import { DashboardFirstRunCue } from "@/components/dashboard/DashboardFirstRunCue";
 import { DemoHoldingsCallout } from "@/components/example/DemoHoldingsCallout";
@@ -54,6 +55,11 @@ import {
 import { buildFourQuestions } from "@/lib/services/fourQuestions";
 import { useProductAccess } from "@/lib/client/useProductAccess";
 import { useChangeIntelligence } from "@/lib/client/useChangeIntelligence";
+import {
+  applyPortfolioChangeAccess,
+  buildPortfolioChangeAttention,
+  resolveSmartAlertsAccessMode,
+} from "@/lib/services/portfolioChangeDetection";
 import {
   CompleteTrialIndicator,
   FreeIntelligenceNote,
@@ -321,6 +327,34 @@ export default function DashboardPage() {
           },
   });
 
+  const smartAlertsMode = resolveSmartAlertsAccessMode(productAccess);
+  const portfolioChangeAttention = useMemo(() => {
+    if (holdings.length === 0) return null;
+    return applyPortfolioChangeAccess(
+      buildPortfolioChangeAttention({
+        holdings,
+        goal,
+        hasSavedGoal,
+        snapshots: changeIntelligence.snapshots,
+        newsItems: [
+          ...(payload.portfolioNews ?? []),
+          ...(payload.macroNews ?? []),
+        ],
+        isDemo: productAccess.isDemo,
+      }),
+      smartAlertsMode,
+    );
+  }, [
+    changeIntelligence.snapshots,
+    goal,
+    hasSavedGoal,
+    holdings,
+    payload.macroNews,
+    payload.portfolioNews,
+    productAccess.isDemo,
+    smartAlertsMode,
+  ]);
+
   const fourQuestions = useMemo(() => {
     if (holdings.length === 0) return null;
     const nextEvent = payload.upcomingEvents?.[0];
@@ -343,6 +377,7 @@ export default function DashboardPage() {
       nextEventLabel,
       nextEventHref: nextEventLabel ? "/events" : null,
       changeIntelligence: changeIntelligence.summary,
+      portfolioChangeAttention,
     });
   }, [
     changeIntelligence.summary,
@@ -356,6 +391,7 @@ export default function DashboardPage() {
     payload.portfolioNews,
     payload.upcomingEvents,
     perspectivesFeed.videos,
+    portfolioChangeAttention,
     portfolioPulse,
     productAccess.intelligenceDepth,
     realityCheck,
@@ -442,6 +478,13 @@ export default function DashboardPage() {
             <>
               <CompleteTrialIndicator access={productAccess} />
               <FreeIntelligenceNote access={productAccess} />
+              {portfolioChangeAttention ? (
+                <SinceLastCheckSection
+                  attention={portfolioChangeAttention}
+                  accessMode={smartAlertsMode}
+                  userSub={userSub}
+                />
+              ) : null}
               <FourQuestionsSection
                 bundle={fourQuestions}
                 intelligenceDepth={productAccess.intelligenceDepth}

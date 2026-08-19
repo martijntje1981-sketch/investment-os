@@ -9,11 +9,14 @@ export const maxDuration = 60;
 export async function GET() {
   try {
     const payload = await fetchPerspectivesPayload();
+    const cacheable = payload.state === "live" && payload.videos.length > 0;
     return NextResponse.json(
       { success: true, ...payload },
       {
         headers: {
-          "Cache-Control": "public, s-maxage=2700, stale-while-revalidate=3600",
+          "Cache-Control": cacheable
+            ? "public, s-maxage=2700, stale-while-revalidate=3600"
+            : "private, no-store",
         },
       },
     );

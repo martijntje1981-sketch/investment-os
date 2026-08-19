@@ -20,6 +20,8 @@ import type {
   FourQuestionsIntelligenceDepth,
 } from "@/lib/services/fourQuestions/types";
 import type { ChangeIntelligenceSummary } from "@/lib/services/changeIntelligence/types";
+import type { PortfolioChangeAttention } from "@/lib/services/portfolioChangeDetection/types";
+import { mergePortfolioChangeIntoFourQuestions } from "@/lib/services/portfolioChangeDetection/mergeIntoFourQuestions";
 import type { GoalRealityCheck } from "@/lib/services/goals/buildGoalRealityCheck";
 import type { GoalProgress } from "@/lib/services/goals/goalProgressEngine";
 import type { InvestmentIntelligence } from "@/lib/services/news/investmentIntelligence";
@@ -62,6 +64,8 @@ export type BuildFourQuestionsInput = {
   nextEventLabel?: string | null;
   nextEventHref?: string | null;
   changeIntelligence?: ChangeIntelligenceSummary | null;
+  /** Phase 13 attention — optional; glance answers stay unchanged. */
+  portfolioChangeAttention?: PortfolioChangeAttention | null;
 };
 
 export function buildFourQuestions(
@@ -203,11 +207,14 @@ export function buildFourQuestions(
     }),
   ];
 
-  const bundle: FourQuestionsBundle = {
-    scope,
-    intelligenceDepth: "complete",
-    questions,
-  };
+  const bundle: FourQuestionsBundle = mergePortfolioChangeIntoFourQuestions(
+    {
+      scope,
+      intelligenceDepth: "complete",
+      questions,
+    },
+    input.portfolioChangeAttention,
+  );
 
   return applyFourQuestionsIntelligenceDepth(bundle, intelligenceDepth);
 }

@@ -3,6 +3,8 @@
  */
 
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 
 import {
   canonicalizeYouTubeChannelId,
@@ -11,6 +13,7 @@ import {
 import {
   fetchPerspectivesUncached,
   resetPerspectivesLastSuccessForTests,
+  resolvePerspectivesAvailabilityState,
 } from "@/lib/services/perspectives/fetchPerspectives";
 import { getActivePerspectiveCreators } from "@/lib/services/perspectives/creators";
 
@@ -254,5 +257,67 @@ describe("fetchPerspectivesUncached resilience", () => {
       const ua = headers.get("User-Agent") ?? "";
       expect(ua).not.toMatch(/TobaileyPerspectives/i);
     }
+  });
+
+  it("treats a near-total outage with one empty 200 as unavailable, not empty", async () => {
+    const creators = getActivePerspectiveCreators();
+    const emptyOk = creators[creators.length - 1]!;
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes(emptyOk.channelId)) {
+          return new Response(
+            `<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom" xmlns:yt="http://www.youtube.com/xml/schemas/2015"><yt:channelId>x</yt:channelId><title>Empty</title></feed>`,
+            { status: 200 },
+          );
+        }
+        return new Response("blocked", { status: 429 });
+      }),
+    );
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.spyOn(console, "info").mockImplementation(() => {});
+
+    const payload = await fetchPerspectivesUncached();
+    expect(payload.videos).toEqual([]);
+    expect(payload.feedErrors).toBeGreaterThan(0);
+    expect(payload.state).toBe("provider_unavailable");
+    expect(payload.state).not.toBe("empty");
+  });
+});
+
+describe("perspectives availability classification", () => {
+  it("does not call a near-total outage 'empty'", () => {
+    expect(
+      resolvePerspectivesAvailabilityState({ videoCount: 0, feedErrors: 20 }),
+    ).toBe("provider_unavailable");
+    expect(
+      resolvePerspectivesAvailabilityState({ videoCount: 3, feedErrors: 18 }),
+    ).toBe("live");
+    expect(
+      resolvePerspectivesAvailabilityState({ videoCount: 0, feedErrors: 0 }),
+    ).toBe("empty");
+  });
+});
+
+describe("Dashboard perspectives empty fallback", () => {
+  it("uses a compact empty state and does not cache outages at the CDN", () => {
+    const card = readFileSync(
+      path.resolve(
+        process.cwd(),
+        "components/perspectives/DashboardPerspectivesCard.tsx",
+      ),
+      "utf8",
+    );
+    const route = readFileSync(
+      path.resolve(process.cwd(), "app/api/perspectives/route.ts"),
+      "utf8",
+    );
+    expect(card).toContain("dashboard-perspectives-compact-empty");
+    expect(card).toContain("Open Perspectives");
+    expect(card).toContain("ExpandableDashboardSection");
+    expect(route).toContain("private, no-store");
+    expect(route).toContain("cacheable");
   });
 });

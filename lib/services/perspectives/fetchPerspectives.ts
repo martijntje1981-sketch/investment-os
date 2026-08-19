@@ -159,6 +159,20 @@ async function fetchCreatorFeed(
   }
 }
 
+/**
+ * Classify an assembled feed. A near-total YouTube RSS outage with one
+ * empty 200 must not look like “no recent videos” — that empty payload
+ * was being cached for 45 minutes and rendered as a large Dashboard card.
+ */
+export function resolvePerspectivesAvailabilityState(input: {
+  videoCount: number;
+  feedErrors: number;
+}): PerspectivesPayload["state"] {
+  if (input.videoCount > 0) return "live";
+  if (input.feedErrors > 0) return "provider_unavailable";
+  return "empty";
+}
+
 function emptyUnavailablePayload(
   creators: PerspectiveCreator[],
   unavailableCreatorIds: string[],
@@ -215,12 +229,10 @@ async function fetchPerspectivesLive(): Promise<PerspectivesPayload> {
 
   const layout = buildPerspectivesLayout(videos);
   const feedErrors = unavailableCreatorIds.length;
-  const state =
-    layout.videos.length > 0
-      ? "live"
-      : feedErrors === creators.length
-        ? "provider_unavailable"
-        : "empty";
+  const state = resolvePerspectivesAvailabilityState({
+    videoCount: layout.videos.length,
+    feedErrors,
+  });
 
   console.info("[perspectives] fetched", {
     schemaVersion: PERSPECTIVES_SCHEMA_VERSION,
@@ -341,3 +353,4 @@ export {
   fetchPerspectivesLive,
   PERSPECTIVE_CREATORS,
 };
+

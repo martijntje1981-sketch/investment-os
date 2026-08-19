@@ -9,6 +9,7 @@
 
 import {
   ANALYSIS_PATH,
+  DASHBOARD_PATH,
   GOALS_PATH,
   ON_TRACK_HUB_PATH,
   PORTFOLIO_HEALTH_PATH,
@@ -44,6 +45,8 @@ export const SECTION_IDS = {
   goalScore: "goal-score",
   newsMarketBrief: "news-market-brief",
   portfolioNews: "portfolio-news",
+  /** Dashboard compact change-attention card (Phase 13). */
+  sinceLastCheck: "since-last-check",
   /** Central Scorecard page sections (`/portfolio-health`). */
   scorecardHealth: "health",
   scorecardGoal: "goal",
@@ -89,6 +92,7 @@ export const DASHBOARD_DEEP_LINKS = {
   marketBriefing: `${NEWS_HUB_PATH}#${SECTION_IDS.newsMarketBrief}`,
   portfolioNews: `${NEWS_HUB_PATH}#${SECTION_IDS.portfolioNews}`,
   newsHub: NEWS_HUB_PATH,
+  sinceLastCheck: `${DASHBOARD_PATH}#${SECTION_IDS.sinceLastCheck}`,
 } as const;
 
 /** CSS class applied briefly after a successful deep-link scroll. */

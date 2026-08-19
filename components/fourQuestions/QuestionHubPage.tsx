@@ -30,6 +30,11 @@ import { useChangeIntelligence } from "@/lib/client/useChangeIntelligence";
 import { DASHBOARD_PATH } from "@/lib/navigation/appRoutes";
 import { buildFourQuestions } from "@/lib/services/fourQuestions";
 import {
+  applyPortfolioChangeAccess,
+  buildPortfolioChangeAttention,
+  resolveSmartAlertsAccessMode,
+} from "@/lib/services/portfolioChangeDetection";
+import {
   getFourQuestionDefinition,
   type FourQuestionDefinition,
 } from "@/lib/services/fourQuestions/catalog";
@@ -58,6 +63,7 @@ export function QuestionHubPage({ questionId }: QuestionHubPageProps) {
     enabled: portfolioReady && Boolean(userSub) && holdings.length > 0,
     isDemo: productAccess.isDemo,
   });
+  const smartAlertsMode = resolveSmartAlertsAccessMode(productAccess);
   const goalProgress = useGoalProgress({ holdings, goal, hasSavedGoal });
   const { realityCheck } = useGoalRealityCheck(
     holdings,
@@ -69,6 +75,32 @@ export function QuestionHubPage({ questionId }: QuestionHubPageProps) {
     userSub,
     holdings.length > 0,
   );
+  const portfolioChangeAttention = useMemo(() => {
+    if (holdings.length === 0) return null;
+    return applyPortfolioChangeAccess(
+      buildPortfolioChangeAttention({
+        holdings,
+        goal,
+        hasSavedGoal,
+        snapshots: changeIntelligence.snapshots,
+        newsItems: [
+          ...(payload.portfolioNews ?? []),
+          ...(payload.macroNews ?? []),
+        ],
+        isDemo: productAccess.isDemo,
+      }),
+      smartAlertsMode,
+    );
+  }, [
+    changeIntelligence.snapshots,
+    goal,
+    hasSavedGoal,
+    holdings,
+    payload.macroNews,
+    payload.portfolioNews,
+    productAccess.isDemo,
+    smartAlertsMode,
+  ]);
   const weekHistory = usePortfolioPerformanceHistory(holdings, "1W");
   const monthHistory = usePortfolioPerformanceHistory(holdings, "1M");
 
@@ -145,6 +177,7 @@ export function QuestionHubPage({ questionId }: QuestionHubPageProps) {
       nextEventLabel: nextEvent?.title?.trim() || null,
       nextEventHref: nextEvent?.title ? "/events" : null,
       changeIntelligence: changeIntelligence.summary,
+      portfolioChangeAttention,
     });
     return bundle.questions.find((row) => row.id === questionId) ?? null;
   }, [
@@ -158,6 +191,7 @@ export function QuestionHubPage({ questionId }: QuestionHubPageProps) {
     payload.macroNews,
     payload.portfolioNews,
     payload.upcomingEvents,
+    portfolioChangeAttention,
     portfolioPulse,
     productAccess.intelligenceDepth,
     questionId,
