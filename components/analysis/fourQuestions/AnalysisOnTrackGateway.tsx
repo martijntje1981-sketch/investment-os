@@ -77,6 +77,10 @@ export function AnalysisOnTrackGateway({
         <GatewayLink href={GOALS_PATH} label="Open full goal view" />
         <GatewayLink href={GOAL_REALITY_HREF} label="Goal Reality Check" />
         <GatewayLink
+          href={DASHBOARD_DEEP_LINKS.whatIf}
+          label="What-if explorer"
+        />
+        <GatewayLink
           href={DASHBOARD_DEEP_LINKS.scenarioStress}
           label="Goal sensitivity in scenarios"
         />

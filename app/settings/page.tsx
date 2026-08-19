@@ -127,7 +127,7 @@ export default function SettingsPage() {
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <Link
                 href={`${REVIEW_PATH}?period=monthly`}
-                className="inline-flex min-h-[44px] items-center text-sm font-semibold text-brand-navy underline-offset-2 hover:underline"
+                className="inline-flex min-h-[44px] items-center text-[15px] font-semibold text-brand-navy underline-offset-2 hover:underline"
               >
                 Open latest Monthly Review
               </Link>

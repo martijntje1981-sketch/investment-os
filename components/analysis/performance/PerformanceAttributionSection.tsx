@@ -346,7 +346,7 @@ export function PerformanceAttributionSection({
 
               <button
                 type="button"
-                className="mt-3 text-[12px] font-semibold text-brand hover:text-brand-hover"
+                className="mt-3 min-h-11 text-[15px] font-semibold text-brand hover:text-brand-hover"
                 onClick={() => setShowDetails((value) => !value)}
                 data-testid="attribution-toggle-details"
               >

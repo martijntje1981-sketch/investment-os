@@ -77,7 +77,7 @@ function QuestionNavLink({
       }`}
     >
       <span
-        className={`text-[10px] font-bold tabular-nums tracking-[0.08em] ${
+        className={`text-[11px] font-bold tabular-nums tracking-[0.08em] ${
           isActive ? v.navNumberActive : v.navNumberIdle
         }`}
       >

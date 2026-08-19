@@ -62,4 +62,25 @@ describe("shared readability tokens", () => {
     expect(goals).toContain("appSectionBodyClass");
     expect(goals).not.toMatch(/text-\[1[12]px\]/);
   });
+
+  it("keeps What-if explanations and limitations on the body token", () => {
+    const explorer = read("components/goals/WhatIfExplorer.tsx");
+    expect(explorer).toContain("appSectionBodyClass");
+    expect(explorer).toContain("min-h-11");
+    expect(explorer).toContain("break-words");
+    expect(explorer).not.toMatch(/text-\[1[012]px\]/);
+    expect(explorer).not.toMatch(/overflow-x-auto|overflow-x-scroll/);
+  });
+
+  it("keeps Four Questions hub evidence on the readable answer scale", () => {
+    const hub = read("components/fourQuestions/QuestionHubPage.tsx");
+    expect(hub).toContain("text-[15px] leading-relaxed sm:text-[16px]");
+    expect(hub).not.toContain('text-[10px] font-bold uppercase tracking-[0.12em]');
+  });
+
+  it("keeps news compact metadata at the 13px floor", () => {
+    const news = read("components/news/newsCardStyles.ts");
+    expect(news).toContain("text-[13px]");
+    expect(news).not.toMatch(/newsCompactMetaClass[\s\S]*text-xs/);
+  });
 });

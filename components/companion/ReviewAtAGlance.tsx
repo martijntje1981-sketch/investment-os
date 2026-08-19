@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { CompanionReview } from "@/lib/services/portfolio/companion";
 import { PORTFOLIO_HEALTH_PATH } from "@/lib/navigation/appRoutes";
 import { TRUST_DATA_AVAILABLE_SHORT } from "@/lib/content/productTrust";
-import { appSectionMetaClass } from "@/components/layout/appSurface";
+import { appSectionLabelClass, appSectionMetaClass } from "@/components/layout/appSurface";
 
 export type ReviewGlancePulse = {
   score: number;
@@ -77,14 +77,14 @@ export function ReviewAtAGlance({
       className="rounded-2xl border border-brand/25 bg-gradient-to-br from-brand-soft/80 to-white px-4 py-4"
       data-testid="review-at-a-glance"
     >
-      <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-brand-navy">
+      <p className={`${appSectionLabelClass} text-brand-navy`}>
         Review at a glance
       </p>
       {chips.length > 0 ? (
         <ul className="mt-3 grid grid-cols-1 gap-3 min-[390px]:grid-cols-2">
           {chips.slice(0, review.period === "daily" ? 3 : 4).map((chip) => (
             <li key={`${chip.label}-${chip.value}`} className="min-w-0">
-              <p className="text-[12px] font-semibold text-slate-500">
+              <p className={appSectionMetaClass}>
                 {chip.label}
               </p>
               <p className="mt-0.5 truncate text-[16px] font-bold tracking-[-0.02em] text-slate-950">

@@ -91,7 +91,7 @@ export function PortfolioScoreDetailSection({
             </p>
             <p
               className={cn(
-                "mt-1 text-[12px] font-semibold",
+                "mt-1 text-[13px] font-semibold",
                 score.available
                   ? SCORE_TONE_LABEL_CLASS[tone]
                   : "text-slate-500",
@@ -125,7 +125,7 @@ export function PortfolioScoreDetailSection({
                 {context.factors.slice(0, 3).map((factor) => (
                   <li
                     key={factor.label}
-                    className="flex items-start gap-2 text-[12px] font-medium text-slate-700"
+                    className={`flex items-start gap-2 ${appSectionBodyClass}`}
                   >
                     <span
                       className={cn(
@@ -141,7 +141,7 @@ export function PortfolioScoreDetailSection({
             ) : null}
             <Link
               href={context.href}
-              className="mt-3 inline-flex min-h-[44px] items-center text-[13px] font-semibold text-sky-700 underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
+              className="mt-3 inline-flex min-h-[44px] items-center text-[15px] font-semibold text-sky-700 underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
             >
               {context.linkLabel}
             </Link>

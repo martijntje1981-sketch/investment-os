@@ -26,6 +26,7 @@ describe("Dashboard deep links", () => {
     expect(DASHBOARD_DEEP_LINKS.scenarioStress).toBe(
       "/analysis#scenario-stress",
     );
+    expect(DASHBOARD_DEEP_LINKS.whatIf).toBe("/goals#what-if");
     expect(DASHBOARD_DEEP_LINKS.resilienceSleep).toBe(
       "/analysis#resilience-sleep",
     );
@@ -62,6 +63,9 @@ describe("Dashboard deep links", () => {
     );
     expect(read("components/analysis/ScenarioStressSection.tsx")).toContain(
       `id="${SECTION_IDS.resilienceSleep}"`,
+    );
+    expect(read("components/goals/WhatIfExplorer.tsx")).toContain(
+      `id="${SECTION_IDS.whatIf}"`,
     );
     expect(read("components/analysis/PortfolioAnalysisPage.tsx")).toContain(
       `id="${SECTION_IDS.portfolioAllocation}"`,

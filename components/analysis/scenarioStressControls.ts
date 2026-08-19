@@ -16,7 +16,7 @@ export function scenarioChoiceClass(selected: boolean): string {
 /** Secondary personal-input chips (contribution / target year). */
 export function personalChoiceClass(selected: boolean): string {
   const base =
-    "min-h-11 cursor-pointer rounded-xl px-3 py-2 text-sm font-medium transition duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 active:scale-[0.99]";
+    "min-h-11 cursor-pointer rounded-xl px-3 py-2 text-[15px] font-medium transition duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 active:scale-[0.99]";
   if (selected) {
     return `${base} border-2 border-sky-600 bg-sky-50 text-sky-950 shadow-sm`;
   }
@@ -24,4 +24,4 @@ export function personalChoiceClass(selected: boolean): string {
 }
 
 export const detailsToggleClass =
-  "inline-flex min-h-11 cursor-pointer list-none items-center rounded-xl px-1 py-2 text-sm font-semibold text-sky-800 underline-offset-2 transition hover:text-sky-950 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 marker:content-none [&::-webkit-details-marker]:hidden";
+  "inline-flex min-h-11 cursor-pointer list-none items-center rounded-xl px-1 py-2 text-[15px] font-semibold text-sky-800 underline-offset-2 transition hover:text-sky-950 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 marker:content-none [&::-webkit-details-marker]:hidden";

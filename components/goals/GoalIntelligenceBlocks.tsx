@@ -125,11 +125,11 @@ export function GoalInsightCard({ insight }: { insight: string }) {
     >
       <p
         id="goal-insight-heading"
-        className="text-xs font-semibold uppercase tracking-[0.08em] text-violet-200"
+        className={`${appSectionLabelClass} text-violet-200`}
       >
         Insight
       </p>
-      <p className="mt-2 text-sm leading-relaxed text-violet-50">{insight}</p>
+      <p className={`mt-2 ${appSectionBodyClass} text-violet-50`}>{insight}</p>
     </section>
   );
 }

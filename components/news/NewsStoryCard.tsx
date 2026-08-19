@@ -1,5 +1,6 @@
 import { ArrowUpRight } from "lucide-react";
 
+import { appSectionBodyClass } from "@/components/layout/appSurface";
 import { NewsCompactCardLayout } from "@/components/news/NewsCompactCardLayout";
 import { NewsMediaThumbnail } from "@/components/news/NewsMediaThumbnail";
 import {
@@ -65,7 +66,7 @@ export function NewsStoryCard({
         {summary}
       </p>
       {whyItMatters ? (
-        <p className="mt-2 break-words text-sm leading-relaxed text-slate-700">
+        <p className={`mt-2 break-words ${appSectionBodyClass}`}>
           <span className="font-semibold text-slate-800">Why it matters:</span>{" "}
           {whyItMatters}
         </p>

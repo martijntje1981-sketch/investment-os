@@ -13,6 +13,7 @@ import type { FourQuestionsIntelligenceDepth } from "@/lib/services/fourQuestion
 import {
   appCardClass,
   appCardPaddingClass,
+  appSectionLabelClass,
   appSectionMetaClass,
   appSolidButtonClass,
 } from "@/components/layout/appSurface";
@@ -82,7 +83,7 @@ export function CompanionReviewPanel({
             <Link
               key={link.href}
               href={link.href}
-              className="inline-flex min-h-[44px] items-center text-sm font-semibold text-brand-navy underline-offset-2 hover:underline"
+              className="inline-flex min-h-[44px] items-center text-[15px] font-semibold text-brand-navy underline-offset-2 hover:underline"
             >
               {link.label}
             </Link>
@@ -98,7 +99,7 @@ export function CompanionReviewPanel({
       aria-labelledby="companion-review-heading"
     >
       <header className="border-b border-slate-100 pb-4">
-        <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-brand">
+        <p className={appSectionLabelClass}>
           {review.periodLabel}
         </p>
         <h2
@@ -168,14 +169,14 @@ export function CompanionReviewPanel({
       ) : null}
 
       {review.milestone ? (
-        <p className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-[14px] font-semibold text-slate-800">
+        <p className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-[15px] font-semibold text-slate-800">
           {review.milestone.label}
         </p>
       ) : null}
 
       {review.focus ? (
         <div className="mt-5 rounded-2xl border border-brand/20 bg-brand-soft/50 px-4 py-3">
-          <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-brand-navy">
+          <p className={`${appSectionLabelClass} text-brand-navy`}>
             One thing to know
           </p>
           {review.focus.href ? (
@@ -207,7 +208,7 @@ export function CompanionReviewPanel({
           <Link
             key={link.href}
             href={link.href}
-            className="inline-flex min-h-[44px] items-center text-sm font-semibold text-brand-navy underline-offset-2 hover:underline"
+              className="inline-flex min-h-[44px] items-center text-[15px] font-semibold text-brand-navy underline-offset-2 hover:underline"
           >
             {link.label}
           </Link>

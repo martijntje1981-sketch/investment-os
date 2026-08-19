@@ -61,7 +61,7 @@ export function IntelligenceArticleLink({
         {children}
       </span>
       <span
-        className={`mt-1 inline-flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs ${styles.meta}`}
+        className={`mt-1 inline-flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[13px] ${styles.meta}`}
       >
         {sourceName?.trim() ? <span>{sourceName.trim()}</span> : null}
         <span className={`inline-flex items-center gap-1 font-semibold ${styles.label}`}>

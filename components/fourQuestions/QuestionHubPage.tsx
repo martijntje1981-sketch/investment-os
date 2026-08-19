@@ -245,7 +245,7 @@ export function QuestionHubPage({ questionId }: QuestionHubPageProps) {
                   <li key={dive.href}>
                     <Link
                       href={dive.href}
-                      className={`inline-flex min-h-11 w-full items-center justify-between gap-2 rounded-xl px-2 py-2 text-[14px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 ${v.hubAccentText} ${v.hubRowHover} ${v.ring}`}
+                      className={`inline-flex min-h-11 w-full items-center justify-between gap-2 rounded-xl px-2 py-2 text-[15px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 ${v.hubAccentText} ${v.hubRowHover} ${v.ring}`}
                     >
                       <span>{dive.label}</span>
                       <ArrowUpRight
@@ -345,16 +345,16 @@ function EvidenceRow({
         aria-hidden
       />
       <span className="min-w-0 flex-1">
-        <span className={`block text-[10px] font-bold uppercase tracking-[0.12em] ${labelClass}`}>
+        <span className={`block ${appSectionLabelClass} ${labelClass}`}>
           {item.label}
         </span>
         {item.detail ? (
-          <span className={`mt-0.5 block text-[14px] leading-snug ${detailClass}`}>
+          <span className={`mt-0.5 block text-[15px] leading-relaxed sm:text-[16px] ${detailClass}`}>
             {item.detail}
           </span>
         ) : null}
         {item.bullets && item.bullets.length > 0 ? (
-          <ul className={`mt-2 space-y-1 pl-4 text-[13px] leading-snug ${bulletClass}`}>
+          <ul className={`mt-2 space-y-1 pl-4 text-[15px] leading-relaxed ${bulletClass}`}>
             {item.bullets.map((b) => (
               <li key={b}>{b}</li>
             ))}

@@ -5,6 +5,7 @@
 import { buildGoalConclusion } from "@/lib/client/dashboardConclusions";
 import { getExpectedReturnAssumption } from "@/lib/client/expectedReturnAssumption";
 import { PORTFOLIO_HISTORY_PATH } from "@/lib/navigation/appRoutes";
+import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 import { fourQuestionHubPath } from "@/lib/services/fourQuestions/catalog";
 import type { IntelligenceScopeId } from "@/lib/services/intelligenceScope";
 import {
@@ -171,6 +172,19 @@ export function buildAmIOnTrackQuestion(input: {
       label: "Contributions",
       detail: contributionSummaryLine.trim(),
       href: PORTFOLIO_HISTORY_PATH,
+      emphasis: "supporting",
+    });
+  }
+  if (
+    progress.hasGoal &&
+    expandItems.every((item) => item.id !== "what-if")
+  ) {
+    expandItems.push({
+      id: "what-if",
+      label: "What if",
+      detail:
+        "See how contributions or planning assumptions change your goal path.",
+      href: DASHBOARD_DEEP_LINKS.whatIf,
       emphasis: "supporting",
     });
   }

@@ -1,3 +1,5 @@
+import { appSectionLabelClass } from "@/components/layout/appSurface";
+
 type ReportExecutiveSummaryProps = {
   points: string[];
 };
@@ -6,7 +8,7 @@ export function ReportExecutiveSummary({ points }: ReportExecutiveSummaryProps) 
   if (points.length === 0) return null;
   return (
     <section className="px-5 py-5 sm:px-7">
-      <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
+      <p className={appSectionLabelClass}>
         At a glance
       </p>
       <ol className="mt-3 space-y-2.5">

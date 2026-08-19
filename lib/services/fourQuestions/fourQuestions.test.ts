@@ -502,6 +502,11 @@ describe("Four Questions builders", () => {
     expect(q3.support).not.toMatch(/recent pace /i);
     expect(q3.support).not.toMatch(/forecast|will return|expected future/i);
     expect(q3.expandItems.some((row) => row.id === "trace-confidence")).toBe(true);
+    expect(q3.expandItems.some((row) => row.id === "what-if")).toBe(true);
+    expect(q3.expandItems.find((row) => row.id === "what-if")?.href).toBe(
+      "/goals#what-if",
+    );
+    expect(q3.answer).not.toMatch(/See how contributions/i);
     expect(q3.explore.label).toBe("Explore full analysis");
     expect(q3.explore.href).toContain("on-track");
 
@@ -526,6 +531,11 @@ describe("Four Questions builders", () => {
     );
     expect(scenarioRow).toBeTruthy();
     expect(resilienceRow).toBeTruthy();
+    const whatIfRow = q4.expandItems.find((row) =>
+      row.href?.includes("#what-if"),
+    );
+    expect(whatIfRow).toBeTruthy();
+    expect(q4.answer).not.toMatch(/would reduce goal progress/i);
     expect(q4.expandItems.find((row) => row.id === "event")?.href).toBe(
       "/events",
     );

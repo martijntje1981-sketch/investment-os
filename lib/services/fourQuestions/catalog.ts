@@ -128,6 +128,7 @@ export const FOUR_QUESTIONS: readonly FourQuestionDefinition[] = [
     deepDives: [
       { label: "Goals", href: GOALS_PATH },
       { label: "Goal Reality Check", href: `${GOALS_PATH}#goal-reality-check` },
+      { label: "What-if explorer", href: `${GOALS_PATH}#what-if` },
       { label: "Portfolio Scorecard", href: PORTFOLIO_HEALTH_PATH },
       {
         label: "Goal sensitivity in scenarios",
@@ -153,6 +154,7 @@ export const FOUR_QUESTIONS: readonly FourQuestionDefinition[] = [
     analysisSectionId: "whats-ahead",
     visual: FOUR_QUESTION_VISUAL.whats_ahead,
     deepDives: [
+      { label: "What-if explorer", href: `${GOALS_PATH}#what-if` },
       { label: "Scenario Stress", href: `${ANALYSIS_PATH}#scenario-stress` },
       { label: "Resilience", href: `${ANALYSIS_PATH}#resilience-sleep` },
       { label: "Market Consensus", href: `${ANALYSIS_PATH}#market-consensus` },

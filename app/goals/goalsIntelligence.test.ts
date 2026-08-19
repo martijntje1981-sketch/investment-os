@@ -48,6 +48,7 @@ describe("Phase 3B Goals Intelligence wiring", () => {
     expect(page).toContain("ExpectedReturnAssumptionEditor");
     expect(page).not.toContain("GoalCoachCard");
     expect(page).not.toContain("GoalWhatIfCard");
+    expect(page).toContain("WhatIfExplorer");
     expect(page).not.toMatch(/overflow-x-auto|overflow-x-scroll/);
   });
 

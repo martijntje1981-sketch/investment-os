@@ -80,7 +80,7 @@ export function NewsArticleCard({
             href={item.canonicalUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 transition hover:bg-slate-50"
+            className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-[15px] font-bold text-slate-700 transition hover:bg-slate-50"
           >
             Open original
             <ExternalLink className="h-3.5 w-3.5" />

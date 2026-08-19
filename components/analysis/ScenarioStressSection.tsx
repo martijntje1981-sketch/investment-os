@@ -36,11 +36,17 @@ import {
   personalChoiceClass,
   scenarioChoiceClass,
 } from "@/components/analysis/scenarioStressControls";
+import { CompleteUpgradeLink } from "@/components/product/CompleteUpgradeLink";
 import {
   ExpectedReturnAssumptionCompact,
   ExpectedReturnAssumptionEditor,
 } from "@/components/goals/ExpectedReturnAssumption";
 import { getExpectedReturnAssumption } from "@/lib/client/expectedReturnAssumption";
+import {
+  canUseCompleteCapability,
+  SEE_COMPLETE_ANALYSIS_LABEL,
+  type ProductAccess,
+} from "@/lib/services/productAccess";
 import type {
   GoalSettings,
   StoredPortfolioHolding,
@@ -151,7 +157,7 @@ function ScenarioResultPanel({
         >
           <div>
             <p className={appSectionLabelClass}>Assumptions</p>
-            <ul className={`mt-1.5 list-disc space-y-1 pl-5 ${appSectionMetaClass}`}>
+            <ul className={`mt-1.5 list-disc space-y-1 pl-5 ${appSectionBodyClass}`}>
               {result.assumptions.map((item) => (
                 <li key={item}>{item}</li>
               ))}
@@ -159,13 +165,13 @@ function ScenarioResultPanel({
           </div>
           <div>
             <p className={appSectionLabelClass}>Limitations</p>
-            <ul className={`mt-1.5 list-disc space-y-1 pl-5 ${appSectionMetaClass}`}>
+            <ul className={`mt-1.5 list-disc space-y-1 pl-5 ${appSectionBodyClass}`}>
               {result.limitations.map((item) => (
                 <li key={item}>{item}</li>
               ))}
             </ul>
           </div>
-          <p className={appSectionMetaClass}>
+          <p className={appSectionBodyClass}>
             Educational estimate only — not investment advice and not a forecast.
           </p>
         </div>
@@ -188,13 +194,13 @@ function CompareMetric({
       <p className={appSectionLabelClass}>{label}</p>
       <div className="mt-2 grid grid-cols-2 gap-3">
         <div>
-          <p className={`text-xs ${appSectionMetaClass}`}>Current</p>
+          <p className={appSectionMetaClass}>Current</p>
           <p className="mt-0.5 text-lg font-semibold tracking-tight text-slate-900">
             {current}
           </p>
         </div>
         <div>
-          <p className={`text-xs ${appSectionMetaClass}`}>After scenario</p>
+          <p className={appSectionMetaClass}>What if</p>
           <p className="mt-0.5 text-lg font-semibold tracking-tight text-slate-900">
             {after}
           </p>
@@ -656,12 +662,12 @@ function ResiliencePanel({
               </span>
             </summary>
             <div className="space-y-3 border-t border-slate-200/80 pt-3" aria-labelledby={detailsId}>
-              <ul className={`list-disc space-y-1 pl-5 ${appSectionMetaClass}`}>
+              <ul className={`list-disc space-y-1 pl-5 ${appSectionBodyClass}`}>
                 {profile.assumptions.map((item) => (
                   <li key={item}>{item}</li>
                 ))}
               </ul>
-              <ul className={`list-disc space-y-1 pl-5 ${appSectionMetaClass}`}>
+              <ul className={`list-disc space-y-1 pl-5 ${appSectionBodyClass}`}>
                 {profile.limitations.map((item) => (
                   <li key={item}>{item}</li>
                 ))}
@@ -689,11 +695,13 @@ export function ScenarioStressSection({
   goal = null,
   hasSavedGoal = false,
   onPersistGoal,
+  productAccess,
 }: {
   holdings: StoredPortfolioHolding[];
   goal?: GoalSettings | null;
   hasSavedGoal?: boolean;
   onPersistGoal?: (nextGoal: GoalSettings) => void;
+  productAccess?: ProductAccess | null;
 }) {
   const { formatEur } = useBaseCurrencyDisplay();
   const relevant = useMemo(
@@ -702,6 +710,9 @@ export function ScenarioStressSection({
   );
   const [selectedId, setSelectedId] = useState<ScenarioId | null>(null);
   const [assumptionEditorOpen, setAssumptionEditorOpen] = useState(false);
+  const canExplore = productAccess
+    ? canUseCompleteCapability(productAccess, "what_if_scenarios")
+    : true;
 
   const effectiveId =
     selectedId &&
@@ -760,7 +771,7 @@ export function ScenarioStressSection({
             this portfolio. Add classified equity or crypto holdings to explore
             supported scenarios.
           </p>
-        ) : (
+        ) : canExplore ? (
           <div
             role="radiogroup"
             aria-label="Scenarios that matter to your portfolio"
@@ -796,16 +807,20 @@ export function ScenarioStressSection({
                       </span>
                     )}
                   </div>
-                  <p className={`mt-1 text-xs leading-snug ${appSectionMetaClass}`}>
+                  <p className={`mt-1 ${appSectionMetaClass}`}>
                     {row.reason}
                   </p>
-                  <p className={`mt-1 text-[11px] font-semibold tabular-nums text-slate-600`}>
+                  <p className={`mt-1 ${appSectionMetaClass}`}>
                     ~{row.affectedWeightPercent}% affected
                   </p>
                 </button>
               );
             })}
           </div>
+        ) : (
+          <p className={appSectionBodyClass}>
+            One modeled scenario preview: {result.scenarioName}.
+          </p>
         )}
 
         {relevant.unavailableRelevant.length > 0 ? (
@@ -828,22 +843,47 @@ export function ScenarioStressSection({
             <p className={`mt-1 ${appSectionMetaClass}`}>{selectedMeta.reason}</p>
           ) : null}
           <div className="mt-3">
-            <ScenarioResultPanel result={result} formatEur={formatEur} />
+            {canExplore ? (
+              <ScenarioResultPanel result={result} formatEur={formatEur} />
+            ) : (
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-4 sm:px-5">
+                <p className={appSectionLabelClass}>Modeled scenario — not a forecast</p>
+                <p className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
+                  {formatImpactPercent(result.estimatedPortfolioImpactPercent)}
+                </p>
+                <p className={`mt-3 ${appSectionBodyClass}`}>
+                  Complete includes the full scenario explorer, exact current vs
+                  what-if values, and contribution or planning-assumption paths.
+                </p>
+                <div className="mt-3">
+                  <CompleteUpgradeLink label={SEE_COMPLETE_ANALYSIS_LABEL} />
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
-        <GoalSensitivityPanel
-          holdingsValue={result.portfolioTotalValue}
-          scenarioResult={result}
-          goal={goal}
-          hasSavedGoal={hasSavedGoal}
-          formatEur={formatEur}
-          onEditAssumption={
-            onPersistGoal && hasSavedGoal && goal
-              ? () => setAssumptionEditorOpen(true)
-              : undefined
-          }
-        />
+        {canExplore ? (
+          <GoalSensitivityPanel
+            holdingsValue={result.portfolioTotalValue}
+            scenarioResult={result}
+            goal={goal}
+            hasSavedGoal={hasSavedGoal}
+            formatEur={formatEur}
+            onEditAssumption={
+              onPersistGoal && hasSavedGoal && goal
+                ? () => setAssumptionEditorOpen(true)
+                : undefined
+            }
+          />
+        ) : null}
+
+        <Link
+          href={DASHBOARD_DEEP_LINKS.whatIf}
+          className={`inline-flex min-h-11 items-center ${appTextLinkClass}`}
+        >
+          Open What-if explorer
+        </Link>
 
         <ResiliencePanel
           holdings={holdings}
@@ -852,7 +892,7 @@ export function ScenarioStressSection({
           formatEur={formatEur}
         />
       </div>
-      {hasSavedGoal && goal && onPersistGoal ? (
+      {canExplore && hasSavedGoal && goal && onPersistGoal ? (
         <ExpectedReturnAssumptionEditor
           open={assumptionEditorOpen}
           onClose={() => setAssumptionEditorOpen(false)}

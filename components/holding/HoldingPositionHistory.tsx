@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { appSectionMetaClass } from "@/components/layout/appSurface";
 import type { HoldingPriceHistoryResult } from "@/lib/services/holdings/fetchHoldingPriceHistory";
 import type { MarketPulsePoint } from "@/lib/services/marketPulse/types";
 
@@ -81,7 +82,7 @@ function HoldingHistoryChart({ points }: { points: MarketPulsePoint[] }) {
           className="stroke-blue-600"
         />
       </svg>
-      <p className="mt-1 text-[11px] font-medium text-slate-400">
+      <p className={`mt-1 ${appSectionMetaClass}`}>
         First {first.toLocaleString("en-GB", { maximumFractionDigits: 2 })} ·{" "}
         {points.length} sessions
       </p>
@@ -192,7 +193,7 @@ export function HoldingPositionHistory({
   return (
     <div className="mt-8 rounded-2xl border border-slate-100 bg-gradient-to-b from-blue-50/80 to-white p-4 sm:p-5">
       <HoldingHistoryChart points={history.points} />
-      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px] font-medium text-slate-500">
+      <div className={`mt-3 flex flex-wrap gap-x-4 gap-y-1 ${appSectionMetaClass}`}>
         {history.window ? <span>Window: {history.window}</span> : null}
         {history.sourceLabel ? <span>{history.sourceLabel}</span> : null}
         {history.updatedAt ? (

@@ -23,7 +23,7 @@ export const newsCompactHeadlineClass =
   "break-words text-base font-semibold leading-snug";
 
 export const newsCompactMetaClass =
-  "mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 break-words text-xs";
+  "mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 break-words text-[13px] font-medium leading-relaxed text-slate-700";
 
 export const newsExternalLinkClass =
   "inline-flex min-h-[44px] w-full shrink-0 items-center justify-center gap-1 rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 motion-reduce:transition-none min-[480px]:w-auto min-[480px]:justify-start";

@@ -189,7 +189,7 @@ export function PortfolioXRaySection({
 
         <button
           type="button"
-          className="min-h-11 text-[12px] font-semibold text-brand hover:text-brand-hover"
+          className="min-h-11 text-[15px] font-semibold text-brand hover:text-brand-hover"
           onClick={() => setShowEligibility((value) => !value)}
           data-testid="xray-toggle-eligibility"
         >

@@ -43,6 +43,7 @@ const TEASE_CATEGORIES: Partial<Record<string, string>> = {
   "trace-perspective": "A related Perspective",
   "trace-sensitivity": "Scenario impact",
   "trace-goal_impact": "Goal impact",
+  "what-if": "See how contributions or planning assumptions change your goal path.",
 };
 
 function teaseCategories(items: FourQuestionExpandItem[]): string[] {

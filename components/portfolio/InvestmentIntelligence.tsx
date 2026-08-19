@@ -12,6 +12,8 @@ import {
   WalletCards,
 } from "lucide-react";
 
+import { appSectionBodyClass } from "@/components/layout/appSurface";
+
 type IntelligenceMetric = {
   label: string;
   score: number;
@@ -103,7 +105,7 @@ export default function InvestmentIntelligence() {
                 </span>
               </div>
 
-              <p className="mt-2 max-w-[620px] text-sm leading-6 text-slate-300">
+              <p className={`mt-2 max-w-[620px] ${appSectionBodyClass} text-slate-300`}>
                 A first portfolio-level assessment based on concentration,
                 growth exposure, defensive assets and goal alignment.
               </p>
@@ -202,7 +204,7 @@ export default function InvestmentIntelligence() {
               <h3 className="font-bold">AI portfolio summary</h3>
             </div>
 
-            <p className="mt-4 text-sm leading-7 text-slate-700">
+            <p className={`mt-4 ${appSectionBodyClass}`}>
               Your portfolio is positioned strongly for long-term growth.
               Bitcoin remains the dominant position and therefore drives a
               large part of both the upside and the risk. Uranium and AI
@@ -210,7 +212,7 @@ export default function InvestmentIntelligence() {
               equities and gold improve balance.
             </p>
 
-            <p className="mt-4 text-sm leading-7 text-slate-700">
+            <p className={`mt-4 ${appSectionBodyClass}`}>
               The main improvement opportunity is diversification. Gradually
               increasing the weight of broad global equities could reduce
               concentration risk without requiring you to sell your Bitcoin
@@ -225,7 +227,7 @@ export default function InvestmentIntelligence() {
               <h3 className="font-bold">Main portfolio risk</h3>
             </div>
 
-            <p className="mt-3 text-sm leading-6 text-slate-700">
+            <p className={`mt-3 ${appSectionBodyClass}`}>
               A large percentage of the portfolio is concentrated in IB1T.
               This means Bitcoin price movements can have a disproportionate
               impact on the total portfolio value.
@@ -239,7 +241,7 @@ export default function InvestmentIntelligence() {
               <h3 className="font-bold">Current strength</h3>
             </div>
 
-            <p className="mt-3 text-sm leading-6 text-slate-700">
+            <p className={`mt-3 ${appSectionBodyClass}`}>
               The portfolio combines several structural themes: Bitcoin, AI
               infrastructure, nuclear energy, global equities, income and
               gold. This creates multiple potential return drivers.
@@ -249,7 +251,7 @@ export default function InvestmentIntelligence() {
       </div>
 
       <div className="border-t border-slate-200 bg-slate-50 px-6 py-4 sm:px-8">
-        <p className="text-xs leading-5 text-slate-500">
+        <p className={appSectionBodyClass}>
           This first score is based on the current portfolio structure. It is
           not personal financial advice. Later versions will use live market
           data, your goals and risk preferences.

@@ -25,6 +25,8 @@ export const SECTION_IDS = {
   portfolioExposure: "portfolio-exposure",
   portfolioXray: "portfolio-xray",
   scenarioStress: "scenario-stress",
+  /** Goals What-if explorer (Phase 12). */
+  whatIf: "what-if",
   resilienceSleep: "resilience-sleep",
   marketConsensus: "market-consensus",
   portfolioPerformance: "portfolio-performance",
@@ -61,6 +63,7 @@ export const DASHBOARD_DEEP_LINKS = {
   portfolioExposure: `${ANALYSIS_PATH}#${SECTION_IDS.portfolioExposure}`,
   portfolioXray: `${ANALYSIS_PATH}#${SECTION_IDS.portfolioXray}`,
   scenarioStress: `${ANALYSIS_PATH}#${SECTION_IDS.scenarioStress}`,
+  whatIf: `${GOALS_PATH}#${SECTION_IDS.whatIf}`,
   resilienceSleep: `${ANALYSIS_PATH}#${SECTION_IDS.resilienceSleep}`,
   marketConsensus: `${ANALYSIS_PATH}#${SECTION_IDS.marketConsensus}`,
   portfolioPerformance: `${ANALYSIS_PATH}#${SECTION_IDS.portfolioPerformance}`,

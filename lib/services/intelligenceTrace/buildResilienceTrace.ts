@@ -124,7 +124,7 @@ function buildGoalImpactLayer(profile: ResilienceProfile): IntelligenceTraceLaye
     title: "Goal impact",
     detail: profile.goalContext.summary,
     presentation: "explore",
-    href: "/goals",
+    href: DASHBOARD_DEEP_LINKS.whatIf,
     emphasis: "high",
   };
 }

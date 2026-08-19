@@ -6,6 +6,8 @@ import {
   MARKETS_TODAY_STORIES_LABEL,
 } from "@/lib/services/news/newsMarketsToday";
 import {
+  appSectionBodyClass,
+  appSectionLabelClass,
   appSectionMetaClass,
   appSectionSubtitleClass,
   appSectionTitleClass,
@@ -115,8 +117,8 @@ function StoryRow({
             {story.title}
           </a>
           {featured && story.whyItMatters ? (
-            <p className="mt-1 line-clamp-2 break-words text-xs leading-relaxed text-slate-600">
-              <span className="font-semibold text-slate-700">Why it matters: </span>
+            <p className={`mt-1 line-clamp-2 break-words ${appSectionBodyClass}`}>
+              <span className="font-semibold text-slate-800">Why it matters: </span>
               {story.whyItMatters}
             </p>
           ) : null}
@@ -158,7 +160,7 @@ function MarketsTodayPulseCard({
 
       <dl className="mt-3 grid gap-3 sm:grid-cols-3">
         <div className="min-w-0">
-          <dt className="text-[11px] font-semibold uppercase tracking-[0.07em] text-slate-500">
+          <dt className={appSectionLabelClass}>
             Sentiment
           </dt>
           <dd className="mt-1.5 flex items-center gap-2">
@@ -172,7 +174,7 @@ function MarketsTodayPulseCard({
           </dd>
         </div>
         <div className="min-w-0">
-          <dt className="text-[11px] font-semibold uppercase tracking-[0.07em] text-slate-500">
+          <dt className={appSectionLabelClass}>
             Biggest theme
           </dt>
           <dd className="mt-1.5 line-clamp-2 text-sm font-semibold leading-snug text-slate-800">
@@ -180,7 +182,7 @@ function MarketsTodayPulseCard({
           </dd>
         </div>
         <div className="min-w-0">
-          <dt className="text-[11px] font-semibold uppercase tracking-[0.07em] text-slate-500">
+          <dt className={appSectionLabelClass}>
             Highest impact
           </dt>
           <dd className="mt-1.5 line-clamp-2 text-sm font-semibold leading-snug text-slate-800">
@@ -257,7 +259,7 @@ export function NewsMarketsTodaySection({
 
               {region.stories.length > 0 ? (
                 <div className="mt-2.5 flex min-h-0 flex-1 flex-col">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.07em] text-slate-500">
+                  <p className={appSectionLabelClass}>
                     {MARKETS_TODAY_STORIES_LABEL}
                   </p>
                   <ul className="mt-1.5 space-y-1.5">

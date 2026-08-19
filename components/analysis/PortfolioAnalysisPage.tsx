@@ -552,6 +552,7 @@ export default function PortfolioAnalysisPage() {
                 goal={goal}
                 hasSavedGoal={hasSavedGoal}
                 onPersistGoal={persistGoal}
+                productAccess={productAccess}
               />
               <MarketConsensusSection
                 analysis={analysis}

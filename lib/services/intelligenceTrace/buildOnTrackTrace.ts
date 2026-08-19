@@ -101,7 +101,7 @@ export function buildOnTrackTrace(input: {
           title: "Sensitivity",
           detail: `Under ${resilienceProfile.mostSensitive.scenarioName}, goal progress would move from approximately ${goalSensitivity.currentProgressPercent.toFixed(1)}% to ${goalSensitivity.stressedProgressPercent.toFixed(1)}%.`,
           presentation: "explore",
-          href: DASHBOARD_DEEP_LINKS.scenarioStress,
+          href: DASHBOARD_DEEP_LINKS.whatIf,
           emphasis: "high",
         });
       }

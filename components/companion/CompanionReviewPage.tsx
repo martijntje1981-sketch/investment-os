@@ -449,7 +449,7 @@ function CompanionReviewContent() {
                 />
                 <Link
                   href="/portfolio-history"
-                  className="inline-flex min-h-[44px] items-center text-sm font-semibold text-brand-navy underline-offset-2 hover:underline"
+                  className="inline-flex min-h-[44px] items-center text-[15px] font-semibold text-brand-navy underline-offset-2 hover:underline"
                 >
                   Open Portfolio History
                 </Link>

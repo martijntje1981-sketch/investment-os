@@ -39,6 +39,7 @@ import {
   ExpectedReturnAssumptionPanel,
 } from "@/components/goals/ExpectedReturnAssumption";
 import { GoalRealityCheckPanel } from "@/components/goals/GoalRealityCheckPanel";
+import { WhatIfExplorer } from "@/components/goals/WhatIfExplorer";
 import { EmptyPortfolioGuide } from "@/components/onboarding/EmptyPortfolioGuide";
 import NumericInput from "@/components/NumericInput";
 import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
@@ -59,6 +60,7 @@ import {
 import {
   buildPortfolioAnalysis,
   buildValuedPositions,
+  formatPortfolioPercent,
 } from "@/lib/client/portfolioAnalysis";
 import {
   canExportPortfolio,
@@ -76,6 +78,7 @@ import { usePortfolioContributions } from "@/lib/client/usePortfolioContribution
 import { usePortfolioPerformanceHistory } from "@/lib/client/usePortfolioPerformanceHistory";
 import { useUserGoal } from "@/lib/client/useUserGoal";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
+import { useProductAccess } from "@/lib/client/useProductAccess";
 import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 import {
   ANALYSIS_PATH,
@@ -121,6 +124,7 @@ export default function GoalsPage() {
     useBaseCurrencyDisplay();
   const { userSub, holdings, portfolioReady } = useUserPortfolio();
   const { goal: savedGoal, hasSavedGoal, persistGoal } = useUserGoal();
+  const productAccess = useProductAccess(portfolioReady && Boolean(userSub));
 
   const history = usePortfolioPerformanceHistory(holdings, "1Y");
   const { realityCheck, isLoading: realityCheckLoading } = useGoalRealityCheck(
@@ -494,6 +498,21 @@ export default function GoalsPage() {
             ) : null}
           </section>
         ) : null}
+
+        <WhatIfExplorer
+          holdings={holdings}
+          goal={hasSavedGoal ? savedGoal : null}
+          hasSavedGoal={hasSavedGoal}
+          currentPortfolioValue={
+            goalProgress.portfolioValueAvailable
+              ? goalProgress.currentValue
+              : null
+          }
+          portfolioValueAvailable={goalProgress.portfolioValueAvailable}
+          productAccess={productAccess}
+          formatEur={formatEur}
+          formatPercent={formatPortfolioPercent}
+        />
 
         {hasSavedGoal && intelligence.insights.length > 0 ? (
           <section

@@ -93,6 +93,7 @@ describe("Analysis under the Four Questions", () => {
     expect(gateway).toContain("GOAL_REALITY_HREF");
     expect(gateway).toContain("goal-reality-check");
     expect(gateway).toContain("Open full goal view");
+    expect(gateway).toContain("What-if explorer");
     expect(gateway).not.toContain("persistGoal");
   });
 

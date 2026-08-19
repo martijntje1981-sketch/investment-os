@@ -193,7 +193,7 @@ export function AnalystIntelligenceSection({
                             ? ` · ${action.previousValue} → ${action.newValue}`
                             : ""}
                         </p>
-                        <p className="mt-2 text-xs leading-5 text-slate-500">
+                        <p className={`mt-2 ${appSectionBodyClass}`}>
                           {action.whyItMatters}
                         </p>
                       </article>
@@ -231,7 +231,7 @@ export function AnalystIntelligenceSection({
             </div>
           ) : null}
 
-          <p className="text-xs leading-5 text-slate-500">
+          <p className={`mt-3 ${appSectionBodyClass}`}>
             {ANALYST_DISCLAIMER}
             {snapshot.source && snapshot.updatedAt
               ? ` Source: ${snapshot.source}. Last updated ${formatShortDate(snapshot.updatedAt)}.`
@@ -325,7 +325,7 @@ export function HoldingAnalystMeta({
             value={formatShortDate(quote.updatedAt)}
           />
           <MiniStat label="Source" value={quote.source} />
-          <p className="sm:col-span-2 text-[11px] leading-5 text-slate-500">
+          <p className={`sm:col-span-2 ${appSectionBodyClass}`}>
             {ANALYST_DISCLAIMER}
           </p>
         </div>

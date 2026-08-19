@@ -157,7 +157,7 @@ function ExploreLink({
   return (
     <Link
       href={question.explore.href}
-      className={`inline-flex min-h-11 w-full items-center justify-between gap-1.5 rounded-xl px-3 py-2.5 text-[14px] font-semibold ${visual.completeTease} transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 ${visual.ring}`}
+      className={`inline-flex min-h-11 w-full items-center justify-between gap-1.5 rounded-xl px-3 py-2.5 text-[15px] font-semibold ${visual.completeTease} transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 ${visual.ring}`}
       data-testid={`four-question-explore-${question.id}`}
       onClick={stopToggle}
     >

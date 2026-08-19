@@ -5,7 +5,7 @@ import {
 } from "@/lib/services/changeIntelligence/config";
 import type { ChangeIntelligenceSummary } from "@/lib/services/changeIntelligence/types";
 import type { FourQuestionsIntelligenceDepth } from "@/lib/services/fourQuestions/types";
-import { appSectionMetaClass } from "@/components/layout/appSurface";
+import { appSectionBodyClass, appSectionLabelClass, appSectionMetaClass } from "@/components/layout/appSurface";
 
 type WhatChangedSectionProps = {
   summary: ChangeIntelligenceSummary;
@@ -30,10 +30,10 @@ export function WhatChangedSection({
     if (!firstHistoryCopy) return null;
     return (
       <section className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
-        <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
+        <p className={appSectionLabelClass}>
           What changed?
         </p>
-        <p className={`mt-2 ${appSectionMetaClass}`}>{FIRST_HISTORY_COPY}</p>
+        <p className={`mt-2 ${appSectionBodyClass}`}>{FIRST_HISTORY_COPY}</p>
       </section>
     );
   }
@@ -42,7 +42,7 @@ export function WhatChangedSection({
     if (summary.status !== "ready") return null;
     return (
       <section className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
-        <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
+        <p className={appSectionLabelClass}>
           What changed?
         </p>
         <p className="mt-2 text-[15px] font-semibold text-slate-950">
@@ -60,7 +60,7 @@ export function WhatChangedSection({
 
   return (
     <section className="mt-5 rounded-2xl border border-brand/20 bg-brand-soft/40 px-4 py-4">
-      <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-brand-navy">
+      <p className={`${appSectionLabelClass} text-brand-navy`}>
         What changed?
       </p>
       <p className="mt-2 text-[15px] font-semibold text-slate-950">{headline}</p>
