@@ -26,6 +26,29 @@ export type NewsContentTypeLabel =
   | "News"
   | "Social post";
 
+/** Deterministic official-macro topics. Unclear items stay unclassified. */
+export type OfficialMacroTopic =
+  | "interest_rates"
+  | "inflation"
+  | "monetary_policy"
+  | "labor"
+  | "growth"
+  | "financial_stability"
+  | "fx_usd"
+  | "liquidity";
+
+export type OfficialMacroInstitution =
+  | "ecb"
+  | "federal_reserve"
+  | "st_louis_fed"
+  | "atlanta_fed";
+
+export type OfficialMacroFeedKind =
+  | "policy_decision"
+  | "economic_release"
+  | "speech"
+  | "research";
+
 export type NewsMatchedHolding = {
   id: string;
   symbol: string;
@@ -67,6 +90,12 @@ export type NewsContentItem = {
   relevanceScore: number;
   /** Provider-reported symbols on wire articles (EODHD). */
   articleSymbols?: string[];
+  /** Official ECB/Fed RSS items — matched by exposure, never keywords. */
+  contextKind?: "macro_official";
+  /** Null when the official item cannot be classified conservatively. */
+  macroTopic?: OfficialMacroTopic | null;
+  officialInstitution?: OfficialMacroInstitution;
+  officialFeedKind?: OfficialMacroFeedKind;
 };
 
 export type MarketBriefInsight = {

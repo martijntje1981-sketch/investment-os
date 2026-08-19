@@ -22,7 +22,9 @@ import { AnalysisFourQuestionsNav } from "@/components/analysis/fourQuestions/An
 import { AnalysisOnTrackGateway } from "@/components/analysis/fourQuestions/AnalysisOnTrackGateway";
 import { AnalysisQuestionSection } from "@/components/analysis/fourQuestions/AnalysisQuestionSection";
 import { AuthenticatedFourQuestionsNav } from "@/components/fourQuestions/AuthenticatedFourQuestionsNav";
+import { readNewsCache } from "@/lib/client/portfolioNews";
 import { buildPortfolioExposureAllocation } from "@/lib/services/classification";
+import { selectOfficialRatePolicyContext } from "@/lib/services/news/officialMacro";
 import { useProductAccess } from "@/lib/client/useProductAccess";
 import BottomNavigation from "@/components/home/BottomNav";
 import {
@@ -158,6 +160,16 @@ export default function PortfolioAnalysisPage() {
     [holdings],
   );
 
+  const ratePolicyContext = useMemo(() => {
+    if (!userSub || !exposureAllocation.fixedIncome) return null;
+    const cached = readNewsCache(userSub);
+    if (!cached?.response) return null;
+    return selectOfficialRatePolicyContext([
+      ...cached.response.portfolioNews,
+      ...cached.response.macroNews,
+    ]);
+  }, [exposureAllocation.fixedIncome, userSub]);
+
   if (!portfolioReady) {
     return <AppPageLoading />;
   }
@@ -274,6 +286,7 @@ export default function PortfolioAnalysisPage() {
               <PortfolioExposureSection
                 allocation={exposureAllocation}
                 showSubgroups={productAccess.intelligenceDepth === "complete"}
+                ratePolicyContext={ratePolicyContext}
               />
               <PortfolioXRaySection holdings={holdings} />
               <CryptoIntelligenceSection holdings={holdings} userSub={userSub} />

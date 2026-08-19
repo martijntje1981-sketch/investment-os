@@ -16,8 +16,14 @@ const MACRO_PATTERN =
   /\b(fed|fomc|ecb|cpi|inflation|interest rate|gdp|central bank|monetary|treasury|bond yield)\b/i;
 
 export function classifyMarketCategory(
-  item: Pick<NewsContentItem, "title" | "description" | "category" | "sourceType">,
+  item: Pick<
+    NewsContentItem,
+    "title" | "description" | "category" | "sourceType" | "contextKind"
+  >,
 ): NewsMarketCategory {
+  if (item.contextKind === "macro_official") {
+    return "macro";
+  }
   const text = `${item.title} ${item.description ?? ""}`.toLowerCase();
 
   if (item.category === "crypto" || CRYPTO_PATTERN.test(text)) {

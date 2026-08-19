@@ -25,12 +25,18 @@ import {
   CONFIDENCE_LABEL_BY_STATUS,
   HOLDING_PAGE_DIRECT_HOLDING_NEWS_LABEL,
   HOLDING_PAGE_DIRECT_NEWS_LABEL,
+  HOLDING_PAGE_MACRO_NEWS_LABEL,
   HOLDING_PAGE_SECTOR_NEWS_LABEL,
   NEWS_HUB_NO_CATALYST,
   partitionHoldingPageNews,
   type HoldingIntelligenceCandidate,
   type HoldingPageNewsItem,
 } from "@/lib/services/holdingIntelligence";
+import {
+  assetClassFromExposureGroup,
+  officialMacroWhyRelevant,
+  OFFICIAL_MACRO_NOT_CAUSE,
+} from "@/lib/services/news/officialMacro";
 import type { FourQuestionsIntelligenceDepth } from "@/lib/services/fourQuestions/types";
 import { NEWS_PATH } from "@/lib/navigation/appRoutes";
 
@@ -60,6 +66,7 @@ function NewsItemRow({
 }) {
   const published = formatNewsTime(row.item.publishedAt || evidenceTimestamp);
   const isSector = row.matchRole === "sector_context";
+  const isMacro = row.matchRole === "macro_context";
   return (
     <li
       data-testid="holding-page-news-item"
@@ -80,7 +87,9 @@ function NewsItemRow({
       <p className={`mt-0.5 ${appSectionMetaClass}`}>
         {row.item.sourceName}
         {published ? ` · ${published}` : ""}
-        {isSector
+        {isMacro
+          ? " · Macro context, not a proven cause."
+          : isSector
           ? " · Sector context, not a proven cause."
           : " · Related context, not a proven cause."}
       </p>
@@ -115,7 +124,7 @@ export function HoldingMoveContextCard({
     candidate.explanationStatus === "supported" ||
     candidate.explanationStatus === "probable_contextual";
   const newsItems = relatedNews ?? [];
-  const { direct, sector } = partitionHoldingPageNews(newsItems);
+  const { direct, sector, macro } = partitionHoldingPageNews(newsItems);
   const hasAnyNews = newsItems.length > 0;
   const directLabel = candidate.isEtfLike
     ? HOLDING_PAGE_DIRECT_NEWS_LABEL
@@ -227,6 +236,34 @@ export function HoldingMoveContextCard({
                   </ul>
                 </div>
               ) : null}
+              {macro.length > 0 ? (
+                <div data-testid="holding-page-macro-news">
+                  <p className={appSectionLabelClass}>
+                    {HOLDING_PAGE_MACRO_NEWS_LABEL}
+                  </p>
+                  <ul className="mt-1.5 space-y-2.5">
+                    {macro.map((row) => (
+                      <NewsItemRow
+                        key={row.item.id}
+                        row={row}
+                        evidenceTimestamp={candidate.evidenceTimestamp}
+                      />
+                    ))}
+                  </ul>
+                  <p className={`mt-2 ${appSectionMetaClass}`}>
+                    Why relevant:{" "}
+                    {officialMacroWhyRelevant(
+                      assetClassFromExposureGroup(
+                        candidate.exposureGroupId,
+                        candidate.name,
+                      ),
+                    )}
+                  </p>
+                  <p className={`mt-1 ${appSectionMetaClass}`}>
+                    {OFFICIAL_MACRO_NOT_CAUSE}
+                  </p>
+                </div>
+              ) : null}
             </div>
           )}
         </div>
@@ -238,9 +275,11 @@ export function HoldingMoveContextCard({
           {isComplete && confidenceLabel
             ? `${confidenceLabel}${
                 hasReliableContext
-                  ? candidate.matchType === "sector_theme" ||
-                    (candidate.isEtfLike &&
-                      candidate.matchType !== "direct_instrument")
+                  ? candidate.matchType === "macro_context"
+                    ? " · High relevance as macro context; not proof of today's price move."
+                    : candidate.matchType === "sector_theme" ||
+                      (candidate.isEtfLike &&
+                        candidate.matchType !== "direct_instrument")
                     ? " · Sector context, not a proven cause."
                     : " · Related context, not a proven cause."
                   : ""

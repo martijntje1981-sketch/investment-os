@@ -58,14 +58,20 @@ function formatFactDate(value: string): string {
 export function enrichNewsItem(item: NewsContentItem): NewsContentItem {
   const summary = generateNewsSummary(item);
   const impactLevel = deriveNewsImpactLevel(item);
-  const interpretation = generateInterpretation({
-    title: item.title,
-    matchedSymbols: item.matchedSymbols,
-    matchedHoldings: item.matchedHoldings,
-    category: item.category,
-    marketCategory: item.marketCategory,
-    impactLevel,
-  });
+  const interpretation =
+    item.contextKind === "macro_official" && item.interpretation
+      ? item.interpretation
+      : generateInterpretation({
+          title: item.title,
+          matchedSymbols: item.matchedSymbols,
+          matchedHoldings: item.matchedHoldings,
+          category: item.category,
+          marketCategory: item.marketCategory,
+          impactLevel,
+          contextKind: item.contextKind,
+          macroTopic: item.macroTopic,
+          officialInstitution: item.officialInstitution,
+        });
 
   return {
     ...item,

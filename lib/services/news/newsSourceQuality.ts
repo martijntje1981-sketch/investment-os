@@ -15,6 +15,10 @@ export const PREMIUM_SOURCE_QUALITY: Record<string, number> = {
   CoinDesk: 26,
   Cointelegraph: 24,
   "EODHD News": 28,
+  "European Central Bank": 42,
+  "Federal Reserve Board": 42,
+  "Federal Reserve Bank of St. Louis": 40,
+  "Federal Reserve Bank of Atlanta": 40,
   "Coin Bureau": 18,
 };
 

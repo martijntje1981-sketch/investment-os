@@ -11,6 +11,7 @@ import {
   BITCOIN_CRYPTO_CONTEXT_NOTE,
   ETF_CONTEXTUAL_NOTE,
   HOLDING_EXPLANATION_NOTES,
+  MACRO_CONTEXT_NOTE,
   CONFIDENCE_BY_STATUS,
   type HoldingExplanationStatus,
   type HoldingNewsMatchType,
@@ -40,7 +41,9 @@ export function newsItemMatchesHolding(
 
 export function classifyHoldingNewsMatchType(
   relevanceScore: number,
+  item?: Pick<NewsContentItem, "contextKind"> | null,
 ): HoldingNewsMatchType {
+  if (item?.contextKind === "macro_official") return "macro_context";
   if (relevanceScore >= DIRECT_INSTRUMENT_SCORE) return "direct_instrument";
   if (relevanceScore >= STRONG_PORTFOLIO_MATCH_SCORE) {
     return "instrument_alias";
@@ -83,6 +86,14 @@ export function resolveHoldingExplanation(input: {
       note: isEtfLike
         ? ETF_CONTEXTUAL_NOTE
         : HOLDING_EXPLANATION_NOTES.probable_contextual,
+      confidence: CONFIDENCE_BY_STATUS.probable_contextual,
+    };
+  }
+
+  if (matchType === "macro_context") {
+    return {
+      status: "probable_contextual",
+      note: MACRO_CONTEXT_NOTE,
       confidence: CONFIDENCE_BY_STATUS.probable_contextual,
     };
   }
@@ -142,6 +153,10 @@ export function selectBestHoldingNewsItem(
   }
 
   const ranked = [...matched].sort((a, b) => {
+    const officialDiff =
+      Number(a.contextKind === "macro_official") -
+      Number(b.contextKind === "macro_official");
+    if (officialDiff !== 0) return officialDiff;
     const scoreDiff = (b.relevanceScore ?? 0) - (a.relevanceScore ?? 0);
     if (scoreDiff !== 0) return scoreDiff;
     return b.publishedAt.localeCompare(a.publishedAt);

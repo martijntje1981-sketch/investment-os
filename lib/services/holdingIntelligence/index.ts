@@ -9,6 +9,7 @@ export {
   CONFIDENCE_LABEL_BY_STATUS,
   ETF_CONTEXTUAL_NOTE,
   HOLDING_EXPLANATION_NOTES,
+  MACRO_CONTEXT_NOTE,
   NEWS_HUB_NO_CATALYST,
 } from "@/lib/services/holdingIntelligence/types";
 export { buildHoldingIntelligenceCandidates } from "@/lib/services/holdingIntelligence/buildHoldingIntelligenceCandidates";
@@ -52,6 +53,7 @@ export {
   HOLDING_PAGE_DIRECT_NEWS_LABEL,
   HOLDING_PAGE_DIRECT_HOLDING_NEWS_LABEL,
   HOLDING_PAGE_SECTOR_NEWS_LABEL,
+  HOLDING_PAGE_MACRO_NEWS_LABEL,
   isDisplayableHoldingPageNewsMatch,
   partitionHoldingPageNews,
   selectHoldingPageComponentNews,

@@ -26,6 +26,7 @@ export type HoldingNewsMatchType =
   | "direct_instrument"
   | "instrument_alias"
   | "sector_theme"
+  | "macro_context"
   | "component"
   | "none";
 
@@ -75,6 +76,9 @@ export const ETF_CONTEXTUAL_NOTE =
 
 export const BITCOIN_CRYPTO_CONTEXT_NOTE =
   "Broader crypto-market context, not a Bitcoin-specific catalyst.";
+
+export const MACRO_CONTEXT_NOTE =
+  "Official macro context, not proof of today’s price move.";
 
 export const NEWS_HUB_NO_CATALYST =
   "No clear holding-specific catalyst found.";

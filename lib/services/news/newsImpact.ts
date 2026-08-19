@@ -1,3 +1,4 @@
+import { officialMacroInterpretation } from "@/lib/services/news/officialMacro/copy";
 import type { NewsContentItem, NewsImpactLevel } from "@/lib/types/newsContent";
 import { STRONG_PORTFOLIO_MATCH_SCORE } from "@/lib/services/news/relevanceMatching";
 
@@ -55,9 +56,24 @@ function stripTitleSuffix(title: string): string {
 export function generateInterpretation(
   item: Pick<
     NewsContentItem,
-    "title" | "matchedSymbols" | "matchedHoldings" | "category" | "marketCategory" | "impactLevel"
+    | "title"
+    | "matchedSymbols"
+    | "matchedHoldings"
+    | "category"
+    | "marketCategory"
+    | "impactLevel"
+    | "contextKind"
+    | "macroTopic"
+    | "officialInstitution"
   >,
 ): string {
+  if (item.contextKind === "macro_official") {
+    return officialMacroInterpretation({
+      institution: item.officialInstitution,
+      topic: item.macroTopic,
+      assetClass: null,
+    });
+  }
   const topic = stripTitleSuffix(item.title);
 
   if (item.matchedHoldings.length > 0) {

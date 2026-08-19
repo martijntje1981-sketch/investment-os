@@ -34,10 +34,15 @@ export function buildQ1HoldingContextLayer(
     };
   }
 
-  const notCause = "Related context, not a proven cause.";
+  const notCause =
+    candidate.matchType === "macro_context"
+      ? "Macro context, not a proven cause."
+      : "Related context, not a proven cause.";
   const bullets = [
     ...(confidence ? [`Confidence: ${confidence}`] : []),
-    candidate.matchType === "sector_theme" || candidate.isEtfLike
+    candidate.matchType === "sector_theme" ||
+    candidate.matchType === "macro_context" ||
+    candidate.isEtfLike
       ? "Sector context, not a proven cause."
       : notCause,
   ];
@@ -61,7 +66,9 @@ export function buildQ1HoldingContextLayer(
   }
 
   const contextualLead = headline
-    ? candidate.isEtfLike
+    ? candidate.matchType === "macro_context"
+      ? `Macro context: ${headline}. ${candidate.explanationNote}`
+      : candidate.isEtfLike
       ? `Sector context: ${headline}. ${ETF_CONTEXTUAL_NOTE}`
       : `${headline}. ${candidate.explanationNote}`
     : candidate.explanationNote;

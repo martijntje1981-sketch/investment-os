@@ -73,7 +73,7 @@ export function buildHoldingIntelligenceCandidates(input: {
     const relevanceScore = attached.item?.relevanceScore ?? null;
     const matchType =
       attached.item != null && relevanceScore != null
-        ? classifyHoldingNewsMatchType(relevanceScore)
+        ? classifyHoldingNewsMatchType(relevanceScore, attached.item)
         : "none";
     const etfLike = isEtfLike(holding);
     const bitcoin = isBitcoinHolding(holding);

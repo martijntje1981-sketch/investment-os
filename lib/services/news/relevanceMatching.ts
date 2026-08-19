@@ -237,6 +237,9 @@ export function scoreNewsItemRelevance(
   item: NewsContentItem,
   profiles: HoldingMatchProfile[],
 ): NewsContentItem {
+  if (item.contextKind === "macro_official") {
+    return item;
+  }
   if (profiles.length === 0) {
     return {
       ...item,

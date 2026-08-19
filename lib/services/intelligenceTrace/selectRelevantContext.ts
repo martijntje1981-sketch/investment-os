@@ -122,6 +122,9 @@ function scoreNewsItem(
   nowMs: number,
   maxNewsAgeMs: number,
 ): number | null {
+  if (item.contextKind === "macro_official") {
+    return scoreOfficialMacroContext(item, subject, nowMs, maxNewsAgeMs);
+  }
   if (!itemMatchesSubject(item, subject)) return null;
   if (isGenericAssetMention(item, subject)) return null;
   if (!isValidArticleUrl(item.canonicalUrl)) return null;
@@ -144,9 +147,44 @@ function scoreNewsItem(
   return titleHit + strongMatch + highImpact + sourceQuality + recency + item.relevanceScore;
 }
 
+function scoreOfficialMacroContext(
+  item: NewsContentItem,
+  subject: RelevantContextSubject,
+  nowMs: number,
+  maxNewsAgeMs: number,
+): number | null {
+  if (!itemMatchesSubject(item, subject)) return null;
+  if (!isValidArticleUrl(item.canonicalUrl)) return null;
+  if (item.relevanceScore < 10) return null;
+
+  const sourceQuality = getSourceQualityScore(item.sourceName);
+  if (sourceQuality < MIN_SOURCE_QUALITY) return null;
+
+  const ageHours = hoursAgo(item.publishedAt, nowMs);
+  if (ageHours == null || ageHours * 3_600_000 > maxNewsAgeMs) return null;
+
+  const recency =
+    ageHours * 3_600_000 <= PREFERRED_NEWS_AGE_MS ? 16 : Math.max(0, 16 - ageHours / 6);
+
+  return sourceQuality + recency + item.relevanceScore;
+}
+
 function newsLayer(item: NewsContentItem, subjectName: string): IntelligenceTraceLayer {
   const source = item.sourceName?.trim();
   const headline = item.title.replace(/\s*[|–—-]\s*.+$/, "").trim();
+  if (item.contextKind === "macro_official") {
+    return {
+      id: "relevant_context",
+      title: "Relevant context",
+      detail: source
+        ? `Macro context for ${subjectName}: ${headline} (${source}). This is official macro context, not a proven cause of the portfolio move.`
+        : `Macro context for ${subjectName}: ${headline}. This is official macro context, not a proven cause of the portfolio move.`,
+      presentation: "expand",
+      href: item.canonicalUrl,
+      hrefExternal: true,
+      emphasis: "supporting",
+    };
+  }
   return {
     id: "relevant_context",
     title: "Relevant context",

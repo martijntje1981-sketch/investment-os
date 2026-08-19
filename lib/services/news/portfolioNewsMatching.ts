@@ -157,6 +157,9 @@ export function scoreNewsItemWithProfiles(
   item: NewsContentItem,
   profiles: NewsHoldingProfile[],
 ): NewsContentItem {
+  if (item.contextKind === "macro_official") {
+    return item;
+  }
   if (profiles.length === 0) {
     return {
       ...item,

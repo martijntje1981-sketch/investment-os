@@ -62,6 +62,9 @@ export function isSportsContent(
 }
 
 export function isFinancialMarketContent(item: NewsContentItem): boolean {
+  if (item.contextKind === "macro_official") {
+    return true;
+  }
   const haystack = buildHaystack(item);
 
   if (isSportsContent(item.title, item.description)) {

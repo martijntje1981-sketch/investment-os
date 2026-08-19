@@ -20,8 +20,9 @@ export const HOLDING_PAGE_NEWS_MAX = 4;
 export const HOLDING_PAGE_DIRECT_NEWS_LABEL = "Direct ETF news";
 export const HOLDING_PAGE_DIRECT_HOLDING_NEWS_LABEL = "Direct holding news";
 export const HOLDING_PAGE_SECTOR_NEWS_LABEL = "Sector / theme context";
+export const HOLDING_PAGE_MACRO_NEWS_LABEL = "Macro context";
 
-export type HoldingPageNewsMatchRole = "direct" | "alias" | "sector_context";
+export type HoldingPageNewsMatchRole = "direct" | "alias" | "sector_context" | "macro_context";
 
 export type HoldingPageNewsItem = {
   item: NewsContentItem;
@@ -30,8 +31,9 @@ export type HoldingPageNewsItem = {
 };
 
 function matchRank(matchType: HoldingNewsMatchType): number {
-  if (matchType === "direct_instrument") return 3;
-  if (matchType === "instrument_alias") return 2;
+  if (matchType === "direct_instrument") return 4;
+  if (matchType === "instrument_alias") return 3;
+  if (matchType === "macro_context") return 2;
   if (matchType === "sector_theme") return 1;
   return 0;
 }
@@ -41,6 +43,7 @@ function matchRoleFor(
 ): HoldingPageNewsMatchRole | null {
   if (matchType === "direct_instrument") return "direct";
   if (matchType === "instrument_alias") return "alias";
+  if (matchType === "macro_context") return "macro_context";
   if (matchType === "sector_theme") return "sector_context";
   return null;
 }
@@ -52,6 +55,9 @@ export function isDisplayableHoldingPageNewsMatch(
 ): boolean {
   if (matchType === "direct_instrument" || matchType === "instrument_alias") {
     return true;
+  }
+  if (matchType === "macro_context") {
+    return relevanceScore > 0;
   }
   if (matchType !== "sector_theme") return false;
   if (options.isBitcoin) return false;
@@ -74,7 +80,7 @@ export function selectHoldingPageNewsItems(
     .filter((item) => newsItemMatchesHolding(item, holding))
     .map((item) => {
       const relevanceScore = item.relevanceScore ?? 0;
-      const matchType = classifyHoldingNewsMatchType(relevanceScore);
+      const matchType = classifyHoldingNewsMatchType(relevanceScore, item);
       return { item, matchType, relevanceScore };
     })
     .filter((row) =>
@@ -92,19 +98,34 @@ export function selectHoldingPageNewsItems(
 
   const selected: HoldingPageNewsItem[] = [];
   const seen = new Set<string>();
+  let officialMacroCount = 0;
   for (const row of ranked) {
     const keys = newsItemStoryKeys(row.item);
     const identity = keys.canonicalUrl || keys.articleId || keys.themeKey;
     if (!identity || seen.has(identity)) continue;
     const matchRole = matchRoleFor(row.matchType);
     if (!matchRole) continue;
+    if (matchRole === "macro_context") {
+      if (officialMacroCount >= 1) continue;
+      officialMacroCount += 1;
+      seen.add(identity);
+      selected.push({
+        item: row.item,
+        matchType: row.matchType,
+        matchRole,
+      });
+      continue;
+    }
+    const nonMacroCount = selected.filter(
+      (entry) => entry.matchRole !== "macro_context",
+    ).length;
+    if (nonMacroCount >= limit) continue;
     seen.add(identity);
     selected.push({
       item: row.item,
       matchType: row.matchType,
       matchRole,
     });
-    if (selected.length >= limit) break;
   }
   return selected;
 }
@@ -112,12 +133,14 @@ export function selectHoldingPageNewsItems(
 export function partitionHoldingPageNews(items: HoldingPageNewsItem[]): {
   direct: HoldingPageNewsItem[];
   sector: HoldingPageNewsItem[];
+  macro: HoldingPageNewsItem[];
 } {
   return {
     direct: items.filter(
       (row) => row.matchRole === "direct" || row.matchRole === "alias",
     ),
     sector: items.filter((row) => row.matchRole === "sector_context"),
+    macro: items.filter((row) => row.matchRole === "macro_context"),
   };
 }
 

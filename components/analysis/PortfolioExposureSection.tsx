@@ -23,6 +23,7 @@ import {
   type PortfolioExposureHoldingContribution,
 } from "@/lib/services/classification";
 import { buildFixedIncomeRateEducation } from "@/lib/services/classification/fixedIncomeEducation";
+import type { NewsContentItem } from "@/lib/types/newsContent";
 
 const HOLDINGS_PREVIEW_LIMIT = 5;
 
@@ -33,9 +34,14 @@ const HOLDINGS_PREVIEW_LIMIT = 5;
 export function PortfolioExposureSection({
   allocation,
   showSubgroups = false,
+  ratePolicyContext = null,
 }: {
   allocation: PortfolioExposureAllocation;
   showSubgroups?: boolean;
+  ratePolicyContext?: Pick<
+    NewsContentItem,
+    "title" | "canonicalUrl" | "sourceName"
+  > | null;
 }) {
   const { formatEur } = useBaseCurrencyDisplay();
   const rateEducation = allocation.fixedIncome
@@ -115,6 +121,20 @@ export function PortfolioExposureSection({
               {rateEducation.durationNote ? (
                 <p className={`mt-2 ${appSectionMetaClass}`}>
                   {rateEducation.durationNote}
+                </p>
+              ) : null}
+              {ratePolicyContext ? (
+                <p className={`mt-2 ${appSectionMetaClass}`}>
+                  Latest official rate-policy context:{" "}
+                  <a
+                    href={ratePolicyContext.canonicalUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-semibold text-slate-800 underline-offset-2 hover:underline"
+                  >
+                    {ratePolicyContext.title}
+                  </a>
+                  {` (${ratePolicyContext.sourceName}). Macro context, not a live policy rate.`}
                 </p>
               ) : null}
             </aside>

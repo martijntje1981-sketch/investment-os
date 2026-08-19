@@ -25,7 +25,7 @@ export type NewsHubHoldingRow = {
   contextHeadline: string | null;
   contextItem: NewsContentItem | null;
   confidenceLabel: "High" | "Medium" | "Low" | null;
-  matchRole: "catalyst_context" | "sector_context" | "none";
+  matchRole: "catalyst_context" | "sector_context" | "macro_context" | "none";
 };
 
 function signedPercent(value: number): string {
@@ -78,6 +78,7 @@ export function buildNewsHubHoldingRow(
 ): NewsHubHoldingRow {
   const strong = hasStrongHoldingContext(candidate);
   const thematic = isVerifiedThematicContext(candidate);
+  const macro = candidate.matchType === "macro_context";
   const showArticle = Boolean(candidate.newsItem) && (strong || thematic);
   const confidenceLabel = CONFIDENCE_LABEL_BY_STATUS[candidate.explanationStatus];
 
@@ -93,6 +94,9 @@ export function buildNewsHubHoldingRow(
       depth === "complete"
         ? `Sector context: ${candidate.newsItem.title}`
         : "Related sector context, not a proven cause.";
+  } else if (macro && depth === "complete" && candidate.newsItem) {
+    matchRole = "none";
+    contextCopy = `${candidate.explanationNote} Official macro context is shown in Markets/Macro when relevant, not as a holding catalyst.`;
   } else if (
     candidate.isBitcoin &&
     candidate.matchType === "sector_theme" &&

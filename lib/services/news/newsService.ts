@@ -18,6 +18,11 @@ import {
   resolveNewsHoldingProfiles,
   scoreNewsItemWithProfiles,
 } from "@/lib/services/news/portfolioNewsMatching";
+import {
+  capOfficialMacroPortfolioItems,
+  isOfficialMacroItem,
+  scoreOfficialMacroItem,
+} from "@/lib/services/news/officialMacro";
 import { STRONG_PORTFOLIO_MATCH_SCORE } from "@/lib/services/news/relevanceMatching";
 import { fetchUpcomingMarketEvents } from "@/lib/services/news/upcomingEvents";
 import { createDegradedNewsResponse } from "@/lib/services/news/newsResponseFactory";
@@ -49,7 +54,11 @@ export async function buildNewsResponse(
   const categorized = assignMarketCategories(financialItems);
   const deduped = deduplicateCrossSourceNews(categorized);
 
-  const scored = deduped.map((item) => scoreNewsItemWithProfiles(item, profiles));
+  const scored = deduped.map((item) =>
+    isOfficialMacroItem(item)
+      ? scoreOfficialMacroItem(item, holdings)
+      : scoreNewsItemWithProfiles(item, profiles),
+  );
   const enriched = enrichNewsItems(scored);
   const sections = partitionNewsHub(enriched);
 
@@ -134,8 +143,10 @@ function normalizeTitleKey(title: string): string {
 }
 
 export function partitionNewsHub(items: NewsContentItem[]) {
-  const portfolioNews = rankPortfolioNews(
-    items.filter((item) => item.relevanceScore >= STRONG_PORTFOLIO_MATCH_SCORE),
+  const portfolioNews = capOfficialMacroPortfolioItems(
+    rankPortfolioNews(
+      items.filter((item) => item.relevanceScore >= STRONG_PORTFOLIO_MATCH_SCORE),
+    ),
   ).slice(0, 12);
 
   const portfolioKeys = new Set(
@@ -146,13 +157,15 @@ export function partitionNewsHub(items: NewsContentItem[]) {
   );
 
   const macroNews = items
-    .filter(
-      (item) =>
+    .filter((item) => {
+      if (portfolioKeys.has(item.canonicalUrl.toLowerCase())) return false;
+      if (portfolioKeys.has(normalizeTitleKey(item.title))) return false;
+      if (isOfficialMacroItem(item) && item.relevanceScore > 0) return true;
+      return (
         item.relevanceScore < STRONG_PORTFOLIO_MATCH_SCORE &&
-        isMacroNewsCandidate(item) &&
-        !portfolioKeys.has(item.canonicalUrl.toLowerCase()) &&
-        !portfolioKeys.has(normalizeTitleKey(item.title)),
-    )
+        isMacroNewsCandidate(item)
+      );
+    })
     .sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt))
     .slice(0, 12);
 
