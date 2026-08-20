@@ -321,6 +321,7 @@ export type BuildPeriodIntelligenceReviewInput = {
   holdingMoves?: HoldingPeriodMove[] | null;
   startingPortfolioValue?: number | null;
   endingPortfolioValue?: number | null;
+  currentPortfolioValue?: number | null;
   totalReturnPercent?: number | null;
   totalReturnAmount?: number | null;
   historicalFxApproximate?: boolean;
@@ -495,6 +496,7 @@ export function buildPeriodIntelligenceReview(
       holdingMoves: input.holdingMoves,
       startingPortfolioValue: input.startingPortfolioValue,
       endingPortfolioValue: input.endingPortfolioValue,
+      currentPortfolioValue: input.currentPortfolioValue,
       totalReturnPercent: input.totalReturnPercent,
       totalReturnAmount: input.totalReturnAmount,
       historicalFxApproximate: input.historicalFxApproximate,

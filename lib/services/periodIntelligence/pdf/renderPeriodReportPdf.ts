@@ -381,7 +381,9 @@ function drawCover(
   brief: PeriodReportBrief | null,
   periodLabel: string,
 ) {
-  const navyHeight = brief?.coverHighlights?.length ? 292 : 236;
+  const navyHeight =
+    (brief?.coverHighlights?.length ? 292 : 236) +
+    (brief?.portfolioValueCaption ? 14 : 0);
   fillRect(painter, 0, 0, PDF_PAGE.width, navyHeight, PDF_THEME.navy);
   fillRect(painter, 0, 0, 7, navyHeight, PDF_THEME.cyan);
   fillRect(painter, 7, 0, 4, navyHeight, PDF_THEME.purple);
@@ -454,6 +456,9 @@ function drawCover(
   if (valueLabel) {
     write("YOUR PORTFOLIO", 8, true, PDF_THEME.cyan, 2);
     write(valueLabel, 28, true, PDF_THEME.white, 3);
+    if (brief?.portfolioValueCaption) {
+      write(brief.portfolioValueCaption, 8, false, PDF_THEME.whiteMuted, 2);
+    }
   }
   if (changeLabel) {
     cursor += 4;
@@ -562,6 +567,13 @@ function drawHoldingsTable(
     color: PDF_THEME.navyMid,
     periodLabel,
   });
+  if (brief.currentContextLabel) {
+    drawText(painter, brief.currentContextLabel, {
+      size: 8,
+      color: PDF_THEME.muted,
+      periodLabel,
+    });
+  }
   painter.y += 6;
   const cols = {
     weight: MARGIN_X + CONTENT_WIDTH - 210,
@@ -791,6 +803,14 @@ export function renderPeriodReportPdf(
   if (brief?.goal.hasGoal && brief.showGoalVisual) {
     const height = goalChartHeight();
     ensureSpace(painter, height + 36, periodLabel);
+    if (brief.currentContextLabel) {
+      drawText(painter, brief.currentContextLabel, {
+        size: 8,
+        color: PDF_THEME.muted,
+        periodLabel,
+      });
+      painter.y += 4;
+    }
     drawGoalProgress(
       { addOp: (op) => addOp(painter, op) },
       {
@@ -944,6 +964,13 @@ export function renderPeriodReportPdf(
       color: PDF_THEME.navyMid,
       periodLabel,
     });
+    if (brief.currentContextLabel) {
+      drawText(painter, brief.currentContextLabel, {
+        size: 8,
+        color: PDF_THEME.muted,
+        periodLabel,
+      });
+    }
     painter.y += 8;
     drawAllocationChart(
       { addOp: (op) => addOp(painter, op) },

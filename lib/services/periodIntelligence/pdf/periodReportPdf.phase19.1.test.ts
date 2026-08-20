@@ -160,6 +160,8 @@ function composeVerificationReview(
       holdings,
       endingPortfolioValue: total,
       startingPortfolioValue: extras.startingPortfolioValue ?? 1_350,
+      currentPortfolioValue: total,
+      now: new Date("2026-08-20T12:00:00.000Z"),
       contributionEntries: extras.contributionEntries,
       chartPoints:
         extras.chartPoints === undefined

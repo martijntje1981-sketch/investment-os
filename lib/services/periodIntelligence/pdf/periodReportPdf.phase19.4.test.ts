@@ -156,12 +156,29 @@ function composeAuthenticatedReview(kind: PeriodIntelligenceKind) {
   ];
   const monthSeries = [
     {
-      date: "2026-07-20",
-      portfolioValue: 1_300,
+      date: "2026-07-01",
+      portfolioValue: 1_350,
       netContributions: null,
       investmentReturn: null,
     },
-    ...weekSeries,
+    {
+      date: "2026-07-31",
+      portfolioValue: 1_400,
+      netContributions: null,
+      investmentReturn: null,
+    },
+    {
+      date: "2026-08-14",
+      portfolioValue: 1_450,
+      netContributions: null,
+      investmentReturn: null,
+    },
+    {
+      date: "2026-08-20",
+      portfolioValue: snapshot,
+      netContributions: null,
+      investmentReturn: null,
+    },
   ];
   const companion = buildCompanionReview(kind, {
     now: new Date("2026-08-20T12:00:00.000Z"),
@@ -179,6 +196,8 @@ function composeAuthenticatedReview(kind: PeriodIntelligenceKind) {
       holdings,
       endingPortfolioValue: snapshot,
       startingPortfolioValue: 1_350,
+      currentPortfolioValue: snapshot,
+      now: new Date("2026-08-20T12:00:00.000Z"),
       chartPoints: kind === "monthly" ? monthSeries : weekSeries,
       holdingMoves: verificationMoves(),
       resilienceProfile:
@@ -263,6 +282,7 @@ describe("Phase 19.4 production PDF renderer parity", () => {
     expect(page).toMatch("chartPoints:");
     expect(page).toMatch("holdingMoves:");
     expect(page).toMatch("endingPortfolioValue:");
+    expect(page).toMatch("currentPortfolioValue:");
     expect(page).toMatch("contributionEntries:");
     expect(page).toMatch("PeriodReportPdfAction");
     expect(page).not.toMatch("phase19ReviewFixture");
@@ -354,6 +374,8 @@ describe("Phase 19.4 production PDF renderer parity", () => {
         holdingsSnapshotValue: 123_803,
         endingPortfolioValue: 123_801,
         companionMetricsEndingValue: 123_801,
+        periodEndDate: "2026-08-20",
+        snapshotAsOfDay: "2026-08-20",
       }),
     ).toBe(123_803);
     const aligned = alignChartEndToCanonical(
@@ -389,6 +411,8 @@ describe("Phase 19.4 production PDF renderer parity", () => {
         holdings,
         endingPortfolioValue: snapshot,
         startingPortfolioValue: 47_000,
+        currentPortfolioValue: snapshot,
+        now: new Date("2026-08-20T12:00:00.000Z"),
         chartPoints: [
           { date: "2026-07-20", portfolioValue: 47_000, netContributions: null, investmentReturn: null },
           { date: "2026-08-20", portfolioValue: snapshot, netContributions: null, investmentReturn: null },

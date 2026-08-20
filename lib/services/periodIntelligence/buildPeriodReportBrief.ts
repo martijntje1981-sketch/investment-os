@@ -43,6 +43,7 @@ import type {
   PeriodReportPerformanceChart,
   PeriodReportScenarioBar,
 } from "@/lib/services/periodIntelligence/periodReportBrief";
+import { formatSignedPercent as formatCompanionSignedPercent } from "@/lib/services/portfolio/companion/format";
 import type { CompanionReview } from "@/lib/services/portfolio/companion/types";
 import type { ResilienceProfile } from "@/lib/services/resilience";
 import { runAllPortfolioScenarios } from "@/lib/services/scenarioEngine/runScenario";
@@ -99,20 +100,64 @@ export function holdingsSnapshotValue(
   return Number.isFinite(total) ? total : null;
 }
 
+export function isSameCalendarDay(
+  left: string | Date | null | undefined,
+  right: string | Date | null | undefined,
+): boolean {
+  const a = isoCalendarDay(left);
+  const b = isoCalendarDay(right);
+  return Boolean(a && b && a === b);
+}
+
+function firstFinitePositive(
+  values: Array<number | null | undefined>,
+): number | null {
+  for (const value of values) {
+    if (value != null && Number.isFinite(value) && value > 0) return value;
+  }
+  return null;
+}
+
+/**
+ * Period-end value for cover / Q1 / chart.
+ * Same-day current snapshot may reconcile with the labelled period-end (Weekly).
+ * Historical Monthly must use the labelled Companion period-end, never today's snapshot.
+ */
 export function resolveCanonicalPeriodEndValue(input: {
   holdingsSnapshotValue: number | null | undefined;
   endingPortfolioValue: number | null | undefined;
   companionMetricsEndingValue: number | null | undefined;
+  periodWindowEndValue?: number | null;
+  periodEndDate?: string | null;
+  snapshotAsOfDay?: string | null;
 }): number | null {
-  const candidates = [
-    input.holdingsSnapshotValue,
-    input.endingPortfolioValue,
-    input.companionMetricsEndingValue,
-  ];
-  for (const value of candidates) {
-    if (value != null && Number.isFinite(value) && value > 0) return value;
+  const sameDay = isSameCalendarDay(
+    input.periodEndDate ?? null,
+    input.snapshotAsOfDay ?? null,
+  );
+  if (sameDay) {
+    return firstFinitePositive([
+      input.holdingsSnapshotValue,
+      input.periodWindowEndValue,
+      input.endingPortfolioValue,
+      input.companionMetricsEndingValue,
+    ]);
   }
-  return null;
+  return firstFinitePositive([
+    input.periodWindowEndValue,
+    input.companionMetricsEndingValue,
+  ]);
+}
+
+export function clipChartPointsToPeriod<T extends { date: string }>(
+  points: T[],
+  startDate: string | null,
+  endDate: string | null,
+): T[] {
+  if (!startDate && !endDate) return points;
+  return points.filter((point) =>
+    inInclusiveRange(point.date, startDate, endDate),
+  );
 }
 
 export function alignChartEndToCanonical<T extends { date: string; value: number }>(
@@ -191,19 +236,40 @@ function toImpactRow(row: HoldingAttributionRow): PeriodReportImpactRow {
   };
 }
 
+function periodResultWindowLabel(
+  kind: PeriodIntelligenceKind,
+  companion: CompanionReview,
+): string {
+  if (kind === "weekly") return "this week";
+  if (companion.periodKind === "calendar_month" && companion.startDate) {
+    const monthName = new Intl.DateTimeFormat("en-GB", {
+      month: "long",
+      year: "numeric",
+      timeZone: "UTC",
+    }).format(new Date(`${companion.startDate.slice(0, 10)}T12:00:00.000Z`));
+    return `in ${monthName}`;
+  }
+  return "this month";
+}
+
 function buildPerformanceChart(
   points: PortfolioPerformancePoint[] | null | undefined,
   canonicalEnd: number | null,
-  asOfDay: string | null,
+  periodStart: string | null,
+  periodEnd: string | null,
 ): PeriodReportPerformanceChart | null {
-  const usable = (points ?? [])
-    .filter(
-      (point) =>
-        Number.isFinite(point.portfolioValue) && point.portfolioValue > 0,
-    )
-    .map((point) => ({ date: point.date, value: point.portfolioValue }));
+  const usable = clipChartPointsToPeriod(
+    (points ?? [])
+      .filter(
+        (point) =>
+          Number.isFinite(point.portfolioValue) && point.portfolioValue > 0,
+      )
+      .map((point) => ({ date: point.date, value: point.portfolioValue })),
+    periodStart,
+    periodEnd,
+  );
   if (usable.length < 2) return null;
-  const aligned = alignChartEndToCanonical(usable, canonicalEnd, asOfDay);
+  const aligned = alignChartEndToCanonical(usable, canonicalEnd, periodEnd);
   const start = aligned[0]!;
   const end = aligned[aligned.length - 1]!;
   return {
@@ -280,6 +346,7 @@ export type BuildPeriodReportBriefInput = {
   holdingMoves?: HoldingPeriodMove[] | null;
   startingPortfolioValue?: number | null;
   endingPortfolioValue?: number | null;
+  currentPortfolioValue?: number | null;
   totalReturnPercent?: number | null;
   totalReturnAmount?: number | null;
   historicalFxApproximate?: boolean;
@@ -298,26 +365,66 @@ export function buildPeriodReportBrief(
 
   const metrics = companion.metrics;
   const snapshotValue = holdingsSnapshotValue(holdings);
-  const endingValue = resolveCanonicalPeriodEndValue({
+  const snapshotAsOfDay = isoCalendarDay(generatedAt);
+  const periodEndDate = isoCalendarDay(companion.endDate);
+  const periodStartDate = isoCalendarDay(companion.startDate);
+  const sameDaySnapshotIsPeriodEnd = isSameCalendarDay(
+    periodEndDate,
+    snapshotAsOfDay,
+  );
+  const windowChartPoints = clipChartPointsToPeriod(
+    (input.chartPoints ?? [])
+      .filter(
+        (point) =>
+          Number.isFinite(point.portfolioValue) && point.portfolioValue > 0,
+      )
+      .map((point) => ({ date: point.date, value: point.portfolioValue })),
+    periodStartDate,
+    periodEndDate,
+  );
+  const periodWindowStartValue = windowChartPoints[0]?.value ?? null;
+  const periodWindowEndValue =
+    windowChartPoints[windowChartPoints.length - 1]?.value ?? null;
+  const periodEndValue = resolveCanonicalPeriodEndValue({
     holdingsSnapshotValue: snapshotValue,
     endingPortfolioValue: input.endingPortfolioValue,
     companionMetricsEndingValue: metrics?.endingValue ?? null,
+    periodWindowEndValue,
+    periodEndDate,
+    snapshotAsOfDay,
   });
-  const asOfDay =
-    isoCalendarDay(review.dataAsOf) ??
-    isoCalendarDay(companion.endDate) ??
-    isoCalendarDay(generatedAt);
-  const coverStartValue = metrics?.startingValue ?? input.startingPortfolioValue ?? null;
+  const periodStartValue = firstFinitePositive([
+    periodWindowStartValue,
+    metrics?.startingValue,
+    input.startingPortfolioValue,
+  ]);
+  const currentPortfolioValue = firstFinitePositive([
+    input.currentPortfolioValue,
+    snapshotValue,
+  ]);
+  const currentValueForContext = sameDaySnapshotIsPeriodEnd
+    ? (currentPortfolioValue ?? periodEndValue)
+    : currentPortfolioValue;
   const attributionStartValue =
     input.startingPortfolioValue ?? metrics?.startingValue ?? null;
+  const attributionEndValue =
+    input.endingPortfolioValue ?? periodEndValue;
+  const periodChangeAmount =
+    periodStartValue != null && periodEndValue != null
+      ? periodEndValue - periodStartValue
+      : metrics?.portfolioMovement ?? null;
   const periodChangePercent =
-    coverStartValue != null &&
-    endingValue != null &&
-    coverStartValue > 0 &&
-    Number.isFinite(coverStartValue) &&
-    Number.isFinite(endingValue)
-      ? ((endingValue - coverStartValue) / coverStartValue) * 100
+    periodStartValue != null &&
+    periodEndValue != null &&
+    periodStartValue > 0 &&
+    Number.isFinite(periodStartValue) &&
+    Number.isFinite(periodEndValue)
+      ? ((periodEndValue - periodStartValue) / periodStartValue) * 100
       : null;
+  const showCurrentSnapshotLabel =
+    monthly &&
+    Boolean(currentValueForContext) &&
+    !sameDaySnapshotIsPeriodEnd;
 
   const headline =
     review.hero?.conclusion ??
@@ -350,7 +457,7 @@ export function buildPeriodReportBrief(
           holdings,
           holdingMoves: input.holdingMoves,
           startingPortfolioValue: attributionStartValue,
-          endingPortfolioValue: endingValue,
+          endingPortfolioValue: attributionEndValue,
           totalReturnPercent: input.totalReturnPercent,
           totalReturnAmount: input.totalReturnAmount,
           historicalFxApproximate: input.historicalFxApproximate,
@@ -390,8 +497,9 @@ export function buildPeriodReportBrief(
   const goalEngine =
     input.hasSavedGoal && input.goal
       ? buildGoalProgressEngine({
-          currentPortfolioValue: endingValue ?? 0,
-          portfolioValueAvailable: endingValue != null && endingValue > 0,
+          currentPortfolioValue: currentValueForContext ?? 0,
+          portfolioValueAvailable:
+            currentValueForContext != null && currentValueForContext > 0,
           goal: input.goal,
           hasSavedGoal: true,
         })
@@ -464,7 +572,7 @@ export function buildPeriodReportBrief(
     (input.contributionEntries?.length ?? 0) > 0
       ? buildPortfolioFundingHistory({
           entries: input.contributionEntries ?? [],
-          currentPortfolioValueBase: endingValue,
+          currentPortfolioValueBase: currentValueForContext ?? periodEndValue,
           portfolioBaseCurrency: "EUR",
         })
       : null;
@@ -508,7 +616,9 @@ export function buildPeriodReportBrief(
     .map((holding) => {
       const value = getHoldingMarketValue(holding) ?? 0;
       const weight =
-        endingValue && endingValue > 0 ? (value / endingValue) * 100 : 0;
+        currentValueForContext && currentValueForContext > 0
+          ? (value / currentValueForContext) * 100
+          : 0;
       const attr = attribution?.holdings.find(
         (row) => row.holdingId === holding.id || row.symbol === holding.symbol,
       );
@@ -550,10 +660,10 @@ export function buildPeriodReportBrief(
 
   const thirtySeconds = uniqueLines(
     [
-      periodChangePercent != null && endingValue != null
-        ? `Portfolio ${formatSignedPercent(periodChangePercent)} this ${kind === "monthly" ? "month" : "week"} to ${formatEur(endingValue)}.`
-        : endingValue != null
-          ? `Your portfolio is ${formatEur(endingValue)}.`
+      periodChangePercent != null && periodEndValue != null
+        ? `Portfolio ${formatCompanionSignedPercent(periodChangePercent)} ${periodResultWindowLabel(kind, companion)} to ${formatEur(periodEndValue)}.`
+        : periodEndValue != null
+          ? `Your portfolio is ${formatEur(periodEndValue)}.`
           : null,
       contributors[0]
         ? `${contributors[0].symbol} was the largest contributor (${contributors[0].contributionPpLabel} portfolio impact).`
@@ -577,6 +687,9 @@ export function buildPeriodReportBrief(
   const methodologyNotes = uniqueLines(
     [
       "This brief uses the same canonical Tobailey intelligence as the app.",
+      showCurrentSnapshotLabel
+        ? "Allocation, holdings, resilience, scenarios, and goal use the current portfolio snapshot, not the labelled period-end."
+        : null,
       attribution
         ? "Holding contribution is portfolio impact in percentage points, not article volume."
         : "Period contribution by holding is shown only when period attribution is available.",
@@ -590,7 +703,7 @@ export function buildPeriodReportBrief(
         ? "Four Questions are mapped from the canonical weekly/monthly review."
         : null,
     ],
-    6,
+    8,
   );
 
   const extraAhead: PeriodReportAheadItem[] = [];
@@ -603,13 +716,28 @@ export function buildPeriodReportBrief(
 
   return {
     generatedAtLabel: `Generated ${formatTimestamp(generatedAt)} UTC`,
-    dataAsOfLabel: review.dataAsOf
-      ? `Data as of ${formatDayLabel(review.dataAsOf)}`
-      : null,
+    dataAsOfLabel: periodEndDate
+      ? `Period end ${formatDayLabel(periodEndDate)}`
+      : review.dataAsOf
+        ? `Data as of ${formatDayLabel(review.dataAsOf)}`
+        : null,
     coverTitle: kind === "monthly" ? "Your Monthly Review" : "Your Weekly Review",
-    portfolioValueLabel: endingValue != null ? formatEur(endingValue) : null,
+    portfolioValueLabel: periodEndValue != null ? formatEur(periodEndValue) : null,
+    portfolioValueCaption: periodEndDate
+      ? `Period end - ${formatDayLabel(periodEndDate)}`
+      : null,
     periodChangeLabel:
-      periodChangePercent != null ? formatSignedPercent(periodChangePercent) : null,
+      periodChangePercent != null
+        ? formatCompanionSignedPercent(periodChangePercent)
+        : null,
+    periodStartValue,
+    periodEndValue,
+    periodChangeAmount,
+    periodChangePercent,
+    currentPortfolioValue: currentValueForContext,
+    currentContextLabel: showCurrentSnapshotLabel
+      ? "Current portfolio snapshot"
+      : null,
     coverHighlights: (() => {
       const chips: PeriodReportCoverHighlight[] = [];
       if (contributors[0]) {
@@ -644,7 +772,12 @@ export function buildPeriodReportBrief(
     })(),
     headline,
     thirtySeconds: thirtySeconds.length > 0 ? thirtySeconds : review.executiveSummary.slice(0, 3),
-    performanceChart: buildPerformanceChart(input.chartPoints, endingValue, asOfDay),
+    performanceChart: buildPerformanceChart(
+      input.chartPoints,
+      periodEndValue,
+      periodStartDate,
+      periodEndDate,
+    ),
     contributors,
     detractors,
     showAllocation: monthly && slices.length > 0,

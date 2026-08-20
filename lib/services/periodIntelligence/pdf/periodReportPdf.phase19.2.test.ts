@@ -160,6 +160,8 @@ function composeReview(
       holdings,
       endingPortfolioValue: snapshot,
       startingPortfolioValue: 120_000,
+      currentPortfolioValue: snapshot,
+      now: new Date("2026-08-20T12:00:00.000Z"),
       contributionEntries: extras.contributionEntries,
       chartPoints: kind === "monthly"
         ? [
@@ -212,6 +214,8 @@ describe("Phase 19.2 premium polish and real-data consistency", () => {
         holdingsSnapshotValue: 123_803,
         endingPortfolioValue: 123_801,
         companionMetricsEndingValue: 123_801,
+        periodEndDate: "2026-08-20",
+        snapshotAsOfDay: "2026-08-20",
       }),
     ).toBe(123_803);
 

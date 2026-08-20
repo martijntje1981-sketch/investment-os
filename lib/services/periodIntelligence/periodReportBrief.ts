@@ -97,7 +97,14 @@ export type PeriodReportBrief = {
   dataAsOfLabel: string | null;
   coverTitle: string;
   portfolioValueLabel: string | null;
+  portfolioValueCaption: string | null;
   periodChangeLabel: string | null;
+  periodStartValue: number | null;
+  periodEndValue: number | null;
+  periodChangeAmount: number | null;
+  periodChangePercent: number | null;
+  currentPortfolioValue: number | null;
+  currentContextLabel: string | null;
   coverHighlights: PeriodReportCoverHighlight[];
   headline: string;
   thirtySeconds: string[];

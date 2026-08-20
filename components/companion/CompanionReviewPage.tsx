@@ -348,9 +348,12 @@ function CompanionReviewContent() {
         : history?.startingValue ?? null,
       endingPortfolioValue: isArchiveMonth
         ? null
+        : history?.endingValue ?? null,
+      currentPortfolioValue: isArchiveMonth
+        ? null
         : snapshot.portfolioValueAvailable
           ? snapshot.portfolioValue
-          : history?.endingValue ?? snapshot.portfolioValue,
+          : null,
       totalReturnPercent: isArchiveMonth
         ? null
         : history?.investmentReturnPercent ?? null,
