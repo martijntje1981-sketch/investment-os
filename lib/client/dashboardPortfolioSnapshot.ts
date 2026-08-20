@@ -9,6 +9,7 @@ import {
   getHoldingMarketValue,
 } from "@/lib/client/portfolioAnalysis";
 import {
+  holdingPricePeriodCaption,
   resolveHoldingDisplayPrice,
 } from "@/lib/client/holdingDisplayPrice";
 import { buildPortfolioPerformance } from "@/lib/client/portfolioPerformance";
@@ -118,7 +119,8 @@ function buildDashboardHoldingRow(
         : null,
     dailyChangeAmount,
     dailyChangePercent,
-    changePeriodLabel: movePeriod.primaryLabel,
+    changePeriodLabel:
+      holdingPricePeriodCaption(priceQuality, movePeriod.primaryLabel) ?? "",
     changePeriodAccessibleDescription: movePeriod.accessibleDescription,
     priceStatus: currentValue !== null ? "available" : "unavailable",
     changeStatus:

@@ -1,5 +1,7 @@
-import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
+import { getExchangeRegistryEntry } from "@/lib/services/instruments/exchangeRegistry";
 import { isCryptoHolding } from "@/lib/services/portfolio/cryptoHolding";
+import { getMarketStatuses } from "@/lib/client/marketStatus";
+import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
 export type HoldingDisplayPriceSource =
   | "live"
@@ -16,6 +18,58 @@ export type HoldingDisplayPrice = {
   quoteCurrency?: string | null;
 };
 
+export type ResolveHoldingDisplayPriceOptions = {
+  now?: Date | number;
+};
+
+type ListedVenueHolding = Pick<
+  StoredPortfolioHolding,
+  "providerSymbol" | "pricingExchange" | "exchange"
+>;
+
+function resolveNowDate(now?: Date | number): Date {
+  if (now instanceof Date) return now;
+  if (typeof now === "number" && Number.isFinite(now)) return new Date(now);
+  return new Date();
+}
+
+function exchangeCodeFromProviderSymbol(
+  providerSymbol: string | null | undefined,
+): string | null {
+  const normalized = providerSymbol?.trim().toUpperCase();
+  if (!normalized || !normalized.includes(".")) return null;
+  return normalized.split(".").pop() || null;
+}
+
+function resolveListedMarketGroup(
+  holding: ListedVenueHolding,
+): "Europe" | "United States" | null {
+  for (const raw of [
+    exchangeCodeFromProviderSymbol(holding.providerSymbol),
+    holding.pricingExchange,
+    holding.exchange,
+  ]) {
+    const group = getExchangeRegistryEntry(raw)?.marketGroup;
+    if (group === "Europe" || group === "United States") {
+      return group;
+    }
+  }
+  return null;
+}
+
+function listedVenueSessionIsClosed(
+  holding: ListedVenueHolding,
+  now: Date,
+): boolean {
+  const statuses = getMarketStatuses(now);
+  const europe = statuses.find((row) => row.label === "Europe");
+  const unitedStates = statuses.find((row) => row.label === "United States");
+  const group = resolveListedMarketGroup(holding);
+  if (group === "Europe") return europe?.status === "closed";
+  if (group === "United States") return unitedStates?.status === "closed";
+  return europe?.status === "closed" && unitedStates?.status === "closed";
+}
+
 function mapPriceDataStatusToDisplaySource(
   status: string | null | undefined,
 ): HoldingDisplayPriceSource {
@@ -25,6 +79,20 @@ function mapPriceDataStatusToDisplaySource(
   if (status === "unavailable") return "unavailable";
   // A usable provider price without status is last-session, never live or estimated.
   return "last_session";
+}
+
+function mapListedPriceDataStatusToDisplaySource(
+  status: string | null | undefined,
+  holding: ListedVenueHolding,
+  now: Date,
+): HoldingDisplayPriceSource {
+  const mapped = mapPriceDataStatusToDisplaySource(status);
+  // Provider age 15m–24h is stored as delayed even after the venue close.
+  // A valid previous-session close is Last session, not Delayed.
+  if (mapped === "delayed" && listedVenueSessionIsClosed(holding, now)) {
+    return "last_session";
+  }
+  return mapped;
 }
 
 function resolveCryptoDisplayPrice(
@@ -95,8 +163,13 @@ export function resolveHoldingDisplayPrice(
     | "currentManualPrice"
     | "manualCurrentValue"
     | "quantity"
+    | "providerSymbol"
+    | "pricingExchange"
+    | "exchange"
   >,
+  options?: ResolveHoldingDisplayPriceOptions,
 ): HoldingDisplayPrice {
+  const now = resolveNowDate(options?.now);
   if (holding.assetType === "cash") {
     const price =
       Number.isFinite(holding.currentPrice) && holding.currentPrice > 0
@@ -111,7 +184,11 @@ export function resolveHoldingDisplayPrice(
   }
 
   if (Number.isFinite(holding.currentPrice) && holding.currentPrice > 0) {
-    const mapped = mapPriceDataStatusToDisplaySource(holding.priceDataStatus);
+    const mapped = mapListedPriceDataStatusToDisplaySource(
+      holding.priceDataStatus,
+      holding,
+      now,
+    );
     return {
       price: holding.currentPrice,
       source: mapped === "unavailable" ? "last_session" : mapped,
@@ -154,9 +231,26 @@ export function resolveHoldingPriceTrustStatus(
     | "currentManualPrice"
     | "manualCurrentValue"
     | "quantity"
+    | "providerSymbol"
+    | "pricingExchange"
+    | "exchange"
   >,
+  options?: ResolveHoldingDisplayPriceOptions,
 ): HoldingPriceTrustStatus {
-  return resolveHoldingDisplayPrice(holding).source;
+  return resolveHoldingDisplayPrice(holding, options).source;
+}
+
+/**
+ * Day-move caption. A delayed quote must not also be labelled Last session.
+ */
+export function holdingPricePeriodCaption(
+  status: HoldingPriceTrustStatus,
+  movePeriodLabel: string | null | undefined,
+): string | null {
+  const trimmed = movePeriodLabel?.trim();
+  if (!trimmed) return null;
+  if (status === "delayed") return null;
+  return trimmed;
 }
 
 /** Scan-friendly badge next to a value. Last-session and live have no badge. */

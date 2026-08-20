@@ -721,6 +721,15 @@ export function renderPeriodReportPdf(
     drawNarrative(painter, changed, "slate", periodLabel);
   }
   if (brief?.performanceChart) {
+    if (brief.performanceChart.availableHistoryLabel) {
+      ensureSpace(painter, 16, periodLabel);
+      drawText(painter, brief.performanceChart.availableHistoryLabel, {
+        size: 8,
+        color: PDF_THEME.muted,
+        periodLabel,
+      });
+      painter.y += 4;
+    }
     const height = performanceChartHeight();
     ensureSpace(painter, height + 10, periodLabel);
     drawPerformanceChart(

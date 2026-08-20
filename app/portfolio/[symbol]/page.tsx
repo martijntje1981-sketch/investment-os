@@ -35,6 +35,7 @@ import {
   resolveHoldingDisplayPrice,
 } from "@/lib/client/holdingValuation";
 import {
+  holdingPricePeriodCaption,
   holdingPriceStatusUserLabel,
   holdingPriceTrustBadgeLabel,
 } from "@/lib/client/holdingDisplayPrice";
@@ -779,6 +780,10 @@ export default function HoldingDetailPage() {
   const hasDailyChange =
     typeof dailyChange === "number" && Number.isFinite(dailyChange);
   const movePeriod = resolveHoldingMovePeriod(holding);
+  const pricePeriodCaption = holdingPricePeriodCaption(
+    displayPrice.source,
+    movePeriod.primaryLabel,
+  );
   const resolvedPrice = displayPrice.price;
   const thesisStatus =
     intelligence.healthScore >= 85
@@ -894,7 +899,7 @@ export default function HoldingDetailPage() {
                 )
               }
               label={
-                movePeriod.primaryLabel ||
+                pricePeriodCaption ||
                 (holding.assetType === "crypto" ? "24h" : "Latest available")
               }
               value={

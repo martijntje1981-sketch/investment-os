@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { prepareCryptoHoldingForSave } from "@/lib/services/portfolio/cryptoHolding";
 import {
@@ -9,6 +9,7 @@ import { buildPortfolioPerformance } from "@/lib/client/portfolioPerformance";
 import { buildDashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
 import { summarizeAuthenticatedHomePortfolio } from "@/lib/client/authenticatedHomePortfolio";
 import {
+  holdingPricePeriodCaption,
   holdingPriceStatusUserLabel,
   holdingPriceTrustBadgeLabel,
   holdingValueUnavailableLabel,
@@ -101,9 +102,11 @@ describe("holdingDisplayPrice crypto safety", () => {
   });
 
   it("does not label delayed or last-session equity prices as estimated", () => {
+    const europeOpen = new Date("2026-08-19T10:00:00.000Z");
     expect(
       resolveHoldingDisplayPrice(
         equity({ priceDataStatus: "delayed", currentPrice: 100 }),
+        { now: europeOpen },
       ).source,
     ).toBe("delayed");
     expect(
@@ -174,6 +177,146 @@ describe("holdingDisplayPrice crypto safety", () => {
 
     expect(resolveHoldingDisplayPrice(crypto).source).toBe("live");
     expect(isEstimatedHoldingPrice(crypto)).toBe(false);
+  });
+});
+
+const EUROPE_OPEN = new Date("2026-08-19T10:00:00.000Z");
+const EUROPE_CLOSED_US_OPEN = new Date("2026-08-19T16:00:00.000Z");
+const US_OPEN = new Date("2026-08-19T15:00:00.000Z");
+
+describe("Phase 19.7 listed price-status semantics", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  function listed(
+    symbol: string,
+    providerSymbol: string,
+    status: StoredPortfolioHolding["priceDataStatus"],
+  ): StoredPortfolioHolding {
+    return {
+      ...equity({
+        id: symbol.toLowerCase(),
+        symbol,
+        name: symbol,
+        providerSymbol,
+        priceDataStatus: status,
+        currentPrice: 100,
+      }),
+      marketPriceUpdatedAt: "2026-08-19T15:35:00.000Z",
+    };
+  }
+
+  it("F/G. valid previous-session exchange close is Last session, never Delayed", () => {
+    for (const row of [
+      listed("IB1T", "IB1T.XETRA", "delayed"),
+      listed("NUKL", "NUKL.XETRA", "delayed"),
+      listed("VWCE", "VWCE.XETRA", "delayed"),
+      listed("EUNA", "EUNA.XETRA", "delayed"),
+      listed("STRC", "STRC.AS", "delayed"),
+      listed("AIFS", "AIFS.XETRA", "delayed"),
+    ]) {
+      const source = resolveHoldingDisplayPrice(row, {
+        now: EUROPE_CLOSED_US_OPEN,
+      }).source;
+      expect(source).toBe("last_session");
+      expect(holdingPriceTrustBadgeLabel(source)).toBeNull();
+      expect(holdingPriceStatusUserLabel(source)).toBe("Last session");
+      expect(
+        holdingPricePeriodCaption(source, "Last session · 20 Aug"),
+      ).toBe("Last session · 20 Aug");
+    }
+  });
+
+  it("H/I. a delayed intraday quote stays Delayed and is not Live", () => {
+    const aapl = equity({
+      symbol: "AAPL",
+      name: "Apple",
+      providerSymbol: "AAPL.US",
+      priceDataStatus: "delayed",
+      currentPrice: 185,
+    });
+    const source = resolveHoldingDisplayPrice(aapl, { now: US_OPEN }).source;
+    expect(source).toBe("delayed");
+    expect(holdingPriceTrustBadgeLabel(source)).toBe("Delayed");
+    expect(holdingPriceStatusUserLabel(source)).toBe("Delayed");
+    expect(holdingPriceStatusUserLabel(source)).not.toMatch(/live/i);
+    expect(holdingPricePeriodCaption(source, "Last session · 20 Aug")).toBeNull();
+  });
+
+  it("J. genuine purchase-price fallback remains Estimated", () => {
+    expect(
+      resolveHoldingDisplayPrice(
+        equity({ currentPrice: 0, purchasePrice: 16, quantity: 20 }),
+      ).source,
+    ).toBe("estimated");
+  });
+
+  it("K. unavailable stays Price unavailable, never a zero price", () => {
+    const missing = equity({
+      currentPrice: 0,
+      purchasePrice: 0,
+      priceDataStatus: "unavailable",
+    });
+    expect(resolveHoldingDisplayPrice(missing).source).toBe("unavailable");
+    expect(holdingPriceStatusUserLabel("unavailable")).toBe("Price unavailable");
+    expect(getHoldingMarketValue(missing)).toBeNull();
+  });
+
+  it("L. a current crypto pair stays Current and is not forced into Last session", () => {
+    const crypto: StoredPortfolioHolding = {
+      ...unpricedCrypto(),
+      pricingStatus: "live",
+      currentPairPrice: 60_000,
+      currentPrice: 60_000,
+      priceDataStatus: "live",
+    };
+    expect(
+      resolveHoldingDisplayPrice(crypto, { now: EUROPE_CLOSED_US_OPEN }).source,
+    ).toBe("live");
+    expect(holdingPriceStatusUserLabel("live")).toBe("Current");
+  });
+
+  it("M. a listed ETF close does not become Estimated because the market is closed", () => {
+    const vwce = listed("VWCE", "VWCE.XETRA", "delayed");
+    expect(
+      resolveHoldingDisplayPrice(vwce, { now: EUROPE_CLOSED_US_OPEN }).source,
+    ).toBe("last_session");
+    expect(isEstimatedHoldingPrice(vwce)).toBe(false);
+    expect(
+      resolveHoldingDisplayPrice(vwce, { now: EUROPE_OPEN }).source,
+    ).toBe("delayed");
+  });
+
+  it("N. Dashboard snapshot quality matches the canonical helper", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(EUROPE_CLOSED_US_OPEN);
+    const rows = [
+      listed("VWCE", "VWCE.XETRA", "delayed"),
+      {
+        ...equity({
+          symbol: "AAPL",
+          providerSymbol: "AAPL.US",
+          priceDataStatus: "delayed",
+          currentPrice: 185,
+        }),
+        marketPriceUpdatedAt: "2026-08-19T15:35:00.000Z",
+      },
+      listed("SPY", "SPY.US", "live"),
+    ];
+    const snapshot = buildDashboardPortfolioSnapshot(rows, null, false);
+    for (const row of snapshot.marketHoldings) {
+      const source = rows.find((item) => item.symbol === row.symbol)!;
+      expect(row.priceQuality).toBe(resolveHoldingPriceTrustStatus(source));
+    }
+    const vwce = snapshot.marketHoldings.find((row) => row.symbol === "VWCE")!;
+    expect(vwce.priceQuality).toBe("last_session");
+    expect(holdingPriceTrustBadgeLabel(vwce.priceQuality)).toBeNull();
+    expect(vwce.changePeriodLabel).toMatch(/Last session/);
+    const aapl = snapshot.marketHoldings.find((row) => row.symbol === "AAPL")!;
+    expect(aapl.priceQuality).toBe("delayed");
+    expect(holdingPriceTrustBadgeLabel(aapl.priceQuality)).toBe("Delayed");
+    expect(aapl.changePeriodLabel).not.toMatch(/Last session/);
   });
 });
 

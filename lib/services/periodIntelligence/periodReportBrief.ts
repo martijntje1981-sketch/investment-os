@@ -17,6 +17,7 @@ export type PeriodReportPerformanceChart = {
   endLabel: string;
   startValueLabel: string;
   endValueLabel: string;
+  availableHistoryLabel: string | null;
 };
 
 export type PeriodReportImpactRow = {

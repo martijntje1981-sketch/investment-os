@@ -297,6 +297,31 @@ function periodResultWindowLabel(
   return "this month";
 }
 
+function formatCompactDayLabel(iso: string): string {
+  const day = iso.slice(0, 10);
+  const date = new Date(`${day}T00:00:00.000Z`);
+  if (Number.isNaN(date.getTime())) return day;
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+  }).format(date);
+}
+
+export function availablePortfolioHistoryLabel(
+  chartStartDate: string | null | undefined,
+  reportPeriodStartDate: string | null | undefined,
+  chartEndDate?: string | null,
+): string | null {
+  const chartStart = isoCalendarDay(chartStartDate);
+  const reportStart = isoCalendarDay(reportPeriodStartDate);
+  if (!chartStart || !reportStart || chartStart <= reportStart) {
+    return null;
+  }
+  const chartEnd = isoCalendarDay(chartEndDate) ?? chartStart;
+  return `Available portfolio history: ${formatCompactDayLabel(chartStart)} – ${formatCompactDayLabel(chartEnd)}`;
+}
+
 function buildPerformanceChart(
   points: PortfolioPerformancePoint[] | null | undefined,
   canonicalEnd: number | null,
@@ -323,6 +348,11 @@ function buildPerformanceChart(
     endLabel: formatDayLabel(end.date),
     startValueLabel: formatEur(start.value),
     endValueLabel: formatEur(end.value),
+    availableHistoryLabel: availablePortfolioHistoryLabel(
+      start.date,
+      periodStart,
+      end.date,
+    ),
   };
 }
 
@@ -427,7 +457,6 @@ export function buildPeriodReportBrief(
   const attributionEndValue =
     input.endingPortfolioValue ?? periodEndValue;
   const showCurrentSnapshotLabel =
-    monthly &&
     currentValueForContext != null &&
     (periodEndValue == null ||
       Math.round(currentValueForContext) !== Math.round(periodEndValue));
@@ -694,7 +723,9 @@ export function buildPeriodReportBrief(
     [
       "This brief uses the same canonical Tobailey intelligence as the app.",
       showCurrentSnapshotLabel
-        ? "Allocation, holdings, resilience, scenarios, and goal use the current portfolio snapshot, not the labelled period-end."
+        ? monthly
+          ? "Allocation, holdings, resilience, scenarios, and goal use the current portfolio snapshot, not the labelled period-end."
+          : "Goal uses the current portfolio snapshot, not the labelled period-end."
         : null,
       attribution
         ? "Holding contribution is portfolio impact in percentage points, not article volume."

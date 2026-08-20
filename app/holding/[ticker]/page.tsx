@@ -19,7 +19,7 @@ import {
   getHoldingCostBasis,
   resolveHoldingDisplayPrice,
 } from "@/lib/client/holdingValuation";
-import { holdingPriceStatusUserLabel, holdingPriceTrustBadgeLabel } from "@/lib/client/holdingDisplayPrice";
+import { holdingPricePeriodCaption, holdingPriceStatusUserLabel, holdingPriceTrustBadgeLabel } from "@/lib/client/holdingDisplayPrice";
 import { formatSmartPrice } from "@/lib/client/smartPriceFormat";
 import { usePortfolioNews } from "@/lib/client/usePortfolioNews";
 import { useProductAccess } from "@/lib/client/useProductAccess";
@@ -225,6 +225,10 @@ export default function HoldingPage() {
       ? "Awaiting data"
       : `${dayChangeValue >= 0 ? "+" : ""}${euro.format(dayChangeValue)}`;
   const movePeriod = resolveHoldingMovePeriod(holding);
+  const pricePeriodCaption = holdingPricePeriodCaption(
+    displayPrice.source,
+    movePeriod.primaryLabel,
+  );
 
   return (
     <>
@@ -296,9 +300,9 @@ export default function HoldingPage() {
                     }`}
                     title={movePeriod.accessibleDescription}
                   >
-                    {dailyChangePercent === null
+                    {dailyChangePercent === null || !pricePeriodCaption
                       ? dayChangeLabel
-                      : `${dayChangeLabel} · ${movePeriod.primaryLabel}`}
+                      : `${dayChangeLabel} · ${pricePeriodCaption}`}
                   </p>
                 </div>
 

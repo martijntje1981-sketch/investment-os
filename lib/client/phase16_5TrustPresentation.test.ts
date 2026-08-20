@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
@@ -62,6 +62,10 @@ function contribution(
 }
 
 describe("Phase 16.5 price-status trust", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("A. last-session market prices are not labelled Estimated", () => {
     const vwce = holding({
       symbol: "VWCE",
@@ -80,10 +84,13 @@ describe("Phase 16.5 price-status trust", () => {
   });
 
   it("B. delayed prices say Delayed and never Live or Current as a badge", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-19T15:00:00.000Z"));
     const aapl = holding({
       symbol: "AAPL",
       name: "Apple",
       currency: "USD",
+      providerSymbol: "AAPL.US",
       priceDataStatus: "delayed",
       currentPrice: 185,
     });
@@ -128,10 +135,17 @@ describe("Phase 16.5 price-status trust", () => {
   });
 
   it("F. Dashboard snapshot quality matches the shared holding trust status", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-19T15:00:00.000Z"));
     const rows = [
-      holding({ symbol: "VWCE", priceDataStatus: "stale" }),
-      holding({ symbol: "AAPL", priceDataStatus: "delayed", currency: "USD" }),
-      holding({ symbol: "SPY", priceDataStatus: "live" }),
+      holding({ symbol: "VWCE", priceDataStatus: "stale", providerSymbol: "VWCE.XETRA" }),
+      holding({
+        symbol: "AAPL",
+        priceDataStatus: "delayed",
+        currency: "USD",
+        providerSymbol: "AAPL.US",
+      }),
+      holding({ symbol: "SPY", priceDataStatus: "live", providerSymbol: "SPY.US" }),
     ];
     const snapshot = buildDashboardPortfolioSnapshot(rows, null, false);
 

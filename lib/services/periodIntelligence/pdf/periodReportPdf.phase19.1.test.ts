@@ -313,9 +313,13 @@ describe("Phase 19.1 real composer path / fixture isolation", () => {
       "Last session",
     );
     const ppfb = verificationHoldings()[1]!;
-    expect(holdingPriceStatusUserLabel(resolveHoldingPriceTrustStatus(ppfb))).toBe(
-      "Delayed",
-    );
+    expect(
+      holdingPriceStatusUserLabel(
+        resolveHoldingPriceTrustStatus(ppfb, {
+          now: new Date("2026-08-19T16:00:00.000Z"),
+        }),
+      ),
+    ).toBe("Last session");
 
     const monthly = composeVerificationReview("monthly");
     const vwceRow = monthly.brief?.holdings.find((row) => row.symbol === "VWCE");

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import type { KeyboardEvent } from "react";
 
 import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
-import { holdingPriceTrustBadgeLabel, holdingValueUnavailableLabel } from "@/lib/client/holdingDisplayPrice";
+import { holdingPricePeriodCaption, holdingPriceTrustBadgeLabel, holdingValueUnavailableLabel } from "@/lib/client/holdingDisplayPrice";
 import { formatHoldingTodayChange } from "@/lib/client/portfolioMovementFormat";
 import { formatCrypto24hChange } from "@/lib/client/cryptoPriceDisplay";
 import { resolveSmartMoneyFractionDigits } from "@/lib/client/smartPriceFormat";
@@ -130,7 +130,7 @@ function holdingPeriodMeta(row: DashboardHoldingRow): string | null {
   if (row.changeStatus !== "available" || !row.changePeriodLabel) {
     return null;
   }
-  return row.changePeriodLabel;
+  return holdingPricePeriodCaption(row.priceQuality, row.changePeriodLabel);
 }
 
 export function HoldingsTodayRow({
