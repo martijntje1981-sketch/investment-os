@@ -315,6 +315,8 @@ function CompanionReviewContent() {
   const periodIntelligence = useMemo(() => {
     if (activePeriod !== "weekly" && activePeriod !== "monthly") return null;
     const isArchiveMonth = Boolean(savedReview);
+    const history =
+      activePeriod === "weekly" ? weekHistory.data : monthHistory.data;
     const built = buildPeriodIntelligenceReview({
       kind: activePeriod,
       companion: review,
@@ -336,6 +338,29 @@ function CompanionReviewContent() {
           null,
       resilienceProfile: isArchiveMonth ? null : resilienceProfile,
       holdings: isArchiveMonth ? [] : holdings,
+      goal: isArchiveMonth ? null : goal,
+      hasSavedGoal: isArchiveMonth ? false : hasSavedGoal,
+      contributionEntries: isArchiveMonth ? [] : contributions.entries,
+      chartPoints: isArchiveMonth ? null : history?.chartPoints ?? null,
+      holdingMoves: isArchiveMonth ? null : history?.holdingMoves ?? null,
+      startingPortfolioValue: isArchiveMonth
+        ? null
+        : history?.startingValue ?? null,
+      endingPortfolioValue: isArchiveMonth
+        ? null
+        : snapshot.portfolioValueAvailable
+          ? snapshot.portfolioValue
+          : history?.endingValue ?? snapshot.portfolioValue,
+      totalReturnPercent: isArchiveMonth
+        ? null
+        : history?.investmentReturnPercent ?? null,
+      totalReturnAmount: isArchiveMonth
+        ? null
+        : history?.investmentReturn ?? null,
+      historicalFxApproximate: isArchiveMonth
+        ? false
+        : Boolean(history?.historicalFxApproximate),
+      now: new Date(),
     });
     return applyPeriodIntelligenceDepth(
       built,
@@ -352,6 +377,11 @@ function CompanionReviewContent() {
     savedReview,
     snapshot,
     weeklyPulse,
+    contributions.entries,
+    weekHistory.data,
+    monthHistory.data,
+    goal,
+    hasSavedGoal,
   ]);
 
   function handleExport() {

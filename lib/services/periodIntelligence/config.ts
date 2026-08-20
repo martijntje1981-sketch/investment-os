@@ -8,6 +8,14 @@ export const PERIOD_FIRST_HISTORY_COPY =
 export const PERIOD_NO_MATERIAL_CHANGE_COPY =
   "Your portfolio was broadly stable this period. No material structural changes were detected.";
 
+/** Honest Q2 empty state. Do not fabricate a What Matters story. */
+export const PERIOD_Q2_QUIET_COPY =
+  "Nothing material needs your attention right now.";
+
+/** Honest Q4 empty state when no distinct forward-looking information exists. */
+export const PERIOD_Q4_QUIET_COPY =
+  "Nothing distinct is flagged ahead for this period.";
+
 export const PERIOD_COMPLETE_TEASE = "See what changed, why it matters, and what to understand next";
 
 export const PERIOD_SECTION_TITLES = {

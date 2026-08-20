@@ -11,7 +11,7 @@ import type { CompanionReview } from "@/lib/services/portfolio/companion/types";
 import type { PerspectiveVideo } from "@/lib/services/perspectives/types";
 import type { ResilienceProfile } from "@/lib/services/resilience";
 import type { NewsContentItem } from "@/lib/types/newsContent";
-import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
+import type { GoalSettings, StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 import {
   PERIOD_COMPLETE_TEASE,
   PERIOD_FIRST_HISTORY_COPY,
@@ -28,6 +28,10 @@ import {
   buildPeriodReportHero,
 } from "@/lib/services/periodIntelligence/buildPeriodReportPresentation";
 import { periodReportExploreHrefs } from "@/lib/services/periodIntelligence/reportExplore";
+import type { PortfolioPerformancePoint } from "@/lib/client/performance/types";
+import type { PortfolioContributionEntry } from "@/lib/services/contributions/types";
+import { buildPeriodReportBrief } from "@/lib/services/periodIntelligence/buildPeriodReportBrief";
+import type { HoldingPeriodMove } from "@/lib/services/performanceAttribution/buildHoldingMovesFromEod";
 import type {
   PeriodIntelligenceKind,
   PeriodIntelligenceReview,
@@ -228,7 +232,7 @@ function aheadSection(
               ? `Modeled impact about ${resilience.mostSensitive.estimatedPortfolioImpactPercent.toFixed(1)}%`
               : null,
             resilience.score != null
-              ? `Resilience ${resilience.score}/100${resilience.bandLabel ? ` · ${resilience.bandLabel}` : ""}`
+              ? `Resilience ${resilience.score}/100${resilience.bandLabel ? ` - ${resilience.bandLabel}` : ""}`
               : null,
           ],
           2,
@@ -310,6 +314,16 @@ export type BuildPeriodIntelligenceReviewInput = {
   intelligence?: InvestmentIntelligence | null;
   perspectiveVideos?: PerspectiveVideo[] | null;
   now?: Date;
+  goal?: GoalSettings | null;
+  hasSavedGoal?: boolean;
+  contributionEntries?: PortfolioContributionEntry[];
+  chartPoints?: PortfolioPerformancePoint[] | null;
+  holdingMoves?: HoldingPeriodMove[] | null;
+  startingPortfolioValue?: number | null;
+  endingPortfolioValue?: number | null;
+  totalReturnPercent?: number | null;
+  totalReturnAmount?: number | null;
+  historicalFxApproximate?: boolean;
 };
 
 export function buildPeriodIntelligenceReview(
@@ -391,7 +405,7 @@ export function buildPeriodIntelligenceReview(
 
   const pulseLine =
     kind === "weekly" && input.weeklyPulse
-      ? `Weekly Pulse ${input.weeklyPulse.score} · ${input.weeklyPulse.bandLabel}`
+      ? `Weekly Pulse ${input.weeklyPulse.score} - ${input.weeklyPulse.bandLabel}`
       : null;
   if (pulseLine && happened && !happened.evidence.includes(pulseLine)) {
     happened.evidence = uniqueLines([...happened.evidence, pulseLine], kind === "monthly" ? 4 : 3);
@@ -423,7 +437,7 @@ export function buildPeriodIntelligenceReview(
     heroConclusion: completeHeadline,
   });
 
-  return {
+  const review: PeriodIntelligenceReview = {
     kind,
     ready: companion.ready,
     readinessReason: companion.readinessReason,
@@ -466,4 +480,27 @@ export function buildPeriodIntelligenceReview(
           ? CHANGE_INTELLIGENCE_COMPLETE_TEASE
           : null,
   };
+
+  if (depth === "complete") {
+    review.brief = buildPeriodReportBrief({
+      kind,
+      companion,
+      review,
+      holdings: input.holdings,
+      resilienceProfile: input.resilienceProfile,
+      goal: input.goal,
+      hasSavedGoal: input.hasSavedGoal,
+      contributionEntries: input.contributionEntries,
+      chartPoints: input.chartPoints,
+      holdingMoves: input.holdingMoves,
+      startingPortfolioValue: input.startingPortfolioValue,
+      endingPortfolioValue: input.endingPortfolioValue,
+      totalReturnPercent: input.totalReturnPercent,
+      totalReturnAmount: input.totalReturnAmount,
+      historicalFxApproximate: input.historicalFxApproximate,
+      generatedAt: input.now,
+    });
+  }
+
+  return review;
 }

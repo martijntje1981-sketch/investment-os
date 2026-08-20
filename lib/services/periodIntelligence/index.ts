@@ -18,6 +18,8 @@ export {
   PERIOD_FIRST_HISTORY_COPY,
   PERIOD_INSIGHT_RANK,
   PERIOD_NO_MATERIAL_CHANGE_COPY,
+  PERIOD_Q2_QUIET_COPY,
+  PERIOD_Q4_QUIET_COPY,
   PERIOD_SECTION_TITLES,
 } from "@/lib/services/periodIntelligence/config";
 
@@ -40,6 +42,8 @@ export type {
   PersonalReportViewModel,
 } from "@/lib/services/periodIntelligence/reportViewModel";
 export { periodReportExploreHrefs } from "@/lib/services/periodIntelligence/reportExplore";
+export { buildPeriodReportBrief } from "@/lib/services/periodIntelligence/buildPeriodReportBrief";
+export type { PeriodReportBrief } from "@/lib/services/periodIntelligence/periodReportBrief";
 export {
   buildArchivedMonthlyPeriodIntelligenceReview,
   canDownloadPeriodReportPdf,

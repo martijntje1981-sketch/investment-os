@@ -117,7 +117,7 @@ function emptyPayload(): IntelligenceStatePayload {
 }
 
 function snapshot(
-  overrides: Partial<IntelligenceStateSnapshot> & {
+  overrides: Omit<Partial<IntelligenceStateSnapshot>, "payload"> & {
     payload?: Partial<IntelligenceStatePayload>;
   } = {},
 ): IntelligenceStateSnapshot {
@@ -315,9 +315,8 @@ describe("Phase 9B period report PDF", () => {
     const text = extractPdfPlainText(bytes);
     expect(Buffer.from(bytes).toString("latin1")).toContain("%PDF");
     expect(text).toMatch(/TOBAILEY/);
-    expect(text).toMatch(/Your personal investment review/);
-    expect(text).toMatch(/YOUR WEEK/);
-    expect(text).toMatch(/At a glance/);
+    expect(text).toMatch(/Your Weekly Review/);
+    expect(text).toMatch(/YOUR PORTFOLIO IN 30 SECONDS|WHAT HAPPENED/);
     expect(text).toMatch(/WHAT HAPPENED/);
     expect(review.intelligenceDepth).toBe("complete");
   });
@@ -325,8 +324,8 @@ describe("Phase 9B period report PDF", () => {
   it("2. monthly Complete PDF is a fuller month review", () => {
     const review = completeReview("monthly");
     const text = pdfText(review);
-    expect(text).toMatch(/YOUR MONTH/);
-    expect(text).toMatch(/Portfolio value|Investment return|At a glance/);
+    expect(text).toMatch(/Your Monthly Review/);
+    expect(text).toMatch(/Portfolio value|Investment return|30 SECONDS/);
     expect(text.split("WHAT").length).toBeGreaterThan(2);
   });
 
@@ -369,7 +368,7 @@ describe("Phase 9B period report PDF", () => {
     expect(archived.kind).toBe("monthly");
     expect(archived.changed).toBeNull();
     const text = pdfText(archived);
-    expect(text).toMatch(/YOUR MONTH/);
+    expect(text).toMatch(/Your Monthly Review/);
     expect(text).not.toMatch(/WHAT CHANGED/);
   });
 
@@ -451,7 +450,10 @@ describe("Phase 9B period report PDF", () => {
       "complete",
     );
     expect(review.goal).toBeNull();
-    expect(pdfText(review)).not.toMatch(/AM I ON TRACK/);
+    const text = pdfText(review);
+    expect(text).toMatch(/Add a goal in Tobailey/);
+    expect(text).not.toMatch(/% of target/);
+    expect(text).not.toMatch(/Projected completion/);
   });
 
   it("10. missing resilience omits a fabricated outlook", () => {

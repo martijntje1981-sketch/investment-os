@@ -15,4 +15,5 @@ export {
   renderPeriodReportPdf,
   sanitizePdfText,
 } from "@/lib/services/periodIntelligence/pdf/renderPeriodReportPdf";
+export { countPdfPages } from "@/lib/services/periodIntelligence/pdf/pdfText";
 export { resolveProductAccessForPdfRequest } from "@/lib/services/periodIntelligence/pdf/resolveProductAccessForPdfRequest";

@@ -29,29 +29,46 @@ React components in `components/report/` are presentational.
 
 ## PDF
 
-`renderPeriodReportPdf(review)` maps the same view model into a printable PDF.
+`renderPeriodReportPdf(review)` is the **one canonical renderer** for new weekly/monthly downloads (Phase 19.2 premium layout). There is no second compact renderer for live reports.
 
-- Live weekly/monthly: POST `/api/review/pdf` with the already-built review.
-- Archived monthly: GET `/api/review/monthly/[yearMonth]/pdf` builds the canonical object from the **saved** Companion snapshot only (`summarizeStoredChangeIntelligence([])`). Never mix live Change Intelligence into a historical month.
+Live path:
+
+```
+CompanionReviewPage
+  → buildPeriodIntelligenceReview (+ buildPeriodReportBrief)
+  → applyPeriodIntelligenceDepth("complete")
+  → POST /api/review/pdf { review }
+  → isPeriodIntelligenceReview
+  → renderPeriodReportPdf(review)
+```
+
+The API route must not recalculate intelligence or pick a legacy layout. Optional `review.brief` (built in the composer) supplies cover metrics, charts, allocation, resilience, and holdings. Without `brief`, the same renderer still draws the Four Questions spine from canonical sections.
+
+Archived monthly: GET `/api/review/monthly/[yearMonth]/pdf` rebuilds a canonical review from the **saved** Companion snapshot only (`holdings: []`). It uses the same renderer. Already-stored PDF bytes are not rewritten (this product does not persist generated files).
+
 - Complete / Complete trial / active Demo: download allowed.
 - Free: in-app report remains; PDF is gated with `period_briefings`.
 - Demo payloads must not mix with personal access.
+
+The previous compact layout lived in `renderPeriodReportPdf` itself (Phase 9B). Phase 19.2 replaced that function body in place. There is no remaining compact renderer module, and live Weekly/Monthly downloads must not select a compact fallback. Archived monthly PDFs are generated dynamically with the same function; they may be thinner when holdings are empty. This product does not persist generated PDF bytes, so already-downloaded files are unchanged.
+
+PDF text uses Helvetica WinAnsi. `sanitizePdfText` maps separators (including middle dot) to ASCII hyphen, keeps Euro, and drops other unsupported characters instead of substituting `?`.
 
 ## Map
 
 | Report block | Canonical field |
 | --- | --- |
+| Cover title (Your Weekly / Monthly Review) | `brief.coverTitle` / kind |
 | Cover kicker (Your week / Your month) | `hero.kicker` |
-| One conclusion | `hero.conclusion` / `headline` |
-| Start → end / return tiles | `hero.metrics` (Companion-formatted strings) |
-| At a glance (max 3) | `executiveSummary` |
-| What happened | `happened` |
-| What changed | `changed` |
-| What matters now | `matters` |
-| Am I on track? | `goal` |
-| Looking ahead | `ahead` |
-| Optional context | `context` — always use `channelLabel` |
-| Data confidence | `confidence.notes` |
+| One conclusion | `hero.conclusion` / `headline` / `brief.headline` |
+| Portfolio value / period change | `brief.portfolioValueLabel` / `brief.periodChangeLabel` (fallback `hero.metrics`) |
+| 30 seconds (max 3) | `brief.thirtySeconds` or `executiveSummary` |
+| 01 What happened | `happened` + `changed` + performance/contributor charts |
+| 02 What matters now | `matters` + `context` — always use `channelLabel` |
+| 03 Am I on track? | `goal` + `brief.goal` (prompt when no goal; no fake chart) |
+| 04 What's ahead | `ahead` + `brief.aheadItems` + modeled scenarios |
+| Allocation | `brief.allocation` from Phase 17 `buildPortfolioExposureAllocation()` |
+| Data confidence | `confidence.notes` + `brief.methodologyNotes` |
 | Explore destinations | `explore` (in-app only) |
 
 Skip a block when the field is `null` or an empty array. Do not invent copy.

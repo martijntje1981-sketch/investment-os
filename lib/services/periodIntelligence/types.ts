@@ -6,6 +6,7 @@
 import type { CompanionPeriodKind } from "@/lib/services/portfolio/companion/types";
 import type { ChangeIntelligenceConfidence } from "@/lib/services/changeIntelligence/types";
 import type { FourQuestionsIntelligenceDepth } from "@/lib/services/fourQuestions/types";
+import type { PeriodReportBrief } from "@/lib/services/periodIntelligence/periodReportBrief";
 
 export type PeriodIntelligenceKind = "weekly" | "monthly";
 
@@ -111,4 +112,9 @@ export type PeriodIntelligenceReview = {
   intelligenceDepth: FourQuestionsIntelligenceDepth;
   isDemo: boolean;
   completeTease: string | null;
+  /**
+   * Optional visual brief for the premium PDF.
+   * Omit on archived/legacy payloads — renderer stays text-only when absent.
+   */
+  brief?: PeriodReportBrief | null;
 };

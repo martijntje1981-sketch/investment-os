@@ -91,6 +91,7 @@ export function applyPeriodIntelligenceDepth(
     context: null,
     confidence: { level: review.confidence.level, notes: [] },
     completeTease: PERIOD_COMPLETE_TEASE,
+    brief: null,
   };
 }
 

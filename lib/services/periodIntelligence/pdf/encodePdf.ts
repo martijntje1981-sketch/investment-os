@@ -13,8 +13,29 @@ export const PDF_PAGE = {
 
 export type PdfColor = { r: number; g: number; b: number };
 
+export type PdfPoint = { x: number; y: number };
+
 export type PdfOp =
   | { op: "fill"; x: number; y: number; w: number; h: number; color: PdfColor }
+  | {
+      op: "stroke";
+      x: number;
+      y: number;
+      w: number;
+      h: number;
+      color: PdfColor;
+      width: number;
+    }
+  | {
+      op: "line";
+      x1: number;
+      y1: number;
+      x2: number;
+      y2: number;
+      color: PdfColor;
+      width: number;
+    }
+  | { op: "polygon"; points: PdfPoint[]; color: PdfColor }
   | {
       op: "text";
       x: number;
@@ -27,12 +48,37 @@ export type PdfOp =
 
 export type PdfPageOps = PdfOp[];
 
-function pdfColor(color: PdfColor): string {
+function pdfFillColor(color: PdfColor): string {
   return `${color.r.toFixed(3)} ${color.g.toFixed(3)} ${color.b.toFixed(3)} rg`;
 }
 
+function pdfStrokeColor(color: PdfColor): string {
+  return `${color.r.toFixed(3)} ${color.g.toFixed(3)} ${color.b.toFixed(3)} RG`;
+}
+
 function escapePdfString(value: string): string {
-  return value.replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
+  let encoded = "";
+  for (const char of value) {
+    if (char === "€") {
+      // WinAnsiEncoding code 128 (octal 200) maps to Euro. No embedded font file.
+      encoded += "\\200";
+      continue;
+    }
+    if (char === "\\") {
+      encoded += "\\\\";
+      continue;
+    }
+    if (char === "(") {
+      encoded += "\\(";
+      continue;
+    }
+    if (char === ")") {
+      encoded += "\\)";
+      continue;
+    }
+    encoded += char;
+  }
+  return encoded;
 }
 
 function opsToStream(ops: PdfPageOps): string {
@@ -40,7 +86,7 @@ function opsToStream(ops: PdfPageOps): string {
   for (const item of ops) {
     if (item.op === "fill") {
       lines.push("q");
-      lines.push(pdfColor(item.color));
+      lines.push(pdfFillColor(item.color));
       lines.push(
         `${item.x.toFixed(2)} ${item.y.toFixed(2)} ${item.w.toFixed(2)} ${item.h.toFixed(2)} re`,
       );
@@ -48,10 +94,46 @@ function opsToStream(ops: PdfPageOps): string {
       lines.push("Q");
       continue;
     }
+    if (item.op === "stroke") {
+      lines.push("q");
+      lines.push(pdfStrokeColor(item.color));
+      lines.push(`${Math.max(0.4, item.width).toFixed(2)} w`);
+      lines.push(
+        `${item.x.toFixed(2)} ${item.y.toFixed(2)} ${item.w.toFixed(2)} ${item.h.toFixed(2)} re`,
+      );
+      lines.push("S");
+      lines.push("Q");
+      continue;
+    }
+    if (item.op === "line") {
+      lines.push("q");
+      lines.push(pdfStrokeColor(item.color));
+      lines.push(`${Math.max(0.4, item.width).toFixed(2)} w`);
+      lines.push(`${item.x1.toFixed(2)} ${item.y1.toFixed(2)} m`);
+      lines.push(`${item.x2.toFixed(2)} ${item.y2.toFixed(2)} l`);
+      lines.push("S");
+      lines.push("Q");
+      continue;
+    }
+    if (item.op === "polygon") {
+      if (item.points.length < 3) continue;
+      const first = item.points[0]!;
+      lines.push("q");
+      lines.push(pdfFillColor(item.color));
+      lines.push(`${first.x.toFixed(2)} ${first.y.toFixed(2)} m`);
+      for (let i = 1; i < item.points.length; i += 1) {
+        const point = item.points[i]!;
+        lines.push(`${point.x.toFixed(2)} ${point.y.toFixed(2)} l`);
+      }
+      lines.push("h");
+      lines.push("f");
+      lines.push("Q");
+      continue;
+    }
     lines.push("BT");
     lines.push(item.bold ? "/F2" : "/F1");
     lines.push(`${item.size} Tf`);
-    lines.push(pdfColor(item.color));
+    lines.push(pdfFillColor(item.color));
     lines.push(`${item.x.toFixed(2)} ${item.y.toFixed(2)} Td`);
     lines.push(`(${escapePdfString(item.text)}) Tj`);
     lines.push("ET");
@@ -80,10 +162,10 @@ export function encodePdfPages(pages: PdfPageOps[]): Uint8Array {
     `2 0 obj<< /Type /Pages /Kids [${kids}] /Count ${safePages.length} >>endobj\n`,
   );
   objects.push(
-    `${fontHelv} 0 obj<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>endobj\n`,
+    `${fontHelv} 0 obj<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>endobj\n`,
   );
   objects.push(
-    `${fontBold} 0 obj<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>endobj\n`,
+    `${fontBold} 0 obj<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>endobj\n`,
   );
 
   for (let i = 0; i < safePages.length; i += 1) {
