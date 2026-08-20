@@ -52,6 +52,16 @@ function parsePurchaseDate(raw: unknown): string | null {
   return parsed.toISOString().slice(0, 10);
 }
 
+/** Short exchange tokens only — long "Instrument" labels are names, not tickers. */
+function looksLikeTickerToken(value: string): boolean {
+  const trimmed = value.trim();
+  if (!trimmed || /\s/.test(trimmed)) return false;
+  return /^[A-Z0-9][A-Z0-9.\-]{0,14}$/i.test(trimmed);
+}
+
+const CASHFLOW_TYPE_PATTERN =
+  /^(deposit|contribution|withdrawal|transfer|cashflow)$/i;
+
 export function parseSpreadsheetBuffer(buffer: ArrayBuffer): ImportRow[] {
   const workbook = XLSX.read(buffer, { type: "array" });
   const sheetName = workbook.SheetNames[0];
@@ -63,145 +73,167 @@ export function parseSpreadsheetBuffer(buffer: ArrayBuffer): ImportRow[] {
   );
 
   return records
-    .map((raw) => {
-      const record = normalizedRecord(raw);
+    .map((raw) => parseSpreadsheetRecord(raw))
+    .filter((row): row is ImportRow => row != null);
+}
 
-      const rawIsin = stringValue(firstValue(record, ["isin"])).toUpperCase();
-      const rawExchange = stringValue(
-        firstValue(record, ["exchange", "mic", "market", "listing"]),
-      ).toUpperCase();
-      const rawTicker = stringValue(
+const QUANTITY_KEYS = [
+  "quantity",
+  "units",
+  "shares",
+  "number",
+  "qty",
+  "position",
+  "numberofshares",
+  "sharesheld",
+  "unitsheld",
+  "unitshold",
+] as const;
+
+function parseSpreadsheetRecord(
+  raw: Record<string, unknown>,
+): ImportRow | null {
+  const record = normalizedRecord(raw);
+
+  const rawType = stringValue(
+    firstValue(record, ["type", "assettype", "category"]),
+  );
+  if (CASHFLOW_TYPE_PATTERN.test(rawType)) {
+    return null;
+  }
+
+  const rawIsin = stringValue(
+    firstValue(record, ["isin", "isincode", "instrumentisin"]),
+  ).toUpperCase();
+  const rawExchange = stringValue(
+    firstValue(record, [
+      "exchange",
+      "mic",
+      "market",
+      "listing",
+      "venue",
+      "boerse",
+    ]),
+  ).toUpperCase();
+  const rawTicker = stringValue(
+    firstValue(record, [
+      "symbol",
+      "ticker",
+      "tickersymbol",
+      "code",
+      "providersymbol",
+    ]),
+  ).toUpperCase();
+  const instrumentColumn = stringValue(firstValue(record, ["instrument"]));
+  const rawCurrency = stringValue(
+    firstValue(record, ["currency", "ccy", "curr", "currencycode"]),
+  ).toUpperCase();
+
+  const isin = isValidIsin(rawIsin) ? rawIsin : null;
+  const tickerFromColumn = splitIsinFromTicker(rawTicker).ticker;
+  const isinFromTickerColumn = splitIsinFromTicker(rawTicker).isin;
+  const resolvedIsin = isin ?? isinFromTickerColumn;
+  let symbol = tickerFromColumn;
+  if (!symbol && looksLikeTickerToken(instrumentColumn)) {
+    symbol = splitIsinFromTicker(instrumentColumn.toUpperCase()).ticker;
+  }
+
+  const namedFromColumn = stringValue(
+    firstValue(record, [
+      "name",
+      "investment",
+      "holding",
+      "security",
+      "securityname",
+      "instrumentname",
+      "description",
+    ]),
+  );
+  const instrumentAsName =
+    !namedFromColumn && instrumentColumn && !looksLikeTickerToken(instrumentColumn)
+      ? instrumentColumn
+      : "";
+  const rawName = namedFromColumn || instrumentAsName || symbol || resolvedIsin || "";
+
+  const isCash =
+    rawType.toLowerCase().includes("cash") ||
+    ["CASH", "EUR", "EURCASH"].includes(symbol.replace(/\s/g, ""));
+
+  const amount = numberValue(
+    firstValue(record, [
+      "amount",
+      "cash",
+      "value",
+      "marketvalue",
+      "positionvalue",
+    ]),
+  );
+  const quantity = isCash
+    ? amount || numberValue(firstValue(record, [...QUANTITY_KEYS]))
+    : numberValue(firstValue(record, [...QUANTITY_KEYS]));
+  const purchasePrice = isCash
+    ? 1
+    : numberValue(
         firstValue(record, [
-          "symbol",
-          "ticker",
-          "code",
-          "instrument",
-          "providersymbol",
-        ]),
-      ).toUpperCase();
-      const rawCurrency = stringValue(
-        firstValue(record, ["currency", "ccy", "curr"]),
-      ).toUpperCase();
-
-      const isin = isValidIsin(rawIsin) ? rawIsin : null;
-      const tickerFromColumn = splitIsinFromTicker(rawTicker).ticker;
-      const isinFromTickerColumn = splitIsinFromTicker(rawTicker).isin;
-      const resolvedIsin = isin ?? isinFromTickerColumn;
-      const symbol = tickerFromColumn;
-
-      const rawName =
-        stringValue(
-          firstValue(record, [
-            "name",
-            "investment",
-            "holding",
-            "security",
-            "securityname",
-            "instrumentname",
-            "description",
-          ]),
-        ) ||
-        symbol ||
-        resolvedIsin ||
-        "Unknown holding";
-
-      const rawType = stringValue(
-        firstValue(record, ["type", "assettype", "category"]),
-      ).toLowerCase();
-      const isCash =
-        rawType.includes("cash") ||
-        ["CASH", "EUR", "EURCASH"].includes(symbol.replace(/\s/g, ""));
-
-      const amount = numberValue(
-        firstValue(record, [
-          "amount",
-          "cash",
-          "value",
-          "marketvalue",
-          "positionvalue",
+          "purchaseprice",
+          "averageprice",
+          "avgprice",
+          "avgpurchaseprice",
+          "costprice",
+          "buyprice",
+          "costbasis",
+          "avgcost",
+          "averagecost",
         ]),
       );
-      const quantity = isCash
-        ? amount ||
-          numberValue(
-            firstValue(record, [
-              "quantity",
-              "units",
-              "shares",
-              "number",
-              "qty",
-              "position",
-            ]),
-          )
-        : numberValue(
-            firstValue(record, [
-              "quantity",
-              "units",
-              "shares",
-              "number",
-              "qty",
-              "position",
-            ]),
-          );
-      const purchasePrice = isCash
-        ? 1
-        : numberValue(
-            firstValue(record, [
-              "purchaseprice",
-              "averageprice",
-              "avgprice",
-              "avgpurchaseprice",
-              "costprice",
-              "buyprice",
-              "costbasis",
-            ]),
-          );
-      const currentPrice = isCash
-        ? 1
-        : numberValue(
-            firstValue(record, [
-              "currentprice",
-              "price",
-              "marketprice",
-              "lastprice",
-              "last",
-            ]),
-          );
-      const purchaseDate = parsePurchaseDate(
+  const currentPrice = isCash
+    ? 1
+    : numberValue(
         firstValue(record, [
-          "purchasedate",
-          "buydate",
-          "acquireddate",
-          "date",
+          "currentprice",
+          "price",
+          "marketprice",
+          "lastprice",
+          "last",
         ]),
       );
+  const purchaseDate = parsePurchaseDate(
+    firstValue(record, ["purchasedate", "buydate", "acquireddate", "date"]),
+  );
 
-      return {
-        id: crypto.randomUUID(),
-        symbol: isCash ? symbol || rawCurrency || "EUR" : symbol,
-        name: isCash ? rawName || `${rawCurrency || "EUR"} Cash` : rawName,
-        quantity,
-        purchasePrice,
-        currentPrice,
-        purchaseDate,
-        assetType: isCash ? ("cash" as const) : ("investment" as const),
-        currency: rawCurrency || "EUR",
-        isin: isCash ? null : resolvedIsin,
-        exchange: isCash ? null : rawExchange || null,
-      } satisfies ImportRow;
-    })
-    .filter((row) => {
-      if (!row.name || row.quantity < 0) return false;
-      const nameLower = row.name.toLowerCase();
-      if (
-        /^(total|totals|sum|subtotal|grand total)\b/i.test(nameLower) ||
-        /^(total|totals|sum|subtotal)$/i.test(row.symbol)
-      ) {
-        return false;
-      }
-      if (row.assetType === "cash") return row.quantity > 0;
-      return Boolean(row.symbol || row.isin || row.name);
-    });
+  if (!isCash && quantity <= 0 && !symbol && !resolvedIsin) {
+    return null;
+  }
+
+  const row = {
+    id: crypto.randomUUID(),
+    symbol: isCash ? symbol || rawCurrency || "EUR" : symbol,
+    name: isCash
+      ? rawName || `${rawCurrency || "EUR"} Cash`
+      : rawName || "Unknown holding",
+    quantity,
+    purchasePrice,
+    currentPrice,
+    purchaseDate,
+    assetType: isCash ? ("cash" as const) : ("investment" as const),
+    currency: rawCurrency || undefined,
+    isin: isCash ? null : resolvedIsin,
+    exchange: isCash ? null : rawExchange || null,
+  } satisfies ImportRow;
+
+  if (!row.name || row.quantity < 0) return null;
+  const nameLower = row.name.toLowerCase();
+  if (
+    /^(total|totals|sum|subtotal|grand total)\b/i.test(nameLower) ||
+    /^(total|totals|sum|subtotal)$/i.test(row.symbol)
+  ) {
+    return null;
+  }
+  if (row.assetType === "cash") {
+    return row.quantity > 0 ? row : null;
+  }
+  if (!row.symbol && !row.isin && !rawName) return null;
+  return row;
 }
 
 const SPREADSHEET_EXTENSIONS = ["xlsx", "xls", "csv"] as const;

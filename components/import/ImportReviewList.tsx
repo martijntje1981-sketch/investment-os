@@ -70,17 +70,18 @@ export function ImportReviewList({
   if (rows.length === 0) return null;
 
   return (
-    <section className="space-y-4">
+    <section className="min-w-0 space-y-4 overflow-x-hidden">
       <div>
-        <p className="text-xs font-black uppercase tracking-[0.14em] text-amber-700">
-          Review needed
+        <p className="text-[13px] font-semibold uppercase tracking-[0.12em] text-amber-800">
+          Needs your help
         </p>
-        <h3 className="mt-1 text-xl font-black tracking-[-0.03em] text-slate-950">
-          Confirm {rows.length} holding{rows.length === 1 ? "" : "s"}
+        <h3 className="mt-1 text-[1.375rem] font-bold tracking-[-0.03em] text-slate-950">
+          {rows.length === 1
+            ? "Confirm this holding"
+            : `Confirm ${rows.length} holdings`}
         </h3>
-        <p className="mt-1 text-sm text-slate-500">
-          Only uncertain fields are editable. Everything else was read
-          automatically.
+        <p className="mt-1 text-[16px] leading-relaxed text-slate-600">
+          Matched holdings are ready. Only unresolved rows are shown here.
         </p>
       </div>
 
@@ -153,7 +154,7 @@ function ImportReviewCard({
   const supportStatus = resolveImportRowInstrumentSupportStatus(row);
 
   return (
-    <article className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm">
+    <article className="min-w-0 overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm">
       <div className="border-b border-slate-100 px-5 py-4 sm:px-6">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -174,14 +175,14 @@ function ImportReviewCard({
                 </span>
               ) : null}
             </div>
-            <h4 className="mt-2 truncate text-lg font-black text-slate-950">
+            <h4 className="mt-2 break-words text-[1.125rem] font-bold text-slate-950">
               {row.instrumentName ?? row.name}
             </h4>
           </div>
           <button
             type="button"
             onClick={onRemove}
-            className="shrink-0 rounded-xl px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50"
+            className="inline-flex min-h-[44px] shrink-0 items-center rounded-xl px-3 py-2 text-[15px] font-bold text-red-700 hover:bg-red-50"
           >
             Remove
           </button>
@@ -205,7 +206,7 @@ function ImportReviewCard({
               return null;
             }
             return (
-              <p className="mt-3 flex items-start gap-2 text-sm leading-6 text-amber-800">
+              <p className="mt-3 flex items-start gap-2 text-[16px] leading-6 text-amber-800">
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                 {row.reviewReason}
               </p>
@@ -291,7 +292,7 @@ function ImportReviewCard({
           type="button"
           onClick={onConfirm}
           disabled={!canConfirmImportRow(row) || purchaseDateError !== null}
-          className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
+          className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-[16px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
         >
           <Check className="h-4 w-4" />
           Confirm this holding
@@ -340,12 +341,12 @@ function ReadOnlyFieldGrid({
       {items.map((item) => (
         <div
           key={item.label}
-          className="rounded-xl bg-slate-50 px-3 py-2"
+          className="w-full min-w-0 rounded-xl bg-slate-50 px-3 py-2"
         >
           <p className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-400">
             {item.label}
           </p>
-          <p className="mt-0.5 truncate text-sm font-bold text-slate-800">
+          <p className="mt-0.5 break-words text-[16px] font-bold text-slate-800">
             {item.value}
           </p>
         </div>

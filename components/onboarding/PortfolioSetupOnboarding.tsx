@@ -27,13 +27,13 @@ type PortfolioSetupOnboardingProps = {
 };
 
 const primaryCtaClass =
-  "inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-brand px-5 py-3.5 text-[15px] font-semibold text-brand-navy shadow-sm transition hover:bg-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-navy sm:w-auto";
+  "inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-brand px-5 py-3.5 text-[16px] font-semibold text-brand-navy shadow-sm transition hover:bg-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-navy sm:w-auto";
 
 const secondaryCtaClass =
-  "inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/5 px-5 py-3.5 text-[15px] font-semibold text-white transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-navy sm:w-auto";
+  "inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/5 px-5 py-3.5 text-[16px] font-semibold text-white transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-navy sm:w-auto";
 
 const tertiaryCtaClass =
-  "inline-flex min-h-[44px] w-full items-center justify-center px-2 py-2 text-[14px] font-medium text-white/70 underline-offset-4 transition hover:text-white hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 sm:w-auto";
+  "inline-flex min-h-[44px] w-full items-center justify-center px-2 py-2 text-[15px] font-medium text-white/70 underline-offset-4 transition hover:text-white hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 sm:w-auto";
 
 export function PortfolioSetupOnboarding({
   variant = "first-time",

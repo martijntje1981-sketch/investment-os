@@ -1,13 +1,14 @@
 import { describe, expect, it } from "vitest";
-import * as XLSX from "xlsx";
 
 import {
   AUTO_IMPORT_THRESHOLD,
   REVIEW_THRESHOLD,
   annotateImportRow,
   buildImportReviewPlan,
+  buildImportWelcomeSummary,
   classifyImportRow,
   effectiveImportConfidence,
+  importTierLabel,
 } from "@/lib/services/import/confidencePolicy";
 import type { ImportRow } from "@/lib/services/import/types";
 
@@ -113,5 +114,46 @@ describe("import confidence policy", () => {
     const plan = buildImportReviewPlan([pending]);
     expect(plan.readyToImport).toBe(false);
     expect(plan.reviewCount).toBe(1);
+  });
+
+  it("never auto-imports when confirmation is required, even at high confidence", () => {
+    expect(
+      classifyImportRow(
+        row({
+          matchConfidence: 0.99,
+          requiresConfirmation: true,
+        }),
+      ),
+    ).toBe("review");
+  });
+
+  it("labels matched / needs review / unmatched honestly", () => {
+    expect(importTierLabel("auto")).toBe("Matched");
+    expect(importTierLabel("review")).toBe("Needs review");
+    expect(importTierLabel("blocked")).toBe("Unmatched");
+  });
+
+  it("summarises confirmation as found / matched / needs help", () => {
+    const allMatched = buildImportWelcomeSummary({
+      total: 8,
+      autoCount: 8,
+      reviewCount: 0,
+      blockedCount: 0,
+    });
+    expect(allMatched.headline).toBe("We found 8 holdings");
+    expect(allMatched.matchedLine).toBe("8 matched");
+    expect(allMatched.helpLine).toBeNull();
+    expect(allMatched.allMatched).toBe(true);
+
+    const oneNeedsHelp = buildImportWelcomeSummary({
+      total: 8,
+      autoCount: 7,
+      reviewCount: 1,
+      blockedCount: 0,
+    });
+    expect(oneNeedsHelp.headline).toBe("We found 8 holdings");
+    expect(oneNeedsHelp.matchedLine).toBe("7 matched");
+    expect(oneNeedsHelp.helpLine).toBe("1 needs your help");
+    expect(oneNeedsHelp.allMatched).toBe(false);
   });
 });

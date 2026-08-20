@@ -27,10 +27,12 @@ export function ImportDropzone({
       <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-600">
         <UploadCloud className="h-6 w-6" />
       </div>
-      <p className="mt-4 text-sm font-bold text-slate-800">
+      <p className="mt-4 text-[16px] font-bold text-slate-800">
         Drop an Excel or CSV file here
       </p>
-      <p className="mt-1 text-xs text-slate-500">XLSX, XLS or CSV</p>
+      <p className="mt-1 text-[15px] text-slate-600">
+        Or use Choose file on your phone. XLSX, XLS or CSV.
+      </p>
     </div>
   );
 }

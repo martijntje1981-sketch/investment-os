@@ -113,7 +113,7 @@ describe("supported portfolio input messaging", () => {
     );
     const setup = readProjectFile("lib/client/portfolioSetup.ts");
 
-    expect(picker).toMatch(/Excel or CSV|Manual entry|Cash entry/);
+    expect(picker).toMatch(/Upload portfolio|Add manually/);
     expect(parser).toMatch(/xlsx|xls|csv/);
     expect(setup).toContain("CSV or Excel");
     expect(setup).toContain("Manual entry");
@@ -132,14 +132,14 @@ describe("supported portfolio input messaging", () => {
     expect(onboarding).toContain("DEMO_PORTFOLIO_ENABLED");
     expect(onboarding).toContain("DEMO_PORTFOLIO_HREF");
     expect(setup).toContain('DEMO_PORTFOLIO_HREF = "/explore"');
-    expect(PORTFOLIO_SETUP_COPY.demoTertiary).toBe("Explore the Demo Portfolio");
+    expect(PORTFOLIO_SETUP_COPY.demoTertiary).toBe("Explore Demo Portfolio");
   });
 
   it("routes primary actions to import and manual-add flows", () => {
     expect(PORTFOLIO_SETUP_ROUTES.import).toBe("/upload");
     expect(PORTFOLIO_SETUP_ROUTES.manualAdd).toBe("/portfolio?add=investment");
-    expect(PORTFOLIO_SETUP_COPY.importPrimary).toBe("Import my portfolio");
-    expect(PORTFOLIO_SETUP_COPY.manualSecondary).toBe("Add holdings manually");
+    expect(PORTFOLIO_SETUP_COPY.importPrimary).toBe("Upload portfolio");
+    expect(PORTFOLIO_SETUP_COPY.manualSecondary).toBe("Add manually");
 
     const onboarding = readProjectFile(
       "components/onboarding/PortfolioSetupOnboarding.tsx",
@@ -172,7 +172,11 @@ describe("empty portfolio surfaces", () => {
     expect(portfolio).toContain("EmptyPortfolioGuide");
     expect(goals).toContain("EmptyPortfolioGuide");
     expect(health).toContain("EmptyPortfolioGuide");
-    expect(analysis).not.toMatch(/totalValue|allocation.*0%|concentration.*0/i);
+    expect(analysis).toContain("!hasHoldings");
+    const guide = readProjectFile(
+      "components/onboarding/EmptyPortfolioGuide.tsx",
+    );
+    expect(guide).not.toMatch(/totalValue|allocation.*0%|concentration.*0/i);
   });
 
   it("keeps Import holdings in the profile menu", () => {

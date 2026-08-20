@@ -64,7 +64,10 @@ import {
   type ImportSource,
 } from "@/lib/services/import";
 import type { ResolvedInstrument } from "@/lib/types/instrument";
-import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
+import {
+  firstIntelligenceDashboardHref,
+  markFirstIntelligencePending,
+} from "@/lib/client/firstIntelligence";
 
 type ImportPhase = "choose" | "processing" | "ready";
 
@@ -443,7 +446,7 @@ export default function UploadPage() {
       const prepared = finalizeImportRowsForSave(rowsToImport);
       rememberConfirmedImportMappings(userSub, rowsToImport);
 
-      const existing = storedHoldings as StoredPortfolioHolding[];
+      const existing = storedHoldings;
       let next = prepared;
       let skippedDuplicates = 0;
       // Partial "ready only" never replaces the whole book — merge into existing.
@@ -483,6 +486,7 @@ export default function UploadPage() {
       clearPendingImportSession(userSub);
       importIdempotencyKeyRef.current = null;
       setSyncFailed(false);
+      markFirstIntelligencePending(userSub);
 
       const importedCount = Math.max(0, prepared.length - skippedDuplicates);
       const parts = [
@@ -498,7 +502,7 @@ export default function UploadPage() {
         parts.push(saved.priceWarning);
       }
       setSuccessMessage(parts.join(" "));
-      window.setTimeout(() => router.push("/dashboard"), 1200);
+      window.setTimeout(() => router.push(firstIntelligenceDashboardHref()), 900);
     } catch (caught) {
       const message =
         caught instanceof Error
@@ -533,8 +537,8 @@ export default function UploadPage() {
     <>
       <PageContainer>
         <PageHero
-          title="Import Portfolio"
-          subtitle="Upload your broker export. Tobailey detects holdings before anything is added."
+          title="Upload portfolio"
+          subtitle="Choose a CSV or Excel file. Tobailey matches holdings; you only review the uncertain ones."
           backToDashboard
         />
 
@@ -600,7 +604,7 @@ export default function UploadPage() {
           ) : null}
 
           {phase === "ready" && rows.length > 0 ? (
-            <div className="space-y-5">
+            <div className="min-w-0 space-y-5 overflow-x-hidden">
               <ImportSummaryCard
                 plan={plan}
                 broker={broker}
@@ -627,15 +631,15 @@ export default function UploadPage() {
                   <div>
                     <h3 className="text-lg font-bold tracking-[-0.02em] text-slate-950">
                       {plan.readyToImport
-                        ? "Ready to import"
+                        ? "Import your portfolio"
                         : "Almost there"}
                     </h3>
-                    <p className="mt-1 text-sm text-slate-500">
+                    <p className="mt-1 text-[16px] leading-relaxed text-slate-600">
                       {plan.readyToImport
-                        ? "You review everything before import. Ambiguous rows stay out until confirmed."
+                        ? "Matched holdings do not need one-by-one confirmation."
                         : canImportReadyOnly
-                          ? "Fix remaining rows, or import only the holdings that are already ready."
-                          : "Confirm or exclude the holdings that need attention, then import."}
+                          ? "Help with the remaining holding, or import the matched ones now."
+                          : "Help with the unmatched holdings, then import."}
                     </p>
                   </div>
                 </div>
@@ -701,9 +705,7 @@ export default function UploadPage() {
                       ? "Importing…"
                       : syncFailed
                         ? "Import portfolio again"
-                        : plan.autoCount > 0
-                          ? `Import ${plan.autoCount} holding${plan.autoCount === 1 ? "" : "s"}`
-                          : "Import portfolio"}
+                        : "Import portfolio"}
                   </button>
                 </div>
                 {successMessage ? (

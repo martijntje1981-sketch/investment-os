@@ -151,12 +151,43 @@ export function buildImportReviewPlan(rows: ImportRow[]): ImportReviewPlan {
 export function importTierLabel(tier: ImportReviewTier): string {
   switch (tier) {
     case "auto":
-      return "Ready";
+      return "Matched";
     case "review":
-      return "Confirm";
+      return "Needs review";
     case "blocked":
-      return "Needs attention";
+      return "Unmatched";
     default:
-      return "Review";
+      return "Needs review";
   }
+}
+
+export type ImportWelcomeSummary = {
+  headline: string;
+  matchedLine: string;
+  helpLine: string | null;
+  allMatched: boolean;
+  needsHelpCount: number;
+};
+
+/** Short confirmation copy: found / matched / needs help. */
+export function buildImportWelcomeSummary(
+  plan: Pick<
+    ImportReviewPlan,
+    "total" | "autoCount" | "reviewCount" | "blockedCount"
+  >,
+): ImportWelcomeSummary {
+  const needsHelpCount = plan.reviewCount + plan.blockedCount;
+  const holdingWord = plan.total === 1 ? "holding" : "holdings";
+  return {
+    headline: `We found ${plan.total} ${holdingWord}`,
+    matchedLine: `${plan.autoCount} matched`,
+    helpLine:
+      needsHelpCount === 0
+        ? null
+        : needsHelpCount === 1
+          ? "1 needs your help"
+          : `${needsHelpCount} need your help`,
+    allMatched: plan.total > 0 && needsHelpCount === 0,
+    needsHelpCount,
+  };
 }

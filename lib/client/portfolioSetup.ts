@@ -44,34 +44,34 @@ export const SUPPORTED_PORTFOLIO_INPUT_METHODS = [
 export const PORTFOLIO_SETUP_STEPS = [
   {
     step: 1,
-    title: "Choose your file",
+    title: "Add your holdings",
   },
   {
     step: 2,
-    title: "Review detected holdings",
+    title: "Review only if needed",
   },
   {
     step: 3,
-    title: "Import complete",
+    title: "See what Tobailey sees",
   },
 ] as const;
 
 export const PORTFOLIO_SETUP_COPY = {
-  welcomeEyebrow: "14-day Complete trial",
+  welcomeEyebrow: "Welcome",
   returningEyebrow: "Portfolio empty",
-  headline: "Your portfolio is ready.",
+  headline: "How would you like to add your portfolio?",
   returningHeadline: "Add holdings to continue",
   supporting:
-    "Import your holdings or add them manually. You can change everything later.",
+    "Upload a CSV or Excel file, or add holdings yourself. You can change everything later.",
   returningSupporting:
-    "Import a CSV or Excel file, or add holdings manually, to restore your Dashboard.",
-  importPrimary: "Import my portfolio",
-  importHint: "Upload a broker export · you review before anything is added",
-  manualSecondary: "Add holdings manually",
-  demoTertiary: "Explore the Demo Portfolio",
+    "Upload a CSV or Excel file, or add holdings manually, to restore your Dashboard.",
+  importPrimary: "Upload portfolio",
+  importHint: "CSV or Excel · you only review uncertain holdings",
+  manualSecondary: "Add manually",
+  demoTertiary: "Explore Demo Portfolio",
   compactTitle: "Set up your portfolio",
   compactBody:
-    "Import a CSV or Excel file, or add holdings manually.",
+    "Upload a CSV or Excel file, or add holdings manually.",
 } as const;
 
 export function portfolioSetupCompletedKey(userSub: string): string {

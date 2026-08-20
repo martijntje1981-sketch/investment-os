@@ -116,8 +116,8 @@ describe("clean personal trial signup", () => {
     expect(empty).toContain("PortfolioSetupOnboarding");
     expect(onboarding).toContain("PORTFOLIO_SETUP_ROUTES.import");
     expect(onboarding).toContain("PORTFOLIO_SETUP_ROUTES.manualAdd");
-    expect(PORTFOLIO_SETUP_COPY.importPrimary).toBe("Import my portfolio");
-    expect(PORTFOLIO_SETUP_COPY.manualSecondary).toBe("Add holdings manually");
+    expect(PORTFOLIO_SETUP_COPY.importPrimary).toBe("Upload portfolio");
+    expect(PORTFOLIO_SETUP_COPY.manualSecondary).toBe("Add manually");
     expect(PORTFOLIO_SETUP_ROUTES.import).toBe("/upload");
     expect(PORTFOLIO_SETUP_ROUTES.manualAdd).toBe("/portfolio?add=investment");
   });

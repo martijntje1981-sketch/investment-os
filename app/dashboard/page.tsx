@@ -12,6 +12,7 @@ import { FourQuestionsSection } from "@/components/dashboard/fourQuestions/FourQ
 import { SinceLastCheckSection } from "@/components/dashboard/SinceLastCheckSection";
 import { AuthenticatedFourQuestionsNav } from "@/components/fourQuestions/AuthenticatedFourQuestionsNav";
 import { DashboardFirstRunCue } from "@/components/dashboard/DashboardFirstRunCue";
+import { FirstIntelligenceMoment } from "@/components/onboarding/FirstIntelligenceMoment";
 import { DemoHoldingsCallout } from "@/components/example/DemoHoldingsCallout";
 import { TrialStepsCard } from "@/components/example/TrialStepsCard";
 import { DashboardPerspectivesWidget } from "@/components/dashboard/DashboardPerspectivesWidget";
@@ -444,6 +445,13 @@ export default function DashboardPage() {
           <DashboardFirstRunCue
             userSub={userSub}
             exampleActive={exampleActive}
+          />
+
+          <FirstIntelligenceMoment
+            userSub={userSub}
+            hasHoldings={holdings.length > 0}
+            exampleActive={exampleActive}
+            hasSavedGoal={hasSavedGoal}
           />
 
           {exampleActive ? (

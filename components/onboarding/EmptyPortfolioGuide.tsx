@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BriefcaseBusiness, Compass, FileSpreadsheet } from "lucide-react";
+import { BriefcaseBusiness, FileSpreadsheet } from "lucide-react";
 
 import {
   appBrandSoftButtonClass,
@@ -61,11 +61,10 @@ export function EmptyPortfolioGuide({
       <div className="mt-7 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
         <Link href={PORTFOLIO_SETUP_ROUTES.import} className={appPrimaryButtonClass}>
           <FileSpreadsheet className="h-4 w-4" aria-hidden="true" />
-          {CONVERSION_COPY.primaryCta}
+          Upload portfolio
         </Link>
-        <Link href={CONVERSION_COPY.exploreHref} className={appBrandSoftButtonClass}>
-          <Compass className="h-4 w-4" aria-hidden="true" />
-          Explore the market
+        <Link href={PORTFOLIO_SETUP_ROUTES.manualAdd} className={appBrandSoftButtonClass}>
+          Add manually
         </Link>
       </div>
     </section>

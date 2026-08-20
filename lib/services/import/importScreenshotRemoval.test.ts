@@ -131,8 +131,8 @@ describe("screenshot import removal", () => {
     expect(picker).not.toMatch(/screenshot/i);
     expect(picker).not.toMatch(/FileImage/);
     expect(picker).not.toMatch(/onScreenshotClick/);
-    expect(picker).toContain("Manual entry");
-    expect(picker).toContain("Cash entry");
+    expect(picker).toContain("Add manually");
+    expect(picker).not.toContain("Cash entry");
 
     expect(dropzone).not.toMatch(/screenshot/i);
     expect(dropzone).not.toMatch(/PNG|JPG|JPEG|WEBP/i);
@@ -157,14 +157,17 @@ describe("screenshot import removal", () => {
     }
   });
 
-  it("keeps manual entry and cash entry reachable from the import page", () => {
+  it("keeps manual entry on import and cash entry on portfolio", () => {
     const picker = readProjectFile("components/import/ImportMethodPicker.tsx");
     const uploadPage = readProjectFile("app/upload/page.tsx");
+    const portfolio = readProjectFile("app/portfolio/page.tsx");
+    const setup = readProjectFile("lib/client/portfolioSetup.ts");
 
     expect(picker).toMatch(/href="\/portfolio\?add=/);
-    expect(picker).toMatch(/Manual entry/);
-    expect(picker).toMatch(/Cash entry/);
-    expect(uploadPage).toMatch(/manually|CSV|Excel|cash/i);
+    expect(picker).toMatch(/Add manually/);
+    expect(portfolio).toMatch(/add=cash|openAdd\("cash"\)/);
+    expect(setup).toContain("Cash positions");
+    expect(uploadPage).toMatch(/manually|CSV|Excel/i);
   });
 
   it("updates empty-state insight copy away from screenshot import", () => {

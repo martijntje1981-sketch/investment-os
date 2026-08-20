@@ -32,6 +32,10 @@ import { PageHero } from "@/components/layout/PageHero";
 import { PageRelatedLinks } from "@/components/layout/PageRelatedLinks";
 import { AuthenticatedFourQuestionsNav } from "@/components/fourQuestions/AuthenticatedFourQuestionsNav";
 import { EmptyPortfolioGuide } from "@/components/onboarding/EmptyPortfolioGuide";
+import {
+  firstIntelligenceDashboardHref,
+  markFirstIntelligencePending,
+} from "@/lib/client/firstIntelligence";
 import { ExportPortfolioButton } from "@/components/export/ExportPortfolioButton";
 import {
   ANALYSIS_PATH,
@@ -456,6 +460,14 @@ export default function PortfolioPage() {
 
     saveHoldings(next);
 
+    const isFirstSetup = holdings.length === 0 && next.length > 0;
+    if (isFirstSetup) {
+      markFirstIntelligencePending(userSub);
+      setEditorOpen(false);
+      router.push(firstIntelligenceDashboardHref());
+      return;
+    }
+
     if (cleaned.assetType !== "cash" && isEstimatedHoldingPrice(cleaned)) {
       setMessage(
         "Holding saved with an estimated price until live market data is available.",
@@ -527,6 +539,13 @@ export default function PortfolioPage() {
       const resolvedDraft = await resolveCryptoDraftForSave(nextDraft);
       const cleaned = normalizeHoldingForSave(resolvedDraft);
       saveHoldings(mergeHoldingOnSave(holdings, cleaned));
+      const isFirstSetup = holdings.length === 0;
+      if (isFirstSetup) {
+        markFirstIntelligencePending(userSub);
+        setCryptoEditorOpen(false);
+        router.push(firstIntelligenceDashboardHref());
+        return;
+      }
       setMessage(
         cleaned.pricingStatus === "needs_review"
           ? "Crypto holding saved. Live pricing is not available for this pair yet."
@@ -1159,8 +1178,12 @@ export default function PortfolioPage() {
                 </div>
               ) : (
                 <div className="mt-7 space-y-5">
+                  <p className="text-[16px] leading-relaxed text-slate-600">
+                    Search an instrument, select the listing, then enter quantity.
+                    Tobailey infers the instrument type for you.
+                  </p>
                   <Field
-                    label="Ticker, ISIN, or provider symbol"
+                    label="Search instrument"
                     required={false}
                     value={draft.symbol}
                     onChange={(value) => {
@@ -1218,7 +1241,7 @@ export default function PortfolioPage() {
                   </button>
                   <p className="text-[15px] leading-relaxed text-slate-600">
                     Bond ETFs and individual bonds use this same flow. Prefer
-                    ISIN or ticker plus exchange (for example IBTM.LSE), then
+                    ISIN or ticker plus exchange (for example EUNA), then
                     Find listing.
                   </p>
 
@@ -1293,7 +1316,7 @@ export default function PortfolioPage() {
                   />
                   <div className="grid gap-4 sm:grid-cols-2">
                     <Field
-                      label={`Average purchase price (${editorCurrencyLocked})`}
+                      label={`Cost basis, optional (${editorCurrencyLocked})`}
                       type="number"
                       prefix={portfolioBaseCurrencySymbol(editorCurrencyLocked)}
                       min="0"
@@ -1378,9 +1401,11 @@ export default function PortfolioPage() {
                   (editorCurrencyLocked !== "EUR" &&
                     baseCurrency !== editorCurrencyLocked)
                 }
-                className="w-full rounded-xl bg-brand px-5 py-3.5 text-sm font-bold text-brand-navy hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex min-h-[48px] w-full items-center justify-center rounded-xl bg-brand px-5 py-3.5 text-[16px] font-bold text-brand-navy hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Save holding
+                {holdings.some((item) => item.id === draft.id)
+                  ? "Save holding"
+                  : "Add holding"}
               </button>
             </div>
           </form>
