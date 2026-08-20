@@ -150,6 +150,9 @@ function contextualKeywordsFromVerifiedProfile(
   if (profile.assetClass === "digital_assets") {
     keywords.push("crypto", "cryptocurrency", "digital asset", "digital assets");
   }
+  if (profile.assetClass === "precious_metals") {
+    keywords.push("gold", "silver", "precious metals");
+  }
 
   return keywords;
 }

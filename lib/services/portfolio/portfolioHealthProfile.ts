@@ -229,6 +229,7 @@ const THEME_COLORS: Record<string, string> = {
   financials_real_estate: "bg-indigo-600",
   industrials_resources: "bg-amber-600",
   diversified_equity: "bg-slate-700",
+  precious_metals: "bg-yellow-700",
 };
 
 function round1(value: number): number {

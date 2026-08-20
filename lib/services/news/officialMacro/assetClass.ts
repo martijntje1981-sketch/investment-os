@@ -36,6 +36,7 @@ export function resolveOfficialMacroAssetClass(
   const groupId = classified.normalizedGroupId;
   const precious = isPreciousMetalsHolding(holding, classified.fundCategory);
 
+  if (groupId === "precious_metals") return "precious_metals";
   if (precious) return "precious_metals";
   if (groupId === "fixed_income") return "fixed_income";
   if (groupId === "crypto" || holding.assetType === "crypto") return "crypto";
@@ -52,6 +53,7 @@ export function assetClassFromExposureGroup(
   holdingName = "",
 ): OfficialMacroAssetClass {
   if (!groupId) return "none";
+  if (groupId === "precious_metals") return "precious_metals";
   if (isPreciousMetalsHolding({ name: holdingName, symbol: "" })) {
     return "precious_metals";
   }

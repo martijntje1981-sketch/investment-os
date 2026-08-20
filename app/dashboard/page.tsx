@@ -180,13 +180,17 @@ export default function DashboardPage() {
 
   const marketsClosed = useMemo(() => areMajorMarketsClosed(), []);
 
-  const portfolioPulse = useMemo(() => {
+  const resilienceProfile = useMemo(() => {
     if (holdings.length === 0) return null;
-    const resilience = buildResilienceProfile({
+    return buildResilienceProfile({
       holdings,
       goal,
       hasSavedGoal,
     });
+  }, [goal, hasSavedGoal, holdings]);
+
+  const portfolioPulse = useMemo(() => {
+    if (holdings.length === 0) return null;
     return buildPortfolioPulse({
       daily: {
         holdings,
@@ -201,7 +205,7 @@ export default function DashboardPage() {
       monthly: {
         month: monthHistory.data,
         week: weekHistory.data,
-        resilienceScore: resilience.score,
+        resilienceScore: resilienceProfile?.score ?? null,
         largestHoldingWeightPercent:
           snapshot.concentrationWeightPercent ?? null,
         goalStatus: goalProgress.hasGoal ? goalProgress.status : null,
@@ -210,13 +214,12 @@ export default function DashboardPage() {
       },
     });
   }, [
-    goal,
     goalProgress.hasGoal,
     goalProgress.status,
-    hasSavedGoal,
     holdings,
     marketsClosed,
     monthHistory.data,
+    resilienceProfile?.score,
     snapshot.concentrationWeightPercent,
     weekHistory.data,
   ]);
@@ -530,7 +533,10 @@ export default function DashboardPage() {
               emphasisNote={smartDashboard.emphasis.historyNote}
             />
 
-            <DashboardPortfolioExposureCard allocation={exposureAllocation} />
+            <DashboardPortfolioExposureCard
+              allocation={exposureAllocation}
+              scenarioResults={resilienceProfile?.scenarioResults ?? null}
+            />
 
             <DashboardExploreTools
               emphasizeGoals={smartDashboard.emphasis.exploreGoalsHighlight}

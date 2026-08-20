@@ -16,6 +16,7 @@ export const EXPOSURE_GROUP_IDS = [
   "industrials_resources",
   "diversified_equity",
   "fixed_income",
+  "precious_metals",
   "crypto",
   "cash",
   "other_unclassified",
@@ -31,6 +32,7 @@ export const EXPOSURE_GROUP_LABELS: Record<ExposureGroupId, string> = {
   industrials_resources: "Industrials & resources",
   diversified_equity: "Diversified equity",
   fixed_income: "Fixed income",
+  precious_metals: "Precious metals",
   crypto: "Crypto",
   cash: "Cash",
   other_unclassified: "Other / Unclassified",
@@ -45,12 +47,13 @@ export const MAIN_EXPOSURE_GROUP_IDS: ExposureGroupId[] = [
   "industrials_resources",
   "diversified_equity",
   "fixed_income",
+  "precious_metals",
   "other_unclassified",
 ];
 
 /**
  * Classified equity / equity-like exposure groups (whole-instrument).
- * Excludes cash, crypto, fixed income, and other_unclassified.
+ * Excludes cash, crypto, fixed income, precious metals, and other_unclassified.
  * Shared by Portfolio Health DNA and Scenario Engine.
  */
 export const EQUITY_EXPOSURE_GROUP_IDS: readonly ExposureGroupId[] = [
@@ -67,6 +70,9 @@ export const EQUITY_EXPOSURE_GROUP_ID_SET = new Set<ExposureGroupId>(
 );
 
 export const FIXED_INCOME_EXPOSURE_GROUP_ID: ExposureGroupId = "fixed_income";
+
+export const PRECIOUS_METALS_EXPOSURE_GROUP_ID: ExposureGroupId =
+  "precious_metals";
 
 export type ExposureClassificationSource =
   | "asset_type"

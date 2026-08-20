@@ -1,9 +1,4 @@
-import { getHoldingMarketValue } from "@/lib/client/portfolioAnalysis";
-import {
-  buildPortfolioExposureAllocation,
-  classifyHoldingExposure,
-} from "@/lib/services/classification";
-import { isPreciousMetalsHolding } from "@/lib/services/news/officialMacro/assetClass";
+import { buildPortfolioExposureAllocation } from "@/lib/services/classification";
 import { titlesAreNearDuplicate } from "@/lib/services/news/newsFeedRanking";
 import {
   applyCreatorDiversity,
@@ -86,19 +81,7 @@ export function derivePerspectivePortfolioSignals(
     (byGroup.get("financials_real_estate") ?? 0) +
     (byGroup.get("industrials_resources") ?? 0);
   const fixedIncomeWeight = byGroup.get("fixed_income") ?? 0;
-
-  const totalValue = holdings.reduce((sum, holding) => {
-    const value = getHoldingMarketValue(holding);
-    return sum + (value ?? 0);
-  }, 0);
-  const preciousValue = holdings.reduce((sum, holding) => {
-    const classified = classifyHoldingExposure(holding);
-    if (!isPreciousMetalsHolding(holding, classified.fundCategory)) {
-      return sum;
-    }
-    return sum + (getHoldingMarketValue(holding) ?? 0);
-  }, 0);
-  const preciousWeight = totalValue > 0 ? (preciousValue / totalValue) * 100 : 0;
+  const preciousWeight = byGroup.get("precious_metals") ?? 0;
   const commodityWeight =
     (byGroup.get("industrials_resources") ?? 0) + preciousWeight;
 

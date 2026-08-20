@@ -1,7 +1,7 @@
 /**
  * Deterministic whole-instrument exposure classifier.
  * Zero provider calls — assetType, verified research profiles, then conservative
- * fixed-income name/type heuristics.
+ * fixed-income and physical precious-metals name/type heuristics.
  */
 
 import {
@@ -149,6 +149,16 @@ function mapResearchProfile(
     );
   }
 
+  if (profile.assetClass === "precious_metals") {
+    return result(
+      "precious_metals",
+      "research_profile",
+      "high",
+      "Verified physical precious-metals research profile",
+      extras,
+    );
+  }
+
   if (profile.assetClass === "equity_etf") {
     return result(
       "diversified_equity",
@@ -246,9 +256,54 @@ function mapResearchProfile(
   );
 }
 
+const MINING_OR_PRODUCER_PATTERN =
+  /\b(miners?|mining|mine|royalty|streaming|producer|exploration|resources?)\b/i;
+const PHYSICAL_PATTERN = /\bphysical\b/i;
+const GOLD_OR_SILVER_PATTERN = /\b(gold|silver)\b/i;
+const PRECIOUS_METALS_VEHICLE_PATTERN = /\b(etc|etp|etn)\b/i;
+
+/**
+ * Tight fallback for physical gold/silver bullion vehicles only.
+ * Requires Physical + (Gold or Silver) + (ETC/ETP/ETN in name or type).
+ * Never matches miners, companies, or a lone "gold"/"silver" token.
+ */
+function classifyPhysicalPreciousMetalsHeuristic(
+  holding: ExposureClassificationHolding,
+): HoldingExposureClassification | null {
+  const nameBlob = [holding.name, holding.instrumentName]
+    .filter(Boolean)
+    .join(" ");
+  const typeBlob = holding.providerInstrumentType ?? "";
+  const combined = `${nameBlob} ${typeBlob}`;
+
+  if (MINING_OR_PRODUCER_PATTERN.test(combined)) {
+    return null;
+  }
+  if (!PHYSICAL_PATTERN.test(nameBlob)) {
+    return null;
+  }
+  if (!GOLD_OR_SILVER_PATTERN.test(nameBlob)) {
+    return null;
+  }
+
+  const vehicleInName = PRECIOUS_METALS_VEHICLE_PATTERN.test(nameBlob);
+  const vehicleInType = PRECIOUS_METALS_VEHICLE_PATTERN.test(typeBlob);
+  if (!vehicleInName && !vehicleInType) {
+    return null;
+  }
+
+  return result(
+    "precious_metals",
+    vehicleInType && !vehicleInName ? "provider_type" : "name_heuristic",
+    "medium",
+    "Physical gold/silver bullion vehicle (ETC/ETP/ETN)",
+  );
+}
+
 /**
  * Classify a single holding into one exposure group.
- * Precedence: cash → native crypto → crypto-linked research → research profile → Other.
+ * Precedence: cash → native crypto → research profile → conservative FI →
+ * tight physical precious-metals heuristic → Other.
  */
 export function classifyHoldingExposure(
   holding: ExposureClassificationHolding,
@@ -281,6 +336,11 @@ export function classifyHoldingExposure(
       fixedIncome.reason,
       { fixedIncome },
     );
+  }
+
+  const preciousMetals = classifyPhysicalPreciousMetalsHeuristic(holding);
+  if (preciousMetals) {
+    return preciousMetals;
   }
 
   return result(

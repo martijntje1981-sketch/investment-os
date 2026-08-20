@@ -67,6 +67,13 @@ export function resolveLookThroughEligibility(
         "Verified income/strategy ETP — not expanded without constituent data.",
       );
     }
+    if (profile.assetClass === "precious_metals") {
+      return result(
+        "gold_etc",
+        "economic_sleeve",
+        "Verified physical precious-metals ETC — economic sleeve only.",
+      );
+    }
     if (
       profile.assetClass === "equity_etf" ||
       profile.assetClass === "thematic_etf"

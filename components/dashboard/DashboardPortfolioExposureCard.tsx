@@ -1,6 +1,8 @@
 "use client";
 
-import { ChartPie } from "lucide-react";
+import { useMemo, useState } from "react";
+import Link from "next/link";
+import { ChartPie, ChevronDown } from "lucide-react";
 
 import { ExpandableDashboardSection } from "@/components/dashboard/ExpandableDashboardSection";
 import {
@@ -9,42 +11,50 @@ import {
 } from "@/components/layout/appSurface";
 import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
+import { holdingDetailPath } from "@/lib/navigation/appRoutes";
+import { buildAllocationIntelligence } from "@/lib/services/allocationIntelligence";
 import {
   EXPOSURE_GROUP_BAR_CLASS,
   EXPOSURE_GROUP_DOT_CLASS,
   formatAllocationPercent,
+  type ExposureGroupId,
   type PortfolioExposureAllocation,
 } from "@/lib/services/classification";
-
-const PREVIEW_CATEGORY_COUNT = 3;
+import type { ScenarioResult } from "@/lib/services/scenarioEngine";
 
 /**
- * Compact Dashboard preview of portfolio exposure (whole-instrument classification).
- * Not sector look-through. Detail lives on Analysis `#portfolio-exposure`.
+ * Dashboard allocation intelligence — canonical exposure groups with
+ * personal conclusion. Whole-instrument classification, not X-Ray.
  */
 export function DashboardPortfolioExposureCard({
   allocation,
+  scenarioResults = null,
 }: {
   allocation: PortfolioExposureAllocation;
+  scenarioResults?: ScenarioResult[] | null;
 }) {
   const { formatEur } = useBaseCurrencyDisplay();
-  const previewGroups = allocation.groups.slice(0, PREVIEW_CATEGORY_COUNT);
-  const remainingGroups = allocation.groups.slice(PREVIEW_CATEGORY_COUNT);
-  const canExpand = remainingGroups.length > 0;
+  const intelligence = useMemo(
+    () => buildAllocationIntelligence({ allocation, scenarioResults }),
+    [allocation, scenarioResults],
+  );
+  const [expandedGroupId, setExpandedGroupId] = useState<ExposureGroupId | null>(
+    null,
+  );
 
   return (
     <ExpandableDashboardSection
       sectionKey="portfolio-exposure"
       title="Portfolio exposure"
       titleId="portfolio-exposure-preview-heading"
-      subtitle="Largest allocation groups"
+      subtitle="What your allocation means"
       icon={<ChartPie className="h-5 w-5" />}
       iconToneClassName="bg-slate-100 text-slate-700 ring-1 ring-slate-200"
       deepLink={{
         href: DASHBOARD_DEEP_LINKS.portfolioExposure,
         label: "View allocation",
       }}
-      expandable={canExpand}
+      expandable={false}
       preview={
         !allocation.hasAnyValue ? (
           <p className={appSectionBodyClass}>
@@ -53,18 +63,18 @@ export function DashboardPortfolioExposureCard({
               : "Add valued holdings to see portfolio exposure."}
           </p>
         ) : (
-          <div className="space-y-4">
+          <div className="min-w-0 space-y-4 overflow-x-clip">
             <div
               className="flex h-3 min-w-0 overflow-hidden rounded-full bg-slate-100"
               role="img"
-              aria-label={allocation.groups
+              aria-label={intelligence.groups
                 .map(
                   (group) =>
                     `${group.displayLabel} ${formatAllocationPercent(group.rawPercent)}`,
                 )
                 .join(", ")}
             >
-              {allocation.groups.map((group) => (
+              {intelligence.groups.map((group) => (
                 <div
                   key={group.groupId}
                   className={`h-full min-w-0 ${EXPOSURE_GROUP_BAR_CLASS[group.groupId]}`}
@@ -74,64 +84,139 @@ export function DashboardPortfolioExposureCard({
               ))}
             </div>
 
-            <ul className="grid min-w-0 gap-2.5">
-              {previewGroups.map((group) => (
-                <li
-                  key={group.groupId}
-                  className="flex min-w-0 items-baseline justify-between gap-3"
-                >
-                  <span className="flex min-w-0 items-center gap-2">
-                    <span
-                      className={`h-2.5 w-2.5 shrink-0 rounded-full ${EXPOSURE_GROUP_DOT_CLASS[group.groupId]}`}
-                      aria-hidden
-                    />
-                    <span className="truncate text-sm font-medium text-slate-800">
-                      {group.displayLabel}
-                    </span>
-                  </span>
-                  <span className="shrink-0 text-sm font-semibold tabular-nums text-slate-950">
-                    {formatAllocationPercent(group.rawPercent)}
-                    <span className="sr-only">
-                      {`, ${formatEur(group.value)}`}
-                    </span>
-                  </span>
-                </li>
-              ))}
+            <ul className="min-w-0 space-y-1" data-testid="allocation-group-rows">
+              {intelligence.groups.map((group) => {
+                const expanded = expandedGroupId === group.groupId;
+                const holdingsId = `allocation-holdings-${group.groupId}`;
+
+                return (
+                  <li key={group.groupId} className="min-w-0">
+                    <button
+                      type="button"
+                      aria-expanded={expanded}
+                      aria-controls={holdingsId}
+                      onClick={() =>
+                        setExpandedGroupId(expanded ? null : group.groupId)
+                      }
+                      className="grid min-h-11 w-full min-w-0 grid-cols-[minmax(0,7.5rem)_minmax(0,1fr)_auto] items-center gap-2 rounded-xl px-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:ring-offset-2 sm:grid-cols-[minmax(0,11rem)_minmax(0,1fr)_auto] sm:gap-3"
+                    >
+                      <span className="flex min-w-0 items-center gap-2">
+                        <span
+                          className={`h-2.5 w-2.5 shrink-0 rounded-full ${EXPOSURE_GROUP_DOT_CLASS[group.groupId]}`}
+                          aria-hidden
+                        />
+                        <span className="truncate text-[15px] font-medium text-slate-800">
+                          {group.displayLabel}
+                        </span>
+                        <ChevronDown
+                          className={`h-3.5 w-3.5 shrink-0 text-slate-500 transition ${
+                            expanded ? "rotate-180" : ""
+                          }`}
+                          aria-hidden
+                        />
+                      </span>
+                      <span
+                        className="h-2 min-w-0 overflow-hidden rounded-full bg-slate-100"
+                        aria-hidden
+                      >
+                        <span
+                          className={`block h-full max-w-full rounded-full ${EXPOSURE_GROUP_BAR_CLASS[group.groupId]}`}
+                          style={{
+                            width: `${Math.min(Math.max(group.rawPercent, 0), 100)}%`,
+                            minWidth: group.rawPercent > 0 ? "2px" : 0,
+                          }}
+                        />
+                      </span>
+                      <span className="shrink-0 text-[15px] font-semibold tabular-nums text-slate-950">
+                        {formatAllocationPercent(group.rawPercent)}
+                        <span className="sr-only">
+                          {`, ${formatEur(group.value)}`}
+                        </span>
+                      </span>
+                    </button>
+
+                    {expanded ? (
+                      <ul
+                        id={holdingsId}
+                        className="mt-1 space-y-1 pb-1 pl-6 sm:pl-8"
+                        data-testid={`allocation-holdings-${group.groupId}`}
+                      >
+                        {group.holdings.map((holding) => (
+                          <li
+                            key={holding.id}
+                            className="flex min-h-11 min-w-0 items-center justify-between gap-3"
+                          >
+                            {holding.assetType === "cash" ? (
+                              <span className="min-w-0 truncate text-[15px] font-medium text-slate-800">
+                                {holding.name}
+                              </span>
+                            ) : (
+                              <Link
+                                href={holdingDetailPath(holding.symbol)}
+                                className="min-w-0 truncate text-[15px] font-semibold text-slate-800 underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:ring-offset-2"
+                              >
+                                <span className="font-semibold">
+                                  {holding.symbol}
+                                </span>
+                                <span className="font-medium text-slate-600">
+                                  {" "}
+                                  {holding.name}
+                                </span>
+                              </Link>
+                            )}
+                            <span className="shrink-0 text-[15px] font-semibold tabular-nums text-slate-950">
+                              {formatAllocationPercent(holding.weightPercent)}
+                            </span>
+                          </li>
+                        ))}
+                        {group.isFixedIncome ? (
+                          <li>
+                            <Link
+                              href={intelligence.bondsRatesHref}
+                              className="inline-flex min-h-11 items-center text-[15px] font-semibold text-slate-800 underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:ring-offset-2"
+                              data-testid="allocation-bonds-rates-link"
+                            >
+                              Understand rates & bonds →
+                            </Link>
+                          </li>
+                        ) : null}
+                      </ul>
+                    ) : group.isFixedIncome ? (
+                      <div className="pl-6 sm:pl-8">
+                        <Link
+                          href={intelligence.bondsRatesHref}
+                          className="inline-flex min-h-11 items-center text-[15px] font-semibold text-slate-800 underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:ring-offset-2"
+                          data-testid="allocation-bonds-rates-link"
+                        >
+                          Understand rates & bonds →
+                        </Link>
+                      </div>
+                    ) : null}
+                  </li>
+                );
+              })}
             </ul>
 
-            {allocation.coverageLabel ? (
-              <p className={appSectionMetaClass}>{allocation.coverageLabel}</p>
-            ) : null}
+            <div className="space-y-1.5" data-testid="allocation-intelligence">
+              <p className={`${appSectionBodyClass} text-[15px] sm:text-[16px]`}>
+                {intelligence.insight.sentence}
+              </p>
+              {intelligence.scenarioLink ? (
+                <p
+                  className={`${appSectionBodyClass} text-[15px] sm:text-[16px]`}
+                  data-testid="allocation-scenario-link"
+                >
+                  {intelligence.scenarioLink.sentence}
+                </p>
+              ) : null}
+              {intelligence.coverageSentence ? (
+                <p className={appSectionMetaClass}>
+                  {intelligence.coverageSentence}
+                </p>
+              ) : null}
+            </div>
           </div>
         )
-      }
-      expandedContent={
-        canExpand ? (
-          <ul className="grid min-w-0 gap-2.5 sm:grid-cols-2">
-            {remainingGroups.map((group) => (
-              <li
-                key={group.groupId}
-                className="flex min-w-0 items-baseline justify-between gap-3"
-              >
-                <span className="flex min-w-0 items-center gap-2">
-                  <span
-                    className={`h-2.5 w-2.5 shrink-0 rounded-full ${EXPOSURE_GROUP_DOT_CLASS[group.groupId]}`}
-                    aria-hidden
-                  />
-                  <span className="truncate text-sm font-medium text-slate-800">
-                    {group.displayLabel}
-                  </span>
-                </span>
-                <span className="shrink-0 text-sm font-semibold tabular-nums text-slate-950">
-                  {formatAllocationPercent(group.rawPercent)}
-                  <span className="sr-only">
-                    {`, ${formatEur(group.value)}`}
-                  </span>
-                </span>
-              </li>
-            ))}
-          </ul>
-        ) : null
       }
     />
   );

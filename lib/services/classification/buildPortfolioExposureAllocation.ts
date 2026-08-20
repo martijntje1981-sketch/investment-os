@@ -30,9 +30,10 @@ const GROUP_SORT_INDEX: Record<ExposureGroupId, number> = {
   industrials_resources: 4,
   diversified_equity: 5,
   fixed_income: 6,
-  other_unclassified: 7,
-  crypto: 8,
-  cash: 9,
+  precious_metals: 7,
+  other_unclassified: 8,
+  crypto: 9,
+  cash: 10,
 };
 
 const FI_TYPE_ORDER: Record<FixedIncomeType, number> = {

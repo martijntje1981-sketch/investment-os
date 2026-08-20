@@ -111,6 +111,9 @@ describe("dynamic holding page quality gate", () => {
     );
     expect(describeHoldingKindLabel(CATEGORIES.bondEtf)).toBe("Bond ETF");
     expect(classifyHoldingExposure(CATEGORIES.commodityEtc).fixedIncome).toBeFalsy();
+    expect(classifyHoldingExposure(CATEGORIES.commodityEtc).normalizedGroupId).toBe(
+      "precious_metals",
+    );
     expect(classifyHoldingExposure(CATEGORIES.bitcoin).normalizedGroupId).toBe(
       "crypto",
     );

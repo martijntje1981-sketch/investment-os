@@ -6,7 +6,14 @@
 export type InstrumentResearchProfile = {
   providerSymbol: string;
   symbol: string;
-  assetClass: "cash" | "equity_etf" | "thematic_etf" | "digital_assets" | "income_etp" | "fixed_income";
+  assetClass:
+    | "cash"
+    | "equity_etf"
+    | "thematic_etf"
+    | "digital_assets"
+    | "income_etp"
+    | "fixed_income"
+    | "precious_metals";
   fundCategory: string;
   sectorExposure: string[];
   regionExposure: string[];
@@ -89,6 +96,18 @@ const PROFILES: InstrumentResearchProfile[] = [
     cyclicalProfile: "defensive",
     verified: true,
   },
+  {
+    providerSymbol: "PPFB.XETRA",
+    symbol: "PPFB",
+    assetClass: "precious_metals",
+    fundCategory: "Physical gold ETC",
+    sectorExposure: ["Physical gold"],
+    regionExposure: ["Global"],
+    marketCapExposure: "thematic",
+    incomeProfile: "none",
+    cyclicalProfile: "unknown",
+    verified: true,
+  },
 ];
 
 const byProviderSymbol = new Map<string, InstrumentResearchProfile>();
@@ -157,6 +176,7 @@ export const RESEARCH_COVERAGE_DIMENSIONS: ResearchCoverageDimension[] = [
     label: "Commodities exposure",
     description: "Commodity-linked or miners exposure.",
     matchesProfile: (profile) =>
+      profile.assetClass === "precious_metals" ||
       profile.sectorExposure.some((sector) =>
         /copper|uranium|materials|commodit/i.test(sector),
       ),

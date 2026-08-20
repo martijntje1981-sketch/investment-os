@@ -65,6 +65,7 @@ export {
   EXPOSURE_GROUP_LABELS,
   FIXED_INCOME_EXPOSURE_GROUP_ID,
   MAIN_EXPOSURE_GROUP_IDS,
+  PRECIOUS_METALS_EXPOSURE_GROUP_ID,
   type ExposureClassificationConfidence,
   type ExposureClassificationSource,
   type ExposureGroupId,
