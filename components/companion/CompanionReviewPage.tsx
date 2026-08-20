@@ -384,7 +384,24 @@ function CompanionReviewContent() {
           }
           backToDashboard
           actions={
-            <ExportPortfolioButton onExport={() => void handleExport()} />
+            <div
+              data-testid="review-hero-actions"
+              className="flex w-full min-w-0 flex-col gap-2 lg:w-[17.5rem]"
+            >
+              {activePeriod === "weekly" || activePeriod === "monthly" ? (
+                <PeriodReportPdfAction
+                  review={periodIntelligence}
+                  access={productAccess}
+                  archiveYearMonth={savedReview ? monthParam : null}
+                  variant="hero"
+                />
+              ) : null}
+              <ExportPortfolioButton
+                onExport={() => void handleExport()}
+                variant="hero"
+                className="w-full"
+              />
+            </div>
           }
         />
 
@@ -433,15 +450,6 @@ function CompanionReviewContent() {
 
             {activePeriod === "weekly" || activePeriod === "monthly" ? (
               <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-                <ExportPortfolioButton
-                  onExport={() => void handleExport()}
-                  variant="secondary"
-                />
-                <PeriodReportPdfAction
-                  review={periodIntelligence}
-                  access={productAccess}
-                  archiveYearMonth={savedReview ? monthParam : null}
-                />
                 <Link
                   href="/portfolio-history"
                   className="inline-flex min-h-[44px] items-center text-[15px] font-semibold text-brand-navy underline-offset-2 hover:underline"

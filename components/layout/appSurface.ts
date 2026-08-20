@@ -119,6 +119,10 @@ export const appGhostButtonClass =
 export const appHeroSecondaryButtonClass =
   `inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-white/50 bg-white/15 px-4 py-2.5 text-[16px] font-semibold text-white transition hover:bg-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-navy-hero ${appControlDisabledClass}`;
 
+/** Primary CTA on premium-blue heroes — solid light button, navy label. */
+export const appHeroPrimaryButtonClass =
+  `inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-[16px] font-bold text-brand-navy shadow-sm transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-navy-hero ${appControlDisabledClass}`;
+
 /** Ghost CTA on navy/near-black heroes. */
 export const appHeroGhostButtonClass = appHeroSecondaryButtonClass;
 

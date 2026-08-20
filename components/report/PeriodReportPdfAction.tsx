@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Download } from "lucide-react";
 
 import {
+  appHeroPrimaryButtonClass,
   appSecondaryButtonClass,
   appTextLinkClass,
 } from "@/components/layout/appSurface";
@@ -17,12 +18,14 @@ type PeriodReportPdfActionProps = {
   review: PeriodIntelligenceReview | null;
   access: ProductAccess;
   archiveYearMonth?: string | null;
+  variant?: "default" | "hero";
 };
 
 export function PeriodReportPdfAction({
   review,
   access,
   archiveYearMonth = null,
+  variant = "default",
 }: PeriodReportPdfActionProps) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,11 +37,26 @@ export function PeriodReportPdfAction({
   const label =
     review.kind === "monthly" ? "Download monthly report" : "Download weekly report";
 
+  const isHero = variant === "hero";
+
   if (!canDownloadPeriodReportPdf(access)) {
     return (
-      <p className="text-[15px] font-medium leading-relaxed text-slate-600">
+      <p
+        className={
+          isHero
+            ? "text-[15px] font-medium leading-relaxed text-white"
+            : "text-[15px] font-medium leading-relaxed text-slate-600"
+        }
+      >
         PDF download is included with Complete.{" "}
-        <Link href={access.upgradeHref} className={appTextLinkClass}>
+        <Link
+          href={access.upgradeHref}
+          className={
+            isHero
+              ? "inline-flex min-h-[44px] items-center font-semibold text-white underline underline-offset-2 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-navy-hero"
+              : appTextLinkClass
+          }
+        >
           {access.upgradeCtaLabel}
         </Link>
       </p>
@@ -50,7 +68,7 @@ export function PeriodReportPdfAction({
   }
 
   async function handleDownload() {
-    if (!review) return;
+    if (!review || busy) return;
     setBusy(true);
     setError(null);
     try {
@@ -100,14 +118,22 @@ export function PeriodReportPdfAction({
         type="button"
         onClick={() => void handleDownload()}
         disabled={busy}
-        className={appSecondaryButtonClass}
+        aria-busy={busy}
+        className={isHero ? appHeroPrimaryButtonClass : appSecondaryButtonClass}
         data-testid="period-report-pdf-download"
       >
-        <Download className="h-4 w-4" aria-hidden />
+        <Download className="h-4 w-4 shrink-0" aria-hidden />
         {busy ? "Preparing PDF…" : label}
       </button>
       {error ? (
-        <p className="text-sm font-semibold text-rose-700" role="alert">
+        <p
+          className={
+            isHero
+              ? "text-sm font-semibold text-rose-200"
+              : "text-sm font-semibold text-rose-700"
+          }
+          role="alert"
+        >
           {error}
         </p>
       ) : null}

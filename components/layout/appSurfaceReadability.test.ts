@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import {
   appControlDisabledClass,
   appFourQuestionAnswerClass,
+  appHeroPrimaryButtonClass,
   appHeroSecondaryButtonClass,
   appPageCanvasClass,
   appSecondaryButtonClass,
@@ -39,6 +40,9 @@ describe("shared readability tokens", () => {
     expect(appSecondaryButtonClass).toContain("text-[16px]");
     expect(appHeroSecondaryButtonClass).toContain("border-white/50");
     expect(appHeroSecondaryButtonClass).toContain("text-white");
+    expect(appHeroPrimaryButtonClass).toContain("bg-white");
+    expect(appHeroPrimaryButtonClass).toContain("text-brand-navy");
+    expect(appHeroPrimaryButtonClass).toContain("min-h-[44px]");
     expect(appSolidButtonClass).toContain(appControlDisabledClass);
     expect(appSecondaryButtonClass).toContain(appControlDisabledClass);
     expect(appControlDisabledClass).toContain("disabled:opacity-50");

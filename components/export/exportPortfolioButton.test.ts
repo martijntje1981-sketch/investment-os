@@ -28,6 +28,7 @@ describe("Export Portfolio control", () => {
   it("keeps Complete PDF gated and visually actionable when allowed", () => {
     expect(pdf).toContain("canDownloadPeriodReportPdf");
     expect(pdf).toContain("appSecondaryButtonClass");
+    expect(pdf).toContain("appHeroPrimaryButtonClass");
     expect(pdf).toContain("PDF download is included with Complete");
   });
 

@@ -59,7 +59,7 @@ export function ExportPortfolioButton({
       className={`${base} ${className}`.trim()}
       data-testid="export-portfolio-button"
     >
-      <Download className="h-4 w-4" aria-hidden />
+      <Download className="h-4 w-4 shrink-0" aria-hidden />
       {busy ? "Exporting…" : "Export portfolio (.xlsx)"}
     </button>
   );
