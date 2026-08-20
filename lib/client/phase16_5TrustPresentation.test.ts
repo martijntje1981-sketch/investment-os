@@ -214,7 +214,7 @@ describe("Phase 16.5 Dashboard presentation contracts", () => {
     expect(holdingsRow).toContain("holdingPriceTrustBadgeLabel");
   });
 
-  it("keeps Q2 purple identity and the light Dashboard hero token", () => {
+  it("keeps Q2 purple identity and the shared premium-blue Dashboard hero", () => {
     const visual = read("lib/services/fourQuestions/types.ts");
     const hero = read("components/dashboard/PortfolioValueCard.tsx");
     const surface = read("components/layout/appSurface.ts");
@@ -222,6 +222,7 @@ describe("Phase 16.5 Dashboard presentation contracts", () => {
     expect(visual).toContain("what_matters_now");
     expect(visual).toContain("from-violet-100");
     expect(hero).toContain("appDashboardHeroShellClass");
-    expect(surface).toContain("from-[#f4f9fd]");
+    expect(surface).toContain("from-hero-premium-from");
+    expect(surface).not.toContain("from-[#f4f9fd]");
   });
 });

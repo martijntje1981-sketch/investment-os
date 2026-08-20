@@ -84,7 +84,7 @@ export function FirstIntelligenceMoment({
         >
           Here’s what Tobailey sees
         </h2>
-        <p className={`${appPageHeroSubtitleClass} text-white/80`}>
+        <p className={appPageHeroSubtitleClass}>
           Your Four Questions are below. If history is still thin, Tobailey
           stays honest instead of inventing a story.
         </p>
@@ -94,7 +94,7 @@ export function FirstIntelligenceMoment({
             <p className="text-[16px] font-semibold leading-relaxed text-white">
               Want Tobailey to track what you’re investing toward?
             </p>
-            <p className="mt-1.5 text-[15px] font-medium leading-relaxed text-white/70">
+            <p className="mt-1.5 text-[15px] font-medium leading-relaxed text-white/90">
               Optional. Skip this and keep using Dashboard and Four Questions.
             </p>
             <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap">

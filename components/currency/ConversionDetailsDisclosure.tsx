@@ -45,15 +45,15 @@ export function ConversionDetailsDisclosure({
     (snapshot.status === "unavailable" || rateLines == null);
 
   const compactButtonClass = isDark
-    ? "inline-flex min-h-[44px] items-center gap-2 rounded-xl px-1 text-sm font-semibold text-slate-200 underline-offset-2 hover:text-white hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300"
+    ? "inline-flex min-h-[44px] items-center gap-2 rounded-xl px-1 text-[15px] font-semibold text-white underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300"
     : "inline-flex min-h-[44px] items-center gap-2 rounded-xl px-1 text-sm font-semibold text-slate-700 underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700";
 
   const fullButtonClass = isDark
-    ? "inline-flex min-h-[44px] w-full items-center justify-between gap-3 rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-left text-sm font-semibold text-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 sm:w-auto"
+    ? "inline-flex min-h-[44px] w-full items-center justify-between gap-3 rounded-xl border border-white/25 bg-white/10 px-4 py-2 text-left text-[15px] font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 sm:w-auto"
     : "inline-flex min-h-[44px] w-full items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-left text-sm font-semibold text-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 sm:w-auto";
 
   const dtClass = isDark
-    ? "font-semibold text-slate-400"
+    ? "font-semibold text-white/90"
     : "font-semibold text-slate-500";
 
   return (
@@ -82,7 +82,7 @@ export function ConversionDetailsDisclosure({
           aria-labelledby={buttonId}
           className={
             isDark
-              ? "mt-3 rounded-2xl border border-white/15 bg-slate-900 px-4 py-3 text-sm leading-6 text-slate-200"
+              ? "mt-3 rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-[15px] leading-6 text-white"
               : "mt-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm leading-6 text-slate-700"
           }
         >

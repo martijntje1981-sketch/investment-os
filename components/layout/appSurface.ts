@@ -40,25 +40,24 @@ export const appSectionBandClass =
 
 /* ── Dark navy hierarchy ─────────────────────────────────── */
 
-/** Primary hero — near-black premium shell (no decorative gradient). */
-export const appHeroShellClass =
-  "min-w-0 overflow-hidden rounded-[28px] border border-white/10 bg-navy-hero text-white shadow-[var(--navy-shadow)] md:rounded-[32px]";
-
 /**
- * Dashboard-only portfolio hero. Calm ice-blue so Four Questions
- * keep the strongest color accents. Do not reuse on other navy heroes.
+ * Shared page hero — premium financial blue.
+ * CTA black (`bg-navy-hero`) stays on buttons / non-hero panels.
  */
-export const appDashboardHeroShellClass =
-  "min-w-0 overflow-hidden rounded-[28px] border border-sky-200/80 bg-gradient-to-br from-[#f4f9fd] via-[#e7f2fb] to-white text-slate-950 shadow-[0_18px_44px_-28px_rgba(15,45,80,0.35)] md:rounded-[32px]";
+export const appHeroShellClass =
+  "min-w-0 overflow-hidden rounded-[28px] border border-white/15 bg-gradient-to-br from-hero-premium-from via-hero-premium-via to-hero-premium-to text-white shadow-[var(--hero-premium-shadow)] md:rounded-[32px]";
+
+/** Dashboard portfolio hero uses the same premium-blue shell. */
+export const appDashboardHeroShellClass = appHeroShellClass;
 
 export const appDashboardHeroInsetClass =
-  "rounded-xl border border-sky-200/70 bg-white/75";
+  "rounded-xl border border-white/15 bg-white/10";
 
 export const appDashboardHeroMetricLabelClass =
-  "text-[13px] font-semibold uppercase tracking-[0.06em] text-slate-700";
+  "text-[13px] font-semibold uppercase tracking-[0.06em] text-white/90";
 
 export const appDashboardHeroMetaClass =
-  "text-[15px] font-medium leading-relaxed text-slate-700";
+  "text-[15px] font-medium leading-relaxed text-white/90";
 
 /** Important dark card — slightly lifted near-black. */
 export const appDarkCardClass =
@@ -91,7 +90,7 @@ export const appHeroKpiClass =
 
 /** Quiet eyebrow labels on dark surfaces — readable uppercase, not micro-copy. */
 export const appHeroMetricLabelClass =
-  "text-[13px] font-semibold uppercase tracking-[0.06em] text-white/75";
+  "text-[13px] font-semibold uppercase tracking-[0.06em] text-white/90";
 
 /* ── Buttons ─────────────────────────────────────────────── */
 
@@ -135,7 +134,7 @@ export const appPageHeroTitleClass =
   "break-words text-[1.625rem] font-bold tracking-[-0.03em] sm:text-[1.75rem] md:text-[1.75rem]";
 
 export const appPageHeroSubtitleClass =
-  "mt-1.5 max-w-2xl break-words text-[16px] font-medium leading-relaxed tracking-[-0.01em] text-white/85";
+  "mt-1.5 max-w-2xl break-words text-[16px] font-medium leading-relaxed tracking-[-0.01em] text-white/90";
 
 export const appSectionTitleClass =
   "text-[1.25rem] font-bold tracking-[-0.02em] text-slate-950 md:text-[1.5rem]";
@@ -193,7 +192,7 @@ export const appDashboardDarkMutedClass =
   "text-[15px] font-medium leading-relaxed text-white/85";
 
 export const appDashboardDarkMetaClass =
-  "text-[13px] font-medium leading-relaxed text-white/80";
+  "text-[13px] font-medium leading-relaxed text-white/90";
 
 export const appAnalysisDarkTitleClass =
   "text-xl font-bold tracking-[-0.02em] text-white";

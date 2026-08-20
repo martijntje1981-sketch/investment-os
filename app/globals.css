@@ -18,7 +18,7 @@
 
   /*
    * Near-black surface hierarchy (authenticated UI).
-   * Premium black/white foundation; brand blue stays an accent only.
+   * Used by solid CTAs and non-hero dark panels — not page heroes.
    */
   --navy-hero: #0a0a0a;
   --navy-hero-lift: #141414;
@@ -27,6 +27,16 @@
   --navy-inset: rgba(255, 255, 255, 0.06);
   --navy-border: rgba(255, 255, 255, 0.1);
   --navy-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+
+  /*
+   * Shared page-hero family: deep navy → rich financial blue.
+   * Darker than the canvas, lighter and calmer than CTA black.
+   */
+  --hero-premium-from: #0a2344;
+  --hero-premium-via: #0e3a68;
+  --hero-premium-to: #155a8a;
+  --hero-premium-border: rgba(255, 255, 255, 0.16);
+  --hero-premium-shadow: 0 18px 40px -18px rgba(8, 36, 72, 0.48);
 
   /* Semantic finance colors — do not replace with brand blue */
   --accent-green: #16a34a;
@@ -62,6 +72,9 @@
   --color-brand-navy: var(--brand-navy);
   --color-navy-hero: var(--navy-hero);
   --color-navy-card: var(--navy-card);
+  --color-hero-premium-from: var(--hero-premium-from);
+  --color-hero-premium-via: var(--hero-premium-via);
+  --color-hero-premium-to: var(--hero-premium-to);
   --color-positive: var(--accent-green);
   --color-negative: var(--accent-red);
   --color-warning: var(--accent-amber);

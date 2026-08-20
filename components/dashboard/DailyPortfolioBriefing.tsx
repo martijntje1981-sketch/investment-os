@@ -21,7 +21,7 @@ export function DailyPortfolioBriefing({
   return (
     <div
       className={`mt-3 border-t pt-3 motion-safe:animate-[tobailey-fade-in_280ms_ease-out] motion-reduce:animate-none ${
-        onLight ? "border-sky-200/70" : "border-white/10"
+        onLight ? "border-sky-200/70" : "border-white/20"
       }`}
       data-testid="daily-portfolio-briefing"
     >
@@ -33,7 +33,7 @@ export function DailyPortfolioBriefing({
         >
           <p
             className={`text-[13px] font-semibold uppercase tracking-[0.08em] ${
-              onLight ? "text-slate-700" : "text-white/70"
+              onLight ? "text-slate-700" : "text-white/90"
             }`}
           >
             Today’s focus
@@ -44,7 +44,7 @@ export function DailyPortfolioBriefing({
               className={`mt-1 inline-flex min-h-[44px] max-w-full items-center rounded-full border px-3 py-1.5 text-[15px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:ring-offset-2 ${
                 onLight
                   ? "border-sky-200 bg-white text-slate-900 hover:bg-sky-50"
-                  : "border-white/15 bg-white/10 text-white/85 hover:bg-white/15 focus-visible:ring-offset-navy-hero"
+                  : "border-white/25 bg-white/10 text-white hover:bg-white/15 focus-visible:ring-offset-navy-hero"
               }`}
             >
               <span className="truncate">{todaysFocus.label}</span>
@@ -54,7 +54,7 @@ export function DailyPortfolioBriefing({
               className={`mt-1 inline-flex min-h-[44px] max-w-full items-center rounded-full border px-3 py-1.5 text-[15px] font-semibold ${
                 onLight
                   ? "border-sky-200 bg-white text-slate-900"
-                  : "border-white/15 bg-white/10 text-white/85"
+                  : "border-white/25 bg-white/10 text-white"
               }`}
             >
               <span className="truncate">{todaysFocus.label}</span>
@@ -65,7 +65,7 @@ export function DailyPortfolioBriefing({
 
       <p
         className={`text-[15px] font-medium leading-relaxed tracking-[-0.01em] sm:text-[16px] ${
-          onLight ? "text-slate-800" : "text-white/80"
+          onLight ? "text-slate-800" : "text-white/90"
         }`}
       >
         <span className={onLight ? "text-slate-950" : "text-white"}>
@@ -84,7 +84,7 @@ export function DailyPortfolioBriefing({
           className={`mt-2 inline-flex min-h-[44px] items-center text-[15px] font-semibold underline-offset-4 transition hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:ring-offset-2 ${
             onLight
               ? "text-slate-800 hover:text-slate-950"
-              : "text-white/70 hover:text-white focus-visible:ring-offset-navy-hero"
+              : "text-white hover:text-sky-100 focus-visible:ring-offset-navy-hero"
           }`}
         >
           {briefing.deepLink.label}

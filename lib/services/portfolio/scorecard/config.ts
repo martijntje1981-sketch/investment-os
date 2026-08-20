@@ -69,6 +69,15 @@ export const SCORE_TONE_RING_CLASS: Record<ScoreBandTone, string> = {
   resilient: "text-emerald-600",
 };
 
+/** Lighter ring strokes for premium-blue (on-dark) heroes. */
+export const SCORE_TONE_RING_ON_DARK_CLASS: Record<ScoreBandTone, string> = {
+  fragile: "text-rose-300",
+  attention: "text-amber-300",
+  balanced: "text-sky-300",
+  strong: "text-emerald-300",
+  resilient: "text-emerald-200",
+};
+
 export const SCORE_TONE_TRACK_CLASS = "text-slate-200";
 
 export const SCORE_TONE_LABEL_CLASS: Record<ScoreBandTone, string> = {

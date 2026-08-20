@@ -12,7 +12,7 @@ describe("Dashboard hero split panels", () => {
     "utf8",
   );
 
-  it("renders two separate premium light-blue panels with page-gap spacing", () => {
+  it("renders two separate premium-blue panels with page-gap spacing", () => {
     expect(hero).toContain('data-testid="dashboard-portfolio-hero"');
     expect(hero).toContain('data-testid="hero-zone-primary"');
     expect(hero).toContain('data-testid="hero-zone-snapshot"');

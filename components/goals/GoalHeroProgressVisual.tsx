@@ -17,11 +17,7 @@ export function GoalHeroProgressVisual({
 }: {
   progress: Pick<
     GoalProgress,
-    | "currentValue"
-    | "targetValue"
-    | "hasGoal"
-    | "goalReached"
-    | "portfolioValueAvailable"
+    "currentValue" | "targetValue" | "hasGoal" | "goalReached"
   >;
   hasSavedGoal: boolean;
 }) {
@@ -73,7 +69,7 @@ export function GoalHeroProgressVisual({
               : "Unavailable"}
           </p>
           <p className={`mt-2 ${appHeroMetricLabelClass}`}>Target</p>
-          <p className="mt-1 text-sm font-bold tabular-nums text-white/85">
+          <p className="mt-1 text-sm font-bold tabular-nums text-white">
             {state.targetValue !== null
               ? formatEur(state.targetValue)
               : "Unavailable"}

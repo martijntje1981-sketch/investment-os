@@ -399,13 +399,13 @@ export default function GoalsPage() {
               />
               {hasSavedGoal ? (
                 <div className="space-y-3">
-                  <p className="text-[13px] font-medium text-white/65">
+                  <p className="text-[13px] font-medium text-white/90">
                     Estimated completion:{" "}
                     <span className="text-white/90">
                       {intelligence.forecast.estimatedCompletionLabel}
                     </span>
                     {intelligence.forecast.isEstimate ? (
-                      <span className="text-white/45"> · estimate</span>
+                      <span className="text-white/90"> · estimate</span>
                     ) : null}
                   </p>
                   {getExpectedReturnAssumption(savedGoal) != null ? (

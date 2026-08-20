@@ -25,6 +25,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import BottomNavigation from "@/components/home/BottomNav";
+import { appHeroShellClass } from "@/components/layout/appSurface";
 import {
   buildHoldingValuation,
   getHoldingCostBasis,
@@ -815,15 +816,15 @@ export default function HoldingDetailPage() {
             </Link>
           </div>
 
-          <section className="mt-6 overflow-hidden rounded-[32px] bg-slate-950 p-7 text-white shadow-xl sm:p-10">
+          <section className={`mt-6 ${appHeroShellClass} p-7 sm:p-10`}>
             <div className="grid gap-8 lg:grid-cols-[1.35fr_0.65fr] lg:items-center">
               <div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-slate-300">
+                  <span className="rounded-full bg-white/10 px-3 py-1.5 text-[13px] font-bold uppercase tracking-[0.14em] text-white/90">
                     {intelligence.category}
                   </span>
 
-                  <span className="rounded-full bg-blue-500/20 px-3 py-1.5 text-xs font-bold text-blue-300">
+                  <span className="rounded-full bg-blue-500/20 px-3 py-1.5 text-[13px] font-bold text-sky-200">
                     {intelligence.stance}
                   </span>
                 </div>
@@ -838,19 +839,19 @@ export default function HoldingDetailPage() {
                       {holding.name || holding.symbol}
                     </h1>
 
-                    <p className="mt-2 text-base font-semibold text-slate-400">
+                    <p className="mt-2 text-base font-semibold text-white/90">
                       {intelligence.role}
                     </p>
                   </div>
                 </div>
 
-                <p className="mt-6 max-w-3xl text-base leading-7 text-slate-300">
+                <p className="mt-6 max-w-3xl text-base leading-7 text-white/90">
                   {intelligence.osInsight}
                 </p>
               </div>
 
-              <div className="rounded-[28px] border border-white/10 bg-white/5 p-6 text-center">
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
+              <div className="rounded-[28px] border border-white/20 bg-white/10 p-6 text-center">
+                <p className="text-[13px] font-bold uppercase tracking-[0.16em] text-white/90">
                   Holding health
                 </p>
 
@@ -858,7 +859,7 @@ export default function HoldingDetailPage() {
                   {intelligence.healthScore}
                 </p>
 
-                <p className="mt-1 text-sm font-semibold text-slate-400">
+                <p className="mt-1 text-sm font-semibold text-white/90">
                   out of 100
                 </p>
 

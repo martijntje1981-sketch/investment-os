@@ -180,7 +180,7 @@ export default function EventsPage() {
           >
             Upcoming Events
           </h1>
-          <p className="mt-2 max-w-2xl text-[15px] font-medium leading-relaxed text-white/75">
+          <p className="mt-2 max-w-2xl text-[15px] font-medium leading-relaxed text-white/90">
             Verified macro, central-bank and portfolio dividend dates for the
             current week and beyond.
           </p>

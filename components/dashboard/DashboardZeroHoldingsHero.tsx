@@ -27,7 +27,7 @@ export function DashboardZeroHoldingsHero() {
       >
         {CONVERSION_COPY.zeroHoldingsHeroTitle}
       </h1>
-      <p className="mt-3 max-w-2xl text-[15px] font-medium leading-relaxed text-white/75 sm:text-base">
+      <p className="mt-3 max-w-2xl text-[15px] font-medium leading-relaxed text-white/90 sm:text-base">
         {CONVERSION_COPY.zeroHoldingsHeroCopy}
       </p>
       <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
@@ -47,7 +47,7 @@ export function DashboardZeroHoldingsHero() {
           <ArrowRight className="h-4 w-4" aria-hidden />
         </Link>
       </div>
-      <p className="mt-5 text-[13px] font-medium text-white/55">
+      <p className="mt-5 text-[13px] font-medium text-white/90">
         {CONVERSION_COPY.softLine}
       </p>
     </section>

@@ -94,7 +94,7 @@ export function HeroPerformanceSparkline({
       className={`inline-flex shrink-0 items-center gap-0.5 rounded-full border p-0.5 ${
         onLight
           ? "border-sky-200 bg-white"
-          : "border-white/15 bg-white/[0.06]"
+          : "border-white/25 bg-white/10"
       }`}
       role="tablist"
       aria-label="Portfolio trend period"
@@ -131,14 +131,14 @@ export function HeroPerformanceSparkline({
               selected
                 ? onLight
                   ? "bg-slate-950 text-white"
-                  : "bg-white/90 text-slate-950"
+                  : "bg-white text-slate-950"
                 : enabled
                   ? onLight
                     ? "text-slate-800 hover:bg-sky-50 hover:text-slate-950"
-                    : "text-white/70 hover:bg-white/10 hover:text-white"
+                    : "text-white hover:bg-white/15 hover:text-white"
                   : onLight
                     ? "cursor-not-allowed text-slate-400"
-                    : "cursor-not-allowed text-white/30"
+                    : "cursor-not-allowed text-white/55"
             }`}
             data-testid={`hero-trend-period-${option}`}
             data-available={enabled ? "true" : "false"}
@@ -156,7 +156,7 @@ export function HeroPerformanceSparkline({
         className={`min-w-0 overflow-hidden rounded-2xl border border-dashed px-3 py-2.5 ${
           onLight
             ? "border-sky-200 bg-white/70"
-            : "border-white/15 bg-white/[0.03]"
+            : "border-white/25 bg-white/10"
         } ${className ?? ""}`}
         aria-label={`${label} unavailable`}
         data-testid="hero-performance-sparkline-empty"
@@ -164,7 +164,7 @@ export function HeroPerformanceSparkline({
         <div className="mb-1.5 flex items-center justify-between gap-2">
           <p
             className={`text-[13px] font-semibold uppercase tracking-[0.08em] ${
-              onLight ? "text-slate-700" : "text-white/70"
+              onLight ? "text-slate-700" : "text-white/90"
             }`}
           >
             Trend
@@ -173,7 +173,7 @@ export function HeroPerformanceSparkline({
         </div>
         <div
           className={`flex w-full items-center justify-center text-[15px] font-medium ${
-            onLight ? "text-slate-600" : "text-white/60"
+            onLight ? "text-slate-600" : "text-white/90"
           } ${emptyHeightClass}`}
         >
           Trend needs more history
@@ -215,26 +215,26 @@ export function HeroPerformanceSparkline({
           : "stroke-red-300"
         : onLight
           ? "stroke-slate-600"
-          : "stroke-white/70";
+          : "stroke-white";
   const fillClass =
     seriesTone === "positive"
       ? onLight
         ? "fill-emerald-600/15"
-        : "fill-emerald-300/15"
+        : "fill-emerald-300/25"
       : seriesTone === "negative"
         ? onLight
           ? "fill-red-600/10"
-          : "fill-red-300/10"
+          : "fill-red-300/20"
         : onLight
           ? "fill-sky-500/10"
-          : "fill-white/10";
+          : "fill-white/20";
 
   return (
     <div
       className={`min-w-0 overflow-hidden rounded-2xl border px-3 py-2.5 ${
         onLight
           ? "border-sky-200/80 bg-white/80"
-          : "border-white/10 bg-white/[0.04]"
+          : "border-white/20 bg-white/10"
       } ${className ?? ""}`}
       data-testid="hero-performance-sparkline"
       data-period={activePeriod}
@@ -243,7 +243,7 @@ export function HeroPerformanceSparkline({
         <div className="min-w-0">
           <p
             className={`text-[13px] font-semibold uppercase tracking-[0.08em] ${
-              onLight ? "text-slate-700" : "text-white/70"
+              onLight ? "text-slate-700" : "text-white/90"
             }`}
           >
             {periodLabel}
@@ -251,7 +251,7 @@ export function HeroPerformanceSparkline({
           {changeLabel ? (
             <p
               className={`mt-0.5 truncate text-[15px] font-semibold tabular-nums ${
-                onLight ? "text-slate-800" : "text-white/80"
+                onLight ? "text-slate-800" : "text-white"
               }`}
             >
               {changeLabel}

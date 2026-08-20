@@ -37,19 +37,17 @@ function holding(
 }
 
 describe("Priority 1 dashboard hero", () => {
-  it("keeps a near-black shared hero shell and a light Dashboard portfolio hero", () => {
+  it("uses a shared premium-blue hero shell for Dashboard and other page heroes", () => {
     const surface = read("components/layout/appSurface.ts");
     const hero = read("components/dashboard/PortfolioValueCard.tsx");
     const dashboard = read("app/dashboard/page.tsx");
     const globals = read("app/globals.css");
 
-    expect(surface).toMatch(
-      /export const appHeroShellClass =\s*"[^"]*bg-navy-hero[^"]*"/,
-    );
-    expect(surface).not.toMatch(
-      /export const appHeroShellClass =\s*"[^"]*linear-gradient[^"]*"/,
-    );
-    expect(surface).toContain("appDashboardHeroShellClass");
+    expect(surface).toContain("from-hero-premium-from");
+    expect(surface).toContain("via-hero-premium-via");
+    expect(surface).toContain("to-hero-premium-to");
+    expect(surface).toContain("appDashboardHeroShellClass = appHeroShellClass");
+    expect(globals).toContain("--hero-premium-from:");
     expect(globals).toContain("--navy-hero: #0a0a0a");
     expect(hero).toContain("appDashboardHeroShellClass");
     expect(hero).toContain("HeroPortfolioPulse");

@@ -425,13 +425,13 @@ export default function MarketPulsePage() {
             </h1>
 
             {holdings.length === 0 ? (
-              <p className="mt-5 max-w-xl text-[15px] font-medium leading-relaxed text-white/80">
+              <p className="mt-5 max-w-xl text-[15px] font-medium leading-relaxed text-white/90">
                 Browse live market context without holdings. Import your
                 portfolio to unlock Portfolio Markets and personalised links.
               </p>
             ) : hero?.kind === "dominant" && hero.name ? (
               <div className="mt-5 max-w-lg">
-                <p className="text-[13px] font-semibold uppercase tracking-[0.08em] text-white/55">
+                <p className="text-[13px] font-semibold uppercase tracking-[0.08em] text-white/90">
                   {hero.summary}
                 </p>
                 <p className="mt-2 text-3xl font-black tracking-[-0.03em] text-white sm:text-4xl">
@@ -442,18 +442,18 @@ export default function MarketPulsePage() {
                     ? "Move unavailable"
                     : `${hero.changePercent >= 0 ? "+" : ""}${hero.changePercent.toFixed(1)}%`}
                 </p>
-                <p className="mt-1 text-[13px] font-semibold text-white/65">
+                <p className="mt-1 text-[13px] font-semibold text-white/90">
                   {formatQuotePeriodLabel(hero.changePeriod)}
                 </p>
                 {hero.portfolioWeightPercent !== null ? (
-                  <p className="mt-2 text-[14px] font-medium text-white/75">
+                  <p className="mt-2 text-[15px] font-medium text-white/90">
                     Linked to {Math.round(hero.portfolioWeightPercent)}% of your
                     portfolio
                   </p>
                 ) : null}
               </div>
             ) : (
-              <p className="mt-5 max-w-xl text-[15px] font-medium leading-relaxed text-white/80">
+              <p className="mt-5 max-w-xl text-[15px] font-medium leading-relaxed text-white/90">
                 {hero?.summary ??
                   snapshot?.leadInsight ??
                   "Loading market context…"}
@@ -488,7 +488,7 @@ export default function MarketPulsePage() {
                         ? "bg-white text-slate-950"
                         : holdings.length === 0 && value === "portfolio"
                           ? "cursor-not-allowed text-white/35"
-                          : "text-white/75"
+                          : "text-white"
                     }`}
                   >
                     {label}
@@ -508,7 +508,7 @@ export default function MarketPulsePage() {
                 Refresh
               </button>
             </div>
-            <p className="mt-4 text-[12px] font-medium text-white/55">
+            <p className="mt-4 text-[13px] font-medium text-white/90">
               Checked{" "}
               {snapshot?.generatedAt
                 ? new Date(snapshot.generatedAt).toLocaleString("en-GB", {
@@ -624,7 +624,7 @@ export default function MarketPulsePage() {
 
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
             <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-              <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-white/50">
+              <p className="text-[13px] font-bold uppercase tracking-[0.08em] text-white/90">
                 Strongest momentum
               </p>
               {snapshot?.momentumStrongest ? (
@@ -638,13 +638,13 @@ export default function MarketPulsePage() {
                   </p>
                 </>
               ) : (
-                <p className="mt-2 text-[14px] font-medium text-white/60">
+                <p className="mt-2 text-[15px] font-medium text-white/90">
                   Comparable move unavailable
                 </p>
               )}
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-              <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-white/50">
+              <p className="text-[13px] font-bold uppercase tracking-[0.08em] text-white/90">
                 Weakest momentum
               </p>
               {snapshot?.momentumWeakest ? (
@@ -658,7 +658,7 @@ export default function MarketPulsePage() {
                   </p>
                 </>
               ) : (
-                <p className="mt-2 text-[14px] font-medium text-white/60">
+                <p className="mt-2 text-[15px] font-medium text-white/90">
                   No second comparable move
                 </p>
               )}
@@ -699,7 +699,7 @@ export default function MarketPulsePage() {
             })}
           </ul>
           {snapshot?.excludedMomentumIds.length ? (
-            <p className="mt-4 text-[12px] font-medium text-white/55">
+            <p className="mt-4 text-[13px] font-medium text-white/90">
               Excluded (no comparable {period} data):{" "}
               {snapshot.excludedMomentumIds.join(", ")}
             </p>

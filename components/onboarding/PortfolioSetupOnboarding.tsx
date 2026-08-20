@@ -145,21 +145,21 @@ export function PortfolioSetupOnboarding({
           </ol>
 
           <div className="mt-6 border-t border-white/10 pt-5">
-            <p className={`${appSectionLabelClass} text-white/50`}>
+            <p className={`${appSectionLabelClass} text-white/90`}>
               Supported ways to add holdings
             </p>
             <ul className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-x-5 sm:gap-y-2">
               {SUPPORTED_PORTFOLIO_INPUT_METHODS.map((method) => (
                 <li
                   key={method.id}
-                  className="text-[14px] font-medium text-white/75"
+                  className="text-[15px] font-medium text-white/90"
                 >
                   <span className="text-white">{method.label}</span>
-                  <span className="text-white/45"> · {method.detail}</span>
+                  <span className="text-white/90"> · {method.detail}</span>
                 </li>
               ))}
             </ul>
-            <p className="mt-3 text-[13px] font-medium text-white/45">
+            <p className="mt-3 text-[13px] font-medium text-white/90">
               Direct broker connections are not available — use a file export or
               enter holdings yourself.
             </p>

@@ -100,11 +100,11 @@ export function PageHero({
       {stats ? (
         <div
           className={cn(
-            "mt-4 min-w-0 border-t border-white/10 pt-4",
+            "mt-4 min-w-0 border-t border-white/15 pt-4",
             "lg:col-start-2 lg:row-start-1 lg:mt-0 lg:w-full lg:max-w-md lg:border-t-0 lg:pt-0 lg:justify-self-end lg:self-start",
             "[&>div]:lg:grid-cols-2",
             Boolean(actionContent) &&
-              "lg:col-span-2 lg:row-start-2 lg:max-w-none lg:border-t lg:border-white/10 lg:pt-4 lg:justify-self-stretch",
+              "lg:col-span-2 lg:row-start-2 lg:max-w-none lg:border-t lg:border-white/15 lg:pt-4 lg:justify-self-stretch",
           )}
         >
           {stats}

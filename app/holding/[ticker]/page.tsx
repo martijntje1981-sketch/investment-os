@@ -8,6 +8,7 @@ import { HoldingFixedIncomeCard } from "@/components/holding/HoldingFixedIncomeC
 import { HoldingMoveContextCard } from "@/components/holding/HoldingMoveContextCard";
 import { HoldingPositionHistory } from "@/components/holding/HoldingPositionHistory";
 import { AppPageLoading } from "@/components/layout/PageContainer";
+import { appHeroShellClass } from "@/components/layout/appSurface";
 import {
   computeHoldingDayMove,
   resolveHoldingChangePercent,
@@ -229,16 +230,16 @@ export default function HoldingPage() {
     <>
       <main className="min-h-screen bg-slate-100 pb-32 pt-20">
         <div className="mx-auto max-w-7xl p-6 md:p-8">
-          <section className="overflow-hidden rounded-3xl bg-slate-950 p-7 text-white shadow-xl md:p-10">
+          <section className={`${appHeroShellClass} p-7 md:p-10`}>
             <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
               <div>
                 <div className="flex flex-wrap items-center gap-3">
-                  <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-slate-300">
+                  <span className="rounded-full bg-white/10 px-3 py-1 text-[13px] font-semibold uppercase tracking-wider text-white/90">
                     {holding.assetType === "cash" ? "Cash" : "Investment"}
                   </span>
 
                   <span
-                    className={`rounded-full px-3 py-1 text-xs font-bold ${
+                    className={`rounded-full px-3 py-1 text-[13px] font-bold ${
                       displayPrice.source === "unavailable"
                         ? "bg-amber-500/20 text-amber-300"
                         : displayPrice.source === "estimated" ||
@@ -255,11 +256,11 @@ export default function HoldingPage() {
                   {holding.symbol}
                 </h1>
 
-                <p className="mt-2 text-lg text-slate-300">{holding.name}</p>
+                <p className="mt-2 text-lg text-white/90">{holding.name}</p>
 
-                <p className="mt-4 text-sm text-slate-400">
+                <p className="mt-4 text-[15px] text-white/90">
                   Last market update:{" "}
-                  <span className="font-medium text-slate-200">
+                  <span className="font-medium text-white">
                     {formatUpdateTime(
                       holding.marketPriceUpdatedAt ?? holding.updatedAt,
                     )}
@@ -269,7 +270,7 @@ export default function HoldingPage() {
 
               <div className="grid grid-cols-2 gap-8 lg:text-right">
                 <div>
-                  <p className="text-sm text-slate-400">Current Price</p>
+                  <p className="text-[13px] font-semibold uppercase tracking-[0.06em] text-white/90">Current Price</p>
 
                   <p className="mt-2 text-3xl font-bold">
                     {resolvedPrice !== null
@@ -282,7 +283,7 @@ export default function HoldingPage() {
                       {holdingPriceTrustBadgeLabel(displayPrice.source)}
                     </p>
                   ) : displayPrice.source === "last_session" ? (
-                    <p className="mt-1 text-sm font-semibold text-slate-300">
+                    <p className="mt-1 text-sm font-semibold text-white/90">
                       Last session
                     </p>
                   ) : null}
@@ -290,7 +291,7 @@ export default function HoldingPage() {
                   <p
                     className={`mt-1 font-semibold ${
                       dailyChangePercent === null
-                        ? "text-slate-400"
+                        ? "text-white/90"
                         : getPerformanceClass(dailyChangePercent)
                     }`}
                     title={movePeriod.accessibleDescription}
@@ -302,13 +303,13 @@ export default function HoldingPage() {
                 </div>
 
                 <div>
-                  <p className="text-sm text-slate-400">Units</p>
+                  <p className="text-[13px] font-semibold uppercase tracking-[0.06em] text-white/90">Units</p>
 
                   <p className="mt-2 text-3xl font-bold">
                     {holding.quantity.toLocaleString("en-GB")}
                   </p>
 
-                  <p className="mt-1 font-semibold text-blue-400">
+                  <p className="mt-1 font-semibold text-sky-200">
                     {holding.currency}
                   </p>
                 </div>

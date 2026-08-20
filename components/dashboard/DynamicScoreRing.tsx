@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   SCORE_TONE_LABEL_CLASS,
   SCORE_TONE_RING_CLASS,
+  SCORE_TONE_RING_ON_DARK_CLASS,
   type ScoreBandTone,
 } from "@/lib/services/portfolio/scorecard/config";
 import type { DynamicPortfolioScore } from "@/lib/services/portfolio/periodScores";
@@ -46,9 +47,11 @@ export function DynamicScoreRing({
   const tone: ScoreBandTone = score.band?.tone ?? "balanced";
   const onDark = appearance === "onDark";
   const ringClass = score.available
-    ? SCORE_TONE_RING_CLASS[tone]
+    ? onDark
+      ? SCORE_TONE_RING_ON_DARK_CLASS[tone]
+      : SCORE_TONE_RING_CLASS[tone]
     : onDark
-      ? "text-white/25"
+      ? "text-white/40"
       : "text-slate-300";
   const display =
     score.available && score.value != null ? String(score.value) : "—";
@@ -91,7 +94,7 @@ export function DynamicScoreRing({
             cy={size / 2}
             r={radius}
             fill="none"
-            className={onDark ? "text-white/15" : "text-slate-200"}
+            className={onDark ? "text-white/25" : "text-slate-200"}
             stroke="currentColor"
             strokeWidth={stroke}
           />
@@ -128,7 +131,7 @@ export function DynamicScoreRing({
             <span
               className={cn(
                 "mt-0.5 text-[8px] font-medium",
-                onDark ? "text-white/45" : "text-slate-400/90",
+                onDark ? "text-white/80" : "text-slate-400/90",
               )}
             >
               /100
@@ -139,11 +142,9 @@ export function DynamicScoreRing({
       <p
         className={cn(
           "mt-1 tracking-[-0.02em]",
-          compact ? "text-[11px] font-semibold" : "mt-1.5",
+          compact ? "text-[13px] font-semibold" : "mt-1.5",
           onDark
-            ? isPrimary
-              ? "text-white"
-              : "text-white/80"
+            ? "text-white"
             : isPrimary
               ? "text-[13px] font-bold text-slate-950"
               : "text-[12px] font-semibold text-slate-700",
@@ -156,13 +157,13 @@ export function DynamicScoreRing({
       {!compact ? (
         <p
           className={cn(
-            "mt-0.5 line-clamp-2 max-w-[9.5rem] text-[10px] font-semibold leading-snug sm:max-w-none sm:text-[11px]",
+            "mt-0.5 line-clamp-2 max-w-[9.5rem] text-[13px] font-semibold leading-snug sm:max-w-none",
             score.available
               ? onDark
-                ? "text-white/55"
+                ? "text-white/90"
                 : SCORE_TONE_LABEL_CLASS[tone]
               : onDark
-                ? "text-white/40"
+                ? "text-white/80"
                 : "text-slate-500",
             !isPrimary && "opacity-90",
           )}
@@ -172,13 +173,13 @@ export function DynamicScoreRing({
       ) : (
         <p
           className={cn(
-            "mt-0.5 max-w-[4.75rem] truncate text-[9px] font-semibold leading-tight",
+            "mt-0.5 max-w-[4.75rem] truncate text-[13px] font-semibold leading-tight",
             score.available
               ? onDark
-                ? "text-white/55"
+                ? "text-white/90"
                 : SCORE_TONE_LABEL_CLASS[tone]
               : onDark
-                ? "text-white/40"
+                ? "text-white/80"
                 : "text-slate-500",
           )}
         >

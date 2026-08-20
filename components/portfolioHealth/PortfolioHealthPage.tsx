@@ -344,7 +344,7 @@ export default function PortfolioHealthPage() {
               <h1 className="mt-4 text-3xl font-black tracking-[-0.04em] text-white">
                 Waiting on portfolio data
               </h1>
-              <p className="mt-3 max-w-md text-base font-medium text-white/75">
+              <p className="mt-3 max-w-md text-base font-medium text-white/90">
                 Add valued holdings to unlock your Portfolio Scorecard.
               </p>
               <Link
@@ -385,11 +385,11 @@ export default function PortfolioHealthPage() {
                 <p className="mt-5 max-w-2xl text-[15px] font-semibold leading-relaxed text-white sm:text-base">
                   {scorecard.summary.headline}
                 </p>
-                <p className="mt-3 text-[12px] font-medium text-white/45">
+                <p className="mt-3 text-[13px] font-medium text-white/90">
                   Scorecard {scorecard.scorecardVersion} · Calculated{" "}
                   {formatScorecardTimestamp(scorecard.calculatedAt)}
                 </p>
-                <p className="mt-3 max-w-xl text-[13px] font-medium leading-relaxed text-white/60">
+                <p className="mt-3 max-w-xl text-[15px] font-medium leading-relaxed text-white/90">
                   {SCORECARD_PAGE_DISCLAIMER}
                 </p>
               </div>

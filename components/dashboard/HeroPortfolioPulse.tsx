@@ -50,7 +50,7 @@ export function HeroPortfolioPulse({
         </p>
         <Link
           href={DASHBOARD_DEEP_LINKS.scorecard}
-          className="inline-flex min-h-11 items-center text-[15px] font-semibold text-brand hover:text-brand-hover"
+          className="inline-flex min-h-11 items-center text-[15px] font-semibold text-sky-200 hover:text-white"
         >
           Scorecard
         </Link>
@@ -60,21 +60,21 @@ export function HeroPortfolioPulse({
           score={pulse.daily}
           size={60}
           emphasis="primary"
-          appearance="onLight"
+          appearance="onDark"
           onActivate={() => setActive(pulse.daily)}
         />
         <DynamicScoreRing
           score={pulse.weekly}
           size={56}
           emphasis="default"
-          appearance="onLight"
+          appearance="onDark"
           onActivate={() => setActive(pulse.weekly)}
         />
         <DynamicScoreRing
           score={pulse.monthly}
           size={56}
           emphasis="default"
-          appearance="onLight"
+          appearance="onDark"
           onActivate={() => setActive(pulse.monthly)}
         />
       </div>
