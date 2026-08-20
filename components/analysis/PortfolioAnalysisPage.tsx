@@ -36,6 +36,7 @@ import { PageHero } from "@/components/layout/PageHero";
 import { PageRelatedLinks } from "@/components/layout/PageRelatedLinks";
 import { ExportPortfolioButton } from "@/components/export/ExportPortfolioButton";
 import { runPortfolioExport } from "@/lib/client/runPortfolioExport";
+import { usePortfolioContributions } from "@/lib/client/usePortfolioContributions";
 import {
   PORTFOLIO_HISTORY_PATH,
   PORTFOLIO_PATH,
@@ -156,6 +157,23 @@ export default function PortfolioAnalysisPage() {
     [holdings],
   );
 
+  const contributionHoldings = useMemo(
+    () =>
+      holdings.map((holding) => ({
+        id: holding.id,
+        symbol: holding.symbol,
+        name: holding.name,
+        assetType: holding.assetType,
+      })),
+    [holdings],
+  );
+  const { entries: contributionEntries } = usePortfolioContributions(
+    performance.totalValue,
+    performance.totalValueAvailable,
+    holdings.length > 0,
+    contributionHoldings,
+  );
+
   const exposureAllocation = useMemo(
     () => buildPortfolioExposureAllocation(holdings),
     [holdings],
@@ -197,7 +215,7 @@ export default function PortfolioAnalysisPage() {
                   onExport={() =>
                     runPortfolioExport({
                       holdings,
-                      entries: [],
+                      entries: contributionEntries,
                       portfolioValueEur: performance.totalValue,
                       portfolioValueAvailable: performance.totalValueAvailable,
                       baseCurrency,

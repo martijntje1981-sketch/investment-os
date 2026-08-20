@@ -29,7 +29,7 @@ describe("Help Centre content", () => {
     const blob = JSON.stringify(HELP_CENTRE_SECTIONS);
     expect(blob).toContain("Portfolio Scorecard");
     expect(blob).toContain("Your Review");
-    expect(blob).toContain("Export Portfolio");
+    expect(blob).toContain("Export portfolio");
     expect(blob).not.toMatch(/Open Portfolio Health/);
     expect(blob).not.toContain("Portfolio Health & Analysis");
   });

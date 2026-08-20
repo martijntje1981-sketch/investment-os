@@ -329,7 +329,7 @@ describe("example expiry enforcement", () => {
     expect(home).toContain("Explore Demo Portfolio");
     expect(home).not.toMatch(/24-?hour free trial/i);
     expect(expired).toContain("Your 14-day Complete trial has ended");
-    expect(expired).toContain("Export Portfolio History");
+    expect(expired).toContain("Export portfolio (.xlsx)");
     expect(expired).toContain("EXAMPLE_KEEP_PORTFOLIO_HREF");
     expect(expired).toContain("Browse without signing in");
     expect(start).toContain("signInWithOtp");

@@ -50,7 +50,7 @@ export const PRODUCT_MODELS: readonly ProductModelDefinition[] = [
       "Four Questions glance answers",
       "Headline personal intelligence",
       "Your Review, Goals and Portfolio Scorecard",
-      "Export Portfolio",
+      "Export portfolio (.xlsx)",
       "Limited intelligence depth",
     ],
     ctaHref: PRODUCT_MODEL_TRIAL_HREF,

@@ -43,7 +43,7 @@ describe("portfolio history UI", () => {
     expect(page).toContain("PortfolioPerformanceChart");
     expect(page).toContain("PortfolioTimelineList");
     expect(page).toContain("ManageContributionsDialog");
-    expect(page).toContain("downloadPortfolioWorkbook");
+    expect(page).toContain("runPortfolioExport");
     expect(page).toContain("buildPortfolioTimeline");
   });
 
@@ -56,7 +56,7 @@ describe("portfolio history UI", () => {
     expect(navCard).toContain('PORTFOLIO_HISTORY_LABEL = "Portfolio History"');
     expect(navCard).toContain("PORTFOLIO_HISTORY_PATH");
     expect(navCard).toContain("View history");
-    expect(navCard).toContain("Export Portfolio");
+    expect(navCard).toContain("Export portfolio");
     expect(tools).toContain("Understand your portfolio");
   });
 

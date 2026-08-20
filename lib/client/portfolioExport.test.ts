@@ -2,15 +2,17 @@ import * as XLSX from "xlsx";
 import { describe, expect, it } from "vitest";
 
 import {
+  ALLOCATION_SHEET,
   buildPortfolioExportFilename,
   buildPortfolioWorkbook,
   canExportPortfolio,
+  CONTRIBUTIONS_SHEET,
+  HOLDINGS_SHEET,
   PORTFOLIO_EXPORT_VERSION,
+  PORTFOLIO_SUMMARY_SHEET,
 } from "@/lib/client/portfolioExport";
-import type {
-  ContributionSummary,
-  PortfolioContributionEntry,
-} from "@/lib/services/contributions/types";
+import type { PortfolioContributionEntry } from "@/lib/services/contributions/types";
+import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
 function entry(
   overrides: Partial<PortfolioContributionEntry> = {},
@@ -40,39 +42,39 @@ function entry(
   };
 }
 
-const summary: ContributionSummary = {
-  totalContributed: 1000,
-  totalWithdrawn: 0,
-  netContributed: 1000,
-  currentValue: 1200,
-  valueAboveContributions: 200,
-  valueAboveContributionsPercent: 20,
-  contributionCount: 1,
-  withdrawalCount: 0,
-  hasContributionData: true,
-  contributionBasisReliable: true,
-};
+function holding(
+  overrides: Partial<StoredPortfolioHolding> &
+    Pick<StoredPortfolioHolding, "symbol">,
+): StoredPortfolioHolding {
+  return {
+    id: overrides.id ?? `${overrides.symbol}-id`,
+    symbol: overrides.symbol,
+    name: overrides.name ?? overrides.symbol,
+    quantity: overrides.quantity ?? 10,
+    purchasePrice: overrides.purchasePrice ?? 90,
+    currentPrice: overrides.currentPrice ?? 120,
+    currency: "EUR",
+    assetType: overrides.assetType ?? "investment",
+    providerSymbol: overrides.providerSymbol,
+  };
+}
 
 describe("portfolioExport", () => {
-  it("names the workbook Tobailey_Portfolio_YYYY-MM-DD.xlsx", () => {
+  it("names the workbook Tobailey-Portfolio-YYYY-MM-DD.xlsx", () => {
     expect(
       buildPortfolioExportFilename(new Date("2026-08-06T12:00:00.000Z")),
-    ).toBe("Tobailey_Portfolio_2026-08-06.xlsx");
+    ).toBe("Tobailey-Portfolio-2026-08-06.xlsx");
   });
 
-  it("builds one workbook with the core sheets", () => {
+  it("builds one workbook with the supported professional sheets", () => {
     const workbook = buildPortfolioWorkbook({
-      summary,
       entries: [entry()],
       holdings: [
-        {
+        holding({
           symbol: "VWCE",
           name: "Vanguard FTSE All-World",
-          assetType: "investment",
-          quantity: 10,
-          marketValue: 1200,
-          weightPercent: 100,
-        },
+          providerSymbol: "VWCE.XETRA",
+        }),
       ],
       portfolioBaseCurrency: "EUR",
       portfolioValueAvailable: true,
@@ -88,18 +90,24 @@ describe("portfolioExport", () => {
       },
     });
 
-    expect(workbook.SheetNames).toContain("Dashboard Summary");
-    expect(workbook.SheetNames).toContain("Holdings");
+    expect(workbook.SheetNames).toContain(PORTFOLIO_SUMMARY_SHEET);
+    expect(workbook.SheetNames).toContain(HOLDINGS_SHEET);
     expect(workbook.SheetNames).toContain("Portfolio History");
-    expect(workbook.SheetNames).toContain("Contributions");
-    expect(workbook.SheetNames).toContain("Goals");
+    expect(workbook.SheetNames).toContain(CONTRIBUTIONS_SHEET);
+    expect(workbook.SheetNames).toContain(ALLOCATION_SHEET);
+    expect(workbook.SheetNames).not.toContain("Goals");
     expect(workbook.SheetNames).not.toContain("Overview");
 
     const summaryMatrix = XLSX.utils.sheet_to_json<Array<string | number>>(
-      workbook.Sheets["Dashboard Summary"],
+      workbook.Sheets[PORTFOLIO_SUMMARY_SHEET]!,
       { header: 1 },
     );
-    expect(summaryMatrix.flat().join(" ")).toContain(PORTFOLIO_EXPORT_VERSION);
+    const notesMatrix = XLSX.utils.sheet_to_json<Array<string | number>>(
+      workbook.Sheets["Data Notes"]!,
+      { header: 1 },
+    );
+    expect(notesMatrix.flat().join(" ")).toContain(PORTFOLIO_EXPORT_VERSION);
+    expect(summaryMatrix.flat().join(" ")).toContain("Goal");
   });
 
   it("allows export with holdings and empty contributions", () => {
@@ -107,51 +115,37 @@ describe("portfolioExport", () => {
       canExportPortfolio({
         entries: [],
         holdings: [
-          {
+          holding({
             symbol: "VWCE",
             name: "Vanguard",
-            assetType: "investment",
             quantity: 1,
-            marketValue: 100,
-            weightPercent: 100,
-          },
+            currentPrice: 100,
+          }),
         ],
         goals: null,
       }),
     ).toBe(true);
 
     const workbook = buildPortfolioWorkbook({
-      summary: {
-        ...summary,
-        totalContributed: 0,
-        netContributed: 0,
-        hasContributionData: false,
-        contributionCount: 0,
-        valueAboveContributions: null,
-        valueAboveContributionsPercent: null,
-      },
       entries: [],
       holdings: [
-        {
+        holding({
           symbol: "VWCE",
           name: "Vanguard",
-          assetType: "investment",
           quantity: 1,
-          marketValue: 100,
-          weightPercent: 100,
-        },
+          currentPrice: 100,
+        }),
       ],
       portfolioBaseCurrency: "EUR",
       portfolioValueAvailable: true,
     });
 
-    expect(workbook.SheetNames).toContain("Holdings");
-    expect(workbook.SheetNames).toContain("Contributions");
+    expect(workbook.SheetNames).toContain(HOLDINGS_SHEET);
+    expect(workbook.SheetNames).toContain(CONTRIBUTIONS_SHEET);
   });
 
-  it("omits Goals sheet when unavailable", () => {
+  it("omits a separate Goals sheet when a goal is saved on Summary instead", () => {
     const workbook = buildPortfolioWorkbook({
-      summary,
       entries: [entry()],
       holdings: [],
       portfolioBaseCurrency: "EUR",

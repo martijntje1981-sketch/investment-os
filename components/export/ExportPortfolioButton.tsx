@@ -54,13 +54,13 @@ export function ExportPortfolioButton({
       type="button"
       onClick={() => void handleClick()}
       disabled={busy || disabled}
-      aria-label="Export Portfolio as Excel workbook"
-      title="Excel workbook"
+      aria-label="Export portfolio as Excel workbook"
+      title="Excel workbook (.xlsx)"
       className={`${base} ${className}`.trim()}
       data-testid="export-portfolio-button"
     >
       <Download className="h-4 w-4" aria-hidden />
-      {busy ? "Exporting…" : "Export Portfolio"}
+      {busy ? "Exporting…" : "Export portfolio (.xlsx)"}
     </button>
   );
 }

@@ -119,7 +119,7 @@ export function PortfolioHistoryNavCard({
                 disabled={isExporting}
                 aria-busy={isExporting}
                 data-testid="dashboard-export-portfolio"
-                aria-label="Export Portfolio as Excel workbook"
+                aria-label="Export portfolio as Excel workbook (.xlsx)"
                 className="inline-flex min-h-[44px] items-center gap-1.5 text-[16px] font-semibold text-cyan-800 transition hover:text-cyan-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2 disabled:opacity-70"
               >
                 <Download className="h-4 w-4" aria-hidden />
@@ -157,7 +157,7 @@ export function PortfolioHistoryNavCard({
           <ul className={`list-disc space-y-1.5 pl-5 ${appSectionMetaClass}`}>
             <li>Portfolio development over selected timeframes</li>
             <li>Recorded contributions and withdrawals</li>
-            <li>One-click Export Portfolio workbook</li>
+            <li>One-click Export portfolio (.xlsx) workbook</li>
           </ul>
         )
       }

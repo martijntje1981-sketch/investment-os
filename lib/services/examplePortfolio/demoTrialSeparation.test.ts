@@ -170,7 +170,7 @@ describe("trial countdown, export, and isolation", () => {
     expect(exportSource).toMatch(/Portfolio History|xlsx|Blob/i);
     expect(access).toContain('"/portfolio-history"');
     expect(access).toContain("EXAMPLE_EXPIRED_ALLOWED_PREFIXES");
-    expect(expired).toContain("Export Portfolio History");
+    expect(expired).toContain("Export portfolio (.xlsx)");
   });
 
   it("prevents demo and personal states from appearing together", () => {

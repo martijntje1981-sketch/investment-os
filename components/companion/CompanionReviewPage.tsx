@@ -365,11 +365,6 @@ function CompanionReviewContent() {
       chartPoints: monthHistory.data?.chartPoints ?? null,
       goal,
       hasSavedGoal,
-      review: bundle.monthly.ready
-        ? bundle.monthly
-        : bundle.weekly.ready
-          ? bundle.weekly
-          : null,
     });
   }
 

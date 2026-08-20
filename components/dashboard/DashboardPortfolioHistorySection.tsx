@@ -15,22 +15,12 @@ import {
   formatContributionBaseAmount,
   formatContributionEntryDate,
 } from "@/lib/client/contributionsFormat";
-import {
-  buildValuedPositions,
-} from "@/lib/client/portfolioAnalysis";
-import {
-  canExportPortfolio,
-  downloadPortfolioWorkbook,
-  mapHoldingsForHistoryExport,
-} from "@/lib/client/portfolioExport";
-import { useCashIntelligence } from "@/lib/client/useCashIntelligence";
+import { runPortfolioExport } from "@/lib/client/runPortfolioExport";
 import { usePortfolioContributions } from "@/lib/client/usePortfolioContributions";
 import { useUserGoal } from "@/lib/client/useUserGoal";
 import type { PortfolioPerformanceHistoryApiResponse } from "@/lib/services/performance/types";
-import { buildPortfolioExposureAllocation } from "@/lib/services/classification";
 import { summarizeRecordedContributionDates } from "@/lib/services/contributions/calculateContributionSummary";
 import { buildPortfolioTimeline } from "@/lib/services/portfolio/timeline";
-import { buildCompanionReview } from "@/lib/services/portfolio/companion";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
 function recordedContributionMeta(input: {
@@ -105,21 +95,6 @@ export function DashboardPortfolioHistorySection({
     contributionHoldings,
   );
 
-  const { snapshot: cashSnapshot } = useCashIntelligence(
-    holdings,
-    holdings.length > 0,
-  );
-
-  const exposure = useMemo(
-    () => buildPortfolioExposureAllocation(holdings),
-    [holdings],
-  );
-
-  const { valuedPositions, unvaluedHoldings } = useMemo(
-    () => buildValuedPositions(holdings),
-    [holdings],
-  );
-
   const timeline = useMemo(
     () =>
       buildPortfolioTimeline({
@@ -166,40 +141,17 @@ export function DashboardPortfolioHistorySection({
     if (isExporting) return;
     setIsExporting(true);
     try {
-      const holdingsRows = mapHoldingsForHistoryExport(
+      runPortfolioExport({
         holdings,
-        valuedPositions.map((position) => ({
-          ...position,
-          value: convertEur(position.value) ?? position.value,
-        })),
-        unvaluedHoldings,
-      );
-      const weeklyReview = buildCompanionReview("weekly", {
-        holdingCount: holdings.length,
-        formatMoney: formatEur,
-        weekSeries: history?.chartPoints ?? timeline.chartPoints,
-        contributionEntries: entries,
+        entries,
+        portfolioValueEur: portfolioValue,
+        portfolioValueAvailable,
+        baseCurrency,
+        convertEur,
+        chartPoints: history?.chartPoints ?? null,
+        goal,
         hasSavedGoal,
       });
-      const input = {
-        summary,
-        entries,
-        holdings: holdingsRows,
-        portfolioBaseCurrency: baseCurrency,
-        portfolioValueAvailable,
-        timelineSummary: timeline.summary,
-        exposure,
-        cash: cashSnapshot,
-        goals:
-          hasSavedGoal && goal
-            ? { goal, hasSavedGoal }
-            : null,
-        review: weeklyReview.ready ? weeklyReview : null,
-      };
-      if (!canExportPortfolio(input)) {
-        return;
-      }
-      downloadPortfolioWorkbook(input);
     } finally {
       setIsExporting(false);
     }

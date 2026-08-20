@@ -32,12 +32,12 @@ describe("Phase 3A Portfolio Intelligence foundation wiring", () => {
   });
 
   it("exposes a single Export Portfolio action and unified workbook", () => {
-    expect(exportSource).toContain("Tobailey_Portfolio_");
-    expect(exportSource).toContain("Dashboard Summary");
+    expect(exportSource).toContain("Tobailey-Portfolio-");
+    expect(exportSource).toContain("Portfolio Summary");
     expect(exportSource).toContain("buildPortfolioWorkbook");
     expect(exportSource).toContain("downloadPortfolioWorkbook");
     expect(historyPage).toContain("ExportPortfolioButton");
-    expect(navCard).toContain("Export Portfolio");
+    expect(navCard).toContain("Export portfolio");
     expect(historyPage).not.toContain("Export Excel");
     expect(navCard).not.toContain("Export Excel");
   });

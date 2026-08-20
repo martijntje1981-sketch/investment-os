@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { History, Plus, Wallet } from "lucide-react";
 import { ExportPortfolioButton } from "@/components/export/ExportPortfolioButton";
-import { Plus, History, Wallet } from "lucide-react";
 
 import { PortfolioPerformanceChart } from "@/components/analysis/performance/PortfolioPerformanceChart";
 import { ManageContributionsDialog } from "@/components/contributions/ManageContributionsDialog";
@@ -28,19 +28,16 @@ import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 import { CONTRIBUTIONS_ADD_LABEL } from "@/lib/client/contributionsCopy";
 import { formatContributionBaseAmount } from "@/lib/client/contributionsFormat";
 import {
-  canExportPortfolio,
-  downloadPortfolioWorkbook,
-  mapHoldingsForHistoryExport,
   PORTFOLIO_EXPORT_EMPTY_MESSAGE,
   PORTFOLIO_EXPORT_FAILURE_MESSAGE,
   PORTFOLIO_EXPORT_SUCCESS_MESSAGE,
 } from "@/lib/client/portfolioExport";
+import { runPortfolioExport } from "@/lib/client/runPortfolioExport";
 import {
   buildValuedPositions,
   formatPortfolioPercent,
 } from "@/lib/client/portfolioAnalysis";
 import { buildPortfolioPerformance } from "@/lib/client/portfolioPerformance";
-import { useCashIntelligence } from "@/lib/client/useCashIntelligence";
 import { useGoalProgress } from "@/lib/client/useGoalProgress";
 import { usePortfolioContributions } from "@/lib/client/usePortfolioContributions";
 import { usePortfolioDividends } from "@/lib/client/usePortfolioDividends";
@@ -54,7 +51,6 @@ import {
   REVIEW_PATH,
 } from "@/lib/navigation/appRoutes";
 import { PAGE_PURPOSE } from "@/lib/navigation/productArchitecture";
-import { buildPortfolioExposureAllocation } from "@/lib/services/classification";
 import {
   buildPortfolioTimeline,
   timelineToGoalHistoryPoints,
@@ -105,10 +101,6 @@ export default function PortfolioHistoryPage() {
       })),
     [holdings],
   );
-  const exposure = useMemo(
-    () => buildPortfolioExposureAllocation(holdings),
-    [holdings],
-  );
 
   const {
     entries,
@@ -129,10 +121,6 @@ export default function PortfolioHistoryPage() {
   );
 
   const history = usePortfolioPerformanceHistory(holdings, "1Y");
-  const { snapshot: cashSnapshot } = useCashIntelligence(
-    holdings,
-    holdings.length > 0,
-  );
   const { snapshot: dividendSnapshot } = usePortfolioDividends(
     holdings,
     userSub,
@@ -190,19 +178,6 @@ export default function PortfolioHistoryPage() {
   const formatContributionAmount = (amount: number) =>
     formatContributionBaseAmount(amount, formatEur, convertToEur);
 
-  const exportHoldings = useMemo(
-    () =>
-      mapHoldingsForHistoryExport(
-        holdings,
-        valuedPositions.map((position) => ({
-          ...position,
-          value: convertEur(position.value) ?? position.value,
-        })),
-        unvaluedHoldings,
-      ),
-    [convertEur, holdings, unvaluedHoldings, valuedPositions],
-  );
-
   if (!portfolioReady) {
     return <AppPageLoading />;
   }
@@ -211,35 +186,26 @@ export default function PortfolioHistoryPage() {
     if (isExporting) return;
     setExportError(null);
     setExportSuccess(null);
-
-    const exportInput = {
-      summary,
-      entries,
-      holdings: exportHoldings,
-      portfolioBaseCurrency: baseCurrency,
-      portfolioValueAvailable: performance.totalValueAvailable,
-      timelineSummary: timeline.summary,
-      exposure,
-      cash: cashSnapshot,
-      goals: hasSavedGoal && goal
-        ? {
-            goal,
-            hasSavedGoal,
-            currentProgressPercent: goalProgress.currentProgressPercent,
-            remainingAmount: goalProgress.remainingAmount,
-            statusLabel: goalProgress.status,
-          }
-        : null,
-    };
-
-    if (!canExportPortfolio(exportInput)) {
-      setExportError(PORTFOLIO_EXPORT_EMPTY_MESSAGE);
-      return;
-    }
-
     setIsExporting(true);
     try {
-      downloadPortfolioWorkbook(exportInput);
+      const ok = runPortfolioExport({
+        holdings,
+        entries,
+        portfolioValueEur: performance.totalValue,
+        portfolioValueAvailable: performance.totalValueAvailable,
+        baseCurrency,
+        convertEur,
+        chartPoints: history.data?.chartPoints ?? null,
+        goal,
+        hasSavedGoal,
+        currentProgressPercent: goalProgress.currentProgressPercent,
+        remainingAmount: goalProgress.remainingAmount,
+        statusLabel: goalProgress.status,
+      });
+      if (!ok) {
+        setExportError(PORTFOLIO_EXPORT_EMPTY_MESSAGE);
+        return;
+      }
       setExportSuccess(PORTFOLIO_EXPORT_SUCCESS_MESSAGE);
     } catch (err) {
       const message =

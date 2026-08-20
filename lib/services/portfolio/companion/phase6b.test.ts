@@ -204,7 +204,7 @@ describe("Phase 6B surfaces", () => {
     expect(reviewPage).toContain("ExportPortfolioButton");
     expect(settings).toContain("Reports");
     expect(settings).toContain("PeriodReviewEmailPreferences");
-    expect(exportButton).toContain("Export Portfolio as Excel workbook");
+    expect(exportButton).toContain("Export portfolio as Excel workbook");
     expect(envExample).toContain("RESEND_API_KEY");
     expect(envExample).toContain("EMAIL_FROM");
   });

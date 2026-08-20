@@ -119,7 +119,7 @@ export const HELP_CENTRE_SECTIONS: HelpCentreSection[] = [
       {
         question: "What is Portfolio History?",
         answer:
-          "How your portfolio developed over time — contributions, withdrawals and development — with Export Portfolio when you want the full workbook.",
+          "How your portfolio developed over time — contributions, withdrawals and development — with Export portfolio (.xlsx) when you want the full workbook.",
         link: { href: PORTFOLIO_HISTORY_PATH, label: "Open Portfolio History" },
       },
       {
@@ -177,15 +177,15 @@ export const HELP_CENTRE_SECTIONS: HelpCentreSection[] = [
     title: "Your data",
     questions: [
       {
-        question: "Export Portfolio",
+        question: "Export portfolio (.xlsx)",
         answer:
-          "One click downloads one Excel workbook with organised sheets for holdings, contributions, history and more when available.",
+          "One click downloads one Excel workbook with organised sheets for holdings, recorded contributions, history and allocation. Weekly and monthly PDF reviews are a separate download.",
         keywords: ["excel", "workbook", "download"],
       },
       {
         question: "What does the Excel workbook contain?",
         answer:
-          "Holdings, contributions and timeline summaries, plus a Portfolio Review sheet when a saved monthly review exists. Existing sheets stay intact.",
+          "Holdings, recorded contributions and withdrawals, sparse portfolio history, and canonical allocation. It is a data export, not the Weekly or Monthly PDF report.",
       },
       {
         question: "Contributions and withdrawals",

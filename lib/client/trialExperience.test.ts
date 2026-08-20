@@ -116,7 +116,7 @@ describe("expired trial export exception", () => {
     expect(access).toContain("EXAMPLE_EXPIRED_ALLOWED_PREFIXES");
     const expired = read("app/example-expired/page.tsx");
     expect(expired).toContain("Your 14-day Complete trial has ended");
-    expect(expired).toContain("Export Portfolio History");
+    expect(expired).toContain("Export portfolio (.xlsx)");
     expect(expired).toContain("PORTFOLIO_HISTORY_PATH");
     expect(expired).not.toContain('href="/analysis"');
     expect(expired).not.toContain('href="/portfolio-health"');

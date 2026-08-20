@@ -46,7 +46,7 @@ describe("Phase X.1 trust and terminology", () => {
     const landing = read("app/page.tsx");
     expect(landing).not.toContain("AI Recommendations");
     expect(landing).toContain("not a broker");
-    expect(landing).toContain("Export Portfolio");
+    expect(landing).toContain("Export portfolio");
     expect(landing).toContain("Your Review");
     expect(landing).toMatch(/not financial advice/i);
     expect(landing).toContain("Start your 14-day trial");

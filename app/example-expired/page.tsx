@@ -51,7 +51,7 @@ export default function ExampleExpiredPage() {
               data-testid="expired-export-history"
             >
               <Download className="h-4 w-4" aria-hidden />
-              Export Portfolio History
+              Export portfolio (.xlsx)
             </Link>
             <Link href={PUBLIC_EXPLORE_PATH} className={appBrandSoftButtonClass}>
               Browse without signing in

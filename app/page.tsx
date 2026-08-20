@@ -53,7 +53,7 @@ const benefits = [
   "Smart Dashboard for today’s four-question glance",
   "Your Review for today, this week and this month",
   "Portfolio History, Goals and Portfolio Scorecard",
-  "Export Portfolio — one Excel workbook, organised sheets",
+  "Export portfolio (.xlsx) — one Excel workbook, organised sheets",
   "Relevant News, Market Pulse and Perspectives",
   "Demo to explore; personal trial starts empty and editable",
 ];

@@ -50,6 +50,7 @@ import {
   formatAllocationPercent,
 } from "@/lib/services/classification";
 import { runPortfolioExport } from "@/lib/client/runPortfolioExport";
+import { usePortfolioContributions } from "@/lib/client/usePortfolioContributions";
 import {
   convertHoldingBaseDraftToEur,
   convertHoldingEurToBaseDraft,
@@ -252,6 +253,22 @@ export default function PortfolioPage() {
     [holdings],
   );
   const totalValue = portfolioAnalysis.totalValue;
+  const contributionHoldings = useMemo(
+    () =>
+      holdings.map((holding) => ({
+        id: holding.id,
+        symbol: holding.symbol,
+        name: holding.name,
+        assetType: holding.assetType,
+      })),
+    [holdings],
+  );
+  const { entries: contributionEntries } = usePortfolioContributions(
+    totalValue,
+    performance.totalValueAvailable,
+    holdings.length > 0,
+    contributionHoldings,
+  );
   const totalReturn = performance.totalReturn;
   const totalReturnPercent = performance.totalReturnPercent;
   const cashValue = performance.cashValue;
@@ -577,7 +594,7 @@ export default function PortfolioPage() {
                 onExport={() =>
                   runPortfolioExport({
                     holdings,
-                    entries: [],
+                    entries: contributionEntries,
                     portfolioValueEur: totalValue,
                     portfolioValueAvailable: performance.totalValueAvailable,
                     baseCurrency,

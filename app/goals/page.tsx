@@ -59,14 +59,9 @@ import {
 } from "@/lib/client/expectedReturnAssumption";
 import {
   buildPortfolioAnalysis,
-  buildValuedPositions,
   formatPortfolioPercent,
 } from "@/lib/client/portfolioAnalysis";
-import {
-  canExportPortfolio,
-  downloadPortfolioWorkbook,
-  mapHoldingsForHistoryExport,
-} from "@/lib/client/portfolioExport";
+import { runPortfolioExport } from "@/lib/client/runPortfolioExport";
 import { buildPortfolioPerformance } from "@/lib/client/portfolioPerformance";
 import {
   GOAL_FORM_DEFAULT,
@@ -120,7 +115,7 @@ function badgeToneClass(status: string): string {
 }
 
 export default function GoalsPage() {
-  const { formatEur, snapshot, baseCurrency, canPersistMonetary, refreshFx } =
+  const { formatEur, snapshot, baseCurrency, canPersistMonetary, refreshFx, convertEur } =
     useBaseCurrencyDisplay();
   const { userSub, holdings, portfolioReady } = useUserPortfolio();
   const { goal: savedGoal, hasSavedGoal, persistGoal } = useUserGoal();
@@ -139,10 +134,6 @@ export default function GoalsPage() {
   );
   const exposure = useMemo(
     () => buildPortfolioExposureAllocation(holdings),
-    [holdings],
-  );
-  const { valuedPositions, unvaluedHoldings } = useMemo(
-    () => buildValuedPositions(holdings),
     [holdings],
   );
 
@@ -334,32 +325,20 @@ export default function GoalsPage() {
     if (isExporting) return;
     setIsExporting(true);
     try {
-      const holdingsRows = mapHoldingsForHistoryExport(
+      runPortfolioExport({
         holdings,
-        valuedPositions,
-        unvaluedHoldings,
-      );
-      const input = {
-        summary,
         entries,
-        holdings: holdingsRows,
-        portfolioBaseCurrency: baseCurrency,
+        portfolioValueEur: portfolioValue,
         portfolioValueAvailable,
-        timelineSummary: timeline.summary,
-        exposure,
-        goals:
-          hasSavedGoal && savedGoal
-            ? {
-                goal: savedGoal,
-                hasSavedGoal,
-                currentProgressPercent: goalProgress.currentProgressPercent,
-                remainingAmount: goalProgress.remainingAmount,
-                statusLabel: goalProgress.status,
-              }
-            : null,
-      };
-      if (!canExportPortfolio(input)) return;
-      downloadPortfolioWorkbook(input);
+        baseCurrency,
+        convertEur,
+        chartPoints: history.data?.chartPoints ?? null,
+        goal: savedGoal,
+        hasSavedGoal,
+        currentProgressPercent: goalProgress.currentProgressPercent,
+        remainingAmount: goalProgress.remainingAmount,
+        statusLabel: goalProgress.status,
+      });
     } finally {
       setIsExporting(false);
     }
