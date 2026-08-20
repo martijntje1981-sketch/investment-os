@@ -2,8 +2,19 @@
 
 import { useMemo, useState } from "react";
 
+import { ManageContributionsDialog } from "@/components/contributions/ManageContributionsDialog";
 import { PortfolioHistoryNavCard } from "@/components/portfolioHistory/PortfolioHistoryNavCard";
 import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
+import {
+  CONTRIBUTIONS_EXPORT_SCOPE_COPY,
+  CONTRIBUTIONS_INCOMPLETE_BASIS_COPY,
+  CONTRIBUTIONS_ONBOARDING_COPY,
+  CONTRIBUTIONS_RECORDED_LABEL,
+} from "@/lib/client/contributionsCopy";
+import {
+  formatContributionBaseAmount,
+  formatContributionEntryDate,
+} from "@/lib/client/contributionsFormat";
 import {
   buildValuedPositions,
 } from "@/lib/client/portfolioAnalysis";
@@ -12,15 +23,37 @@ import {
   downloadPortfolioWorkbook,
   mapHoldingsForHistoryExport,
 } from "@/lib/client/portfolioExport";
-import { formatContributionBaseAmount } from "@/lib/client/contributionsFormat";
 import { useCashIntelligence } from "@/lib/client/useCashIntelligence";
 import { usePortfolioContributions } from "@/lib/client/usePortfolioContributions";
 import { useUserGoal } from "@/lib/client/useUserGoal";
 import type { PortfolioPerformanceHistoryApiResponse } from "@/lib/services/performance/types";
 import { buildPortfolioExposureAllocation } from "@/lib/services/classification";
+import { summarizeRecordedContributionDates } from "@/lib/services/contributions/calculateContributionSummary";
 import { buildPortfolioTimeline } from "@/lib/services/portfolio/timeline";
 import { buildCompanionReview } from "@/lib/services/portfolio/companion";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
+
+function recordedContributionMeta(input: {
+  count: number;
+  earliestDate: string | null;
+  latestDate: string | null;
+}): string | null {
+  if (input.count <= 0) return null;
+
+  const countLabel =
+    input.count === 1
+      ? "1 recorded contribution"
+      : `${input.count} recorded contributions`;
+
+  if (!input.earliestDate) return countLabel;
+
+  const earliest = formatContributionEntryDate(input.earliestDate);
+  if (!input.latestDate || input.latestDate === input.earliestDate) {
+    return `${countLabel} · ${earliest}`;
+  }
+
+  return `${countLabel} · ${earliest} – ${formatContributionEntryDate(input.latestDate)}`;
+}
 
 /**
  * Dashboard Portfolio History preview — reuses existing month/week series
@@ -44,6 +77,7 @@ export function DashboardPortfolioHistorySection({
     useBaseCurrencyDisplay();
   const { goal, hasSavedGoal } = useUserGoal();
   const [isExporting, setIsExporting] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const contributionHoldings = useMemo(
     () =>
@@ -56,7 +90,15 @@ export function DashboardPortfolioHistorySection({
     [holdings],
   );
 
-  const { entries, summary } = usePortfolioContributions(
+  const {
+    entries,
+    summary,
+    isMutating,
+    mutationError,
+    saveEntry,
+    removeEntry,
+    hasEntries,
+  } = usePortfolioContributions(
     portfolioValue,
     portfolioValueAvailable,
     holdings.length > 0,
@@ -101,11 +143,24 @@ export function DashboardPortfolioHistorySection({
     ],
   );
 
-  const keyStatisticValue = formatContributionBaseAmount(
-    timeline.summary.netContributions,
-    formatEur,
-    convertToEur,
+  const recordedDates = useMemo(
+    () => summarizeRecordedContributionDates(entries, baseCurrency),
+    [baseCurrency, entries],
   );
+
+  const keyStatisticValue = hasEntries
+    ? formatContributionBaseAmount(
+        timeline.summary.netContributions,
+        formatEur,
+        convertToEur,
+      )
+    : null;
+
+  const incompleteNote = hasEntries && !summary.contributionBasisReliable
+    ? CONTRIBUTIONS_INCOMPLETE_BASIS_COPY
+    : !hasEntries
+      ? CONTRIBUTIONS_ONBOARDING_COPY
+      : null;
 
   function handleExport() {
     if (isExporting) return;
@@ -151,14 +206,34 @@ export function DashboardPortfolioHistorySection({
   }
 
   return (
-    <PortfolioHistoryNavCard
-      chartPoints={timeline.chartPoints}
-      hasSeries={timeline.hasValueSeries}
-      keyStatisticLabel="Net contributions"
-      keyStatisticValue={keyStatisticValue}
-      onExportPortfolio={handleExport}
-      isExporting={isExporting}
-      emphasisNote={emphasisNote}
-    />
+    <>
+      <PortfolioHistoryNavCard
+        chartPoints={timeline.chartPoints}
+        hasSeries={timeline.hasValueSeries}
+        keyStatisticLabel={CONTRIBUTIONS_RECORDED_LABEL}
+        keyStatisticValue={keyStatisticValue}
+        supportingMeta={recordedContributionMeta(recordedDates)}
+        incompleteNote={incompleteNote}
+        exportDisclaimer={CONTRIBUTIONS_EXPORT_SCOPE_COPY}
+        onAddContribution={() => setDialogOpen(true)}
+        onExportPortfolio={handleExport}
+        isExporting={isExporting}
+        emphasisNote={emphasisNote}
+      />
+
+      {dialogOpen ? (
+        <ManageContributionsDialog
+          entries={entries}
+          summary={summary}
+          holdings={contributionHoldings}
+          isMutating={isMutating}
+          mutationError={mutationError}
+          portfolioValueAvailable={portfolioValueAvailable}
+          onClose={() => setDialogOpen(false)}
+          onSave={saveEntry}
+          onDelete={removeEntry}
+        />
+      ) : null}
+    </>
   );
 }

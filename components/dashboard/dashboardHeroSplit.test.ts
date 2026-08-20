@@ -12,13 +12,13 @@ describe("Dashboard hero split panels", () => {
     "utf8",
   );
 
-  it("renders two separate premium black panels with page-gap spacing", () => {
+  it("renders two separate premium light-blue panels with page-gap spacing", () => {
     expect(hero).toContain('data-testid="dashboard-portfolio-hero"');
     expect(hero).toContain('data-testid="hero-zone-primary"');
     expect(hero).toContain('data-testid="hero-zone-snapshot"');
     expect(hero).toContain("space-y-3 sm:space-y-4");
-    expect(hero).toContain("appHeroShellClass");
-    expect(hero.match(/appHeroShellClass/g)?.length).toBeGreaterThanOrEqual(2);
+    expect(hero).toContain("appDashboardHeroShellClass");
+    expect(hero.match(/appDashboardHeroShellClass/g)?.length).toBeGreaterThanOrEqual(2);
   });
 
   it("keeps value/move/trend in panel 1 and pulse/focus/movers/briefing in panel 2", () => {

@@ -19,8 +19,9 @@ export type DashboardHoldingPriceStatus = "available" | "unavailable";
 export type DashboardHoldingChangeStatus = "available" | "unavailable";
 export type DashboardHoldingPriceQuality =
   | "live"
+  | "delayed"
+  | "last_session"
   | "estimated"
-  | "stale"
   | "unavailable";
 
 export type DashboardHoldingRow = {
@@ -97,14 +98,7 @@ function buildDashboardHoldingRow(
     currentValue !== null && dailyChangePercent !== null
       ? computeHoldingDayMove(holding, currentValue)
       : null;
-  const priceQuality: DashboardHoldingPriceQuality =
-    displayPrice.source === "unavailable"
-      ? "unavailable"
-      : displayPrice.source === "estimated"
-        ? "estimated"
-        : holding.priceDataStatus === "stale"
-          ? "stale"
-          : "live";
+  const priceQuality: DashboardHoldingPriceQuality = displayPrice.source;
   const movePeriod = resolveHoldingMovePeriod(holding);
 
   return {

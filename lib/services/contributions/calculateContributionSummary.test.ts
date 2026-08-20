@@ -295,4 +295,24 @@ describe("calculateContributionSummary", () => {
     expect(withOpening.valueAboveContributions).toBe(10_884);
     expect(withOpening.valueAboveContributionsPercent).not.toBeNull();
   });
+
+  it("does not treat a small opening-balance tag as complete history", () => {
+    const taggedOpening = calculateContributionSummary(
+      [
+        entry({
+          entryType: "contribution",
+          baseAmount: 400,
+          entryDate: "2026-08-01",
+          source: "opening_balance",
+        }),
+      ],
+      125_000,
+      "EUR",
+    );
+
+    expect(taggedOpening.netContributed).toBe(400);
+    expect(taggedOpening.contributionBasisReliable).toBe(false);
+    expect(taggedOpening.valueAboveContributions).toBeNull();
+    expect(taggedOpening.valueAboveContributionsPercent).toBeNull();
+  });
 });

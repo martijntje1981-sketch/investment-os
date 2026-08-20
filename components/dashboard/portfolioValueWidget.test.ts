@@ -151,7 +151,7 @@ describe("dashboard portfolio value widget", () => {
       "utf8",
     );
     expect(valueSource).toContain("appHeroMatchedKpiClass");
-    expect(valueSource).toContain("appHeroMetricLabelClass");
+    expect(valueSource).toContain("appDashboardHeroMetricLabelClass");
     expect(valueSource).toContain("appHeroPaddingCompactClass");
     expect(valueSource).toContain("appDisplayClass");
     expect(valueSource).toContain("tabular-nums");

@@ -7,7 +7,7 @@ import type { PortfolioBaseCurrency } from "@/lib/types/portfolioBaseCurrency";
 /**
  * Net contributed must cover at least this share of current value
  * before value-above-contributions is treated as a reliable comparison.
- * Opening-balance entries bypass this ratio check.
+ * An opening-balance tag does not bypass this check.
  */
 export const CONTRIBUTION_BASIS_MIN_COVERAGE_RATIO = 0.2;
 
@@ -44,8 +44,8 @@ export function hasOpeningBalanceContribution(
 
 /**
  * True when the ledger is a credible funding basis for value-vs-contributions.
- * Incomplete ledgers (e.g. a small top-up vs a large portfolio) must not look
- * like portfolio return.
+ * Incomplete ledgers (e.g. a €400 top-up vs a large portfolio) must not look
+ * like portfolio return. An opening-balance tag does not prove completeness.
  */
 export function isContributionBasisReliable(input: {
   entries: PortfolioContributionEntry[];
@@ -53,15 +53,6 @@ export function isContributionBasisReliable(input: {
   currentValue: number | null;
   portfolioBaseCurrency: PortfolioBaseCurrency;
 }): boolean {
-  if (
-    hasOpeningBalanceContribution(
-      input.entries,
-      input.portfolioBaseCurrency,
-    )
-  ) {
-    return true;
-  }
-
   if (
     input.currentValue == null ||
     !(input.currentValue > 0) ||
@@ -150,5 +141,29 @@ export function calculateContributionSummary(
     withdrawalCount,
     hasContributionData,
     contributionBasisReliable,
+  };
+}
+
+export type RecordedContributionPreview = {
+  count: number;
+  earliestDate: string | null;
+  latestDate: string | null;
+};
+
+/** Dates and counts of recorded ledger rows — not a completeness claim. */
+export function summarizeRecordedContributionDates(
+  entries: PortfolioContributionEntry[],
+  portfolioBaseCurrency: PortfolioBaseCurrency,
+): RecordedContributionPreview {
+  const dates = entries
+    .filter((entry) => isValidEntry(entry, portfolioBaseCurrency))
+    .map((entry) => entry.entryDate)
+    .filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date))
+    .sort();
+
+  return {
+    count: dates.length,
+    earliestDate: dates[0] ?? null,
+    latestDate: dates[dates.length - 1] ?? null,
   };
 }

@@ -37,7 +37,7 @@ function holding(
 }
 
 describe("Priority 1 dashboard hero", () => {
-  it("keeps a near-black solid hero shell with pulse inside the value card", () => {
+  it("keeps a near-black shared hero shell and a light Dashboard portfolio hero", () => {
     const surface = read("components/layout/appSurface.ts");
     const hero = read("components/dashboard/PortfolioValueCard.tsx");
     const dashboard = read("app/dashboard/page.tsx");
@@ -49,7 +49,9 @@ describe("Priority 1 dashboard hero", () => {
     expect(surface).not.toMatch(
       /export const appHeroShellClass =\s*"[^"]*linear-gradient[^"]*"/,
     );
+    expect(surface).toContain("appDashboardHeroShellClass");
     expect(globals).toContain("--navy-hero: #0a0a0a");
+    expect(hero).toContain("appDashboardHeroShellClass");
     expect(hero).toContain("HeroPortfolioPulse");
     expect(hero).toContain("Biggest mover");
     expect(hero).toContain("holdingDetailPath");

@@ -9,9 +9,12 @@ import { buildPortfolioPerformance } from "@/lib/client/portfolioPerformance";
 import { buildDashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
 import { summarizeAuthenticatedHomePortfolio } from "@/lib/client/authenticatedHomePortfolio";
 import {
+  holdingPriceStatusUserLabel,
+  holdingPriceTrustBadgeLabel,
   holdingValueUnavailableLabel,
   isEstimatedHoldingPrice,
   resolveHoldingDisplayPrice,
+  resolveHoldingPriceTrustStatus,
 } from "@/lib/client/holdingDisplayPrice";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
@@ -97,17 +100,17 @@ describe("holdingDisplayPrice crypto safety", () => {
     expect(getHoldingMarketValue(investment)).toBe(320);
   });
 
-  it("does not label delayed or unknown equity prices as live", () => {
+  it("does not label delayed or last-session equity prices as estimated", () => {
     expect(
       resolveHoldingDisplayPrice(
         equity({ priceDataStatus: "delayed", currentPrice: 100 }),
       ).source,
-    ).toBe("estimated");
+    ).toBe("delayed");
     expect(
       resolveHoldingDisplayPrice(
         equity({ priceDataStatus: "stale", currentPrice: 100 }),
       ).source,
-    ).toBe("estimated");
+    ).toBe("last_session");
     expect(
       resolveHoldingDisplayPrice(
         equity({ priceDataStatus: "live", currentPrice: 100 }),
@@ -117,21 +120,60 @@ describe("holdingDisplayPrice crypto safety", () => {
       ...equity({ currentPrice: 100 }),
       priceDataStatus: undefined,
     };
-    expect(resolveHoldingDisplayPrice(missingStatus).source).toBe("estimated");
+    expect(resolveHoldingDisplayPrice(missingStatus).source).toBe("last_session");
+    expect(isEstimatedHoldingPrice(missingStatus)).toBe(false);
+    expect(isEstimatedHoldingPrice(equity({ priceDataStatus: "stale" }))).toBe(
+      false,
+    );
   });
 
-  it("treats cash as book value, not a live market quote", () => {
+  it("treats cash as book value, not an estimated market quote", () => {
     expect(
       resolveHoldingDisplayPrice({
         ...equity({ assetType: "cash", currentPrice: 1, symbol: "EUR" }),
         assetType: "cash",
       }).source,
-    ).toBe("estimated");
+    ).toBe("live");
+    expect(
+      isEstimatedHoldingPrice({
+        ...equity({ assetType: "cash", currentPrice: 1, symbol: "EUR" }),
+        assetType: "cash",
+      }),
+    ).toBe(false);
   });
 
   it("uses crypto-specific unavailable copy", () => {
     expect(holdingValueUnavailableLabel(unpricedCrypto())).toBe("Value unavailable");
     expect(holdingValueUnavailableLabel(equity())).toBe("Price unavailable");
+  });
+
+  it("keeps Estimated only for genuine fallbacks and Delayed never Live", () => {
+    expect(holdingPriceTrustBadgeLabel("last_session")).toBeNull();
+    expect(holdingPriceTrustBadgeLabel("live")).toBeNull();
+    expect(holdingPriceTrustBadgeLabel("delayed")).toBe("Delayed");
+    expect(holdingPriceTrustBadgeLabel("estimated")).toBe("Estimated");
+    expect(holdingPriceStatusUserLabel("last_session")).toBe("Last session");
+    expect(holdingPriceStatusUserLabel("delayed")).toBe("Delayed");
+    expect(holdingPriceStatusUserLabel("live")).toBe("Current");
+    expect(holdingPriceStatusUserLabel("live")).not.toBe("Live");
+    expect(
+      resolveHoldingPriceTrustStatus(
+        equity({ currentPrice: 0, purchasePrice: 90 }),
+      ),
+    ).toBe("estimated");
+  });
+
+  it("preserves a current crypto 24h pair price as live, not estimated", () => {
+    const crypto: StoredPortfolioHolding = {
+      ...unpricedCrypto(),
+      pricingStatus: "live",
+      currentPairPrice: 60_000,
+      currentPrice: 60_000,
+      priceDataStatus: "live",
+    };
+
+    expect(resolveHoldingDisplayPrice(crypto).source).toBe("live");
+    expect(isEstimatedHoldingPrice(crypto)).toBe(false);
   });
 });
 

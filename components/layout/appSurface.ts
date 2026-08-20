@@ -44,6 +44,22 @@ export const appSectionBandClass =
 export const appHeroShellClass =
   "min-w-0 overflow-hidden rounded-[28px] border border-white/10 bg-navy-hero text-white shadow-[var(--navy-shadow)] md:rounded-[32px]";
 
+/**
+ * Dashboard-only portfolio hero. Calm ice-blue so Four Questions
+ * keep the strongest color accents. Do not reuse on other navy heroes.
+ */
+export const appDashboardHeroShellClass =
+  "min-w-0 overflow-hidden rounded-[28px] border border-sky-200/80 bg-gradient-to-br from-[#f4f9fd] via-[#e7f2fb] to-white text-slate-950 shadow-[0_18px_44px_-28px_rgba(15,45,80,0.35)] md:rounded-[32px]";
+
+export const appDashboardHeroInsetClass =
+  "rounded-xl border border-sky-200/70 bg-white/75";
+
+export const appDashboardHeroMetricLabelClass =
+  "text-[13px] font-semibold uppercase tracking-[0.06em] text-slate-700";
+
+export const appDashboardHeroMetaClass =
+  "text-[15px] font-medium leading-relaxed text-slate-700";
+
 /** Important dark card — slightly lifted near-black. */
 export const appDarkCardClass =
   "min-w-0 overflow-hidden rounded-[24px] border border-white/10 bg-navy-card text-white shadow-[var(--navy-shadow)] md:rounded-[28px]";

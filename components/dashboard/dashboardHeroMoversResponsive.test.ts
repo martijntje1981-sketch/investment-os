@@ -44,8 +44,9 @@ describe("Dashboard hero movers responsive layout", () => {
       "utf8",
     );
 
-    expect(source).toContain("No negative mover");
+    expect(source).toContain("snapshot.heroLowestMover");
     expect(source).toContain("Weakest mover");
+    expect(source).not.toContain("No negative mover");
   });
 
   it("keeps crypto 24-hour period labels from mover selection logic", () => {
@@ -160,12 +161,11 @@ describe("Dashboard hero movers responsive layout", () => {
       "utf8",
     );
 
-    expect(source).toContain("changePeriodLabel");
     expect(source).toContain("signedPercent");
     expect(source).toContain(
-      "truncate text-sm font-bold leading-none tracking-[-0.02em] tabular-nums",
+      "truncate text-[15px] font-bold tabular-nums tracking-[-0.02em] sm:text-[15px]",
     );
-    expect(source).toContain("appDarkInsetClass");
+    expect(source).toContain("appDashboardHeroInsetClass");
     expect(source).toContain("TrendingUp");
     expect(source).toContain("TrendingDown");
   });

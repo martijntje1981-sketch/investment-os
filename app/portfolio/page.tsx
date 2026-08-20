@@ -90,9 +90,11 @@ import {
   getHoldingMarketValue,
 } from "@/lib/client/holdingValuation";
 import {
+  holdingPriceTrustBadgeLabel,
   holdingValueUnavailableLabel,
   isEstimatedHoldingPrice,
   resolveHoldingDisplayPrice,
+  resolveHoldingPriceTrustStatus,
 } from "@/lib/client/holdingDisplayPrice";
 import {
   buildCryptoPriceMetadataLine,
@@ -781,7 +783,8 @@ export default function PortfolioPage() {
               <div className="divide-y divide-slate-200">
                 {holdings.map((holding) => {
                   const holdingValue = getHoldingMarketValue(holding);
-                  const estimatedPrice = isEstimatedHoldingPrice(holding);
+                  const priceTrust = resolveHoldingPriceTrustStatus(holding);
+                  const priceTrustBadge = holdingPriceTrustBadgeLabel(priceTrust);
                   const matchStatus = resolveHoldingMatchStatus(holding);
                   const holdingReturn =
                     holdingValue === null
@@ -887,9 +890,9 @@ export default function PortfolioPage() {
                                 {holdingValue === null
                                   ? holdingValueUnavailableLabel(holding)
                                   : formatEur(holdingValue)}
-                                {estimatedPrice && holdingValue !== null ? (
-                                  <span className="ml-1 text-[11px] font-semibold text-amber-700">
-                                    est.
+                                {priceTrustBadge && holdingValue !== null ? (
+                                  <span className="ml-1 text-[13px] font-semibold text-amber-800">
+                                    {priceTrustBadge}
                                   </span>
                                 ) : null}
                               </p>
@@ -1009,9 +1012,9 @@ export default function PortfolioPage() {
                             {holdingValue === null
                               ? holdingValueUnavailableLabel(holding)
                               : formatEur(holdingValue)}
-                            {estimatedPrice && holdingValue !== null ? (
-                              <span className="ml-1 text-xs font-semibold text-amber-700">
-                                est.
+                            {priceTrustBadge && holdingValue !== null ? (
+                              <span className="ml-1 text-[13px] font-semibold text-amber-800">
+                                {priceTrustBadge}
                               </span>
                             ) : null}
                           </p>

@@ -317,7 +317,7 @@ describe("dashboard portfolio exposure integration", () => {
     "utf8",
   );
 
-  it("places Portfolio exposure after Market Pulse and before Contributions", () => {
+  it("places Portfolio exposure after Market Pulse and before Explore tools", () => {
     const holdingsIdx = dashboardSource.indexOf("<HoldingsToday");
     const pulseIdx = dashboardSource.indexOf(
       "<DashboardMarketPulseCard",
@@ -327,14 +327,13 @@ describe("dashboard portfolio exposure integration", () => {
     const exposureIdx = dashboardSource.indexOf(
       "<DashboardPortfolioExposureCard",
     );
-    const contributionsIdx = dashboardSource.indexOf(
-      "<DashboardContributionsCard",
-    );
+    const exploreIdx = dashboardSource.indexOf("<DashboardExploreTools");
     expect(holdingsIdx).toBeGreaterThan(-1);
     expect(pulseIdx).toBeGreaterThan(holdingsIdx);
     expect(cashIdx).toBeGreaterThan(pulseIdx);
     expect(exposureIdx).toBeGreaterThan(cashIdx);
-    expect(contributionsIdx).toBeGreaterThan(exposureIdx);
+    expect(exploreIdx).toBeGreaterThan(exposureIdx);
+    expect(dashboardSource).not.toContain("DashboardContributionsCard");
   });
 
   it("uses deep-link CTA with portfolio-exposure hash and keeps Phase 1/2 sections", () => {

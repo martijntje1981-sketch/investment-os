@@ -218,8 +218,8 @@ describe("Dashboard micro-UX — hero 1D/1W/1M", () => {
 
   it("keeps compact mobile touch targets without horizontal scroll", () => {
     const sparkline = read("components/dashboard/HeroPerformanceSparkline.tsx");
-    expect(sparkline).toContain("min-h-8");
-    expect(sparkline).toContain("min-w-8");
+    expect(sparkline).toContain("min-h-[44px]");
+    expect(sparkline).toContain("min-w-[44px]");
     expect(sparkline).not.toContain("overflow-x-auto");
   });
 });

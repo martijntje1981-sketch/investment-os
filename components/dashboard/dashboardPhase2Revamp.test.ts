@@ -149,13 +149,14 @@ describe("dashboard phase 2 compact previews", () => {
     expect(dashboardSource).not.toContain("groupBySector");
   });
 
-  it("places Contributions below holdings without Dividend or Goal Progress cards", () => {
+  it("places Portfolio History below holdings without Dividend or Goal Progress cards", () => {
     const holdingsIdx = dashboardSource.indexOf("<HoldingsToday");
-    const contributionsIdx = dashboardSource.indexOf(
-      "<DashboardContributionsCard",
+    const historyIdx = dashboardSource.indexOf(
+      "<DashboardPortfolioHistorySection",
     );
     expect(holdingsIdx).toBeGreaterThan(-1);
-    expect(contributionsIdx).toBeGreaterThan(holdingsIdx);
+    expect(historyIdx).toBeGreaterThan(holdingsIdx);
+    expect(dashboardSource).not.toContain("DashboardContributionsCard");
     expect(dashboardSource).not.toContain("DashboardDividendCard");
     expect(dashboardSource).not.toContain("DashboardGoalProgressCard");
     expect(dashboardSource).toContain("pulse={portfolioPulse}");

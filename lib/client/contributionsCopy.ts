@@ -5,7 +5,12 @@ export const CONTRIBUTIONS_ONBOARDING_COPY =
   "Add the total amount you have contributed to establish your starting point.";
 
 export const CONTRIBUTIONS_INCOMPLETE_BASIS_COPY =
-  "Contribution history is incomplete. Recorded deposits do not yet establish a reliable funding basis for return-style comparisons.";
+  "These are recorded contributions, not a complete funding history. Tobailey cannot treat them as portfolio return.";
+
+export const CONTRIBUTIONS_RECORDED_LABEL = "Recorded contributions";
+
+export const CONTRIBUTIONS_EXPORT_SCOPE_COPY =
+  "Export includes current holdings. It does not guarantee complete contribution history.";
 
 export const CONTRIBUTIONS_OPENING_LABEL = "Opening contribution";
 

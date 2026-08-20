@@ -11,6 +11,7 @@ import {
   appSectionMetaClass,
   appTextLinkClass,
 } from "@/components/layout/appSurface";
+import { CONTRIBUTIONS_ADD_LABEL } from "@/lib/client/contributionsCopy";
 import type { PortfolioPerformancePoint } from "@/lib/client/performance/types";
 import { PORTFOLIO_HISTORY_PATH } from "@/lib/navigation/appRoutes";
 
@@ -26,6 +27,11 @@ type PortfolioHistoryNavCardProps = {
   /** One key statistic already formatted for display. */
   keyStatisticLabel?: string | null;
   keyStatisticValue?: string | null;
+  supportingMeta?: string | null;
+  incompleteNote?: string | null;
+  exportDisclaimer?: string | null;
+  onAddContribution?: () => void;
+  addContributionLabel?: string;
   onExportPortfolio?: () => void;
   isExporting?: boolean;
   /** Optional quiet emphasis line (Phase 3C) — not a second statistic. */
@@ -41,8 +47,13 @@ export function PortfolioHistoryNavCard({
   variant: _variant = "tinted",
   chartPoints = null,
   hasSeries = false,
-  keyStatisticLabel = "Net contributions",
+  keyStatisticLabel = "Recorded contributions",
   keyStatisticValue = null,
+  supportingMeta = null,
+  incompleteNote = null,
+  exportDisclaimer = null,
+  onAddContribution,
+  addContributionLabel = CONTRIBUTIONS_ADD_LABEL,
   onExportPortfolio,
   isExporting = false,
   emphasisNote = null,
@@ -63,7 +74,7 @@ export function PortfolioHistoryNavCard({
         shellClassName="overflow-hidden rounded-[24px] border-2 border-cyan-300 bg-gradient-to-br from-cyan-100 via-sky-50 to-white shadow-[0_12px_32px_-16px_rgba(8,145,178,0.45)]"
       deepLink={{
         href: PORTFOLIO_HISTORY_PATH,
-        label: "View Portfolio History",
+        label: "View history",
       }}
       expandable={showChart}
       preview={
@@ -71,20 +82,36 @@ export function PortfolioHistoryNavCard({
           {keyStatisticValue ? (
             <div className="min-w-0">
               <p className={appSectionLabelClass}>
-                {keyStatisticLabel ?? "Key figure"}
+                {keyStatisticLabel ?? "Recorded contributions"}
               </p>
               <p className="mt-0.5 break-words text-[20px] font-bold tracking-[-0.03em] text-cyan-950">
                 {keyStatisticValue}
               </p>
+              {supportingMeta ? (
+                <p className={`mt-1 ${appSectionMetaClass}`}>{supportingMeta}</p>
+              ) : null}
             </div>
           ) : (
             <p className={appSectionBodyClass}>
-              Contributions, withdrawals and development over time — open
-              Portfolio History for the full record.
+              Recorded contributions, withdrawals and development over time —
+              open Portfolio History for the full record.
             </p>
           )}
 
+          {incompleteNote ? (
+            <p className={appSectionMetaClass}>{incompleteNote}</p>
+          ) : null}
+
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            {onAddContribution ? (
+              <button
+                type="button"
+                onClick={onAddContribution}
+                className="inline-flex min-h-[44px] items-center text-[16px] font-semibold text-cyan-800 transition hover:text-cyan-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2"
+              >
+                {addContributionLabel}
+              </button>
+            ) : null}
             {onExportPortfolio ? (
               <button
                 type="button"
@@ -96,15 +123,17 @@ export function PortfolioHistoryNavCard({
                 className="inline-flex min-h-[44px] items-center gap-1.5 text-[16px] font-semibold text-cyan-800 transition hover:text-cyan-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2 disabled:opacity-70"
               >
                 <Download className="h-4 w-4" aria-hidden />
-                {isExporting ? "Exporting…" : "Export Portfolio"}
+                {isExporting ? "Exporting…" : "Export"}
               </button>
             ) : null}
             <Link href={PORTFOLIO_HISTORY_PATH} className={appTextLinkClass}>
-              View Portfolio History
+              View history
             </Link>
           </div>
 
-          {!showChart && !keyStatisticValue ? (
+          {exportDisclaimer ? (
+            <p className={appSectionMetaClass}>{exportDisclaimer}</p>
+          ) : !showChart && !keyStatisticValue ? (
             <p className={appSectionMetaClass}>
               Export your full portfolio workbook when you are ready.
             </p>
@@ -127,7 +156,7 @@ export function PortfolioHistoryNavCard({
         ) : (
           <ul className={`list-disc space-y-1.5 pl-5 ${appSectionMetaClass}`}>
             <li>Portfolio development over selected timeframes</li>
-            <li>Contributions and withdrawals summary</li>
+            <li>Recorded contributions and withdrawals</li>
             <li>One-click Export Portfolio workbook</li>
           </ul>
         )

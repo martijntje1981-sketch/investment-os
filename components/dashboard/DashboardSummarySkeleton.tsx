@@ -5,7 +5,7 @@ export function DashboardSummarySkeleton() {
       aria-busy="true"
       aria-label="Loading dashboard summary"
     >
-      <div className="min-h-[220px] animate-pulse rounded-[28px] bg-navy-hero md:min-h-[240px] md:rounded-[32px]" />
+      <div className="min-h-[220px] animate-pulse rounded-[28px] border border-sky-200/80 bg-sky-50 md:min-h-[240px] md:rounded-[32px]" />
       <div
         className="grid min-w-0 gap-4 md:gap-5 lg:grid-cols-2"
         aria-hidden

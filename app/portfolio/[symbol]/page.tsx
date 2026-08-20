@@ -31,9 +31,12 @@ import {
   getHoldingReturnPercent,
   getHoldingReturnValue,
   getPortfolioTotalMarketValue,
-  isEstimatedHoldingPrice,
   resolveHoldingDisplayPrice,
 } from "@/lib/client/holdingValuation";
+import {
+  holdingPriceStatusUserLabel,
+  holdingPriceTrustBadgeLabel,
+} from "@/lib/client/holdingDisplayPrice";
 import { resolveHoldingChangePercent } from "@/lib/client/dailyPerformance";
 import { resolveHoldingMovePeriod } from "@/lib/client/performancePeriod";
 import { formatSmartPrice } from "@/lib/client/smartPriceFormat";
@@ -757,7 +760,8 @@ export default function HoldingDetailPage() {
   const returnValue = getHoldingReturnValue(holding);
   const returnPercentage = getHoldingReturnPercent(holding);
   const displayPrice = resolveHoldingDisplayPrice(holding);
-  const estimatedPrice = isEstimatedHoldingPrice(holding);
+  const priceTrustBadge = holdingPriceTrustBadgeLabel(displayPrice.source);
+  const priceStatusLabel = holdingPriceStatusUserLabel(displayPrice.source);
 
   const allocation =
     valuation?.portfolioWeightPercent ??
@@ -873,7 +877,9 @@ export default function HoldingDetailPage() {
               label="Current price"
               value={
                 resolvedPrice !== null
-                  ? `${formatUnitPrice(resolvedPrice, holding.currency)}${estimatedPrice ? " est." : ""}`
+                  ? `${formatUnitPrice(resolvedPrice, holding.currency)}${
+                      priceTrustBadge ? ` ${priceTrustBadge}` : ""
+                    }`
                   : "Price pending"
               }
               detail={holding.symbol.toUpperCase()}
@@ -919,21 +925,17 @@ export default function HoldingDetailPage() {
             <LiveMetric
               icon={<LineChart className="h-5 w-5" />}
               label="Market status"
-              value={
-                holding.priceDataStatus === "live"
-                  ? "Live quote"
-                  : holding.priceDataStatus === "delayed"
-                    ? "Delayed quote"
-                    : holding.priceDataStatus === "stale"
-                      ? "Stale quote"
-                      : "Latest available"
-              }
+              value={priceStatusLabel}
               detail={
-                holding.priceDataStatus === "live"
-                  ? "Provider reported a live market price"
-                  : holding.priceDataStatus === "delayed"
+                displayPrice.source === "live"
+                  ? "Current provider market price"
+                  : displayPrice.source === "delayed"
                     ? "Provider price may be delayed versus the exchange"
-                    : "Based on the latest available provider price — not always live"
+                    : displayPrice.source === "last_session"
+                      ? "Official last-session market price"
+                      : displayPrice.source === "estimated"
+                        ? "Derived from a fallback or manual valuation"
+                        : "No trustworthy current valuation"
               }
             />
           </section>
@@ -947,7 +949,7 @@ export default function HoldingDetailPage() {
                   ? formatCurrency(currentValue, holding.currency)
                   : "Price pending"
               }
-              description={`${holding.quantity.toLocaleString("en-GB")} units${estimatedPrice && currentValue !== null ? " · estimated price" : ""}`}
+              description={`${holding.quantity.toLocaleString("en-GB")} units${displayPrice.source === "estimated" && currentValue !== null ? " · estimated price" : ""}`}
             />
 
             <MetricCard
@@ -1193,7 +1195,7 @@ export default function HoldingDetailPage() {
                   label="Current price"
                   value={
                     resolvedPrice !== null
-                      ? `${formatUnitPrice(resolvedPrice, holding.currency)}${estimatedPrice ? " (estimated)" : ""}`
+                      ? `${formatUnitPrice(resolvedPrice, holding.currency)}${displayPrice.source === "estimated" ? " (estimated)" : ""}`
                       : "Unavailable"
                   }
                 />

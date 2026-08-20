@@ -3,7 +3,6 @@
 import { useMemo } from "react";
 import { DashboardEmptyState } from "@/components/dashboard/DashboardEmptyState";
 import { DashboardCashIntelligenceCard } from "@/components/dashboard/DashboardCashIntelligenceCard";
-import { DashboardContributionsCard } from "@/components/contributions/DashboardContributionsCard";
 import { DashboardMarketPulseCard } from "@/components/dashboard/DashboardMarketPulseCard";
 import { DashboardSummary } from "@/components/dashboard/DashboardSummary";
 import { DashboardExploreTools } from "@/components/dashboard/DashboardExploreTools";
@@ -532,16 +531,6 @@ export default function DashboardPage() {
             />
 
             <DashboardPortfolioExposureCard allocation={exposureAllocation} />
-
-            <DashboardContributionsCard
-              snapshot={snapshot}
-              holdings={holdings.map((holding) => ({
-                id: holding.id,
-                symbol: holding.symbol,
-                name: holding.name,
-                assetType: holding.assetType,
-              }))}
-            />
 
             <DashboardExploreTools
               emphasizeGoals={smartDashboard.emphasis.exploreGoalsHighlight}

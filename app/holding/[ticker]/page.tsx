@@ -16,9 +16,9 @@ import { resolveHoldingMovePeriod } from "@/lib/client/performancePeriod";
 import {
   buildHoldingValuation,
   getHoldingCostBasis,
-  isEstimatedHoldingPrice,
   resolveHoldingDisplayPrice,
 } from "@/lib/client/holdingValuation";
+import { holdingPriceStatusUserLabel, holdingPriceTrustBadgeLabel } from "@/lib/client/holdingDisplayPrice";
 import { formatSmartPrice } from "@/lib/client/smartPriceFormat";
 import { usePortfolioNews } from "@/lib/client/usePortfolioNews";
 import { useProductAccess } from "@/lib/client/useProductAccess";
@@ -92,21 +92,8 @@ function getMetricPerformanceClass(value: number) {
 
 function priceQualityLabel(
   source: ReturnType<typeof resolveHoldingDisplayPrice>["source"],
-  isStale: boolean,
 ) {
-  if (source === "unavailable") {
-    return "Price unavailable";
-  }
-
-  if (source === "estimated") {
-    return "Estimated price";
-  }
-
-  if (isStale) {
-    return "Stale price";
-  }
-
-  return "Latest available price";
+  return holdingPriceStatusUserLabel(source);
 }
 
 export default function HoldingPage() {
@@ -205,16 +192,12 @@ export default function HoldingPage() {
   }
 
   const displayPrice = valuation.displayPrice;
-  const estimatedPrice = isEstimatedHoldingPrice(holding);
   const dailyChangePercent = resolveHoldingChangePercent(holding);
   const dayChangeValue =
     valuation.marketValue !== null && dailyChangePercent !== null
       ? computeHoldingDayMove(holding, valuation.marketValue)
       : null;
-  const priceLabel = priceQualityLabel(
-    displayPrice.source,
-    holding.priceDataStatus === "stale",
-  );
+  const priceLabel = priceQualityLabel(displayPrice.source);
   const resolvedPrice = displayPrice.price;
   const marketValueLabel =
     valuation.marketValue === null
@@ -258,7 +241,8 @@ export default function HoldingPage() {
                     className={`rounded-full px-3 py-1 text-xs font-bold ${
                       displayPrice.source === "unavailable"
                         ? "bg-amber-500/20 text-amber-300"
-                        : estimatedPrice || holding.priceDataStatus === "stale"
+                        : displayPrice.source === "estimated" ||
+                            displayPrice.source === "delayed"
                           ? "bg-amber-500/20 text-amber-300"
                           : "bg-emerald-500/20 text-emerald-300"
                     }`}
@@ -293,9 +277,13 @@ export default function HoldingPage() {
                       : "Unavailable"}
                   </p>
 
-                  {estimatedPrice ? (
+                  {holdingPriceTrustBadgeLabel(displayPrice.source) ? (
                     <p className="mt-1 text-sm font-semibold text-amber-300">
-                      Estimated price
+                      {holdingPriceTrustBadgeLabel(displayPrice.source)}
+                    </p>
+                  ) : displayPrice.source === "last_session" ? (
+                    <p className="mt-1 text-sm font-semibold text-slate-300">
+                      Last session
                     </p>
                   ) : null}
 
@@ -333,9 +321,13 @@ export default function HoldingPage() {
               label="Position Value"
               value={marketValueLabel}
               subtitle={
-                estimatedPrice && valuation.marketValue !== null
+                displayPrice.source === "estimated" && valuation.marketValue !== null
                   ? "Estimated market value"
-                  : "Current market value"
+                  : displayPrice.source === "last_session"
+                    ? "Last-session market value"
+                    : displayPrice.source === "delayed"
+                      ? "Delayed market value"
+                      : "Current market value"
               }
             />
 
@@ -431,7 +423,13 @@ export default function HoldingPage() {
                   label="Current price"
                   value={
                     resolvedPrice !== null
-                      ? `${formatUnitPrice(resolvedPrice)}${estimatedPrice ? " (estimated)" : ""}`
+                      ? `${formatUnitPrice(resolvedPrice)}${
+                          displayPrice.source === "estimated"
+                            ? " (estimated)"
+                            : displayPrice.source === "delayed"
+                              ? " (delayed)"
+                              : ""
+                        }`
                       : "Unavailable"
                   }
                 />

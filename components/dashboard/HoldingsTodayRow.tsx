@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import type { KeyboardEvent } from "react";
 
 import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
-import { holdingValueUnavailableLabel } from "@/lib/client/holdingDisplayPrice";
+import { holdingPriceTrustBadgeLabel, holdingValueUnavailableLabel } from "@/lib/client/holdingDisplayPrice";
 import { formatHoldingTodayChange } from "@/lib/client/portfolioMovementFormat";
 import { formatCrypto24hChange } from "@/lib/client/cryptoPriceDisplay";
 import { resolveSmartMoneyFractionDigits } from "@/lib/client/smartPriceFormat";
@@ -53,23 +53,14 @@ function rowSurfaceClass(index: number, layout: "mobile" | "desktop"): string {
 }
 
 function HoldingPriceQualityBadge({ row }: { row: DashboardHoldingRow }) {
-  if (row.priceQuality === "estimated") {
-    return (
-      <span className="ml-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-amber-700">
-        est.
-      </span>
-    );
-  }
+  const label = holdingPriceTrustBadgeLabel(row.priceQuality);
+  if (!label) return null;
 
-  if (row.priceQuality === "stale") {
-    return (
-      <span className="ml-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-slate-600">
-        stale
-      </span>
-    );
-  }
-
-  return null;
+  return (
+    <span className="ml-1.5 text-[13px] font-semibold text-amber-800">
+      {label}
+    </span>
+  );
 }
 
 function HoldingValueLabel({

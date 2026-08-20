@@ -41,7 +41,7 @@ export type ContributionSummary = {
   hasContributionData: boolean;
   /**
    * False when the ledger does not establish a credible funding basis
-   * (no opening balance and net contributed is a small share of portfolio value).
+   * (net contributed is a small share of portfolio value).
    */
   contributionBasisReliable: boolean;
 };

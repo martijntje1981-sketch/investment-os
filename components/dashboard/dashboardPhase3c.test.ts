@@ -27,7 +27,6 @@ describe("Phase 3C Smart Dashboard Intelligence wiring", () => {
       "<DashboardCashIntelligenceCard",
       "<DashboardPortfolioHistorySection",
       "<DashboardPortfolioExposureCard",
-      "<DashboardContributionsCard",
       "<DashboardExploreTools",
       "<DashboardMarketStatus",
     ].map((token) => dashboard.indexOf(token));

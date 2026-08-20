@@ -3,8 +3,12 @@ import { isCryptoHolding } from "@/lib/services/portfolio/cryptoHolding";
 
 export type HoldingDisplayPriceSource =
   | "live"
+  | "delayed"
+  | "last_session"
   | "estimated"
   | "unavailable";
+
+export type HoldingPriceTrustStatus = HoldingDisplayPriceSource;
 
 export type HoldingDisplayPrice = {
   price: number | null;
@@ -16,10 +20,11 @@ function mapPriceDataStatusToDisplaySource(
   status: string | null | undefined,
 ): HoldingDisplayPriceSource {
   if (status === "live") return "live";
-  if (status === "delayed" || status === "stale") return "estimated";
+  if (status === "delayed") return "delayed";
+  if (status === "stale") return "last_session";
   if (status === "unavailable") return "unavailable";
-  // Unknown / missing status must not imply live.
-  return "estimated";
+  // A usable provider price without status is last-session, never live or estimated.
+  return "last_session";
 }
 
 function resolveCryptoDisplayPrice(
@@ -44,7 +49,7 @@ function resolveCryptoDisplayPrice(
     const mapped = mapPriceDataStatusToDisplaySource(holding.priceDataStatus);
     return {
       price: pairPrice,
-      source: mapped === "unavailable" ? "estimated" : mapped,
+      source: mapped === "unavailable" ? "unavailable" : mapped,
       quoteCurrency: holding.pairCurrency ?? null,
     };
   }
@@ -97,8 +102,8 @@ export function resolveHoldingDisplayPrice(
       Number.isFinite(holding.currentPrice) && holding.currentPrice > 0
         ? holding.currentPrice
         : 1;
-    // Cash is book value, not a live market quote.
-    return { price, source: "estimated" };
+    // Cash is book value, not a guessed market quote.
+    return { price, source: "live" };
   }
 
   if (isCryptoHolding(holding)) {
@@ -109,7 +114,7 @@ export function resolveHoldingDisplayPrice(
     const mapped = mapPriceDataStatusToDisplaySource(holding.priceDataStatus);
     return {
       price: holding.currentPrice,
-      source: mapped === "unavailable" ? "estimated" : mapped,
+      source: mapped === "unavailable" ? "last_session" : mapped,
     };
   }
 
@@ -134,6 +139,55 @@ export function isEstimatedHoldingPrice(
   >,
 ): boolean {
   return resolveHoldingDisplayPrice(holding).source === "estimated";
+}
+
+export function resolveHoldingPriceTrustStatus(
+  holding: Pick<
+    StoredPortfolioHolding,
+    | "assetType"
+    | "currentPrice"
+    | "currentPairPrice"
+    | "pairCurrency"
+    | "purchasePrice"
+    | "priceDataStatus"
+    | "pricingStatus"
+    | "currentManualPrice"
+    | "manualCurrentValue"
+    | "quantity"
+  >,
+): HoldingPriceTrustStatus {
+  return resolveHoldingDisplayPrice(holding).source;
+}
+
+/** Scan-friendly badge next to a value. Last-session and live have no badge. */
+export function holdingPriceTrustBadgeLabel(
+  status: HoldingPriceTrustStatus,
+): string | null {
+  if (status === "estimated") return "Estimated";
+  if (status === "delayed") return "Delayed";
+  return null;
+}
+
+export function holdingPriceTrustCaption(
+  status: HoldingPriceTrustStatus,
+): string | null {
+  if (status === "unavailable") return "Price unavailable";
+  if (status === "delayed") return "Delayed";
+  if (status === "estimated") return "Estimated";
+  if (status === "live") return null;
+  if (status === "last_session") return "Last session";
+  return null;
+}
+
+/** Holding-page / detail language. Never calls last-session or delayed "Live". */
+export function holdingPriceStatusUserLabel(
+  status: HoldingPriceTrustStatus,
+): string {
+  if (status === "unavailable") return "Price unavailable";
+  if (status === "estimated") return "Estimated";
+  if (status === "delayed") return "Delayed";
+  if (status === "last_session") return "Last session";
+  return "Current";
 }
 
 export function holdingValueUnavailableLabel(

@@ -40,7 +40,6 @@ describe("portfolio history UI", () => {
     expect(page).toContain("Current holdings");
     expect(page).toContain("Add activity");
     expect(page).toContain("ExportPortfolioButton");
-    expect(page).toContain('variant="hero"');
     expect(page).toContain("PortfolioPerformanceChart");
     expect(page).toContain("PortfolioTimelineList");
     expect(page).toContain("ManageContributionsDialog");
@@ -56,7 +55,7 @@ describe("portfolio history UI", () => {
     expect(portfolio).toContain("Portfolio History");
     expect(navCard).toContain('PORTFOLIO_HISTORY_LABEL = "Portfolio History"');
     expect(navCard).toContain("PORTFOLIO_HISTORY_PATH");
-    expect(navCard).toContain("View Portfolio History");
+    expect(navCard).toContain("View history");
     expect(navCard).toContain("Export Portfolio");
     expect(tools).toContain("Understand your portfolio");
   });

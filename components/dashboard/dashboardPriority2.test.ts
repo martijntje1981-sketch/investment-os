@@ -31,7 +31,6 @@ describe("Priority 2 Dashboard progressive disclosure", () => {
       "<DashboardCashIntelligenceCard",
       "<DashboardPortfolioHistorySection",
       "<DashboardPortfolioExposureCard",
-      "<DashboardContributionsCard",
       "<DashboardExploreTools",
       "<DashboardMarketStatus",
     ].map((token) => dashboard.indexOf(token));
@@ -119,6 +118,6 @@ describe("Priority 2 Dashboard progressive disclosure", () => {
     expect(dashboard).toContain("pulse={portfolioPulse}");
     expect(dashboard).toContain("useLivePortfolioPriceRefresh");
     expect(hero).toContain("HeroPortfolioPulse");
-    expect(hero).toContain("appHeroShellClass");
+    expect(hero).toContain("appDashboardHeroShellClass");
   });
 });

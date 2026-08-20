@@ -162,9 +162,9 @@ describe("dashboard phase 1 revamp", () => {
     expect(dashboardSource).not.toContain("DashboardDividendCard");
   });
 
-  it("updates the summary skeleton to a compact navy hero without welcome/movers placeholders", () => {
+  it("updates the summary skeleton to a compact light-blue hero without welcome/movers placeholders", () => {
     expect(skeletonSource).toContain("min-h-[220px]");
-    expect(skeletonSource).toContain("bg-navy-hero");
+    expect(skeletonSource).toContain("bg-sky-50");
     expect(skeletonSource).toContain('data-skeleton="decision-briefing"');
     expect(skeletonSource).toContain('data-skeleton="health-story"');
     expect(skeletonSource).not.toContain("min-h-[96px]");

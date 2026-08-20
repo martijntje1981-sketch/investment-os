@@ -31,7 +31,7 @@ function formatPeriodChange(
 }
 
 /**
- * Real portfolio value sparkline for the black hero.
+ * Real portfolio value sparkline for the Dashboard hero.
  * Local 1W / 1M switch — no fabricated intraday 1D series.
  */
 export function HeroPerformanceSparkline({
@@ -43,6 +43,7 @@ export function HeroPerformanceSparkline({
   label = "Portfolio trend",
   className,
   compactOnMobile = false,
+  appearance = "onLight",
 }: {
   weekPoints?: PortfolioPerformancePoint[] | null;
   monthPoints?: PortfolioPerformancePoint[] | null;
@@ -52,7 +53,9 @@ export function HeroPerformanceSparkline({
   className?: string;
   /** Slightly shorter chart on narrow viewports. */
   compactOnMobile?: boolean;
+  appearance?: "onLight" | "onDark";
 }) {
+  const onLight = appearance === "onLight";
   const weekSeries = useMemo(() => usablePoints(weekPoints), [weekPoints]);
   const monthSeries = useMemo(
     () => usablePoints(monthPoints ?? points),
@@ -88,7 +91,11 @@ export function HeroPerformanceSparkline({
 
   const selector = (
     <div
-      className="inline-flex shrink-0 items-center gap-0.5 rounded-full border border-white/15 bg-white/[0.06] p-0.5"
+      className={`inline-flex shrink-0 items-center gap-0.5 rounded-full border p-0.5 ${
+        onLight
+          ? "border-sky-200 bg-white"
+          : "border-white/15 bg-white/[0.06]"
+      }`}
       role="tablist"
       aria-label="Portfolio trend period"
       data-testid="hero-trend-period-selector"
@@ -120,12 +127,18 @@ export function HeroPerformanceSparkline({
               if (!enabled || is1D) return;
               setPreferredPeriod(option);
             }}
-            className={`min-h-8 min-w-8 rounded-full px-2 text-[10px] font-bold tracking-wide transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 sm:min-h-9 sm:px-2.5 sm:text-[11px] ${
+            className={`min-h-[44px] min-w-[44px] rounded-full px-2.5 text-[13px] font-bold tracking-wide transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 ${
               selected
-                ? "bg-white/90 text-slate-950"
+                ? onLight
+                  ? "bg-slate-950 text-white"
+                  : "bg-white/90 text-slate-950"
                 : enabled
-                  ? "text-white/70 hover:bg-white/10 hover:text-white"
-                  : "cursor-not-allowed text-white/30"
+                  ? onLight
+                    ? "text-slate-800 hover:bg-sky-50 hover:text-slate-950"
+                    : "text-white/70 hover:bg-white/10 hover:text-white"
+                  : onLight
+                    ? "cursor-not-allowed text-slate-400"
+                    : "cursor-not-allowed text-white/30"
             }`}
             data-testid={`hero-trend-period-${option}`}
             data-available={enabled ? "true" : "false"}
@@ -140,18 +153,28 @@ export function HeroPerformanceSparkline({
   if (series.length < 2) {
     return (
       <div
-        className={`min-w-0 overflow-hidden rounded-2xl border border-dashed border-white/15 bg-white/[0.03] px-3 py-2.5 ${className ?? ""}`}
+        className={`min-w-0 overflow-hidden rounded-2xl border border-dashed px-3 py-2.5 ${
+          onLight
+            ? "border-sky-200 bg-white/70"
+            : "border-white/15 bg-white/[0.03]"
+        } ${className ?? ""}`}
         aria-label={`${label} unavailable`}
         data-testid="hero-performance-sparkline-empty"
       >
         <div className="mb-1.5 flex items-center justify-between gap-2">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/45">
+          <p
+            className={`text-[13px] font-semibold uppercase tracking-[0.08em] ${
+              onLight ? "text-slate-700" : "text-white/70"
+            }`}
+          >
             Trend
           </p>
           {selector}
         </div>
         <div
-          className={`flex w-full items-center justify-center text-[12px] font-medium text-white/40 ${emptyHeightClass}`}
+          className={`flex w-full items-center justify-center text-[15px] font-medium ${
+            onLight ? "text-slate-600" : "text-white/60"
+          } ${emptyHeightClass}`}
         >
           Trend needs more history
         </div>
@@ -183,30 +206,54 @@ export function HeroPerformanceSparkline({
 
   const strokeClass =
     seriesTone === "positive"
-      ? "stroke-emerald-300"
+      ? onLight
+        ? "stroke-emerald-600"
+        : "stroke-emerald-300"
       : seriesTone === "negative"
-        ? "stroke-red-300"
-        : "stroke-white/70";
+        ? onLight
+          ? "stroke-red-600"
+          : "stroke-red-300"
+        : onLight
+          ? "stroke-slate-600"
+          : "stroke-white/70";
   const fillClass =
     seriesTone === "positive"
-      ? "fill-emerald-300/15"
+      ? onLight
+        ? "fill-emerald-600/15"
+        : "fill-emerald-300/15"
       : seriesTone === "negative"
-        ? "fill-red-300/10"
-        : "fill-white/10";
+        ? onLight
+          ? "fill-red-600/10"
+          : "fill-red-300/10"
+        : onLight
+          ? "fill-sky-500/10"
+          : "fill-white/10";
 
   return (
     <div
-      className={`min-w-0 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2.5 ${className ?? ""}`}
+      className={`min-w-0 overflow-hidden rounded-2xl border px-3 py-2.5 ${
+        onLight
+          ? "border-sky-200/80 bg-white/80"
+          : "border-white/10 bg-white/[0.04]"
+      } ${className ?? ""}`}
       data-testid="hero-performance-sparkline"
       data-period={activePeriod}
     >
       <div className="mb-1.5 flex min-w-0 items-center justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/45">
+          <p
+            className={`text-[13px] font-semibold uppercase tracking-[0.08em] ${
+              onLight ? "text-slate-700" : "text-white/70"
+            }`}
+          >
             {periodLabel}
           </p>
           {changeLabel ? (
-            <p className="mt-0.5 truncate text-[11px] font-semibold tabular-nums text-white/55">
+            <p
+              className={`mt-0.5 truncate text-[15px] font-semibold tabular-nums ${
+                onLight ? "text-slate-800" : "text-white/80"
+              }`}
+            >
               {changeLabel}
             </p>
           ) : null}

@@ -37,8 +37,9 @@ describe("contributions ledger UI", () => {
     "utf8",
   );
 
-  it("places the contributions card on the dashboard without Dividend duplication", () => {
-    expect(dashboardSource).toContain("DashboardContributionsCard");
+  it("places recorded contributions on the consolidated Portfolio History card", () => {
+    expect(dashboardSource).toContain("DashboardPortfolioHistorySection");
+    expect(dashboardSource).not.toContain("DashboardContributionsCard");
     expect(dashboardSource).not.toContain("DashboardGoalProgressCard");
     expect(dashboardSource).toContain("pulse={portfolioPulse}");
     expect(dashboardSource).not.toContain("DashboardDividendCard");

@@ -27,14 +27,16 @@ describe("dashboard hero surface consistency", () => {
     "utf8",
   );
 
-  it("uses the shared solid dark hero shell instead of a gradient", () => {
+  it("uses the shared solid dark hero shell on other pages, and a light Dashboard hero", () => {
     const heroShellMatch = surfaceSource.match(
       /export const appHeroShellClass =\s*"([^"]+)"/,
     );
     expect(heroShellMatch?.[1]).toContain("bg-navy-hero");
     expect(heroShellMatch?.[1]).not.toContain("bg-gradient");
-    expect(valueSource).toContain("appHeroShellClass");
-    expect(valueSource).not.toContain("bg-gradient-to-b");
+    expect(valueSource).toContain("appDashboardHeroShellClass");
+    expect(valueSource.replaceAll("appDashboardHeroShellClass", "")).not.toContain(
+      "appHeroShellClass",
+    );
     expect(valueSource).not.toContain("ambientGlowClass");
     expect(emptySource).toContain("PortfolioSetupOnboarding");
     expect(onboardingSource).toContain("appHeroShellClass");
