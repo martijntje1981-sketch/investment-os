@@ -208,7 +208,7 @@ describe("Phase 19.2 premium polish and real-data consistency", () => {
     expect(review.brief?.thirtySeconds.join(" ")).not.toContain("needs your attention right now");
   });
 
-  it("reconciles cover and same-day chart ending value to the holdings snapshot", () => {
+  it("cover and chart use the labelled Companion period-end, not a later live snapshot", () => {
     expect(
       resolveCanonicalPeriodEndValue({
         holdingsSnapshotValue: 123_803,
@@ -217,26 +217,25 @@ describe("Phase 19.2 premium polish and real-data consistency", () => {
         periodEndDate: "2026-08-20",
         snapshotAsOfDay: "2026-08-20",
       }),
-    ).toBe(123_803);
+    ).toBe(123_801);
 
     const aligned = alignChartEndToCanonical(
       [
         { date: "2026-08-14", value: 120_000 },
         { date: "2026-08-20", value: 123_801 },
       ],
-      123_803,
+      123_801,
       "2026-08-20",
     );
-    expect(aligned[aligned.length - 1]?.value).toBe(123_803);
+    expect(aligned[aligned.length - 1]?.value).toBe(123_801);
     expect(isoCalendarDay("2026-08-20T12:00:00.000Z")).toBe("2026-08-20");
 
     const review = composeReview("weekly", { chartEnd: 123_801, chartEndDate: "2026-08-20" });
-    expect(review.brief?.portfolioValueLabel).toBe("€123,803");
-    expect(review.brief?.performanceChart?.endValueLabel).toBe("€123,803");
+    expect(review.brief?.portfolioValueLabel).toBe("€123,801");
+    expect(review.brief?.performanceChart?.endValueLabel).toBe("€123,801");
     expect(review.brief?.performanceChart?.endLabel).toMatch(/20 Aug 2026/);
     const text = extractPdfPlainText(renderPeriodReportPdf(review));
-    expect(text).toMatch(/€123,803/);
-    expect(text).not.toMatch(/€123,801/);
+    expect(text).toMatch(/€123,801/);
   });
 
   it("does not force a chart end onto a different calendar day", () => {
@@ -254,7 +253,7 @@ describe("Phase 19.2 premium polish and real-data consistency", () => {
       chartEnd: 123_801,
       chartEndDate: "2026-08-19",
     });
-    expect(review.brief?.portfolioValueLabel).toBe("€123,803");
+    expect(review.brief?.portfolioValueLabel).toBe("€123,801");
     expect(review.brief?.performanceChart?.endValueLabel).toBe("€123,801");
   });
 

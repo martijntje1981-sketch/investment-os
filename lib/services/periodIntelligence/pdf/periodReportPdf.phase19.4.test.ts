@@ -377,7 +377,7 @@ describe("Phase 19.4 production PDF renderer parity", () => {
         periodEndDate: "2026-08-20",
         snapshotAsOfDay: "2026-08-20",
       }),
-    ).toBe(123_803);
+    ).toBe(123_801);
     const aligned = alignChartEndToCanonical(
       [
         { date: "2026-08-14", value: 120_000 },

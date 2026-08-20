@@ -118,10 +118,67 @@ function firstFinitePositive(
   return null;
 }
 
+export type CanonicalPeriodResult = {
+  periodStartDate: string | null;
+  periodEndDate: string | null;
+  periodStartValue: number | null;
+  periodEndValue: number | null;
+  periodMovementAmount: number | null;
+  periodMovementPercent: number | null;
+  periodInvestmentReturnAmount: number | null;
+  periodNetContributions: number | null;
+};
+
 /**
- * Period-end value for cover / Q1 / chart.
- * Same-day current snapshot may reconcile with the labelled period-end (Weekly).
- * Historical Monthly must use the labelled Companion period-end, never today's snapshot.
+ * One labelled-period result. Same numbers Q1 already uses (Companion metrics).
+ * PERIOD CHANGE = portfolio movement % = (end - start) / start.
+ * Never the live holdings snapshot. Never contribution-adjusted return %.
+ */
+export function canonicalPeriodResultFromCompanion(
+  companion: CompanionReview,
+): CanonicalPeriodResult {
+  const metrics = companion.metrics;
+  const periodStartValue =
+    metrics?.startingValue != null && Number.isFinite(metrics.startingValue)
+      ? metrics.startingValue
+      : null;
+  const periodEndValue =
+    metrics?.endingValue != null && Number.isFinite(metrics.endingValue)
+      ? metrics.endingValue
+      : null;
+  const periodMovementAmount =
+    metrics?.portfolioMovement != null && Number.isFinite(metrics.portfolioMovement)
+      ? metrics.portfolioMovement
+      : periodStartValue != null && periodEndValue != null
+        ? periodEndValue - periodStartValue
+        : null;
+  const periodMovementPercent =
+    periodStartValue != null &&
+    periodStartValue > 0 &&
+    periodMovementAmount != null
+      ? (periodMovementAmount / periodStartValue) * 100
+      : null;
+  return {
+    periodStartDate: isoCalendarDay(companion.startDate),
+    periodEndDate: isoCalendarDay(companion.endDate),
+    periodStartValue,
+    periodEndValue,
+    periodMovementAmount,
+    periodMovementPercent,
+    periodInvestmentReturnAmount:
+      metrics?.investmentReturn != null && Number.isFinite(metrics.investmentReturn)
+        ? metrics.investmentReturn
+        : null,
+    periodNetContributions:
+      metrics?.netContributions != null && Number.isFinite(metrics.netContributions)
+        ? metrics.netContributions
+        : null,
+  };
+}
+
+/**
+ * Period-end for cover / chart / Q1 is the labelled Companion result.
+ * Live holdings never overwrite a historical or in-period observation.
  */
 export function resolveCanonicalPeriodEndValue(input: {
   holdingsSnapshotValue: number | null | undefined;
@@ -131,21 +188,9 @@ export function resolveCanonicalPeriodEndValue(input: {
   periodEndDate?: string | null;
   snapshotAsOfDay?: string | null;
 }): number | null {
-  const sameDay = isSameCalendarDay(
-    input.periodEndDate ?? null,
-    input.snapshotAsOfDay ?? null,
-  );
-  if (sameDay) {
-    return firstFinitePositive([
-      input.holdingsSnapshotValue,
-      input.periodWindowEndValue,
-      input.endingPortfolioValue,
-      input.companionMetricsEndingValue,
-    ]);
-  }
   return firstFinitePositive([
-    input.periodWindowEndValue,
     input.companionMetricsEndingValue,
+    input.periodWindowEndValue,
   ]);
 }
 
@@ -365,66 +410,27 @@ export function buildPeriodReportBrief(
 
   const metrics = companion.metrics;
   const snapshotValue = holdingsSnapshotValue(holdings);
-  const snapshotAsOfDay = isoCalendarDay(generatedAt);
-  const periodEndDate = isoCalendarDay(companion.endDate);
-  const periodStartDate = isoCalendarDay(companion.startDate);
-  const sameDaySnapshotIsPeriodEnd = isSameCalendarDay(
-    periodEndDate,
-    snapshotAsOfDay,
-  );
-  const windowChartPoints = clipChartPointsToPeriod(
-    (input.chartPoints ?? [])
-      .filter(
-        (point) =>
-          Number.isFinite(point.portfolioValue) && point.portfolioValue > 0,
-      )
-      .map((point) => ({ date: point.date, value: point.portfolioValue })),
-    periodStartDate,
-    periodEndDate,
-  );
-  const periodWindowStartValue = windowChartPoints[0]?.value ?? null;
-  const periodWindowEndValue =
-    windowChartPoints[windowChartPoints.length - 1]?.value ?? null;
-  const periodEndValue = resolveCanonicalPeriodEndValue({
-    holdingsSnapshotValue: snapshotValue,
-    endingPortfolioValue: input.endingPortfolioValue,
-    companionMetricsEndingValue: metrics?.endingValue ?? null,
-    periodWindowEndValue,
-    periodEndDate,
-    snapshotAsOfDay,
-  });
-  const periodStartValue = firstFinitePositive([
-    periodWindowStartValue,
-    metrics?.startingValue,
-    input.startingPortfolioValue,
-  ]);
+  const period = canonicalPeriodResultFromCompanion(companion);
+  const periodEndDate = period.periodEndDate;
+  const periodStartDate = period.periodStartDate;
+  const periodStartValue = period.periodStartValue;
+  const periodEndValue = period.periodEndValue;
+  const periodChangeAmount = period.periodMovementAmount;
+  const periodChangePercent = period.periodMovementPercent;
   const currentPortfolioValue = firstFinitePositive([
     input.currentPortfolioValue,
     snapshotValue,
   ]);
-  const currentValueForContext = sameDaySnapshotIsPeriodEnd
-    ? (currentPortfolioValue ?? periodEndValue)
-    : currentPortfolioValue;
+  const currentValueForContext = currentPortfolioValue;
   const attributionStartValue =
     input.startingPortfolioValue ?? metrics?.startingValue ?? null;
   const attributionEndValue =
     input.endingPortfolioValue ?? periodEndValue;
-  const periodChangeAmount =
-    periodStartValue != null && periodEndValue != null
-      ? periodEndValue - periodStartValue
-      : metrics?.portfolioMovement ?? null;
-  const periodChangePercent =
-    periodStartValue != null &&
-    periodEndValue != null &&
-    periodStartValue > 0 &&
-    Number.isFinite(periodStartValue) &&
-    Number.isFinite(periodEndValue)
-      ? ((periodEndValue - periodStartValue) / periodStartValue) * 100
-      : null;
   const showCurrentSnapshotLabel =
     monthly &&
-    Boolean(currentValueForContext) &&
-    !sameDaySnapshotIsPeriodEnd;
+    currentValueForContext != null &&
+    (periodEndValue == null ||
+      Math.round(currentValueForContext) !== Math.round(periodEndValue));
 
   const headline =
     review.hero?.conclusion ??
@@ -734,6 +740,8 @@ export function buildPeriodReportBrief(
     periodEndValue,
     periodChangeAmount,
     periodChangePercent,
+    periodInvestmentReturnAmount: period.periodInvestmentReturnAmount,
+    periodNetContributions: period.periodNetContributions,
     currentPortfolioValue: currentValueForContext,
     currentContextLabel: showCurrentSnapshotLabel
       ? "Current portfolio snapshot"

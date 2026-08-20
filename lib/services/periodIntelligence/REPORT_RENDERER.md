@@ -61,7 +61,7 @@ PDF text uses Helvetica WinAnsi. `sanitizePdfText` maps separators (including mi
 | Cover title (Your Weekly / Monthly Review) | `brief.coverTitle` / kind |
 | Cover kicker (Your week / Your month) | `hero.kicker` |
 | One conclusion | `hero.conclusion` / `headline` / `brief.headline` |
-| Portfolio value / period change | labelled period-end / labelled period % (`brief.periodEndValue`, `brief.periodChangePercent`) — not the live snapshot unless the period-end calendar day matches today |
+| Portfolio value / period change | labelled Companion period-end and **portfolio movement %** (`brief.periodEndValue`, `brief.periodChangePercent`). PERIOD CHANGE is not investment-return % and never the live snapshot |
 | Current allocation / holdings / goal | `brief.currentPortfolioValue` with `brief.currentContextLabel` when later than the period-end |
 | 30 seconds (max 3) | `brief.thirtySeconds` or `executiveSummary` |
 | 01 What happened | `happened` + `changed` + performance/contributor charts |

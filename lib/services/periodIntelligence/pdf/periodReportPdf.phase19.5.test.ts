@@ -224,7 +224,7 @@ describe("Phase 19.5 monthly period consistency", () => {
     expect(review.brief?.currentPortfolioValue).toBe(LIVE_NOW);
   });
 
-  it("Weekly same-day snapshot may still reconcile with period-end", () => {
+  it("does not overwrite weekly period-end with a later live snapshot", () => {
     const holdings = [
       holding({
         id: "w-cash",
@@ -261,10 +261,10 @@ describe("Phase 19.5 monthly period consistency", () => {
       "complete",
     );
     expect(review.period.endDate).toBe("2026-08-20");
-    expect(review.brief?.periodEndValue).toBe(123_803);
-    expect(review.brief?.portfolioValueLabel).toBe("€123,803");
-    expect(review.brief?.performanceChart?.endValueLabel).toBe("€123,803");
-    expect(review.brief?.currentContextLabel).toBeNull();
+    expect(review.brief?.periodEndValue).toBe(123_801);
+    expect(review.brief?.portfolioValueLabel).toBe("€123,801");
+    expect(review.brief?.performanceChart?.endValueLabel).toBe("€123,801");
+    expect(review.brief?.currentPortfolioValue).toBe(123_803);
   });
 
   it("archived monthly stays on stored period data", () => {

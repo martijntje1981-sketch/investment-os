@@ -103,6 +103,8 @@ export type PeriodReportBrief = {
   periodEndValue: number | null;
   periodChangeAmount: number | null;
   periodChangePercent: number | null;
+  periodInvestmentReturnAmount: number | null;
+  periodNetContributions: number | null;
   currentPortfolioValue: number | null;
   currentContextLabel: string | null;
   coverHighlights: PeriodReportCoverHighlight[];
