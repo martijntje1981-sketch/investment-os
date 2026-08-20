@@ -26,6 +26,7 @@ import {
   BONDS_RATES_OFFICIAL_CONTEXT_LABEL,
   BONDS_RATES_SECTION_ID,
   buildBondsRatesView,
+  formatAllocationPercent,
 } from "@/lib/services/classification";
 import type { PortfolioExposureAllocation } from "@/lib/services/classification/types";
 import type { FourQuestionsIntelligenceDepth } from "@/lib/services/fourQuestions/types";
@@ -143,9 +144,7 @@ export function BondsRatesSection({
             <div className={appIdentityAheadMetricClass}>
               <p className={appSectionLabelClass}>Fixed Income</p>
               <p className={`mt-1 text-[1.35rem] ${appKpiFutureClass}`}>
-                {view.weightPercent != null
-                  ? `${Math.round(view.weightPercent)}%`
-                  : "—"}
+                {formatAllocationPercent(view.weightPercent)}
               </p>
               <p className={`mt-1.5 ${appSectionBodyClass}`}>
                 {view.sleeveValue != null ? `${formatEur(view.sleeveValue)} · ` : ""}
@@ -178,7 +177,7 @@ export function BondsRatesSection({
                     <span className="font-normal text-slate-600"> · {row.name}</span>
                   </Link>
                   <span className={`shrink-0 tabular-nums ${appTableValueClass}`}>
-                    {Math.round(row.percent)}%
+                    {formatAllocationPercent(row.percent)}
                   </span>
                 </li>
               ))}
@@ -196,7 +195,7 @@ export function BondsRatesSection({
                     {row.label}
                   </span>
                   <span className={`shrink-0 tabular-nums ${appSectionMetaClass}`}>
-                    {row.percent}%
+                    {formatAllocationPercent(row.percent)}
                   </span>
                 </li>
               ))}

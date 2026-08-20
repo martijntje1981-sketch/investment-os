@@ -19,6 +19,7 @@ import { formatPortfolioPercent } from "@/lib/client/portfolioAnalysis";
 import { useDashboardMarketPulsePreview } from "@/lib/client/useDashboardMarketPulsePreview";
 import { useInvestmentIntelligence } from "@/lib/client/useInvestmentIntelligence";
 import { usePortfolioPerformanceHistory } from "@/lib/client/usePortfolioPerformanceHistory";
+import { formatAllocationPercent } from "@/lib/services/classification";
 import { isCryptoIntelligenceHolding } from "@/lib/services/classification/cryptoInstrumentIdentity";
 import {
   buildCryptoIntelligenceProfile,
@@ -147,7 +148,7 @@ function CoinDetailBlock({ coin }: { coin: CoinIntelligence }) {
             : "Unavailable"}
         </span>
         {" · "}
-        Weight: {formatPortfolioPercent(coin.portfolioWeightPercent)}
+        Weight: {formatAllocationPercent(coin.portfolioWeightPercent)}
         {" · "}
         Contribution:{" "}
         {coin.contributionPp != null

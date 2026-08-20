@@ -28,6 +28,7 @@ import {
   findHoldingIntelligenceCandidate,
   selectHoldingPageNewsItems,
 } from "@/lib/services/holdingIntelligence";
+import { formatAllocationPercent } from "@/lib/services/classification";
 
 const euro = new Intl.NumberFormat("en-GB", {
   style: "currency",
@@ -222,7 +223,7 @@ export default function HoldingPage() {
   const weightLabel =
     valuation.portfolioWeightPercent === null
       ? "—"
-      : `${valuation.portfolioWeightPercent.toFixed(1)}%`;
+      : formatAllocationPercent(valuation.portfolioWeightPercent);
   const returnPercentLabel =
     valuation.returnPercent === null
       ? "Price pending"

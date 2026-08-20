@@ -6,6 +6,7 @@
 
 import { holdingDetailPath, portfolioAddPath } from "@/lib/navigation/appRoutes";
 import { classifyHoldingExposure } from "@/lib/services/classification/classifyHoldingExposure";
+import { formatAllocationPercent } from "@/lib/services/classification/formatAllocationPercent";
 import {
   buildWhyRatesMatterCopy,
   selectVisibleOfficialRates,
@@ -110,7 +111,7 @@ export function buildFixedIncomePortfolioContextLine(
 ): string | null {
   if (weightPercent == null || !Number.isFinite(weightPercent)) return null;
   if (weightPercent < MATERIAL_WEIGHT_PERCENT) return null;
-  return `Fixed income now represents ${Math.round(weightPercent)}% of your portfolio.`;
+  return `Fixed income now represents ${formatAllocationPercent(weightPercent)} of your portfolio.`;
 }
 
 export function formatFixedIncomeHoldingField(
@@ -290,16 +291,16 @@ function whatMattersLine(
   sleeve: NonNullable<PortfolioExposureAllocation["fixedIncome"]>,
   typeRow: ReturnType<typeof dominantSubtype>,
 ): string {
-  const weight = Math.round(sleeve.weightPercent);
+  const weight = formatAllocationPercent(sleeve.weightPercent);
   const typePart =
     typeRow && typeRow.type !== "unknown"
       ? `, mostly ${formatFixedIncomeSubtypeLabel(typeRow).replace(/ · inferred$/i, "").toLowerCase()}`
       : "";
   const inferred = typeRow?.confidence === "inferred" ? " (inferred)" : "";
   if (sleeve.majorityIsClassifiedLongDuration) {
-    return `Fixed Income is ${weight}% of this portfolio${typePart}${inferred}. Classified holdings lean longer duration, so this sleeve is generally more sensitive to yield changes.`;
+    return `Fixed Income is ${weight} of this portfolio${typePart}${inferred}. Classified holdings lean longer duration, so this sleeve is generally more sensitive to yield changes.`;
   }
-  return `Fixed Income is ${weight}% of this portfolio${typePart}${inferred}. Rates and existing bond prices generally move in opposite directions; this sleeve is part of that picture.`;
+  return `Fixed Income is ${weight} of this portfolio${typePart}${inferred}. Rates and existing bond prices generally move in opposite directions; this sleeve is part of that picture.`;
 }
 
 function rateEffectLine(

@@ -1,5 +1,6 @@
 export {
   classifyHoldingExposure,
+  describeHoldingKindLabel,
   resolveGroupFromVerifiedExposureText,
   type ExposureClassificationHolding,
 } from "@/lib/services/classification/classifyHoldingExposure";
@@ -46,6 +47,7 @@ export {
   allocateDisplayPercents,
   buildPortfolioExposureAllocation,
 } from "@/lib/services/classification/buildPortfolioExposureAllocation";
+export { formatAllocationPercent } from "@/lib/services/classification/formatAllocationPercent";
 export {
   isBitcoinHolding,
   isEthereumHolding,

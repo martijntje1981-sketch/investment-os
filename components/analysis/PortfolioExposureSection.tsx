@@ -17,6 +17,7 @@ import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 import {
   EXPOSURE_GROUP_BAR_CLASS,
   EXPOSURE_GROUP_DOT_CLASS,
+  formatAllocationPercent,
   formatFixedIncomeSubtypeLabel,
   type PortfolioExposureAllocation,
   type PortfolioExposureGroupSlice,
@@ -82,7 +83,7 @@ export function PortfolioExposureSection({
             aria-label={allocation.groups
               .map(
                 (group) =>
-                  `${group.displayLabel} ${group.displayPercent} percent`,
+                  `${group.displayLabel} ${formatAllocationPercent(group.rawPercent)}`,
               )
               .join(", ")}
           >
@@ -91,7 +92,7 @@ export function PortfolioExposureSection({
                 key={group.groupId}
                 className={`h-full min-w-0 ${EXPOSURE_GROUP_BAR_CLASS[group.groupId]}`}
                 style={{ width: `${group.displayPercent}%` }}
-                title={`${group.displayLabel}: ${group.displayPercent}%`}
+                title={`${group.displayLabel}: ${formatAllocationPercent(group.rawPercent)}`}
               />
             ))}
           </div>
@@ -171,7 +172,9 @@ function ExposureCategoryRow({
           </div>
         </div>
         <div className="shrink-0 text-right">
-          <p className={appTableValueClass}>{group.displayPercent}%</p>
+          <p className={appTableValueClass}>
+            {formatAllocationPercent(group.rawPercent)}
+          </p>
           <p className={`mt-1 ${appCardValueClass}`}>{formatEur(group.value)}</p>
         </div>
       </div>
@@ -187,7 +190,7 @@ function ExposureCategoryRow({
                 {formatFixedIncomeSubtypeLabel(row)}
               </span>
               <span className={`shrink-0 tabular-nums ${appSectionLabelClass}`}>
-                {row.displayPercent}%
+                {formatAllocationPercent(row.rawPercent)}
               </span>
             </li>
           ))}

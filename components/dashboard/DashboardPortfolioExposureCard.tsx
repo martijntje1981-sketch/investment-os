@@ -12,6 +12,7 @@ import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 import {
   EXPOSURE_GROUP_BAR_CLASS,
   EXPOSURE_GROUP_DOT_CLASS,
+  formatAllocationPercent,
   type PortfolioExposureAllocation,
 } from "@/lib/services/classification";
 
@@ -59,7 +60,7 @@ export function DashboardPortfolioExposureCard({
               aria-label={allocation.groups
                 .map(
                   (group) =>
-                    `${group.displayLabel} ${group.displayPercent} percent`,
+                    `${group.displayLabel} ${formatAllocationPercent(group.rawPercent)}`,
                 )
                 .join(", ")}
             >
@@ -68,7 +69,7 @@ export function DashboardPortfolioExposureCard({
                   key={group.groupId}
                   className={`h-full min-w-0 ${EXPOSURE_GROUP_BAR_CLASS[group.groupId]}`}
                   style={{ width: `${group.displayPercent}%` }}
-                  title={`${group.displayLabel}: ${group.displayPercent}%`}
+                  title={`${group.displayLabel}: ${formatAllocationPercent(group.rawPercent)}`}
                 />
               ))}
             </div>
@@ -89,7 +90,7 @@ export function DashboardPortfolioExposureCard({
                     </span>
                   </span>
                   <span className="shrink-0 text-sm font-semibold tabular-nums text-slate-950">
-                    {group.displayPercent}%
+                    {formatAllocationPercent(group.rawPercent)}
                     <span className="sr-only">
                       {`, ${formatEur(group.value)}`}
                     </span>
@@ -122,7 +123,7 @@ export function DashboardPortfolioExposureCard({
                   </span>
                 </span>
                 <span className="shrink-0 text-sm font-semibold tabular-nums text-slate-950">
-                  {group.displayPercent}%
+                  {formatAllocationPercent(group.rawPercent)}
                   <span className="sr-only">
                     {`, ${formatEur(group.value)}`}
                   </span>

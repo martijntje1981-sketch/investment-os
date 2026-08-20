@@ -41,6 +41,10 @@ import {
 } from "@/lib/navigation/appRoutes";
 import { PAGE_PURPOSE } from "@/lib/navigation/productArchitecture";
 import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
+import {
+  describeHoldingKindLabel,
+  formatAllocationPercent,
+} from "@/lib/services/classification";
 import { runPortfolioExport } from "@/lib/client/runPortfolioExport";
 import {
   convertHoldingBaseDraftToEur,
@@ -777,6 +781,11 @@ export default function PortfolioPage() {
                       ? findAnalystQuoteForHolding(holding, analystQuotes)
                       : null;
                   const isCrypto = isCryptoHolding(holding);
+                  const kindLabel = describeHoldingKindLabel(holding);
+                  const allocationLabel =
+                    holdingValue === null
+                      ? "—"
+                      : formatAllocationPercent(allocation);
                   const cryptoDisplayPrice = isCrypto
                     ? resolveHoldingDisplayPrice(holding)
                     : null;
@@ -834,13 +843,18 @@ export default function PortfolioPage() {
                         <div className="min-w-0 flex-1">
                           <div className="flex min-w-0 items-center gap-2">
                             <span
-                              className={`inline-flex shrink-0 rounded-lg px-2 py-1 text-[12px] font-bold ${holding.assetType === "cash" ? "bg-emerald-100 text-emerald-800" : isCrypto ? "bg-violet-100 text-violet-900" : "bg-slate-950 text-white"}`}
+                              className={`inline-flex shrink-0 rounded-lg px-2 py-1 text-[13px] font-bold ${holding.assetType === "cash" ? "bg-emerald-100 text-emerald-800" : isCrypto ? "bg-violet-100 text-violet-900" : "bg-slate-950 text-white"}`}
                             >
                               {holding.symbol}
                             </span>
                             <p className="min-w-0 truncate text-[14px] font-semibold text-slate-900">
                               {holding.name}
                             </p>
+                            {kindLabel ? (
+                              <span className="shrink-0 text-[13px] font-medium text-teal-800">
+                                {kindLabel}
+                              </span>
+                            ) : null}
                           </div>
                           {detailHref ? (
                             <ViewHoldingCue className="mt-1 block" />
@@ -888,9 +902,7 @@ export default function PortfolioPage() {
                                 Allocation
                               </p>
                               <p className="truncate text-[13px] font-semibold tabular-nums text-slate-700">
-                                {holdingValue === null
-                                  ? "—"
-                                  : `${allocation.toFixed(1)}%`}
+                                {allocationLabel}
                               </p>
                             </div>
                           </div>
@@ -904,7 +916,7 @@ export default function PortfolioPage() {
                             type="button"
                             onClick={() => openEdit(holding)}
                             aria-label={`Edit ${holding.name}`}
-                            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600"
+                            className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600"
                           >
                             <Pencil className="h-4 w-4" />
                           </button>
@@ -912,7 +924,7 @@ export default function PortfolioPage() {
                             type="button"
                             onClick={() => removeHolding(holding)}
                             aria-label={`Remove ${holding.name}`}
-                            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-red-600"
+                            className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-red-600"
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -935,7 +947,7 @@ export default function PortfolioPage() {
                               ? "Cash holding"
                               : isCrypto
                                 ? `${holding.quantity.toLocaleString("en-GB")} · ${holding.tradingPair ?? `${holding.symbol}/${holding.pairCurrency ?? "EUR"}`}`
-                                : `${holding.quantity.toLocaleString("en-GB")} units · ${holdingMatchStatusLabel(matchStatus, holding.assetType)}`}
+                                : `${holding.quantity.toLocaleString("en-GB")} units · ${holdingMatchStatusLabel(matchStatus, holding.assetType)}${kindLabel ? ` · ${kindLabel}` : ""}`}
                           </p>
                           {isCrypto ? (
                             <div className="mt-2 space-y-1">
@@ -987,9 +999,7 @@ export default function PortfolioPage() {
                         </div>
                         <div>
                           <p className={appTableValueClass}>
-                            {holdingValue === null
-                              ? "—"
-                              : `${allocation.toFixed(1)}%`}
+                            {allocationLabel}
                           </p>
                         </div>
                         <div>

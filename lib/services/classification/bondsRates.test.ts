@@ -465,6 +465,9 @@ describe("Phase 14 bonds and rates intelligence", () => {
       intelligenceDepth: "complete",
     });
     expect(view.hasFixedIncome).toBe(true);
+    expect(view.weightPercent).toBeGreaterThan(0);
+    expect(view.weightPercent).toBeLessThan(0.1);
+    expect(view.whatMatters).toMatch(/<0\.1%/);
     expect(view.allocationLine).not.toBe(view.emptyHeadline);
     expect(view.holdings.map((row) => row.symbol)).toContain("EUNA");
     expect(view.metrics.some((row) => /aggregate/i.test(row.value))).toBe(true);
@@ -526,6 +529,8 @@ describe("Phase 14 bonds and rates intelligence", () => {
     expect(match).toContain("safeFetchSearch");
     expect(match).not.toMatch(/type:\s*"stock"/);
     expect(read("app/portfolio/page.tsx")).toMatch(/Bond ETFs and individual bonds/);
+    expect(read("app/portfolio/page.tsx")).toContain("describeHoldingKindLabel");
+    expect(read("app/portfolio/page.tsx")).toContain("formatAllocationPercent");
     expect(read("lib/services/instruments/listingConfirmation.ts")).toContain(
       "providerInstrumentType",
     );

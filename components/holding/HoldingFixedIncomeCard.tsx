@@ -22,6 +22,7 @@ import {
   BONDS_RATES_OFFICIAL_CONTEXT_LABEL,
   buildFixedIncomeHoldingProfile,
   classifyHoldingExposure,
+  formatAllocationPercent,
 } from "@/lib/services/classification";
 import type { FourQuestionsIntelligenceDepth } from "@/lib/services/fourQuestions/types";
 import type { HoldingPageNewsItem } from "@/lib/services/holdingIntelligence";
@@ -73,7 +74,7 @@ export function HoldingFixedIncomeCard({
     metrics.push({
       id: "weight",
       label: "Portfolio weight",
-      value: `${weightPercent.toFixed(1)}%`,
+      value: formatAllocationPercent(weightPercent),
     });
   }
   if (changePercent != null && Number.isFinite(changePercent)) {

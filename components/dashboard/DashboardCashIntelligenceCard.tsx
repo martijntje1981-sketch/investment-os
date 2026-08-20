@@ -15,6 +15,7 @@ import {
 } from "@/components/layout/appSurface";
 import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 import { useCashIntelligence } from "@/lib/client/useCashIntelligence";
+import { formatAllocationPercent } from "@/lib/services/classification";
 import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
@@ -29,7 +30,7 @@ function formatRate(rate: number | null | undefined): string {
 
 function formatAllocation(value: number | null | undefined): string | null {
   if (value == null || !Number.isFinite(value)) return null;
-  return `${value.toFixed(1)}%`;
+  return formatAllocationPercent(value);
 }
 
 /**

@@ -6,6 +6,7 @@ import {
   buildPersonalIntelligenceConclusion,
   selectDashboardActionPlanItems,
 } from "@/lib/client/dashboardConclusions";
+import { formatAllocationPercent } from "@/lib/services/classification";
 import { fourQuestionHubPath } from "@/lib/services/fourQuestions/catalog";
 import {
   buildChangeTrace,
@@ -45,12 +46,6 @@ function isPortfolioMoveHeadline(text: string): boolean {
   return /larger-than-usual|larger than usual|portfolio moved/i.test(text);
 }
 
-function formatWeightPercent(value: number): string {
-  const rounded = Math.round(value);
-  if (Math.abs(value - rounded) < 0.05) return `${rounded}%`;
-  return `${value.toFixed(1)}%`;
-}
-
 function buildStructuralAttention(input: {
   intelligence: PersonalIntelligenceToday;
 }): { answer: string; support: string } | null {
@@ -68,8 +63,8 @@ function buildStructuralAttention(input: {
 
   const support =
     group && group.displayPercent >= 20
-      ? `About ${formatWeightPercent(group.displayPercent)} of portfolio value is linked to ${group.displayLabel.toLowerCase()} exposure.`
-      : `About ${formatWeightPercent(leadingWeight.weightPercent)} of portfolio value currently sits in one holding.`;
+      ? `About ${formatAllocationPercent(group.displayPercent)} of portfolio value is linked to ${group.displayLabel.toLowerCase()} exposure.`
+      : `About ${formatAllocationPercent(leadingWeight.weightPercent)} of portfolio value currently sits in one holding.`;
 
   return {
     answer: `${leadingWeight.name} remains your largest portfolio concentration.`,
@@ -205,7 +200,7 @@ export function buildWhatMattersNowQuestion(input: {
           : !quiet &&
               intelligence.exposure?.fixedIncome &&
               intelligence.exposure.fixedIncome.weightPercent >= 15
-            ? `Fixed income now represents ${formatWeightPercent(intelligence.exposure.fixedIncome.weightPercent)} of your portfolio.`
+            ? `Fixed income now represents ${formatAllocationPercent(intelligence.exposure.fixedIncome.weightPercent)} of your portfolio.`
         : !quiet &&
             conclusion.attentionLine &&
             !isDailyDriverWording(conclusion.attentionLine)

@@ -290,3 +290,19 @@ export function classifyHoldingExposure(
     "No verified assetType special-case, research profile, or conservative fixed-income match",
   );
 }
+
+export function describeHoldingKindLabel(
+  holding: ExposureClassificationHolding,
+): string | null {
+  if (holding.assetType === "cash") return "Cash";
+  const classified = classifyHoldingExposure(holding);
+  if (!classified.fixedIncome?.isFixedIncome) return null;
+  const blob = [
+    holding.providerInstrumentType,
+    holding.name,
+    holding.instrumentName,
+  ]
+    .filter(Boolean)
+    .join(" ");
+  return /\betf\b/i.test(blob) ? "Bond ETF" : "Fixed Income";
+}
