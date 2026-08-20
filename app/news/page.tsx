@@ -1,7 +1,6 @@
 "use client";
 
 import { NewsHubContent } from "@/components/news/NewsHubContent";
-import BottomNavigation from "@/components/home/BottomNav";
 import { MakeTobaileyYoursCard } from "@/components/conversion/MakeTobaileyYoursCard";
 import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer";
 import { PageHero } from "@/components/layout/PageHero";
@@ -82,7 +81,6 @@ export default function NewsPage() {
           isRefreshing={isLoading}
         />
       </PageContainer>
-      <BottomNavigation />
     </>
   );
 }

@@ -79,7 +79,12 @@ describe("discover UI integration", () => {
     );
 
     expect(discoverPage).toContain("ThingsYouMayHaveMissedSection");
-    expect(discoverPage).toContain("BottomNavigation");
+    expect(discoverPage).not.toContain("BottomNavigation");
+    const layout = readFileSync(
+      resolve(process.cwd(), "app/layout.tsx"),
+      "utf8",
+    );
+    expect(layout).toContain("<BottomNav />");
     expect(preview).not.toContain("DiscoverMissedTeaser");
     expect(preview).toContain("DASHBOARD_DEEP_LINKS.marketBriefing");
     expect(dashboard).not.toContain("useDiscoverSnapshot");

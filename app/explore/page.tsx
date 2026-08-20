@@ -5,7 +5,6 @@ import Link from "next/link";
 import { ArrowRight, Check, Sparkles } from "lucide-react";
 
 import { TrialStepsCard } from "@/components/example/TrialStepsCard";
-import BottomNavigation from "@/components/home/BottomNav";
 import { PageContainer } from "@/components/layout/PageContainer";
 import {
   appBrandSoftButtonClass,
@@ -625,7 +624,6 @@ export default function ExplorePage() {
           </div>
         </section>
       </PageContainer>
-      <BottomNavigation />
     </>
   );
 }

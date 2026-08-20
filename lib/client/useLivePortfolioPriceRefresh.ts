@@ -14,6 +14,7 @@ import {
 } from "@/lib/client/appEntryPortfolioRefresh";
 import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 import type { CryptoRefreshDiagnosticRecord } from "@/lib/client/cryptoRefreshDiagnostics";
+import { markAppEntryPricesReconciled } from "@/lib/client/appEntryPerformanceMarks";
 import { readLastLivePriceRefreshAt } from "@/lib/client/livePortfolioPriceRefresh";
 import {
   buildRefreshPreviewMessageForHoldings,
@@ -65,16 +66,19 @@ export function useLivePortfolioPriceRefresh({
     setLiveRefreshAt(readLastLivePriceRefreshAt(userSub));
   }, [ready, userSub]);
 
-  const refreshPrices = useCallback(async () => {
+  const refreshPrices = useCallback(async (options?: { cacheFirst?: boolean }) => {
     if (!userSub || isRefreshingRef.current) return;
 
     const currentHoldings = holdingsRef.current;
-    const preview = buildRefreshPreviewMessageForHoldings(
-      currentHoldings,
-      userSub,
-    );
-    if (preview) {
-      setMessage(preview);
+    const cacheFirst = options?.cacheFirst === true;
+    if (!cacheFirst) {
+      const preview = buildRefreshPreviewMessageForHoldings(
+        currentHoldings,
+        userSub,
+      );
+      if (preview) {
+        setMessage(preview);
+      }
     }
     setShowRefreshDiagnostics(false);
     setRefreshDiagnostics(null);
@@ -90,7 +94,10 @@ export function useLivePortfolioPriceRefresh({
         baseCurrency,
         fxStatus: snapshot.status,
         refreshFx,
+        cacheFirst,
       });
+
+      markAppEntryPricesReconciled();
 
       // Keep prior figures on soft skip (cooldown / in-flight) — never clear data.
       if (outcome.updated || outcome.status === "success") {
@@ -120,6 +127,7 @@ export function useLivePortfolioPriceRefresh({
       }
       return outcome;
     } catch {
+      markAppEntryPricesReconciled();
       setStatus("error");
       setMessage(
         "Prices could not be refreshed. Your last available prices remain visible.",
@@ -158,7 +166,7 @@ export function useLivePortfolioPriceRefresh({
         holdingsCount: holdingsRef.current.length,
       });
       if (!decision.shouldRefresh) return;
-      void refreshPrices();
+      void refreshPrices({ cacheFirst: true });
     };
 
     if (!entryRefreshStartedRef.current) {

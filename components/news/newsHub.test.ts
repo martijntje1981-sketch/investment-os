@@ -41,7 +41,7 @@ describe("news hub UI structure", () => {
     expect(hubSource).not.toContain("NewsHubTabs");
     expect(hubSource).not.toContain("matchMedia");
     expect(hubSource).not.toContain("PortfolioNewsPreview");
-    expect(newsPage).toContain("BottomNavigation");
+    expect(newsPage).not.toContain("BottomNavigation");
     expect(newsPage).toContain("PageContainer");
     expect(newsPage).toContain("PageHero");
     expect(newsPage).toContain('title="News"');

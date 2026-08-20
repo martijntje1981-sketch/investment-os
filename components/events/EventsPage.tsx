@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import { CalendarDays } from "lucide-react";
 
 import { BackButton } from "@/components/layout/BackButton";
-import BottomNavigation from "@/components/home/BottomNav";
 import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer";
 import { AuthenticatedFourQuestionsNav } from "@/components/fourQuestions/AuthenticatedFourQuestionsNav";
 import {
@@ -279,7 +278,6 @@ export default function EventsPage() {
           </div>
         )}
       </PageContainer>
-      <BottomNavigation />
     </>
   );
 }

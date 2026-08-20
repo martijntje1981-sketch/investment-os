@@ -5,7 +5,6 @@ import Link from "next/link";
 import { ArrowRight, RefreshCw } from "lucide-react";
 
 import { BackButton } from "@/components/layout/BackButton";
-import BottomNavigation from "@/components/home/BottomNav";
 import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer";
 import { AuthenticatedFourQuestionsNav } from "@/components/fourQuestions/AuthenticatedFourQuestionsNav";
 import {
@@ -789,7 +788,6 @@ export default function MarketPulsePage() {
           </Link>
         </div>
       </PageContainer>
-      <BottomNavigation />
     </>
   );
 }

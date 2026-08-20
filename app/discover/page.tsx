@@ -7,7 +7,6 @@ import {
   RelatedInvestmentsSection,
   ThingsYouMayHaveMissedSection,
 } from "@/components/discover/DiscoverSections";
-import BottomNavigation from "@/components/home/BottomNav";
 import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer";
 import { PageHero } from "@/components/layout/PageHero";
 import { formatNewsRefreshedAt } from "@/components/news/newsFormatting";
@@ -52,7 +51,6 @@ export default function DiscoverPage() {
           </section>
           <DiscoverDisclaimer />
         </PageContainer>
-        <BottomNavigation />
       </>
     );
   }
@@ -95,7 +93,6 @@ export default function DiscoverPage() {
 
         <DiscoverDisclaimer />
       </PageContainer>
-      <BottomNavigation />
     </>
   );
 }

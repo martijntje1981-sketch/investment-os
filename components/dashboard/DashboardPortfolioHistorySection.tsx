@@ -137,11 +137,11 @@ export function DashboardPortfolioHistorySection({
       ? CONTRIBUTIONS_ONBOARDING_COPY
       : null;
 
-  function handleExport() {
+  async function handleExport() {
     if (isExporting) return;
     setIsExporting(true);
     try {
-      runPortfolioExport({
+      await runPortfolioExport({
         holdings,
         entries,
         portfolioValueEur: portfolioValue,

@@ -16,7 +16,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AlertCircle, Check, Info, RefreshCw, Sparkles } from "lucide-react";
 
-import BottomNavigation from "@/components/home/BottomNav";
 import { SupportedInstrumentsCallout } from "@/components/marketing/SupportedInstrumentsCallout";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHero } from "@/components/layout/PageHero";
@@ -722,7 +721,6 @@ export default function UploadPage() {
 
           {phase === "choose" ? <ImportTrustBanner /> : null}
       </PageContainer>
-      <BottomNavigation />
     </>
   );
 }

@@ -42,6 +42,7 @@ import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 import { useMarketSnapshotMetadata } from "@/lib/client/useMarketSnapshotMetadata";
 import { useLivePortfolioPriceRefresh } from "@/lib/client/useLivePortfolioPriceRefresh";
 import { usePortfolioPerformanceHistory } from "@/lib/client/usePortfolioPerformanceHistory";
+import { useAfterFirstPaint } from "@/lib/client/useAfterFirstPaint";
 import { needsPortfolioSetup } from "@/lib/client/portfolioSetup";
 import { buildSmartDashboardIntelligence } from "@/lib/client/smartDashboardIntelligence";
 import { buildPortfolioHealthProfile } from "@/lib/services/portfolio/portfolioHealthProfile";
@@ -118,10 +119,13 @@ export default function DashboardPage() {
     goal,
     hasSavedGoal,
   });
+  const historyEnabled = useAfterFirstPaint(
+    portfolioReady && holdings.length > 0,
+  );
   const { realityCheck } = useGoalRealityCheck(
     scopedHoldings,
     goal,
-    scopedHoldings.length > 0 && hasSavedGoal,
+    historyEnabled && scopedHoldings.length > 0 && hasSavedGoal,
   );
 
   const {
@@ -141,8 +145,16 @@ export default function DashboardPage() {
     portfolioReady && holdings.length > 0,
   );
 
-  const weekHistory = usePortfolioPerformanceHistory(holdings, "1W");
-  const monthHistory = usePortfolioPerformanceHistory(holdings, "1M");
+  const weekHistory = usePortfolioPerformanceHistory(
+    holdings,
+    "1W",
+    historyEnabled,
+  );
+  const monthHistory = usePortfolioPerformanceHistory(
+    holdings,
+    "1M",
+    historyEnabled,
+  );
 
   const snapshot = useMemo(
     () => buildDashboardPortfolioSnapshot(holdings, goal, hasSavedGoal),

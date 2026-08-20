@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { ArrowRight, Download } from "lucide-react";
 
-import BottomNavigation from "@/components/home/BottomNav";
 import { PageContainer } from "@/components/layout/PageContainer";
 import {
   appBrandSoftButtonClass,
@@ -67,7 +66,6 @@ export default function ExampleExpiredPage() {
           </div>
         </section>
       </PageContainer>
-      <BottomNavigation />
     </>
   );
 }

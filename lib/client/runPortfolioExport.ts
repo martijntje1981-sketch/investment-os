@@ -1,13 +1,9 @@
 /**
  * Shared one-click Export Portfolio runner — one workbook builder only.
  * Always includes the canonical contribution ledger when the caller supplies it.
+ * The Excel library loads only when the user exports.
  */
 
-import {
-  canExportPortfolio,
-  downloadPortfolioWorkbook,
-  type PortfolioExportInput,
-} from "@/lib/client/portfolioExport";
 import { calculateContributionSummary } from "@/lib/services/contributions/calculateContributionSummary";
 import { buildPortfolioFundingHistory } from "@/lib/services/contributions/portfolioFundingHistory";
 import type { PortfolioContributionEntry } from "@/lib/services/contributions/types";
@@ -15,6 +11,7 @@ import { buildPortfolioTimeline } from "@/lib/services/portfolio/timeline";
 import type { PortfolioBaseCurrency } from "@/lib/types/portfolioBaseCurrency";
 import type { GoalSettings, StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 import type { PortfolioPerformancePoint } from "@/lib/client/performance/types";
+import type { PortfolioExportInput } from "@/lib/client/portfolioExport";
 
 export type RunPortfolioExportInput = {
   holdings: StoredPortfolioHolding[];
@@ -31,7 +28,9 @@ export type RunPortfolioExportInput = {
   statusLabel?: string | null;
 };
 
-export function runPortfolioExport(input: RunPortfolioExportInput): boolean {
+export async function runPortfolioExport(
+  input: RunPortfolioExportInput,
+): Promise<boolean> {
   const currentBase =
     input.portfolioValueAvailable && input.portfolioValueEur != null
       ? input.convertEur(input.portfolioValueEur)
@@ -77,6 +76,10 @@ export function runPortfolioExport(input: RunPortfolioExportInput): boolean {
           }
         : null,
   };
+
+  const { canExportPortfolio, downloadPortfolioWorkbook } = await import(
+    "@/lib/client/portfolioExport"
+  );
 
   if (!canExportPortfolio(exportInput)) return false;
   downloadPortfolioWorkbook(exportInput);

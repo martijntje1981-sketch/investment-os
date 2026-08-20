@@ -24,7 +24,6 @@ import {
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
-import BottomNavigation from "@/components/home/BottomNav";
 import { appHeroShellClass } from "@/components/layout/appSurface";
 import {
   buildHoldingValuation,
@@ -751,8 +750,6 @@ export default function HoldingDetailPage() {
             </section>
           </div>
         </main>
-
-        <BottomNavigation />
       </>
     );
   }
@@ -1307,8 +1304,6 @@ export default function HoldingDetailPage() {
           </section>
         </div>
       </main>
-
-      <BottomNavigation />
     </>
   );
 }

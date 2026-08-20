@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Sparkles } from "lucide-react";
 
-import BottomNavigation from "@/components/home/BottomNav";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHero } from "@/components/layout/PageHero";
 import { AuthenticatedFourQuestionsNav } from "@/components/fourQuestions/AuthenticatedFourQuestionsNav";
@@ -159,7 +158,6 @@ export default function PerspectivesPage() {
           />
           <PerspectivesSkeleton />
         </PageContainer>
-        <BottomNavigation />
       </>
     );
   }
@@ -331,7 +329,6 @@ export default function PerspectivesPage() {
           </div>
         )}
       </PageContainer>
-      <BottomNavigation />
     </>
   );
 }

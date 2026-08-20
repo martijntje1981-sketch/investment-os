@@ -57,6 +57,7 @@ export type UsePortfolioPerformanceHistoryResult = {
 export function usePortfolioPerformanceHistory(
   holdings: StoredPortfolioHolding[],
   period: PerformancePeriodId,
+  enabled = true,
 ): UsePortfolioPerformanceHistoryResult {
   const [data, setData] =
     useState<PortfolioPerformanceHistoryApiResponse | null>(null);
@@ -67,7 +68,7 @@ export function usePortfolioPerformanceHistory(
   const fingerprint = useMemo(() => holdingsFingerprint(holdings), [holdings]);
 
   useEffect(() => {
-    if (period === "1D") {
+    if (!enabled || period === "1D") {
       setData(null);
       setIsLoading(false);
       setError(null);
@@ -136,7 +137,7 @@ export function usePortfolioPerformanceHistory(
     };
     // fingerprint captures holdings identity for the request
     // eslint-disable-next-line react-hooks/exhaustive-deps -- holdings via fingerprint
-  }, [period, fingerprint]);
+  }, [period, fingerprint, enabled]);
 
   return { data, isLoading, error };
 }

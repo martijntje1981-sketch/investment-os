@@ -228,7 +228,12 @@ function attachCryptoRefreshDiagnostics<T extends StoredPortfolioHolding>(
 
 export async function refreshLivePortfolioPrices<
   T extends StoredPortfolioHolding,
->(userSub: string, holdings: T[]): Promise<LivePriceRefreshResult<T>> {
+>(
+  userSub: string,
+  holdings: T[],
+  options?: { cacheFirst?: boolean },
+): Promise<LivePriceRefreshResult<T>> {
+  const cacheFirst = options?.cacheFirst === true;
   const preparedHoldings = prepareHoldingsForPricing(holdings) as T[];
   const totalQuotable = countUniqueQuotableProviderSymbols(preparedHoldings, userSub);
   const uniqueRequested = totalQuotable;
@@ -248,7 +253,7 @@ export async function refreshLivePortfolioPrices<
   }
 
   const cooldownRemainingMs = getLivePriceRefreshCooldownRemainingMs();
-  if (cooldownRemainingMs > 0) {
+  if (!cacheFirst && cooldownRemainingMs > 0) {
     return {
       holdings: applyCachedPrices(userSub, preparedHoldings),
       updated: false,
@@ -284,63 +289,66 @@ export async function refreshLivePortfolioPrices<
     logLivePriceRefreshTrace("refresh_click", {
       uniqueRequested,
       totalQuotable,
+      cacheFirst,
     });
 
-    const estimateResponse = await fetch("/api/prices", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        holdings: quotablePayload,
-        forceRefresh: true,
-        estimateOnly: true,
-      }),
-      cache: "no-store",
-    });
-
-    const estimateData = (await estimateResponse.json()) as PriceApiResponse;
-    const totalRequired =
-      estimateData.refreshSummary?.totalCallsRequired ??
-      (estimateData.refreshSummary?.providerCallsRequired ?? uniqueRequested);
-    const canAfford =
-      estimateData.canAffordRefresh ??
-      (estimateData.eodhdBudget
-        ? totalRequired <= estimateData.eodhdBudget.spendableRemaining
-        : true);
-
-    if (!canAfford) {
-      logLivePriceRefreshTrace("budget_blocked", {
-        totalRequired,
-        spendableRemaining: estimateData.eodhdBudget?.spendableRemaining ?? null,
+    if (!cacheFirst) {
+      const estimateResponse = await fetch("/api/prices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          holdings: quotablePayload,
+          forceRefresh: true,
+          estimateOnly: true,
+        }),
+        cache: "no-store",
       });
-      return attachCryptoRefreshDiagnostics(
-        {
-          holdings: applyCachedPrices(userSub, preparedHoldings),
-          updated: false,
-          uniqueRequested,
-          updatedCount: 0,
-          totalQuotable,
-          message:
-            "The market-data limit has been reached. Your last available prices remain visible.",
-          quotaExhausted: true,
-          inProgress: false,
-          cooldownRemainingMs: 0,
-        },
-        {
-          preparedHoldings,
-          quotablePayload,
-          apiResponse: {
-            ...estimateData,
-            prices: [],
-            errors: [],
-            requested: quotablePayload.length,
-            received: 0,
-            canAffordRefresh: false,
+
+      const estimateData = (await estimateResponse.json()) as PriceApiResponse;
+      const totalRequired =
+        estimateData.refreshSummary?.totalCallsRequired ??
+        (estimateData.refreshSummary?.providerCallsRequired ?? uniqueRequested);
+      const canAfford =
+        estimateData.canAffordRefresh ??
+        (estimateData.eodhdBudget
+          ? totalRequired <= estimateData.eodhdBudget.spendableRemaining
+          : true);
+
+      if (!canAfford) {
+        logLivePriceRefreshTrace("budget_blocked", {
+          totalRequired,
+          spendableRemaining: estimateData.eodhdBudget?.spendableRemaining ?? null,
+        });
+        return attachCryptoRefreshDiagnostics(
+          {
+            holdings: applyCachedPrices(userSub, preparedHoldings),
+            updated: false,
+            uniqueRequested,
+            updatedCount: 0,
+            totalQuotable,
+            message:
+              "The market-data limit has been reached. Your last available prices remain visible.",
+            quotaExhausted: true,
+            inProgress: false,
+            cooldownRemainingMs: 0,
           },
-          beforeHoldings: preparedHoldings,
-          afterHoldings: preparedHoldings,
-          budgetBlocked: true,
-        },
-      );
+          {
+            preparedHoldings,
+            quotablePayload,
+            apiResponse: {
+              ...estimateData,
+              prices: [],
+              errors: [],
+              requested: quotablePayload.length,
+              received: 0,
+              canAffordRefresh: false,
+            },
+            beforeHoldings: preparedHoldings,
+            afterHoldings: preparedHoldings,
+            budgetBlocked: true,
+          },
+        );
+      }
     }
 
     const response = await fetch("/api/prices", {
@@ -348,7 +356,7 @@ export async function refreshLivePortfolioPrices<
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         holdings: quotablePayload,
-        forceRefresh: true,
+        forceRefresh: !cacheFirst,
         estimateOnly: false,
       }),
       cache: "no-store",
@@ -373,6 +381,68 @@ export async function refreshLivePortfolioPrices<
 
     const normalizedQuotes = parsePriceApiResponseQuotes(data.prices);
     const cachedHoldings = applyCachedPrices(userSub, preparedHoldings);
+
+    if (cacheFirst) {
+      if (normalizedQuotes.length === 0) {
+        return {
+          holdings: cachedHoldings,
+          updated: false,
+          uniqueRequested,
+          updatedCount: 0,
+          totalQuotable,
+          message:
+            "Prices could not be refreshed. Your last available prices remain visible.",
+          quotaExhausted: false,
+          inProgress: false,
+          cooldownRemainingMs: getLivePriceRefreshCooldownRemainingMs(),
+        };
+      }
+
+      const refreshed = applyPricesToHoldings(preparedHoldings, normalizedQuotes, {
+        clearMissingDailyFields: false,
+      });
+      const appliedCount = countAppliedPriceUpdates(preparedHoldings, refreshed);
+      if (appliedCount === 0) {
+        return {
+          holdings: cachedHoldings,
+          updated: false,
+          uniqueRequested,
+          updatedCount: 0,
+          totalQuotable,
+          message: buildNoPricesUpdatedMessage(),
+          quotaExhausted: false,
+          inProgress: false,
+          cooldownRemainingMs: getLivePriceRefreshCooldownRemainingMs(),
+        };
+      }
+
+      writePriceCache(userSub, normalizedQuotes, {
+        lastSuccessfulUpdate: data.lastSuccessfulUpdate ?? new Date().toISOString(),
+        quoteSource: data.quoteSource ?? "cache",
+      });
+
+      logLivePriceRefreshTrace("holdings_applied", {
+        quoteCount: normalizedQuotes.length,
+        appliedCount,
+        cacheFirst: true,
+        lastUpdatedAt:
+          refreshed.find((holding) => holding.marketPriceUpdatedAt)?.marketPriceUpdatedAt ??
+          null,
+      });
+
+      return {
+        holdings: refreshed,
+        updated: true,
+        uniqueRequested,
+        updatedCount: appliedCount,
+        totalQuotable,
+        message: buildLiveRefreshSuccessMessage(appliedCount),
+        quotaExhausted: false,
+        inProgress: false,
+        cooldownRemainingMs: getLivePriceRefreshCooldownRemainingMs(),
+        showCryptoRefreshDiagnostics: false,
+      };
+    }
 
     if (
       isQuotaExhaustedResponse(

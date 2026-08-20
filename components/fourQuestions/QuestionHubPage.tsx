@@ -7,7 +7,6 @@ import { useMemo } from "react";
 import { FourQuestionsCompactNav } from "@/components/fourQuestions/FourQuestionsCompactNav";
 import { QuestionHubBrandBar } from "@/components/fourQuestions/QuestionHubBrandBar";
 import { TobaileyMarkWatermark } from "@/components/fourQuestions/TobaileyMarkWatermark";
-import BottomNavigation from "@/components/home/BottomNav";
 import {
   AppPageLoading,
   PageContainer,
@@ -303,7 +302,6 @@ export function QuestionHubPage({ questionId }: QuestionHubPageProps) {
           </Link>
         </p>
       </PageContainer>
-      <BottomNavigation />
     </>
   );
 }

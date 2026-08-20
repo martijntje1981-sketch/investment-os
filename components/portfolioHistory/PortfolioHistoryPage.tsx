@@ -7,7 +7,6 @@ import { ExportPortfolioButton } from "@/components/export/ExportPortfolioButton
 
 import { PortfolioPerformanceChart } from "@/components/analysis/performance/PortfolioPerformanceChart";
 import { ManageContributionsDialog } from "@/components/contributions/ManageContributionsDialog";
-import BottomNavigation from "@/components/home/BottomNav";
 import {
   AppPageLoading,
   PageContainer,
@@ -182,13 +181,13 @@ export default function PortfolioHistoryPage() {
     return <AppPageLoading />;
   }
 
-  function handleExport() {
+  async function handleExport() {
     if (isExporting) return;
     setExportError(null);
     setExportSuccess(null);
     setIsExporting(true);
     try {
-      const ok = runPortfolioExport({
+      const ok = await runPortfolioExport({
         holdings,
         entries,
         portfolioValueEur: performance.totalValue,
@@ -486,8 +485,6 @@ export default function PortfolioHistoryPage() {
           </div>
         </section>
       </PageContainer>
-
-      <BottomNavigation />
 
       {dialogOpen ? (
         <ManageContributionsDialog

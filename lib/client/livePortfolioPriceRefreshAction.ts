@@ -27,6 +27,7 @@ export type LivePortfolioPriceRefreshActionInput = {
   baseCurrency: PortfolioBaseCurrency;
   fxStatus: BaseCurrencyFxStatus;
   refreshFx: () => void;
+  cacheFirst?: boolean;
 };
 
 export type LivePortfolioPriceRefreshActionOutcome = {
@@ -86,6 +87,7 @@ export async function runLivePortfolioPriceRefreshAction(
     baseCurrency,
     fxStatus,
     refreshFx,
+    cacheFirst,
   } = input;
 
   const uniqueCount = countUniqueQuotableProviderSymbols(holdings, userSub);
@@ -106,7 +108,9 @@ export async function runLivePortfolioPriceRefreshAction(
     };
   }
 
-  const result = await refreshLivePortfolioPrices(userSub, holdings);
+  const result = await refreshLivePortfolioPrices(userSub, holdings, {
+    cacheFirst,
+  });
   let fxRecoveryRequested = false;
   let liveRefreshAt = readLastLivePriceRefreshAt(userSub);
   let nextHoldings = result.holdings;

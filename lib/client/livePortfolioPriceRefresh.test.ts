@@ -9,7 +9,6 @@ import {
   resetLivePriceRefreshStateForTests,
 } from "@/lib/client/livePortfolioPriceRefresh";
 import {
-  applyCachedPrices,
   isPriceCacheFresh,
   loadUserPortfolioHoldings,
   writePortfolioToStorage,
@@ -379,5 +378,75 @@ describe("livePortfolioPriceRefresh", () => {
 
     expect(readLastLivePriceRefreshAt(USER)).toBeNull();
     expect(localStorage.getItem(lastLivePriceRefreshKey(USER))).toBeNull();
+  });
+
+  it("cache-first app-entry skips estimate and forceRefresh", async () => {
+    writePortfolioToStorage(USER, [holding("VWCE", "VWCE.XETRA")]);
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        success: true,
+        quoteSource: "cache",
+        prices: [
+          {
+            symbol: "VWCE",
+            providerSymbol: "VWCE.XETRA",
+            priceEur: 121,
+            currentPrice: 121,
+            dataStatus: "delayed",
+            updatedAt: new Date().toISOString(),
+          },
+        ],
+        requested: 1,
+        received: 1,
+        refreshSummary: { providerCallsMade: 0 },
+      }),
+    } as Response);
+
+    const result = await refreshLivePortfolioPrices(
+      USER,
+      loadUserPortfolioHoldings(USER),
+      { cacheFirst: true },
+    );
+
+    expect(fetch).toHaveBeenCalledTimes(1);
+    const body = JSON.parse(String(vi.mocked(fetch).mock.calls[0]![1]?.body));
+    expect(body.forceRefresh).toBe(false);
+    expect(body.estimateOnly).toBe(false);
+    expect(result.updated).toBe(true);
+    expect(result.holdings[0]?.currentPrice).toBe(121);
+    expect(result.holdings[0]?.priceDataStatus).toBe("delayed");
+    expect(readLastLivePriceRefreshAt(USER)).toBeNull();
+  });
+
+  it("cache-first keeps last-known-good when the request fails", async () => {
+    writePortfolioToStorage(USER, [
+      {
+        ...holding("VWCE", "VWCE.XETRA"),
+        currentPrice: 110,
+        priceDataStatus: "stale",
+      },
+    ]);
+    writePriceCache(USER, [
+      {
+        symbol: "VWCE",
+        providerSymbol: "VWCE.XETRA",
+        priceEur: 110,
+        currentPrice: 110,
+        dataStatus: "stale",
+        updatedAt: new Date().toISOString(),
+      },
+    ]);
+    vi.mocked(fetch).mockRejectedValueOnce(new Error("network down"));
+
+    const result = await refreshLivePortfolioPrices(
+      USER,
+      loadUserPortfolioHoldings(USER),
+      { cacheFirst: true },
+    );
+
+    expect(result.updated).toBe(false);
+    expect(result.holdings[0]?.currentPrice).toBe(110);
+    expect(result.message).toMatch(/last available prices remain visible/i);
   });
 });

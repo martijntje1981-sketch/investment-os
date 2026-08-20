@@ -8,6 +8,7 @@ import {
   resolveHoldingPriceTrustStatus,
 } from "@/lib/client/holdingDisplayPrice";
 import { getHoldingMarketValue } from "@/lib/client/portfolioAnalysis";
+import { resolvePortfolioTotalValueAvailability } from "@/lib/client/portfolioValuationAvailability";
 import type { PortfolioPerformancePoint } from "@/lib/client/performance/types";
 import {
   buildAllocationIntelligence,
@@ -116,6 +117,35 @@ function firstFinitePositive(
     if (value != null && Number.isFinite(value) && value > 0) return value;
   }
   return null;
+}
+
+/**
+ * Current-snapshot total for Goal / funding comparison.
+ * Holdings use the same availability helper as Dashboard and Goals.
+ * Cash-only remainder or a caller-supplied partial sum must not flip
+ * an unpriced investment book to available.
+ */
+export function resolvePeriodReportCurrentPortfolioContext(
+  holdings: StoredPortfolioHolding[],
+  inputCurrent: number | null | undefined,
+): { available: boolean; value: number | null } {
+  if (holdings.length > 0) {
+    const availability = resolvePortfolioTotalValueAvailability(holdings);
+    if (!availability.isAvailable) {
+      return { available: false, value: null };
+    }
+    return {
+      available: true,
+      value:
+        firstFinitePositive([inputCurrent, availability.totalValue]) ??
+        availability.totalValue,
+    };
+  }
+
+  const fromInput = firstFinitePositive([inputCurrent]);
+  return fromInput != null
+    ? { available: true, value: fromInput }
+    : { available: false, value: null };
 }
 
 export type CanonicalPeriodResult = {
@@ -439,7 +469,6 @@ export function buildPeriodReportBrief(
   const review = input.review;
 
   const metrics = companion.metrics;
-  const snapshotValue = holdingsSnapshotValue(holdings);
   const period = canonicalPeriodResultFromCompanion(companion);
   const periodEndDate = period.periodEndDate;
   const periodStartDate = period.periodStartDate;
@@ -447,11 +476,12 @@ export function buildPeriodReportBrief(
   const periodEndValue = period.periodEndValue;
   const periodChangeAmount = period.periodMovementAmount;
   const periodChangePercent = period.periodMovementPercent;
-  const currentPortfolioValue = firstFinitePositive([
+  const currentContext = resolvePeriodReportCurrentPortfolioContext(
+    holdings,
     input.currentPortfolioValue,
-    snapshotValue,
-  ]);
-  const currentValueForContext = currentPortfolioValue;
+  );
+  const currentValueForContext = currentContext.value;
+  const portfolioTotalAvailable = currentContext.available;
   const attributionStartValue =
     input.startingPortfolioValue ?? metrics?.startingValue ?? null;
   const attributionEndValue =
@@ -532,9 +562,10 @@ export function buildPeriodReportBrief(
   const goalEngine =
     input.hasSavedGoal && input.goal
       ? buildGoalProgressEngine({
-          currentPortfolioValue: currentValueForContext ?? 0,
-          portfolioValueAvailable:
-            currentValueForContext != null && currentValueForContext > 0,
+          currentPortfolioValue: portfolioTotalAvailable
+            ? (currentValueForContext ?? 0)
+            : 0,
+          portfolioValueAvailable: portfolioTotalAvailable,
           goal: input.goal,
           hasSavedGoal: true,
         })
@@ -565,9 +596,11 @@ export function buildPeriodReportBrief(
       : {
           hasGoal: false,
           prompt:
-            input.hasSavedGoal || companion.goalStatusLabel
-              ? null
-              : NO_GOAL_PROMPT,
+            goalEngine?.hasGoal && !goalEngine.portfolioValueAvailable
+              ? goalEngine.summary
+              : input.hasSavedGoal || companion.goalStatusLabel
+                ? null
+                : NO_GOAL_PROMPT,
         };
 
   const resilienceFactors = (input.resilienceProfile?.factors ?? [])
@@ -607,7 +640,9 @@ export function buildPeriodReportBrief(
     (input.contributionEntries?.length ?? 0) > 0
       ? buildPortfolioFundingHistory({
           entries: input.contributionEntries ?? [],
-          currentPortfolioValueBase: currentValueForContext ?? periodEndValue,
+          currentPortfolioValueBase: portfolioTotalAvailable
+            ? (currentValueForContext ?? periodEndValue)
+            : null,
           portfolioBaseCurrency: "EUR",
         })
       : null;

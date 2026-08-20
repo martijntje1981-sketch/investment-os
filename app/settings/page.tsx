@@ -5,7 +5,6 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, BriefcaseBusiness, Goal, Mail, UserRound } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 
-import BottomNavigation from "@/components/home/BottomNav";
 import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer";
 import { PageHero } from "@/components/layout/PageHero";
 import {
@@ -191,7 +190,6 @@ export default function SettingsPage() {
           </nav>
         </section>
       </PageContainer>
-      <BottomNavigation />
     </>
   );
 }

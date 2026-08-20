@@ -24,7 +24,6 @@ import {
   appSolidButtonClass,
   appTextLinkClass,
 } from "@/components/layout/appSurface";
-import BottomNavigation from "@/components/home/BottomNav";
 import { ConversionDetailsDisclosure } from "@/components/currency/ConversionDetailsDisclosure";
 import {
   AppPageLoading,
@@ -321,11 +320,11 @@ export default function GoalsPage() {
     setSaved(true);
   }
 
-  function handleExport() {
+  async function handleExport() {
     if (isExporting) return;
     setIsExporting(true);
     try {
-      runPortfolioExport({
+      await runPortfolioExport({
         holdings,
         entries,
         portfolioValueEur: portfolioValue,
@@ -698,7 +697,6 @@ export default function GoalsPage() {
           }}
         />
       ) : null}
-      <BottomNavigation />
     </>
   );
 }

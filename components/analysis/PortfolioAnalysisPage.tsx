@@ -27,7 +27,6 @@ import { readNewsCache } from "@/lib/client/portfolioNews";
 import { buildPortfolioExposureAllocation } from "@/lib/services/classification";
 import { selectOfficialRatePolicyContext } from "@/lib/services/news/officialMacro";
 import { useProductAccess } from "@/lib/client/useProductAccess";
-import BottomNavigation from "@/components/home/BottomNav";
 import {
   AppPageLoading,
   PageContainer,
@@ -601,7 +600,6 @@ export default function PortfolioAnalysisPage() {
           </div>
         )}
       </PageContainer>
-      <BottomNavigation />
     </>
   );
 }

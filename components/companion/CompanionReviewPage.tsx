@@ -4,7 +4,6 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 
-import BottomNavigation from "@/components/home/BottomNav";
 import {
   AppPageLoading,
   PageContainer,
@@ -388,7 +387,7 @@ function CompanionReviewContent() {
   ]);
 
   function handleExport() {
-    runPortfolioExport({
+    return runPortfolioExport({
       holdings,
       entries: contributions.entries,
       portfolioValueEur: snapshot.portfolioValue,
@@ -430,7 +429,7 @@ function CompanionReviewContent() {
                 />
               ) : null}
               <ExportPortfolioButton
-                onExport={() => void handleExport()}
+                onExport={handleExport}
                 variant="hero"
                 className="w-full"
               />
@@ -509,7 +508,6 @@ function CompanionReviewContent() {
           </div>
         )}
       </PageContainer>
-      <BottomNavigation />
     </>
   );
 }

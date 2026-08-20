@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 
 import { BackButton } from "@/components/layout/BackButton";
-import BottomNavigation from "@/components/home/BottomNav";
 import { ScoreRing } from "@/components/dashboard/ScoreRing";
 import {
   AppPageLoading,
@@ -985,7 +984,6 @@ export default function PortfolioHealthPage() {
           </div>
         ) : null}
       </PageContainer>
-      <BottomNavigation />
     </>
   );
 }

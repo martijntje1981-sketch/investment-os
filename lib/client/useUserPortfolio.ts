@@ -1,6 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  createContext,
+  createElement,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+import { markAppEntryCachedPortfolioReady } from "@/lib/client/appEntryPerformanceMarks";
 import {
   applyCachedPrices,
   dispatchPortfolioUpdated,
@@ -58,7 +68,17 @@ import {
 } from "@/lib/services/portfolio/idempotency";
 import type { PortfolioSyncPreview } from "@/lib/services/portfolio/types";
 
-export function useUserPortfolio() {
+let remoteHydrateStartsForTests = 0;
+
+export function __countUserPortfolioRemoteHydratesForTests(): number {
+  return remoteHydrateStartsForTests;
+}
+
+export function __resetUserPortfolioRemoteHydratesForTests(): void {
+  remoteHydrateStartsForTests = 0;
+}
+
+function useUserPortfolioState() {
   const { userSub, authReady } = useAuthenticatedUserSub();
   const [holdings, setHoldings] = useState<StoredPortfolioHolding[]>([]);
   const [portfolioReady, setPortfolioReady] = useState(false);
@@ -96,6 +116,7 @@ export function useUserPortfolio() {
   const hydrateFromRemote = useCallback(
     async (force = false) => {
       if (!userSub || (!force && remoteHydratedRef.current)) return;
+      remoteHydrateStartsForTests += 1;
 
       setSyncState({ status: "loading" });
       const localHoldings = loadUserPortfolioHoldings(userSub);
@@ -105,6 +126,7 @@ export function useUserPortfolio() {
       if (localHoldings.length > 0) {
         setHoldings(applyCachedPrices(userSub, localHoldings));
         setPortfolioReady(true);
+        markAppEntryCachedPortfolioReady();
       }
 
       const remoteResult = await fetchRemotePortfolio();
@@ -738,4 +760,21 @@ export function useUserPortfolio() {
     recoverPortfolio,
     dismissRecovery,
   };
+}
+
+type UserPortfolioApi = ReturnType<typeof useUserPortfolioState>;
+
+const UserPortfolioContext = createContext<UserPortfolioApi | null>(null);
+
+export function UserPortfolioProvider({ children }: { children: ReactNode }) {
+  const value = useUserPortfolioState();
+  return createElement(UserPortfolioContext.Provider, { value }, children);
+}
+
+export function useUserPortfolio(): UserPortfolioApi {
+  const value = useContext(UserPortfolioContext);
+  if (!value) {
+    throw new Error("useUserPortfolio must be used within UserPortfolioProvider");
+  }
+  return value;
 }
