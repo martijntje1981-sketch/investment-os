@@ -52,7 +52,7 @@ export function NewsForPortfolioSection({
 
       {rows.length === 0 ? (
         <p className={`rounded-[16px] border border-slate-200 bg-slate-50/80 px-4 py-3 ${appSectionBodyClass}`}>
-          No holdings had a material portfolio impact in the current brief.
+          No meaningful portfolio news in the current brief.
         </p>
       ) : (
         <NewsExpandableList
@@ -76,7 +76,9 @@ export function NewsForPortfolioSection({
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
-                    <p className={appSectionLabelClass}>Holding</p>
+                    <p className={appSectionLabelClass}>
+                      {row.exposureLabel || "Holding"}
+                    </p>
                     <Link
                       href={holdingDetailPath(row.candidate.symbol)}
                       className="mt-1 block text-[1.05rem] font-semibold text-slate-950 underline-offset-2 hover:underline"
@@ -134,6 +136,8 @@ export function NewsForPortfolioSection({
                     <p className={`mt-1 ${appSectionBodyClass}`}>
                       {row.matchRole === "sector_context" ? (
                         <span className="mr-1 font-semibold">Sector context:</span>
+                      ) : row.matchRole === "macro_context" ? (
+                        <span className="mr-1 font-semibold">Macro context:</span>
                       ) : null}
                       <a
                         href={item.canonicalUrl}
@@ -151,7 +155,9 @@ export function NewsForPortfolioSection({
                         {item.sourceName}
                         {row.matchRole === "sector_context"
                           ? " · Sector context, not a proven cause."
-                          : " · Related context, not a proven cause."}
+                          : row.matchRole === "macro_context"
+                            ? " · Official macro context, not a proven cause."
+                            : " · Related context, not a proven cause."}
                       </span>
                     </p>
                   ) : (

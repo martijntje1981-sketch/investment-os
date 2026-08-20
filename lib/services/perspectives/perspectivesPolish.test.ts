@@ -9,6 +9,8 @@ import {
   buildPerspectiveRelevance,
   derivePerspectivePortfolioSignals,
   orderPerspectivesForAudience,
+  perspectiveFamily,
+  selectCoverageFirstPerspectives,
   selectDashboardPerspectivesForAudience,
   selectTodaysPerspective,
   type PerspectivePortfolioSignals,
@@ -61,6 +63,8 @@ const emptySignals: PerspectivePortfolioSignals = {
   cryptoWeight: 0,
   technologyWeight: 0,
   equityWeight: 0,
+  commodityWeight: 0,
+  fixedIncomeWeight: 0,
 };
 
 const cryptoSignals: PerspectivePortfolioSignals = {
@@ -68,6 +72,8 @@ const cryptoSignals: PerspectivePortfolioSignals = {
   cryptoWeight: 40,
   technologyWeight: 0,
   equityWeight: 10,
+  commodityWeight: 0,
+  fixedIncomeWeight: 0,
 };
 
 describe("perspective topic tags", () => {
@@ -178,6 +184,91 @@ describe("featured selection and relevance", () => {
     );
     expect(selected).toHaveLength(2);
     expect(selected[0]?.id).toBe("btc");
+  });
+
+  it("prefers distinct perspective families over several similar crypto items", () => {
+    const mixedSignals: PerspectivePortfolioSignals = {
+      hasHoldings: true,
+      cryptoWeight: 40,
+      technologyWeight: 10,
+      equityWeight: 25,
+      commodityWeight: 12,
+      fixedIncomeWeight: 8,
+    };
+    const mixed = [
+      video({
+        id: "btc-1",
+        title: "Bitcoin ETF flows and crypto liquidity",
+        publishedAt: "2026-08-01T12:00:00.000Z",
+        category: "bitcoin",
+        isTrustedSource: true,
+      }),
+      video({
+        id: "btc-2",
+        title: "Another Bitcoin market wrap this week",
+        publishedAt: "2026-08-01T11:30:00.000Z",
+        category: "bitcoin",
+        isTrustedSource: true,
+      }),
+      video({
+        id: "btc-3",
+        title: "Crypto traders react to Bitcoin volatility",
+        publishedAt: "2026-08-01T11:00:00.000Z",
+        category: "bitcoin",
+        isTrustedSource: true,
+      }),
+      video({
+        id: "macro-1",
+        title: "Fed rates, inflation and the ECB outlook",
+        publishedAt: "2026-08-01T10:00:00.000Z",
+        category: "macro",
+        isTrustedSource: true,
+      }),
+      video({
+        id: "gold-1",
+        title: "Gold, copper and commodity prices this week",
+        publishedAt: "2026-08-01T09:30:00.000Z",
+        category: "investing",
+        isTrustedSource: true,
+      }),
+    ];
+    const selected = selectCoverageFirstPerspectives(
+      mixed,
+      mixedSignals,
+      5,
+      now,
+    );
+    const families = selected.map((item) => perspectiveFamily(item));
+    expect(new Set(families).size).toBeGreaterThanOrEqual(3);
+    expect(families).toContain("crypto");
+    expect(families).toContain("macro_rates");
+    expect(families).toContain("commodities");
+    expect(families.filter((family) => family === "crypto").length).toBe(1);
+  });
+
+  it("does not fill Perspectives with weak unrelated material when only crypto is strong", () => {
+    const selected = selectCoverageFirstPerspectives(
+      [
+        video({
+          id: "btc-only",
+          title: "Bitcoin ETF flows this week",
+          publishedAt: "2026-08-01T12:00:00.000Z",
+          category: "bitcoin",
+          isTrustedSource: true,
+        }),
+        video({
+          id: "old-unrelated",
+          title: "Random celebrity interview compilation",
+          publishedAt: "2026-07-01T12:00:00.000Z",
+          category: "investing",
+          isTrustedSource: false,
+        }),
+      ],
+      cryptoSignals,
+      5,
+      now,
+    );
+    expect(selected.map((item) => item.id)).toEqual(["btc-only"]);
   });
 
   it("builds neutral why-it-matters copy from tags", () => {
@@ -374,6 +465,6 @@ describe("perspectives polish wiring", () => {
     );
     expect(source).toContain("HeroPerformanceSparkline");
     expect(source).not.toMatch(/fakeHistory|Math\.random/i);
-    expect(source).toContain("no invented series");
+    expect(source).toMatch(/no fabricated intraday 1D series/i);
   });
 });

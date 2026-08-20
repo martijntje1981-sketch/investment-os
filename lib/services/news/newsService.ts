@@ -23,6 +23,7 @@ import {
   isOfficialMacroItem,
   scoreOfficialMacroItem,
 } from "@/lib/services/news/officialMacro";
+import { orderNewsItemsForPortfolioCoverage } from "@/lib/services/news/portfolioCoverage";
 import { STRONG_PORTFOLIO_MATCH_SCORE } from "@/lib/services/news/relevanceMatching";
 import { fetchUpcomingMarketEvents } from "@/lib/services/news/upcomingEvents";
 import { createDegradedNewsResponse } from "@/lib/services/news/newsResponseFactory";
@@ -60,7 +61,7 @@ export async function buildNewsResponse(
       : scoreNewsItemWithProfiles(item, profiles),
   );
   const enriched = enrichNewsItems(scored);
-  const sections = partitionNewsHub(enriched);
+  const sections = partitionNewsHub(enriched, holdings);
 
   const dividendNews = filterPortfolioDividendNews(sections.portfolioNews);
   const analystNews = filterPortfolioAnalystNews(sections.portfolioNews);
@@ -142,12 +143,24 @@ function normalizeTitleKey(title: string): string {
     .trim();
 }
 
-export function partitionNewsHub(items: NewsContentItem[]) {
-  const portfolioNews = capOfficialMacroPortfolioItems(
-    rankPortfolioNews(
-      items.filter((item) => item.relevanceScore >= STRONG_PORTFOLIO_MATCH_SCORE),
-    ),
-  ).slice(0, 12);
+export function partitionNewsHub(
+  items: NewsContentItem[],
+  holdings: StoredPortfolioHolding[] = [],
+) {
+  const rankedStrong = rankPortfolioNews(
+    items.filter((item) => item.relevanceScore >= STRONG_PORTFOLIO_MATCH_SCORE),
+  );
+  const coverageOrdered =
+    holdings.length > 0
+      ? orderNewsItemsForPortfolioCoverage({
+          holdings,
+          items: rankedStrong,
+        })
+      : rankedStrong;
+  const portfolioNews = capOfficialMacroPortfolioItems(coverageOrdered).slice(
+    0,
+    12,
+  );
 
   const portfolioKeys = new Set(
     portfolioNews.flatMap((item) => [

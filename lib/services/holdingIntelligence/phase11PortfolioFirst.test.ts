@@ -482,6 +482,7 @@ describe("Phase 11C–11H portfolio-first news", () => {
       "lib/services/fourQuestions/buildFourQuestions.ts",
       "lib/services/news/newsBriefingLayout.ts",
       "lib/services/news/relevanceMatching.ts",
+      "lib/services/news/portfolioCoverage.ts",
       "components/news/NewsForPortfolioSection.tsx",
       "components/holding/HoldingMoveContextCard.tsx",
       "lib/services/holdingIntelligence/holdingPageNews.ts",
@@ -573,6 +574,7 @@ describe("Phase 11C–11H portfolio-first news", () => {
         ),
       }),
     );
-    expect(rows.map((row) => row.symbol)).toEqual(["NUKL"]);
+    expect(rows[0]?.symbol).toBe("NUKL");
+    expect(rows.map((row) => row.symbol)[0]).not.toBe("AIFS");
   });
 });

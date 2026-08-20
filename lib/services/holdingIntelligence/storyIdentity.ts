@@ -5,6 +5,7 @@
  */
 
 import { normalizeMarketsTodayUrl } from "@/lib/services/news/marketsTodayDedup";
+import { titlesAreNearDuplicate } from "@/lib/services/news/newsFeedRanking";
 import type { HoldingIntelligenceCandidate } from "@/lib/services/holdingIntelligence/types";
 import type { NewsContentItem } from "@/lib/types/newsContent";
 
@@ -76,12 +77,29 @@ export function isSameUnderlyingStory(
   if (
     left.themeKey &&
     right.themeKey &&
-    left.themeKey === right.themeKey &&
-    left.holdingSymbol === right.holdingSymbol
+    left.holdingSymbol === right.holdingSymbol &&
+    (left.themeKey === right.themeKey ||
+      titlesAreNearDuplicate(left.themeKey, right.themeKey))
   ) {
     return true;
   }
   return false;
+}
+
+/** Same URL, article id, or near-duplicate title — one development, not two. */
+export function newsItemsAreSameDevelopment(
+  left: Pick<NewsContentItem, "id" | "canonicalUrl" | "title">,
+  right: Pick<NewsContentItem, "id" | "canonicalUrl" | "title">,
+): boolean {
+  const a = newsItemStoryKeys(left);
+  const b = newsItemStoryKeys(right);
+  if (a.canonicalUrl && b.canonicalUrl && a.canonicalUrl === b.canonicalUrl) {
+    return true;
+  }
+  if (a.articleId && b.articleId && a.articleId === b.articleId) {
+    return true;
+  }
+  return titlesAreNearDuplicate(left.title, right.title);
 }
 
 /**

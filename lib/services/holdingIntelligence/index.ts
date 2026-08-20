@@ -30,6 +30,7 @@ export {
   buildHoldingStoryIdentity,
   dedupeSharedHoldingStories,
   isSameUnderlyingStory,
+  newsItemsAreSameDevelopment,
   storyIdentityKey,
 } from "@/lib/services/holdingIntelligence/storyIdentity";
 export type {

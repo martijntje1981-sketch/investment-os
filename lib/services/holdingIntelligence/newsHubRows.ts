@@ -1,16 +1,20 @@
 /**
  * News hub projection of holding intelligence.
  * Rank by portfolio impact — never by article count.
+ * Coverage-before-repetition is applied after materiality.
  */
 
 import { ATTRIBUTION_DISPLAY_MIN_PP } from "@/lib/services/personalIntelligence/attribution";
 import {
   CONFIDENCE_LABEL_BY_STATUS,
+  MACRO_CONTEXT_NOTE,
   NEWS_HUB_NO_CATALYST,
   type HoldingIntelligenceCandidate,
 } from "@/lib/services/holdingIntelligence/types";
-import { rankHoldingIntelligenceCandidates } from "@/lib/services/holdingIntelligence/rankHoldingIntelligence";
-import { dedupeSharedHoldingStories } from "@/lib/services/holdingIntelligence/storyIdentity";
+import {
+  coverageThemeFromCandidate,
+  selectCoverageFirstHoldings,
+} from "@/lib/services/news/portfolioCoverage";
 import type { NewsContentItem } from "@/lib/types/newsContent";
 
 type IntelligenceDepth = "free" | "complete";
@@ -19,6 +23,7 @@ export const NEWS_HUB_HOLDING_LIMIT = 8;
 
 export type NewsHubHoldingRow = {
   candidate: HoldingIntelligenceCandidate;
+  exposureLabel: string;
   moveLabel: string;
   impactLabel: string;
   contextCopy: string;
@@ -67,9 +72,7 @@ export function selectNewsHubHoldingCandidates(
   candidates: HoldingIntelligenceCandidate[],
   limit = NEWS_HUB_HOLDING_LIMIT,
 ): HoldingIntelligenceCandidate[] {
-  const ranked = rankHoldingIntelligenceCandidates(candidates);
-  const deduped = dedupeSharedHoldingStories(ranked);
-  return deduped.filter(isNewsHubMaterialHolding).slice(0, limit);
+  return selectCoverageFirstHoldings(candidates, limit);
 }
 
 export function buildNewsHubHoldingRow(
@@ -79,8 +82,12 @@ export function buildNewsHubHoldingRow(
   const strong = hasStrongHoldingContext(candidate);
   const thematic = isVerifiedThematicContext(candidate);
   const macro = candidate.matchType === "macro_context";
-  const showArticle = Boolean(candidate.newsItem) && (strong || thematic);
+  const fixedIncomeMacro =
+    macro && candidate.exposureGroupId === "fixed_income";
+  const showArticle =
+    Boolean(candidate.newsItem) && (strong || thematic || fixedIncomeMacro);
   const confidenceLabel = CONFIDENCE_LABEL_BY_STATUS[candidate.explanationStatus];
+  const exposureLabel = coverageThemeFromCandidate(candidate).label;
 
   let contextCopy = NEWS_HUB_NO_CATALYST;
   let matchRole: NewsHubHoldingRow["matchRole"] = "none";
@@ -94,6 +101,12 @@ export function buildNewsHubHoldingRow(
       depth === "complete"
         ? `Sector context: ${candidate.newsItem.title}`
         : "Related sector context, not a proven cause.";
+  } else if (showArticle && candidate.newsItem && fixedIncomeMacro) {
+    matchRole = "macro_context";
+    contextCopy =
+      depth === "complete"
+        ? `${MACRO_CONTEXT_NOTE} ${candidate.newsItem.title}`
+        : MACRO_CONTEXT_NOTE;
   } else if (macro && depth === "complete" && candidate.newsItem) {
     matchRole = "none";
     contextCopy = `${candidate.explanationNote} Official macro context is shown in Markets/Macro when relevant, not as a holding catalyst.`;
@@ -109,6 +122,7 @@ export function buildNewsHubHoldingRow(
 
   return {
     candidate,
+    exposureLabel,
     moveLabel:
       candidate.changePercent == null
         ? "Unavailable"

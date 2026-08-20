@@ -1,6 +1,13 @@
-import { buildPortfolioExposureAllocation } from "@/lib/services/classification";
+import { getHoldingMarketValue } from "@/lib/client/portfolioAnalysis";
+import {
+  buildPortfolioExposureAllocation,
+  classifyHoldingExposure,
+} from "@/lib/services/classification";
+import { isPreciousMetalsHolding } from "@/lib/services/news/officialMacro/assetClass";
+import { titlesAreNearDuplicate } from "@/lib/services/news/newsFeedRanking";
 import {
   applyCreatorDiversity,
+  isLowQualityPerspectiveTitle,
   sortPerspectivesByPublishedDesc,
 } from "@/lib/services/perspectives/groupPerspectives";
 import type { PerspectiveVideo } from "@/lib/services/perspectives/types";
@@ -10,18 +17,49 @@ import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 const CRYPTO_WEIGHT_THRESHOLD = 5;
 const TECH_WEIGHT_THRESHOLD = 8;
 const EQUITY_WEIGHT_THRESHOLD = 15;
+const COMMODITY_WEIGHT_THRESHOLD = 5;
+const FIXED_INCOME_WEIGHT_THRESHOLD = 5;
+const QUALITY_FRESHNESS_FLOOR = 25;
+
+export type PerspectiveFamilyId =
+  | "macro_rates"
+  | "equities"
+  | "commodities"
+  | "crypto"
+  | "portfolio_themes";
+
+export const PERSPECTIVE_FAMILY_LABELS: Record<PerspectiveFamilyId, string> = {
+  macro_rates: "Macro & Rates",
+  equities: "Equities",
+  commodities: "Commodities",
+  crypto: "Crypto",
+  portfolio_themes: "Portfolio Themes",
+};
 
 export type PerspectivePortfolioSignals = {
   hasHoldings: boolean;
   cryptoWeight: number;
   technologyWeight: number;
   equityWeight: number;
+  commodityWeight: number;
+  fixedIncomeWeight: number;
 };
 
 export type PerspectiveRelevance = {
   relevant: boolean;
   reasons: string[];
 };
+
+function emptySignals(): PerspectivePortfolioSignals {
+  return {
+    hasHoldings: false,
+    cryptoWeight: 0,
+    technologyWeight: 0,
+    equityWeight: 0,
+    commodityWeight: 0,
+    fixedIncomeWeight: 0,
+  };
+}
 
 /**
  * Derive portfolio theme weights from existing exposure classification only.
@@ -30,12 +68,7 @@ export function derivePerspectivePortfolioSignals(
   holdings: StoredPortfolioHolding[],
 ): PerspectivePortfolioSignals {
   if (holdings.length === 0) {
-    return {
-      hasHoldings: false,
-      cryptoWeight: 0,
-      technologyWeight: 0,
-      equityWeight: 0,
-    };
+    return emptySignals();
   }
 
   const exposure = buildPortfolioExposureAllocation(holdings);
@@ -52,13 +85,69 @@ export function derivePerspectivePortfolioSignals(
     (byGroup.get("consumer") ?? 0) +
     (byGroup.get("financials_real_estate") ?? 0) +
     (byGroup.get("industrials_resources") ?? 0);
+  const fixedIncomeWeight = byGroup.get("fixed_income") ?? 0;
+
+  const totalValue = holdings.reduce((sum, holding) => {
+    const value = getHoldingMarketValue(holding);
+    return sum + (value ?? 0);
+  }, 0);
+  const preciousValue = holdings.reduce((sum, holding) => {
+    const classified = classifyHoldingExposure(holding);
+    if (!isPreciousMetalsHolding(holding, classified.fundCategory)) {
+      return sum;
+    }
+    return sum + (getHoldingMarketValue(holding) ?? 0);
+  }, 0);
+  const preciousWeight = totalValue > 0 ? (preciousValue / totalValue) * 100 : 0;
+  const commodityWeight =
+    (byGroup.get("industrials_resources") ?? 0) + preciousWeight;
 
   return {
     hasHoldings: true,
     cryptoWeight,
     technologyWeight,
     equityWeight,
+    commodityWeight,
+    fixedIncomeWeight,
   };
+}
+
+export function perspectiveFamily(
+  video: Pick<PerspectiveVideo, "category" | "title">,
+): PerspectiveFamilyId {
+  const tags = mapPerspectiveTopicTags(video.title);
+  const title = video.title.toLowerCase();
+  const commodityTitle =
+    /\b(gold|silver|copper|uranium|oil|commodit)/i.test(title) ||
+    tags.includes("Gold");
+  if (commodityTitle) return "commodities";
+  if (
+    video.category === "bitcoin" ||
+    tags.includes("Bitcoin") ||
+    tags.includes("Crypto")
+  ) {
+    return "crypto";
+  }
+  if (
+    video.category === "macro" ||
+    tags.includes("Federal Reserve") ||
+    tags.includes("ECB") ||
+    tags.includes("Interest Rates") ||
+    tags.includes("Inflation") ||
+    tags.includes("Macro") ||
+    tags.includes("Liquidity")
+  ) {
+    return "macro_rates";
+  }
+  if (
+    video.category === "technology" ||
+    tags.includes("AI") ||
+    tags.includes("NVIDIA") ||
+    tags.includes("Technology")
+  ) {
+    return "portfolio_themes";
+  }
+  return "equities";
 }
 
 /**
@@ -74,6 +163,7 @@ export function buildPerspectiveRelevance(
   }
 
   const tags = mapPerspectiveTopicTags(video.title);
+  const family = perspectiveFamily(video);
   const reasons: string[] = [];
 
   const cryptoSignal =
@@ -95,6 +185,13 @@ export function buildPerspectiveRelevance(
     reasons.push("You hold technology or AI-related investments.");
   }
 
+  const commoditySignal =
+    (signals.commodityWeight ?? 0) >= COMMODITY_WEIGHT_THRESHOLD &&
+    family === "commodities";
+  if (commoditySignal && reasons.length < 2) {
+    reasons.push("You hold commodity or precious-metals exposure.");
+  }
+
   const equitySignal =
     signals.equityWeight >= EQUITY_WEIGHT_THRESHOLD &&
     (video.category === "investing" ||
@@ -108,7 +205,8 @@ export function buildPerspectiveRelevance(
 
   const macroSensitive =
     (signals.equityWeight >= EQUITY_WEIGHT_THRESHOLD ||
-      signals.cryptoWeight >= CRYPTO_WEIGHT_THRESHOLD) &&
+      signals.cryptoWeight >= CRYPTO_WEIGHT_THRESHOLD ||
+      (signals.fixedIncomeWeight ?? 0) >= FIXED_INCOME_WEIGHT_THRESHOLD) &&
     (video.category === "macro" ||
       tags.includes("Inflation") ||
       tags.includes("Interest Rates") ||
@@ -146,11 +244,13 @@ function relevanceBoost(
   let boost = 36 + relevance.reasons.length * 10;
 
   // Prefer direct theme matches over soft macro sensitivity.
+  // Keep the crypto bump modest so one quality macro/commodity
+  // video can still appear beside Bitcoin when it exists.
   if (
     signals.cryptoWeight >= CRYPTO_WEIGHT_THRESHOLD &&
     video.category === "bitcoin"
   ) {
-    boost += 28;
+    boost += 12;
   }
   if (
     signals.technologyWeight >= TECH_WEIGHT_THRESHOLD &&
@@ -163,6 +263,18 @@ function relevanceBoost(
     video.category === "investing"
   ) {
     boost += 22;
+  }
+  if (
+    (signals.commodityWeight ?? 0) >= COMMODITY_WEIGHT_THRESHOLD &&
+    perspectiveFamily(video) === "commodities"
+  ) {
+    boost += 22;
+  }
+  if (
+    (signals.fixedIncomeWeight ?? 0) >= FIXED_INCOME_WEIGHT_THRESHOLD &&
+    perspectiveFamily(video) === "macro_rates"
+  ) {
+    boost += 18;
   }
 
   return boost;
@@ -181,6 +293,90 @@ function perspectiveAudienceScore(
   );
 }
 
+export function isQualityPerspective(
+  video: PerspectiveVideo,
+  signals: PerspectivePortfolioSignals,
+  nowMs: number,
+): boolean {
+  if (isLowQualityPerspectiveTitle(video.title)) return false;
+  const fresh = freshnessScore(video.publishedAt, nowMs) >= QUALITY_FRESHNESS_FLOOR;
+  if (!fresh && !video.isTrustedSource) return false;
+  if (!signals.hasHoldings) return video.isTrustedSource || fresh;
+  return (
+    video.isTrustedSource ||
+    buildPerspectiveRelevance(video, signals).relevant
+  );
+}
+
+function rankPerspectivesForAudience(
+  videos: PerspectiveVideo[],
+  signals: PerspectivePortfolioSignals,
+  nowMs: number,
+): PerspectiveVideo[] {
+  return [...videos].sort((left, right) => {
+    const leftScore = perspectiveAudienceScore(left, signals, nowMs);
+    const rightScore = perspectiveAudienceScore(right, signals, nowMs);
+    if (rightScore !== leftScore) return rightScore - leftScore;
+    return right.publishedAt.localeCompare(left.publishedAt);
+  });
+}
+
+/**
+ * Quality + relevance first, then distinct families.
+ * Does not fill with weak unrelated material.
+ */
+export function selectCoverageFirstPerspectives(
+  videos: PerspectiveVideo[],
+  signals: PerspectivePortfolioSignals,
+  limit: number,
+  nowMs: number = Date.now(),
+): PerspectiveVideo[] {
+  if (limit <= 0 || videos.length === 0) return [];
+  const ranked = rankPerspectivesForAudience(videos, signals, nowMs);
+  const quality = ranked.filter((video) =>
+    isQualityPerspective(video, signals, nowMs),
+  );
+  if (quality.length === 0) return [];
+  const pool = quality;
+  const selected: PerspectiveVideo[] = [];
+  const usedFamilies = new Set<PerspectiveFamilyId>();
+
+  for (const video of pool) {
+    if (selected.length >= limit) break;
+    const family = perspectiveFamily(video);
+    if (usedFamilies.has(family)) continue;
+    if (
+      selected.some((existing) =>
+        titlesAreNearDuplicate(existing.title, video.title),
+      )
+    ) {
+      continue;
+    }
+    selected.push(video);
+    usedFamilies.add(family);
+  }
+
+  const moreFamilies = pool.some(
+    (video) => !usedFamilies.has(perspectiveFamily(video)),
+  );
+  if (!moreFamilies && selected.length < Math.min(2, limit)) {
+    for (const video of pool) {
+      if (selected.length >= Math.min(2, limit)) break;
+      if (selected.some((existing) => existing.id === video.id)) continue;
+      if (
+        selected.some((existing) =>
+          titlesAreNearDuplicate(existing.title, video.title),
+        )
+      ) {
+        continue;
+      }
+      selected.push(video);
+    }
+  }
+
+  return selected;
+}
+
 /**
  * Select a single “Today’s Perspective” using:
  * 1) portfolio relevance (holdings users only)
@@ -195,12 +391,7 @@ export function selectTodaysPerspective(
 ): PerspectiveVideo | null {
   if (videos.length === 0) return null;
 
-  const ranked = [...videos].sort((left, right) => {
-    const leftScore = perspectiveAudienceScore(left, signals, nowMs);
-    const rightScore = perspectiveAudienceScore(right, signals, nowMs);
-    if (rightScore !== leftScore) return rightScore - leftScore;
-    return right.publishedAt.localeCompare(left.publishedAt);
-  });
+  const ranked = rankPerspectivesForAudience(videos, signals, nowMs);
 
   // Soft diversity: if top two share a category and the second is nearly as
   // fresh but from another category among the top candidates, prefer diversity
@@ -238,12 +429,24 @@ export function orderPerspectivesForAudience(
     return sortPerspectivesByPublishedDesc(videos);
   }
 
-  return [...videos].sort((left, right) => {
-    const leftScore = perspectiveAudienceScore(left, signals, nowMs);
-    const rightScore = perspectiveAudienceScore(right, signals, nowMs);
-    if (rightScore !== leftScore) return rightScore - leftScore;
-    return right.publishedAt.localeCompare(left.publishedAt);
-  });
+  const ranked = rankPerspectivesForAudience(videos, signals, nowMs);
+  const interleaved: PerspectiveVideo[] = [];
+  const usedFamilies = new Set<PerspectiveFamilyId>();
+
+  for (const video of ranked) {
+    if (!isQualityPerspective(video, signals, nowMs)) continue;
+    const family = perspectiveFamily(video);
+    if (usedFamilies.has(family)) continue;
+    interleaved.push(video);
+    usedFamilies.add(family);
+  }
+
+  for (const video of ranked) {
+    if (interleaved.some((existing) => existing.id === video.id)) continue;
+    interleaved.push(video);
+  }
+
+  return interleaved;
 }
 
 export function selectDashboardPerspectivesForAudience(
@@ -252,6 +455,11 @@ export function selectDashboardPerspectivesForAudience(
   limit = 2,
   nowMs: number = Date.now(),
 ): PerspectiveVideo[] {
-  const ordered = orderPerspectivesForAudience(videos, signals, nowMs);
-  return applyCreatorDiversity(ordered, limit);
+  const selected = selectCoverageFirstPerspectives(
+    videos,
+    signals,
+    limit,
+    nowMs,
+  );
+  return applyCreatorDiversity(selected, limit);
 }

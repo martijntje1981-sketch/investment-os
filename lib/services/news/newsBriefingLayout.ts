@@ -33,6 +33,13 @@ import {
   buildNewsHubHoldingRows,
   type NewsHubHoldingRow,
 } from "@/lib/services/holdingIntelligence/newsHubRows";
+import {
+  exposureLabelForNewsItem,
+  orderNewsItemsForPortfolioCoverage,
+  selectCoverageFirstNewsItems,
+  COVERAGE_STORY_TARGET_MAX,
+} from "@/lib/services/news/portfolioCoverage";
+import { compareHoldingIntelligenceCandidates } from "@/lib/services/holdingIntelligence/rankHoldingIntelligence";
 import type { FourQuestionsIntelligenceDepth } from "@/lib/services/fourQuestions/types";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 import type {
@@ -86,6 +93,7 @@ export type PortfolioNewsCard = {
   affectedHoldings: string[];
   marketImpact: PortfolioMarketImpact;
   confidence: string | null;
+  exposureLabel: string | null;
 };
 
 export type NewsBriefingLayoutOptions = {
@@ -220,12 +228,16 @@ function buildMarketBriefHeadlines(
   return headlines;
 }
 
-function toPortfolioCard(item: NewsContentItem): PortfolioNewsCard {
+function toPortfolioCard(
+  item: NewsContentItem,
+  holdings: StoredPortfolioHolding[] = [],
+): PortfolioNewsCard {
   return {
     item,
     affectedHoldings: affectedHoldingsForItem(item),
     marketImpact: detectPortfolioMarketImpact(item),
     confidence: portfolioImpactConfidence(item),
+    exposureLabel: exposureLabelForNewsItem(item, holdings),
   };
 }
 
@@ -271,6 +283,7 @@ function groupItemsByHolding(input: {
   videos: NewsContentItem[];
   analystItems: NewsContentItem[];
   dividendItems: NewsContentItem[];
+  holdings?: StoredPortfolioHolding[];
 }): HoldingNewsGroup[] {
   const groups = new Map<string, HoldingNewsGroup>();
 
@@ -320,6 +333,17 @@ function groupItemsByHolding(input: {
   addItems(input.analystItems, "analystUpdates");
   addItems(input.dividendItems, "dividendUpdates");
 
+  const rankedHoldings =
+    (input.holdings?.length ?? 0) > 0
+      ? buildHoldingIntelligenceCandidates({
+          holdings: input.holdings ?? [],
+          newsItems: input.portfolioItems,
+        })
+      : [];
+  const materiality = new Map(
+    rankedHoldings.map((candidate) => [candidate.symbol.trim().toUpperCase(), candidate]),
+  );
+
   return [...groups.values()]
     .map((group) => ({
       ...group,
@@ -334,7 +358,16 @@ function groupItemsByHolding(input: {
         dedupeById(group.dividendUpdates).length,
     }))
     .filter((group) => group.totalCount > 0)
-    .sort((left, right) => right.totalCount - left.totalCount);
+    .sort((left, right) => {
+      const leftCandidate = materiality.get(left.symbol);
+      const rightCandidate = materiality.get(right.symbol);
+      if (leftCandidate && rightCandidate) {
+        return compareHoldingIntelligenceCandidates(leftCandidate, rightCandidate);
+      }
+      if (leftCandidate && !rightCandidate) return -1;
+      if (!leftCandidate && rightCandidate) return 1;
+      return left.symbol.localeCompare(right.symbol);
+    });
 }
 
 function markMarketsTodayStoriesUsed(
@@ -383,13 +416,30 @@ export function buildNewsBriefingLayout(
   const portfolioPool = rankedAll.filter(
     (item) => isStrongPortfolioItem(item) && item.sourceType !== "youtube",
   );
+  const holdings = resolvedOptions.holdings ?? [];
+  const coverageOrderedPool =
+    holdings.length > 0
+      ? orderNewsItemsForPortfolioCoverage({
+          holdings,
+          items: portfolioPool,
+        })
+      : portfolioPool;
   const portfolioSelected = takeUniquePageItems(
-    portfolioPool,
+    coverageOrderedPool,
     pageDedupState,
     Number.POSITIVE_INFINITY,
     now,
   );
-  const portfolioCards = portfolioSelected.map(toPortfolioCard);
+  const featuredPortfolioItems =
+    holdings.length > 0
+      ? selectCoverageFirstNewsItems({
+          holdings,
+          items: portfolioSelected,
+        }).items.slice(0, COVERAGE_STORY_TARGET_MAX)
+      : portfolioSelected;
+  const portfolioCards = featuredPortfolioItems.map((item) =>
+    toPortfolioCard(item, holdings),
+  );
 
   const marketsTodayCandidates = filterPageDuplicates(rankedAll, pageDedupState);
   const marketsToday = buildMarketsTodayRegions({
@@ -438,6 +488,7 @@ export function buildNewsBriefingLayout(
     videos: payload.marketVideos.filter((item) => isStrongPortfolioItem(item)),
     analystItems: payload.analystNews ?? [],
     dividendItems: payload.dividendNews ?? [],
+    holdings: resolvedOptions.holdings,
   });
 
   const holdingIntelligenceRows =
