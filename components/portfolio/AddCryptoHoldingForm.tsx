@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Check, Loader2, Search, X } from "lucide-react";
 
 import NumericInput from "@/components/NumericInput";
+import { HoldingIdentifierLabel } from "@/components/import/HoldingIdentifierHelp";
 import {
   appSectionLabelClass,
   appSectionMetaClass,
@@ -212,6 +213,7 @@ export function AddCryptoHoldingForm({
             <CryptoField
               id="crypto-symbol"
               label="Symbol"
+              helpTerm="ticker"
               required
               value={draft.symbol}
               error={fieldErrors.symbol}
@@ -226,10 +228,12 @@ export function AddCryptoHoldingForm({
               error={fieldErrors.amount}
               onChange={(value) => updateDraft({ quantity: value })}
             />
-            <label className="block min-w-0">
-              <span className="text-[15px] font-bold text-slate-800">
-                Pair currency
-              </span>
+            <div className="block min-w-0">
+              <HoldingIdentifierLabel term="currency">
+                <span className="text-[15px] font-bold text-slate-800">
+                  Pair currency
+                </span>
+              </HoldingIdentifierLabel>
               <select
                 id="crypto-pair-currency"
                 value={draft.pairCurrency ?? "EUR"}
@@ -256,7 +260,7 @@ export function AddCryptoHoldingForm({
               {fieldErrors.pairCurrency ? (
                 <FieldError message={fieldErrors.pairCurrency} />
               ) : null}
-            </label>
+            </div>
 
             <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
               <p className={appSectionLabelClass}>Trading pair</p>
@@ -408,6 +412,7 @@ function CryptoField({
   required = false,
   error,
   autoCapitalize,
+  helpTerm,
 }: {
   id: string;
   label: string;
@@ -416,13 +421,24 @@ function CryptoField({
   required?: boolean;
   error?: string;
   autoCapitalize?: "characters";
+  helpTerm?: "ticker" | "isin" | "exchange" | "currency";
 }) {
+  const labelText = (
+    <span className="text-[15px] font-bold text-slate-800">
+      {label}
+      {required ? " *" : ""}
+    </span>
+  );
+
   return (
-    <label className="block min-w-0" htmlFor={id}>
-      <span className="text-[15px] font-bold text-slate-800">
-        {label}
-        {required ? " *" : ""}
-      </span>
+    <div className="block min-w-0">
+      {helpTerm ? (
+        <HoldingIdentifierLabel term={helpTerm}>{labelText}</HoldingIdentifierLabel>
+      ) : (
+        <label htmlFor={id} className="block">
+          {labelText}
+        </label>
+      )}
       <input
         id={id}
         required={required}
@@ -432,7 +448,7 @@ function CryptoField({
         className="mt-2 min-h-[44px] w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-[15px] font-semibold text-slate-900 outline-none focus:border-blue-400"
       />
       {error ? <FieldError message={error} /> : null}
-    </label>
+    </div>
   );
 }
 

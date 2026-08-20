@@ -4,6 +4,7 @@
  */
 
 import { MANUAL_PRICING_SELECTION_TITLE } from "@/lib/client/holdingVenuePresentation";
+import { humanizeInstrumentMatchMessage } from "@/lib/content/holdingIdentifierHelp";
 
 const MULTIPLE_LISTING_PATTERN = /multiple listings/i;
 
@@ -45,7 +46,7 @@ export function formatListingLookupGuidance(
       }
       continue;
     }
-    alerts.push(message);
+    alerts.push(humanizeInstrumentMatchMessage(message));
   }
 
   return { guidance, alerts };

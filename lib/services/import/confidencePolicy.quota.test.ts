@@ -39,6 +39,7 @@ describe("confidencePolicy quota messaging", () => {
   it("shows genuine no-match when provider is available", () => {
     const reason = buildReviewReason(row({ matchWarnings: [] }), "review");
 
-    expect(reason).toMatch(/could not match this holding/i);
+    expect(reason).toMatch(/couldn’t confidently identify this investment/i);
+    expect(reason).toMatch(/ticker, ISIN or exchange/i);
   });
 });

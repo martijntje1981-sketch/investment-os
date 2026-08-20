@@ -6,6 +6,10 @@ import { useState } from "react";
 import NumericInput from "@/components/NumericInput";
 import { SupportStatusBadge } from "@/components/marketing/SupportStatusBadge";
 import { ExchangeFieldEditor } from "@/components/import/ExchangeFieldEditor";
+import {
+  HoldingIdentifierGlossaryDisclosure,
+  HoldingIdentifierLabel,
+} from "@/components/import/HoldingIdentifierHelp";
 import { HoldingVenueSummary } from "@/components/instruments/HoldingVenueSummary";
 import { ListingCandidatePicker } from "@/components/instruments/ListingCandidatePicker";
 import { ExactListingSymbolField } from "@/components/import/ExactListingSymbolField";
@@ -32,7 +36,6 @@ import {
 import {
   getPurchaseDateValidationError,
   importTierLabel,
-  roundConfidencePercent,
   type ImportRow,
 } from "@/lib/services/import";
 import type { ResolvedInstrument } from "@/lib/types/instrument";
@@ -83,6 +86,9 @@ export function ImportReviewList({
         <p className="mt-1 text-[16px] leading-relaxed text-slate-600">
           Matched holdings are ready. Only unresolved rows are shown here.
         </p>
+        <div className="mt-2">
+          <HoldingIdentifierGlossaryDisclosure />
+        </div>
       </div>
 
       {rows.map((row) => (
@@ -126,9 +132,6 @@ function ImportReviewCard({
   onRemove: () => void;
 }) {
   const tier = row.reviewTier ?? "review";
-  const confidence = roundConfidencePercent(
-    row.matchConfidence ?? row.extractionConfidence,
-  );
   const unresolvedCandidates = row.candidates ?? [];
   const alternatives = buildListingCandidates(row);
   const showPricingListingPicker = needsManualPricingSelection({
@@ -169,11 +172,6 @@ function ImportReviewCard({
                 {importTierLabel(tier)}
               </span>
               <SupportStatusBadge status={supportStatus} />
-              {confidence > 0 ? (
-                <span className="text-[11px] font-bold text-slate-500">
-                  {confidence}% confidence
-                </span>
-              ) : null}
             </div>
             <h4 className="mt-2 break-words text-[1.125rem] font-bold text-slate-950">
               {row.instrumentName ?? row.name}
@@ -258,11 +256,6 @@ function ImportReviewCard({
             }}
             selectedProviderSymbol={row.providerSymbol}
             onSelect={onSelectCandidate}
-            title={
-              row.exchange?.trim()
-                ? undefined
-                : "Likely matches"
-            }
           />
         ) : null}
 
@@ -414,17 +407,28 @@ function UncertainFieldEditor({
         ? row.isin ?? ""
         : row.symbol;
 
-  return (
-    <label className="block">
-      <span className="mb-1.5 block text-[11px] font-black uppercase tracking-[0.1em] text-slate-400">
+  const identifierTerm = field === "ticker" || field === "isin" ? field : null;
+  const labelNode = identifierTerm ? (
+    <HoldingIdentifierLabel term={identifierTerm}>
+      <span className="text-[11px] font-black uppercase tracking-[0.1em] text-slate-400">
         {label}
       </span>
+    </HoldingIdentifierLabel>
+  ) : (
+    <span className="mb-1.5 block text-[11px] font-black uppercase tracking-[0.1em] text-slate-400">
+      {label}
+    </span>
+  );
+
+  return (
+    <div className="block min-w-0">
+      {labelNode}
       <input
         value={textValue}
         onChange={(event) => onChange(event.target.value)}
-        className={inputClass}
+        className={`${inputClass} ${identifierTerm ? "mt-1.5" : ""}`}
       />
-    </label>
+    </div>
   );
 }
 

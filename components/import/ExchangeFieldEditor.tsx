@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Check } from "lucide-react";
 
+import { HoldingIdentifierLabel } from "@/components/import/HoldingIdentifierHelp";
 import { normalizeExchange } from "@/lib/services/instruments/exchangeNormalizer";
 import {
   findExchangeOption,
@@ -181,11 +182,13 @@ export function ExchangeFieldEditor({
   const purchaseExchangeConfirmed = Boolean(selectedExchange);
 
   return (
-    <label className="block">
+    <div className="block min-w-0">
       <span className="mb-1.5 flex items-center justify-between gap-2">
-        <span className="text-[11px] font-black uppercase tracking-[0.1em] text-slate-400">
-          Purchase exchange
-        </span>
+        <HoldingIdentifierLabel term="exchange">
+          <span className="text-[11px] font-black uppercase tracking-[0.1em] text-slate-400">
+            Purchase exchange
+          </span>
+        </HoldingIdentifierLabel>
         {purchaseExchangeConfirmed ? (
           <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.1em] text-emerald-800">
             <Check className="h-3 w-3" aria-hidden />
@@ -281,6 +284,6 @@ export function ExchangeFieldEditor({
           </ul>
         ) : null}
       </div>
-    </label>
+    </div>
   );
 }

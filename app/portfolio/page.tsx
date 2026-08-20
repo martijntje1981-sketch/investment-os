@@ -84,6 +84,7 @@ import { ListingCandidatePicker } from "@/components/instruments/ListingCandidat
 import { HoldingDividendMeta } from "@/components/analysis/DividendIntelligenceSection";
 import { HoldingAnalystMeta } from "@/components/analysis/AnalystIntelligenceSection";
 import { ExchangeFieldEditor } from "@/components/import/ExchangeFieldEditor";
+import { HoldingIdentifierLabel } from "@/components/import/HoldingIdentifierHelp";
 import { AddCryptoHoldingForm } from "@/components/portfolio/AddCryptoHoldingForm";
 import { buildPortfolioAnalysis } from "@/lib/client/portfolioAnalysis";
 import {
@@ -1199,11 +1200,12 @@ export default function PortfolioPage() {
               ) : (
                 <div className="mt-7 space-y-5">
                   <p className="text-[16px] leading-relaxed text-slate-600">
-                    Search an instrument, select the listing, then enter quantity.
-                    Tobailey infers the instrument type for you.
+                    Search by name, ticker or ISIN, select the listing, then
+                    enter quantity. Tobailey infers the instrument type for you.
                   </p>
                   <Field
                     label="Search instrument"
+                    helpTerm="ticker"
                     required={false}
                     value={draft.symbol}
                     onChange={(value) => {
@@ -1216,6 +1218,7 @@ export default function PortfolioPage() {
                   />
                   <Field
                     label="ISIN (optional)"
+                    helpTerm="isin"
                     required={false}
                     value={draft.isin ?? ""}
                     onChange={(value) => {
@@ -1473,6 +1476,7 @@ function Field({
   min,
   step,
   required = type === "number",
+  helpTerm,
 }: {
   label: string;
   value: string | number;
@@ -1482,11 +1486,30 @@ function Field({
   min?: string;
   step?: string;
   required?: boolean;
+  helpTerm?: "ticker" | "isin" | "exchange" | "currency";
 }) {
+  const labelText = (
+    <span
+      className={
+        type === "number"
+          ? "text-[15px] font-bold text-slate-800"
+          : "text-sm font-bold text-slate-700"
+      }
+    >
+      {label}
+    </span>
+  );
+  const labelNode = helpTerm ? (
+    <HoldingIdentifierLabel term={helpTerm}>{labelText}</HoldingIdentifierLabel>
+  ) : (
+    labelText
+  );
+  const Wrapper = helpTerm ? "div" : "label";
+
   if (type === "number") {
     return (
-      <label className="block">
-        <span className="text-[15px] font-bold text-slate-800">{label}</span>
+      <Wrapper className="block min-w-0">
+        {labelNode}
         <span className="mt-2 flex min-h-[44px] items-center rounded-xl border border-slate-200 bg-slate-50 px-4 focus-within:border-blue-400">
           {prefix && <span className="font-bold text-slate-400">{prefix}</span>}
           <NumericInput
@@ -1498,13 +1521,13 @@ function Field({
             className="min-w-0 flex-1 bg-transparent px-2 py-3.5 font-bold outline-none"
           />
         </span>
-      </label>
+      </Wrapper>
     );
   }
 
   return (
-    <label className="block">
-      <span className="text-sm font-bold text-slate-700">{label}</span>
+    <Wrapper className="block min-w-0">
+      {labelNode}
       <span className="mt-2 flex items-center rounded-xl border border-slate-200 bg-slate-50 px-4 focus-within:border-blue-400">
         {prefix && <span className="font-bold text-slate-400">{prefix}</span>}
         <input
@@ -1517,6 +1540,6 @@ function Field({
           className="min-w-0 flex-1 bg-transparent px-2 py-3.5 font-bold outline-none"
         />
       </span>
-    </label>
+    </Wrapper>
   );
 }

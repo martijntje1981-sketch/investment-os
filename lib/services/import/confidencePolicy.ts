@@ -4,6 +4,10 @@
  * Match Engine remains the source of truth; this layer only classifies UX tiers.
  */
 
+import {
+  humanizeInstrumentMatchMessage,
+  UNIDENTIFIED_HOLDING_USER_MESSAGE,
+} from "@/lib/content/holdingIdentifierHelp";
 import { MATCHING_UNAVAILABLE_WARNING } from "@/lib/services/marketData/providerErrors";
 import type { ImportReviewTier, ImportRow, ImportReviewPlan } from "@/lib/services/import/types";
 import { aggregateFieldExtractionConfidence } from "@/lib/services/extraction/fieldConfidence";
@@ -69,7 +73,7 @@ export function buildReviewReason(row: ImportRow, tier: ImportReviewTier): strin
     if (isProviderUnavailableRow(row)) {
       return MATCHING_UNAVAILABLE_WARNING;
     }
-    return "We could not match this holding to a listed instrument.";
+    return UNIDENTIFIED_HOLDING_USER_MESSAGE;
   }
 
   const warnings = [
@@ -78,17 +82,21 @@ export function buildReviewReason(row: ImportRow, tier: ImportReviewTier): strin
   ].filter(Boolean);
 
   if (tier === "blocked") {
-    return (
+    return humanizeInstrumentMatchMessage(
       warnings[0] ??
-      "This match is uncertain. Pick the correct instrument or confirm the details."
+        "This match is uncertain. Pick the correct instrument or confirm the details.",
     );
   }
 
   if (row.requiresConfirmation) {
-    return warnings[0] ?? "Please confirm this instrument match.";
+    return humanizeInstrumentMatchMessage(
+      warnings[0] ?? "Please confirm this instrument match.",
+    );
   }
 
-  return warnings[0] ?? "Please review this holding before import.";
+  return humanizeInstrumentMatchMessage(
+    warnings[0] ?? "Please review this holding before import.",
+  );
 }
 
 export function classifyImportRow(row: ImportRow): ImportReviewTier {

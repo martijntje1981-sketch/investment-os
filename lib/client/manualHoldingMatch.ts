@@ -21,6 +21,10 @@ import {
 import type { ResolvedInstrument } from "@/lib/types/instrument";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
+import {
+  humanizeInstrumentMatchMessage,
+  UNIDENTIFIED_HOLDING_USER_MESSAGE,
+} from "@/lib/content/holdingIdentifierHelp";
 import { MATCHING_UNAVAILABLE_WARNING } from "@/lib/services/marketData/providerErrors";
 
 type MatchApiResult = {
@@ -137,7 +141,7 @@ export async function lookupManualHoldingListing(
       warnings: [
         unavailable
           ? "Instrument lookup is temporarily unavailable. You can continue manually and save your holding."
-          : "We couldn't find a listing right now. You can continue manually and save your holding.",
+          : `${UNIDENTIFIED_HOLDING_USER_MESSAGE} You can continue and save this holding.`,
       ],
       quotaUnavailable: unavailable,
     };
@@ -161,8 +165,8 @@ export async function lookupManualHoldingListing(
           "Instrument lookup is temporarily unavailable. You can continue manually and save your holding.",
         ]
       : warnings.length > 0
-        ? warnings
-        : ["No listing matched this holding. You can continue manually and save your holding."],
+        ? warnings.map(humanizeInstrumentMatchMessage)
+        : [`${UNIDENTIFIED_HOLDING_USER_MESSAGE} You can continue and save this holding.`],
     quotaUnavailable: lookupUnavailable,
   };
 }

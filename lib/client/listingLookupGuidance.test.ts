@@ -54,4 +54,13 @@ describe("listingLookupGuidance", () => {
     expect(result.guidance).toEqual([]);
     expect(result.alerts).toEqual([]);
   });
+
+  it("humanizes technical unmatched alerts for users", () => {
+    const result = formatListingLookupGuidance([
+      "No EODHD listing found for ticker VWCE. Add an ISIN or exchange to resolve.",
+    ]);
+
+    expect(result.alerts[0]).toMatch(/couldn’t confidently identify this investment/i);
+    expect(result.alerts[0]).not.toMatch(/EODHD/);
+  });
 });
