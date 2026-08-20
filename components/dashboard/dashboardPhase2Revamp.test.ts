@@ -149,13 +149,16 @@ describe("dashboard phase 2 compact previews", () => {
     expect(dashboardSource).not.toContain("groupBySector");
   });
 
-  it("places Portfolio History below holdings without Dividend or Goal Progress cards", () => {
-    const holdingsIdx = dashboardSource.indexOf("<HoldingsToday");
-    const historyIdx = dashboardSource.indexOf(
-      "<DashboardPortfolioHistorySection",
+  it("places Portfolio Evolution after Four Questions without Dividend or Goal Progress cards", () => {
+    const fourIdx = dashboardSource.indexOf("<FourQuestionsSection");
+    const evolutionIdx = dashboardSource.indexOf(
+      "<DashboardPortfolioEvolutionCard",
     );
-    expect(holdingsIdx).toBeGreaterThan(-1);
-    expect(historyIdx).toBeGreaterThan(holdingsIdx);
+    const holdingsIdx = dashboardSource.indexOf("<HoldingsToday");
+    expect(fourIdx).toBeGreaterThan(-1);
+    expect(evolutionIdx).toBeGreaterThan(fourIdx);
+    expect(holdingsIdx).toBeGreaterThan(evolutionIdx);
+    expect(dashboardSource).not.toContain("DashboardPortfolioHistorySection");
     expect(dashboardSource).not.toContain("DashboardContributionsCard");
     expect(dashboardSource).not.toContain("DashboardDividendCard");
     expect(dashboardSource).not.toContain("DashboardGoalProgressCard");

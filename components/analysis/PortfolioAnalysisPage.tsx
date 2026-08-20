@@ -292,8 +292,8 @@ export default function PortfolioAnalysisPage() {
               />
               <TopPerformersByCategorySection holdings={holdings} />
               <p className={appSectionMetaClass}>
-                For the full timeline, open{" "}
-                <Link href={PORTFOLIO_HISTORY_PATH} className={appTextLinkClass}>
+                For the full timeline and Portfolio Evolution, open{" "}
+                <Link href={`${PORTFOLIO_HISTORY_PATH}#portfolio-evolution`} className={appTextLinkClass}>
                   Portfolio History
                 </Link>
                 .

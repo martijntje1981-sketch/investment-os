@@ -172,7 +172,7 @@ describe("Dashboard UX polish phase", () => {
   it("keeps Cash Intelligence metrics and Analysis deep link", () => {
     expect(cash).toContain("portfolioCashWeightPercent");
     expect(cash).toContain("totalCashInBase");
-    expect(cash).toContain("totalIndicativeAnnualYieldInEur");
+    expect(cash).toContain("cashBenchmarkPercent");
     expect(cash).toContain("DASHBOARD_DEEP_LINKS.cashIntelligence");
     expect(cash).toContain("Cash held");
     expect(cash).toContain("Allocation");

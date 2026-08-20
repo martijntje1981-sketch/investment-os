@@ -12,6 +12,8 @@ import {
   buildChangeTrace,
 } from "@/lib/services/changeIntelligence/buildChangeTrace";
 import type { ChangeIntelligenceSummary } from "@/lib/services/changeIntelligence/types";
+import { buildEvolutionQ2ExpandItems } from "@/lib/services/portfolioEvolution/buildEvolutionQ2ExpandItems";
+import type { PortfolioEvolutionTimeline } from "@/lib/services/portfolioEvolution/types";
 import {
   buildWhatMattersTrace,
   traceToExpandItems,
@@ -85,6 +87,8 @@ export function buildWhatMattersNowQuestion(input: {
   relevantContext?: IntelligenceTraceLayer | null;
   changeIntelligence?: ChangeIntelligenceSummary | null;
   intelligenceDepth?: FourQuestionsIntelligenceDepth;
+  /** Candidate evidence only — never wins the Q2 glance. */
+  evolutionTimeline?: PortfolioEvolutionTimeline | null;
 }): FourQuestionAnswer {
   const { scope, holdings, intelligence, cryptoDashboardLine } = input;
 
@@ -233,13 +237,15 @@ export function buildWhatMattersNowQuestion(input: {
       relevantContext: input.relevantContext,
     });
 
-  const expandItems: FourQuestionExpandItem[] =
-    traceToExpandItems({
+  const expandItems: FourQuestionExpandItem[] = [
+    ...(traceToExpandItems({
       trace,
       questionId: "what_matters_now",
       depth: "complete",
       exploreHref,
-    }) ?? [];
+    }) ?? []),
+    ...buildEvolutionQ2ExpandItems(input.evolutionTimeline),
+  ];
 
   return {
     id: "what_matters_now",

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { History, Plus, Wallet } from "lucide-react";
 import { ExportPortfolioButton } from "@/components/export/ExportPortfolioButton";
@@ -52,8 +53,17 @@ import {
 import { PAGE_PURPOSE } from "@/lib/navigation/productArchitecture";
 import {
   buildPortfolioTimeline,
+  resolveHistorySummaryPresentation,
   timelineToGoalHistoryPoints,
 } from "@/lib/services/portfolio/timeline";
+
+const PortfolioEvolutionSection = dynamic(
+  () =>
+    import("@/components/portfolioEvolution/PortfolioEvolutionSection").then(
+      (mod) => mod.PortfolioEvolutionSection,
+    ),
+  { ssr: false },
+);
 
 function SummaryMetric({
   label,
@@ -223,16 +233,18 @@ export default function PortfolioHistoryPage() {
     timeline.summary.portfolioGrowth != null
       ? formatEur(timeline.summary.portfolioGrowth)
       : "—";
-  const returnLabel =
-    timeline.summary.investmentReturn != null
-      ? formatContributionAmount(timeline.summary.investmentReturn)
-      : "—";
   const netLabel = formatContributionAmount(timeline.summary.netContributions);
   const currentValueLabel =
     timeline.summary.portfolioValueAvailable &&
     timeline.summary.currentPortfolioValue != null
       ? formatEur(timeline.summary.currentPortfolioValue)
       : "Unavailable";
+  const historySummary = resolveHistorySummaryPresentation(timeline.summary);
+  const historySummaryValues: Record<string, string> = {
+    value_change: growthLabel,
+    recorded_net: netLabel,
+    current_value: currentValueLabel,
+  };
 
   return (
     <>
@@ -316,16 +328,23 @@ export default function PortfolioHistoryPage() {
             )}
           </div>
 
-          <div className="grid min-w-0 gap-4 border-t border-slate-100 px-4 py-4 sm:grid-cols-2 sm:gap-0 lg:grid-cols-4 sm:px-6">
-            <SummaryMetric label="Portfolio growth" value={growthLabel} />
-            <SummaryMetric label="Investment return" value={returnLabel} />
-            <SummaryMetric label="Net contributions" value={netLabel} />
-            <SummaryMetric
-              label="Current portfolio value"
-              value={currentValueLabel}
-            />
+          <div className="grid min-w-0 gap-4 border-t border-slate-100 px-4 py-4 sm:grid-cols-3 sm:gap-0 sm:px-6">
+            {historySummary.metrics.map((metric) => (
+              <SummaryMetric
+                key={metric.id}
+                label={metric.label}
+                value={historySummaryValues[metric.id] ?? "—"}
+              />
+            ))}
           </div>
         </section>
+
+        <PortfolioEvolutionSection
+          holdings={holdings}
+          entries={entries}
+          contributionBasisReliable={summary.contributionBasisReliable}
+          yearChartPoints={history.data?.chartPoints ?? null}
+        />
 
         <section
           aria-labelledby="portfolio-history-timeline-title"

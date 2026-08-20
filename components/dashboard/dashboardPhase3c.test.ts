@@ -21,11 +21,11 @@ describe("Phase 3C Smart Dashboard Intelligence wiring", () => {
     const order = [
       "<DashboardSummary",
       "<FourQuestionsSection",
+      "<DashboardPortfolioEvolutionCard",
       "<HoldingsToday",
       "<DashboardMarketPulseCard",
       "<DashboardPerspectivesWidget",
       "<DashboardCashIntelligenceCard",
-      "<DashboardPortfolioHistorySection",
       "<DashboardPortfolioExposureCard",
       "<DashboardExploreTools",
       "<DashboardMarketStatus",
@@ -71,7 +71,7 @@ describe("Phase 3C Smart Dashboard Intelligence wiring", () => {
   });
 
   it("applies emphasis without reordering sections", () => {
-    expect(dashboard).toContain("emphasisNote={smartDashboard.emphasis.historyNote}");
+    expect(dashboard).toContain("DashboardPortfolioEvolutionCard");
     expect(dashboard).toContain(
       "emphasizeGoals={smartDashboard.emphasis.exploreGoalsHighlight}",
     );

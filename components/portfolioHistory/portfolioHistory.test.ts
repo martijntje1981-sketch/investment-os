@@ -32,10 +32,7 @@ describe("portfolio history UI", () => {
   });
 
   it("renders chart, summary metrics, timeline, holdings, and Export Portfolio", () => {
-    expect(page).toContain("Portfolio growth");
-    expect(page).toContain("Investment return");
-    expect(page).toContain("Net contributions");
-    expect(page).toContain("Current portfolio value");
+    expect(page).toContain("resolveHistorySummaryPresentation");
     expect(page).toContain("Timeline");
     expect(page).toContain("Current holdings");
     expect(page).toContain("Add activity");
@@ -45,12 +42,14 @@ describe("portfolio history UI", () => {
     expect(page).toContain("ManageContributionsDialog");
     expect(page).toContain("runPortfolioExport");
     expect(page).toContain("buildPortfolioTimeline");
+    expect(page).not.toContain("Investment return");
   });
 
-  it("keeps Portfolio History discoverable in Dashboard, Portfolio and User Menu", () => {
+  it("keeps Portfolio History discoverable in Portfolio, User Menu, and Evolution", () => {
     expect(menu).toContain("PORTFOLIO_HISTORY_PATH");
     expect(menu).toContain("Portfolio History");
-    expect(dashboard).toContain("DashboardPortfolioHistorySection");
+    expect(dashboard).toContain("DashboardPortfolioEvolutionCard");
+    expect(dashboard).not.toContain("DashboardPortfolioHistorySection");
     expect(portfolio).toContain("PortfolioHistoryNavCard");
     expect(portfolio).toContain("Portfolio History");
     expect(navCard).toContain('PORTFOLIO_HISTORY_LABEL = "Portfolio History"');

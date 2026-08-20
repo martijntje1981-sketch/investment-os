@@ -66,6 +66,8 @@ export type BuildFourQuestionsInput = {
   changeIntelligence?: ChangeIntelligenceSummary | null;
   /** Phase 13 attention — optional; glance answers stay unchanged. */
   portfolioChangeAttention?: PortfolioChangeAttention | null;
+  /** Q2 expand candidate only — does not override glance ranking. */
+  evolutionTimeline?: import("@/lib/services/portfolioEvolution/types").PortfolioEvolutionTimeline | null;
 };
 
 export function buildFourQuestions(
@@ -183,6 +185,7 @@ export function buildFourQuestions(
       relevantContext: q2Context?.layer ?? null,
       changeIntelligence: input.changeIntelligence,
       intelligenceDepth,
+      evolutionTimeline: input.evolutionTimeline,
     }),
     buildAmIOnTrackQuestion({
       scope,

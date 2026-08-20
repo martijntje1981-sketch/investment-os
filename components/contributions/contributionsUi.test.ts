@@ -37,8 +37,10 @@ describe("contributions ledger UI", () => {
     "utf8",
   );
 
-  it("places recorded contributions on the consolidated Portfolio History card", () => {
-    expect(dashboardSource).toContain("DashboardPortfolioHistorySection");
+  it("places recorded contributions on Portfolio and Evolution, not a duplicate Dashboard ledger card", () => {
+    expect(dashboardSource).toContain("usePortfolioContributions");
+    expect(dashboardSource).toContain("DashboardPortfolioEvolutionCard");
+    expect(dashboardSource).not.toContain("DashboardPortfolioHistorySection");
     expect(dashboardSource).not.toContain("DashboardContributionsCard");
     expect(dashboardSource).not.toContain("DashboardGoalProgressCard");
     expect(dashboardSource).toContain("pulse={portfolioPulse}");

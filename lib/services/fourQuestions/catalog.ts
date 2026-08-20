@@ -104,6 +104,7 @@ export const FOUR_QUESTIONS: readonly FourQuestionDefinition[] = [
     deepDives: [
       { label: "News", href: NEWS_PATH },
       { label: "Market Pulse", href: MARKET_PULSE_PATH },
+      { label: "Portfolio Evolution", href: `${PORTFOLIO_HISTORY_PATH}#portfolio-evolution` },
       { label: "Exposure & X-Ray", href: `${ANALYSIS_PATH}#portfolio-exposure` },
       { label: "Bonds & Rates", href: `${ANALYSIS_PATH}#bonds-rates` },
       { label: "Crypto intelligence", href: `${ANALYSIS_PATH}#crypto-intelligence` },

@@ -209,7 +209,7 @@ describe("Phase 16.5 Dashboard presentation contracts", () => {
     return readFileSync(path.resolve(process.cwd(), relativePath), "utf8");
   }
 
-  it("uses one Portfolio History card and never shows value-above-contributions on Dashboard", () => {
+  it("uses Portfolio Evolution as the Dashboard visual entry; History remains a page, not a large Dashboard card", () => {
     const dashboard = read("app/dashboard/page.tsx");
     const history = read(
       "components/dashboard/DashboardPortfolioHistorySection.tsx",
@@ -217,7 +217,8 @@ describe("Phase 16.5 Dashboard presentation contracts", () => {
     const card = read("components/portfolioHistory/PortfolioHistoryNavCard.tsx");
     const holdingsRow = read("components/dashboard/HoldingsTodayRow.tsx");
 
-    expect(dashboard).toContain("DashboardPortfolioHistorySection");
+    expect(dashboard).toContain("DashboardPortfolioEvolutionCard");
+    expect(dashboard).not.toContain("DashboardPortfolioHistorySection");
     expect(dashboard).not.toContain("DashboardContributionsCard");
     expect(history).toContain("CONTRIBUTIONS_RECORDED_LABEL");
     expect(history).toContain("CONTRIBUTIONS_INCOMPLETE_BASIS_COPY");

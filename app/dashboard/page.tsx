@@ -6,7 +6,7 @@ import { DashboardCashIntelligenceCard } from "@/components/dashboard/DashboardC
 import { DashboardMarketPulseCard } from "@/components/dashboard/DashboardMarketPulseCard";
 import { DashboardSummary } from "@/components/dashboard/DashboardSummary";
 import { DashboardExploreTools } from "@/components/dashboard/DashboardExploreTools";
-import { DashboardPortfolioHistorySection } from "@/components/dashboard/DashboardPortfolioHistorySection";
+import { DashboardPortfolioEvolutionCard } from "@/components/portfolioEvolution/DashboardPortfolioEvolutionCard";
 import { FourQuestionsSection } from "@/components/dashboard/fourQuestions/FourQuestionsSection";
 import { SinceLastCheckSection } from "@/components/dashboard/SinceLastCheckSection";
 import { AuthenticatedFourQuestionsNav } from "@/components/fourQuestions/AuthenticatedFourQuestionsNav";
@@ -54,8 +54,13 @@ import {
   buildPulseAttributionEnrichment,
 } from "@/lib/services/performanceAttribution";
 import { buildFourQuestions } from "@/lib/services/fourQuestions";
+import { usePortfolioContributions } from "@/lib/client/usePortfolioContributions";
 import { useProductAccess } from "@/lib/client/useProductAccess";
 import { useChangeIntelligence } from "@/lib/client/useChangeIntelligence";
+import {
+  buildEvolutionNowState,
+  buildPortfolioEvolutionTimeline,
+} from "@/lib/services/portfolioEvolution";
 import {
   applyPortfolioChangeAccess,
   buildPortfolioChangeAttention,
@@ -160,6 +165,24 @@ export default function DashboardPage() {
     () => buildDashboardPortfolioSnapshot(holdings, goal, hasSavedGoal),
     [goal, hasSavedGoal, holdings],
   );
+
+  const contributionHoldings = useMemo(
+    () =>
+      holdings.map((holding) => ({
+        id: holding.id,
+        symbol: holding.symbol,
+        name: holding.name,
+        assetType: holding.assetType,
+      })),
+    [holdings],
+  );
+  const { entries: contributionEntries, summary: contributionSummary } =
+    usePortfolioContributions(
+      snapshot.portfolioValueAvailable ? snapshot.portfolioValue : null,
+      snapshot.portfolioValueAvailable,
+      portfolioReady && Boolean(userSub) && holdings.length > 0,
+      contributionHoldings,
+    );
 
   const exposureAllocation = useMemo(
     () => buildPortfolioExposureAllocation(holdings),
@@ -370,6 +393,37 @@ export default function DashboardPage() {
     smartAlertsMode,
   ]);
 
+  const evolutionTimeline = useMemo(() => {
+    if (holdings.length === 0) return null;
+    return buildPortfolioEvolutionTimeline({
+      timeframe: "30D",
+      chartPoints: monthHistory.data?.chartPoints ?? null,
+      snapshots: changeIntelligence.snapshots,
+      entries: contributionEntries,
+      now: buildEvolutionNowState({
+        holdings,
+        goal,
+        hasSavedGoal,
+        goalProgressPercent: goalProgress.hasGoal
+          ? goalProgress.currentProgressPercent
+          : null,
+      }),
+      contributionBasisReliable: contributionSummary.contributionBasisReliable,
+      intelligenceDepth: productAccess.intelligenceDepth,
+    });
+  }, [
+    changeIntelligence.snapshots,
+    contributionEntries,
+    contributionSummary.contributionBasisReliable,
+    goal,
+    goalProgress.currentProgressPercent,
+    goalProgress.hasGoal,
+    hasSavedGoal,
+    holdings,
+    monthHistory.data?.chartPoints,
+    productAccess.intelligenceDepth,
+  ]);
+
   const fourQuestions = useMemo(() => {
     if (holdings.length === 0) return null;
     const nextEvent = payload.upcomingEvents?.[0];
@@ -393,9 +447,11 @@ export default function DashboardPage() {
       nextEventHref: nextEventLabel ? "/events" : null,
       changeIntelligence: changeIntelligence.summary,
       portfolioChangeAttention,
+      evolutionTimeline,
     });
   }, [
     changeIntelligence.summary,
+    evolutionTimeline,
     goal,
     goalProgress,
     hasSavedGoal,
@@ -511,6 +567,9 @@ export default function DashboardPage() {
                 bundle={fourQuestions}
                 intelligenceDepth={productAccess.intelligenceDepth}
               />
+              {evolutionTimeline ? (
+                <DashboardPortfolioEvolutionCard timeline={evolutionTimeline} />
+              ) : null}
             </>
           ) : null}
 
@@ -536,14 +595,6 @@ export default function DashboardPage() {
             <DashboardPerspectivesWidget />
 
             <DashboardCashIntelligenceCard holdings={holdings} />
-
-            <DashboardPortfolioHistorySection
-              holdings={holdings}
-              history={monthHistory.data}
-              portfolioValue={snapshot.portfolioValue}
-              portfolioValueAvailable={snapshot.portfolioValueAvailable}
-              emphasisNote={smartDashboard.emphasis.historyNote}
-            />
 
             <DashboardPortfolioExposureCard
               allocation={exposureAllocation}

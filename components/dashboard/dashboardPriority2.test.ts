@@ -25,11 +25,11 @@ describe("Priority 2 Dashboard progressive disclosure", () => {
     const order = [
       "<DashboardSummary",
       "<FourQuestionsSection",
+      "<DashboardPortfolioEvolutionCard",
       "<HoldingsToday",
       "<DashboardMarketPulseCard",
       "<DashboardPerspectivesWidget",
       "<DashboardCashIntelligenceCard",
-      "<DashboardPortfolioHistorySection",
       "<DashboardPortfolioExposureCard",
       "<DashboardExploreTools",
       "<DashboardMarketStatus",

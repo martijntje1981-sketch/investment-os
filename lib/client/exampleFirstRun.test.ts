@@ -101,9 +101,10 @@ describe("first-run dashboard wiring", () => {
     expect(tools).toContain("ANALYSIS_PATH");
     expect(tools).toContain("GOALS_PATH");
     expect(tools).toContain("Understand your portfolio");
-    expect(tools).toContain("Strengths, structure and resilience.");
-    expect(tools).toContain("Track progress toward your targets.");
-    expect(dashboard).toContain("DashboardPortfolioHistorySection");
+    expect(tools).toContain("Structure, health and resilience");
+    expect(tools).toContain("Track progress toward your target");
+    expect(dashboard).toContain("DashboardPortfolioEvolutionCard");
+    expect(dashboard).not.toContain("DashboardPortfolioHistorySection");
     expect(dashboard).toContain("DashboardMarketPulseCard");
     expect(dashboard).toContain("DashboardPerspectivesWidget");
     expect(menu).toContain('title="My portfolio"');

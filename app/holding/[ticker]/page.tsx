@@ -30,6 +30,7 @@ import {
   selectHoldingPageNewsItems,
 } from "@/lib/services/holdingIntelligence";
 import { formatAllocationPercent } from "@/lib/services/classification";
+import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 
 const euro = new Intl.NumberFormat("en-GB", {
   style: "currency",
@@ -261,6 +262,14 @@ export default function HoldingPage() {
                 </h1>
 
                 <p className="mt-2 text-lg text-white/90">{holding.name}</p>
+                {holding.assetType === "cash" ? (
+                  <Link
+                    href={DASHBOARD_DEEP_LINKS.cashIntelligence}
+                    className="mt-3 inline-flex min-h-11 items-center text-[15px] font-semibold text-cyan-200 underline-offset-2 hover:underline"
+                  >
+                    Understand your cash →
+                  </Link>
+                ) : null}
 
                 <p className="mt-4 text-[15px] text-white/90">
                   Last market update:{" "}
