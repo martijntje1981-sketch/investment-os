@@ -20,6 +20,10 @@ import {
   shouldShowCryptoRefreshDiagnostics,
   type CryptoRefreshDiagnosticRecord,
 } from "@/lib/client/cryptoRefreshDiagnostics";
+import {
+  __resetCacheFirstPriceQuotesForTests,
+  fetchCacheFirstPriceQuotes,
+} from "@/lib/client/cacheFirstPriceQuotes";
 import { logLivePriceRefreshTrace } from "@/lib/client/marketDataRefreshTrace";
 import { lastLivePriceRefreshKey } from "@/lib/client/portfolioStorageKeys";
 import { NO_QUOTABLE_HOLDINGS_MESSAGE } from "@/lib/services/prices/types";
@@ -351,18 +355,27 @@ export async function refreshLivePortfolioPrices<
       }
     }
 
-    const response = await fetch("/api/prices", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        holdings: quotablePayload,
-        forceRefresh: !cacheFirst,
-        estimateOnly: false,
-      }),
-      cache: "no-store",
-    });
+    const quoted = cacheFirst
+      ? await fetchCacheFirstPriceQuotes(userSub, quotablePayload)
+      : await (async () => {
+          const liveResponse = await fetch("/api/prices", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              holdings: quotablePayload,
+              forceRefresh: true,
+              estimateOnly: false,
+            }),
+            cache: "no-store",
+          });
+          return {
+            ok: liveResponse.ok,
+            data: (await liveResponse.json()) as PriceApiResponse,
+          };
+        })();
 
-    const data = (await response.json()) as PriceApiResponse;
+    const response = { ok: quoted.ok };
+    const data = quoted.data;
 
     logLivePriceRefreshTrace("api_response", {
       ok: response.ok,
@@ -602,6 +615,7 @@ export async function refreshLivePortfolioPrices<
 export function resetLivePriceRefreshStateForTests(): void {
   lastLiveRefreshCompletedAt = 0;
   liveRefreshInFlight = null;
+  __resetCacheFirstPriceQuotesForTests();
   if (typeof localStorage !== "undefined") {
     for (let index = localStorage.length - 1; index >= 0; index -= 1) {
       const key = localStorage.key(index);

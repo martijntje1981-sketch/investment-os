@@ -3,6 +3,10 @@
  */
 
 import {
+  __resetCacheFirstPriceQuotesForTests,
+  fetchCacheFirstPriceQuotes,
+} from "@/lib/client/cacheFirstPriceQuotes";
+import {
   applyCachedPrices,
   applyPricesToHoldings,
   buildPriceRequestPayload,
@@ -17,7 +21,6 @@ import {
   type StoredPortfolioHolding,
 } from "@/lib/client/portfolioPricing";
 import { NO_QUOTABLE_HOLDINGS_MESSAGE } from "@/lib/services/prices/types";
-import type { PriceApiResponse } from "@/lib/types/portfolioStorage";
 
 export type MarketSnapshotMetadata = {
   success?: boolean;
@@ -37,6 +40,7 @@ export function isMarketSnapshotSyncInFlight(): boolean {
 
 export function resetMarketSnapshotSyncForTests(): void {
   snapshotSyncInFlight = null;
+  __resetCacheFirstPriceQuotesForTests();
 }
 
 export async function fetchMarketSnapshotMetadata(): Promise<MarketSnapshotMetadata | null> {
@@ -115,15 +119,10 @@ export async function syncPortfolioPricesFromSnapshot<
         buildPriceRequestPayload(holdings, userSub),
       );
 
-      const response = await fetch("/api/prices", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ holdings: payload }),
-        cache: "no-store",
-      });
+      const quoted = await fetchCacheFirstPriceQuotes(userSub, payload);
+      const data = quoted.data;
 
-      const data = (await response.json()) as PriceApiResponse;
-      if (!response.ok || (!data.success && !data.message)) {
+      if (!quoted.ok || (!data.success && !data.message)) {
         throw new Error(data.error ?? data.message ?? "Market snapshot unavailable");
       }
 

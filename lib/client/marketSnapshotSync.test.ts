@@ -98,7 +98,7 @@ describe("marketSnapshotSync", () => {
     });
     expect(pricesCall).toBeTruthy();
     const body = JSON.parse(String(pricesCall?.[1]?.body));
-    expect(body.forceRefresh).toBeUndefined();
+    expect(body.forceRefresh).toBe(false);
   });
 
   it("skips snapshot sync when local cache is already current", async () => {

@@ -54,7 +54,8 @@ describe("pre-launch performance batch", () => {
     expect(hook).toContain("markAppEntryCachedPortfolioReady");
     expect(liveHook).toContain("cacheFirst: true");
     expect(liveRefresh).toContain("cacheFirst");
-    expect(liveRefresh).toContain("forceRefresh: !cacheFirst");
+    expect(liveRefresh).toContain("fetchCacheFirstPriceQuotes");
+    expect(liveRefresh).toContain("forceRefresh: true");
   });
 
   it("E. cache-first does not record a live refresh timestamp", () => {
@@ -80,7 +81,7 @@ describe("pre-launch performance batch", () => {
     expect(dashboard).toContain("historyEnabled");
     expect(dashboard).toContain("historyEnabled && scopedHoldings.length > 0 && hasSavedGoal");
     expect(historyHook).toContain("enabled = true");
-    expect(historyHook).toContain("if (!enabled || period === \"1D\")");
+    expect(historyHook).toContain("if (!enabled || period === \"1D\" || !userSub)");
     expect(dashboard).toContain("usePortfolioPerformanceHistory");
   });
 
@@ -132,6 +133,8 @@ describe("pre-launch performance batch", () => {
       );
     }
     expect(liveRefresh).toContain('fetch("/api/prices"');
-    expect(historyHook).toContain('fetch("/api/portfolio/performance"');
+    expect(read("lib/client/portfolioPerformanceHistoryRequest.ts")).toContain(
+      'fetch("/api/portfolio/performance"',
+    );
   });
 });
