@@ -11,18 +11,22 @@ import {
   appSectionTitleClass,
   appTextLinkClass,
 } from "@/components/layout/appSurface";
+import { DashboardPortfolioStance } from "@/components/portfolioStance/DashboardPortfolioStance";
 import {
   EVOLUTION_BUILDING_BODY,
   EVOLUTION_BUILDING_HEADLINE,
   PORTFOLIO_EVOLUTION_HREF,
   type PortfolioEvolutionTimeline,
 } from "@/lib/services/portfolioEvolution";
+import type { PortfolioStanceHistory } from "@/lib/services/portfolioStance";
 import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 
 export function DashboardPortfolioEvolutionCard({
   timeline,
+  stanceHistory,
 }: {
   timeline: PortfolioEvolutionTimeline;
+  stanceHistory?: PortfolioStanceHistory | null;
 }) {
   return (
     <section
@@ -63,6 +67,9 @@ export function DashboardPortfolioEvolutionCard({
             <PortfolioEvolutionVisual timeline={timeline} variant="dashboard" />
           </div>
         )}
+        {stanceHistory ? (
+          <DashboardPortfolioStance history={stanceHistory} />
+        ) : null}
       </div>
     </section>
   );

@@ -85,6 +85,8 @@ describe("product access resolver", () => {
     expect(canUseCompleteCapability(free, "what_if_scenarios")).toBe(false);
     expect(canUseCompleteCapability(trial, "what_if_scenarios")).toBe(true);
     expect(canUseCompleteCapability(free, "goal_sensitivity")).toBe(false);
+    expect(canUseCompleteCapability(free, "portfolio_stance")).toBe(false);
+    expect(canUseCompleteCapability(trial, "portfolio_stance")).toBe(true);
   });
 });
 

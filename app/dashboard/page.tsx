@@ -63,6 +63,10 @@ import {
 } from "@/lib/services/portfolioEvolution";
 import { buildLookingAhead } from "@/lib/services/lookingAhead";
 import {
+  buildPortfolioStance,
+  buildPortfolioStanceHistory,
+} from "@/lib/services/portfolioStance";
+import {
   applyPortfolioChangeAccess,
   buildPortfolioChangeAttention,
   resolveSmartAlertsAccessMode,
@@ -442,6 +446,28 @@ export default function DashboardPage() {
     resilienceProfile,
   ]);
 
+  const stanceHistory = useMemo(() => {
+    if (holdings.length === 0) return null;
+    const current = buildPortfolioStance({
+      holdings,
+      allocation: exposureAllocation,
+      analysis: portfolioAnalysis,
+      resilience: resilienceProfile,
+    });
+    return buildPortfolioStanceHistory({
+      snapshots: changeIntelligence.snapshots,
+      current,
+      intelligenceDepth: productAccess.intelligenceDepth,
+    });
+  }, [
+    changeIntelligence.snapshots,
+    exposureAllocation,
+    holdings,
+    portfolioAnalysis,
+    productAccess.intelligenceDepth,
+    resilienceProfile,
+  ]);
+
   const fourQuestions = useMemo(() => {
     if (holdings.length === 0) return null;
     const nextEvent = payload.upcomingEvents?.[0];
@@ -466,6 +492,7 @@ export default function DashboardPage() {
       changeIntelligence: changeIntelligence.summary,
       portfolioChangeAttention,
       evolutionTimeline,
+      stanceHistory,
     });
   }, [
     changeIntelligence.summary,
@@ -484,6 +511,7 @@ export default function DashboardPage() {
     portfolioPulse,
     productAccess.intelligenceDepth,
     realityCheck,
+    stanceHistory,
   ]);
 
   const exampleActive = useExampleActiveStatus(
@@ -585,7 +613,10 @@ export default function DashboardPage() {
                 />
               ) : null}
               {evolutionTimeline ? (
-                <DashboardPortfolioEvolutionCard timeline={evolutionTimeline} />
+                <DashboardPortfolioEvolutionCard
+                  timeline={evolutionTimeline}
+                  stanceHistory={stanceHistory}
+                />
               ) : null}
               {lookingAhead ? (
                 <LookingAheadSection model={lookingAhead} />

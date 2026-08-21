@@ -38,6 +38,7 @@ import {
   ExpectedReturnAssumptionPanel,
 } from "@/components/goals/ExpectedReturnAssumption";
 import { GoalRealityCheckPanel } from "@/components/goals/GoalRealityCheckPanel";
+import { GoalTradeOffsSection } from "@/components/portfolioStance/GoalTradeOffsSection";
 import { WhatIfExplorer } from "@/components/goals/WhatIfExplorer";
 import { EmptyPortfolioGuide } from "@/components/onboarding/EmptyPortfolioGuide";
 import NumericInput from "@/components/NumericInput";
@@ -86,6 +87,10 @@ import {
   goalsStatusBadgeLabel,
 } from "@/lib/services/goals/buildGoalsIntelligence";
 import { buildPortfolioHealthProfile } from "@/lib/services/portfolio/portfolioHealthProfile";
+import {
+  buildGoalTradeOffs,
+  buildPortfolioStance,
+} from "@/lib/services/portfolioStance";
 import {
   buildPortfolioTimeline,
   timelineToGoalHistoryPoints,
@@ -180,6 +185,31 @@ export default function GoalsPage() {
     hasSavedGoal,
     portfolioHistory: timelineToGoalHistoryPoints(timeline),
   });
+
+  const goalTradeOffs = useMemo(() => {
+    const stance = buildPortfolioStance({
+      holdings,
+      allocation: exposure,
+      analysis,
+    });
+    return buildGoalTradeOffs({
+      goal: savedGoal,
+      hasSavedGoal,
+      currentPortfolioValue: goalProgress.currentValue,
+      portfolioValueAvailable: goalProgress.portfolioValueAvailable,
+      stance,
+      complete: productAccess.intelligenceDepth === "complete",
+    });
+  }, [
+    analysis,
+    exposure,
+    goalProgress.currentValue,
+    goalProgress.portfolioValueAvailable,
+    hasSavedGoal,
+    holdings,
+    productAccess.intelligenceDepth,
+    savedGoal,
+  ]);
 
   const healthAlignment = useMemo(() => {
     if (!hasSavedGoal || holdings.length === 0) return null;
@@ -476,6 +506,11 @@ export default function GoalsPage() {
             ) : null}
           </section>
         ) : null}
+
+        <GoalTradeOffsSection
+          model={goalTradeOffs}
+          productAccess={productAccess}
+        />
 
         <WhatIfExplorer
           holdings={holdings}

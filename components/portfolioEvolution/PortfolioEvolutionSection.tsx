@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 
 import { PortfolioEvolutionVisual } from "@/components/portfolioEvolution/PortfolioEvolutionVisual";
+import { PortfolioStanceSection } from "@/components/portfolioStance/PortfolioStanceSection";
 import {
   appCardClass,
   appCardPaddingClass,
@@ -27,6 +28,10 @@ import {
   buildPortfolioEvolutionTimeline,
   type EvolutionTimeframeId,
 } from "@/lib/services/portfolioEvolution";
+import {
+  buildPortfolioStance,
+  buildPortfolioStanceHistory,
+} from "@/lib/services/portfolioStance";
 import { formatContributionEntryDate } from "@/lib/client/contributionsFormat";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
@@ -107,11 +112,22 @@ export function PortfolioEvolutionSection({
     ],
   );
 
+  const stanceHistory = useMemo(
+    () =>
+      buildPortfolioStanceHistory({
+        snapshots: changeIntelligence.snapshots,
+        current: buildPortfolioStance({ holdings }),
+        intelligenceDepth: productAccess.intelligenceDepth,
+      }),
+    [changeIntelligence.snapshots, holdings, productAccess.intelligenceDepth],
+  );
+
   const enabledIds = EVOLUTION_TIMEFRAME_IDS.filter((id) =>
     complete ? timeline.timeframeEnabled[id] || id === "30D" : id === "30D",
   );
 
   return (
+    <>
     <section
       id="portfolio-evolution"
       aria-labelledby="portfolio-evolution-heading"
@@ -184,5 +200,9 @@ export function PortfolioEvolutionSection({
         </div>
       ) : null}
     </section>
+    {holdings.length > 0 ? (
+      <PortfolioStanceSection history={stanceHistory} />
+    ) : null}
+    </>
   );
 }

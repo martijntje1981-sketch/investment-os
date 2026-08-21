@@ -10,6 +10,10 @@ import type {
   EvolutionFundingVsMarket,
   EvolutionNowState,
 } from "@/lib/services/portfolioEvolution/types";
+import {
+  buildPortfolioStanceFromInputs,
+  collectStanceInputsFromNowState,
+} from "@/lib/services/portfolioStance";
 
 function metric(
   rows: EvolutionBeforeNowMetric[],
@@ -74,6 +78,23 @@ export function buildEvolutionConclusion(input: {
     nowState.scenarioImpactPercent < thenState.scenarioImpactPercent - 2;
   const cashUp = cash != null && cash.absDelta >= 3 && (thenState ? groupWeight(nowState, "cash") > groupWeight(thenState, "cash") : false);
 
+  const thenStanceInputs = thenState ? collectStanceInputsFromNowState(thenState) : null;
+  const nowStanceInputs = collectStanceInputsFromNowState(nowState);
+  const thenStance = thenStanceInputs
+    ? buildPortfolioStanceFromInputs(thenStanceInputs)
+    : null;
+  const nowStance = nowStanceInputs
+    ? buildPortfolioStanceFromInputs(nowStanceInputs)
+    : null;
+  const stanceMoreOffensive =
+    thenStance?.score != null &&
+    nowStance?.score != null &&
+    (nowStance.score - thenStance.score >= 6 ||
+      (thenStance.bandId != null &&
+        nowStance.bandId != null &&
+        thenStance.bandId !== nowStance.bandId &&
+        nowStance.score > thenStance.score));
+
   if (crypto) {
     supporting.push(`Crypto ${crypto.fromLabel} → ${crypto.toLabel}`);
   }
@@ -116,6 +137,15 @@ export function buildEvolutionConclusion(input: {
   if (valueUp && cryptoUp) {
     return {
       primary: "Your portfolio grew while crypto exposure increased.",
+      supporting: sliced,
+      material: true,
+    };
+  }
+
+  if (valueUp && stanceMoreOffensive) {
+    return {
+      primary:
+        "Your portfolio grew and became more offensive in its positioning.",
       supporting: sliced,
       material: true,
     };

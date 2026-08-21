@@ -44,7 +44,8 @@ export type CompleteCapabilityId =
   | "portfolio_whats_ahead"
   | "smart_alerts"
   | "period_briefings"
-  | "cross_asset_intelligence";
+  | "cross_asset_intelligence"
+  | "portfolio_stance";
 
 export type ProductAccess = {
   tier: ProductAccessTier;

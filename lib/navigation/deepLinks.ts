@@ -13,6 +13,7 @@ import {
   GOALS_PATH,
   ON_TRACK_HUB_PATH,
   PORTFOLIO_HEALTH_PATH,
+  PORTFOLIO_HISTORY_PATH,
   WHAT_HAPPENED_HUB_PATH,
   WHAT_MATTERS_HUB_PATH,
   WHATS_AHEAD_HUB_PATH,
@@ -48,6 +49,10 @@ export const SECTION_IDS = {
   portfolioNews: "portfolio-news",
   /** Dashboard New & Notable card. */
   newAndNotable: "new-and-notable",
+  /** Portfolio Stance (History / Evolution). */
+  portfolioStance: "portfolio-stance",
+  /** Goals contribution vs stance trade-offs. */
+  goalTradeOffs: "goal-trade-offs",
   /** @deprecated Alias kept so older hashes still resolve. */
   sinceLastCheck: "new-and-notable",
   /** Central Scorecard page sections (`/portfolio-health`). */
@@ -98,6 +103,8 @@ export const DASHBOARD_DEEP_LINKS = {
   newsHub: NEWS_HUB_PATH,
   newAndNotable: `${DASHBOARD_PATH}#${SECTION_IDS.newAndNotable}`,
   sinceLastCheck: `${DASHBOARD_PATH}#${SECTION_IDS.newAndNotable}`,
+  portfolioStance: `${PORTFOLIO_HISTORY_PATH}#${SECTION_IDS.portfolioStance}`,
+  goalTradeOffs: `${GOALS_PATH}#${SECTION_IDS.goalTradeOffs}`,
 } as const;
 
 /** CSS class applied briefly after a successful deep-link scroll. */

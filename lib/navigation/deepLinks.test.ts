@@ -96,6 +96,16 @@ describe("Dashboard deep links", () => {
     expect(read("components/news/NewsMarketBriefSection.tsx")).toContain(
       `id="${SECTION_IDS.newsMarketBrief}"`,
     );
+    expect(DASHBOARD_DEEP_LINKS.portfolioStance).toBe(
+      "/portfolio-history#portfolio-stance",
+    );
+    expect(DASHBOARD_DEEP_LINKS.goalTradeOffs).toBe("/goals#goal-trade-offs");
+    expect(read("components/portfolioStance/PortfolioStanceSection.tsx")).toContain(
+      `id="portfolio-stance"`,
+    );
+    expect(read("components/portfolioStance/GoalTradeOffsSection.tsx")).toContain(
+      `id="goal-trade-offs"`,
+    );
   });
 
   it("wires Dashboard cards to deep-link destinations", () => {

@@ -22,6 +22,7 @@ import type {
 import type { ChangeIntelligenceSummary } from "@/lib/services/changeIntelligence/types";
 import type { PortfolioChangeAttention } from "@/lib/services/portfolioChangeDetection/types";
 import { mergePortfolioChangeIntoFourQuestions } from "@/lib/services/portfolioChangeDetection/mergeIntoFourQuestions";
+import { mergeStanceIntoFourQuestions } from "@/lib/services/portfolioStance/mergeStanceIntoFourQuestions";
 import type { GoalRealityCheck } from "@/lib/services/goals/buildGoalRealityCheck";
 import type { GoalProgress } from "@/lib/services/goals/goalProgressEngine";
 import type { InvestmentIntelligence } from "@/lib/services/news/investmentIntelligence";
@@ -68,6 +69,8 @@ export type BuildFourQuestionsInput = {
   portfolioChangeAttention?: PortfolioChangeAttention | null;
   /** Q2 expand candidate only — does not override glance ranking. */
   evolutionTimeline?: import("@/lib/services/portfolioEvolution/types").PortfolioEvolutionTimeline | null;
+  /** Q2/Q4 supporting expand only — does not override glance ranking. */
+  stanceHistory?: import("@/lib/services/portfolioStance/types").PortfolioStanceHistory | null;
 };
 
 export function buildFourQuestions(
@@ -210,7 +213,7 @@ export function buildFourQuestions(
     }),
   ];
 
-  const bundle: FourQuestionsBundle = mergePortfolioChangeIntoFourQuestions(
+  const withChange: FourQuestionsBundle = mergePortfolioChangeIntoFourQuestions(
     {
       scope,
       intelligenceDepth: "complete",
@@ -219,5 +222,8 @@ export function buildFourQuestions(
     input.portfolioChangeAttention,
   );
 
-  return applyFourQuestionsIntelligenceDepth(bundle, intelligenceDepth);
+  return applyFourQuestionsIntelligenceDepth(
+    mergeStanceIntoFourQuestions(withChange, input.stanceHistory),
+    intelligenceDepth,
+  );
 }
