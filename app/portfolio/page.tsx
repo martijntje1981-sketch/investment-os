@@ -7,12 +7,10 @@ import {
   Banknote,
   BarChart3,
   CircleDollarSign,
-  Coins,
   History,
   Loader2,
   Pencil,
   PieChart,
-  Plus,
   Search,
   Sparkles,
   Trash2,
@@ -68,7 +66,6 @@ import {
   appDarkCardPaddingClass,
   appDashboardDarkBodyClass,
   appHeroMetricLabelClass,
-  appSecondaryButtonClass,
   appSectionLabelClass,
   appSectionMetaClass,
   appSectionTitleClass,
@@ -81,6 +78,7 @@ import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
 import PortfolioSyncBanner from "@/components/PortfolioSyncBanner";
 import CryptoRefreshTechnicalDetails from "@/components/portfolio/CryptoRefreshTechnicalDetails";
 import { RefreshPricesButton } from "@/components/portfolio/RefreshPricesButton";
+import { PortfolioHeroAddMenu } from "@/components/portfolio/PortfolioHeroAddMenu";
 import { HoldingVenueSummary } from "@/components/instruments/HoldingVenueSummary";
 import { ListingCandidatePicker } from "@/components/instruments/ListingCandidatePicker";
 import { HoldingDividendMeta } from "@/components/analysis/DividendIntelligenceSection";
@@ -141,8 +139,7 @@ import type { ResolvedInstrument } from "@/lib/types/instrument";
 import { usePortfolioDividends } from "@/lib/client/usePortfolioDividends";
 import { usePortfolioAnalyst } from "@/lib/client/usePortfolioAnalyst";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
-import { formatPortfolioHeroRefreshLabel } from "@/lib/client/marketSnapshotSync";
-import { useMarketSnapshotMetadata } from "@/lib/client/useMarketSnapshotMetadata";
+import { resolvePortfolioDisplayFreshness } from "@/lib/client/portfolioDisplayFreshness";
 import { holdingDetailPath } from "@/lib/navigation/appRoutes";
 import { ViewHoldingCue } from "@/components/holding/ViewHoldingCue";
 
@@ -208,9 +205,6 @@ export default function PortfolioPage() {
     userSub,
     holdings.length > 0,
   );
-  const { lastRefreshedAt: snapshotRefreshedAt } = useMarketSnapshotMetadata(
-    portfolioReady && holdings.length > 0,
-  );
   const {
     refreshPrices,
     isRefreshing,
@@ -218,6 +212,7 @@ export default function PortfolioPage() {
     message,
     setMessage,
     liveRefreshAt,
+    displayFreshnessAt,
     refreshDiagnostics,
     showRefreshDiagnostics,
     disabled: refreshDisabled,
@@ -228,9 +223,13 @@ export default function PortfolioPage() {
     ready: portfolioReady,
   });
 
-  const heroRefreshLabel = useMemo(
-    () => formatPortfolioHeroRefreshLabel(liveRefreshAt, snapshotRefreshedAt),
-    [liveRefreshAt, snapshotRefreshedAt],
+  const heroFreshness = useMemo(
+    () =>
+      resolvePortfolioDisplayFreshness({
+        displayFreshnessAt,
+        legacyLiveRefreshAt: liveRefreshAt,
+      }),
+    [displayFreshnessAt, liveRefreshAt],
   );
   const [draft, setDraft] = useState<Holding>(emptyDraft);
   const [cryptoDraft, setCryptoDraft] = useState<Holding>(
@@ -589,11 +588,36 @@ export default function PortfolioPage() {
       <PageContainer>
         <PageHero
           title="Portfolio"
-          subtitle={heroRefreshLabel}
+          subtitle={
+            <span className="inline-flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+              {heroFreshness.label ? (
+                <span data-testid="portfolio-hero-freshness">
+                  {heroFreshness.label}
+                </span>
+              ) : null}
+              <RefreshPricesButton
+                variant="compact"
+                appearance="onLight"
+                onClick={() => void refreshPrices()}
+                isRefreshing={isRefreshing}
+                disabled={refreshDisabled}
+                status={refreshStatus}
+              />
+            </span>
+          }
           backToDashboard
           actions={
             <>
+              <Link
+                href={PORTFOLIO_HISTORY_PATH}
+                aria-label="Portfolio History"
+                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-bold text-brand-navy hover:bg-brand-hover"
+              >
+                <History className="h-4 w-4" aria-hidden="true" />
+                History
+              </Link>
               <ExportPortfolioButton
+                label="Export"
                 onExport={() =>
                   runPortfolioExport({
                     holdings,
@@ -605,45 +629,11 @@ export default function PortfolioPage() {
                   })
                 }
               />
-              <Link
-                href={PORTFOLIO_HISTORY_PATH}
-                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-bold text-brand-navy hover:bg-brand-hover"
-              >
-                <History className="h-4 w-4" aria-hidden="true" />
-                Portfolio History
-              </Link>
-              <Link
-                href={PORTFOLIO_HEALTH_PATH}
-                className={appSecondaryButtonClass}
-              >
-                <PieChart className="h-4 w-4" aria-hidden="true" />
-                Portfolio Scorecard
-              </Link>
-              <RefreshPricesButton
-                onClick={() => void refreshPrices()}
-                isRefreshing={isRefreshing}
-                disabled={refreshDisabled}
-                status={refreshStatus}
-                appearance="onLight"
+              <PortfolioHeroAddMenu
+                onAddInvestment={() => openAdd("investment")}
+                onAddCrypto={openAddCrypto}
+                onAddCash={() => openAdd("cash")}
               />
-              <button
-                onClick={() => openAdd("cash")}
-                className={appSecondaryButtonClass}
-              >
-                <Banknote className="h-4 w-4" /> Add cash
-              </button>
-              <button
-                onClick={openAddCrypto}
-                className={appSecondaryButtonClass}
-              >
-                <Coins className="h-4 w-4" /> Add crypto
-              </button>
-              <button
-                onClick={() => openAdd("investment")}
-                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-bold text-brand-navy hover:bg-brand-hover"
-              >
-                <Plus className="h-4 w-4" /> Add investment
-              </button>
             </>
           }
         />

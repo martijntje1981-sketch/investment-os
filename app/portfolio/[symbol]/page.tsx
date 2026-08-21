@@ -35,8 +35,8 @@ import {
 } from "@/lib/client/holdingValuation";
 import {
   holdingPricePeriodCaption,
+  holdingPriceHoldingsLabel,
   holdingPriceStatusUserLabel,
-  holdingPriceTrustBadgeLabel,
 } from "@/lib/client/holdingDisplayPrice";
 import { resolveHoldingChangePercent } from "@/lib/client/dailyPerformance";
 import { resolveHoldingMovePeriod } from "@/lib/client/performancePeriod";
@@ -759,7 +759,7 @@ export default function HoldingDetailPage() {
   const returnValue = getHoldingReturnValue(holding);
   const returnPercentage = getHoldingReturnPercent(holding);
   const displayPrice = resolveHoldingDisplayPrice(holding);
-  const priceTrustBadge = holdingPriceTrustBadgeLabel(displayPrice.source);
+  const priceTrustBadge = holdingPriceHoldingsLabel(displayPrice.source);
   const priceStatusLabel = holdingPriceStatusUserLabel(displayPrice.source);
 
   const allocation =

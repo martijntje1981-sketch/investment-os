@@ -25,6 +25,10 @@ import {
   fetchCacheFirstPriceQuotes,
 } from "@/lib/client/cacheFirstPriceQuotes";
 import { logLivePriceRefreshTrace } from "@/lib/client/marketDataRefreshTrace";
+import {
+  recordPortfolioDisplayFreshness,
+  resetPortfolioDisplayFreshnessForTests,
+} from "@/lib/client/portfolioDisplayFreshness";
 import { lastLivePriceRefreshKey } from "@/lib/client/portfolioStorageKeys";
 import { NO_QUOTABLE_HOLDINGS_MESSAGE } from "@/lib/services/prices/types";
 import type {
@@ -450,6 +454,8 @@ export async function refreshLivePortfolioPrices<
           null,
       });
 
+      recordPortfolioDisplayFreshness(userSub);
+
       return {
         holdings: refreshed,
         updated: true,
@@ -554,6 +560,7 @@ export async function refreshLivePortfolioPrices<
       quoteSource: data.quoteSource ?? "provider",
     });
     recordLastLivePriceRefreshAt(userSub);
+    recordPortfolioDisplayFreshness(userSub);
 
     lastLiveRefreshCompletedAt = Date.now();
 
@@ -623,6 +630,7 @@ export function resetLivePriceRefreshStateForTests(): void {
   lastLiveRefreshCompletedAt = 0;
   liveRefreshInFlight = null;
   __resetCacheFirstPriceQuotesForTests();
+  resetPortfolioDisplayFreshnessForTests();
   if (typeof localStorage !== "undefined") {
     for (let index = localStorage.length - 1; index >= 0; index -= 1) {
       const key = localStorage.key(index);

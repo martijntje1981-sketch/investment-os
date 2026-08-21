@@ -5,6 +5,7 @@
 
 import type { CryptoRefreshDiagnosticRecord } from "@/lib/client/cryptoRefreshDiagnostics";
 import { resolveHoldingDisplayPrice } from "@/lib/client/holdingDisplayPrice";
+import { readPortfolioDisplayFreshness } from "@/lib/client/portfolioDisplayFreshness";
 import {
   buildLiveRefreshPreviewMessage,
   countUniqueQuotableProviderSymbols,
@@ -35,6 +36,7 @@ export type LivePortfolioPriceRefreshActionOutcome = {
   updated: boolean;
   message: string;
   liveRefreshAt: string | null;
+  displayFreshnessAt: string | null;
   fxRecoveryRequested: boolean;
   status: Exclude<RefreshPricesUiStatus, "loading" | "idle"> | "idle";
   uniqueRequested: number;
@@ -132,6 +134,7 @@ export async function runLivePortfolioPriceRefreshAction(
       updated: false,
       message: NO_QUOTABLE_REFRESH_MESSAGE,
       liveRefreshAt: readLastLivePriceRefreshAt(userSub),
+      displayFreshnessAt: readPortfolioDisplayFreshness(userSub),
       fxRecoveryRequested: false,
       status: "idle" as const,
       uniqueRequested: 0,
@@ -180,6 +183,7 @@ export async function runLivePortfolioPriceRefreshAction(
     updated: result.updated,
     message: result.message,
     liveRefreshAt,
+    displayFreshnessAt: readPortfolioDisplayFreshness(userSub),
     fxRecoveryRequested,
     status,
     uniqueRequested: result.uniqueRequested,

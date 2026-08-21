@@ -15,6 +15,7 @@ import {
   writePriceCache,
 } from "@/lib/client/portfolioPricing";
 import { lastLivePriceRefreshKey } from "@/lib/client/portfolioStorageKeys";
+import { readPortfolioDisplayFreshness } from "@/lib/client/portfolioDisplayFreshness";
 import { resetMarketPriceCacheForTests } from "@/lib/services/prices/cache/marketPriceCache";
 import {
   configureMarketDataProvidersForTests,
@@ -417,6 +418,7 @@ describe("livePortfolioPriceRefresh", () => {
     expect(result.holdings[0]?.currentPrice).toBe(121);
     expect(result.holdings[0]?.priceDataStatus).toBe("delayed");
     expect(readLastLivePriceRefreshAt(USER)).toBeNull();
+    expect(readPortfolioDisplayFreshness(USER)).toBeTruthy();
   });
 
   it("cache-first keeps last-known-good when the request fails", async () => {
@@ -447,6 +449,7 @@ describe("livePortfolioPriceRefresh", () => {
 
     expect(result.updated).toBe(false);
     expect(result.holdings[0]?.currentPrice).toBe(110);
+    expect(readPortfolioDisplayFreshness(USER)).toBeNull();
     expect(result.message).toMatch(/last available prices remain visible/i);
   });
 });

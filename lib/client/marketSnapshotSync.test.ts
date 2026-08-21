@@ -7,6 +7,7 @@ import {
   syncPortfolioPricesFromSnapshot,
 } from "@/lib/client/marketSnapshotSync";
 import { writePriceCache } from "@/lib/client/portfolioPricing";
+import { readPortfolioDisplayFreshness } from "@/lib/client/portfolioDisplayFreshness";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
 const storage = new Map<string, string>();
@@ -92,6 +93,7 @@ describe("marketSnapshotSync", () => {
 
     expect(result.updated).toBe(true);
     expect(result.holdings[0]?.currentPrice).toBe(112);
+    expect(readPortfolioDisplayFreshness(USER)).toBeTruthy();
 
     const pricesCall = fetchMock.mock.calls.find(([url, init]) => {
       return String(url).includes("/api/prices") && init?.method === "POST";
@@ -126,6 +128,7 @@ describe("marketSnapshotSync", () => {
     const result = await syncPortfolioPricesFromSnapshot(USER, [holding()]);
 
     expect(result.updated).toBe(false);
+    expect(readPortfolioDisplayFreshness(USER)).toBeNull();
     expect(fetchMock).toHaveBeenCalledOnce();
     expect(String(fetchMock.mock.calls[0]?.[0])).toContain("/api/market-snapshot");
   });

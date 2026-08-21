@@ -13,6 +13,7 @@ import {
   holdingPriceStatusUserLabel,
   holdingPriceTrustBadgeLabel,
   resolveHoldingDisplayPrice,
+  resolveHoldingListedMarketGroup,
 } from "@/lib/client/holdingDisplayPrice";
 import {
   resetLivePriceRefreshStateForTests,
@@ -330,6 +331,52 @@ describe("price status consistency hotfix", () => {
     expect(brief).toContain("resolveHoldingPriceTrustStatus");
     expect(excel).toContain("holdingPriceStatusUserLabel");
     expect(excel).toContain("resolveHoldingDisplayPrice");
+  });
+
+  it("H. unique verified suffixless NUKL resolves to Xetra / Europe", () => {
+    const nukl = equity({ symbol: "NUKL", priceDataStatus: "delayed" });
+    expect(nukl.providerSymbol).toBeUndefined();
+    expect(resolveHoldingListedMarketGroup(nukl)).toBe("Europe");
+    expect(
+      resolveHoldingDisplayPrice(nukl, { now: EUROPE_CLOSED_US_OPEN }).source,
+    ).toBe("last_session");
+  });
+
+  it("J. IB1T / NUKL / VWCE traces: Delayed while Xetra open, Last session after close even if US is open", () => {
+    const traces = [
+      equity({ symbol: "IB1T", providerSymbol: "IB1T.XETRA", priceDataStatus: "delayed" }),
+      equity({ symbol: "NUKL", priceDataStatus: "delayed" }),
+      equity({ symbol: "VWCE", providerSymbol: "VWCE", priceDataStatus: "delayed" }),
+    ];
+    for (const row of traces) {
+      expect(resolveHoldingListedMarketGroup(row)).toBe("Europe");
+      expect(resolveHoldingDisplayPrice(row, { now: EUROPE_OPEN }).source).toBe(
+        "delayed",
+      );
+      expect(
+        resolveHoldingDisplayPrice(row, { now: EUROPE_CLOSED_US_OPEN }).source,
+      ).toBe("last_session");
+      expect(
+        holdingPriceHoldingsLabel(
+          resolveHoldingDisplayPrice(row, { now: EUROPE_CLOSED_US_OPEN }).source,
+        ),
+      ).toBe("Last session");
+    }
+  });
+
+  it("uses the canonical holdings label on Dashboard, Portfolio, and holding detail", () => {
+    const holdingsRow = read("components/dashboard/HoldingsTodayRow.tsx");
+    const portfolio = read("app/portfolio/page.tsx");
+    const holdingPage = read("app/holding/[ticker]/page.tsx");
+    const symbolPage = read("app/portfolio/[symbol]/page.tsx");
+    expect(holdingsRow).toContain("holdingPriceHoldingsLabel");
+    expect(portfolio).toContain("holdingPriceHoldingsLabel");
+    expect(holdingPage).toContain("holdingPriceHoldingsLabel");
+    expect(symbolPage).toContain("holdingPriceHoldingsLabel");
+    expect(holdingsRow).not.toContain("holdingPriceTrustBadgeLabel");
+    expect(portfolio).not.toContain("holdingPriceTrustBadgeLabel");
+    expect(holdingPage).not.toContain("holdingPriceTrustBadgeLabel");
+    expect(symbolPage).not.toContain("holdingPriceTrustBadgeLabel");
   });
 
   it("I. does not add a new API or provider path", () => {

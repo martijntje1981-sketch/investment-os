@@ -21,6 +21,7 @@ import {
   type StoredPortfolioHolding,
 } from "@/lib/client/portfolioPricing";
 import { NO_QUOTABLE_HOLDINGS_MESSAGE } from "@/lib/services/prices/types";
+import { recordPortfolioDisplayFreshness } from "@/lib/client/portfolioDisplayFreshness";
 
 export type MarketSnapshotMetadata = {
   success?: boolean;
@@ -161,6 +162,8 @@ export async function syncPortfolioPricesFromSnapshot<
           data.lastSuccessfulUpdate ?? metadata?.lastRefreshedAt ?? null,
         quoteSource: data.quoteSource ?? "cache",
       });
+
+      recordPortfolioDisplayFreshness(userSub);
 
       return {
         holdings: refreshed,

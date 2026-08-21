@@ -12,8 +12,7 @@ import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 import type { HeroMover } from "@/lib/client/dailyPerformance";
 import { previousClosePhraseFromContextLine } from "@/lib/client/dailyPortfolioBriefing";
 import type { RefreshPricesUiStatus } from "@/lib/client/livePortfolioPriceRefreshAction";
-import { formatAmsterdamPriceRefreshTime } from "@/lib/client/marketSnapshotSync";
-import { formatMarketUpdateTime } from "@/lib/client/marketStatus";
+import { resolvePortfolioDisplayFreshness } from "@/lib/client/portfolioDisplayFreshness";
 import { formatPortfolioPercent } from "@/lib/client/portfolioAnalysis";
 import {
   formatSignedPortfolioCurrency,
@@ -138,6 +137,7 @@ export function PortfolioValueCard({
     status?: RefreshPricesUiStatus;
     message?: string | null;
     liveRefreshAt?: string | null;
+    displayFreshnessAt?: string | null;
   };
 }) {
   const { formatEur } = useBaseCurrencyDisplay();
@@ -159,9 +159,11 @@ export function PortfolioValueCard({
     ? formatSignedPortfolioPercent(snapshot.todayPercent)
     : null;
 
-  const updatedLabel = refresh?.liveRefreshAt
-    ? `Updated ${formatAmsterdamPriceRefreshTime(refresh.liveRefreshAt)}`
-    : `Updated ${formatMarketUpdateTime(snapshot.lastUpdatedAt)}`;
+  const freshness = resolvePortfolioDisplayFreshness({
+    displayFreshnessAt: refresh?.displayFreshnessAt,
+    legacyLiveRefreshAt: refresh?.liveRefreshAt,
+  });
+  const updatedLabel = freshness.label;
 
   const coverageAppendix =
     snapshot.dailyPerformanceCoverageMessage &&
@@ -279,12 +281,21 @@ export function PortfolioValueCard({
           </div>
 
           <div className="mt-2.5 flex flex-wrap items-center gap-2">
-            <p className={appDashboardHeroMetaClass}>
-              {isStaleDisplay ? (
-                <span className="text-amber-800">Previous close · </span>
+              {updatedLabel ? (
+                <p
+                  className={appDashboardHeroMetaClass}
+                  data-testid="dashboard-hero-freshness"
+                >
+                  {isStaleDisplay ? (
+                    <span className="text-amber-800">Previous close · </span>
+                  ) : null}
+                  {updatedLabel}
+                </p>
+              ) : isStaleDisplay ? (
+                <p className={appDashboardHeroMetaClass}>
+                  <span className="text-amber-800">Previous close</span>
+                </p>
               ) : null}
-              {updatedLabel}
-            </p>
           </div>
 
           {refresh?.message &&

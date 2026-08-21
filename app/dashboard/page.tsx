@@ -104,6 +104,7 @@ export default function DashboardPage() {
     status: refreshStatus,
     message: refreshMessage,
     liveRefreshAt,
+    displayFreshnessAt,
     disabled: refreshDisabled,
   } = useLivePortfolioPriceRefresh({
     userSub,
@@ -595,6 +596,7 @@ export default function DashboardPage() {
               status: refreshStatus,
               message: refreshMessage,
               liveRefreshAt,
+              displayFreshnessAt,
             }}
           />
 

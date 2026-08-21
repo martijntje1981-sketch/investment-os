@@ -16,6 +16,8 @@ type ExportPortfolioButtonProps = {
   disabled?: boolean;
   variant?: "solid" | "secondary" | "hero" | "text" | "ghost";
   className?: string;
+  /** Visible label. Accessible name stays "Export portfolio as Excel workbook". */
+  label?: string;
 };
 
 /**
@@ -27,6 +29,7 @@ export function ExportPortfolioButton({
   disabled = false,
   variant = "secondary",
   className = "",
+  label = "Export portfolio (.xlsx)",
 }: ExportPortfolioButtonProps) {
   const [busy, setBusy] = useState(false);
 
@@ -60,7 +63,7 @@ export function ExportPortfolioButton({
       data-testid="export-portfolio-button"
     >
       <Download className="h-4 w-4 shrink-0" aria-hidden />
-      {busy ? "Exporting…" : "Export portfolio (.xlsx)"}
+      {busy ? "Exporting…" : label}
     </button>
   );
 }

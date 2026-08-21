@@ -16,6 +16,7 @@ import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 import type { CryptoRefreshDiagnosticRecord } from "@/lib/client/cryptoRefreshDiagnostics";
 import { markAppEntryPricesReconciled } from "@/lib/client/appEntryPerformanceMarks";
 import { readLastLivePriceRefreshAt } from "@/lib/client/livePortfolioPriceRefresh";
+import { readPortfolioDisplayFreshness } from "@/lib/client/portfolioDisplayFreshness";
 import {
   buildRefreshPreviewMessageForHoldings,
   readLivePriceRefreshUiState,
@@ -50,6 +51,9 @@ export function useLivePortfolioPriceRefresh({
   const [status, setStatus] = useState<RefreshPricesUiStatus>("idle");
   const [message, setMessage] = useState(idleMessage);
   const [liveRefreshAt, setLiveRefreshAt] = useState<string | null>(null);
+  const [displayFreshnessAt, setDisplayFreshnessAt] = useState<string | null>(
+    null,
+  );
   const [refreshDiagnostics, setRefreshDiagnostics] = useState<
     CryptoRefreshDiagnosticRecord[] | null
   >(null);
@@ -63,9 +67,12 @@ export function useLivePortfolioPriceRefresh({
   useEffect(() => {
     if (!userSub) {
       setLiveRefreshAt(null);
+      setDisplayFreshnessAt(null);
       return;
     }
-    setLiveRefreshAt(readLastLivePriceRefreshAt(userSub));
+    const liveAt = readLastLivePriceRefreshAt(userSub);
+    setLiveRefreshAt(liveAt);
+    setDisplayFreshnessAt(readPortfolioDisplayFreshness(userSub) ?? liveAt);
     const shared = readLivePriceRefreshUiState(userSub);
     if (shared?.status === "success") {
       setStatus("success");
@@ -80,6 +87,14 @@ export function useLivePortfolioPriceRefresh({
       setMessage(idleMessage);
     }
   }, [idleMessage, ready, userSub]);
+
+  useEffect(() => {
+    if (!userSub) return;
+    const stored = readPortfolioDisplayFreshness(userSub);
+    if (stored) {
+      setDisplayFreshnessAt(stored);
+    }
+  }, [holdings, userSub]);
 
   const refreshPrices = useCallback(async (options?: { cacheFirst?: boolean }) => {
     if (!userSub || isRefreshingRef.current) return;
@@ -130,6 +145,11 @@ export function useLivePortfolioPriceRefresh({
       if (outcome.liveRefreshAt) {
         setLiveRefreshAt(outcome.liveRefreshAt);
       }
+      setDisplayFreshnessAt(
+        outcome.displayFreshnessAt ??
+          readPortfolioDisplayFreshness(userSub) ??
+          outcome.liveRefreshAt,
+      );
       if (
         outcome.showCryptoRefreshDiagnostics &&
         outcome.cryptoRefreshDiagnostics
@@ -207,6 +227,7 @@ export function useLivePortfolioPriceRefresh({
     message,
     setMessage,
     liveRefreshAt,
+    displayFreshnessAt,
     setLiveRefreshAt,
     refreshDiagnostics,
     showRefreshDiagnostics,

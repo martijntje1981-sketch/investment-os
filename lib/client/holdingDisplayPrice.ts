@@ -1,5 +1,8 @@
 import { getExchangeRegistryEntry } from "@/lib/services/instruments/exchangeRegistry";
-import { lookupUniqueVerifiedByTicker } from "@/lib/services/instruments/verifiedInstrumentRegistry";
+import {
+  lookupUniqueVerifiedByTicker,
+  lookupVerifiedInstrument,
+} from "@/lib/services/instruments/verifiedInstrumentRegistry";
 import { isCryptoHolding } from "@/lib/services/portfolio/cryptoHolding";
 import { getMarketStatuses } from "@/lib/client/marketStatus";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
@@ -28,7 +31,17 @@ type ListedVenueHolding = Pick<
   "providerSymbol" | "pricingExchange" | "exchange"
 > & {
   symbol?: string | null;
+  isin?: string | null;
 };
+
+function tickerWithoutListingSuffix(
+  symbol: string | null | undefined,
+): string | null {
+  const normalized = symbol?.trim().toUpperCase();
+  if (!normalized) return null;
+  if (!normalized.includes(".")) return normalized;
+  return normalized.split(".")[0] || normalized;
+}
 
 function resolveNowDate(now?: Date | number): Date {
   if (now instanceof Date) return now;
@@ -44,21 +57,51 @@ function exchangeCodeFromProviderSymbol(
   return normalized.split(".").pop() || null;
 }
 
+function resolveListedVenueExchange(
+  holding: ListedVenueHolding,
+): string | null {
+  const verified =
+    lookupVerifiedInstrument({
+      ticker: holding.symbol,
+      isin: holding.isin,
+      exchange: holding.pricingExchange ?? holding.exchange,
+      providerSymbol: holding.providerSymbol,
+    }) ??
+    lookupUniqueVerifiedByTicker(holding.symbol) ??
+    lookupUniqueVerifiedByTicker(tickerWithoutListingSuffix(holding.symbol));
+
+  for (const raw of [
+    verified?.exchange,
+    exchangeCodeFromProviderSymbol(
+      holding.providerSymbol ?? verified?.providerSymbol,
+    ),
+    exchangeCodeFromProviderSymbol(holding.symbol),
+    holding.pricingExchange,
+    holding.exchange,
+  ]) {
+    if (getExchangeRegistryEntry(raw)) {
+      return raw?.trim() ? raw : null;
+    }
+  }
+  return verified?.exchange ?? null;
+}
+
+export function resolveHoldingListedMarketGroup(
+  holding: ListedVenueHolding,
+): "Europe" | "United States" | null {
+  const group = getExchangeRegistryEntry(
+    resolveListedVenueExchange(holding),
+  )?.marketGroup;
+  if (group === "Europe" || group === "United States") {
+    return group;
+  }
+  return null;
+}
+
 function resolveListedMarketGroup(
   holding: ListedVenueHolding,
 ): "Europe" | "United States" | null {
-  for (const raw of [
-    exchangeCodeFromProviderSymbol(holding.providerSymbol),
-    holding.pricingExchange,
-    holding.exchange,
-    lookupUniqueVerifiedByTicker(holding.symbol)?.exchange,
-  ]) {
-    const group = getExchangeRegistryEntry(raw)?.marketGroup;
-    if (group === "Europe" || group === "United States") {
-      return group;
-    }
-  }
-  return null;
+  return resolveHoldingListedMarketGroup(holding);
 }
 
 function listedVenueSessionIsClosed(
@@ -170,6 +213,8 @@ export function resolveHoldingDisplayPrice(
     | "providerSymbol"
     | "pricingExchange"
     | "exchange"
+    | "symbol"
+    | "isin"
   >,
   options?: ResolveHoldingDisplayPriceOptions,
 ): HoldingDisplayPrice {
@@ -211,12 +256,19 @@ export function isEstimatedHoldingPrice(
     StoredPortfolioHolding,
     | "assetType"
     | "currentPrice"
+    | "currentPairPrice"
+    | "pairCurrency"
     | "purchasePrice"
     | "priceDataStatus"
     | "pricingStatus"
     | "currentManualPrice"
     | "manualCurrentValue"
     | "quantity"
+    | "providerSymbol"
+    | "pricingExchange"
+    | "exchange"
+    | "symbol"
+    | "isin"
   >,
 ): boolean {
   return resolveHoldingDisplayPrice(holding).source === "estimated";
@@ -238,6 +290,8 @@ export function resolveHoldingPriceTrustStatus(
     | "providerSymbol"
     | "pricingExchange"
     | "exchange"
+    | "symbol"
+    | "isin"
   >,
   options?: ResolveHoldingDisplayPriceOptions,
 ): HoldingPriceTrustStatus {

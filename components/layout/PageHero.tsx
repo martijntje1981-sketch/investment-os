@@ -24,7 +24,7 @@ export function PageHero({
   id,
 }: {
   title: string;
-  subtitle?: string;
+  subtitle?: ReactNode;
   actions?: ReactNode;
   stats?: ReactNode;
   /** Optional full-width visual below the title block (e.g. goal trajectory). */
@@ -83,7 +83,7 @@ export function PageHero({
           {title}
         </h1>
         {subtitle ? (
-          <p className={appPageHeroSubtitleClass}>{subtitle}</p>
+          <div className={appPageHeroSubtitleClass}>{subtitle}</div>
         ) : null}
         {visual ? <div className="mt-5 min-w-0">{visual}</div> : null}
       </div>

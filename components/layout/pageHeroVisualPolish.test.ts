@@ -16,6 +16,7 @@ describe("Pre-launch light hero contrast and action alignment", () => {
   const pdf = read("components/report/PeriodReportPdfAction.tsx");
   const discover = read("app/discover/page.tsx");
   const portfolio = read("app/portfolio/page.tsx");
+  const addMenu = read("components/portfolio/PortfolioHeroAddMenu.tsx");
   const news = read("app/news/page.tsx");
 
   it("keeps the approved light Q1 cyan hero and navy type tokens", () => {
@@ -82,12 +83,13 @@ describe("Pre-launch light hero contrast and action alignment", () => {
     expect(surface).toContain("flex-wrap");
     expect(portfolio).toContain("<PageHero");
     expect(portfolio).toContain("ExportPortfolioButton");
-    expect(portfolio).toContain("Portfolio History");
+    expect(portfolio).toContain("aria-label=\"Portfolio History\"");
     expect(portfolio).toContain("Portfolio Scorecard");
     expect(portfolio).toContain("RefreshPricesButton");
-    expect(portfolio).toContain("Add cash");
-    expect(portfolio).toContain("Add crypto");
-    expect(portfolio).toContain("Add investment");
+    expect(portfolio).toContain("PortfolioHeroAddMenu");
+    expect(addMenu).toContain("Add cash");
+    expect(addMenu).toContain("Add crypto");
+    expect(addMenu).toContain("Add investment");
     expect(goals).toContain("<PageHero");
     expect(analysis).toContain("<PageHero");
     expect(goals).toContain("backToDashboard");

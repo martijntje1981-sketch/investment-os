@@ -12,6 +12,11 @@ import {
 type UseDismissibleMenuOptions = {
   /** Close when the route/pathname changes. */
   closeOnChangeKey?: string | null;
+  /**
+   * Lock document scroll while open. Keep true for large overlay menus;
+   * small dropdowns should pass false.
+   */
+  lockScroll?: boolean;
 };
 
 /**
@@ -21,7 +26,7 @@ type UseDismissibleMenuOptions = {
  * `panelRef` is optional for portaled panels that live outside `containerRef`.
  */
 export function useDismissibleMenu(options: UseDismissibleMenuOptions = {}) {
-  const { closeOnChangeKey = null } = options;
+  const { closeOnChangeKey = null, lockScroll = true } = options;
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
@@ -99,7 +104,7 @@ export function useDismissibleMenu(options: UseDismissibleMenuOptions = {}) {
    * independently (including iOS) instead of the page behind it.
    */
   useEffect(() => {
-    if (!open || typeof document === "undefined") {
+    if (!open || !lockScroll || typeof document === "undefined") {
       return;
     }
 
@@ -136,7 +141,7 @@ export function useDismissibleMenu(options: UseDismissibleMenuOptions = {}) {
       documentElement.style.overscrollBehavior = previous.htmlOverscroll;
       window.scrollTo(0, scrollY);
     };
-  }, [open]);
+  }, [lockScroll, open]);
 
   return {
     open,

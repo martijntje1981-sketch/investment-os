@@ -13,6 +13,7 @@ export type DashboardRefreshControl = {
   status?: RefreshPricesUiStatus;
   message?: string | null;
   liveRefreshAt?: string | null;
+  displayFreshnessAt?: string | null;
 };
 
 export function DashboardSummary({
