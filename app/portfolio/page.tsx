@@ -94,7 +94,7 @@ import {
   getHoldingMarketValue,
 } from "@/lib/client/holdingValuation";
 import {
-  holdingPriceTrustBadgeLabel,
+  holdingPriceHoldingsLabel,
   holdingValueUnavailableLabel,
   isEstimatedHoldingPrice,
   resolveHoldingDisplayPrice,
@@ -805,7 +805,7 @@ export default function PortfolioPage() {
                 {holdings.map((holding) => {
                   const holdingValue = getHoldingMarketValue(holding);
                   const priceTrust = resolveHoldingPriceTrustStatus(holding);
-                  const priceTrustBadge = holdingPriceTrustBadgeLabel(priceTrust);
+                  const priceTrustBadge = holdingPriceHoldingsLabel(priceTrust);
                   const matchStatus = resolveHoldingMatchStatus(holding);
                   const holdingReturn =
                     holdingValue === null

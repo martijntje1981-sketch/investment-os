@@ -397,14 +397,21 @@ export async function refreshLivePortfolioPrices<
 
     if (cacheFirst) {
       if (normalizedQuotes.length === 0) {
+        const hasUsableCachedPrice = cachedHoldings.some(
+          (holding) =>
+            holding.assetType !== "cash" &&
+            Number.isFinite(holding.currentPrice) &&
+            holding.currentPrice > 0,
+        );
         return {
           holdings: cachedHoldings,
           updated: false,
           uniqueRequested,
           updatedCount: 0,
           totalQuotable,
-          message:
-            "Prices could not be refreshed. Your last available prices remain visible.",
+          message: hasUsableCachedPrice
+            ? "Using last available prices."
+            : "Prices could not be refreshed. Your last available prices remain visible.",
           quotaExhausted: false,
           inProgress: false,
           cooldownRemainingMs: getLivePriceRefreshCooldownRemainingMs(),

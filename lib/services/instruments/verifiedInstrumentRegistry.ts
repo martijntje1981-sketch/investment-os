@@ -207,6 +207,18 @@ export function lookupVerifiedByTickerExchange(
   return byTickerExchange.get(tickerExchangeKey(normalizedTicker, normalizedExchange)) ?? null;
 }
 
+/** Unique verified ticker only — never guesses when the same ticker exists on two venues. */
+export function lookupUniqueVerifiedByTicker(
+  ticker: string | null | undefined,
+): VerifiedInstrumentEntry | null {
+  const normalized = ticker?.trim().toUpperCase();
+  if (!normalized) return null;
+  const matches = VERIFIED_INSTRUMENTS.filter(
+    (entry) => entry.ticker.toUpperCase() === normalized,
+  );
+  return matches.length === 1 ? matches[0]! : null;
+}
+
 export type VerifiedInstrumentLookupInput = {
   ticker?: string | null;
   isin?: string | null;

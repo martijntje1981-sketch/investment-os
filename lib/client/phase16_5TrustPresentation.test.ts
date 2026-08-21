@@ -226,7 +226,7 @@ describe("Phase 16.5 Dashboard presentation contracts", () => {
     expect(card).toContain("Recorded contributions");
     expect(card).toContain("How your portfolio developed");
     expect(holdingsRow).not.toContain("est.");
-    expect(holdingsRow).toContain("holdingPriceTrustBadgeLabel");
+    expect(holdingsRow).toContain("holdingPriceHoldingsLabel");
   });
 
   it("keeps Q2 purple identity and the shared premium-blue Dashboard hero", () => {

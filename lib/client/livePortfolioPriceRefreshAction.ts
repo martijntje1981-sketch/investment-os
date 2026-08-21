@@ -4,6 +4,7 @@
  */
 
 import type { CryptoRefreshDiagnosticRecord } from "@/lib/client/cryptoRefreshDiagnostics";
+import { resolveHoldingDisplayPrice } from "@/lib/client/holdingDisplayPrice";
 import {
   buildLiveRefreshPreviewMessage,
   countUniqueQuotableProviderSymbols,
@@ -47,11 +48,37 @@ export type LivePortfolioPriceRefreshActionOutcome = {
   holdings: StoredPortfolioHolding[];
 };
 
+const lastRefreshUiByUser = new Map<
+  string,
+  { status: LivePortfolioPriceRefreshActionOutcome["status"]; message: string }
+>();
+
+export function readLivePriceRefreshUiState(userSub: string | null): {
+  status: LivePortfolioPriceRefreshActionOutcome["status"];
+  message: string;
+} | null {
+  if (!userSub) return null;
+  return lastRefreshUiByUser.get(userSub) ?? null;
+}
+
+export function resetLivePriceRefreshUiStateForTests(): void {
+  lastRefreshUiByUser.clear();
+}
+
+function holdingsHaveUsablePrices(holdings: StoredPortfolioHolding[]): boolean {
+  return holdings.some((holding) => {
+    if (holding.assetType === "cash") return false;
+    const display = resolveHoldingDisplayPrice(holding);
+    return display.price != null && display.source !== "unavailable";
+  });
+}
+
 function resolvePostRefreshStatus(
   result: Pick<
     LivePriceRefreshResult<StoredPortfolioHolding>,
     "updated" | "quotaExhausted" | "inProgress" | "cooldownRemainingMs" | "message"
   >,
+  options?: { cacheFirst?: boolean; hasUsablePrices?: boolean },
 ): LivePortfolioPriceRefreshActionOutcome["status"] {
   if (result.updated) {
     return "success";
@@ -61,12 +88,21 @@ function resolvePostRefreshStatus(
     return "idle";
   }
 
-  if (
-    result.quotaExhausted ||
+  if (result.quotaExhausted) {
+    return "error";
+  }
+
+  const failedRefreshCopy =
     /could not be refreshed|market-data limit|No live prices were updated/i.test(
       result.message,
-    )
-  ) {
+    );
+
+  // Cache-first miss with last-known-good prices is reconciliation, not a failed refresh.
+  if (options?.cacheFirst && options.hasUsablePrices && !failedRefreshCopy) {
+    return "idle";
+  }
+
+  if (failedRefreshCopy) {
     return "error";
   }
 
@@ -92,12 +128,12 @@ export async function runLivePortfolioPriceRefreshAction(
 
   const uniqueCount = countUniqueQuotableProviderSymbols(holdings, userSub);
   if (uniqueCount === 0) {
-    return {
+    const idle = {
       updated: false,
       message: NO_QUOTABLE_REFRESH_MESSAGE,
       liveRefreshAt: readLastLivePriceRefreshAt(userSub),
       fxRecoveryRequested: false,
-      status: "idle",
+      status: "idle" as const,
       uniqueRequested: 0,
       updatedCount: 0,
       totalQuotable: 0,
@@ -106,6 +142,11 @@ export async function runLivePortfolioPriceRefreshAction(
       cooldownRemainingMs: 0,
       holdings,
     };
+    lastRefreshUiByUser.set(userSub, {
+      status: idle.status,
+      message: idle.message,
+    });
+    return idle;
   }
 
   const result = await refreshLivePortfolioPrices(userSub, holdings, {
@@ -129,12 +170,18 @@ export async function runLivePortfolioPriceRefreshAction(
     }
   }
 
+  const status = resolvePostRefreshStatus(result, {
+    cacheFirst: Boolean(cacheFirst),
+    hasUsablePrices: holdingsHaveUsablePrices(nextHoldings),
+  });
+  lastRefreshUiByUser.set(userSub, { status, message: result.message });
+
   return {
     updated: result.updated,
     message: result.message,
     liveRefreshAt,
     fxRecoveryRequested,
-    status: resolvePostRefreshStatus(result),
+    status,
     uniqueRequested: result.uniqueRequested,
     updatedCount: result.updatedCount,
     totalQuotable: result.totalQuotable,

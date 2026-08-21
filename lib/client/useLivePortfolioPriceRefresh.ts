@@ -18,6 +18,7 @@ import { markAppEntryPricesReconciled } from "@/lib/client/appEntryPerformanceMa
 import { readLastLivePriceRefreshAt } from "@/lib/client/livePortfolioPriceRefresh";
 import {
   buildRefreshPreviewMessageForHoldings,
+  readLivePriceRefreshUiState,
   runLivePortfolioPriceRefreshAction,
   type RefreshPricesUiStatus,
 } from "@/lib/client/livePortfolioPriceRefreshAction";
@@ -28,6 +29,7 @@ export {
   NO_QUOTABLE_REFRESH_MESSAGE,
   runLivePortfolioPriceRefreshAction,
   buildRefreshPreviewMessageForHoldings,
+  readLivePriceRefreshUiState,
 } from "@/lib/client/livePortfolioPriceRefreshAction";
 
 export function useLivePortfolioPriceRefresh({
@@ -64,7 +66,20 @@ export function useLivePortfolioPriceRefresh({
       return;
     }
     setLiveRefreshAt(readLastLivePriceRefreshAt(userSub));
-  }, [ready, userSub]);
+    const shared = readLivePriceRefreshUiState(userSub);
+    if (shared?.status === "success") {
+      setStatus("success");
+      setMessage(shared.message);
+    } else if (shared?.status === "error") {
+      setStatus("error");
+      setMessage(
+        "Prices could not be refreshed. Your last available prices remain visible.",
+      );
+    } else if (shared?.status === "idle") {
+      setStatus("idle");
+      setMessage(idleMessage);
+    }
+  }, [idleMessage, ready, userSub]);
 
   const refreshPrices = useCallback(async (options?: { cacheFirst?: boolean }) => {
     if (!userSub || isRefreshingRef.current) return;

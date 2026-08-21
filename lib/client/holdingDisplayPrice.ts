@@ -1,4 +1,5 @@
 import { getExchangeRegistryEntry } from "@/lib/services/instruments/exchangeRegistry";
+import { lookupUniqueVerifiedByTicker } from "@/lib/services/instruments/verifiedInstrumentRegistry";
 import { isCryptoHolding } from "@/lib/services/portfolio/cryptoHolding";
 import { getMarketStatuses } from "@/lib/client/marketStatus";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
@@ -25,7 +26,9 @@ export type ResolveHoldingDisplayPriceOptions = {
 type ListedVenueHolding = Pick<
   StoredPortfolioHolding,
   "providerSymbol" | "pricingExchange" | "exchange"
->;
+> & {
+  symbol?: string | null;
+};
 
 function resolveNowDate(now?: Date | number): Date {
   if (now instanceof Date) return now;
@@ -48,6 +51,7 @@ function resolveListedMarketGroup(
     exchangeCodeFromProviderSymbol(holding.providerSymbol),
     holding.pricingExchange,
     holding.exchange,
+    lookupUniqueVerifiedByTicker(holding.symbol)?.exchange,
   ]) {
     const group = getExchangeRegistryEntry(raw)?.marketGroup;
     if (group === "Europe" || group === "United States") {
@@ -251,6 +255,14 @@ export function holdingPricePeriodCaption(
   if (!trimmed) return null;
   if (status === "delayed") return null;
   return trimmed;
+}
+
+/** Scan-friendly status next to a holding value. Live stays unlabeled. */
+export function holdingPriceHoldingsLabel(
+  status: HoldingPriceTrustStatus,
+): string | null {
+  if (status === "live" || status === "unavailable") return null;
+  return holdingPriceStatusUserLabel(status);
 }
 
 /** Scan-friendly badge next to a value. Last-session and live have no badge. */
