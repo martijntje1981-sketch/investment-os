@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { BackToDashboardLink } from "@/components/layout/BackToDashboardLink";
 import {
   appHeroShellClass,
+  appPageHeroActionsClass,
   appPageHeroSubtitleClass,
   appPageHeroTitleClass,
 } from "@/components/layout/appSurface";
@@ -64,7 +65,7 @@ export function PageHero({
               "lg:px-6 lg:py-[1.125rem]",
             ),
         hasAside
-          ? "lg:grid lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start lg:gap-x-6"
+          ? "lg:grid lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start lg:justify-between lg:gap-x-6"
           : "lg:flex lg:flex-col lg:justify-start",
       )}
     >
@@ -89,8 +90,8 @@ export function PageHero({
       {actionContent ? (
         <div
           className={cn(
-            "mt-4 flex min-w-0 flex-wrap gap-2",
-            "lg:col-start-2 lg:row-start-1 lg:mt-0 lg:max-w-md lg:justify-end lg:self-start",
+            appPageHeroActionsClass,
+            "lg:col-start-2 lg:row-start-1 lg:self-start",
           )}
         >
           {actionContent}

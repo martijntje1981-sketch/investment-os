@@ -156,7 +156,10 @@ export function PortfolioEvolutionSection({
         ))}
       </div>
 
-      {timeline.emptyState === "building" && !timeline.hasValueSeries ? (
+      {timeline.emptyState === "building" &&
+      !timeline.hasValueSeries &&
+      timeline.beforeNow.length === 0 &&
+      !timeline.mixCheckpoints ? (
         <div className="mt-5 rounded-2xl bg-slate-50 px-4 py-5">
           <p className={appCardValueClass}>{EVOLUTION_BUILDING_HEADLINE}</p>
           <p className={`mt-2 ${appSectionBodyClass}`}>{EVOLUTION_BUILDING_BODY}</p>

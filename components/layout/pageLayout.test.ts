@@ -91,7 +91,9 @@ describe("authenticated page layout", () => {
 
     expect(heroSource).toContain("appPageHeroTitleClass");
     expect(heroSource).toContain("appPageHeroSubtitleClass");
+    expect(heroSource).toContain("appPageHeroActionsClass");
     expect(surfaceSource).toContain("appPageHeroTitleClass");
+    expect(surfaceSource).toContain("appPageHeroActionsClass");
     expect(surfaceSource).toContain("break-words");
   });
 

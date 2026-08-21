@@ -207,9 +207,10 @@ export default function PortfolioAnalysisPage() {
             </p>
           }
           actions={
-            <div className="flex flex-wrap gap-2">
+            <>
               {hasHoldings ? (
                 <ExportPortfolioButton
+                  variant="hero"
                   onExport={() =>
                     runPortfolioExport({
                       holdings,
@@ -229,7 +230,7 @@ export default function PortfolioAnalysisPage() {
                 Portfolio Scorecard
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
-            </div>
+            </>
           }
         />
 

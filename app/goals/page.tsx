@@ -16,7 +16,9 @@ import {
 import { ExportPortfolioButton } from "@/components/export/ExportPortfolioButton";
 import {
   appCardValueClass,
-  appHeroMetricLabelClass,
+  appPageHeroInsetClass,
+  appPageHeroMetaClass,
+  appPageHeroMetricLabelClass,
   appSectionBodyClass,
   appSectionLabelClass,
   appSectionMetaClass,
@@ -407,33 +409,33 @@ export default function GoalsPage() {
               />
               {hasSavedGoal ? (
                 <div className="space-y-3">
-                  <p className="text-[13px] font-medium text-white/90">
+                  <p className={appPageHeroMetaClass}>
                     Estimated completion:{" "}
-                    <span className="text-white/90">
+                    <span className="font-semibold text-slate-950">
                       {intelligence.forecast.estimatedCompletionLabel}
                     </span>
                     {intelligence.forecast.isEstimate ? (
-                      <span className="text-white/90"> · estimate</span>
+                      <span className="text-slate-600"> · estimate</span>
                     ) : null}
                   </p>
                   {getExpectedReturnAssumption(savedGoal) != null ? (
-                    <div className="rounded-2xl border border-white/15 bg-white/10 px-3.5 py-3">
-                      <p className={appHeroMetricLabelClass}>
+                    <div className={appPageHeroInsetClass}>
+                      <p className={appPageHeroMetricLabelClass}>
                         Expected return
                       </p>
-                      <p className="mt-1 text-lg font-bold text-white">
+                      <p className="mt-1 text-lg font-bold text-slate-950">
                         {formatExpectedReturnPa(
                           getExpectedReturnAssumption(savedGoal)!,
                         )}
                       </p>
                       <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
-                        <p className="text-[13px] font-medium text-white/65">
+                        <p className="text-[13px] font-medium text-slate-600">
                           Your assumption
                         </p>
                         <button
                           type="button"
                           onClick={() => setAssumptionEditorOpen(true)}
-                          className="inline-flex min-h-11 items-center text-[13px] font-semibold text-white underline-offset-2 hover:underline"
+                          className={`${appTextLinkClass} text-[13px]`}
                           data-testid="expected-return-assumption-edit"
                         >
                           Edit

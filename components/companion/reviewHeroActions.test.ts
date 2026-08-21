@@ -66,7 +66,7 @@ describe("Phase 19.3 Review hero actions", () => {
       heroBlock.indexOf("ExportPortfolioButton"),
     );
     expect(heroBlock).toContain('variant="hero"');
-    expect(heroBlock).toContain('className="w-full"');
+    expect(heroBlock).not.toContain('className="w-full"');
   });
 
   it("G/H/I. Complete and trial stay allowed; Free stays gated without a fake download", () => {
@@ -119,11 +119,11 @@ describe("Phase 19.3 Review hero actions", () => {
     expect(page).not.toContain("pdfPeriod");
   });
 
-  it("M/N. Hero actions stack full-width with >=44px targets and no overflow-x scroll", () => {
+  it("M/N. Hero actions wrap in one row with >=44px targets and no overflow-x scroll", () => {
     expect(page).toContain('data-testid="review-hero-actions"');
-    expect(page).toContain("flex w-full min-w-0 flex-col gap-2");
+    expect(page).toContain("flex min-w-0 flex-wrap items-center justify-end gap-2");
     expect(page).not.toMatch(/review-hero-actions[\s\S]{0,200}overflow-x-(auto|scroll)/);
-    expect(pdf).toContain("min-h-[44px]");
+    expect(pdf).toContain("appHeroPrimaryButtonClass");
     expect(excel).toContain("appHeroSecondaryButtonClass");
     expect(excel).toContain("appSecondaryButtonClass");
     expect(tokens).toContain("min-h-[44px]");

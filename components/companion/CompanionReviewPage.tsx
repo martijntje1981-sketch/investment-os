@@ -418,7 +418,7 @@ function CompanionReviewContent() {
           actions={
             <div
               data-testid="review-hero-actions"
-              className="flex w-full min-w-0 flex-col gap-2 lg:w-[17.5rem]"
+              className="flex min-w-0 flex-wrap items-center justify-end gap-2"
             >
               {activePeriod === "weekly" || activePeriod === "monthly" ? (
                 <PeriodReportPdfAction
@@ -431,7 +431,6 @@ function CompanionReviewContent() {
               <ExportPortfolioButton
                 onExport={handleExport}
                 variant="hero"
-                className="w-full"
               />
             </div>
           }

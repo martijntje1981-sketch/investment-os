@@ -44,7 +44,7 @@ export function PeriodReportPdfAction({
       <p
         className={
           isHero
-            ? "text-[15px] font-medium leading-relaxed text-white"
+            ? "text-[15px] font-medium leading-relaxed text-slate-700"
             : "text-[15px] font-medium leading-relaxed text-slate-600"
         }
       >
@@ -53,7 +53,7 @@ export function PeriodReportPdfAction({
           href={access.upgradeHref}
           className={
             isHero
-              ? "inline-flex min-h-[44px] items-center font-semibold text-white underline underline-offset-2 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-navy-hero"
+              ? `${appTextLinkClass} underline`
               : appTextLinkClass
           }
         >
@@ -127,11 +127,7 @@ export function PeriodReportPdfAction({
       </button>
       {error ? (
         <p
-          className={
-            isHero
-              ? "text-sm font-semibold text-rose-200"
-              : "text-sm font-semibold text-rose-700"
-          }
+          className="text-sm font-semibold text-rose-700"
           role="alert"
         >
           {error}

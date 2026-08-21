@@ -23,5 +23,10 @@ describe("goals hero integration", () => {
 
     expect(goalsPage).toContain("GoalHeroProgressVisual");
     expect(goalsPage).toContain("visual={");
+    expect(goalsPage).toContain("appPageHeroMetricLabelClass");
+    expect(goalsPage).toContain("appPageHeroMetaClass");
+    expect(goalsPage).not.toMatch(/text-white\/90/);
+    expect(goalsPage).not.toMatch(/text-white\/65/);
+    expect(goalsPage).not.toMatch(/border-white\/15 bg-white\/10/);
   });
 });

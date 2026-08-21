@@ -432,4 +432,29 @@ describe("Portfolio Evolution Dashboard hierarchy", () => {
     expect(section).toContain("min-h-11");
     expect(dashboard).not.toMatch(/overflow-x-auto|overflow-x-scroll/);
   });
+
+  it("X. desktop reserves the chart grid only when value history exists", () => {
+    expect(visual).toContain('data-testid="evolution-value-layout"');
+    expect(visual).toContain('data-testid="evolution-evidence-layout"');
+    expect(visual).toContain("hasValueSeries");
+    expect(visual).toContain("lg:grid-cols-3");
+    const evidence = visual.slice(
+      visual.indexOf('data-testid="evolution-evidence-layout"'),
+    );
+    expect(evidence).not.toContain("lg:grid-cols-[minmax(0,1.5fr)");
+    expect(evidence).not.toContain("lg:grid-cols-[minmax(0,1.55fr)");
+    expect(card).toContain("flex min-w-0 flex-wrap items-center");
+    expect(card).toContain("View full evolution");
+    expect(card).toContain("View allocation");
+    expect(card).not.toContain("flex-col items-start gap-1");
+  });
+
+  it("Y. compact stance sits inside Evolution, before the navy conclusion", () => {
+    expect(card).toContain("stance={");
+    expect(visual).toContain("stance ?");
+    expect(visual.indexOf("stance")).toBeLessThan(
+      visual.indexOf('data-testid="evolution-conclusion"'),
+    );
+    expect(visual).toContain("appDarkCardClass");
+  });
 });

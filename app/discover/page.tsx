@@ -9,6 +9,7 @@ import {
 } from "@/components/discover/DiscoverSections";
 import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer";
 import { PageHero } from "@/components/layout/PageHero";
+import { appPageHeroMetaClass } from "@/components/layout/appSurface";
 import { formatNewsRefreshedAt } from "@/components/news/newsFormatting";
 import { useDiscoverSnapshot } from "@/lib/client/discoverSnapshot";
 import { useUserGoal } from "@/lib/client/useUserGoal";
@@ -64,7 +65,7 @@ export default function DiscoverPage() {
           backToDashboard
           stats={
             snapshot?.sourceStatus.briefingGeneratedAt ? (
-              <p className="text-sm text-slate-400">
+              <p className={`${appPageHeroMetaClass} text-sm`}>
                 Briefing as of{" "}
                 {formatNewsRefreshedAt(snapshot.sourceStatus.briefingGeneratedAt)}
                 {snapshot.freshness === "stale" ? " · cached briefing" : null}

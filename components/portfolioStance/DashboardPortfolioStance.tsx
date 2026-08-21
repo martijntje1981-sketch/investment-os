@@ -28,7 +28,7 @@ export function DashboardPortfolioStance({
 
   return (
     <div
-      className="mt-5 min-w-0 overflow-x-clip rounded-2xl border border-cyan-100 bg-white/80 px-4 py-4"
+      className="min-w-0 overflow-x-clip rounded-2xl border border-cyan-100 bg-white/80 px-4 py-4"
       data-testid="dashboard-portfolio-stance"
     >
       <p className={appSectionLabelClass}>Portfolio Stance</p>

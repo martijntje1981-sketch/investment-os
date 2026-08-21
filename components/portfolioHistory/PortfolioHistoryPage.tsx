@@ -254,7 +254,7 @@ export default function PortfolioHistoryPage() {
           subtitle="How your portfolio developed, what you invested, and what changed."
           backToDashboard
           actions={
-            <div className="flex flex-wrap gap-2">
+            <>
               <button
                 type="button"
                 onClick={() => setDialogOpen(true)}
@@ -268,7 +268,7 @@ export default function PortfolioHistoryPage() {
                 disabled={isExporting}
                 onExport={handleExport}
               />
-            </div>
+            </>
           }
         />
 
