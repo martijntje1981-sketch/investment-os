@@ -62,13 +62,14 @@ export const appSectionBandClass =
 /* ── Dark navy hierarchy ─────────────────────────────────── */
 
 /**
- * Shared page hero — premium financial blue.
+ * Shared page hero — dark Q1 / Tobailey cyan (cyan-950 → cyan-800).
+ * Same family as appIntelligenceAccent*; dark enough for white type.
  * CTA black (`bg-navy-hero`) stays on buttons / non-hero panels.
  */
 export const appHeroShellClass =
   "min-w-0 overflow-hidden rounded-[28px] border border-white/15 bg-gradient-to-br from-hero-premium-from via-hero-premium-via to-hero-premium-to text-white shadow-[var(--hero-premium-shadow)] md:rounded-[32px]";
 
-/** Dashboard portfolio hero uses the same premium-blue shell. */
+/** Dashboard portfolio hero uses the same Q1 cyan shell. */
 export const appDashboardHeroShellClass = appHeroShellClass;
 
 export const appDashboardHeroInsetClass =

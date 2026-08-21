@@ -29,14 +29,15 @@
   --navy-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
 
   /*
-   * Shared page-hero family: deep navy → rich financial blue.
-   * Darker than the canvas, lighter and calmer than CTA black.
+   * Shared page-hero family: dark Q1 / Tobailey cyan
+   * (Tailwind cyan-950 → cyan-900 → cyan-800).
+   * Same hue as the Phase 20 intelligence accent; dark enough for white type.
    */
-  --hero-premium-from: #0a2344;
-  --hero-premium-via: #0e3a68;
-  --hero-premium-to: #155a8a;
+  --hero-premium-from: #083344;
+  --hero-premium-via: #164e63;
+  --hero-premium-to: #155e75;
   --hero-premium-border: rgba(255, 255, 255, 0.16);
-  --hero-premium-shadow: 0 18px 40px -18px rgba(8, 36, 72, 0.48);
+  --hero-premium-shadow: 0 18px 40px -18px rgba(8, 145, 178, 0.38);
 
   /* Semantic finance colors — do not replace with brand blue */
   --accent-green: #16a34a;

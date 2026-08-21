@@ -6,7 +6,7 @@ function read(relativePath: string) {
   return readFileSync(path.resolve(process.cwd(), relativePath), "utf8");
 }
 
-describe("Phase 16.6 premium blue page heroes", () => {
+describe("Phase 16.6 / 20 shared Q1 cyan page heroes", () => {
   const globals = read("app/globals.css");
   const surface = read("components/layout/appSurface.ts");
   const pageHero = read("components/layout/PageHero.tsx");
@@ -21,12 +21,15 @@ describe("Phase 16.6 premium blue page heroes", () => {
     "components/portfolioHistory/PortfolioHistoryNavCard.tsx",
   );
 
-  it("defines one shared premium-blue hero token family without recoloring CTA black", () => {
-    expect(globals).toContain("--hero-premium-from: #0a2344");
-    expect(globals).toContain("--hero-premium-via: #0e3a68");
-    expect(globals).toContain("--hero-premium-to: #155a8a");
+  it("defines one shared Q1 cyan hero token family without recoloring CTA black", () => {
+    expect(globals).toContain("--hero-premium-from: #083344");
+    expect(globals).toContain("--hero-premium-via: #164e63");
+    expect(globals).toContain("--hero-premium-to: #155e75");
     expect(globals).toContain("--color-hero-premium-from:");
     expect(globals).toContain("--navy-hero: #0a0a0a");
+    expect(globals).toContain("--navy-card: #121212");
+    expect(globals).toContain("rgba(8, 145, 178, 0.38)");
+    expect(surface).toContain("appIntelligenceAccentCardClass");
     expect(surface).toMatch(
       /export const appHeroShellClass =\s*"[^"]*from-hero-premium-from[^"]*"/,
     );
@@ -45,6 +48,13 @@ describe("Phase 16.6 premium blue page heroes", () => {
     expect(analysis).toContain("<PageHero");
     expect(news).toContain("<PageHero");
     expect(goals).toContain("<PageHero");
+    expect(read("app/portfolio/page.tsx")).toContain("<PageHero");
+    expect(read("components/portfolioHistory/PortfolioHistoryPage.tsx")).toContain(
+      "<PageHero",
+    );
+    expect(read("components/companion/CompanionReviewPage.tsx")).toContain(
+      "<PageHero",
+    );
     expect(holding).toContain("appHeroShellClass");
     expect(holding).not.toContain("rounded-3xl bg-slate-950");
     expect(holdingAlt).toContain("appHeroShellClass");
