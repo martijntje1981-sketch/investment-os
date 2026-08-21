@@ -32,7 +32,7 @@ function HeroStat({
   label,
   value,
   detail,
-  valueClassName = "text-white",
+  valueClassName = "text-slate-950",
 }: {
   label: string;
   value: string;
@@ -40,15 +40,15 @@ function HeroStat({
   valueClassName?: string;
 }) {
   return (
-    <div className="min-w-0 rounded-[14px] border border-white/10 bg-white/[0.04] px-3 py-2.5 sm:px-4 sm:py-3">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400">
+    <div className="min-w-0 rounded-[14px] border border-cyan-100 bg-white/80 px-3 py-2.5 sm:px-4 sm:py-3">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-cyan-800">
         {label}
       </p>
       <p className={`mt-1 truncate text-base font-black sm:text-lg ${valueClassName}`}>
         {value}
       </p>
       {detail ? (
-        <p className="mt-0.5 truncate text-xs text-slate-400">{detail}</p>
+        <p className="mt-0.5 truncate text-xs text-slate-600">{detail}</p>
       ) : null}
     </div>
   );
@@ -82,11 +82,11 @@ export function HomePageHeroStats({
 
   const todayTone = summary.hasDailyData
     ? summary.todayChange > 0
-      ? "text-emerald-300"
+      ? "text-emerald-600"
       : summary.todayChange < 0
-        ? "text-red-300"
-        : "text-slate-300"
-    : "text-slate-300";
+        ? "text-rose-600"
+        : "text-slate-700"
+    : "text-slate-700";
 
   return (
     <div className="space-y-2">
@@ -125,7 +125,7 @@ export function HomePageHeroStats({
         />
       </div>
       <div>
-        <ConversionDetailsDisclosure compactTrigger tone="dark" />
+        <ConversionDetailsDisclosure compactTrigger tone="light" />
       </div>
     </div>
   );

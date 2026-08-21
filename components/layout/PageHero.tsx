@@ -53,7 +53,7 @@ export function PageHero({
       aria-labelledby="app-page-hero-title"
       className={cn(
         id ? "scroll-mt-24" : null,
-        "min-w-0 text-white",
+        "min-w-0 text-slate-950",
         embedded
           ? isDashboard
             ? "px-5 py-7 sm:px-7 sm:py-8 md:px-8 md:py-9"
@@ -76,7 +76,7 @@ export function PageHero({
       >
         <h1
           id="app-page-hero-title"
-          className={cn(appPageHeroTitleClass, "text-white")}
+          className={appPageHeroTitleClass}
         >
           {title}
         </h1>
@@ -100,11 +100,11 @@ export function PageHero({
       {stats ? (
         <div
           className={cn(
-            "mt-4 min-w-0 border-t border-white/15 pt-4",
+            "mt-4 min-w-0 border-t border-cyan-200/70 pt-4",
             "lg:col-start-2 lg:row-start-1 lg:mt-0 lg:w-full lg:max-w-md lg:border-t-0 lg:pt-0 lg:justify-self-end lg:self-start",
             "[&>div]:lg:grid-cols-2",
             Boolean(actionContent) &&
-              "lg:col-span-2 lg:row-start-2 lg:max-w-none lg:border-t lg:border-white/15 lg:pt-4 lg:justify-self-stretch",
+              "lg:col-span-2 lg:row-start-2 lg:max-w-none lg:border-t lg:border-cyan-200/70 lg:pt-4 lg:justify-self-stretch",
           )}
         >
           {stats}

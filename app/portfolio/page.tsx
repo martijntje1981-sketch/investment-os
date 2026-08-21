@@ -68,6 +68,7 @@ import {
   appDarkCardPaddingClass,
   appDashboardDarkBodyClass,
   appHeroMetricLabelClass,
+  appSecondaryButtonClass,
   appSectionLabelClass,
   appSectionMetaClass,
   appSectionTitleClass,
@@ -603,7 +604,6 @@ export default function PortfolioPage() {
                     convertEur,
                   })
                 }
-                className="border border-white/20 bg-white/10 text-white hover:bg-white/15"
               />
               <Link
                 href={PORTFOLIO_HISTORY_PATH}
@@ -614,7 +614,7 @@ export default function PortfolioPage() {
               </Link>
               <Link
                 href={PORTFOLIO_HEALTH_PATH}
-                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-bold text-white hover:bg-white/15"
+                className={appSecondaryButtonClass}
               >
                 <PieChart className="h-4 w-4" aria-hidden="true" />
                 Portfolio Scorecard
@@ -624,16 +624,17 @@ export default function PortfolioPage() {
                 isRefreshing={isRefreshing}
                 disabled={refreshDisabled}
                 status={refreshStatus}
+                appearance="onLight"
               />
               <button
                 onClick={() => openAdd("cash")}
-                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-bold text-white hover:bg-white/15"
+                className={appSecondaryButtonClass}
               >
                 <Banknote className="h-4 w-4" /> Add cash
               </button>
               <button
                 onClick={openAddCrypto}
-                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-bold text-white hover:bg-white/15"
+                className={appSecondaryButtonClass}
               >
                 <Coins className="h-4 w-4" /> Add crypto
               </button>

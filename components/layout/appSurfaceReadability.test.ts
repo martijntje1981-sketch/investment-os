@@ -38,10 +38,10 @@ describe("shared readability tokens", () => {
     expect(appSecondaryButtonClass).toContain("bg-white");
     expect(appSecondaryButtonClass).toContain("text-slate-950");
     expect(appSecondaryButtonClass).toContain("text-[16px]");
-    expect(appHeroSecondaryButtonClass).toContain("border-white/50");
-    expect(appHeroSecondaryButtonClass).toContain("text-white");
-    expect(appHeroPrimaryButtonClass).toContain("bg-white");
-    expect(appHeroPrimaryButtonClass).toContain("text-brand-navy");
+    expect(appHeroSecondaryButtonClass).toContain("border-slate-300");
+    expect(appHeroSecondaryButtonClass).toContain("text-slate-950");
+    expect(appHeroPrimaryButtonClass).toContain("bg-navy-hero");
+    expect(appHeroPrimaryButtonClass).toContain("text-white");
     expect(appHeroPrimaryButtonClass).toContain("min-h-[44px]");
     expect(appSolidButtonClass).toContain(appControlDisabledClass);
     expect(appSecondaryButtonClass).toContain(appControlDisabledClass);

@@ -822,11 +822,11 @@ export default function HoldingDetailPage() {
             <div className="grid gap-8 lg:grid-cols-[1.35fr_0.65fr] lg:items-center">
               <div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded-full bg-white/10 px-3 py-1.5 text-[13px] font-bold uppercase tracking-[0.14em] text-white/90">
+                  <span className="rounded-full bg-cyan-50 px-3 py-1.5 text-[13px] font-bold uppercase tracking-[0.14em] text-cyan-800">
                     {intelligence.category}
                   </span>
 
-                  <span className="rounded-full bg-blue-500/20 px-3 py-1.5 text-[13px] font-bold text-sky-200">
+                  <span className="rounded-full bg-sky-100 px-3 py-1.5 text-[13px] font-bold text-cyan-800">
                     {intelligence.stance}
                   </span>
                 </div>
@@ -837,31 +837,31 @@ export default function HoldingDetailPage() {
                   </div>
 
                   <div>
-                    <h1 className="text-3xl font-bold tracking-[-0.04em] sm:text-5xl">
+                    <h1 className="text-3xl font-bold tracking-[-0.04em] text-slate-950 sm:text-5xl">
                       {holding.name || holding.symbol}
                     </h1>
 
-                    <p className="mt-2 text-base font-semibold text-white/90">
+                    <p className="mt-2 text-base font-semibold text-slate-700">
                       {intelligence.role}
                     </p>
                   </div>
                 </div>
 
-                <p className="mt-6 max-w-3xl text-base leading-7 text-white/90">
+                <p className="mt-6 max-w-3xl text-base leading-7 text-slate-700">
                   {intelligence.osInsight}
                 </p>
               </div>
 
-              <div className="rounded-[28px] border border-white/20 bg-white/10 p-6 text-center">
-                <p className="text-[13px] font-bold uppercase tracking-[0.16em] text-white/90">
+              <div className="rounded-[28px] border border-cyan-100 bg-white/80 p-6 text-center">
+                <p className="text-[13px] font-bold uppercase tracking-[0.16em] text-cyan-800">
                   Holding health
                 </p>
 
-                <p className="mt-3 text-6xl font-black tracking-[-0.06em] text-white">
+                <p className="mt-3 text-6xl font-black tracking-[-0.06em] text-slate-950">
                   {intelligence.healthScore}
                 </p>
 
-                <p className="mt-1 text-sm font-semibold text-white/90">
+                <p className="mt-1 text-sm font-semibold text-slate-700">
                   out of 100
                 </p>
 

@@ -15,7 +15,6 @@ import { PAGE_PURPOSE } from "@/lib/navigation/productArchitecture";
 import {
   appCardClass,
   appCardPaddingClass,
-  appDashboardDarkMetaClass,
   appSectionMetaClass,
   appSectionSubtitleClass,
   appSectionTitleClass,
@@ -171,7 +170,7 @@ export default function PerspectivesPage() {
           backToDashboard={Boolean(userSub)}
           stats={
             payload?.fetchedAt ? (
-              <p className={`${appDashboardDarkMetaClass} mt-0`}>
+              <p className={`${appSectionMetaClass} mt-0`}>
                 {formatUpdatedMinutesAgo(payload.fetchedAt)}
               </p>
             ) : null

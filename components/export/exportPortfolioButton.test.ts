@@ -22,7 +22,7 @@ describe("Export Portfolio control", () => {
     expect(source).toContain('data-testid="export-portfolio-button"');
     expect(source).not.toContain("appGhostButtonClass");
     expect(tokens).toContain("border-slate-300");
-    expect(tokens).toContain("border-white/50");
+    expect(tokens).toContain("bg-navy-hero");
   });
 
   it("keeps Complete PDF gated and visually actionable when allowed", () => {

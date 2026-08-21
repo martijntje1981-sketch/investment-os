@@ -8,7 +8,7 @@ import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer
 import { AuthenticatedFourQuestionsNav } from "@/components/fourQuestions/AuthenticatedFourQuestionsNav";
 import {
   appCardClass,
-  appHeroMetricLabelClass,
+  appDashboardHeroMetricLabelClass,
   appHeroShellClass,
   appSectionMetaClass,
   appSectionSubtitleClass,
@@ -170,16 +170,16 @@ export default function EventsPage() {
           aria-labelledby="events-page-heading"
         >
           <div className="mb-4">
-            <BackButton />
+            <BackButton variant="light" />
           </div>
-          <p className={appHeroMetricLabelClass}>Market calendar</p>
+          <p className={appDashboardHeroMetricLabelClass}>Market calendar</p>
           <h1
             id="events-page-heading"
-            className="mt-2 text-3xl font-bold tracking-[-0.03em] text-white"
+            className="mt-2 text-3xl font-bold tracking-[-0.03em] text-slate-950"
           >
             Upcoming Events
           </h1>
-          <p className="mt-2 max-w-2xl text-[15px] font-medium leading-relaxed text-white/90">
+          <p className="mt-2 max-w-2xl text-[15px] font-medium leading-relaxed text-slate-700">
             Verified macro, central-bank and portfolio dividend dates for the
             current week and beyond.
           </p>

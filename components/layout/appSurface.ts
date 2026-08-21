@@ -62,24 +62,27 @@ export const appSectionBandClass =
 /* ── Dark navy hierarchy ─────────────────────────────────── */
 
 /**
- * Shared page hero — dark Q1 / Tobailey cyan (cyan-950 → cyan-800).
- * Same family as appIntelligenceAccent*; dark enough for white type.
- * CTA black (`bg-navy-hero`) stays on buttons / non-hero panels.
+ * Shared page hero — light Q1 / Tobailey cyan (cyan-100 → sky-50 → white).
+ * Same family as appIntelligenceAccent*. Navy type, not a dark banking block.
+ * Navy/dark (`bg-navy-card`) stays on conclusions, not page heroes.
  */
 export const appHeroShellClass =
-  "min-w-0 overflow-hidden rounded-[28px] border border-white/15 bg-gradient-to-br from-hero-premium-from via-hero-premium-via to-hero-premium-to text-white shadow-[var(--hero-premium-shadow)] md:rounded-[32px]";
+  "min-w-0 overflow-hidden rounded-[28px] border border-cyan-200 bg-gradient-to-br from-cyan-100 via-sky-50 to-white text-slate-950 shadow-[0_12px_32px_-16px_rgba(8,145,178,0.28)] md:rounded-[32px]";
 
-/** Dashboard portfolio hero uses the same Q1 cyan shell. */
+/** Dashboard portfolio value uses the same light Q1 cyan shell. */
 export const appDashboardHeroShellClass = appHeroShellClass;
 
+/** Subordinate Dashboard pulse — light, not a second hero. */
+export const appDashboardHeroSubordinateClass = appIntelligenceAccentCardClass;
+
 export const appDashboardHeroInsetClass =
-  "rounded-xl border border-white/15 bg-white/10";
+  "rounded-xl border border-cyan-100 bg-white/80";
 
 export const appDashboardHeroMetricLabelClass =
-  "text-[13px] font-semibold uppercase tracking-[0.06em] text-white/90";
+  "text-[13px] font-semibold uppercase tracking-[0.06em] text-cyan-800";
 
 export const appDashboardHeroMetaClass =
-  "text-[15px] font-medium leading-relaxed text-white/90";
+  "text-[15px] font-medium leading-relaxed text-slate-700";
 
 /** Important dark card — slightly lifted near-black. */
 export const appDarkCardClass =
@@ -110,7 +113,7 @@ export const appHeroMatchedKpiClass =
 export const appHeroKpiClass =
   "text-lg font-bold leading-none tracking-[-0.02em] tabular-nums";
 
-/** Quiet eyebrow labels on dark surfaces — readable uppercase, not micro-copy. */
+/** Quiet eyebrow labels on dark navy/conclusion surfaces. */
 export const appHeroMetricLabelClass =
   "text-[13px] font-semibold uppercase tracking-[0.06em] text-white/90";
 
@@ -137,16 +140,15 @@ export const appSecondaryButtonClass =
 export const appGhostButtonClass =
   `inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl px-3 py-2 text-[16px] font-semibold text-slate-800 transition hover:bg-slate-100 hover:text-brand-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 ${appControlDisabledClass}`;
 
-/** Secondary CTA on navy/near-black heroes — readable white, not brand-dominant. */
-export const appHeroSecondaryButtonClass =
-  `inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-white/50 bg-white/15 px-4 py-2.5 text-[16px] font-semibold text-white transition hover:bg-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-navy-hero ${appControlDisabledClass}`;
+/** Secondary CTA on light page heroes. */
+export const appHeroSecondaryButtonClass = appSecondaryButtonClass;
 
-/** Primary CTA on premium-blue heroes — solid light button, navy label. */
+/** Primary CTA on light page heroes — navy on cyan, not white-on-dark. */
 export const appHeroPrimaryButtonClass =
-  `inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-[16px] font-bold text-brand-navy shadow-sm transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-navy-hero ${appControlDisabledClass}`;
+  `inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-navy-hero px-5 py-3 text-[16px] font-bold text-white shadow-sm transition hover:bg-navy-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 ${appControlDisabledClass}`;
 
-/** Ghost CTA on navy/near-black heroes. */
-export const appHeroGhostButtonClass = appHeroSecondaryButtonClass;
+/** Ghost CTA on light page heroes. */
+export const appHeroGhostButtonClass = appSecondaryButtonClass;
 
 export const appTextLinkClass =
   "inline-flex min-h-[44px] items-center gap-1.5 text-[16px] font-semibold text-brand-navy underline-offset-2 transition hover:text-brand hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2";
@@ -157,10 +159,10 @@ export const appPageTitleClass =
   "text-[1.375rem] font-bold tracking-[-0.02em] text-slate-950 sm:text-[1.625rem]";
 
 export const appPageHeroTitleClass =
-  "break-words text-[1.625rem] font-bold tracking-[-0.03em] sm:text-[1.75rem] md:text-[1.75rem]";
+  "break-words text-[1.625rem] font-bold tracking-[-0.03em] text-slate-950 sm:text-[1.75rem] md:text-[1.75rem]";
 
 export const appPageHeroSubtitleClass =
-  "mt-1.5 max-w-2xl break-words text-[16px] font-medium leading-relaxed tracking-[-0.01em] text-white/90";
+  "mt-1.5 max-w-2xl break-words text-[16px] font-medium leading-relaxed tracking-[-0.01em] text-slate-700";
 
 export const appSectionTitleClass =
   "text-[1.25rem] font-bold tracking-[-0.02em] text-slate-950 md:text-[1.5rem]";

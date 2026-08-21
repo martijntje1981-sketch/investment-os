@@ -70,14 +70,14 @@ function formatUpdateTime(value: string | null | undefined) {
 
 function getPerformanceClass(value: number) {
   if (value > 0) {
-    return "text-emerald-400";
+    return "text-emerald-600";
   }
 
   if (value < 0) {
-    return "text-red-400";
+    return "text-rose-600";
   }
 
-  return "text-slate-300";
+  return "text-slate-700";
 }
 
 function getMetricPerformanceClass(value: number) {
@@ -239,41 +239,41 @@ export default function HoldingPage() {
             <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
               <div>
                 <div className="flex flex-wrap items-center gap-3">
-                  <span className="rounded-full bg-white/10 px-3 py-1 text-[13px] font-semibold uppercase tracking-wider text-white/90">
+                  <span className="rounded-full bg-cyan-50 px-3 py-1 text-[13px] font-semibold uppercase tracking-wider text-cyan-800">
                     {holding.assetType === "cash" ? "Cash" : "Investment"}
                   </span>
 
                   <span
                     className={`rounded-full px-3 py-1 text-[13px] font-bold ${
                       displayPrice.source === "unavailable"
-                        ? "bg-amber-500/20 text-amber-300"
+                        ? "bg-amber-100 text-amber-800"
                         : displayPrice.source === "estimated" ||
                             displayPrice.source === "delayed"
-                          ? "bg-amber-500/20 text-amber-300"
-                          : "bg-emerald-500/20 text-emerald-300"
+                          ? "bg-amber-100 text-amber-800"
+                          : "bg-emerald-100 text-emerald-800"
                     }`}
                   >
                     {priceLabel}
                   </span>
                 </div>
 
-                <h1 className="mt-5 text-4xl font-bold tracking-tight md:text-5xl">
+                <h1 className="mt-5 text-4xl font-bold tracking-tight text-slate-950 md:text-5xl">
                   {holding.symbol}
                 </h1>
 
-                <p className="mt-2 text-lg text-white/90">{holding.name}</p>
+                <p className="mt-2 text-lg text-slate-700">{holding.name}</p>
                 {holding.assetType === "cash" ? (
                   <Link
                     href={DASHBOARD_DEEP_LINKS.cashIntelligence}
-                    className="mt-3 inline-flex min-h-11 items-center text-[15px] font-semibold text-cyan-200 underline-offset-2 hover:underline"
+                  className="mt-3 inline-flex min-h-11 items-center text-[15px] font-semibold text-cyan-800 underline-offset-2 hover:underline"
                   >
                     Understand your cash →
                   </Link>
                 ) : null}
 
-                <p className="mt-4 text-[15px] text-white/90">
+                <p className="mt-4 text-[15px] text-slate-700">
                   Last market update:{" "}
-                  <span className="font-medium text-white">
+                  <span className="font-medium text-slate-950">
                     {formatUpdateTime(
                       holding.marketPriceUpdatedAt ?? holding.updatedAt,
                     )}
@@ -283,7 +283,7 @@ export default function HoldingPage() {
 
               <div className="grid grid-cols-2 gap-8 lg:text-right">
                 <div>
-                  <p className="text-[13px] font-semibold uppercase tracking-[0.06em] text-white/90">Current Price</p>
+                  <p className="text-[13px] font-semibold uppercase tracking-[0.06em] text-slate-700">Current Price</p>
 
                   <p className="mt-2 text-3xl font-bold">
                     {resolvedPrice !== null
@@ -292,11 +292,11 @@ export default function HoldingPage() {
                   </p>
 
                   {holdingPriceTrustBadgeLabel(displayPrice.source) ? (
-                    <p className="mt-1 text-sm font-semibold text-amber-300">
+                    <p className="mt-1 text-sm font-semibold text-amber-800">
                       {holdingPriceTrustBadgeLabel(displayPrice.source)}
                     </p>
                   ) : displayPrice.source === "last_session" ? (
-                    <p className="mt-1 text-sm font-semibold text-white/90">
+                    <p className="mt-1 text-sm font-semibold text-slate-700">
                       Last session
                     </p>
                   ) : null}
@@ -304,7 +304,7 @@ export default function HoldingPage() {
                   <p
                     className={`mt-1 font-semibold ${
                       dailyChangePercent === null
-                        ? "text-white/90"
+                        ? "text-slate-700"
                         : getPerformanceClass(dailyChangePercent)
                     }`}
                     title={movePeriod.accessibleDescription}
@@ -316,7 +316,7 @@ export default function HoldingPage() {
                 </div>
 
                 <div>
-                  <p className="text-[13px] font-semibold uppercase tracking-[0.06em] text-white/90">Units</p>
+                  <p className="text-[13px] font-semibold uppercase tracking-[0.06em] text-slate-700">Units</p>
 
                   <p className="mt-2 text-3xl font-bold">
                     {holding.quantity.toLocaleString("en-GB")}

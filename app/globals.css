@@ -29,15 +29,14 @@
   --navy-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
 
   /*
-   * Shared page-hero family: dark Q1 / Tobailey cyan
-   * (Tailwind cyan-950 → cyan-900 → cyan-800).
-   * Same hue as the Phase 20 intelligence accent; dark enough for white type.
+   * Shared page-hero family: light Q1 / Tobailey cyan
+   * (Tailwind cyan-100 → sky-50 → white). Navy type lives on the shell class.
    */
-  --hero-premium-from: #083344;
-  --hero-premium-via: #164e63;
-  --hero-premium-to: #155e75;
-  --hero-premium-border: rgba(255, 255, 255, 0.16);
-  --hero-premium-shadow: 0 18px 40px -18px rgba(8, 145, 178, 0.38);
+  --hero-premium-from: #cffafe;
+  --hero-premium-via: #f0f9ff;
+  --hero-premium-to: #ffffff;
+  --hero-premium-border: rgba(8, 145, 178, 0.28);
+  --hero-premium-shadow: 0 12px 32px -16px rgba(8, 145, 178, 0.28);
 
   /* Semantic finance colors — do not replace with brand blue */
   --accent-green: #16a34a;

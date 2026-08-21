@@ -8,7 +8,7 @@ import { BackButton } from "@/components/layout/BackButton";
 import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer";
 import { AuthenticatedFourQuestionsNav } from "@/components/fourQuestions/AuthenticatedFourQuestionsNav";
 import {
-  appHeroMetricLabelClass,
+  appDashboardHeroMetricLabelClass,
   appHeroShellClass,
   appSectionBodyClass,
   appSectionMetaClass,
@@ -411,12 +411,12 @@ export default function MarketPulsePage() {
           />
           <div className="relative">
             <div className="mb-4">
-              <BackButton />
+              <BackButton variant="light" />
             </div>
-            <p className={appHeroMetricLabelClass}>Market Pulse</p>
+            <p className={appDashboardHeroMetricLabelClass}>Market Pulse</p>
             <h1
               id="market-pulse-hero"
-              className="mt-2 text-[28px] font-black tracking-[-0.04em] text-white sm:text-4xl"
+              className="mt-2 text-[28px] font-black tracking-[-0.04em] text-slate-950 sm:text-4xl"
             >
               {holdings.length === 0
                 ? "Explore available market signals in detail"
@@ -424,35 +424,35 @@ export default function MarketPulsePage() {
             </h1>
 
             {holdings.length === 0 ? (
-              <p className="mt-5 max-w-xl text-[15px] font-medium leading-relaxed text-white/90">
+              <p className="mt-5 max-w-xl text-[15px] font-medium leading-relaxed text-slate-700">
                 Browse live market context without holdings. Import your
                 portfolio to unlock Portfolio Markets and personalised links.
               </p>
             ) : hero?.kind === "dominant" && hero.name ? (
               <div className="mt-5 max-w-lg">
-                <p className="text-[13px] font-semibold uppercase tracking-[0.08em] text-white/90">
+                <p className="text-[13px] font-semibold uppercase tracking-[0.08em] text-slate-700">
                   {hero.summary}
                 </p>
-                <p className="mt-2 text-3xl font-black tracking-[-0.03em] text-white sm:text-4xl">
+                <p className="mt-2 text-3xl font-black tracking-[-0.03em] text-slate-950 sm:text-4xl">
                   {hero.name}
                 </p>
-                <p className="mt-1 text-2xl font-bold tabular-nums text-sky-200">
+                <p className="mt-1 text-2xl font-bold tabular-nums text-cyan-800">
                   {hero.changePercent === null
                     ? "Move unavailable"
                     : `${hero.changePercent >= 0 ? "+" : ""}${hero.changePercent.toFixed(1)}%`}
                 </p>
-                <p className="mt-1 text-[13px] font-semibold text-white/90">
+                <p className="mt-1 text-[13px] font-semibold text-slate-700">
                   {formatQuotePeriodLabel(hero.changePeriod)}
                 </p>
                 {hero.portfolioWeightPercent !== null ? (
-                  <p className="mt-2 text-[15px] font-medium text-white/90">
+                  <p className="mt-2 text-[15px] font-medium text-slate-700">
                     Linked to {Math.round(hero.portfolioWeightPercent)}% of your
                     portfolio
                   </p>
                 ) : null}
               </div>
             ) : (
-              <p className="mt-5 max-w-xl text-[15px] font-medium leading-relaxed text-white/90">
+              <p className="mt-5 max-w-xl text-[15px] font-medium leading-relaxed text-slate-700">
                 {hero?.summary ??
                   snapshot?.leadInsight ??
                   "Loading market context…"}
@@ -461,7 +461,7 @@ export default function MarketPulsePage() {
 
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <div
-                className="inline-flex rounded-full border border-white/15 bg-white/5 p-1"
+                className="inline-flex rounded-full border border-cyan-200 bg-white/80 p-1"
                 role="group"
                 aria-label="Market filter"
               >
@@ -486,8 +486,8 @@ export default function MarketPulsePage() {
                       filter === value
                         ? "bg-white text-slate-950"
                         : holdings.length === 0 && value === "portfolio"
-                          ? "cursor-not-allowed text-white/35"
-                          : "text-white"
+                          ? "cursor-not-allowed text-slate-400"
+                          : "text-slate-700"
                     }`}
                   >
                     {label}
@@ -498,7 +498,7 @@ export default function MarketPulsePage() {
                 type="button"
                 onClick={() => void load({ quiet: true })}
                 disabled={refreshing}
-                className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-white/20 px-4 text-[14px] font-semibold text-white"
+                className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-slate-300 bg-white px-4 text-[14px] font-semibold text-slate-950"
               >
                 <RefreshCw
                   className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
@@ -507,7 +507,7 @@ export default function MarketPulsePage() {
                 Refresh
               </button>
             </div>
-            <p className="mt-4 text-[13px] font-medium text-white/90">
+            <p className="mt-4 text-[13px] font-medium text-slate-700">
               Checked{" "}
               {snapshot?.generatedAt
                 ? new Date(snapshot.generatedAt).toLocaleString("en-GB", {
@@ -613,51 +613,51 @@ export default function MarketPulsePage() {
           className={`${appHeroShellClass} px-5 py-6 sm:px-7 sm:py-7`}
           aria-labelledby="momentum-heading"
         >
-          <p className={appHeroMetricLabelClass}>Market Momentum</p>
+          <p className={appDashboardHeroMetricLabelClass}>Market Momentum</p>
           <h2
             id="momentum-heading"
-            className="mt-1.5 text-xl font-bold tracking-[-0.03em] text-white sm:text-2xl"
+            className="mt-1.5 text-xl font-bold tracking-[-0.03em] text-slate-950 sm:text-2xl"
           >
             {period} story at a glance
           </h2>
 
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-              <p className="text-[13px] font-bold uppercase tracking-[0.08em] text-white/90">
+            <div className="rounded-2xl border border-cyan-100 bg-white/80 px-4 py-3">
+              <p className="text-[13px] font-bold uppercase tracking-[0.08em] text-slate-700">
                 Strongest momentum
               </p>
               {snapshot?.momentumStrongest ? (
                 <>
-                  <p className="mt-1.5 text-lg font-bold text-white">
+                  <p className="mt-1.5 text-lg font-bold text-slate-950">
                     {snapshot.momentumStrongest.name}
                   </p>
-                  <p className="mt-0.5 text-xl font-black tabular-nums text-emerald-300">
+                  <p className="mt-0.5 text-xl font-black tabular-nums text-emerald-600">
                     {snapshot.momentumStrongest.changePercent >= 0 ? "+" : ""}
                     {snapshot.momentumStrongest.changePercent.toFixed(1)}%
                   </p>
                 </>
               ) : (
-                <p className="mt-2 text-[15px] font-medium text-white/90">
+                <p className="mt-2 text-[15px] font-medium text-slate-700">
                   Comparable move unavailable
                 </p>
               )}
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-              <p className="text-[13px] font-bold uppercase tracking-[0.08em] text-white/90">
+            <div className="rounded-2xl border border-cyan-100 bg-white/80 px-4 py-3">
+              <p className="text-[13px] font-bold uppercase tracking-[0.08em] text-slate-700">
                 Weakest momentum
               </p>
               {snapshot?.momentumWeakest ? (
                 <>
-                  <p className="mt-1.5 text-lg font-bold text-white">
+                  <p className="mt-1.5 text-lg font-bold text-slate-950">
                     {snapshot.momentumWeakest.name}
                   </p>
-                  <p className="mt-0.5 text-xl font-black tabular-nums text-rose-300">
+                  <p className="mt-0.5 text-xl font-black tabular-nums text-rose-600">
                     {snapshot.momentumWeakest.changePercent >= 0 ? "+" : ""}
                     {snapshot.momentumWeakest.changePercent.toFixed(1)}%
                   </p>
                 </>
               ) : (
-                <p className="mt-2 text-[15px] font-medium text-white/90">
+                <p className="mt-2 text-[15px] font-medium text-slate-700">
                   No second comparable move
                 </p>
               )}
@@ -673,7 +673,7 @@ export default function MarketPulsePage() {
               const positive = (row.changePercent ?? 0) >= 0;
               return (
                 <li key={row.marketId}>
-                  <div className="flex items-center justify-between gap-3 text-[13px] font-semibold text-white">
+                  <div className="flex items-center justify-between gap-3 text-[13px] font-semibold text-slate-950">
                     <span>{row.name}</span>
                     <span className="tabular-nums">
                       {row.changePercent === null
@@ -698,7 +698,7 @@ export default function MarketPulsePage() {
             })}
           </ul>
           {snapshot?.excludedMomentumIds.length ? (
-            <p className="mt-4 text-[13px] font-medium text-white/90">
+            <p className="mt-4 text-[13px] font-medium text-slate-700">
               Excluded (no comparable {period} data):{" "}
               {snapshot.excludedMomentumIds.join(", ")}
             </p>

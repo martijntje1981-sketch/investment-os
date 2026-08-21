@@ -30,10 +30,10 @@ const primaryCtaClass =
   "inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-brand px-5 py-3.5 text-[16px] font-semibold text-brand-navy shadow-sm transition hover:bg-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-navy sm:w-auto";
 
 const secondaryCtaClass =
-  "inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/5 px-5 py-3.5 text-[16px] font-semibold text-white transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-navy sm:w-auto";
+  "inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3.5 text-[16px] font-semibold text-slate-950 shadow-sm transition hover:border-slate-400 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 sm:w-auto";
 
 const tertiaryCtaClass =
-  "inline-flex min-h-[44px] w-full items-center justify-center px-2 py-2 text-[15px] font-medium text-white/70 underline-offset-4 transition hover:text-white hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 sm:w-auto";
+  "inline-flex min-h-[44px] w-full items-center justify-center px-2 py-2 text-[15px] font-medium text-slate-700 underline-offset-4 transition hover:text-slate-950 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 sm:w-auto";
 
 export function PortfolioSetupOnboarding({
   variant = "first-time",
@@ -67,7 +67,7 @@ export function PortfolioSetupOnboarding({
 
         <div className="relative">
           <p
-            className={`inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 ${appSectionLabelClass} text-sky-200`}
+            className={`inline-flex items-center gap-2 rounded-full bg-cyan-50 px-3 py-1 ${appSectionLabelClass} text-cyan-800`}
           >
             <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
             {eyebrow}
@@ -75,12 +75,12 @@ export function PortfolioSetupOnboarding({
 
           <h1
             id="portfolio-setup-heading"
-            className={`mt-4 sm:mt-5 ${appPageHeroTitleClass} text-white`}
+            className={`mt-4 sm:mt-5 ${appPageHeroTitleClass}`}
           >
             {headline}
           </h1>
 
-          <p className={`${appPageHeroSubtitleClass} text-white/80`}>
+          <p className={appPageHeroSubtitleClass}>
             {supporting}
           </p>
 
@@ -96,7 +96,7 @@ export function PortfolioSetupOnboarding({
               </Link>
               <p
                 id="portfolio-setup-import-hint"
-                className="text-center text-[13px] font-medium text-white/60 sm:text-left"
+                className="text-center text-[13px] font-medium text-slate-600 sm:text-left"
               >
                 {PORTFOLIO_SETUP_COPY.importHint}
               </p>
@@ -129,37 +129,37 @@ export function PortfolioSetupOnboarding({
             {PORTFOLIO_SETUP_STEPS.map((item) => (
               <li
                 key={item.step}
-                className="flex gap-3 rounded-2xl border border-white/10 bg-white/5 px-3.5 py-3"
+                className="flex gap-3 rounded-2xl border border-cyan-100 bg-white/80 px-3.5 py-3"
               >
                 <span
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/15 text-[13px] font-bold tabular-nums text-white"
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-cyan-600 text-[13px] font-bold tabular-nums text-white"
                   aria-hidden="true"
                 >
                   {item.step}
                 </span>
-                <span className="pt-0.5 text-[14px] font-medium leading-snug text-white/85">
+                <span className="pt-0.5 text-[14px] font-medium leading-snug text-slate-800">
                   {item.title}
                 </span>
               </li>
             ))}
           </ol>
 
-          <div className="mt-6 border-t border-white/10 pt-5">
-            <p className={`${appSectionLabelClass} text-white/90`}>
+          <div className="mt-6 border-t border-cyan-200/80 pt-5">
+            <p className={appSectionLabelClass}>
               Supported ways to add holdings
             </p>
             <ul className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-x-5 sm:gap-y-2">
               {SUPPORTED_PORTFOLIO_INPUT_METHODS.map((method) => (
                 <li
                   key={method.id}
-                  className="text-[15px] font-medium text-white/90"
+                  className="text-[15px] font-medium text-slate-700"
                 >
-                  <span className="text-white">{method.label}</span>
-                  <span className="text-white/90"> · {method.detail}</span>
+                  <span className="text-slate-950">{method.label}</span>
+                  <span className="text-slate-700"> · {method.detail}</span>
                 </li>
               ))}
             </ul>
-            <p className="mt-3 text-[13px] font-medium text-white/90">
+            <p className="mt-3 text-[13px] font-medium text-slate-700">
               Direct broker connections are not available — use a file export or
               enter holdings yourself.
             </p>

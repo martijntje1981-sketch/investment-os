@@ -31,7 +31,6 @@ import {
   appDarkCardPaddingClass,
   appDashboardDarkMetaClass,
   appHeroMetricLabelClass,
-  appHeroShellClass,
   appSectionBodyClass,
   appSectionLabelClass,
   appSectionMetaClass,
@@ -327,7 +326,7 @@ export default function PortfolioHealthPage() {
           holdings.length === 0 ? (
             <div className="space-y-4">
               <div className="mb-1">
-                <BackButton />
+                <BackButton variant="light" />
               </div>
               <EmptyPortfolioGuide
                 title="Portfolio Scorecard needs holdings"
@@ -335,9 +334,9 @@ export default function PortfolioHealthPage() {
               />
             </div>
           ) : (
-            <section className={`${appHeroShellClass} px-5 py-9 sm:px-8`}>
+            <section className={`${appDarkCardClass} px-5 py-9 sm:px-8`}>
               <div className="mb-4">
-                <BackButton />
+                <BackButton variant="light" />
               </div>
               <p className={appHeroMetricLabelClass}>Portfolio Scorecard</p>
               <h1 className="mt-4 text-3xl font-black tracking-[-0.04em] text-white">
@@ -359,12 +358,12 @@ export default function PortfolioHealthPage() {
           <>
             {/* Hero — Portfolio Scorecard */}
             <section
-              className={`${appHeroShellClass} relative overflow-hidden ${appDarkCardPaddingClass} sm:py-9`}
+              className={`${appDarkCardClass} relative overflow-hidden ${appDarkCardPaddingClass} sm:py-9`}
               aria-labelledby="portfolio-scorecard-hero"
             >
               <div className="relative max-w-3xl">
                 <div className="mb-4">
-                  <BackButton />
+                  <BackButton variant="light" />
                 </div>
                 <p className={appHeroMetricLabelClass}>Portfolio Scorecard</p>
                 <h1

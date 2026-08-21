@@ -237,7 +237,7 @@ describe("Phase 16.5 Dashboard presentation contracts", () => {
     expect(visual).toContain("what_matters_now");
     expect(visual).toContain("from-violet-100");
     expect(hero).toContain("appDashboardHeroShellClass");
-    expect(surface).toContain("from-hero-premium-from");
+    expect(surface).toContain("from-cyan-100");
     expect(surface).not.toContain("from-[#f4f9fd]");
   });
 });

@@ -73,14 +73,14 @@ export function FirstIntelligenceMoment({
       />
       <div className="relative">
         <p
-          className={`inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 ${appSectionLabelClass} text-emerald-200`}
+          className={`inline-flex items-center gap-2 rounded-full bg-cyan-50 px-3 py-1 ${appSectionLabelClass} text-emerald-800`}
         >
           <Sparkles className="h-3.5 w-3.5" aria-hidden />
           Your portfolio is ready
         </p>
         <h2
           id="first-intelligence-heading"
-          className={`mt-4 ${appPageHeroTitleClass} text-white`}
+          className={`mt-4 ${appPageHeroTitleClass}`}
         >
           Here’s what Tobailey sees
         </h2>
@@ -90,11 +90,11 @@ export function FirstIntelligenceMoment({
         </p>
 
         {showGoalInvite ? (
-          <div className="mt-6 rounded-2xl border border-white/15 bg-white/[0.08] px-4 py-4">
-            <p className="text-[16px] font-semibold leading-relaxed text-white">
+          <div className="mt-6 rounded-2xl border border-cyan-200 bg-white/80 px-4 py-4">
+            <p className="text-[16px] font-semibold leading-relaxed text-slate-950">
               Want Tobailey to track what you’re investing toward?
             </p>
-            <p className="mt-1.5 text-[15px] font-medium leading-relaxed text-white/90">
+            <p className="mt-1.5 text-[15px] font-medium leading-relaxed text-slate-700">
               Optional. Skip this and keep using Dashboard and Four Questions.
             </p>
             <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap">

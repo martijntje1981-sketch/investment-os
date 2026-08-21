@@ -1,8 +1,8 @@
 "use client";
 
 import {
-  appDashboardDarkMetaClass,
-  appHeroMetricLabelClass,
+  appDashboardHeroMetricLabelClass,
+  appSectionMetaClass,
 } from "@/components/layout/appSurface";
 import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 import {
@@ -34,7 +34,7 @@ export function GoalHeroProgressVisual({
 
   if (state.status === "unconfigured") {
     return (
-      <p className={`${appDashboardDarkMetaClass} text-sm leading-relaxed`}>
+      <p className={`${appSectionMetaClass} text-sm leading-relaxed`}>
         Save a financial target to track your progress trajectory here.
       </p>
     );
@@ -42,7 +42,7 @@ export function GoalHeroProgressVisual({
 
   if (state.status === "invalid-target") {
     return (
-      <p className={`${appDashboardDarkMetaClass} text-sm leading-relaxed`}>
+      <p className={`${appSectionMetaClass} text-sm leading-relaxed`}>
         Set a valid target amount to see goal progress.
       </p>
     );
@@ -50,7 +50,7 @@ export function GoalHeroProgressVisual({
 
   if (state.status === "unavailable") {
     return (
-      <p className={`${appDashboardDarkMetaClass} text-sm leading-relaxed`}>
+      <p className={`${appSectionMetaClass} text-sm leading-relaxed`}>
         Portfolio value is unavailable, so goal progress cannot be shown yet.
       </p>
     );
@@ -60,20 +60,20 @@ export function GoalHeroProgressVisual({
     <div aria-label={state.ariaLabel}>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className={appHeroMetricLabelClass}>Achieved</p>
-          <p className="mt-1 text-2xl font-black tabular-nums tracking-[-0.03em] text-white sm:text-3xl">
+          <p className={appDashboardHeroMetricLabelClass}>Achieved</p>
+          <p className="mt-1 text-2xl font-black tabular-nums tracking-[-0.03em] text-slate-950 sm:text-3xl">
             {formatGoalHeroProgressPercent(state.displayPercent)}
           </p>
         </div>
         <div className="text-right">
-          <p className={appHeroMetricLabelClass}>Current</p>
-          <p className="mt-1 text-sm font-bold tabular-nums text-white">
+          <p className={appDashboardHeroMetricLabelClass}>Current</p>
+          <p className="mt-1 text-sm font-bold tabular-nums text-slate-950">
             {state.currentValue !== null
               ? formatEur(state.currentValue)
               : "Unavailable"}
           </p>
-          <p className={`mt-2 ${appHeroMetricLabelClass}`}>Target</p>
-          <p className="mt-1 text-sm font-bold tabular-nums text-white">
+          <p className={`mt-2 ${appDashboardHeroMetricLabelClass}`}>Target</p>
+          <p className="mt-1 text-sm font-bold tabular-nums text-slate-950">
             {state.targetValue !== null
               ? formatEur(state.targetValue)
               : "Unavailable"}
@@ -81,9 +81,9 @@ export function GoalHeroProgressVisual({
         </div>
       </div>
 
-      <div className="relative mt-5 h-2 overflow-hidden rounded-full bg-white/10">
+      <div className="relative mt-5 h-2 overflow-hidden rounded-full bg-cyan-100">
         <div
-          className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-blue-400 via-violet-400 to-fuchsia-400 transition-[width] duration-500 motion-reduce:transition-none"
+          className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-cyan-600 via-sky-500 to-cyan-400 transition-[width] duration-500 motion-reduce:transition-none"
           style={{ width: `${state.fillPercent}%` }}
           role="progressbar"
           aria-valuemin={0}
@@ -93,7 +93,7 @@ export function GoalHeroProgressVisual({
         />
         {state.fillPercent > 0 ? (
           <span
-            className="absolute top-1/2 h-3 w-3 -translate-y-1/2 rounded-full border border-white/70 bg-white shadow-[0_0_0_4px_rgba(255,255,255,0.12)] motion-reduce:transition-none"
+            className="absolute top-1/2 h-3 w-3 -translate-y-1/2 rounded-full border border-cyan-700 bg-white shadow-[0_0_0_4px_rgba(8,145,178,0.16)] motion-reduce:transition-none"
             style={{ left: `calc(${state.fillPercent}% - 6px)` }}
             aria-hidden
           />

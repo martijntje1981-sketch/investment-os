@@ -53,7 +53,7 @@ describe("Phase 19.3 Review hero actions", () => {
     expect(pdf).toContain("appHeroPrimaryButtonClass");
     expect(tokens).toContain("appHeroPrimaryButtonClass");
     expect(tokens).toMatch(
-      /appHeroPrimaryButtonClass =\s*`inline-flex min-h-\[44px\].*bg-white/,
+      /appHeroPrimaryButtonClass =\s*`inline-flex min-h-\[44px\].*bg-navy-hero/,
     );
     expect(page).toContain('variant="hero"');
     expect(excel).toContain("appHeroSecondaryButtonClass");

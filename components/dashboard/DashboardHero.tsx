@@ -6,10 +6,10 @@ import { Target, TrendingDown, TrendingUp } from "lucide-react";
 import { ConversionDetailsDisclosure } from "@/components/currency/ConversionDetailsDisclosure";
 import {
   appCardValueClass,
+  appDashboardHeroMetricLabelClass,
   appDashboardLightCardClass,
   appDisplayClass,
   appHeroKpiClass,
-  appHeroMetricLabelClass,
   appHeroShellClass,
   appSectionBodyClass,
   appSectionLabelClass,
@@ -47,9 +47,9 @@ export function DashboardPortfolioHero({
   const todayTone =
     summary.hasDailyData && summary.todayChange !== 0
       ? summary.todayChange > 0
-        ? "text-emerald-300"
-        : "text-red-300"
-      : "text-slate-300";
+        ? "text-emerald-600"
+        : "text-rose-600"
+      : "text-slate-700";
 
   const todayValue = formatTodayMoveValue({
     hasDailyData: summary.hasDailyData,
@@ -66,19 +66,19 @@ export function DashboardPortfolioHero({
   });
 
   const totalTone =
-    summary.totalReturn >= 0 ? "text-emerald-300" : "text-red-300";
+    summary.totalReturn >= 0 ? "text-emerald-600" : "text-rose-600";
 
   return (
     <section className={appHeroShellClass}>
       <div className="px-4 py-5 md:px-8 md:py-6">
-        <p className={appHeroMetricLabelClass}>Portfolio value</p>
+        <p className={appDashboardHeroMetricLabelClass}>Portfolio value</p>
         <p className={`mt-2 ${appDisplayClass}`}>
           {summary.portfolioValueAvailable
             ? formatEur(summary.portfolioValue)
             : "Unavailable"}
         </p>
         <div className="mt-2">
-          <ConversionDetailsDisclosure compactTrigger tone="dark" />
+          <ConversionDetailsDisclosure compactTrigger tone="light" />
         </div>
         {summary.portfolioValueCoverageMessage ? (
           <p className={`mt-2 ${appSectionMetaClass} text-slate-500`}>
@@ -94,7 +94,7 @@ export function DashboardPortfolioHero({
             label={summary.dailyMoveHeroLabel}
             value={todayValue}
             detail={todayDetail}
-            valueClassName={showTodayMove ? todayTone : "text-slate-300"}
+            valueClassName={showTodayMove ? todayTone : "text-slate-700"}
           />
           <HeroMetric
             label="Total gain / loss"
@@ -111,7 +111,7 @@ export function DashboardPortfolioHero({
                   : "Price data required"
             }
             valueClassName={
-              summary.canShowPerformance ? totalTone : "text-slate-300"
+              summary.canShowPerformance ? totalTone : "text-slate-700"
             }
           />
           <HeroMetric
@@ -128,14 +128,14 @@ export function DashboardPortfolioHero({
                 ? `Target ${formatEur(summary.goalTarget)}`
                 : "Set a goal to track progress"
             }
-            valueClassName="text-violet-200"
+            valueClassName="text-cyan-800"
             icon={<Target className="h-4 w-4" />}
           />
           <HeroMetric
             label="Holdings"
             value={String(summary.holdingCount)}
             detail={`${summary.holdingCount === 1 ? "position" : "positions"} monitored`}
-            valueClassName="text-slate-100"
+            valueClassName="text-slate-950"
           />
         </div>
       </div>
@@ -157,7 +157,7 @@ function HeroMetric({
   icon?: React.ReactNode;
 }) {
   return (
-    <div className="min-w-0 rounded-[18px] border border-white/10 bg-white/[0.04] px-4 py-3.5">
+    <div className="min-w-0 rounded-[18px] border border-cyan-100 bg-white/80 px-4 py-3.5">
       <div
         className={`flex items-center gap-2 ${appSectionLabelClass} text-slate-400`}
       >

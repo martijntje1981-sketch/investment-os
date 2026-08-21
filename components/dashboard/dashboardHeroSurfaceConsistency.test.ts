@@ -31,11 +31,14 @@ describe("dashboard hero surface consistency", () => {
     const heroShellMatch = surfaceSource.match(
       /export const appHeroShellClass =\s*"([^"]+)"/,
     );
-    expect(heroShellMatch?.[1]).toContain("from-hero-premium-from");
+    expect(heroShellMatch?.[1]).toContain("from-cyan-100");
+    expect(heroShellMatch?.[1]).toContain("via-sky-50");
+    expect(heroShellMatch?.[1]).toContain("text-slate-950");
     expect(heroShellMatch?.[1]).toContain("bg-gradient-to-br");
     expect(heroShellMatch?.[1]).not.toContain("bg-navy-hero");
     expect(valueSource).toContain("appDashboardHeroShellClass");
-    expect(valueSource).toContain("appearance=\"onDark\"");
+    expect(valueSource).toContain("appDashboardHeroSubordinateClass");
+    expect(valueSource).toContain("appearance=\"onLight\"");
     expect(valueSource).not.toContain("ambientGlowClass");
     expect(emptySource).toContain("PortfolioSetupOnboarding");
     expect(onboardingSource).toContain("appHeroShellClass");
@@ -45,7 +48,7 @@ describe("dashboard hero surface consistency", () => {
   it("matches the PageHero surface token", () => {
     expect(pageHeroSource).toContain("appHeroShellClass");
     expect(pageHeroSource).not.toContain("bg-gradient-to-b");
-    expect(surfaceSource).toContain("from-hero-premium-from");
+    expect(surfaceSource).toContain("from-cyan-100");
     expect(surfaceSource).toContain("bg-navy-hero");
     expect(surfaceSource).toContain("appDarkCardClass");
   });

@@ -51,7 +51,6 @@ import {
   appCardValueClass,
   appDarkCardClass,
   appDarkCardPaddingClass,
-  appDashboardDarkMetaClass,
   appHeroGhostButtonClass,
   appHeroMetricLabelClass,
   appSectionBodyClass,
@@ -203,7 +202,7 @@ export default function PortfolioAnalysisPage() {
           subtitle="Explore your portfolio through four questions — explanation, evidence and tools."
           backToDashboard
           stats={
-            <p className={`${appDashboardDarkMetaClass} mt-0`}>
+            <p className={`${appSectionMetaClass} mt-0`}>
               Updated {formatUpdatedAt(analysis.lastUpdatedAt)}
             </p>
           }
@@ -221,7 +220,6 @@ export default function PortfolioAnalysisPage() {
                       convertEur,
                     })
                   }
-                  className="border border-white/25 bg-white/10 text-white hover:bg-white/15"
                 />
               ) : null}
               <Link
