@@ -93,9 +93,12 @@ export const appPageHeroMetaClass = appDashboardHeroMetaClass;
 export const appPageHeroInsetClass =
   "rounded-2xl border border-cyan-200/80 bg-white/80 px-3.5 py-3";
 
-/** Shared hero action cluster: one wrap row, consistent height/gap. */
+/**
+ * Shared hero action cluster: wrap inside a bounded right column.
+ * Never grow to max-content of an unwrapped button row (that collapses the title).
+ */
 export const appPageHeroActionsClass =
-  "mt-4 flex min-h-11 min-w-0 flex-wrap items-center justify-start gap-2 overflow-x-clip lg:mt-0 lg:justify-end";
+  "mt-4 flex min-h-11 w-full min-w-0 max-w-full flex-wrap items-center justify-start gap-2 overflow-x-clip lg:mt-0 lg:max-w-xl lg:justify-end";
 
 /** Important dark card — slightly lifted near-black. */
 export const appDarkCardClass =

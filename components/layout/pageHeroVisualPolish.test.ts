@@ -72,6 +72,28 @@ describe("Pre-launch light hero contrast and action alignment", () => {
     expect(news).toContain("backToDashboard");
   });
 
+  it("many hero actions cannot collapse PageHero content", () => {
+    expect(pageHero).toContain(
+      "lg:grid-cols-[minmax(14rem,1fr)_minmax(0,36rem)]",
+    );
+    expect(pageHero).toContain("lg:min-w-[14rem]");
+    expect(pageHero).not.toContain("lg:grid-cols-[minmax(0,1fr)_auto]");
+    expect(surface).toContain("lg:max-w-xl");
+    expect(surface).toContain("flex-wrap");
+    expect(portfolio).toContain("<PageHero");
+    expect(portfolio).toContain("ExportPortfolioButton");
+    expect(portfolio).toContain("Portfolio History");
+    expect(portfolio).toContain("Portfolio Scorecard");
+    expect(portfolio).toContain("RefreshPricesButton");
+    expect(portfolio).toContain("Add cash");
+    expect(portfolio).toContain("Add crypto");
+    expect(portfolio).toContain("Add investment");
+    expect(goals).toContain("<PageHero");
+    expect(analysis).toContain("<PageHero");
+    expect(goals).toContain("backToDashboard");
+    expect(analysis).toContain("backToDashboard");
+  });
+
   it("keeps hero action controls at a 44px tap target", () => {
     expect(surface).toContain("min-h-[44px]");
     expect(surface).toContain("appPageHeroActionsClass");

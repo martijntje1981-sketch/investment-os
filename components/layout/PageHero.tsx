@@ -65,14 +65,15 @@ export function PageHero({
               "lg:px-6 lg:py-[1.125rem]",
             ),
         hasAside
-          ? "lg:grid lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start lg:justify-between lg:gap-x-6"
+          ? "lg:grid lg:grid-cols-[minmax(14rem,1fr)_minmax(0,36rem)] lg:items-start lg:justify-between lg:gap-x-6"
           : "lg:flex lg:flex-col lg:justify-start",
       )}
     >
       <div
         className={cn(
           "min-w-0",
-          hasAside && "lg:col-start-1 lg:row-start-1 lg:self-start",
+          hasAside &&
+            "lg:col-start-1 lg:row-start-1 lg:min-w-[14rem] lg:self-start",
         )}
       >
         <h1
@@ -91,7 +92,7 @@ export function PageHero({
         <div
           className={cn(
             appPageHeroActionsClass,
-            "lg:col-start-2 lg:row-start-1 lg:self-start",
+            "lg:col-start-2 lg:row-start-1 lg:max-w-xl lg:justify-self-end lg:self-start",
           )}
         >
           {actionContent}
