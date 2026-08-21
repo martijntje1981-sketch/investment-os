@@ -301,6 +301,8 @@ describe("Phase 13 portfolio change detection", () => {
     });
     expect(result.status).toBe("attention");
     expect(result.structuralHistoryAvailable).toBe(true);
+    expect(result.window.label).toMatch(/^Compared with .+ snapshot$/);
+    expect(result.window.label).not.toMatch(/Last opened/i);
     expect(
       result.ranked.some(
         (row) =>
@@ -458,6 +460,7 @@ describe("Phase 13 portfolio change detection", () => {
     });
     expect(result.status).toBe("nothing_material");
     expect(result.headline).toBe(NOTHING_IMPORTANT_CHANGED_COPY);
+    expect(result.support).toMatch(/broadly consistent with the latest comparable snapshot/);
     expect(result.primary).toBeNull();
     expect(result.secondary).toEqual([]);
   });
@@ -672,7 +675,7 @@ describe("Phase 13 portfolio change detection", () => {
       "lib/services/portfolioChangeDetection/mapSignals.ts",
       "lib/services/portfolioChangeDetection/access.ts",
       "lib/services/portfolioChangeDetection/alertFoundation.ts",
-      "components/dashboard/SinceLastCheckSection.tsx",
+      "components/dashboard/NewAndNotableSection.tsx",
       "app/dashboard/page.tsx",
     ];
     const blob = files.map((file) => read(file)).join("\n");
@@ -803,12 +806,14 @@ describe("Phase 13 portfolio change detection", () => {
 });
 
 describe("Phase 13 UI wiring", () => {
-  it("renders a compact Since your last check surface on Dashboard", () => {
+  it("renders a compact New & Notable surface on Dashboard", () => {
     const dashboard = read("app/dashboard/page.tsx");
-    const ui = read("components/dashboard/SinceLastCheckSection.tsx");
-    expect(dashboard).toContain("SinceLastCheckSection");
+    const ui = read("components/dashboard/NewAndNotableSection.tsx");
+    expect(dashboard).toContain("NewAndNotableSection");
     expect(dashboard).toContain("buildPortfolioChangeAttention");
-    expect(ui).toContain("Since your last check");
+    expect(ui).toContain("New & Notable");
+    expect(ui).not.toContain("Since your last check");
+    expect(ui).not.toContain("Last opened");
     expect(ui).toContain("min-h-11");
     expect(ui).toContain("appIdentityHappenedCardClass");
     expect(ui).toContain("Why am I seeing this?");

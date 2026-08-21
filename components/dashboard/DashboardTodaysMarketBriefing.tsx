@@ -5,6 +5,8 @@ import { ArrowUpRight, Radio } from "lucide-react";
 
 import {
   appCardPaddingCompactClass,
+  appDashboardLightCardClass,
+  appIntelligenceAccentIconWellClass,
   appSectionLabelClass,
   appSectionMetaClass,
   appTextLinkClass,
@@ -94,7 +96,7 @@ export function DashboardTodaysMarketBriefing(
   return (
     <section
       aria-labelledby="todays-market-briefing-heading"
-      className={`min-w-0 overflow-hidden rounded-[24px] border border-violet-200/70 border-l-[3px] border-l-violet-500 bg-gradient-to-br from-violet-50/80 via-white to-[#f7f5fb] shadow-[var(--shadow-card)] md:rounded-[28px] ${appCardPaddingCompactClass}`}
+      className={`${appDashboardLightCardClass} ${appCardPaddingCompactClass}`}
       data-testid="todays-market-briefing"
     >
       <div className="flex items-start gap-3">
@@ -113,7 +115,7 @@ export function DashboardTodaysMarketBriefing(
           </span>
         ) : (
           <span
-            className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-violet-50 text-violet-800 ring-1 ring-violet-100"
+            className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl ${appIntelligenceAccentIconWellClass}`}
             aria-hidden
           >
             <Radio className="h-4 w-4" />
@@ -121,7 +123,7 @@ export function DashboardTodaysMarketBriefing(
         )}
         <div className="min-w-0 flex-1">
           <p
-            className={`${appSectionLabelClass} text-violet-900/80`}
+            className={appSectionLabelClass}
             id="todays-market-briefing-heading"
           >
             Markets today

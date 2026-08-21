@@ -16,7 +16,10 @@ export const PORTFOLIO_CHANGE_CONTRIBUTION_PP = 0.25;
 export const PORTFOLIO_CHANGE_NEWS_BACKED_PP = ATTRIBUTION_MATERIAL_MIN_PP;
 
 export const NOTHING_IMPORTANT_CHANGED_COPY =
-  "Nothing important has changed since your last check.";
+  "No material portfolio changes need your attention right now.";
+
+export const NOTHING_MATERIAL_SUPPORT_COPY =
+  "Your portfolio remains broadly consistent with the latest comparable snapshot.";
 
 export const INSUFFICIENT_CHANGE_HISTORY_COPY =
   "Tobailey doesn’t have enough comparable history yet to say what changed.";

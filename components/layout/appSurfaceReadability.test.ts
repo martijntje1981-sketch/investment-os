@@ -97,4 +97,13 @@ describe("shared readability tokens", () => {
     expect(identity).toContain("text-emerald-600");
     expect(identity).toContain("text-rose-600");
   });
+
+  it("exposes the shared Q1 cyan intelligence accent for surfaces outside Four Questions", () => {
+    const surface = read("components/layout/appSurface.ts");
+    expect(surface).toContain("appIntelligenceAccentCardClass");
+    expect(surface).toContain("border-cyan-200/80");
+    expect(surface).toContain("appIntelligenceAccentStrongCardClass");
+    expect(surface).toContain("from-cyan-50");
+    expect(surface).toContain("appIntelligenceAccentIconWellClass");
+  });
 });

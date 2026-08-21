@@ -6,6 +6,7 @@ export {
   FREE_CHANGE_TEASE,
   INSUFFICIENT_CHANGE_HISTORY_COPY,
   NOTHING_IMPORTANT_CHANGED_COPY,
+  NOTHING_MATERIAL_SUPPORT_COPY,
   UNAVAILABLE_CHANGE_COPY,
 } from "@/lib/services/portfolioChangeDetection/config";
 export { buildPortfolioChangeAttention } from "@/lib/services/portfolioChangeDetection/buildPortfolioChangeAttention";

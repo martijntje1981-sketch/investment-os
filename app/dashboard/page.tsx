@@ -8,7 +8,8 @@ import { DashboardSummary } from "@/components/dashboard/DashboardSummary";
 import { DashboardExploreTools } from "@/components/dashboard/DashboardExploreTools";
 import { DashboardPortfolioEvolutionCard } from "@/components/portfolioEvolution/DashboardPortfolioEvolutionCard";
 import { FourQuestionsSection } from "@/components/dashboard/fourQuestions/FourQuestionsSection";
-import { SinceLastCheckSection } from "@/components/dashboard/SinceLastCheckSection";
+import { NewAndNotableSection } from "@/components/dashboard/NewAndNotableSection";
+import { LookingAheadSection } from "@/components/dashboard/LookingAheadSection";
 import { AuthenticatedFourQuestionsNav } from "@/components/fourQuestions/AuthenticatedFourQuestionsNav";
 import { DashboardFirstRunCue } from "@/components/dashboard/DashboardFirstRunCue";
 import { FirstIntelligenceMoment } from "@/components/onboarding/FirstIntelligenceMoment";
@@ -16,7 +17,6 @@ import { DemoHoldingsCallout } from "@/components/example/DemoHoldingsCallout";
 import { TrialStepsCard } from "@/components/example/TrialStepsCard";
 import { DashboardPerspectivesWidget } from "@/components/dashboard/DashboardPerspectivesWidget";
 import { HoldingsToday } from "@/components/dashboard/HoldingsToday";
-import { DashboardPortfolioExposureCard } from "@/components/dashboard/DashboardPortfolioExposureCard";
 import { DashboardMarketStatus } from "@/components/dashboard/DashboardMarketStatus";
 import { ExamplePortfolioPreparation } from "@/components/examplePortfolio/ExamplePortfolioPreparation";
 import { useExampleActiveStatus } from "@/lib/client/useExampleActiveStatus";
@@ -61,6 +61,7 @@ import {
   buildEvolutionNowState,
   buildPortfolioEvolutionTimeline,
 } from "@/lib/services/portfolioEvolution";
+import { buildLookingAhead } from "@/lib/services/lookingAhead";
 import {
   applyPortfolioChangeAccess,
   buildPortfolioChangeAttention,
@@ -424,6 +425,23 @@ export default function DashboardPage() {
     productAccess.intelligenceDepth,
   ]);
 
+  const lookingAhead = useMemo(() => {
+    if (holdings.length === 0) return null;
+    return buildLookingAhead({
+      holdings,
+      allocation: exposureAllocation,
+      resilience: resilienceProfile,
+      upcomingEvents: payload.upcomingEvents,
+      intelligenceDepth: productAccess.intelligenceDepth,
+    });
+  }, [
+    exposureAllocation,
+    holdings,
+    payload.upcomingEvents,
+    productAccess.intelligenceDepth,
+    resilienceProfile,
+  ]);
+
   const fourQuestions = useMemo(() => {
     if (holdings.length === 0) return null;
     const nextEvent = payload.upcomingEvents?.[0];
@@ -556,19 +574,21 @@ export default function DashboardPage() {
             <>
               <CompleteTrialIndicator access={productAccess} />
               <FreeIntelligenceNote access={productAccess} />
-              {portfolioChangeAttention ? (
-                <SinceLastCheckSection
-                  attention={portfolioChangeAttention}
-                  accessMode={smartAlertsMode}
-                  userSub={userSub}
-                />
-              ) : null}
               <FourQuestionsSection
                 bundle={fourQuestions}
                 intelligenceDepth={productAccess.intelligenceDepth}
               />
+              {portfolioChangeAttention ? (
+                <NewAndNotableSection
+                  attention={portfolioChangeAttention}
+                  accessMode={smartAlertsMode}
+                />
+              ) : null}
               {evolutionTimeline ? (
                 <DashboardPortfolioEvolutionCard timeline={evolutionTimeline} />
+              ) : null}
+              {lookingAhead ? (
+                <LookingAheadSection model={lookingAhead} />
               ) : null}
             </>
           ) : null}
@@ -595,11 +615,6 @@ export default function DashboardPage() {
             <DashboardPerspectivesWidget />
 
             <DashboardCashIntelligenceCard holdings={holdings} />
-
-            <DashboardPortfolioExposureCard
-              allocation={exposureAllocation}
-              scenarioResults={resilienceProfile?.scenarioResults ?? null}
-            />
 
             <DashboardExploreTools
               emphasizeGoals={smartDashboard.emphasis.exploreGoalsHighlight}

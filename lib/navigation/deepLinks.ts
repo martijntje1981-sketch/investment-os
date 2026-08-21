@@ -46,8 +46,10 @@ export const SECTION_IDS = {
   goalScore: "goal-score",
   newsMarketBrief: "news-market-brief",
   portfolioNews: "portfolio-news",
-  /** Dashboard compact change-attention card (Phase 13). */
-  sinceLastCheck: "since-last-check",
+  /** Dashboard New & Notable card. */
+  newAndNotable: "new-and-notable",
+  /** @deprecated Alias kept so older hashes still resolve. */
+  sinceLastCheck: "new-and-notable",
   /** Central Scorecard page sections (`/portfolio-health`). */
   scorecardHealth: "health",
   scorecardGoal: "goal",
@@ -94,7 +96,8 @@ export const DASHBOARD_DEEP_LINKS = {
   marketBriefing: `${NEWS_HUB_PATH}#${SECTION_IDS.newsMarketBrief}`,
   portfolioNews: `${NEWS_HUB_PATH}#${SECTION_IDS.portfolioNews}`,
   newsHub: NEWS_HUB_PATH,
-  sinceLastCheck: `${DASHBOARD_PATH}#${SECTION_IDS.sinceLastCheck}`,
+  newAndNotable: `${DASHBOARD_PATH}#${SECTION_IDS.newAndNotable}`,
+  sinceLastCheck: `${DASHBOARD_PATH}#${SECTION_IDS.newAndNotable}`,
 } as const;
 
 /** CSS class applied briefly after a successful deep-link scroll. */

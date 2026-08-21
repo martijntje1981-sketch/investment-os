@@ -106,7 +106,7 @@ describe("Dashboard deep links", () => {
       "DASHBOARD_DEEP_LINKS.dividendIntelligence",
     );
     expect(
-      read("components/dashboard/DashboardPortfolioExposureCard.tsx"),
+      read("components/portfolioEvolution/DashboardPortfolioEvolutionCard.tsx"),
     ).toContain("DASHBOARD_DEEP_LINKS.portfolioExposure");
     expect(read("components/dashboard/ScoreRing.tsx")).toContain("score.href");
     expect(

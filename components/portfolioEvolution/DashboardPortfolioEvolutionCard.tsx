@@ -5,7 +5,7 @@ import Link from "next/link";
 import { PortfolioEvolutionVisual } from "@/components/portfolioEvolution/PortfolioEvolutionVisual";
 import {
   appCardPaddingClass,
-  appDashboardLightCardClass,
+  appIntelligenceAccentStrongCardClass,
   appSectionLabelClass,
   appSectionMetaClass,
   appSectionTitleClass,
@@ -17,6 +17,7 @@ import {
   PORTFOLIO_EVOLUTION_HREF,
   type PortfolioEvolutionTimeline,
 } from "@/lib/services/portfolioEvolution";
+import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 
 export function DashboardPortfolioEvolutionCard({
   timeline,
@@ -26,7 +27,7 @@ export function DashboardPortfolioEvolutionCard({
   return (
     <section
       aria-labelledby="dashboard-evolution-heading"
-      className={`${appDashboardLightCardClass} min-w-0 overflow-x-clip border-2 border-cyan-200 bg-gradient-to-br from-cyan-50 via-white to-white`}
+      className={`${appIntelligenceAccentStrongCardClass} min-w-0 overflow-x-clip`}
       data-testid="dashboard-portfolio-evolution"
     >
       <div className={`${appCardPaddingClass} min-w-0`}>
@@ -37,9 +38,17 @@ export function DashboardPortfolioEvolutionCard({
             </p>
             <h2 className={appSectionTitleClass}>See how your portfolio changed</h2>
           </div>
-          <Link href={PORTFOLIO_EVOLUTION_HREF} className={`${appTextLinkClass} shrink-0`}>
-            View full evolution →
-          </Link>
+          <div className="flex shrink-0 flex-col items-start gap-1 sm:items-end">
+            <Link href={PORTFOLIO_EVOLUTION_HREF} className={`${appTextLinkClass} shrink-0`}>
+              View full evolution →
+            </Link>
+            <Link
+              href={DASHBOARD_DEEP_LINKS.portfolioExposure}
+              className={`${appTextLinkClass} shrink-0`}
+            >
+              View allocation →
+            </Link>
+          </div>
         </div>
 
         {timeline.emptyState === "building" && !timeline.hasValueSeries ? (

@@ -1,7 +1,9 @@
 /**
  * Semantic visual identity — Four Questions palette reused across the product.
  * Happened = cyan, Matters = violet, On track = amber, Ahead = teal.
- * Use these instead of one-off pastel borders.
+ * These four colors stay a Tobailey signature inside Four Questions.
+ * Outside Four Questions, major Dashboard intelligence uses the shared
+ * Q1 cyan family in appSurface (`appIntelligenceAccent*`), not violet/amber/teal.
  */
 
 export const appIdentityHappenedCardClass =

@@ -34,7 +34,10 @@ describe("Dashboard allocation intelligence UI", () => {
     expect(card).not.toContain("look-through");
     expect(card).not.toContain("look through");
     expect(engine).not.toContain("constituent");
-    expect(dashboard).toContain("scenarioResults={resilienceProfile?.scenarioResults");
+    expect(dashboard).not.toContain("DashboardPortfolioExposureCard");
+    expect(
+      read("components/portfolioEvolution/DashboardPortfolioEvolutionCard.tsx"),
+    ).toContain("View allocation");
     expect(dashboard).not.toContain("fetch(");
   });
 

@@ -157,7 +157,13 @@ describe("dashboard phase 2 compact previews", () => {
     const holdingsIdx = dashboardSource.indexOf("<HoldingsToday");
     expect(fourIdx).toBeGreaterThan(-1);
     expect(evolutionIdx).toBeGreaterThan(fourIdx);
-    expect(holdingsIdx).toBeGreaterThan(evolutionIdx);
+    expect(dashboardSource.indexOf("<LookingAheadSection")).toBeGreaterThan(
+      evolutionIdx,
+    );
+    expect(holdingsIdx).toBeGreaterThan(
+      dashboardSource.indexOf("<LookingAheadSection"),
+    );
+    expect(dashboardSource).not.toContain("DashboardPortfolioExposureCard");
     expect(dashboardSource).not.toContain("DashboardPortfolioHistorySection");
     expect(dashboardSource).not.toContain("DashboardContributionsCard");
     expect(dashboardSource).not.toContain("DashboardDividendCard");

@@ -4,6 +4,7 @@ import { Minus, TrendingDown, TrendingUp, Waves } from "lucide-react";
 
 import { ExpandableDashboardSection } from "@/components/dashboard/ExpandableDashboardSection";
 import {
+  appIntelligenceAccentIconWellClass,
   appSectionBodyClass,
   appSectionMetaClass,
 } from "@/components/layout/appSurface";
@@ -147,7 +148,7 @@ export function DashboardMarketPulseCard({
       titleId="market-pulse-preview-heading"
       subtitle="Broader market state in one glance"
       icon={<Waves className="h-5 w-5" />}
-      iconToneClassName="bg-amber-50 text-amber-700"
+      iconToneClassName={appIntelligenceAccentIconWellClass}
       loading={isLoading}
       expandable={canExpand}
       deepLink={{ href: "/market-pulse", label: "Open Market Pulse" }}

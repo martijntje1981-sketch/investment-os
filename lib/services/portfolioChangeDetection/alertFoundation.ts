@@ -18,7 +18,7 @@ export function toAlertCandidate(
       {
         channel: "in_app",
         ready: true,
-        reason: "Surfaced in the Since your last check attention card.",
+        reason: "Surfaced in the New & Notable attention card.",
       },
       {
         channel: "email",

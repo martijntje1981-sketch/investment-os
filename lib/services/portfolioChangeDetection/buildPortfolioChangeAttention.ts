@@ -18,6 +18,7 @@ import {
   DAILY_COMPARISON_LIMITATION,
   INSUFFICIENT_CHANGE_HISTORY_COPY,
   NOTHING_IMPORTANT_CHANGED_COPY,
+  NOTHING_MATERIAL_SUPPORT_COPY,
   PORTFOLIO_CHANGE_MAX_PRIMARY,
   PORTFOLIO_CHANGE_MAX_SECONDARY,
   STRUCTURAL_COMPARISON_LIMITATION,
@@ -96,7 +97,6 @@ function formatSnapshotWhen(iso: string | null): string | null {
   return new Intl.DateTimeFormat("en-GB", {
     day: "numeric",
     month: "short",
-    year: "numeric",
   }).format(date);
 }
 
@@ -107,13 +107,11 @@ function buildWindow(input: {
 }): PortfolioChangeWindow {
   if (input.previous) {
     const when = formatSnapshotWhen(input.previous.capturedAt);
-    const kindLabel =
-      input.previous.snapshotKind === "monthly" ? "monthly" : "weekly";
     return {
       kind: "live_vs_snapshot",
       label: when
-        ? `Compared with your last ${kindLabel} snapshot · ${when}`
-        : `Compared with your last ${kindLabel} snapshot`,
+        ? `Compared with ${when} snapshot`
+        : "Compared with latest stored snapshot",
       previousCapturedAt: input.previous.capturedAt,
       detectedAt: input.detectedAt,
       snapshotKind: input.previous.snapshotKind,
@@ -257,7 +255,7 @@ export function buildPortfolioChangeAttention(
     status: "nothing_material",
     headline: NOTHING_IMPORTANT_CHANGED_COPY,
     support: previous
-      ? "No holding move, concentration, goal, or risk shift crossed Tobailey’s materiality floor."
+      ? NOTHING_MATERIAL_SUPPORT_COPY
       : "Today’s moves are small. Structural comparison will appear after a stored snapshot exists.",
     window,
     primary: null,

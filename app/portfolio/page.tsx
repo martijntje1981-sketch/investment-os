@@ -22,6 +22,7 @@ import {
 import { ConversionDetailsDisclosure } from "@/components/currency/ConversionDetailsDisclosure";
 import { PortfolioFundingSection } from "@/components/contributions/PortfolioFundingSection";
 import { PortfolioHistoryNavCard } from "@/components/portfolioHistory/PortfolioHistoryNavCard";
+import { PortfolioAllocationNavCard } from "@/components/portfolio/PortfolioAllocationNavCard";
 import { formatListingLookupGuidance } from "@/lib/client/listingLookupGuidance";
 import { needsManualPricingSelection } from "@/lib/client/holdingVenuePresentation";
 import {
@@ -752,6 +753,7 @@ export default function PortfolioPage() {
         <ConversionDetailsDisclosure compactTrigger />
 
         <PortfolioHistoryNavCard variant="card" />
+        <PortfolioAllocationNavCard />
 
         <PortfolioFundingSection
           portfolioValueEur={totalValue}

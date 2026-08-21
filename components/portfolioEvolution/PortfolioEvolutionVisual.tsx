@@ -6,6 +6,8 @@ import { PortfolioEvolutionChart } from "@/components/portfolioEvolution/Portfol
 import { PortfolioEvolutionMixCheckpoints } from "@/components/portfolioEvolution/PortfolioEvolutionMixCheckpoints";
 import {
   appCardValueClass,
+  appDarkCardClass,
+  appIntelligenceAccentMetricClass,
   appSectionLabelClass,
   appSectionMetaClass,
   appSectionTitleClass,
@@ -61,7 +63,7 @@ export function PortfolioEvolutionVisual({
             {beforeNow.map((metric) => (
               <div
                 key={metric.id}
-                className="rounded-2xl bg-cyan-50/80 px-4 py-3 ring-1 ring-cyan-100"
+                className={appIntelligenceAccentMetricClass}
               >
                 <p className={appSectionLabelClass}>{metric.label}</p>
                 <p className={`mt-1 ${appCardValueClass} text-[1.15rem]`}>
@@ -80,7 +82,7 @@ export function PortfolioEvolutionVisual({
       </div>
 
       <div
-        className="mt-6 rounded-[22px] bg-slate-950 px-5 py-5 text-white"
+        className={`mt-6 ${appDarkCardClass} rounded-[22px] px-5 py-5`}
         data-testid="evolution-conclusion"
       >
         <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-cyan-200">

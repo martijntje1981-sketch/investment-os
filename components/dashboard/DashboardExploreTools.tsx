@@ -5,10 +5,10 @@ import { Activity, ArrowUpRight, ScanLine, Target } from "lucide-react";
 
 import {
   appCardPaddingCompactClass,
+  appDashboardLightCardClass,
   appSectionMetaClass,
   appSectionSubtitleClass,
   appSectionTitleClass,
-  appTintedPanelClass,
 } from "@/components/layout/appSurface";
 import {
   ANALYSIS_PATH,
@@ -51,7 +51,7 @@ export function DashboardExploreTools({
   return (
     <section
       aria-labelledby="dashboard-explore-tools-heading"
-      className={`${appTintedPanelClass} ${appCardPaddingCompactClass}`}
+      className={`${appDashboardLightCardClass} ${appCardPaddingCompactClass}`}
       data-testid="explore-tobailey"
     >
       <div className="min-w-0">

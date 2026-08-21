@@ -1,5 +1,6 @@
 import {
   appDashboardDarkMutedClass,
+  appIntelligenceAccentIconWellClass,
   appSectionSubtitleClass,
   appSectionTitleClass,
 } from "@/components/layout/appSurface";
@@ -16,7 +17,7 @@ export function DashboardSectionHeader({
   title,
   subtitle,
   icon,
-  iconToneClassName = "bg-violet-50 text-violet-700 ring-1 ring-violet-100",
+  iconToneClassName = appIntelligenceAccentIconWellClass,
   trailing,
   bordered = true,
   className,
@@ -62,7 +63,7 @@ export function DashboardSectionHeader({
             className={cn(
               "flex shrink-0 items-center justify-center rounded-2xl shadow-sm",
               isFeature
-                ? "h-11 w-11 bg-violet-500/20 text-violet-200 ring-1 ring-violet-400/25"
+                ? "h-11 w-11 bg-cyan-400/20 text-cyan-100 ring-1 ring-cyan-300/25"
                 : isHoldings
                   ? "h-11 w-11 bg-white text-slate-700 ring-1 ring-slate-200/90"
                   : "h-10 w-10",

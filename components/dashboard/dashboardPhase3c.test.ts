@@ -21,12 +21,13 @@ describe("Phase 3C Smart Dashboard Intelligence wiring", () => {
     const order = [
       "<DashboardSummary",
       "<FourQuestionsSection",
+      "<NewAndNotableSection",
       "<DashboardPortfolioEvolutionCard",
+      "<LookingAheadSection",
       "<HoldingsToday",
       "<DashboardMarketPulseCard",
       "<DashboardPerspectivesWidget",
       "<DashboardCashIntelligenceCard",
-      "<DashboardPortfolioExposureCard",
       "<DashboardExploreTools",
       "<DashboardMarketStatus",
     ].map((token) => dashboard.indexOf(token));

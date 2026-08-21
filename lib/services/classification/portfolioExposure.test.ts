@@ -317,22 +317,19 @@ describe("dashboard portfolio exposure integration", () => {
     "utf8",
   );
 
-  it("places Portfolio exposure after Market Pulse and before Explore tools", () => {
+  it("places Market Pulse, Cash, and Explore tools after Holdings without a large Exposure card", () => {
     const holdingsIdx = dashboardSource.indexOf("<HoldingsToday");
     const pulseIdx = dashboardSource.indexOf(
       "<DashboardMarketPulseCard",
       holdingsIdx,
     );
     const cashIdx = dashboardSource.indexOf("<DashboardCashIntelligenceCard");
-    const exposureIdx = dashboardSource.indexOf(
-      "<DashboardPortfolioExposureCard",
-    );
     const exploreIdx = dashboardSource.indexOf("<DashboardExploreTools");
     expect(holdingsIdx).toBeGreaterThan(-1);
     expect(pulseIdx).toBeGreaterThan(holdingsIdx);
     expect(cashIdx).toBeGreaterThan(pulseIdx);
-    expect(exposureIdx).toBeGreaterThan(cashIdx);
-    expect(exploreIdx).toBeGreaterThan(exposureIdx);
+    expect(exploreIdx).toBeGreaterThan(cashIdx);
+    expect(dashboardSource).not.toContain("DashboardPortfolioExposureCard");
     expect(dashboardSource).not.toContain("DashboardContributionsCard");
   });
 

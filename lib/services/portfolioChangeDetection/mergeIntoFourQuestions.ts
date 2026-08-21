@@ -46,7 +46,7 @@ export function mergePortfolioChangeIntoFourQuestions(
         expandItems: [
           ...additions.map((signal) => ({
             id: `change-attention-${signal.id}`,
-            label: "Since your last check",
+            label: "New & Notable",
             detail: signal.title,
             bullets: [signal.whyItMatters, signal.evidence.howCalculated],
             href: signal.destination.href,

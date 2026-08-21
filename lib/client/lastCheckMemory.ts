@@ -1,6 +1,6 @@
 /**
- * Client-only last-opened timestamp for the "Since your last check" label.
- * Not a previous portfolio state. Never used as a comparison baseline.
+ * Legacy last-opened timestamp helper.
+ * Not a previous portfolio state and not a New & Notable comparison baseline.
  */
 
 const STORAGE_PREFIX = "tobailey:last-check-at";

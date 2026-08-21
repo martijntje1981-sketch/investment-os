@@ -34,6 +34,27 @@ export const appCardInteractiveClass =
 export const appTintedPanelClass =
   "min-w-0 overflow-hidden rounded-[24px] border-2 border-cyan-200 bg-gradient-to-br from-cyan-100 via-sky-50 to-white shadow-[0_12px_32px_-16px_rgba(8,145,178,0.38)] md:rounded-[28px]";
 
+/**
+ * Primary Tobailey intelligence accent — Q1 cyan/light-blue family.
+ * Use on major Dashboard intelligence outside Four Questions.
+ * White/off-white content with a cyan border; not a full color block.
+ */
+export const appIntelligenceAccentCardClass =
+  "min-w-0 overflow-hidden rounded-[24px] border border-cyan-200/80 bg-white shadow-[var(--shadow-card)] md:rounded-[28px]";
+
+/** Slightly stronger cyan wash for signature intelligence (Portfolio Evolution). */
+export const appIntelligenceAccentStrongCardClass =
+  "min-w-0 overflow-hidden rounded-[24px] border border-cyan-200 bg-gradient-to-br from-cyan-50 via-white to-white shadow-[0_12px_32px_-18px_rgba(8,145,178,0.22)] md:rounded-[28px]";
+
+export const appIntelligenceAccentMetricClass =
+  "min-w-0 rounded-2xl border border-cyan-100 bg-cyan-50/70 px-4 py-3";
+
+export const appIntelligenceAccentEyebrowClass =
+  "text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-800";
+
+export const appIntelligenceAccentIconWellClass =
+  "bg-cyan-50 text-cyan-800 ring-1 ring-cyan-100";
+
 /** Soft section band behind stacked supporting content. */
 export const appSectionBandClass =
   "rounded-[28px] border border-brand/12 bg-brand-soft/45 p-4 md:p-5";
