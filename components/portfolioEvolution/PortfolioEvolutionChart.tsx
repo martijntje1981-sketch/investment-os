@@ -328,7 +328,7 @@ export function PortfolioEvolutionChart({
       </div>
       {!compact && selected ? (
         <p className={`mt-2 ${appSectionMetaClass}`}>
-          A recorded {selected.title.toLowerCase()} is funding, not investment return.
+          A recorded {selected.kind} is funding, not investment return.
         </p>
       ) : null}
     </div>

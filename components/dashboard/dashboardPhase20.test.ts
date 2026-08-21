@@ -42,7 +42,7 @@ describe("Phase 20 Dashboard intelligence refinement", () => {
   it("B. New & Notable renders", () => {
     expect(dashboard).toContain("NewAndNotableSection");
     expect(notable).toContain("New & Notable");
-    expect(notable).toContain("Meaningful changes worth knowing about");
+    expect(notable).toContain("Changes worth knowing about");
     expect(notable).toContain('id="new-and-notable"');
   });
 

@@ -38,7 +38,7 @@ export function LookingAheadSection({
           </p>
         ) : (
           <p className={`mt-0.5 ${appSectionMetaClass}`}>
-            What existing evidence suggests is most relevant to watch next
+            What the evidence suggests to watch next
           </p>
         )}
 

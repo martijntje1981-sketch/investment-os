@@ -172,7 +172,7 @@ export function PortfolioEvolutionSection({
 
       {complete && timeline.fundingEvents.length > 0 ? (
         <div className="mt-6">
-          <h3 className={appSectionTitleClass}>Your contributions and their effect</h3>
+          <h3 className={appSectionTitleClass}>Recorded contributions</h3>
           <ul className="mt-3 space-y-3">
             {timeline.fundingEvents.map((event) => (
               <li

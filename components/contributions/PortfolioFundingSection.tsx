@@ -39,6 +39,7 @@ import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 import { usePortfolioContributions } from "@/lib/client/usePortfolioContributions";
 import { formatPortfolioPercent } from "@/lib/client/portfolioAnalysis";
 import { formatSignedPortfolioCurrency } from "@/lib/client/portfolioMovementFormat";
+import { activityTypeLabel } from "@/lib/services/contributions/activityLabels";
 import type {
   ContributionHoldingOption,
   PortfolioContributionEntry,
@@ -287,9 +288,7 @@ export function PortfolioFundingSection({
                                 />
                               )}
                               <span>
-                                {entry.entryType === "contribution"
-                                  ? "Contribution"
-                                  : "Withdrawal"}
+                                {activityTypeLabel(entry)}
                               </span>
                             </p>
                             <p className={`mt-1 ${appSectionMetaClass}`}>

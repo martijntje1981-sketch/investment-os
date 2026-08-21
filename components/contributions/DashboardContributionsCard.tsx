@@ -29,6 +29,7 @@ import { formatSignedPortfolioCurrency } from "@/lib/client/portfolioMovementFor
 import { formatPortfolioPercent } from "@/lib/client/portfolioAnalysis";
 import type { DashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
 import { PORTFOLIO_HISTORY_PATH } from "@/lib/navigation/appRoutes";
+import { activityTypeLabel } from "@/lib/services/contributions/activityLabels";
 import type { ContributionHoldingOption } from "@/lib/services/contributions/types";
 
 const RECENT_ENTRY_LIMIT = 3;
@@ -200,13 +201,11 @@ export function DashboardContributionsCard({
                   >
                     <span className="min-w-0">
                       <span className="block truncate text-sm font-medium text-slate-900">
-                        {entry.entryType === "withdrawal"
-                          ? "Withdrawal"
-                          : "Contribution"}
+                        {activityTypeLabel(entry)}
                         {entry.destinationType === "holding" &&
                         entry.destinationHoldingSymbol
                           ? ` · ${entry.destinationHoldingSymbol}`
-                          : " · Cash"}
+                          : ""}
                       </span>
                       <span className={appSectionMetaClass}>
                         {entry.entryDate}

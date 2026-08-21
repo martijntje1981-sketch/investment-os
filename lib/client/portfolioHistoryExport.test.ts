@@ -121,9 +121,9 @@ describe("portfolioHistoryExport", () => {
     ).toBe("Opening contribution");
     expect(
       activityTypeLabel(entry({ entryType: "withdrawal", source: "manual" })),
-    ).toBe("Withdrawal");
+    ).toBe("Recorded withdrawal");
     expect(activityTypeLabel(entry({ source: "import" }))).toBe(
-      "Contribution (imported)",
+      "Recorded contribution (imported)",
     );
     expect(activitySourceLabel(entry({ source: "opening_balance" }))).toBe(
       "Opening balance",
@@ -153,6 +153,10 @@ describe("portfolioHistoryExport", () => {
     );
     expect(history).toHaveLength(3);
     expect(history[0]?.Date).toBe("2026-01-01");
+    expect(history[0]?.Destination).toBe("Portfolio");
+    expect(history[0]?.Destination).not.toBe("Cash");
+    expect(history[2]?.Type).toBe("Recorded withdrawal");
+    expect(history[2]?.Destination).toBe("Portfolio");
     expect(history[1]?.Destination).toBe("Holding");
     expect(history[1]?.["Holding symbol"]).toBe("VWCE");
     expect(history[1]?.["Holding name"]).toBe("Vanguard FTSE All-World");

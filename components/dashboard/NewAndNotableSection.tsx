@@ -64,7 +64,7 @@ export function NewAndNotableSection({
             New & Notable
           </p>
           <p className={`mt-0.5 ${appSectionMetaClass}`}>
-            Meaningful changes worth knowing about
+            Changes worth knowing about
           </p>
           {attention.window.kind !== "unavailable" ? (
             <p className={`mt-1 ${appSectionMetaClass}`}>{attention.window.label}</p>

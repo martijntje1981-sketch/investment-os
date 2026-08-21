@@ -199,7 +199,7 @@ export default function PortfolioAnalysisPage() {
       <PageContainer>
         <PageHero
           title="Analysis"
-          subtitle="Explore your portfolio through four questions — explanation, evidence and tools."
+          subtitle="Four questions — explanation, evidence and tools."
           backToDashboard
           stats={
             <p className={`${appSectionMetaClass} mt-0`}>

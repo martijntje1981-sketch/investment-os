@@ -428,7 +428,7 @@ export default function PortfolioHistoryPage() {
               <EmptyPortfolioGuide
                 density="compact"
                 title="No holdings yet"
-                body="Add or import holdings on the Portfolio page. History still tracks cash contributions independently."
+                body="Add or import holdings on the Portfolio page. History still tracks recorded contributions independently."
                 className="border-0 shadow-none"
               />
             ) : (

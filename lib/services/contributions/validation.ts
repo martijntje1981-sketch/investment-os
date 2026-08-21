@@ -2,7 +2,10 @@ import {
   normalizePortfolioBaseCurrency,
   type PortfolioBaseCurrency,
 } from "@/lib/types/portfolioBaseCurrency";
-import { normalizeDestinationType } from "@/lib/services/contributions/destination";
+import {
+  CONTRIBUTION_HOLDING_OR_PORTFOLIO_MESSAGE,
+  normalizeDestinationType,
+} from "@/lib/services/contributions/destination";
 import type {
   ContributionEntryDraft,
   ContributionEntryType,
@@ -132,7 +135,7 @@ export function validateContributionDraft(
       return {
         ok: false,
         field: "destinationHoldingId",
-        message: "Choose an investment holding, or use Add to cash.",
+        message: CONTRIBUTION_HOLDING_OR_PORTFOLIO_MESSAGE,
       };
     }
 

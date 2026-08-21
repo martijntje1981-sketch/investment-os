@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  contributionDestinationKindLabel,
   contributionDestinationLabel,
   formatContributionDestinationLines,
 } from "@/lib/services/contributions/destination";
@@ -35,10 +36,11 @@ function entry(
 }
 
 describe("contribution destination display", () => {
-  it("labels cash destinations", () => {
-    expect(contributionDestinationLabel(entry())).toBe("Cash");
+  it("labels unspecified destinations as portfolio, not cash", () => {
+    expect(contributionDestinationLabel(entry())).toBe("Portfolio");
+    expect(contributionDestinationKindLabel(entry())).toBe("Portfolio");
     expect(formatContributionDestinationLines(entry(), (n) => `€${n}`)).toEqual(
-      ["Destination: Cash"],
+      ["Destination: Portfolio"],
     );
   });
 
@@ -61,5 +63,10 @@ describe("contribution destination display", () => {
       "Price: €120.97",
       "Fee: €2.5",
     ]);
+    expect(
+      contributionDestinationKindLabel({
+        destinationType: "holding",
+      }),
+    ).toBe("Holding");
   });
 });

@@ -62,7 +62,7 @@ export function DashboardExploreTools({
           Understand your portfolio
         </h2>
         <p className={`mt-1 ${appSectionSubtitleClass}`}>
-          Go deeper when you want the full story.
+          Performance, goals and structure.
         </p>
       </div>
 

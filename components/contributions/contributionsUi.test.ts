@@ -58,7 +58,7 @@ describe("contributions ledger UI", () => {
     expect(fundingSource).toContain("PORTFOLIO_FUNDING_EMPTY_COPY");
     expect(fundingSource).toContain("PORTFOLIO_FUNDING_OPENING_ACTION");
     expect(copySource).toContain(
-      "Track how much money you have added to or withdrawn from this portfolio.",
+      "Record contributions and withdrawals for this portfolio.",
     );
   });
 
@@ -121,7 +121,7 @@ describe("contributions ledger UI", () => {
     expect(cardSource).toContain("!hasEntries");
     expect(cardSource).toContain("CONTRIBUTIONS_ONBOARDING_COPY");
     expect(copySource).toContain(
-      "Add the total amount you have contributed to establish your starting point.",
+      "Add the total you have contributed to set a starting point.",
     );
   });
 

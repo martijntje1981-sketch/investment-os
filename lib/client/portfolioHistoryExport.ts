@@ -12,6 +12,7 @@ import {
   activitySourceLabel,
   activityTypeLabel,
 } from "@/lib/services/contributions/activityLabels";
+import { contributionDestinationKindLabel } from "@/lib/services/contributions/destination";
 import type {
   ContributionSummary,
   PortfolioContributionEntry,
@@ -190,7 +191,7 @@ export function buildPortfolioHistoryWorkbook(
       activityTypeLabel(entry),
       Math.round(entry.amount * 100) / 100,
       entry.currency,
-      entry.destinationType === "holding" ? "Holding" : "Cash",
+      contributionDestinationKindLabel(entry),
       symbol,
       resolveHoldingName(symbol || null, input.holdings),
       entry.destinationQuantity ?? "",
@@ -248,13 +249,13 @@ export function buildPortfolioHistoryWorkbook(
     ["Portfolio History export notes"],
     [],
     [
-      "This workbook summarises cash contributions and withdrawals recorded in Tobailey, plus a snapshot of current holdings.",
+      "This workbook summarises recorded contributions and withdrawals in Tobailey, plus a snapshot of current holdings.",
     ],
     [],
     ["Included"],
     ["• Manual contributions and withdrawals"],
     ["• Opening balance entries"],
-    ["• Optional destination detail (cash or one holding allocation)"],
+    ["• Optional destination detail (portfolio, or one holding note)"],
     ["• Imported contribution entries (when present)"],
     ["• Current holdings with validated market values where available"],
     [],
@@ -267,7 +268,7 @@ export function buildPortfolioHistoryWorkbook(
     [],
     ["Interpretation"],
     [
-      "Net contributed equals total contributed minus total withdrawn. It does not account for the timing of cash flows.",
+      "Net contributed equals total contributed minus total withdrawn. Timing of those flows is not included.",
     ],
     [
       "Destination holding quantity, price and fee are allocation notes only. They do not change holdings or double-count portfolio value.",

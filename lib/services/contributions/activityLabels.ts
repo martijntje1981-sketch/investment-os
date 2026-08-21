@@ -7,12 +7,12 @@ export function activityTypeLabel(
     return "Opening contribution";
   }
   if (entry.entryType === "withdrawal") {
-    return "Withdrawal";
+    return "Recorded withdrawal";
   }
   if (entry.source === "import") {
-    return "Contribution (imported)";
+    return "Recorded contribution (imported)";
   }
-  return "Contribution";
+  return "Recorded contribution";
 }
 
 export function activitySourceLabel(

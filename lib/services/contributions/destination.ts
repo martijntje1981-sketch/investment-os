@@ -9,6 +9,20 @@ export function normalizeDestinationType(
   return value === "holding" ? "holding" : "cash";
 }
 
+/** Unspecified destination is funding, not a cash-holding claim. */
+export const PORTFOLIO_DESTINATION_LABEL = "Portfolio";
+export const HOLDING_DESTINATION_KIND_LABEL = "Holding";
+export const CONTRIBUTION_HOLDING_OR_PORTFOLIO_MESSAGE =
+  "Choose an investment holding, or record it as a portfolio contribution.";
+
+export function contributionDestinationKindLabel(
+  entry: Pick<PortfolioContributionEntry, "destinationType">,
+): string {
+  return entry.destinationType === "holding"
+    ? HOLDING_DESTINATION_KIND_LABEL
+    : PORTFOLIO_DESTINATION_LABEL;
+}
+
 export function contributionDestinationLabel(
   entry: Pick<
     PortfolioContributionEntry,
@@ -16,9 +30,9 @@ export function contributionDestinationLabel(
   >,
 ): string {
   if (entry.destinationType === "holding") {
-    return entry.destinationHoldingSymbol?.trim() || "Holding";
+    return entry.destinationHoldingSymbol?.trim() || HOLDING_DESTINATION_KIND_LABEL;
   }
-  return "Cash";
+  return PORTFOLIO_DESTINATION_LABEL;
 }
 
 export function formatContributionDestinationLines(

@@ -259,7 +259,7 @@ describe("Portfolio Evolution", () => {
     });
     const event = timeline.fundingEvents.find((row) => row.id === "c1");
     expect(event?.amount).toBe(400);
-    expect(event?.immediateEffectLabel).toMatch(/€400 was added/);
+    expect(event?.immediateEffectLabel).toBe("Added to your portfolio.");
     expect(timeline.conclusion.primary).not.toMatch(/became Bitcoin/i);
   });
 
@@ -272,7 +272,7 @@ describe("Portfolio Evolution", () => {
     });
     const event = timeline.fundingEvents.find((row) => row.id === "w1");
     expect(event?.amount).toBe(-1000);
-    expect(event?.immediateEffectLabel).toMatch(/withdrawn/);
+    expect(event?.immediateEffectLabel).toBe("Removed from your portfolio.");
   });
 
   it("C. contribution cash allocation coincidence only when snapshots prove it", () => {
@@ -315,7 +315,11 @@ describe("Portfolio Evolution", () => {
       entries: [contribution],
       snapshots: [snapshotFromState(thenState())],
     });
-    expect(timeline.fundingEvents[0]?.recordedDestinationLabel).toBe("Recorded as cash");
+    expect(timeline.fundingEvents[0]?.recordedDestinationLabel).toBeNull();
+    expect(timeline.fundingEvents[0]?.immediateEffectLabel).toBe(
+      "Added to your portfolio.",
+    );
+    expect(timeline.fundingEvents[0]?.immediateEffectLabel).not.toMatch(/cash/i);
     expect(JSON.stringify(timeline)).not.toMatch(/became Bitcoin/i);
     expect(timeline.fundingEvents[0]?.immediateEffectLabel).not.toMatch(/Bitcoin/i);
   });

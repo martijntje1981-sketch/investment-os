@@ -1,3 +1,4 @@
+import { CONTRIBUTION_HOLDING_OR_PORTFOLIO_MESSAGE } from "@/lib/services/contributions/destination";
 import {
   mapDbContributionToEntry,
   sortContributionsByDateDesc,
@@ -67,7 +68,7 @@ async function assertOwnedHolding(
   }
 
   if (data.asset_type === "cash") {
-    throw new Error("Choose an investment holding, or use Add to cash.");
+    throw new Error(CONTRIBUTION_HOLDING_OR_PORTFOLIO_MESSAGE);
   }
 
   return {

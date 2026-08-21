@@ -60,10 +60,10 @@ describe("portfolio history UI", () => {
   });
 
   it("extends add activity with cash or holding destination", () => {
-    expect(dialog).toContain("Add to cash");
-    expect(dialog).toContain("Invest in a holding");
+    expect(dialog).toContain("CONTRIBUTION_DEFAULT_DESTINATION_ACTION");
+    expect(dialog).toContain("CONTRIBUTION_HOLDING_DESTINATION_ACTION");
     expect(dialog).toContain("destinationType");
-    expect(dialog).toContain("does not change holding");
+    expect(dialog).toContain("CONTRIBUTION_FUNDING_ONLY_NOTE");
     expect(exportSource).toContain('"Destination"');
     expect(exportSource).toContain('"Price per unit"');
     expect(exportSource).toContain("sanitizeExcelCellValue");

@@ -23,7 +23,7 @@ export function AnalysisFourQuestionsNav() {
       data-testid="analysis-four-questions-nav"
     >
       <p className={`${appSectionLabelClass} text-brand-navy`}>
-        Explore your portfolio
+        Four questions
       </p>
       <ul className="mt-3 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
         {ANALYSIS_FOUR_QUESTION_NAV.map((item) => (

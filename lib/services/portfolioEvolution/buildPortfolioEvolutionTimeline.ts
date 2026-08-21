@@ -262,19 +262,17 @@ function buildFundingEvents(
     const destination =
       entry.destinationType === "holding" && entry.destinationHoldingSymbol
         ? `Recorded toward ${entry.destinationHoldingSymbol}`
-        : entry.destinationType === "cash"
-          ? "Recorded as cash"
-          : null;
+        : null;
 
     return {
       id: entry.id,
       date: entry.entryDate,
       kind: isWithdrawal ? "withdrawal" : "contribution",
       amount,
-      title: isWithdrawal ? "Withdrawal" : "Contribution",
+      title: isWithdrawal ? "Recorded withdrawal" : "Recorded contribution",
       immediateEffectLabel: isWithdrawal
-        ? `€${Math.round(Math.abs(amount)).toLocaleString("en-GB")} was withdrawn from the portfolio.`
-        : `€${Math.round(amount).toLocaleString("en-GB")} was added to the portfolio.`,
+        ? "Removed from your portfolio."
+        : "Added to your portfolio.",
       recordedDestinationLabel: destination,
       allocationCoincidence: complete
         ? allocationCoincidence(entry.entryDate, snapshots, now)

@@ -15,11 +15,15 @@ import {
   CONTRIBUTIONS_MANAGE_LABEL,
   CONTRIBUTIONS_ONBOARDING_COPY,
   CONTRIBUTIONS_OPENING_LABEL,
+  CONTRIBUTION_DEFAULT_DESTINATION_ACTION,
+  CONTRIBUTION_FUNDING_ONLY_NOTE,
+  CONTRIBUTION_HOLDING_DESTINATION_ACTION,
 } from "@/lib/client/contributionsCopy";
 import { formatContributionBaseAmount } from "@/lib/client/contributionsFormat";
 import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 import { formatSignedPortfolioCurrency } from "@/lib/client/portfolioMovementFormat";
 import { formatPortfolioPercent } from "@/lib/client/portfolioAnalysis";
+import { activityTypeLabel } from "@/lib/services/contributions/activityLabels";
 import { formatContributionDestinationLines } from "@/lib/services/contributions/destination";
 import type {
   ContributionEntryDraft,
@@ -407,7 +411,7 @@ export function ManageContributionsDialog({
                           }))
                         }
                       />
-                      Add to cash
+                      {CONTRIBUTION_DEFAULT_DESTINATION_ACTION}
                     </label>
                     <label className="flex min-h-[44px] items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-800">
                       <input
@@ -437,7 +441,7 @@ export function ManageContributionsDialog({
                           }))
                         }
                       />
-                      Invest in a holding
+                      {CONTRIBUTION_HOLDING_DESTINATION_ACTION}
                     </label>
                   </div>
                   {draft.entryType === "contribution" &&
@@ -547,8 +551,7 @@ export function ManageContributionsDialog({
                         : "Enter quantity and price"}
                     </p>
                     <p className={`mt-1 ${appSectionMetaClass}`}>
-                      Recorded as cash inflow only. This does not change holding
-                      quantities or create a buy.
+                      {CONTRIBUTION_FUNDING_ONLY_NOTE}
                     </p>
                   </div>
                 </>
@@ -634,7 +637,6 @@ export function ManageContributionsDialog({
               <h3 className="text-sm font-semibold text-slate-900">Entries</h3>
               <ul className="space-y-3">
                 {entries.map((entry) => {
-                  const isOpening = entry.source === "opening_balance";
                   const isDeleting = deleteConfirmId === entry.id;
                   const destinationLines = formatContributionDestinationLines(
                     entry,
@@ -649,10 +651,7 @@ export function ManageContributionsDialog({
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div className="min-w-0">
                           <p className="text-sm font-semibold text-slate-900">
-                            {entry.entryType === "contribution"
-                              ? "Contribution"
-                              : "Withdrawal"}
-                            {isOpening ? ` · ${CONTRIBUTIONS_OPENING_LABEL}` : ""}
+                            {activityTypeLabel(entry)}
                           </p>
                           <p className={`mt-1 ${appSectionMetaClass}`}>
                             {formatEntryDate(entry.entryDate)} ·{" "}
