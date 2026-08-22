@@ -59,7 +59,7 @@ export default async function ForgotPasswordPage({
               </div>
             </div>
 
-            <button className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-6 text-sm font-bold text-white shadow-lg transition hover:bg-slate-800">
+            <button className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-navy-hero px-6 text-sm font-bold text-white shadow-lg transition hover:bg-navy-card">
               Send reset link
               <ArrowRight className="h-4 w-4" />
             </button>

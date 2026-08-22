@@ -253,7 +253,7 @@ export function PortfolioValueCard({
             ) : null}
           </div>
 
-          <div className="mt-3 min-w-0 border-t border-cyan-200/80 pt-3 lg:mt-4 lg:grid lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] lg:items-end lg:gap-5 lg:pt-4">
+          <div className="mt-3 min-w-0 border-t border-brand/20 pt-3 lg:mt-4 lg:grid lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] lg:items-end lg:gap-5 lg:pt-4">
             <div className="min-w-0">
               <p className={appDashboardHeroMetricLabelClass}>Latest move</p>
               <p

@@ -742,7 +742,7 @@ export default function HoldingDetailPage() {
 
               <Link
                 href="/portfolio"
-                className="mt-7 inline-flex items-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white"
+                className="mt-7 inline-flex items-center gap-2 rounded-xl bg-navy-hero px-5 py-3 text-sm font-bold text-white"
               >
                 Return to portfolio
                 <ArrowRight className="h-4 w-4" />
@@ -822,11 +822,11 @@ export default function HoldingDetailPage() {
             <div className="grid gap-8 lg:grid-cols-[1.35fr_0.65fr] lg:items-center">
               <div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded-full bg-cyan-50 px-3 py-1.5 text-[13px] font-bold uppercase tracking-[0.14em] text-cyan-800">
+                  <span className="rounded-full bg-brand-soft px-3 py-1.5 text-[13px] font-bold uppercase tracking-[0.14em] text-q1-strong">
                     {intelligence.category}
                   </span>
 
-                  <span className="rounded-full bg-sky-100 px-3 py-1.5 text-[13px] font-bold text-cyan-800">
+                  <span className="rounded-full bg-brand-soft px-3 py-1.5 text-[13px] font-bold text-q1-strong">
                     {intelligence.stance}
                   </span>
                 </div>
@@ -852,8 +852,8 @@ export default function HoldingDetailPage() {
                 </p>
               </div>
 
-              <div className="rounded-[28px] border border-cyan-100 bg-white/80 p-6 text-center">
-                <p className="text-[13px] font-bold uppercase tracking-[0.16em] text-cyan-800">
+              <div className="rounded-[28px] border border-brand/20 bg-white/80 p-6 text-center">
+                <p className="text-[13px] font-bold uppercase tracking-[0.16em] text-q1-strong">
                   Holding health
                 </p>
 
@@ -1023,7 +1023,7 @@ export default function HoldingDetailPage() {
           </div>
 
           <section className="mt-7 grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-            <article className="rounded-[28px] bg-slate-950 p-7 text-white shadow-lg sm:p-8">
+            <article className="rounded-[28px] bg-navy-hero p-7 text-white shadow-lg sm:p-8">
               <div className="flex items-center gap-3">
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10">
                   <Brain className="h-5 w-5" />
@@ -1107,7 +1107,7 @@ export default function HoldingDetailPage() {
             <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
               <div>
                 <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-50 text-violet-700">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-q2-soft text-q2-strong">
                     <Gauge className="h-5 w-5" />
                   </div>
 
@@ -1354,7 +1354,7 @@ function ComingSoonCard({
 }) {
   return (
     <article className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm">
-      <span className="rounded-full bg-violet-50 px-3 py-1.5 text-xs font-bold text-violet-700">
+      <span className="rounded-full bg-q2-soft px-3 py-1.5 text-xs font-bold text-q2-strong">
         Coming soon
       </span>
       <h2 className="mt-5 text-xl font-bold text-slate-950">{title}</h2>

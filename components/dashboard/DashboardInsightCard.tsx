@@ -54,7 +54,7 @@ export function DashboardInsightCard({
         title="Today’s portfolio insight"
         subtitle="Interpreting your Portfolio Scorecard"
         icon={<Sparkles className="h-5 w-5" />}
-        iconToneClassName="bg-violet-50 text-violet-700 ring-1 ring-violet-100"
+        iconToneClassName="bg-q2-soft text-q2-strong ring-1 ring-q2/20"
         bordered={false}
         trailing={
           <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-600">

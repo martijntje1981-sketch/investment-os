@@ -89,7 +89,7 @@ export function NewAndNotableSection({
               ))}
               <Link
                 href={primary.destination.href}
-                className="mt-3 inline-flex min-h-11 items-center gap-1.5 rounded-xl bg-slate-950 px-3.5 text-[15px] font-semibold text-white transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
+                className="mt-3 inline-flex min-h-11 items-center gap-1.5 rounded-xl bg-navy-hero px-3.5 text-[15px] font-semibold text-white transition hover:bg-navy-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
               >
                 {primary.destination.label}
                 <ArrowUpRight className="h-4 w-4" aria-hidden />
@@ -118,7 +118,7 @@ export function NewAndNotableSection({
           {accessMode === "free_preview" && attention.status === "attention" ? (
             <Link
               href={COMPLETE_UPGRADE_HREF}
-              className="mt-3 inline-flex min-h-11 items-center text-[15px] font-semibold text-cyan-800 underline-offset-2 hover:underline"
+              className="mt-3 inline-flex min-h-11 items-center text-[15px] font-semibold text-q1-strong underline-offset-2 hover:underline"
             >
               {FREE_CHANGE_TEASE}
             </Link>

@@ -35,7 +35,7 @@ describe("Dashboard hero mobile movers prominence", () => {
     expect(source).toContain("appHeroPaddingCompactClass");
     expect(source).toContain("appHeroMatchedKpiClass");
     expect(source).toContain("appDashboardHeroMetricLabelClass");
-    expect(source).toContain("mt-3 min-w-0 border-t border-cyan-200/80 pt-3");
+    expect(source).toContain("mt-3 min-w-0 border-t border-brand/20 pt-3");
     expect(source).toContain('variant="icon"');
     expect(source).toContain("space-y-3 sm:space-y-4");
   });

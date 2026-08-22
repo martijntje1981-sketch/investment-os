@@ -48,20 +48,20 @@ const TONE_VISUAL: Record<
 > = {
   intelligence: {
     surface:
-      "border border-blue-200/70 bg-gradient-to-br from-blue-50/90 via-white to-[#f3f7fb]",
-    accentBorder: "border-l-[3px] border-l-blue-500",
-    iconSurface: "bg-blue-50 text-blue-800 ring-1 ring-blue-100",
-    iconClass: "text-blue-800",
-    labelClass: "text-blue-900/80",
+      "border border-brand/25 bg-gradient-to-br from-brand-soft via-white to-[#f4f8fc]",
+    accentBorder: "border-l-[3px] border-l-brand",
+    iconSurface: "bg-brand-soft text-q1-strong ring-1 ring-brand/20",
+    iconClass: "text-q1-strong",
+    labelClass: "text-q1-deep",
     Icon: Sparkles,
   },
   resilience: {
     surface:
-      "border border-sky-200/70 bg-gradient-to-br from-sky-50/85 via-white to-[#f4f8fb]",
-    accentBorder: "border-l-[3px] border-l-sky-500",
-    iconSurface: "bg-sky-50 text-sky-800 ring-1 ring-sky-100",
-    iconClass: "text-sky-800",
-    labelClass: "text-sky-900/80",
+      "border border-q2/30 bg-gradient-to-br from-q2-soft via-white to-[#f4f7fb]",
+    accentBorder: "border-l-[3px] border-l-q2",
+    iconSurface: "bg-q2-soft text-q2-strong ring-1 ring-q2/20",
+    iconClass: "text-q2-strong",
+    labelClass: "text-q2-deep",
     Icon: Shield,
   },
   goal: {
@@ -84,20 +84,20 @@ const TONE_VISUAL: Record<
   },
   markets: {
     surface:
-      "border border-violet-200/70 bg-gradient-to-br from-violet-50/80 via-white to-[#f7f5fb]",
-    accentBorder: "border-l-[3px] border-l-violet-500",
-    iconSurface: "bg-violet-50 text-violet-800 ring-1 ring-violet-100",
-    iconClass: "text-violet-800",
-    labelClass: "text-violet-900/80",
+      "border border-q4/30 bg-gradient-to-br from-q4-soft via-white to-[#f4f6f9]",
+    accentBorder: "border-l-[3px] border-l-q4",
+    iconSurface: "bg-q4-soft text-q4-strong ring-1 ring-q4/20",
+    iconClass: "text-q4-strong",
+    labelClass: "text-q4-deep",
     Icon: Radio,
   },
   review: {
     surface:
-      "border border-indigo-200/60 bg-gradient-to-br from-indigo-50/70 via-white to-[#f5f6fb]",
-    accentBorder: "border-l-[3px] border-l-indigo-400",
-    iconSurface: "bg-indigo-50 text-indigo-800 ring-1 ring-indigo-100",
-    iconClass: "text-indigo-800",
-    labelClass: "text-indigo-900/75",
+      "border border-q3/30 bg-gradient-to-br from-q3-soft via-white to-[#f4f6fa]",
+    accentBorder: "border-l-[3px] border-l-q3",
+    iconSurface: "bg-q3-soft text-q3-strong ring-1 ring-q3/20",
+    iconClass: "text-q3-strong",
+    labelClass: "text-q3-deep",
     Icon: ClipboardList,
   },
 };

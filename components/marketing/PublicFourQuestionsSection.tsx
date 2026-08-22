@@ -19,7 +19,7 @@ export function PublicFourQuestionsSection() {
     >
       <div className="mx-auto max-w-7xl">
         <div className="mx-auto max-w-3xl text-center">
-          <p className="text-sm font-bold uppercase tracking-[0.18em] text-slate-500">
+          <p className="text-sm font-bold uppercase tracking-[0.18em] text-q1-strong">
             Four questions
           </p>
           <h2 className="mt-4 text-4xl font-black tracking-[-0.045em] text-slate-950 sm:text-5xl">
@@ -60,11 +60,11 @@ export function PublicFourQuestionsSection() {
                   {question.publicPromise}
                 </p>
                 {isOpen ? (
-                  <p className="mt-3 border-t border-slate-200/80 pt-3 text-sm leading-6 text-slate-500">
+                  <p className="mt-3 border-t border-slate-200/80 pt-3 text-sm leading-6 text-slate-700">
                     {question.publicDetail}
                   </p>
                 ) : (
-                  <p className="mt-3 text-xs font-semibold text-slate-400">
+                  <p className="mt-3 text-xs font-semibold text-slate-600">
                     Tap for one more detail
                   </p>
                 )}

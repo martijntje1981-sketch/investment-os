@@ -93,7 +93,7 @@ export function HeroPerformanceSparkline({
     <div
       className={`inline-flex shrink-0 items-center gap-0.5 rounded-full border p-0.5 ${
         onLight
-          ? "border-sky-200 bg-white"
+          ? "border-brand/25 bg-white"
           : "border-white/25 bg-white/10"
       }`}
       role="tablist"
@@ -130,11 +130,11 @@ export function HeroPerformanceSparkline({
             className={`min-h-[44px] min-w-[44px] rounded-full px-2.5 text-[13px] font-bold tracking-wide transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 ${
               selected
                 ? onLight
-                  ? "bg-slate-950 text-white"
+                  ? "bg-navy-hero text-white"
                   : "bg-white text-slate-950"
                 : enabled
                   ? onLight
-                    ? "text-slate-800 hover:bg-sky-50 hover:text-slate-950"
+                    ? "text-slate-800 hover:bg-brand-soft hover:text-slate-950"
                     : "text-white hover:bg-white/15 hover:text-white"
                   : onLight
                     ? "cursor-not-allowed text-slate-400"
@@ -155,7 +155,7 @@ export function HeroPerformanceSparkline({
       <div
         className={`min-w-0 overflow-hidden rounded-2xl border border-dashed px-3 py-2.5 ${
           onLight
-            ? "border-sky-200 bg-white/70"
+            ? "border-brand/25 bg-white/70"
             : "border-white/25 bg-white/10"
         } ${className ?? ""}`}
         aria-label={`${label} unavailable`}
@@ -233,7 +233,7 @@ export function HeroPerformanceSparkline({
     <div
       className={`min-w-0 overflow-hidden rounded-2xl border px-3 py-2.5 ${
         onLight
-          ? "border-sky-200/80 bg-white/80"
+          ? "border-brand/25/80 bg-white/80"
           : "border-white/20 bg-white/10"
       } ${className ?? ""}`}
       data-testid="hero-performance-sparkline"

@@ -63,7 +63,7 @@ export function DashboardSectionHeader({
             className={cn(
               "flex shrink-0 items-center justify-center rounded-2xl shadow-sm",
               isFeature
-                ? "h-11 w-11 bg-cyan-400/20 text-cyan-100 ring-1 ring-cyan-300/25"
+                ? "h-11 w-11 bg-brand/20 text-brand ring-1 ring-brand/30"
                 : isHoldings
                   ? "h-11 w-11 bg-white text-slate-700 ring-1 ring-slate-200/90"
                   : "h-10 w-10",

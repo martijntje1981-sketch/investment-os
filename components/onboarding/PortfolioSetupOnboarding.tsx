@@ -67,7 +67,7 @@ export function PortfolioSetupOnboarding({
 
         <div className="relative">
           <p
-            className={`inline-flex items-center gap-2 rounded-full bg-cyan-50 px-3 py-1 ${appSectionLabelClass} text-cyan-800`}
+            className={`inline-flex items-center gap-2 rounded-full bg-brand-soft px-3 py-1 ${appSectionLabelClass} text-q1-strong`}
           >
             <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
             {eyebrow}
@@ -129,10 +129,10 @@ export function PortfolioSetupOnboarding({
             {PORTFOLIO_SETUP_STEPS.map((item) => (
               <li
                 key={item.step}
-                className="flex gap-3 rounded-2xl border border-cyan-100 bg-white/80 px-3.5 py-3"
+                className="flex gap-3 rounded-2xl border border-brand/20 bg-white/80 px-3.5 py-3"
               >
                 <span
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-cyan-600 text-[13px] font-bold tabular-nums text-white"
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-q1-strong text-[13px] font-bold tabular-nums text-white"
                   aria-hidden="true"
                 >
                   {item.step}
@@ -144,7 +144,7 @@ export function PortfolioSetupOnboarding({
             ))}
           </ol>
 
-          <div className="mt-6 border-t border-cyan-200/80 pt-5">
+          <div className="mt-6 border-t border-brand/20 pt-5">
             <p className={appSectionLabelClass}>
               Supported ways to add holdings
             </p>

@@ -177,7 +177,7 @@ export function AddCryptoHoldingForm({
   }
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-slate-950/60 p-0 backdrop-blur-sm sm:items-center sm:p-5">
+    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-navy-hero/60 p-0 backdrop-blur-sm sm:items-center sm:p-5">
       <form
         onSubmit={(event) => void handleSubmit(event)}
         className="flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-t-[28px] bg-white shadow-2xl sm:rounded-[28px]"
@@ -298,7 +298,7 @@ export function AddCryptoHoldingForm({
                         onClick={() => selectSearchResult(result)}
                         className={`w-full rounded-2xl border px-4 py-3 text-left transition ${
                           active
-                            ? "border-slate-900 bg-slate-950 text-white"
+                            ? "border-slate-900 bg-navy-hero text-white"
                             : "border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white"
                         }`}
                       >
@@ -379,7 +379,7 @@ export function AddCryptoHoldingForm({
           <button
             type="submit"
             disabled={isSaving}
-            className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-3.5 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-navy-hero px-5 py-3.5 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSaving ? (
               <>

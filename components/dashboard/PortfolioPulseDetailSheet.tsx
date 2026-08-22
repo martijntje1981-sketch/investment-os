@@ -71,7 +71,7 @@ export function PortfolioPulseDetailSheet({
     >
       <button
         type="button"
-        className="absolute inset-0 bg-slate-950/45"
+        className="absolute inset-0 bg-navy-hero/45"
         aria-label="Close pulse detail"
         onClick={onClose}
       />

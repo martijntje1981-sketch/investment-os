@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { readFileSync, existsSync } from "node:fs";
 import path from "node:path";
 
-import { BRAND, BRAND_META } from "@/lib/brand";
+import { BRAND, BRAND_META, FOUR_QUESTION_COLORS } from "@/lib/brand";
 
 function read(relativePath: string): string {
   return readFileSync(path.resolve(process.cwd(), relativePath), "utf8");
@@ -14,6 +14,8 @@ describe("Tobailey brand system", () => {
     expect(BRAND.tagline).toBe("Your investments. Understood.");
     expect(BRAND.primary).toBe("#5DB7FF");
     expect(BRAND.navy).toBe("#0B1F3A");
+    expect(BRAND.navyHero).toBe("#0B1F3A");
+    expect(BRAND.navyCard).toBe("#16324F");
     expect(BRAND_META.title).toBe("Tobailey");
   });
 
@@ -44,6 +46,19 @@ describe("Tobailey brand system", () => {
     expect(css).toContain("--color-navy-hero:");
     expect(css).toContain("--color-navy-card:");
     expect(css).toContain("--accent-green:");
+    expect(css).toContain("--hero-premium-from: #b7dcf2");
+    expect(css).toContain("--q1: #2eb5f0");
+    expect(css).toContain("--q2: #2773c8");
+    expect(css).toContain("--q3: #1b4f9a");
+    expect(css).toContain("--q4: #163a66");
+  });
+
+  it("keeps Four Questions in one blue family with distinct depths", () => {
+    expect(FOUR_QUESTION_COLORS.what_happened.accent).toBe("#2EB5F0");
+    expect(FOUR_QUESTION_COLORS.what_matters_now.accent).toBe("#2773C8");
+    expect(FOUR_QUESTION_COLORS.am_i_on_track.accent).toBe("#1B4F9A");
+    expect(FOUR_QUESTION_COLORS.whats_ahead.accent).toBe("#163A66");
+    expect(FOUR_QUESTION_COLORS.whats_ahead.deep).toBe("#0B1F3A");
   });
 
   it("keeps marketing and auth surfaces on the Tobailey logo", () => {

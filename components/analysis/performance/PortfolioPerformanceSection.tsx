@@ -221,7 +221,7 @@ export function PortfolioPerformanceSection({
       <div className="border-b border-white/10 bg-white/[0.03] px-4 py-4 md:px-5 md:py-4">
         <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex min-w-0 items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-violet-500/20 text-violet-200 ring-1 ring-violet-400/25">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-q2/20 text-brand ring-1 ring-q2/30">
               <LineChart className="h-4 w-4" />
             </div>
             <div className="min-w-0">

@@ -21,7 +21,7 @@ export function DailyPortfolioBriefing({
   return (
     <div
       className={`mt-3 border-t pt-3 motion-safe:animate-[tobailey-fade-in_280ms_ease-out] motion-reduce:animate-none ${
-        onLight ? "border-sky-200/70" : "border-white/20"
+        onLight ? "border-brand/20" : "border-white/20"
       }`}
       data-testid="daily-portfolio-briefing"
     >
@@ -43,7 +43,7 @@ export function DailyPortfolioBriefing({
               href={todaysFocus.href}
               className={`mt-1 inline-flex min-h-[44px] max-w-full items-center rounded-full border px-3 py-1.5 text-[15px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:ring-offset-2 ${
                 onLight
-                  ? "border-sky-200 bg-white text-slate-900 hover:bg-sky-50"
+                  ? "border-brand/25 bg-white text-slate-900 hover:bg-brand-soft"
                   : "border-white/25 bg-white/10 text-white hover:bg-white/15 focus-visible:ring-offset-navy-hero"
               }`}
             >
@@ -53,7 +53,7 @@ export function DailyPortfolioBriefing({
             <span
               className={`mt-1 inline-flex min-h-[44px] max-w-full items-center rounded-full border px-3 py-1.5 text-[15px] font-semibold ${
                 onLight
-                  ? "border-sky-200 bg-white text-slate-900"
+                  ? "border-brand/25 bg-white text-slate-900"
                   : "border-white/25 bg-white/10 text-white"
               }`}
             >
@@ -84,7 +84,7 @@ export function DailyPortfolioBriefing({
           className={`mt-2 inline-flex min-h-[44px] items-center text-[15px] font-semibold underline-offset-4 transition hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:ring-offset-2 ${
             onLight
               ? "text-slate-800 hover:text-slate-950"
-              : "text-white hover:text-sky-100 focus-visible:ring-offset-navy-hero"
+              : "text-white hover:text-brand focus-visible:ring-offset-navy-hero"
           }`}
         >
           {briefing.deepLink.label}

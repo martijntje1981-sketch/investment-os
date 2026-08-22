@@ -56,7 +56,7 @@ export default function ContactPage() {
         <div className="absolute left-1/2 top-0 h-[440px] w-[800px] -translate-x-1/2 rounded-full bg-gradient-to-br from-blue-200/40 via-violet-200/30 to-transparent blur-3xl" />
 
         <div className="relative mx-auto max-w-4xl px-5 py-20 text-center sm:px-8 sm:py-28">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-950 text-white shadow-xl">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-navy-hero text-white shadow-xl">
             <MessageSquareText className="h-7 w-7" />
           </div>
 
@@ -86,7 +86,7 @@ export default function ContactPage() {
                   key={option.title}
                   className="rounded-[26px] border border-slate-200 bg-white p-6 shadow-sm"
                 >
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-950 text-white">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-navy-hero text-white">
                     <Icon className="h-5 w-5" />
                   </div>
 
@@ -101,7 +101,7 @@ export default function ContactPage() {
               );
             })}
 
-            <article className="rounded-[26px] bg-slate-950 p-6 text-white shadow-xl">
+            <article className="rounded-[26px] bg-navy-hero p-6 text-white shadow-xl">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10">
                 <ShieldCheck className="h-5 w-5" />
               </div>
@@ -222,7 +222,7 @@ export default function ContactPage() {
 
               <button
                 type="submit"
-                className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-6 text-sm font-bold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-slate-800"
+                className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-navy-hero px-6 text-sm font-bold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-navy-card"
               >
                 <Mail className="h-4 w-4" />
                 Send message

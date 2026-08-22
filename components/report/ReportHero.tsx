@@ -12,7 +12,7 @@ type ReportHeroProps = {
 
 export function ReportHero({ report }: ReportHeroProps) {
   return (
-    <header className="bg-slate-950 px-5 py-6 text-white sm:px-7 sm:py-8">
+    <header className="bg-gradient-to-br from-brand-navy via-brand-deep to-q4-deep px-5 py-6 text-white sm:px-7 sm:py-8">
       <p className={appHeroMetricLabelClass}>
         {report.kicker}
       </p>

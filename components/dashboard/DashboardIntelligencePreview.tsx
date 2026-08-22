@@ -20,9 +20,9 @@ import type { InvestmentIntelligence } from "@/lib/services/news/investmentIntel
 const STATUS_STYLES: Record<InvestmentIntelligence["portfolioStatus"], string> =
   {
     Stable: "border-slate-200 bg-slate-50 text-slate-700",
-    Watching: "border-blue-200 bg-blue-50 text-blue-800",
-    Elevated: "border-violet-200 bg-violet-50 text-violet-800",
-    "High Attention": "border-violet-300 bg-violet-100 text-violet-900",
+    Watching: "border-q1/30 bg-q1-soft text-q1-deep",
+    Elevated: "border-amber-200 bg-amber-50 text-amber-900",
+    "High Attention": "border-rose-200 bg-rose-50 text-rose-900",
   };
 
 /**
@@ -62,7 +62,7 @@ export function DashboardIntelligencePreview({
         title="Market Briefing"
         subtitle="One lead insight for today"
         icon={<Radio className="h-5 w-5" />}
-        iconToneClassName="bg-violet-50 text-violet-700 ring-1 ring-violet-100"
+        iconToneClassName="bg-q4-soft text-q4-strong ring-1 ring-q4/20"
       />
 
       <div

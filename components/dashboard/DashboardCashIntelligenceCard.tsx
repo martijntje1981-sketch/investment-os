@@ -60,7 +60,7 @@ export function DashboardCashIntelligenceCard({
       title={disclaimer}
     >
       <div className="flex min-w-0 items-start gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-sky-50 text-sky-700 ring-1 ring-sky-100">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-q3-soft text-q3-strong ring-1 ring-q3/20">
           <Landmark className="h-5 w-5" aria-hidden />
         </div>
         <div className="min-w-0 flex-1">

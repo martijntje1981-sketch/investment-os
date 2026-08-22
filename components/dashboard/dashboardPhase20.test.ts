@@ -181,13 +181,13 @@ describe("Phase 20 Dashboard intelligence refinement", () => {
     expect(evolutionVisual).toContain("appDarkCardClass");
     expect(evolutionVisual).toContain("Tobailey conclusion");
 
-    expect(fourQuestions).toContain("from-cyan-100");
-    expect(fourQuestions).toContain("from-violet-100");
-    expect(fourQuestions).toContain("from-amber-100");
-    expect(fourQuestions).toContain("from-teal-100");
-    expect(identity).toContain("border-2 border-cyan-300");
-    expect(identity).toContain("border-2 border-violet-300");
-    expect(identity).toContain("border-2 border-amber-300");
-    expect(identity).toContain("border-2 border-teal-300");
+    expect(fourQuestions).toContain("from-q1-soft");
+    expect(fourQuestions).toContain("from-q2-soft");
+    expect(fourQuestions).toContain("from-q3-soft");
+    expect(fourQuestions).toContain("from-q4-soft");
+    expect(identity).toContain("FOUR_QUESTION_VISUAL.what_happened.card");
+    expect(identity).toContain("FOUR_QUESTION_VISUAL.what_matters_now.card");
+    expect(identity).toContain("FOUR_QUESTION_VISUAL.am_i_on_track.card");
+    expect(identity).toContain("FOUR_QUESTION_VISUAL.whats_ahead.card");
   });
 });

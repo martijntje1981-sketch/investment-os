@@ -61,8 +61,8 @@ function CompareRow({
   whatIf: string;
 }) {
   return (
-    <div className="min-w-0 overflow-hidden rounded-2xl border-2 border-teal-200 bg-white">
-      <p className={`border-b border-teal-100 bg-teal-50 px-4 py-2 ${appSectionLabelClass} text-teal-900`}>
+    <div className="min-w-0 overflow-hidden rounded-2xl border-2 border-q3/35 bg-white">
+      <p className={`border-b border-q3/20 bg-q3-soft px-4 py-2 ${appSectionLabelClass} text-q3-deep`}>
         {label}
       </p>
       <div className="grid min-w-0 grid-cols-1 gap-0 sm:grid-cols-2">
@@ -72,9 +72,9 @@ function CompareRow({
             {current}
           </p>
         </div>
-        <div className="min-w-0 bg-gradient-to-br from-teal-50 to-emerald-50 px-4 py-3.5">
-          <p className={`${appSectionMetaClass} text-teal-800`}>What if</p>
-          <p className="mt-1 break-words text-xl font-bold tracking-tight text-teal-900 sm:text-2xl">
+        <div className="min-w-0 bg-gradient-to-br from-q3-soft to-white px-4 py-3.5">
+          <p className={`${appSectionMetaClass} text-q3-strong`}>What if</p>
+          <p className="mt-1 break-words text-xl font-bold tracking-tight text-q3-deep sm:text-2xl">
             {whatIf}
           </p>
         </div>
@@ -180,7 +180,7 @@ export function WhatIfExplorer({
       data-testid="what-if-explorer"
       data-access={result.accessMode}
     >
-      <div className="border-b border-amber-200/80 bg-gradient-to-br from-slate-950 to-slate-900 px-5 py-5 text-white sm:px-8">
+      <div className="border-b border-white/10 bg-gradient-to-br from-brand-navy to-q3-deep px-5 py-5 text-white sm:px-8">
         <div
           className={`inline-flex items-center gap-2 rounded-full bg-amber-400/15 px-3 py-1 ${appHeroMetricLabelClass} text-amber-100`}
         >
@@ -300,8 +300,8 @@ export function WhatIfExplorer({
         ) : null}
 
         {result.status !== "educational_only" ? (
-          <div className="space-y-4 rounded-[24px] border-2 border-teal-200 bg-gradient-to-br from-teal-50 via-white to-emerald-50 px-4 py-4 sm:px-5">
-            <p className={`text-[13px] font-semibold uppercase tracking-[0.06em] text-teal-800`}>
+          <div className="space-y-4 rounded-[24px] border-2 border-q3/30 bg-gradient-to-br from-q3-soft via-white to-white px-4 py-4 sm:px-5">
+            <p className={`text-[13px] font-semibold uppercase tracking-[0.06em] text-q3-strong`}>
               {WHAT_IF_DISCLAIMER}
             </p>
             {result.explorer === "preview" ? (

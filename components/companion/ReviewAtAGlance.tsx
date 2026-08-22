@@ -84,14 +84,14 @@ export function ReviewAtAGlance({
       className={`${appIdentityHappenedCardClass} px-4 py-4`}
       data-testid="review-at-a-glance"
     >
-      <p className="text-[13px] font-bold uppercase tracking-[0.08em] text-cyan-900">
+      <p className="text-[13px] font-bold uppercase tracking-[0.08em] text-q1-deep">
         Review at a glance
       </p>
       {chips.length > 0 ? (
         <ul className="mt-3 grid grid-cols-1 gap-3 min-[390px]:grid-cols-2">
           {chips.slice(0, review.period === "daily" ? 3 : 4).map((chip) => (
             <li key={`${chip.label}-${chip.value}`} className={appIdentityHappenedMetricClass}>
-              <p className="text-[13px] font-semibold text-cyan-800">
+              <p className="text-[13px] font-semibold text-q1-strong">
                 {chip.label}
               </p>
               <p className={`mt-0.5 truncate text-[18px] tracking-[-0.02em] ${appKpiIntelClass}`}>

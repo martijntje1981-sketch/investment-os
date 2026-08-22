@@ -144,7 +144,7 @@ export function PortfolioFundingSection({
             <button
               type="button"
               onClick={() => setDialogOpen(true)}
-              className="inline-flex min-h-[44px] shrink-0 items-center justify-center rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+              className="inline-flex min-h-[44px] shrink-0 items-center justify-center rounded-xl bg-navy-hero px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-navy-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
             >
               {manageActionLabel}
             </button>
@@ -173,7 +173,7 @@ export function PortfolioFundingSection({
               <button
                 type="button"
                 onClick={() => setDialogOpen(true)}
-                className="inline-flex min-h-[44px] items-center rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                className="inline-flex min-h-[44px] items-center rounded-xl bg-navy-hero px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-navy-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
               >
                 {PORTFOLIO_FUNDING_OPENING_ACTION}
               </button>

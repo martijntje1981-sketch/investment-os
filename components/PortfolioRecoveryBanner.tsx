@@ -63,7 +63,7 @@ export default function PortfolioRecoveryBanner({
         <button
           type="button"
           onClick={onRecover}
-          className="inline-flex items-center justify-center rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white"
+          className="inline-flex items-center justify-center rounded-xl bg-navy-hero px-5 py-3 text-sm font-bold text-white"
         >
           Recover portfolio
         </button>

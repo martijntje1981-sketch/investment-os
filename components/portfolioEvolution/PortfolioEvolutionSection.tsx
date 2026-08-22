@@ -147,7 +147,7 @@ export function PortfolioEvolutionSection({
             disabled={!timeline.timeframeEnabled[id] && id !== timeline.timeframe}
             className={`inline-flex min-h-11 min-w-11 items-center justify-center rounded-full px-4 text-[15px] font-semibold ${
               timeline.timeframe === id
-                ? "bg-cyan-700 text-white"
+                ? "bg-q1-strong text-white"
                 : "bg-slate-100 text-slate-800"
             } disabled:opacity-40`}
           >

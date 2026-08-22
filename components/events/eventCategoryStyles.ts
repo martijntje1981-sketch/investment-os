@@ -18,13 +18,13 @@ export function calendarCategoryChipClass(
     return "bg-brand-soft text-brand-navy";
   }
   if (category === "dividends") {
-    return "bg-sky-50 text-sky-900";
+    return "bg-q1-soft text-q1-deep";
   }
   if (category === "earnings") {
-    return "bg-indigo-50 text-indigo-900";
+    return "bg-q2-soft text-q2-deep";
   }
   if (category === "crypto") {
-    return "bg-violet-50 text-violet-900";
+    return "bg-q4-soft text-q4-deep";
   }
   return "bg-slate-100 text-slate-700";
 }

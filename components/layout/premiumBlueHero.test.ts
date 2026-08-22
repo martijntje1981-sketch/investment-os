@@ -21,19 +21,19 @@ describe("Phase 16.6 / 20 shared Q1 cyan page heroes", () => {
     "components/portfolioHistory/PortfolioHistoryNavCard.tsx",
   );
 
-  it("defines one shared light Q1 cyan hero token family without recoloring CTA black", () => {
-    expect(globals).toContain("--hero-premium-from: #cffafe");
-    expect(globals).toContain("--hero-premium-via: #f0f9ff");
-    expect(globals).toContain("--hero-premium-to: #ffffff");
+  it("defines one shared light Tobailey-blue hero token family without near-black CTAs", () => {
+    expect(globals).toContain("--hero-premium-from: #b7dcf2");
+    expect(globals).toContain("--hero-premium-via: #cfe6f6");
+    expect(globals).toContain("--hero-premium-to: #e4f2fa");
     expect(globals).toContain("--color-hero-premium-from:");
-    expect(globals).toContain("--navy-hero: #0a0a0a");
-    expect(globals).toContain("--navy-card: #121212");
+    expect(globals).toContain("--navy-hero: #0b1f3a");
+    expect(globals).toContain("--navy-card: #16324f");
     expect(surface).toContain("appIntelligenceAccentCardClass");
     expect(surface).toMatch(
-      /export const appHeroShellClass =\s*"[^"]*from-cyan-100[^"]*"/,
+      /export const appHeroShellClass =\s*"[^"]*from-hero-premium-from[^"]*"/,
     );
     expect(surface).toContain("text-slate-950");
-    expect(surface).toContain("border-cyan-200");
+    expect(surface).toContain("border-brand/20");
     expect(surface).toContain("bg-gradient-to-br");
     expect(surface).toContain("appDashboardHeroShellClass = appHeroShellClass");
     expect(surface).toContain("appDashboardHeroSubordinateClass");
@@ -64,13 +64,13 @@ describe("Phase 16.6 / 20 shared Q1 cyan page heroes", () => {
   });
 
   it("keeps Four Questions and Portfolio History card outside the hero recolor", () => {
-    expect(fourQuestions).toContain("from-violet-100");
-    expect(fourQuestions).toContain("from-cyan-100");
-    expect(historyCard).toContain("from-cyan");
+    expect(fourQuestions).toContain("from-q2-soft");
+    expect(fourQuestions).toContain("from-q1-soft");
+    expect(historyCard).toContain("from-q1-soft");
     expect(historyCard).not.toContain("appHeroShellClass");
   });
 
-  it("keeps Dashboard hero content contracts and readable navy type on light cyan", () => {
+  it("keeps Dashboard hero content contracts and readable navy type on light Tobailey blue", () => {
     expect(dashboardHero).toContain("Portfolio value");
     expect(dashboardHero).toContain("Latest move");
     expect(dashboardHero).toContain("HeroPerformanceSparkline");

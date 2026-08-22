@@ -26,11 +26,11 @@ export function TodaysMarketBriefHero({
   isRefreshing: boolean;
 }) {
   return (
-    <section className="overflow-hidden rounded-[28px] border border-slate-800 bg-slate-950 text-white shadow-2xl sm:rounded-[32px]">
+    <section className="overflow-hidden rounded-[28px] border border-white/10 bg-gradient-to-br from-brand-navy via-brand-deep to-q4-deep text-white shadow-[var(--navy-shadow)] sm:rounded-[32px]">
       <div className="border-b border-white/10 px-4 py-4 sm:px-8 sm:py-6">
         <div className="flex flex-wrap items-start justify-between gap-3 sm:gap-4">
           <div className="min-w-0 flex-1">
-            <div className={`inline-flex items-center gap-2 rounded-full bg-violet-500/15 px-3 py-1 ${appHeroMetricLabelClass} text-violet-200`}>
+            <div className={`inline-flex items-center gap-2 rounded-full bg-brand/15 px-3 py-1 ${appHeroMetricLabelClass} text-brand`}>
               <Newspaper className="h-3.5 w-3.5" />
               Daily intelligence
             </div>
@@ -89,12 +89,12 @@ export function TodaysMarketBriefHero({
             </p>
           </div>
 
-          <div className="min-w-[240px] shrink-0 rounded-[20px] border border-violet-400/20 bg-violet-500/10 p-4 sm:min-w-0">
-            <div className={`flex items-center gap-2 ${appHeroMetricLabelClass} text-violet-200`}>
+          <div className="min-w-[240px] shrink-0 rounded-[20px] border border-brand/25 bg-brand/10 p-4 sm:min-w-0">
+            <div className={`flex items-center gap-2 ${appHeroMetricLabelClass} text-brand`}>
               <Target className="h-3.5 w-3.5" />
               Watch today
             </div>
-            <p className={`mt-2 line-clamp-3 ${appSectionBodyClass} text-violet-50`}>
+            <p className={`mt-2 line-clamp-3 ${appSectionBodyClass} text-white`}>
               {brief.whatToWatchToday}
             </p>
           </div>
@@ -119,8 +119,8 @@ export function TodaysMarketBriefHero({
                   <span
                     className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] ${
                       insight.insightType === "fact"
-                        ? "bg-blue-500/20 text-blue-100"
-                        : "bg-violet-500/20 text-violet-100"
+                        ? "bg-brand/20 text-brand"
+                        : "bg-q2/25 text-white"
                     }`}
                   >
                     {insight.insightType === "fact" ? "Fact" : "Interpretation"}

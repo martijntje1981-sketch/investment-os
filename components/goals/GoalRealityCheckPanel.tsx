@@ -123,7 +123,7 @@ export function GoalRealityCheckCompactLink({
     >
       <a
         href="/goals#goal-reality-check"
-        className="font-semibold text-sky-800 underline-offset-2 hover:underline"
+        className="font-semibold text-q1-strong underline-offset-2 hover:underline"
       >
         Goal Reality Check
       </a>

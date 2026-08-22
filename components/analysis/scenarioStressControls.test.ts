@@ -28,10 +28,10 @@ describe("Scenario stress interactive affordance", () => {
     const selected = scenarioChoiceClass(true);
     const idle = scenarioChoiceClass(false);
     expect(selected).toContain("border-2");
-    expect(selected).toContain("border-sky-600");
-    expect(selected).toContain("bg-sky-50");
+    expect(selected).toContain("border-q1-strong");
+    expect(selected).toContain("bg-q1-soft");
     expect(idle).toContain("cursor-pointer");
-    expect(idle).toContain("hover:border-sky-500");
+    expect(idle).toContain("hover:border-brand");
     expect(idle).toContain("focus-visible:ring-2");
     expect(idle).not.toContain("border-2");
   });
@@ -46,9 +46,9 @@ describe("Scenario stress interactive affordance", () => {
     const selected = personalChoiceClass(true);
     const idle = personalChoiceClass(false);
     expect(selected).toContain("border-2");
-    expect(selected).toContain("border-sky-600");
+    expect(selected).toContain("border-q1-strong");
     expect(idle).toContain("cursor-pointer");
-    expect(idle).toContain("hover:border-sky-400");
+    expect(idle).toContain("hover:border-brand");
     expect(idle).toContain("min-h-11");
   });
 

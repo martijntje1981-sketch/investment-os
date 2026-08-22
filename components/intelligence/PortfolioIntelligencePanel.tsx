@@ -42,11 +42,11 @@ export function PortfolioIntelligencePanel({
     intelligence.holdingInsights.negative.length > 0;
 
   return (
-    <section className="overflow-hidden rounded-[28px] border border-slate-800 bg-slate-950 text-white shadow-2xl sm:rounded-[32px]">
+    <section className="overflow-hidden rounded-[28px] border border-white/10 bg-gradient-to-br from-brand-navy via-brand-deep to-q4-deep text-white shadow-[var(--navy-shadow)] sm:rounded-[32px]">
       <div className="border-b border-white/10 px-4 py-4 sm:px-8 sm:py-6">
         <div className="flex flex-wrap items-start justify-between gap-3 sm:gap-4">
           <div className="min-w-0 flex-1">
-            <div className="inline-flex items-center gap-2 rounded-full bg-violet-500/15 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-violet-200">
+            <div className="inline-flex items-center gap-2 rounded-full bg-brand/15 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-brand">
               <Sparkles className="h-3.5 w-3.5" />
               Investment intelligence
             </div>
@@ -131,7 +131,7 @@ export function PortfolioIntelligencePanel({
               <ul className="mt-4 space-y-2 text-sm leading-6 text-slate-100">
                 {intelligence.todayMatters.map((bullet) => (
                   <li key={intelligenceBulletKey(bullet)} className="flex gap-2">
-                    <span className="text-violet-300">•</span>
+                    <span className="text-brand">•</span>
                     <span className="min-w-0 flex-1">
                       <IntelligenceBulletRow bullet={bullet} variant="dark" />
                     </span>
@@ -146,8 +146,8 @@ export function PortfolioIntelligencePanel({
           </div>
 
           {intelligence.mustWatch ? (
-            <div className="rounded-[22px] border border-violet-400/20 bg-violet-500/10 p-4 sm:p-5">
-              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.14em] text-violet-200">
+            <div className="rounded-[22px] border border-brand/25 bg-brand/10 p-4 sm:p-5">
+              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.14em] text-brand">
                 {intelligence.mustWatch.type === "video" ? (
                   <PlayCircle className="h-3.5 w-3.5" />
                 ) : (
@@ -155,10 +155,10 @@ export function PortfolioIntelligencePanel({
                 )}
                 Must watch
               </div>
-              <p className="mt-3 text-sm font-semibold leading-7 text-violet-50">
+              <p className="mt-3 text-sm font-semibold leading-7 text-white">
                 {intelligence.mustWatch.title}
               </p>
-              <p className="mt-2 text-xs leading-6 text-violet-100/80">
+              <p className="mt-2 text-xs leading-6 text-white/80">
                 {intelligence.mustWatch.reason} Source: {intelligence.mustWatch.sourceName}
               </p>
               <a

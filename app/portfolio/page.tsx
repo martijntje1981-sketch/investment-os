@@ -876,7 +876,7 @@ export default function PortfolioPage() {
                         <div className="min-w-0 flex-1">
                           <div className="flex min-w-0 items-center gap-2">
                             <span
-                              className={`inline-flex shrink-0 rounded-lg px-2 py-1 text-[13px] font-bold ${holding.assetType === "cash" ? "bg-emerald-100 text-emerald-800" : isCrypto ? "bg-violet-100 text-violet-900" : "bg-slate-950 text-white"}`}
+                              className={`inline-flex shrink-0 rounded-lg px-2 py-1 text-[13px] font-bold ${holding.assetType === "cash" ? "bg-emerald-100 text-emerald-800" : isCrypto ? "bg-q2-soft text-q2-deep" : "bg-navy-hero text-white"}`}
                             >
                               {holding.symbol}
                             </span>
@@ -884,7 +884,7 @@ export default function PortfolioPage() {
                               {holding.name}
                             </p>
                             {kindLabel ? (
-                              <span className="shrink-0 text-[13px] font-medium text-teal-800">
+                              <span className="shrink-0 text-[13px] font-medium text-q3-strong">
                                 {kindLabel}
                               </span>
                             ) : null}
@@ -968,7 +968,7 @@ export default function PortfolioPage() {
                       <div className="hidden min-w-0 gap-4 lg:grid lg:grid-cols-[0.55fr_1.4fr_1fr_0.7fr_1fr_auto] lg:items-start">
                         <div className="flex items-start">
                           <span
-                            className={`inline-flex rounded-xl px-3 py-2 ${appTableValueClass} ${holding.assetType === "cash" ? "bg-emerald-100 text-emerald-800" : isCrypto ? "bg-violet-100 text-violet-900" : "bg-slate-950 text-white"}`}
+                            className={`inline-flex rounded-xl px-3 py-2 ${appTableValueClass} ${holding.assetType === "cash" ? "bg-emerald-100 text-emerald-800" : isCrypto ? "bg-q2-soft text-q2-deep" : "bg-navy-hero text-white"}`}
                           >
                             {holding.symbol}
                           </span>
@@ -1145,7 +1145,7 @@ export default function PortfolioPage() {
       ) : null}
 
       {editorOpen && (
-        <div className="fixed inset-0 z-[80] flex items-end justify-center bg-slate-950/60 p-0 backdrop-blur-sm sm:items-center sm:p-5">
+        <div className="fixed inset-0 z-[80] flex items-end justify-center bg-navy-hero/60 p-0 backdrop-blur-sm sm:items-center sm:p-5">
           <form
             onSubmit={submitHolding}
             className="flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-t-[28px] bg-white shadow-2xl sm:rounded-[28px]"

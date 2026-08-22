@@ -9,14 +9,14 @@ const ZONES = [
   {
     id: "efficient",
     label: "Efficient Growth",
-    className: "bg-sky-500/[0.12]",
+    className: "bg-brand/[0.14]",
     x: 0,
     y: 0,
   },
   {
     id: "aggressive",
     label: "Aggressive Growth",
-    className: "bg-violet-500/[0.14]",
+    className: "bg-q2/[0.16]",
     x: 1,
     y: 0,
   },
@@ -96,13 +96,13 @@ export function RiskReturnMap({
           className="absolute z-10 -translate-x-1/2 -translate-y-1/2"
           style={{ left: `${x}%`, top: `${y}%` }}
         >
-          <span className="absolute -inset-3 animate-pulse rounded-full bg-sky-400/20" />
-          <span className="relative block h-4 w-4 rounded-full border-2 border-white bg-sky-400 shadow-[0_0_18px_rgba(56,189,248,0.55)]" />
+          <span className="absolute -inset-3 animate-pulse rounded-full bg-brand/25" />
+          <span className="relative block h-4 w-4 rounded-full border-2 border-white bg-brand shadow-[0_0_18px_rgba(93,183,255,0.45)]" />
         </div>
       </div>
 
       <div className="mt-4 rounded-2xl border border-white/15 bg-white/5 px-4 py-3">
-        <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-sky-300">
+        <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-brand">
           Your portfolio
         </p>
         <p className="mt-1 text-[15px] font-semibold text-white">

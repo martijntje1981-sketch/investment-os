@@ -28,7 +28,7 @@ export function CollapsibleMarketVideos({
         aria-expanded={open}
       >
         <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-[18px] bg-slate-950 text-white">
+          <div className="flex h-12 w-12 items-center justify-center rounded-[18px] bg-navy-hero text-white">
             <PlayCircle className="h-5 w-5" />
           </div>
           <div>

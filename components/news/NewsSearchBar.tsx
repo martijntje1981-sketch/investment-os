@@ -148,7 +148,7 @@ export function NewsSearchBar({
               onClick={() => onScopeFilterChange(filter.id)}
               className={`rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.08em] transition sm:px-4 sm:py-2 sm:text-xs ${
                 active
-                  ? "bg-slate-950 text-white"
+                  ? "bg-navy-hero text-white"
                   : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
               }`}
             >

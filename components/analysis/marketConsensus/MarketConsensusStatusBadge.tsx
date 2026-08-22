@@ -37,19 +37,19 @@ const STATUS_STYLES: Record<
     Icon: CircleHelp,
   },
   "Underlying market outlook": {
-    className: "border-blue-200 bg-blue-50 text-blue-950",
+    className: "border-q1/30 bg-q1-soft text-q1-deep",
     Icon: BarChart3,
   },
   "Theme-level outlook": {
-    className: "border-indigo-200 bg-indigo-50 text-indigo-950",
+    className: "border-q2/30 bg-q2-soft text-q2-deep",
     Icon: BarChart3,
   },
   "Asset-class outlook": {
-    className: "border-violet-200 bg-violet-50 text-violet-950",
+    className: "border-q4/30 bg-q4-soft text-q4-deep",
     Icon: BarChart3,
   },
   "Market outlook": {
-    className: "border-violet-200 bg-violet-50 text-violet-950",
+    className: "border-q4/30 bg-q4-soft text-q4-deep",
     Icon: BarChart3,
   },
   "Partial analyst coverage": {

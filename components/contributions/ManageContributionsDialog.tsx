@@ -243,7 +243,7 @@ export function ManageContributionsDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-slate-950/60 p-0 backdrop-blur-sm sm:items-center sm:p-5">
+    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-navy-hero/60 p-0 backdrop-blur-sm sm:items-center sm:p-5">
       <div
         role="dialog"
         aria-modal="true"
@@ -615,7 +615,7 @@ export function ManageContributionsDialog({
             <button
               type="submit"
               disabled={isMutating}
-              className="mt-4 inline-flex min-h-[44px] items-center justify-center rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-4 inline-flex min-h-[44px] items-center justify-center rounded-xl bg-navy-hero px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-navy-card disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isMutating ? (
                 <>

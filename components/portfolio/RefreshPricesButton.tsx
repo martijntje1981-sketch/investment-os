@@ -39,11 +39,11 @@ export function RefreshPricesButton({
   const base =
     variant === "icon"
       ? onLight
-        ? "inline-flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-sky-200 bg-white text-slate-800 shadow-sm transition hover:bg-sky-50 hover:text-slate-950 disabled:cursor-not-allowed disabled:opacity-45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2"
+        ? "inline-flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-brand/25 bg-white text-slate-800 shadow-sm transition hover:bg-brand-soft hover:text-slate-950 disabled:cursor-not-allowed disabled:opacity-45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2"
         : "inline-flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-white/25 bg-white/10 text-white transition hover:bg-white/20 hover:text-white disabled:cursor-not-allowed disabled:opacity-45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-navy-hero"
       : variant === "compact"
         ? onLight
-          ? "inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl px-2 py-2 text-sm font-semibold text-cyan-950 transition hover:bg-white/70 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60"
+          ? "inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl px-2 py-2 text-sm font-semibold text-brand-navy transition hover:bg-white/70 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60"
           : "inline-flex min-h-[40px] min-w-[40px] items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/[0.06] px-3 py-2 text-sm font-semibold text-white/85 transition hover:bg-white/12 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60"
         : "inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-bold text-white hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60";
 

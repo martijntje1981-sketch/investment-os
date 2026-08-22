@@ -86,7 +86,7 @@ export default function InvestmentIntelligence() {
 
   return (
     <section className="mt-8 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
-      <div className="border-b border-slate-200 bg-slate-950 px-6 py-6 text-white sm:px-8">
+      <div className="border-b border-slate-200 bg-navy-hero px-6 py-6 text-white sm:px-8">
         <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-center">
           <div className="flex items-start gap-4">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/10">

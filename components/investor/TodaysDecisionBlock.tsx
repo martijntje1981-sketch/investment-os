@@ -9,21 +9,21 @@ const TONE_STYLES = {
     neutral: "border-slate-200/90 bg-slate-50/80 text-slate-800",
     positive: "border-emerald-200/70 bg-emerald-50/50 text-emerald-950",
     attention: "border-amber-200/80 bg-amber-50/60 text-amber-950",
-    critical: "border-violet-200 bg-violet-50 text-slate-950",
+    critical: "border-q2/40 bg-q2-soft text-slate-950",
   },
   dark: {
     neutral: "border-white/10 bg-white/[0.04] text-slate-100",
     positive: "border-emerald-400/20 bg-emerald-500/10 text-emerald-100",
     attention: "border-amber-400/20 bg-amber-500/10 text-amber-100",
-    critical: "border-violet-400/25 bg-violet-500/10 text-violet-100",
+    critical: "border-q2/35 bg-q2-strong/20 text-white",
   },
 } as const;
 
 const INTERACTIVE_STYLES = {
   light:
-    "cursor-pointer transition hover:border-slate-300 hover:bg-white hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 active:scale-[0.995]",
+    "cursor-pointer transition hover:border-slate-300 hover:bg-white hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 active:scale-[0.995]",
   dark:
-    "cursor-pointer transition hover:border-white/20 hover:bg-white/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 active:scale-[0.995]",
+    "cursor-pointer transition hover:border-white/20 hover:bg-white/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-navy-hero active:scale-[0.995]",
 } as const;
 
 function resolveToneStyles(
@@ -38,7 +38,7 @@ function iconToneClass(
   tone: TodaysDecisionResult["tone"],
 ): string {
   if (tone === "critical") {
-    return variant === "dark" ? "text-violet-300" : "text-violet-600";
+    return variant === "dark" ? "text-brand" : "text-q2-strong";
   }
 
   if (tone === "attention") {
@@ -57,7 +57,7 @@ function recommendationLabelClass(
   tone: TodaysDecisionResult["tone"],
 ): string {
   if (tone === "critical") {
-    return variant === "dark" ? "text-violet-200" : "text-violet-700";
+    return variant === "dark" ? "text-brand" : "text-q2-deep";
   }
 
   return variant === "dark" ? "text-inherit" : "text-inherit";
@@ -69,8 +69,8 @@ function statusBadgeClass(
 ): string {
   if (tone === "critical") {
     return variant === "dark"
-      ? "border-violet-400/30 bg-violet-500/15 text-violet-100"
-      : "border-violet-200 bg-violet-100 text-violet-800";
+      ? "border-brand/30 bg-brand/15 text-brand"
+      : "border-q2/30 bg-q2-soft text-q2-deep";
   }
 
   return variant === "dark"
@@ -80,8 +80,8 @@ function statusBadgeClass(
 
 function destinationCueClass(variant: "light" | "dark"): string {
   return variant === "dark"
-    ? "text-violet-200 group-hover:text-violet-100"
-    : "text-violet-700 group-hover:text-violet-800";
+    ? "text-brand group-hover:text-white"
+    : "text-q1-strong group-hover:text-q1-deep";
 }
 
 function resolveDestination(decision: TodaysDecisionResult): {

@@ -183,7 +183,7 @@ export default function HoldingPage() {
             </button>
             <Link
               href="/portfolio"
-              className="rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white"
+              className="rounded-xl bg-navy-hero px-5 py-3 text-sm font-bold text-white"
             >
               Open portfolio
             </Link>
@@ -239,7 +239,7 @@ export default function HoldingPage() {
             <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
               <div>
                 <div className="flex flex-wrap items-center gap-3">
-                  <span className="rounded-full bg-cyan-50 px-3 py-1 text-[13px] font-semibold uppercase tracking-wider text-cyan-800">
+                  <span className="rounded-full bg-brand-soft px-3 py-1 text-[13px] font-semibold uppercase tracking-wider text-q1-strong">
                     {holding.assetType === "cash" ? "Cash" : "Investment"}
                   </span>
 
@@ -265,7 +265,7 @@ export default function HoldingPage() {
                 {holding.assetType === "cash" ? (
                   <Link
                     href={DASHBOARD_DEEP_LINKS.cashIntelligence}
-                  className="mt-3 inline-flex min-h-11 items-center text-[15px] font-semibold text-cyan-800 underline-offset-2 hover:underline"
+                  className="mt-3 inline-flex min-h-11 items-center text-[15px] font-semibold text-q1-strong underline-offset-2 hover:underline"
                   >
                     Understand your cash →
                   </Link>
@@ -318,7 +318,7 @@ export default function HoldingPage() {
                     {holding.quantity.toLocaleString("en-GB")}
                   </p>
 
-                  <p className="mt-1 font-semibold text-sky-200">
+                  <p className="mt-1 font-semibold text-brand">
                     {holding.currency}
                   </p>
                 </div>
@@ -482,7 +482,7 @@ export default function HoldingPage() {
             </button>
             <Link
               href="/portfolio"
-              className="rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white shadow-sm"
+              className="rounded-xl bg-navy-hero px-5 py-3 text-sm font-bold text-white shadow-sm"
             >
               Open portfolio
             </Link>

@@ -79,7 +79,7 @@ export function NewsMediaThumbnail({
           />
           {showPlayIndicator ? (
             <div
-              className="pointer-events-none absolute inset-0 flex items-center justify-center bg-slate-950/20"
+              className="pointer-events-none absolute inset-0 flex items-center justify-center bg-navy-hero/20"
               aria-hidden
             >
               <PlayCircle className="h-6 w-6 text-white drop-shadow-sm" />

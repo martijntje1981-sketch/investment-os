@@ -1,52 +1,82 @@
 @import "tailwindcss";
 
 :root {
-  /* App canvas */
-  --background: #eef3f8;
+  /* App canvas — white space first, with a faint blue tint */
+  --background: #f4f7fb;
   --foreground: #0b1f3a;
-  --muted: #64748b;
-  --border: #d9e3ef;
+  --muted: #4a5d73;
+  --border: #d5e2ef;
   --card: #ffffff;
   --surface-elevated: #ffffff;
+  --surface-tint: #eaf2f9;
 
-  /* Tobailey brand */
+  /* Tobailey brand — homepage blue is the heart of the identity */
   --brand-primary: #5db7ff;
-  --brand-primary-hover: #3aa3f5;
-  --brand-primary-soft: #e4f2fc;
+  --brand-primary-hover: #3a9fe8;
+  --brand-primary-soft: #e4f3fc;
+  --brand-display: #2b9fe0;
+  --brand-strong: #1b7fbf;
   --brand-navy: #0b1f3a;
+  --brand-deep: #123052;
+  --brand-ink: #071525;
   --brand-text: #0b1f3a;
 
   /*
-   * Near-black surface hierarchy (authenticated UI).
-   * Used by solid CTAs and non-hero dark panels — not page heroes.
+   * Dark surfaces stay inside the navy family — never near-black.
+   * Used by solid CTAs and conclusion panels, not as the default canvas.
    */
-  --navy-hero: #0a0a0a;
-  --navy-hero-lift: #141414;
-  --navy-hero-deep: #050505;
-  --navy-card: #121212;
-  --navy-inset: rgba(255, 255, 255, 0.06);
-  --navy-border: rgba(255, 255, 255, 0.1);
-  --navy-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+  --navy-hero: #0b1f3a;
+  --navy-hero-lift: #143056;
+  --navy-hero-deep: #071525;
+  --navy-card: #16324f;
+  --navy-inset: rgba(255, 255, 255, 0.08);
+  --navy-border: rgba(255, 255, 255, 0.14);
+  --navy-shadow: 0 12px 32px rgba(11, 31, 58, 0.22);
 
   /*
-   * Shared page-hero family: light Q1 / Tobailey cyan
-   * (Tailwind cyan-100 → sky-50 → white). Navy type lives on the shell class.
+   * Shared page-hero family: light-to-medium Tobailey blue.
+   * One step richer than the canvas so the hero reads as the intro surface.
+   * Still light — navy type, never a dark block.
    */
-  --hero-premium-from: #cffafe;
-  --hero-premium-via: #f0f9ff;
-  --hero-premium-to: #ffffff;
-  --hero-premium-border: rgba(8, 145, 178, 0.28);
-  --hero-premium-shadow: 0 12px 32px -16px rgba(8, 145, 178, 0.28);
+  --hero-premium-from: #b7dcf2;
+  --hero-premium-via: #cfe6f6;
+  --hero-premium-to: #e4f2fa;
+  --hero-premium-border: rgba(27, 127, 191, 0.32);
+  --hero-premium-shadow: 0 12px 32px -16px rgba(11, 31, 58, 0.16);
 
-  /* Semantic finance colors — do not replace with brand blue */
-  --accent-green: #16a34a;
-  --accent-green-light: #ecfdf5;
-  --accent-red: #dc2626;
-  --accent-amber: #d97706;
+  /*
+   * Four Questions — one Tobailey blue family with more perceptual distance.
+   * Q1 brightest / closest to homepage blue → Q4 deepest navy.
+   */
+  --q1: #2eb5f0;
+  --q1-soft: #c4ecfb;
+  --q1-strong: #075f8c;
+  --q1-deep: #054e74;
+
+  --q2: #2773c8;
+  --q2-soft: #d0dff4;
+  --q2-strong: #1458a3;
+  --q2-deep: #0d3f7a;
+
+  --q3: #1b4f9a;
+  --q3-soft: #cdd6ea;
+  --q3-strong: #133a76;
+  --q3-deep: #0e2b58;
+
+  --q4: #163a66;
+  --q4-soft: #d0d6e1;
+  --q4-strong: #102847;
+  --q4-deep: #0b1f3a;
+
+  /* Semantic finance colors — distinct from brand blue, slightly quieter */
+  --accent-green: #157a3e;
+  --accent-green-light: #e8f6ee;
+  --accent-red: #c62828;
+  --accent-amber: #b45309;
 
   /* Interaction */
   --focus-ring: var(--brand-primary);
-  --hover-soft: rgba(15, 23, 42, 0.04);
+  --hover-soft: rgba(11, 31, 58, 0.04);
 
   /* Layout rhythm */
   --bottom-nav-height: 4.5rem;
@@ -66,15 +96,37 @@
   --color-muted: var(--muted);
   --color-border: var(--border);
   --color-card: var(--card);
+  --color-surface-tint: var(--surface-tint);
   --color-brand: var(--brand-primary);
   --color-brand-hover: var(--brand-primary-hover);
   --color-brand-soft: var(--brand-primary-soft);
+  --color-brand-display: var(--brand-display);
+  --color-brand-strong: var(--brand-strong);
   --color-brand-navy: var(--brand-navy);
+  --color-brand-deep: var(--brand-deep);
+  --color-brand-ink: var(--brand-ink);
   --color-navy-hero: var(--navy-hero);
+  --color-navy-hero-lift: var(--navy-hero-lift);
   --color-navy-card: var(--navy-card);
   --color-hero-premium-from: var(--hero-premium-from);
   --color-hero-premium-via: var(--hero-premium-via);
   --color-hero-premium-to: var(--hero-premium-to);
+  --color-q1: var(--q1);
+  --color-q1-soft: var(--q1-soft);
+  --color-q1-strong: var(--q1-strong);
+  --color-q1-deep: var(--q1-deep);
+  --color-q2: var(--q2);
+  --color-q2-soft: var(--q2-soft);
+  --color-q2-strong: var(--q2-strong);
+  --color-q2-deep: var(--q2-deep);
+  --color-q3: var(--q3);
+  --color-q3-soft: var(--q3-soft);
+  --color-q3-strong: var(--q3-strong);
+  --color-q3-deep: var(--q3-deep);
+  --color-q4: var(--q4);
+  --color-q4-soft: var(--q4-soft);
+  --color-q4-strong: var(--q4-strong);
+  --color-q4-deep: var(--q4-deep);
   --color-positive: var(--accent-green);
   --color-negative: var(--accent-red);
   --color-warning: var(--accent-amber);

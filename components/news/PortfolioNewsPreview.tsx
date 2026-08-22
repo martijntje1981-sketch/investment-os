@@ -48,7 +48,7 @@ export function PortfolioNewsPreview({
         <button
           type="button"
           onClick={onViewAll}
-          className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-bold text-white"
+          className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-navy-hero px-4 py-3 text-sm font-bold text-white"
         >
           View all portfolio news
           <ArrowRight className="h-4 w-4" />

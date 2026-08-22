@@ -285,7 +285,7 @@ function ImportReviewCard({
           type="button"
           onClick={onConfirm}
           disabled={!canConfirmImportRow(row) || purchaseDateError !== null}
-          className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-[16px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
+          className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-navy-hero px-4 py-3 text-[16px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
         >
           <Check className="h-4 w-4" />
           Confirm this holding

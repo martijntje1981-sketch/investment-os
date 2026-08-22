@@ -157,7 +157,7 @@ export default async function MarketingHomePage({
       <main>
         {/* HERO */}
         <section className="relative overflow-hidden border-b border-slate-200 bg-slate-50">
-          <div className="absolute left-1/2 top-0 h-[560px] w-[860px] -translate-x-1/2 rounded-full bg-gradient-to-br from-brand/25 via-cyan-100/30 to-transparent blur-3xl" />
+          <div className="absolute left-1/2 top-0 h-[560px] w-[860px] -translate-x-1/2 rounded-full bg-gradient-to-br from-brand/25 via-brand-soft/60 to-transparent blur-3xl" />
 
           <div className="relative mx-auto grid max-w-7xl gap-14 px-5 pb-20 pt-16 sm:px-8 sm:pb-28 sm:pt-24 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
             <div>
@@ -171,7 +171,7 @@ export default async function MarketingHomePage({
                 <span className="block text-brand">in four questions</span>
               </h1>
 
-              <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-600 sm:text-xl">
+              <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-700 sm:text-xl">
                 Tobailey connects portfolio, markets, news, goals, risk and
                 intelligence into a simple daily view — not a broker, trading
                 platform or financial adviser.
@@ -194,7 +194,7 @@ export default async function MarketingHomePage({
                   <ChevronRight className="h-4 w-4" />
                 </Link>
               </div>
-              <p className="mt-3 max-w-xl text-sm leading-6 text-slate-500">
+              <p className="mt-3 max-w-xl text-sm leading-6 text-slate-600">
                 Personal trial starts with your own empty portfolio. Demo is a
                 separate read-only showroom.
               </p>
@@ -208,11 +208,11 @@ export default async function MarketingHomePage({
 
             <div className="relative">
               <div className="rounded-[32px] border border-slate-200 bg-white p-4 shadow-2xl shadow-slate-300/50 sm:p-6">
-                <div className="rounded-[26px] border border-slate-200 bg-slate-950 p-6 text-white sm:p-7">
-                  <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">
+                <div className="rounded-[26px] border border-white/10 bg-brand-navy p-6 text-white sm:p-7">
+                  <p className="text-xs font-black uppercase tracking-[0.14em] text-brand">
                     The four questions
                   </p>
-                  <p className="mt-2 text-sm leading-6 text-slate-300">
+                  <p className="mt-2 text-sm leading-6 text-white/85">
                     Illustrative product language — the same structure you will
                     see after signup.
                   </p>
@@ -250,7 +250,7 @@ export default async function MarketingHomePage({
           <div className="mx-auto max-w-7xl">
             <div className="grid gap-12 lg:grid-cols-[0.75fr_1.25fr] lg:items-start">
               <div>
-                <p className="text-sm font-bold uppercase tracking-[0.18em] text-blue-300">
+                <p className="text-sm font-bold uppercase tracking-[0.18em] text-brand">
                   How Tobailey works
                 </p>
 
@@ -422,7 +422,7 @@ export default async function MarketingHomePage({
           id="contact"
           className="scroll-mt-24 px-5 py-20 sm:px-8 sm:py-24"
         >
-          <div className="mx-auto max-w-5xl overflow-hidden rounded-[36px] border border-slate-200 bg-slate-950 p-8 text-white shadow-2xl sm:p-12">
+          <div className="mx-auto max-w-5xl overflow-hidden rounded-[36px] border border-white/10 bg-gradient-to-br from-brand-navy via-brand-deep to-q4-deep p-8 text-white shadow-[var(--navy-shadow)] sm:p-12">
             <div className="flex flex-col justify-between gap-10 lg:flex-row lg:items-center">
               <div>
                 <p className="text-sm font-bold uppercase tracking-[0.17em] text-slate-400">

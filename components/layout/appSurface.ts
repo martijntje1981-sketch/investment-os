@@ -32,28 +32,28 @@ export const appCardInteractiveClass =
  * Use sparingly — not on every card.
  */
 export const appTintedPanelClass =
-  "min-w-0 overflow-hidden rounded-[24px] border-2 border-cyan-200 bg-gradient-to-br from-cyan-100 via-sky-50 to-white shadow-[0_12px_32px_-16px_rgba(8,145,178,0.38)] md:rounded-[28px]";
+  "min-w-0 overflow-hidden rounded-[24px] border-2 border-brand/25 bg-gradient-to-br from-brand-soft via-white to-white shadow-[0_12px_32px_-16px_rgba(11,31,58,0.14)] md:rounded-[28px]";
 
 /**
- * Primary Tobailey intelligence accent — Q1 cyan/light-blue family.
+ * Primary Tobailey intelligence accent — homepage-blue family.
  * Use on major Dashboard intelligence outside Four Questions.
- * White/off-white content with a cyan border; not a full color block.
+ * White/off-white content with a brand-blue border; not a full color block.
  */
 export const appIntelligenceAccentCardClass =
-  "min-w-0 overflow-hidden rounded-[24px] border border-cyan-200/80 bg-white shadow-[var(--shadow-card)] md:rounded-[28px]";
+  "min-w-0 overflow-hidden rounded-[24px] border border-brand/25 bg-white shadow-[var(--shadow-card)] md:rounded-[28px]";
 
-/** Slightly stronger cyan wash for signature intelligence (Portfolio Evolution). */
+/** Slightly stronger brand wash for signature intelligence (Portfolio Evolution). */
 export const appIntelligenceAccentStrongCardClass =
-  "min-w-0 overflow-hidden rounded-[24px] border border-cyan-200 bg-gradient-to-br from-cyan-50 via-white to-white shadow-[0_12px_32px_-18px_rgba(8,145,178,0.22)] md:rounded-[28px]";
+  "min-w-0 overflow-hidden rounded-[24px] border border-brand/30 bg-gradient-to-br from-brand-soft via-white to-white shadow-[0_12px_32px_-18px_rgba(11,31,58,0.12)] md:rounded-[28px]";
 
 export const appIntelligenceAccentMetricClass =
-  "min-w-0 rounded-2xl border border-cyan-100 bg-cyan-50/70 px-4 py-3";
+  "min-w-0 rounded-2xl border border-brand/20 bg-brand-soft/80 px-4 py-3";
 
 export const appIntelligenceAccentEyebrowClass =
-  "text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-800";
+  "text-[11px] font-semibold uppercase tracking-[0.16em] text-q1-strong";
 
 export const appIntelligenceAccentIconWellClass =
-  "bg-cyan-50 text-cyan-800 ring-1 ring-cyan-100";
+  "bg-brand-soft text-q1-strong ring-1 ring-brand/20";
 
 /** Soft section band behind stacked supporting content. */
 export const appSectionBandClass =
@@ -62,25 +62,25 @@ export const appSectionBandClass =
 /* ── Dark navy hierarchy ─────────────────────────────────── */
 
 /**
- * Shared page hero — light Q1 / Tobailey cyan (cyan-100 → sky-50 → white).
- * Same family as appIntelligenceAccent*. Navy type, not a dark banking block.
- * Navy/dark (`bg-navy-card`) stays on conclusions, not page heroes.
+ * Shared page hero — light-to-medium Tobailey blue.
+ * Richer than the canvas so it reads as the page intro, still light enough
+ * for navy type. Navy/dark (`bg-navy-card`) stays on conclusions, not page heroes.
  */
 export const appHeroShellClass =
-  "min-w-0 overflow-hidden rounded-[28px] border border-cyan-200 bg-gradient-to-br from-cyan-100 via-sky-50 to-white text-slate-950 shadow-[0_12px_32px_-16px_rgba(8,145,178,0.28)] md:rounded-[32px]";
+  "min-w-0 overflow-hidden rounded-[28px] border border-brand/30 bg-gradient-to-br from-hero-premium-from via-hero-premium-via to-hero-premium-to text-slate-950 shadow-[0_12px_32px_-16px_rgba(11,31,58,0.16)] md:rounded-[32px]";
 
-/** Dashboard portfolio value uses the same light Q1 cyan shell. */
+/** Dashboard portfolio value uses the same light Tobailey-blue hero shell. */
 export const appDashboardHeroShellClass = appHeroShellClass;
 
 /** Subordinate Dashboard pulse — light, not a second hero. */
 export const appDashboardHeroSubordinateClass = appIntelligenceAccentCardClass;
 
 export const appDashboardHeroInsetClass =
-  "rounded-xl border border-cyan-100 bg-white/80";
+  "rounded-xl border border-brand/25 bg-white/85";
 
-/** Eyebrow labels on the light Q1 cyan hero — never white/opacity. */
+/** Eyebrow labels on the light-to-medium Tobailey-blue hero — navy, not faint blue. */
 export const appPageHeroMetricLabelClass =
-  "text-[13px] font-semibold uppercase tracking-[0.06em] text-cyan-800";
+  "text-[13px] font-semibold uppercase tracking-[0.06em] text-brand-navy";
 
 export const appDashboardHeroMetricLabelClass = appPageHeroMetricLabelClass;
 
@@ -91,7 +91,7 @@ export const appPageHeroMetaClass = appDashboardHeroMetaClass;
 
 /** Inset evidence on the light hero (not white/10 on navy). */
 export const appPageHeroInsetClass =
-  "rounded-2xl border border-cyan-200/80 bg-white/80 px-3.5 py-3";
+  "rounded-2xl border border-brand/25 bg-white/85 px-3.5 py-3";
 
 /**
  * Shared hero action cluster: wrap inside a bounded right column.
@@ -100,7 +100,7 @@ export const appPageHeroInsetClass =
 export const appPageHeroActionsClass =
   "mt-4 flex min-h-11 w-full min-w-0 max-w-full flex-wrap items-center justify-start gap-2 overflow-x-clip lg:mt-0 lg:max-w-xl lg:justify-end";
 
-/** Important dark card — slightly lifted near-black. */
+/** Important dark card — lifted navy, never near-black. */
 export const appDarkCardClass =
   "min-w-0 overflow-hidden rounded-[24px] border border-white/10 bg-navy-card text-white shadow-[var(--navy-shadow)] md:rounded-[28px]";
 
@@ -159,7 +159,7 @@ export const appGhostButtonClass =
 /** Secondary CTA on light page heroes. */
 export const appHeroSecondaryButtonClass = appSecondaryButtonClass;
 
-/** Primary CTA on light page heroes — navy on cyan, auto width in the action row. */
+/** Primary CTA on light page heroes — navy on Tobailey-blue wash, auto width in the action row. */
 export const appHeroPrimaryButtonClass =
   `inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-navy-hero px-5 py-3 text-[16px] font-bold text-white shadow-sm transition hover:bg-navy-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 ${appControlDisabledClass}`;
 

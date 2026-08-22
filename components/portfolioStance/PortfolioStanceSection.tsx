@@ -124,7 +124,7 @@ export function PortfolioStanceSection({
               )}
 
               {history.change?.material ? (
-                <div className="mt-5 rounded-2xl border border-cyan-100 bg-cyan-50/60 px-4 py-4">
+                <div className="mt-5 rounded-2xl border border-brand/20 bg-brand-soft/60 px-4 py-4">
                   <p className={appSectionLabelClass}>What changed my stance?</p>
                   <p className={`mt-2 ${appSectionBodyClass}`}>{history.change.summary}</p>
                   <p className="mt-2 text-[1.15rem] font-bold tabular-nums text-slate-950">

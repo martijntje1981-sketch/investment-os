@@ -1,58 +1,55 @@
 /**
  * Semantic visual identity — Four Questions palette reused across the product.
- * Happened = cyan, Matters = violet, On track = amber, Ahead = teal.
- * These four colors stay a Tobailey signature inside Four Questions.
+ * Q1 brightest Tobailey blue → Q4 deepest navy. One family, four depths.
  * Outside Four Questions, major Dashboard intelligence uses the shared
- * Q1 cyan family in appSurface (`appIntelligenceAccent*`), not violet/amber/teal.
+ * brand-blue accent in appSurface (`appIntelligenceAccent*`).
  */
 
-export const appIdentityHappenedCardClass =
-  "overflow-hidden rounded-[24px] border-2 border-cyan-300 bg-gradient-to-br from-cyan-100 via-sky-50 to-white shadow-[0_12px_32px_-16px_rgba(8,145,178,0.5)]";
+import { FOUR_QUESTION_VISUAL } from "@/lib/services/fourQuestions/types";
+
+export const appIdentityHappenedCardClass = FOUR_QUESTION_VISUAL.what_happened.card;
 
 export const appIdentityMattersCardClass =
-  "overflow-hidden rounded-[24px] border-2 border-violet-300 bg-gradient-to-br from-violet-100 via-fuchsia-50 to-white shadow-[0_12px_32px_-16px_rgba(91,33,182,0.42)]";
+  FOUR_QUESTION_VISUAL.what_matters_now.card;
 
-export const appIdentityOnTrackCardClass =
-  "overflow-hidden rounded-[24px] border-2 border-amber-300 bg-gradient-to-br from-amber-100 via-orange-50 to-white shadow-[0_12px_32px_-16px_rgba(180,83,9,0.42)]";
+export const appIdentityOnTrackCardClass = FOUR_QUESTION_VISUAL.am_i_on_track.card;
 
-export const appIdentityAheadCardClass =
-  "overflow-hidden rounded-[24px] border-2 border-teal-300 bg-gradient-to-br from-teal-100 via-emerald-50 to-white shadow-[0_12px_32px_-16px_rgba(15,118,110,0.45)]";
+export const appIdentityAheadCardClass = FOUR_QUESTION_VISUAL.whats_ahead.card;
 
 export const appIdentityHappenedIconClass =
-  "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-cyan-600 text-white shadow-md shadow-cyan-800/30";
+  FOUR_QUESTION_VISUAL.what_happened.iconWell;
 
 export const appIdentityMattersIconClass =
-  "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-violet-600 text-white shadow-md shadow-violet-800/30";
+  FOUR_QUESTION_VISUAL.what_matters_now.iconWell;
 
 export const appIdentityOnTrackIconClass =
-  "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-500 text-white shadow-md shadow-amber-800/30";
+  FOUR_QUESTION_VISUAL.am_i_on_track.iconWell;
 
-export const appIdentityAheadIconClass =
-  "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-teal-600 text-white shadow-md shadow-teal-800/30";
+export const appIdentityAheadIconClass = FOUR_QUESTION_VISUAL.whats_ahead.iconWell;
 
 export const appIdentityHappenedMetricClass =
-  "min-w-0 rounded-2xl border border-cyan-200 bg-gradient-to-br from-cyan-50 to-white px-4 py-3.5";
+  "min-w-0 rounded-2xl border border-q1/25 bg-gradient-to-br from-q1-soft to-white px-4 py-3.5";
 
 export const appIdentityMattersMetricClass =
-  "min-w-0 rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50 to-white px-4 py-3.5";
+  "min-w-0 rounded-2xl border border-q2/25 bg-gradient-to-br from-q2-soft to-white px-4 py-3.5";
 
 export const appIdentityOnTrackMetricClass =
-  "min-w-0 rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white px-4 py-3.5";
+  "min-w-0 rounded-2xl border border-q3/25 bg-gradient-to-br from-q3-soft to-white px-4 py-3.5";
 
 export const appIdentityAheadMetricClass =
-  "min-w-0 rounded-2xl border border-teal-200 bg-gradient-to-br from-teal-50 to-white px-4 py-3.5";
+  "min-w-0 rounded-2xl border border-q4/25 bg-gradient-to-br from-q4-soft to-white px-4 py-3.5";
 
 export const appKpiPositiveClass =
-  "font-bold tabular-nums text-emerald-600";
+  "font-bold tabular-nums text-emerald-700";
 
 export const appKpiNegativeClass =
-  "font-bold tabular-nums text-rose-600";
+  "font-bold tabular-nums text-rose-700";
 
 export const appKpiGoalClass =
-  "font-bold tabular-nums text-amber-800";
+  "font-bold tabular-nums text-q3-strong";
 
 export const appKpiIntelClass =
-  "font-bold tabular-nums text-cyan-900";
+  "font-bold tabular-nums text-q1-deep";
 
 export const appKpiFutureClass =
-  "font-bold tabular-nums text-teal-800";
+  "font-bold tabular-nums text-q4-strong";

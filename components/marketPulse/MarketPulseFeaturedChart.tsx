@@ -169,7 +169,7 @@ export function MarketPulseFeaturedChart({
             onClick={() => onPeriodChange(item)}
             className={`min-h-[40px] min-w-[44px] rounded-full px-3 text-[13px] font-semibold ${
               period === item
-                ? "bg-sky-400 text-slate-950"
+                ? "bg-brand text-brand-navy"
                 : "border border-white/15 text-white/80"
             }`}
           >
@@ -260,7 +260,7 @@ export function MarketPulseFeaturedChart({
         </div>
       </dl>
       {asset.relevanceWhy ? (
-        <p className="mt-4 max-w-2xl text-[13px] font-medium leading-snug text-sky-200/90">
+        <p className="mt-4 max-w-2xl text-[13px] font-medium leading-snug text-white/90">
           {asset.relevanceWhy.split("\n")[0]}
         </p>
       ) : null}

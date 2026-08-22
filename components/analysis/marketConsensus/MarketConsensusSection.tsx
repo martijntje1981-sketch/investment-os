@@ -64,9 +64,9 @@ export function MarketConsensusSection({
       className="mt-7 scroll-mt-24 min-w-0 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm"
       aria-labelledby="market-consensus-heading"
     >
-      <div className="border-b border-slate-200 bg-gradient-to-br from-sky-700 to-slate-950 px-5 py-6 text-white sm:px-8">
+      <div className="border-b border-slate-200 bg-gradient-to-br from-q1-deep to-brand-navy px-5 py-6 text-white sm:px-8">
         <div
-          className={`inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 ${appHeroMetricLabelClass} text-sky-100`}
+          className={`inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 ${appHeroMetricLabelClass} text-brand`}
         >
           <Users className="h-3.5 w-3.5" aria-hidden="true" />
           Market consensus
@@ -78,7 +78,7 @@ export function MarketConsensusSection({
           Market consensus
         </h2>
         <p
-          className={`mt-3 max-w-3xl ${appAnalysisDarkHeaderCopyClass} text-sky-50/95`}
+          className={`mt-3 max-w-3xl ${appAnalysisDarkHeaderCopyClass} text-white/90`}
         >
           See how third-party analysts and market research currently assess the
           holdings in your portfolio. Consensus data reflects external opinions

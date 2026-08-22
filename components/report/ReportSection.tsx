@@ -4,19 +4,19 @@ import { ReportEvidenceList } from "@/components/report/ReportEvidenceList";
 import type { PersonalReportAccent, PersonalReportSectionView } from "@/lib/services/periodIntelligence";
 
 const ACCENT: Record<PersonalReportAccent, string> = {
-  cyan: "border-l-cyan-500",
-  violet: "border-l-violet-500",
-  amber: "border-l-amber-500",
-  teal: "border-l-teal-500",
+  cyan: "border-l-q1",
+  violet: "border-l-q2",
+  amber: "border-l-amber-600",
+  teal: "border-l-q4",
   slate: "border-l-slate-400",
 };
 
 const EYEBROW: Record<PersonalReportAccent, string> = {
-  cyan: "text-cyan-800",
-  violet: "text-violet-800",
+  cyan: "text-q1-strong",
+  violet: "text-q2-strong",
   amber: "text-amber-900",
-  teal: "text-teal-800",
-  slate: "text-slate-600",
+  teal: "text-q4-strong",
+  slate: "text-slate-700",
 };
 
 type ReportSectionProps = {

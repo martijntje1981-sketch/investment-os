@@ -73,7 +73,7 @@ export function FirstIntelligenceMoment({
       />
       <div className="relative">
         <p
-          className={`inline-flex items-center gap-2 rounded-full bg-cyan-50 px-3 py-1 ${appSectionLabelClass} text-emerald-800`}
+          className={`inline-flex items-center gap-2 rounded-full bg-brand-soft px-3 py-1 ${appSectionLabelClass} text-emerald-800`}
         >
           <Sparkles className="h-3.5 w-3.5" aria-hidden />
           Your portfolio is ready
@@ -90,7 +90,7 @@ export function FirstIntelligenceMoment({
         </p>
 
         {showGoalInvite ? (
-          <div className="mt-6 rounded-2xl border border-cyan-200 bg-white/80 px-4 py-4">
+          <div className="mt-6 rounded-2xl border border-brand/25 bg-white/80 px-4 py-4">
             <p className="text-[16px] font-semibold leading-relaxed text-slate-950">
               Want Tobailey to track what you’re investing toward?
             </p>

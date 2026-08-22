@@ -121,7 +121,7 @@ export function NewsBriefingIntelligence({
 
   return (
     <section className={appIdentityMattersCardClass}>
-      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-violet-200/80 px-4 py-4 sm:px-6 sm:py-5">
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-q2/25 px-4 py-4 sm:px-6 sm:py-5">
         <div className="min-w-0">
           <div className="flex min-w-0 items-start gap-3">
             <div className={appIdentityMattersIconClass}>
@@ -161,8 +161,8 @@ export function NewsBriefingIntelligence({
       </div>
 
       <div className="space-y-3 px-4 py-4 sm:space-y-5 sm:px-6 sm:py-5">
-        <div className="rounded-[20px] border-2 border-cyan-200 bg-gradient-to-br from-cyan-50 to-white px-4 py-4 sm:px-5 sm:py-5">
-          <p className={`${appSectionBodyMediumClass} text-cyan-900`}>
+        <div className="rounded-[20px] border-2 border-q1/35 bg-gradient-to-br from-q1-soft to-white px-4 py-4 sm:px-5 sm:py-5">
+          <p className={`${appSectionBodyMediumClass} text-q1-deep`}>
             Today&apos;s portfolio summary
           </p>
           <p className={`mt-3 text-[1.125rem] font-semibold leading-snug text-slate-950`}>
@@ -173,7 +173,7 @@ export function NewsBriefingIntelligence({
         <TodaysDecisionBlock decision={todaysDecision} variant="light" />
 
         <div className={appIdentityMattersMetricClass}>
-          <p className={`${appSectionBodyMediumClass} text-violet-900`}>
+          <p className={`${appSectionBodyMediumClass} text-q2-deep`}>
             What matters for your portfolio
           </p>
           {topMatters.length > 0 ? (

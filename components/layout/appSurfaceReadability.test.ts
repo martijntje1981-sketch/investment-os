@@ -89,21 +89,20 @@ describe("shared readability tokens", () => {
 
   it("exposes a clearly visible Four Questions semantic identity", () => {
     const identity = read("components/layout/semanticIdentity.ts");
-    expect(identity).toContain("border-2 border-cyan-300");
-    expect(identity).toContain("border-2 border-violet-300");
-    expect(identity).toContain("border-2 border-amber-300");
-    expect(identity).toContain("border-2 border-teal-300");
-    expect(identity).toContain("bg-cyan-600");
-    expect(identity).toContain("text-emerald-600");
-    expect(identity).toContain("text-rose-600");
+    expect(identity).toContain("FOUR_QUESTION_VISUAL.what_happened.card");
+    expect(identity).toContain("FOUR_QUESTION_VISUAL.what_matters_now.card");
+    expect(identity).toContain("FOUR_QUESTION_VISUAL.am_i_on_track.card");
+    expect(identity).toContain("FOUR_QUESTION_VISUAL.whats_ahead.card");
+    expect(identity).toContain("text-emerald-700");
+    expect(identity).toContain("text-rose-700");
   });
 
   it("exposes the shared Q1 cyan intelligence accent for surfaces outside Four Questions", () => {
     const surface = read("components/layout/appSurface.ts");
     expect(surface).toContain("appIntelligenceAccentCardClass");
-    expect(surface).toContain("border-cyan-200/80");
+    expect(surface).toContain("border-brand/25");
     expect(surface).toContain("appIntelligenceAccentStrongCardClass");
-    expect(surface).toContain("from-cyan-50");
+    expect(surface).toContain("from-brand-soft");
     expect(surface).toContain("appIntelligenceAccentIconWellClass");
   });
 });

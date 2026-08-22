@@ -46,7 +46,7 @@ export function DashboardQuickActions() {
             href={href}
             className="flex min-h-[88px] flex-col items-start justify-between rounded-[22px] border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-950 text-white">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-navy-hero text-white">
               <Icon className="h-4 w-4" />
             </div>
             <span className={appValueSemiboldClass}>{label}</span>

@@ -46,7 +46,7 @@ export function UpcomingEventsStrip({
     <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
       <div className={`border-b border-slate-100 ${compact ? "px-5 py-4" : "px-5 py-5 sm:px-8"}`}>
         <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-[18px] bg-slate-950 text-white">
+          <div className="flex h-12 w-12 items-center justify-center rounded-[18px] bg-navy-hero text-white">
             <CalendarDays className="h-5 w-5" />
           </div>
           <div>
@@ -74,7 +74,7 @@ export function UpcomingEventsStrip({
             }`}
           >
             <div className="flex items-center justify-between gap-2">
-              <span className="rounded-full bg-slate-950 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-white">
+              <span className="rounded-full bg-navy-hero px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-white">
                 {CATEGORY_LABELS[event.category]}
               </span>
               <span

@@ -28,7 +28,7 @@ export function DashboardPortfolioStance({
 
   return (
     <div
-      className="min-w-0 overflow-x-clip rounded-2xl border border-cyan-100 bg-white/80 px-4 py-4"
+      className="min-w-0 overflow-x-clip rounded-2xl border border-brand/20 bg-white/80 px-4 py-4"
       data-testid="dashboard-portfolio-stance"
     >
       <p className={appSectionLabelClass}>Portfolio Stance</p>
@@ -43,7 +43,7 @@ export function DashboardPortfolioStance({
           </p>
         </div>
         {delta != null ? (
-          <p className="shrink-0 text-right text-[15px] font-semibold tabular-nums text-cyan-900">
+          <p className="shrink-0 text-right text-[15px] font-semibold tabular-nums text-q1-deep">
             {history.prior ? "Vs last snapshot" : "Change"}
             <span className="mt-0.5 block text-[1.05rem]">
               {delta > 0 ? "+" : ""}

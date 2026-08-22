@@ -58,13 +58,13 @@ function CompositionBar({
       ) : null}
       {ethereum > 0 ? (
         <span
-          className="bg-violet-500/90"
+          className="bg-q2-strong/90"
           style={{ width: `${(ethereum / total) * 100}%` }}
         />
       ) : null}
       {other > 0 ? (
         <span
-          className="bg-sky-500/80"
+          className="bg-q1-strong/80"
           style={{ width: `${(other / total) * 100}%` }}
         />
       ) : null}
@@ -97,7 +97,7 @@ function moveToneClass(value: number | null): string {
 
 function CoinChip({ symbol }: { symbol: string }) {
   return (
-    <span className="inline-flex min-h-8 items-center rounded-md bg-violet-50 px-2 text-[12px] font-semibold tracking-wide text-violet-900">
+    <span className="inline-flex min-h-8 items-center rounded-md bg-q2-soft px-2 text-[12px] font-semibold tracking-wide text-q2-deep">
       {symbol}
     </span>
   );
@@ -179,7 +179,7 @@ function CoinDetailBlock({ coin }: { coin: CoinIntelligence }) {
                 href={story.canonicalUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="text-[13px] font-medium text-sky-900 underline-offset-2 hover:underline"
+                className="text-[13px] font-medium text-q1-deep underline-offset-2 hover:underline"
               >
                 {story.title}
               </a>
@@ -384,9 +384,9 @@ export function CryptoIntelligenceSection({
       aria-labelledby="crypto-intelligence-heading"
       data-testid="crypto-intelligence-section"
     >
-      <div className="border-b border-slate-200 bg-gradient-to-br from-slate-950 via-violet-950 to-sky-950 px-5 py-5 text-white sm:px-8">
+      <div className="border-b border-slate-200 bg-gradient-to-br from-brand-navy via-q2-deep to-q4-deep px-5 py-5 text-white sm:px-8">
         <div
-          className={`inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 ${appHeroMetricLabelClass} text-violet-100`}
+          className={`inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 ${appHeroMetricLabelClass} text-brand`}
         >
           <Coins className="h-3.5 w-3.5" aria-hidden="true" />
           Crypto intelligence
@@ -398,7 +398,7 @@ export function CryptoIntelligenceSection({
           Crypto intelligence
         </h2>
         <p
-          className={`mt-2 max-w-2xl ${appAnalysisDarkHeaderCopyClass} text-violet-50/90`}
+          className={`mt-2 max-w-2xl ${appAnalysisDarkHeaderCopyClass} text-white/90`}
         >
           What happened in the coins you own — analysed deeply, shown simply.
         </p>
@@ -461,7 +461,7 @@ export function CryptoIntelligenceSection({
         <div>
           <button
             type="button"
-            className="inline-flex min-h-11 min-w-[44px] items-center text-sm font-semibold text-sky-800 underline-offset-2 hover:underline"
+            className="inline-flex min-h-11 min-w-[44px] items-center text-sm font-semibold text-q1-strong underline-offset-2 hover:underline"
             aria-expanded={detailsOpen}
             onClick={() => setDetailsOpen((open) => !open)}
           >

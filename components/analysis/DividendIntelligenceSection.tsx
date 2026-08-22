@@ -67,7 +67,7 @@ export function DividendIntelligenceSection({
       className="mt-7 scroll-mt-24 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm"
       aria-labelledby="distribution-policy-heading"
     >
-      <div className="border-b border-slate-200 bg-gradient-to-br from-emerald-700 to-slate-950 px-5 py-5 text-white sm:px-8">
+      <div className="border-b border-slate-200 bg-gradient-to-br from-emerald-700 to-brand-navy px-5 py-5 text-white sm:px-8">
         <div
           className={`inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 ${appHeroMetricLabelClass} text-emerald-100`}
         >

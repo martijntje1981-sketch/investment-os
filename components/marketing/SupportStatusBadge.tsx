@@ -6,10 +6,10 @@ const STATUS_STYLES: Record<
   string
 > = {
   supported: "bg-emerald-50 text-emerald-800 border-emerald-200",
-  supported_via_conversion: "bg-blue-50 text-blue-800 border-blue-200",
+  supported_via_conversion: "bg-q1-soft text-q1-deep border-q1/30",
   pending_match: "bg-amber-50 text-amber-900 border-amber-200",
   not_supported: "bg-slate-100 text-slate-700 border-slate-200",
-  live_price_unavailable: "bg-violet-50 text-violet-900 border-violet-200",
+  live_price_unavailable: "bg-q2-soft text-q2-deep border-q2/30",
 };
 
 type SupportStatusBadgeProps = {

@@ -42,9 +42,9 @@ export function AnalystIntelligenceSection({
 
   return (
     <section className={`mt-7 ${appCardClass}`}>
-      <div className="border-b border-slate-200 bg-gradient-to-br from-violet-700 to-slate-950 px-5 py-6 text-white sm:px-8">
+      <div className="border-b border-slate-200 bg-gradient-to-br from-q2-deep to-brand-navy px-5 py-6 text-white sm:px-8">
         <div
-          className={`inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 ${appSectionLabelClass} text-violet-100`}
+          className={`inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 ${appSectionLabelClass} text-brand`}
         >
           <LineChart className="h-3.5 w-3.5" />
           Analyst intelligence
@@ -183,7 +183,7 @@ export function AnalystIntelligenceSection({
                       >
                         <div className="flex flex-wrap items-center gap-2">
                           <p className="font-black">{action.symbol}</p>
-                          <span className="rounded-full bg-violet-50 px-2 py-0.5 text-xs font-bold text-violet-800">
+                          <span className="rounded-full bg-q2-soft px-2 py-0.5 text-xs font-bold text-q2-strong">
                             {formatActionType(action.actionType)}
                           </span>
                         </div>
@@ -193,7 +193,7 @@ export function AnalystIntelligenceSection({
                             ? ` · ${action.previousValue} → ${action.newValue}`
                             : ""}
                         </p>
-                        <p className={`mt-2 ${appSectionBodyClass}`}>
+                        <p className="mt-2 text-xs leading-5 text-slate-500">
                           {action.whyItMatters}
                         </p>
                       </article>
@@ -231,7 +231,7 @@ export function AnalystIntelligenceSection({
             </div>
           ) : null}
 
-          <p className={`mt-3 ${appSectionBodyClass}`}>
+          <p className="text-xs leading-5 text-slate-500">
             {ANALYST_DISCLAIMER}
             {snapshot.source && snapshot.updatedAt
               ? ` Source: ${snapshot.source}. Last updated ${formatShortDate(snapshot.updatedAt)}.`
@@ -259,7 +259,7 @@ export function HoldingAnalystMeta({
   }
 
   return (
-    <div className="rounded-2xl border border-violet-100 bg-violet-50/50 p-3">
+    <div className="rounded-2xl border border-q2/20 bg-q2-soft/50 p-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <span
@@ -280,7 +280,7 @@ export function HoldingAnalystMeta({
         <button
           type="button"
           onClick={() => setExpanded((value) => !value)}
-          className="inline-flex min-h-[44px] items-center gap-1 rounded-xl px-3 text-xs font-bold text-violet-800 hover:bg-violet-100"
+          className="inline-flex min-h-[44px] items-center gap-1 rounded-xl px-3 text-xs font-bold text-q2-strong hover:bg-q2-soft"
           aria-expanded={expanded}
           aria-label={
             expanded ? "Hide analyst details" : "Show analyst details"
@@ -294,7 +294,7 @@ export function HoldingAnalystMeta({
       </div>
 
       {expanded ? (
-        <div className="mt-3 grid gap-2 border-t border-violet-100 pt-3 sm:grid-cols-2">
+        <div className="mt-3 grid gap-2 border-t border-q2/20 pt-3 sm:grid-cols-2">
           <MiniStat
             label="Avg. price target"
             value={
@@ -325,7 +325,7 @@ export function HoldingAnalystMeta({
             value={formatShortDate(quote.updatedAt)}
           />
           <MiniStat label="Source" value={quote.source} />
-          <p className={`sm:col-span-2 ${appSectionBodyClass}`}>
+          <p className="sm:col-span-2 text-[11px] leading-5 text-slate-500">
             {ANALYST_DISCLAIMER}
           </p>
         </div>
@@ -346,8 +346,8 @@ function Metric({ label, value }: { label: string; value: string }) {
 function MiniStat({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className={`${appSectionLabelClass} text-violet-800/80`}>{label}</p>
-      <p className="mt-0.5 text-sm font-bold text-violet-950">{value}</p>
+      <p className={`${appSectionLabelClass} text-q2-strong/80`}>{label}</p>
+      <p className="mt-0.5 text-sm font-bold text-q2-deep">{value}</p>
     </div>
   );
 }

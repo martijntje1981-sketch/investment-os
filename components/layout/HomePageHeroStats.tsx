@@ -40,8 +40,8 @@ function HeroStat({
   valueClassName?: string;
 }) {
   return (
-    <div className="min-w-0 rounded-[14px] border border-cyan-100 bg-white/80 px-3 py-2.5 sm:px-4 sm:py-3">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-cyan-800">
+    <div className="min-w-0 rounded-[14px] border border-brand/20 bg-white/80 px-3 py-2.5 sm:px-4 sm:py-3">
+      <p className="text-[13px] font-semibold uppercase tracking-[0.1em] text-q1-strong">
         {label}
       </p>
       <p className={`mt-1 truncate text-base font-black sm:text-lg ${valueClassName}`}>

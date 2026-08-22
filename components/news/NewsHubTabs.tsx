@@ -28,7 +28,7 @@ export function NewsHubTabs({
               onClick={() => onTabChange(tab.id)}
               className={`rounded-2xl px-4 py-3 text-left transition ${
                 active
-                  ? "bg-slate-950 text-white shadow-lg"
+                  ? "bg-navy-hero text-white shadow-lg"
                   : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
               }`}
             >

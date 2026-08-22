@@ -83,7 +83,7 @@ export function OfficialRatesBoard({
                     data-testid={`official-rate-${rate.id}`}
                   >
                     <p className={appSectionLabelClass}>{rate.label}</p>
-                    <p className="mt-1 text-[1.35rem] font-bold tabular-nums text-teal-900">
+                    <p className="mt-1 text-[1.35rem] font-bold tabular-nums text-q3-deep">
                       {display ?? "—"}
                     </p>
                     {showChanges && rate.direction !== "unknown" ? (
@@ -104,7 +104,7 @@ export function OfficialRatesBoard({
                       href={rate.sourceUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={`mt-2 inline-flex min-h-11 items-center font-semibold text-teal-900 underline-offset-2 hover:underline ${appSectionMetaClass}`}
+                      className={`mt-2 inline-flex min-h-11 items-center font-semibold text-q3-deep underline-offset-2 hover:underline ${appSectionMetaClass}`}
                     >
                       {rate.source}
                     </a>

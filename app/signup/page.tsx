@@ -274,7 +274,7 @@ export default async function SignupPage({
         <section className="relative hidden overflow-hidden bg-brand-navy px-12 py-14 text-white lg:flex lg:flex-col lg:justify-between">
           <div className="absolute -right-40 -top-40 h-[540px] w-[540px] rounded-full bg-brand/25 blur-3xl" />
 
-          <div className="absolute -bottom-48 -left-32 h-[540px] w-[540px] rounded-full bg-sky-400/15 blur-3xl" />
+          <div className="absolute -bottom-48 -left-32 h-[540px] w-[540px] rounded-full bg-brand/15 blur-3xl" />
 
           <div className="relative">
             <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold text-slate-200">

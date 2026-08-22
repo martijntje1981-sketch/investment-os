@@ -45,7 +45,7 @@ export default function DiscoverPage() {
             </p>
             <Link
               href="/upload"
-              className="mt-4 inline-flex min-h-[44px] items-center rounded-xl bg-slate-950 px-4 py-3 text-sm font-bold text-white"
+              className="mt-4 inline-flex min-h-[44px] items-center rounded-xl bg-navy-hero px-4 py-3 text-sm font-bold text-white"
             >
               Add portfolio
             </Link>

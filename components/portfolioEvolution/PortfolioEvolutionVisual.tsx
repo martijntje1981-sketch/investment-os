@@ -122,7 +122,7 @@ export function PortfolioEvolutionVisual({
         className={`mt-6 ${appDarkCardClass} rounded-[22px] px-5 py-5`}
         data-testid="evolution-conclusion"
       >
-        <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-cyan-200">
+        <p className="text-[13px] font-semibold uppercase tracking-[0.18em] text-brand">
           Tobailey conclusion
         </p>
         <p className="mt-2 text-[1.2rem] font-semibold leading-snug sm:text-[1.35rem]">
@@ -134,7 +134,7 @@ export function PortfolioEvolutionVisual({
           </p>
         ))}
         {timeline.fundingVsMarket ? (
-          <p className="mt-3 text-[14px] text-cyan-100/90">
+          <p className="mt-3 text-[14px] text-white/85">
             {timeline.fundingVsMarket.copy}
           </p>
         ) : null}

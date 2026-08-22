@@ -61,10 +61,10 @@ export function DashboardIntelligenceSummary({
   });
 
   return (
-    <section className="overflow-hidden rounded-[24px] border border-slate-800 bg-slate-950 text-white shadow-xl md:rounded-[28px]">
+    <section className="overflow-hidden rounded-[24px] border border-white/10 bg-gradient-to-br from-brand-navy via-brand-deep to-q4-deep text-white shadow-[var(--navy-shadow)] md:rounded-[28px]">
       <div className="flex flex-wrap items-start justify-between gap-3 border-b border-white/10 px-4 py-4 md:px-6">
         <div className="min-w-0">
-          <div className="inline-flex items-center gap-2 rounded-full bg-violet-500/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.1em] text-violet-200">
+          <div className="inline-flex items-center gap-2 rounded-full bg-brand/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.1em] text-brand">
             <Sparkles className="h-3.5 w-3.5" />
             Today&apos;s Portfolio Intelligence
           </div>
@@ -109,7 +109,7 @@ export function DashboardIntelligenceSummary({
             <ul className="mt-2 space-y-1.5 text-sm leading-6 text-slate-100">
               {topBullets.map((bullet) => (
                 <li key={intelligenceBulletKey(bullet)} className="flex gap-2">
-                  <span className="text-violet-300">•</span>
+                  <span className="text-brand">•</span>
                   <span className="min-w-0 flex-1">
                     <IntelligenceBulletRow bullet={bullet} variant="dark" />
                   </span>

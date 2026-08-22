@@ -19,13 +19,13 @@ describe("Pre-launch light hero contrast and action alignment", () => {
   const addMenu = read("components/portfolio/PortfolioHeroAddMenu.tsx");
   const news = read("app/news/page.tsx");
 
-  it("keeps the approved light Q1 cyan hero and navy type tokens", () => {
+  it("keeps the approved light Tobailey-blue hero and navy type tokens", () => {
     expect(surface).toMatch(
-      /export const appHeroShellClass =\s*"[^"]*from-cyan-100[^"]*"/,
+      /export const appHeroShellClass =\s*"[^"]*from-hero-premium-from[^"]*"/,
     );
     expect(surface).toContain("text-slate-950");
     expect(surface).toContain("appPageHeroMetricLabelClass");
-    expect(surface).toContain("text-cyan-800");
+    expect(surface).toContain("text-q1-strong");
     expect(surface).toContain("appPageHeroMetaClass");
     expect(surface).toContain("appPageHeroInsetClass");
     expect(surface).toContain("appPageHeroActionsClass");

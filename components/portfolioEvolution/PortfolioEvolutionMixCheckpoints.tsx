@@ -57,7 +57,7 @@ export function PortfolioEvolutionMixCheckpoints({
             key={`${checkpoint.date}-${checkpoint.sourceQuality}`}
             className="grid min-w-0 grid-cols-[5.5rem_minmax(0,1fr)] items-center gap-3"
           >
-            <p className="text-[13px] font-semibold uppercase tracking-[0.08em] text-cyan-800">
+            <p className="text-[13px] font-semibold uppercase tracking-[0.08em] text-q1-strong">
               {checkpoint.sourceQuality === "current"
                 ? "Now"
                 : formatPerformanceAxisDate(checkpoint.date)}
@@ -78,7 +78,7 @@ export function PortfolioEvolutionMixCheckpoints({
                 })}
               </div>
               {index < checkpoints.length - 1 ? (
-                <div className="ml-2 h-2 w-px bg-cyan-200" aria-hidden />
+                <div className="ml-2 h-2 w-px bg-brand/40" aria-hidden />
               ) : null}
             </div>
           </div>

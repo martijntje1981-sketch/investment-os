@@ -69,7 +69,7 @@ export function NewsForPortfolioSection({
               : null;
             return (
               <article
-                className="min-w-0 rounded-[20px] border-2 border-violet-200 bg-gradient-to-br from-violet-50 via-white to-white p-4 shadow-sm"
+                className="min-w-0 rounded-[20px] border-2 border-q2/30 bg-gradient-to-br from-q2-soft via-white to-white p-4 shadow-sm"
                 data-testid="news-hub-holding-row"
                 data-symbol={row.candidate.symbol}
                 data-match-role={row.matchRole}
@@ -110,7 +110,7 @@ export function NewsForPortfolioSection({
                   </div>
                   <div className={appIdentityAheadMetricClass}>
                     <dt className={appSectionLabelClass}>Portfolio impact</dt>
-                    <dd className="mt-1 text-[16px] font-bold tabular-nums text-teal-900">
+                    <dd className="mt-1 text-[16px] font-bold tabular-nums text-q4-deep">
                       {row.impactLabel}
                     </dd>
                   </div>

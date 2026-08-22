@@ -95,7 +95,7 @@ export function DashboardContributionsCard({
         <button
           type="button"
           onClick={() => setDialogOpen(true)}
-          className="inline-flex min-h-[40px] items-center rounded-xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+          className="inline-flex min-h-[40px] items-center rounded-xl bg-navy-hero px-4 py-2 text-sm font-semibold text-white transition hover:bg-navy-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
         >
           {CONTRIBUTIONS_ADD_LABEL}
         </button>

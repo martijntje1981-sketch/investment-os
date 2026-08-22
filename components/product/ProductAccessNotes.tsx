@@ -24,9 +24,9 @@ export function PlanStatusBadge({
     access.tier === "complete"
       ? "border-emerald-200 bg-emerald-50 text-emerald-900"
       : access.tier === "trial"
-        ? "border-violet-200 bg-violet-50 text-violet-900"
+        ? "border-q2/30 bg-q2-soft text-q2-deep"
         : access.isDemo
-          ? "border-sky-200 bg-sky-50 text-sky-900"
+          ? "border-q1/30 bg-q1-soft text-q1-deep"
           : "border-slate-200 bg-slate-50 text-slate-700";
 
   return (

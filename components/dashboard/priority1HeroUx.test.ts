@@ -43,12 +43,12 @@ describe("Priority 1 dashboard hero", () => {
     const dashboard = read("app/dashboard/page.tsx");
     const globals = read("app/globals.css");
 
-    expect(surface).toContain("from-cyan-100");
-    expect(surface).toContain("via-sky-50");
-    expect(surface).toContain("to-white");
+    expect(surface).toContain("from-hero-premium-from");
+    expect(surface).toContain("via-hero-premium-via");
+    expect(surface).toContain("to-hero-premium-to");
     expect(surface).toContain("appDashboardHeroShellClass = appHeroShellClass");
     expect(globals).toContain("--hero-premium-from:");
-    expect(globals).toContain("--navy-hero: #0a0a0a");
+    expect(globals).toContain("--navy-hero: #0b1f3a");
     expect(hero).toContain("appDashboardHeroShellClass");
     expect(hero).toContain("HeroPortfolioPulse");
     expect(hero).toContain("Biggest mover");

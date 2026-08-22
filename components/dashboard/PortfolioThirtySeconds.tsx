@@ -160,7 +160,7 @@ function MarketCalmerBlock({ calmer }: { calmer: MarketCalmerResult }) {
 
       <button
         type="button"
-        className="mt-1.5 inline-flex min-h-11 items-center text-sm font-medium text-sky-800"
+        className="mt-1.5 inline-flex min-h-11 items-center text-sm font-medium text-q1-strong"
         aria-expanded={expanded}
         aria-controls={detailsId}
         onClick={() => setExpanded((value) => !value)}

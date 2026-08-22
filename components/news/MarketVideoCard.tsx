@@ -21,7 +21,7 @@ export function MarketVideoCard({ item }: { item: NewsContentItem }) {
             <PlayCircle className="h-12 w-12 text-slate-300" />
           </div>
         )}
-        <span className="absolute left-3 top-3 rounded-full bg-slate-950/85 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-white">
+        <span className="absolute left-3 top-3 rounded-full bg-navy-hero/85 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-white">
           {item.sourceName}
         </span>
       </div>
@@ -42,7 +42,7 @@ export function MarketVideoCard({ item }: { item: NewsContentItem }) {
             href={item.canonicalUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-xl bg-slate-950 px-3 py-2 text-xs font-bold text-white transition hover:bg-slate-800"
+            className="inline-flex items-center gap-2 rounded-xl bg-navy-hero px-3 py-2 text-xs font-bold text-white transition hover:bg-navy-card"
           >
             Watch
             <ExternalLink className="h-3.5 w-3.5" />

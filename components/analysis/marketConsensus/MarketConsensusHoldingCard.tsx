@@ -25,10 +25,10 @@ function HoldingIdentity({ card }: { card: MarketConsensusHoldingCardModel }) {
       <span
         className={`inline-flex shrink-0 rounded-xl px-3 py-2 text-sm font-bold ${
           card.state === "crypto_outlook"
-            ? "bg-violet-100 text-violet-900"
+            ? "bg-q2-soft text-q2-deep"
             : card.state === "etf_outlook"
               ? "bg-blue-100 text-blue-900"
-              : "bg-slate-950 text-white"
+              : "bg-navy-hero text-white"
         }`}
         aria-hidden="true"
       >
@@ -236,7 +236,7 @@ function ExpandedDetails({ card }: { card: MarketConsensusHoldingCardModel }) {
 
       {card.cryptoDisclaimer ? (
         <p
-          className={`rounded-2xl border border-violet-100 bg-violet-50 px-4 py-3 ${appSectionBodyClass} text-violet-950`}
+          className={`rounded-2xl border border-q2/20 bg-q2-soft px-4 py-3 ${appSectionBodyClass} text-q2-deep`}
         >
           {card.cryptoDisclaimer}
         </p>
@@ -333,7 +333,7 @@ export function MarketConsensusHoldingCard({
           <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
             <SummaryBlock card={card} />
             {card.cryptoDisclaimer ? (
-              <p className={`mt-3 ${appSectionBodyClass} text-violet-900`}>
+              <p className={`mt-3 ${appSectionBodyClass} text-q2-deep`}>
                 {card.cryptoDisclaimer}
               </p>
             ) : null}

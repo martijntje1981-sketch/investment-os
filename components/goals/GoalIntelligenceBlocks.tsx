@@ -42,7 +42,7 @@ export function GoalCoachCard({ coach }: { coach: GoalCoachResult }) {
       <p className={`mt-2 ${appSectionBodyClass} text-slate-200`}>{coach.body}</p>
       <p className={`mt-2 ${appSectionMetaClass} text-slate-300`}>{coach.reason}</p>
       {coach.actionLine ? (
-        <p className="mt-2 text-sm font-semibold text-violet-200">{coach.actionLine}</p>
+        <p className="mt-2 text-sm font-semibold text-brand">{coach.actionLine}</p>
       ) : null}
     </section>
   );
@@ -121,15 +121,15 @@ export function GoalInsightCard({ insight }: { insight: string }) {
   return (
     <section
       aria-labelledby="goal-insight-heading"
-      className="rounded-2xl border border-violet-400/20 bg-violet-500/10 p-4 sm:p-5"
+      className="rounded-2xl border border-q3/30 bg-q3-strong/20 p-4 sm:p-5"
     >
       <p
         id="goal-insight-heading"
-        className={`${appSectionLabelClass} text-violet-200`}
+        className="text-xs font-semibold uppercase tracking-[0.08em] text-brand"
       >
         Insight
       </p>
-      <p className={`mt-2 ${appSectionBodyClass} text-violet-50`}>{insight}</p>
+      <p className="mt-2 text-sm leading-relaxed text-white">{insight}</p>
     </section>
   );
 }

@@ -64,7 +64,7 @@ export const READINESS_SCORE_BAND_LABELS = [
 export const SCORE_TONE_RING_CLASS: Record<ScoreBandTone, string> = {
   fragile: "text-rose-500",
   attention: "text-amber-500",
-  balanced: "text-sky-500",
+  balanced: "text-brand-display",
   strong: "text-emerald-500",
   resilient: "text-emerald-600",
 };
@@ -73,7 +73,7 @@ export const SCORE_TONE_RING_CLASS: Record<ScoreBandTone, string> = {
 export const SCORE_TONE_RING_ON_DARK_CLASS: Record<ScoreBandTone, string> = {
   fragile: "text-rose-300",
   attention: "text-amber-300",
-  balanced: "text-sky-300",
+  balanced: "text-brand",
   strong: "text-emerald-300",
   resilient: "text-emerald-200",
 };
@@ -83,7 +83,7 @@ export const SCORE_TONE_TRACK_CLASS = "text-slate-200";
 export const SCORE_TONE_LABEL_CLASS: Record<ScoreBandTone, string> = {
   fragile: "text-rose-700",
   attention: "text-amber-700",
-  balanced: "text-sky-700",
+  balanced: "text-q1-strong",
   strong: "text-emerald-700",
   resilient: "text-emerald-800",
 };

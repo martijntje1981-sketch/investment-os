@@ -35,13 +35,13 @@ export function PublicProductModelsSection() {
               key={model.id}
               className={`flex flex-col rounded-[28px] border p-7 shadow-sm ${
                 model.featured
-                  ? "border-slate-900 bg-slate-950 text-white"
+                  ? "border-brand-navy bg-gradient-to-br from-brand-navy via-brand-deep to-q4-deep text-white"
                   : "border-slate-200 bg-slate-50/60 text-slate-950"
               }`}
             >
               <p
                 className={`text-xs font-black uppercase tracking-[0.16em] ${
-                  model.featured ? "text-violet-300" : "text-slate-500"
+                  model.featured ? "text-brand" : "text-slate-600"
                 }`}
               >
                 {model.shortName}
@@ -92,7 +92,7 @@ export function PublicProductModelsSection() {
                 className={`mt-8 inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3.5 text-sm font-bold transition ${
                   model.featured
                     ? "bg-brand text-brand-navy hover:bg-brand-hover"
-                    : "bg-slate-950 text-white hover:bg-slate-800"
+                    : "bg-navy-hero text-white hover:bg-navy-card"
                 }`}
               >
                 {model.ctaLabel}

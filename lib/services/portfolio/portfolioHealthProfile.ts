@@ -212,18 +212,18 @@ const THEMATIC_GROUPS = new Set<ExposureGroupId>([
 const EQUITY_GROUP_IDS = EQUITY_EXPOSURE_GROUP_ID_SET;
 
   const ASSET_COLORS = {
-  crypto: "bg-violet-500",
-  equity: "bg-sky-500",
+  crypto: "bg-q2-strong",
+  equity: "bg-brand-strong",
   cash: "bg-slate-400",
   other: "bg-slate-300",
   fixed_income: "bg-teal-700",
   bitcoin: "bg-amber-500",
-  altcoins: "bg-violet-600",
+  altcoins: "bg-q2-strong",
   stablecoins: "bg-emerald-600",
 } as const;
 
 const THEME_COLORS: Record<string, string> = {
-  technology_communication: "bg-sky-600",
+  technology_communication: "bg-brand-strong",
   healthcare: "bg-rose-500",
   consumer: "bg-orange-500",
   financials_real_estate: "bg-indigo-600",
@@ -1075,7 +1075,7 @@ export function buildHiddenDrivers(input: {
         label: "Large-cap altcoins",
         weight: crypto.largeCapAltPortfolioWeight,
         multiplier: 1.25,
-        colorClass: "bg-violet-500",
+        colorClass: "bg-q2-strong",
       });
     }
     if (crypto.speculativeAltPortfolioWeight >= 2) {
@@ -1125,7 +1125,7 @@ export function buildHiddenDrivers(input: {
             label: "Other crypto",
             weight: otherCrypto,
             multiplier: 1.3,
-            colorClass: "bg-violet-500",
+            colorClass: "bg-q2-strong",
           });
         }
       } else {
@@ -1134,7 +1134,7 @@ export function buildHiddenDrivers(input: {
           label: "Crypto",
           weight: classification.cryptoWeight,
           multiplier: 1.4,
-          colorClass: "bg-violet-500",
+          colorClass: "bg-q2-strong",
         });
       }
     }

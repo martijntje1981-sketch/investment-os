@@ -54,7 +54,7 @@ export function PortfolioXRaySection({
     >
       <div className="border-b border-white/10 bg-white/[0.03] px-4 py-4 md:px-5 md:py-4">
         <div className="flex min-w-0 items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-sky-500/20 text-sky-100 ring-1 ring-sky-400/25">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-brand/20 text-brand ring-1 ring-brand/30">
             <ScanSearch className="h-4 w-4" />
           </div>
           <div className="min-w-0">
@@ -189,7 +189,7 @@ export function PortfolioXRaySection({
 
         <button
           type="button"
-          className="min-h-11 text-[15px] font-semibold text-brand hover:text-brand-hover"
+          className="min-h-11 text-[12px] font-semibold text-brand hover:text-brand-hover"
           onClick={() => setShowEligibility((value) => !value)}
           data-testid="xray-toggle-eligibility"
         >

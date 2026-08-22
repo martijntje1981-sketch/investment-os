@@ -81,9 +81,9 @@ export function GoalHeroProgressVisual({
         </div>
       </div>
 
-      <div className="relative mt-5 h-2 overflow-hidden rounded-full bg-cyan-100">
+      <div className="relative mt-5 h-2 overflow-hidden rounded-full bg-q3-soft">
         <div
-          className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-cyan-600 via-sky-500 to-cyan-400 transition-[width] duration-500 motion-reduce:transition-none"
+          className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-q3-deep via-q3-strong to-q3 transition-[width] duration-500 motion-reduce:transition-none"
           style={{ width: `${state.fillPercent}%` }}
           role="progressbar"
           aria-valuemin={0}
@@ -93,7 +93,7 @@ export function GoalHeroProgressVisual({
         />
         {state.fillPercent > 0 ? (
           <span
-            className="absolute top-1/2 h-3 w-3 -translate-y-1/2 rounded-full border border-cyan-700 bg-white shadow-[0_0_0_4px_rgba(8,145,178,0.16)] motion-reduce:transition-none"
+            className="absolute top-1/2 h-3 w-3 -translate-y-1/2 rounded-full border border-q3-strong bg-white shadow-[0_0_0_4px_rgba(24,69,124,0.16)] motion-reduce:transition-none"
             style={{ left: `calc(${state.fillPercent}% - 6px)` }}
             aria-hidden
           />

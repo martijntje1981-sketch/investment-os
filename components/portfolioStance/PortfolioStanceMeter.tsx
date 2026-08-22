@@ -21,7 +21,7 @@ export function PortfolioStanceMeter({
         <p className={appSectionLabelClass}>Offensive</p>
       </div>
       <div
-        className={`relative mt-1.5 w-full overflow-hidden rounded-full bg-gradient-to-r from-cyan-100 via-slate-200 to-cyan-800 ${
+        className={`relative mt-1.5 w-full overflow-hidden rounded-full bg-gradient-to-r from-q1-soft via-slate-200 to-q4-deep ${
           compact ? "h-2.5" : "h-3.5"
         }`}
         role="meter"

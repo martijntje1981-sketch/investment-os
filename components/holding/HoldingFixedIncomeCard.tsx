@@ -151,7 +151,7 @@ export function HoldingFixedIncomeCard({
       </dl>
 
       <aside
-        className="mt-4 rounded-2xl border border-teal-200 bg-white/80 px-4 py-3.5"
+        className="mt-4 rounded-2xl border border-q3/30 bg-white/80 px-4 py-3.5"
         data-testid="holding-fixed-income-education"
       >
         <p className={appSectionLabelClass}>How rates relate</p>
@@ -169,7 +169,7 @@ export function HoldingFixedIncomeCard({
             href={official.canonicalUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className={`mt-2 inline-flex min-h-11 items-center font-semibold text-teal-900 underline-offset-2 hover:underline ${appSectionBodyClass}`}
+            className={`mt-2 inline-flex min-h-11 items-center font-semibold text-q3-deep underline-offset-2 hover:underline ${appSectionBodyClass}`}
           >
             {official.title}
           </a>
@@ -187,7 +187,7 @@ export function HoldingFixedIncomeCard({
             aria-expanded={open}
             aria-controls={panelId}
             onClick={() => setOpen((value) => !value)}
-            className="inline-flex min-h-11 w-full items-center justify-between gap-3 rounded-xl border border-teal-200 bg-white/70 px-4 font-semibold text-teal-950"
+            className="inline-flex min-h-11 w-full items-center justify-between gap-3 rounded-xl border border-q3/30 bg-white/70 px-4 font-semibold text-q3-deep"
           >
             <span className={appSectionBodyClass}>Data & limitations</span>
             <ChevronDown

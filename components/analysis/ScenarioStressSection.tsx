@@ -291,7 +291,7 @@ function GoalSensitivityPanel({
             <p className={appSectionMetaClass}>
               <a
                 href="/goals#goal-reality-check"
-                className="font-semibold text-sky-800 underline-offset-2 hover:underline"
+                className="font-semibold text-q1-strong underline-offset-2 hover:underline"
               >
                 Goal Reality Check
               </a>
@@ -377,7 +377,7 @@ function GoalSensitivityPanel({
       ) : null}
 
       {hasSavedGoal && goal ? (
-        <div className="space-y-4 rounded-2xl border border-sky-100 bg-sky-50/40 px-4 py-4 sm:px-5">
+        <div className="space-y-4 rounded-2xl border border-brand/20 bg-brand-soft/50 px-4 py-4 sm:px-5">
           <div>
             <p className={appSectionLabelClass}>Personal input</p>
             <h3 className={`mt-1 ${appSectionTitleClass} text-base`}>
@@ -465,7 +465,7 @@ function GoalSensitivityPanel({
           {targetYearSensitivity.status === "ok" &&
           targetYearSensitivity.current &&
           targetYearSensitivity.withExtraYear ? (
-            <div className="space-y-3 border-t border-sky-100/80 pt-4">
+            <div className="space-y-3 border-t border-brand/20/80 pt-4">
               <p className={appSectionBodyClass}>
                 Target year · current {targetYearSensitivity.currentTargetYear}
               </p>
@@ -581,7 +581,7 @@ function ResiliencePanel({
                   </span>
                 </p>
               </div>
-              <p className="rounded-full bg-sky-50 px-3 py-1.5 text-sm font-medium text-sky-900">
+              <p className="rounded-full bg-q1-soft px-3 py-1.5 text-sm font-medium text-q1-deep">
                 {profile.bandLabel ?? "—"}
               </p>
             </div>
@@ -617,7 +617,7 @@ function ResiliencePanel({
           </ul>
 
           {profile.mostSensitive ? (
-            <div className="rounded-2xl border border-sky-100 bg-sky-50/50 px-4 py-4">
+            <div className="rounded-2xl border border-brand/20 bg-brand-soft/60 px-4 py-4">
               <p className={appSectionLabelClass}>Most sensitive to</p>
               <p className="mt-1 text-lg font-semibold text-slate-900">
                 {profile.mostSensitive.scenarioName}
@@ -735,9 +735,9 @@ export function ScenarioStressSection({
       className={`mt-7 scroll-mt-24 overflow-hidden ${appCardClass}`}
       aria-labelledby="scenario-stress-heading"
     >
-      <div className="border-b border-slate-200 bg-gradient-to-br from-sky-900 to-slate-950 px-5 py-5 text-white sm:px-8">
+      <div className="border-b border-slate-200 bg-gradient-to-br from-q4-deep to-brand-navy px-5 py-5 text-white sm:px-8">
         <div
-          className={`inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 ${appHeroMetricLabelClass} text-sky-100`}
+          className={`inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 ${appHeroMetricLabelClass} text-brand`}
         >
           <FlaskConical className="h-3.5 w-3.5" aria-hidden="true" />
           Scenario / stress test
@@ -748,7 +748,7 @@ export function ScenarioStressSection({
         >
           What if…?
         </h2>
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-sky-50/95 sm:text-[15px]">
+        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/90 sm:text-[15px]">
           Hypothetical estimates of how a market move could affect your portfolio
           and goal — based on current classified exposure and saved assumptions,
           not a prediction.
@@ -793,12 +793,12 @@ export function ScenarioStressSection({
                 >
                   <div className="flex items-start justify-between gap-2">
                     <p
-                      className={`text-sm font-semibold ${selected ? "text-sky-950" : "text-slate-900"}`}
+                      className={`text-sm font-semibold ${selected ? "text-q1-deep" : "text-slate-900"}`}
                     >
                       {row.shortLabel}
                     </p>
                     {selected ? (
-                      <span className="shrink-0 rounded-full bg-sky-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                      <span className="shrink-0 rounded-full bg-q1-strong px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
                         Selected
                       </span>
                     ) : (

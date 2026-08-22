@@ -164,7 +164,7 @@ describe("dashboard phase 1 revamp", () => {
 
   it("updates the summary skeleton to a compact light-blue hero without welcome/movers placeholders", () => {
     expect(skeletonSource).toContain("min-h-[220px]");
-    expect(skeletonSource).toContain("bg-sky-50");
+    expect(skeletonSource).toContain("bg-brand-soft");
     expect(skeletonSource).toContain('data-skeleton="decision-briefing"');
     expect(skeletonSource).toContain('data-skeleton="health-story"');
     expect(skeletonSource).not.toContain("min-h-[96px]");

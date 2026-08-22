@@ -235,9 +235,9 @@ describe("Phase 16.5 Dashboard presentation contracts", () => {
     const surface = read("components/layout/appSurface.ts");
 
     expect(visual).toContain("what_matters_now");
-    expect(visual).toContain("from-violet-100");
+    expect(visual).toContain("from-q2-soft");
     expect(hero).toContain("appDashboardHeroShellClass");
-    expect(surface).toContain("from-cyan-100");
+    expect(surface).toContain("from-brand-soft");
     expect(surface).not.toContain("from-[#f4f9fd]");
   });
 });

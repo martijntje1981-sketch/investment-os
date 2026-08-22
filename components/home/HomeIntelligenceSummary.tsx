@@ -50,7 +50,7 @@ export function HomeIntelligenceSummary({
       <div className="flex min-w-0 items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <Sparkles className="h-4 w-4 text-violet-600" aria-hidden />
+            <Sparkles className="h-4 w-4 text-q1-strong" aria-hidden />
             <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
               Portfolio intelligence
             </p>

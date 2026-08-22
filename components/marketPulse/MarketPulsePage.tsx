@@ -43,7 +43,7 @@ function accentBar(accent: string): string {
   if (accent === "copper") return "bg-orange-600";
   if (accent === "uranium") return "bg-emerald-500";
   if (accent === "bitcoin") return "bg-amber-400";
-  return "bg-violet-500";
+  return "bg-q2";
 }
 
 function accentStroke(accent: string): string {
@@ -52,7 +52,7 @@ function accentStroke(accent: string): string {
   if (accent === "copper") return "stroke-orange-500";
   if (accent === "uranium") return "stroke-emerald-400";
   if (accent === "bitcoin") return "stroke-amber-400";
-  return "stroke-violet-400";
+  return "stroke-q2";
 }
 
 function formatMove(value: number | null, periodLabel: string | null): string {
@@ -183,7 +183,7 @@ function LinkedMarketCard({
         </p>
       </div>
       {formatWeight(asset.portfolioWeightPercent) ? (
-        <p className="mt-2 text-[12px] font-semibold text-sky-800">
+        <p className="mt-2 text-[13px] font-semibold text-q1-strong">
           Linked to {formatWeight(asset.portfolioWeightPercent)}
         </p>
       ) : null}
@@ -436,7 +436,7 @@ export default function MarketPulsePage() {
                 <p className="mt-2 text-3xl font-black tracking-[-0.03em] text-slate-950 sm:text-4xl">
                   {hero.name}
                 </p>
-                <p className="mt-1 text-2xl font-bold tabular-nums text-cyan-800">
+                <p className="mt-1 text-2xl font-bold tabular-nums text-q1-deep">
                   {hero.changePercent === null
                     ? "Move unavailable"
                     : `${hero.changePercent >= 0 ? "+" : ""}${hero.changePercent.toFixed(1)}%`}
@@ -461,7 +461,7 @@ export default function MarketPulsePage() {
 
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <div
-                className="inline-flex rounded-full border border-cyan-200 bg-white/80 p-1"
+                className="inline-flex rounded-full border border-brand/25 bg-white/80 p-1"
                 role="group"
                 aria-label="Market filter"
               >
@@ -622,7 +622,7 @@ export default function MarketPulsePage() {
           </h2>
 
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-2xl border border-cyan-100 bg-white/80 px-4 py-3">
+            <div className="rounded-2xl border border-brand/20 bg-white/80 px-4 py-3">
               <p className="text-[13px] font-bold uppercase tracking-[0.08em] text-slate-700">
                 Strongest momentum
               </p>
@@ -642,7 +642,7 @@ export default function MarketPulsePage() {
                 </p>
               )}
             </div>
-            <div className="rounded-2xl border border-cyan-100 bg-white/80 px-4 py-3">
+            <div className="rounded-2xl border border-brand/20 bg-white/80 px-4 py-3">
               <p className="text-[13px] font-bold uppercase tracking-[0.08em] text-slate-700">
                 Weakest momentum
               </p>

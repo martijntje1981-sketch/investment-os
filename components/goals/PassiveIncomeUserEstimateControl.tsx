@@ -270,7 +270,7 @@ export function PassiveIncomeUserEstimateControl({
           type="button"
           disabled={disabled}
           onClick={startEditing}
-          className="mt-3 inline-flex min-h-[44px] items-center justify-center rounded-xl bg-slate-950 px-4 text-sm font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700"
+          className="mt-3 inline-flex min-h-[44px] items-center justify-center rounded-xl bg-navy-hero px-4 text-sm font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700"
         >
           Add estimate
         </button>

@@ -13,7 +13,7 @@ export function perspectiveCategoryChipClass(
     case "investing":
       return "bg-emerald-50 text-emerald-900";
     case "technology":
-      return "bg-sky-50 text-sky-900";
+      return "bg-q1-soft text-q1-deep";
     default:
       return "bg-slate-100 text-slate-700";
   }

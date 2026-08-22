@@ -18,31 +18,31 @@ function rgb(hex: string): PdfColor {
 }
 
 export const PDF_THEME = {
-  navy: rgb("#0D243F"),
-  navyDeep: rgb("#09182B"),
-  navyMid: rgb("#16304F"),
+  navy: rgb("#0B1F3A"),
+  navyDeep: rgb("#071525"),
+  navyMid: rgb("#16324F"),
   cyan: rgb("#5DB7FF"),
-  cyanDeep: rgb("#2A8FD6"),
-  purple: rgb("#7C5CFC"),
-  orange: rgb("#E8943A"),
-  mint: rgb("#2FAE8C"),
-  green: rgb("#1F9A6B"),
-  negative: rgb("#C45C4A"),
-  ink: rgb("#122033"),
-  muted: rgb("#5B6B7C"),
-  line: rgb("#E4E9EF"),
-  paper: rgb("#F7F9FC"),
-  paperWarm: rgb("#F4F1EB"),
-  paperCyan: rgb("#F3F8FC"),
-  paperPurple: rgb("#F6F4FD"),
-  paperOrange: rgb("#FBF6F0"),
-  paperMint: rgb("#F2F8F6"),
+  cyanDeep: rgb("#2EB5F0"),
+  purple: rgb("#2773C8"),
+  orange: rgb("#B45309"),
+  mint: rgb("#163A66"),
+  green: rgb("#157A3E"),
+  negative: rgb("#C62828"),
+  ink: rgb("#0B1F3A"),
+  muted: rgb("#4A5D73"),
+  line: rgb("#D5E2EF"),
+  paper: rgb("#F4F7FB"),
+  paperWarm: rgb("#F4F8FC"),
+  paperCyan: rgb("#C4ECFB"),
+  paperPurple: rgb("#D0DFF4"),
+  paperOrange: rgb("#CDD6EA"),
+  paperMint: rgb("#D0D6E1"),
   white: rgb("#FFFFFF"),
   whiteMuted: rgb("#D7E3F0"),
   whiteSoft: rgb("#9BB0C6"),
   demo: rgb("#E8C56B"),
   unclassified: rgb("#94A3B8"),
-  chartFill: rgb("#D7E8F8"),
+  chartFill: rgb("#E4F3FC"),
 } as const;
 
 export const PDF_QUESTION_TINT: Record<FourQuestionId, PdfColor> = {
@@ -53,10 +53,10 @@ export const PDF_QUESTION_TINT: Record<FourQuestionId, PdfColor> = {
 };
 
 export const PDF_QUESTION_ACCENT: Record<FourQuestionId, PdfColor> = {
-  what_happened: PDF_THEME.cyan,
-  what_matters_now: PDF_THEME.purple,
-  am_i_on_track: PDF_THEME.orange,
-  whats_ahead: PDF_THEME.mint,
+  what_happened: rgb("#2EB5F0"),
+  what_matters_now: rgb("#2773C8"),
+  am_i_on_track: rgb("#1B4F9A"),
+  whats_ahead: rgb("#163A66"),
 };
 
 export const PDF_SECTION_ACCENT: Record<PersonalReportAccent, PdfColor> = {

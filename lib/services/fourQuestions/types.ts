@@ -64,6 +64,7 @@ export type FourQuestionsBundle = {
 
 /**
  * Visual identity tokens per question.
+ * One Tobailey blue family: Q1 brightest, Q4 deepest navy.
  * Soft `panel` stays for Dashboard/Analysis cards.
  * Richer hub and nav tokens power authenticated hub chrome.
  */
@@ -113,183 +114,183 @@ export const FOUR_QUESTION_VISUAL: Record<
   }
 > = {
   what_happened: {
-    card: "overflow-hidden rounded-[24px] border-2 border-cyan-300 bg-gradient-to-br from-cyan-100 via-sky-50 to-white shadow-[0_12px_32px_-16px_rgba(8,145,178,0.5)]",
+    card: "overflow-hidden rounded-[24px] border-2 border-q1/60 bg-gradient-to-br from-q1-soft via-q1-soft/70 to-white shadow-[0_12px_32px_-16px_rgba(7,95,140,0.22)]",
     iconWell:
-      "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-cyan-600 text-white shadow-md shadow-cyan-800/30",
-    answer: "text-cyan-950",
+      "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-q1-strong text-white shadow-md shadow-q1-deep/25",
+    answer: "text-q1-deep",
     panel:
-      "border-2 border-cyan-300 bg-gradient-to-br from-cyan-100 via-sky-50 to-white",
-    number: "text-cyan-800",
-    eyebrow: "text-cyan-900/55",
-    hover: "hover:bg-cyan-50/50",
-    ring: "focus-visible:ring-cyan-400/40",
-    onDark: "text-cyan-300",
+      "border-2 border-q1/60 bg-gradient-to-br from-q1-soft via-q1-soft/70 to-white",
+    number: "text-q1-strong",
+    eyebrow: "text-q1-deep/75",
+    hover: "hover:bg-q1-soft/80",
+    ring: "focus-visible:ring-q1/45",
+    onDark: "text-q1",
     navIdle:
-      "border-cyan-300/80 bg-gradient-to-br from-cyan-100/95 to-cyan-50/90",
-    navNumberIdle: "text-cyan-700",
-    navLabelIdle: "text-cyan-950/85",
+      "border-q1/40 bg-gradient-to-br from-q1-soft to-white",
+    navNumberIdle: "text-q1-strong",
+    navLabelIdle: "text-q1-deep",
     navActive:
-      "border-cyan-400 bg-gradient-to-br from-cyan-600 via-cyan-500 to-sky-500 shadow-md shadow-cyan-900/20 ring-1 ring-inset ring-white/25",
-    navNumberActive: "text-cyan-50",
+      "border-q1-strong bg-gradient-to-br from-q1-strong to-q1-deep shadow-md shadow-q1-deep/20 ring-1 ring-inset ring-white/20",
+    navNumberActive: "text-white",
     navLabelActive: "text-white",
     hubPageWash:
-      "bg-gradient-to-b from-cyan-100/70 via-[#f4f8fb] to-[#eef2f6]",
+      "bg-gradient-to-b from-q1-soft/85 via-[#f4f7fb] to-[#eef3f8]",
     hubHero:
-      "bg-gradient-to-br from-[#0b4f6c] via-[#0e7490] to-[#38bdf8] text-white shadow-lg shadow-cyan-900/25",
+      "bg-gradient-to-br from-q1-deep via-q1-strong to-q1 text-white shadow-lg shadow-q1-deep/20",
     hubAnswer:
-      "border border-cyan-300/70 bg-gradient-to-br from-cyan-100 via-white to-sky-50 shadow-md shadow-cyan-900/10 border-l-[5px] border-l-cyan-600",
-    hubAnswerEyebrow: "text-cyan-800",
+      "border border-q1/35 bg-gradient-to-br from-q1-soft via-white to-white shadow-md shadow-q1-deep/8 border-l-[5px] border-l-q1-strong",
+    hubAnswerEyebrow: "text-q1-strong",
     hubTintSection:
-      "border border-cyan-200/70 bg-gradient-to-br from-cyan-50/90 via-white to-white",
-    hubAccentText: "text-cyan-800",
-    hubAccentIcon: "text-cyan-600",
-    hubRowHover: "hover:bg-cyan-50/90",
-    hubDot: "bg-cyan-500",
+      "border border-q1/25 bg-gradient-to-br from-q1-soft/80 via-white to-white",
+    hubAccentText: "text-q1-strong",
+    hubAccentIcon: "text-q1-strong",
+    hubRowHover: "hover:bg-q1-soft/80",
+    hubDot: "bg-q1-strong",
     expandPanel:
-      "border-t border-cyan-200/60 bg-gradient-to-b from-cyan-50/90 via-white to-white",
+      "border-t border-q1/25 bg-gradient-to-b from-q1-soft/70 via-white to-white",
     expandHigh:
-      "border border-cyan-300/55 bg-gradient-to-br from-cyan-100/95 via-cyan-50/70 to-white border-l-[4px] border-l-cyan-700",
+      "border border-q1/35 bg-gradient-to-br from-q1-soft via-white to-white border-l-[4px] border-l-q1-strong",
     expandSupporting:
-      "border-l-[3px] border-l-cyan-400/80 bg-cyan-50/45",
+      "border-l-[3px] border-l-q1/70 bg-q1-soft/55",
     expandLow: "border-l-2 border-l-slate-300 bg-slate-50/70",
-    expandClickable: "hover:bg-cyan-100/75 hover:shadow-sm",
-    expandLabel: "text-cyan-800",
+    expandClickable: "hover:bg-q1-soft hover:shadow-sm",
+    expandLabel: "text-q1-strong",
     completeTease:
-      "border border-cyan-700/30 bg-gradient-to-r from-cyan-800 via-cyan-700 to-sky-600 text-white shadow-sm shadow-cyan-900/20",
+      "border border-q1-deep/30 bg-gradient-to-r from-q1-deep via-q1-strong to-q1 text-white shadow-sm shadow-q1-deep/20",
   },
   what_matters_now: {
-    card: "overflow-hidden rounded-[24px] border-2 border-violet-300 bg-gradient-to-br from-violet-100 via-fuchsia-50 to-white shadow-[0_12px_32px_-16px_rgba(91,33,182,0.42)]",
+    card: "overflow-hidden rounded-[24px] border-2 border-q2/55 bg-gradient-to-br from-q2-soft via-white to-white shadow-[0_12px_32px_-16px_rgba(20,88,163,0.20)]",
     iconWell:
-      "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-violet-600 text-white shadow-md shadow-violet-800/30",
-    answer: "text-violet-950",
+      "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-q2-strong text-white shadow-md shadow-q2-deep/25",
+    answer: "text-q2-deep",
     panel:
-      "border-2 border-violet-300 bg-gradient-to-br from-violet-100 via-fuchsia-50 to-white",
-    number: "text-violet-800",
-    eyebrow: "text-violet-900/55",
-    hover: "hover:bg-violet-50/45",
-    ring: "focus-visible:ring-violet-400/40",
-    onDark: "text-violet-300",
+      "border-2 border-q2/55 bg-gradient-to-br from-q2-soft via-white to-white",
+    number: "text-q2-strong",
+    eyebrow: "text-q2-deep/75",
+    hover: "hover:bg-q2-soft/80",
+    ring: "focus-visible:ring-q2/45",
+    onDark: "text-q2",
     navIdle:
-      "border-violet-300/80 bg-gradient-to-br from-violet-100/95 to-violet-50/90",
-    navNumberIdle: "text-violet-700",
-    navLabelIdle: "text-violet-950/85",
+      "border-q2/40 bg-gradient-to-br from-q2-soft to-white",
+    navNumberIdle: "text-q2-strong",
+    navLabelIdle: "text-q2-deep",
     navActive:
-      "border-violet-400 bg-gradient-to-br from-violet-700 via-violet-600 to-fuchsia-500 shadow-md shadow-violet-900/20 ring-1 ring-inset ring-white/25",
-    navNumberActive: "text-violet-100",
+      "border-q2-strong bg-gradient-to-br from-q2-strong to-q2-deep shadow-md shadow-q2-deep/20 ring-1 ring-inset ring-white/20",
+    navNumberActive: "text-white",
     navLabelActive: "text-white",
     hubPageWash:
-      "bg-gradient-to-b from-violet-100/70 via-[#f6f4fb] to-[#eef2f6]",
+      "bg-gradient-to-b from-q2-soft/85 via-[#f4f7fb] to-[#eef3f8]",
     hubHero:
-      "bg-gradient-to-br from-[#3b0764] via-[#6d28d9] to-[#a78bfa] text-white shadow-lg shadow-violet-900/25",
+      "bg-gradient-to-br from-q2-deep via-q2-strong to-q2 text-white shadow-lg shadow-q2-deep/20",
     hubAnswer:
-      "border border-violet-300/70 bg-gradient-to-br from-violet-100 via-white to-fuchsia-50 shadow-md shadow-violet-900/10 border-l-[5px] border-l-violet-600",
-    hubAnswerEyebrow: "text-violet-800",
+      "border border-q2/35 bg-gradient-to-br from-q2-soft via-white to-white shadow-md shadow-q2-deep/8 border-l-[5px] border-l-q2-strong",
+    hubAnswerEyebrow: "text-q2-strong",
     hubTintSection:
-      "border border-violet-200/70 bg-gradient-to-br from-violet-50/90 via-white to-white",
-    hubAccentText: "text-violet-800",
-    hubAccentIcon: "text-violet-600",
-    hubRowHover: "hover:bg-violet-50/90",
-    hubDot: "bg-violet-500",
+      "border border-q2/25 bg-gradient-to-br from-q2-soft/80 via-white to-white",
+    hubAccentText: "text-q2-strong",
+    hubAccentIcon: "text-q2-strong",
+    hubRowHover: "hover:bg-q2-soft/80",
+    hubDot: "bg-q2-strong",
     expandPanel:
-      "border-t border-violet-200/60 bg-gradient-to-b from-violet-50/90 via-white to-white",
+      "border-t border-q2/25 bg-gradient-to-b from-q2-soft/70 via-white to-white",
     expandHigh:
-      "border border-violet-300/55 bg-gradient-to-br from-violet-100/95 via-violet-50/70 to-white border-l-[4px] border-l-violet-700",
+      "border border-q2/35 bg-gradient-to-br from-q2-soft via-white to-white border-l-[4px] border-l-q2-strong",
     expandSupporting:
-      "border-l-[3px] border-l-violet-400/80 bg-violet-50/45",
+      "border-l-[3px] border-l-q2/70 bg-q2-soft/55",
     expandLow: "border-l-2 border-l-slate-300 bg-slate-50/70",
-    expandClickable: "hover:bg-violet-100/75 hover:shadow-sm",
-    expandLabel: "text-violet-800",
+    expandClickable: "hover:bg-q2-soft hover:shadow-sm",
+    expandLabel: "text-q2-strong",
     completeTease:
-      "border border-violet-700/30 bg-gradient-to-r from-violet-800 via-violet-700 to-fuchsia-600 text-white shadow-sm shadow-violet-900/20",
+      "border border-q2-deep/30 bg-gradient-to-r from-q2-deep via-q2-strong to-q2 text-white shadow-sm shadow-q2-deep/20",
   },
   am_i_on_track: {
-    card: "overflow-hidden rounded-[24px] border-2 border-amber-300 bg-gradient-to-br from-amber-100 via-orange-50 to-white shadow-[0_12px_32px_-16px_rgba(180,83,9,0.42)]",
+    card: "overflow-hidden rounded-[24px] border-2 border-q3/50 bg-gradient-to-br from-q3-soft via-white to-white shadow-[0_12px_32px_-16px_rgba(19,58,118,0.20)]",
     iconWell:
-      "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-500 text-white shadow-md shadow-amber-800/30",
-    answer: "text-amber-950",
+      "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-q3-strong text-white shadow-md shadow-q3-deep/25",
+    answer: "text-q3-deep",
     panel:
-      "border-2 border-amber-300 bg-gradient-to-br from-amber-100 via-orange-50 to-white",
-    number: "text-amber-900",
-    eyebrow: "text-amber-950/50",
-    hover: "hover:bg-amber-50/45",
-    ring: "focus-visible:ring-amber-400/40",
-    onDark: "text-amber-300",
+      "border-2 border-q3/50 bg-gradient-to-br from-q3-soft via-white to-white",
+    number: "text-q3-strong",
+    eyebrow: "text-q3-deep/75",
+    hover: "hover:bg-q3-soft/80",
+    ring: "focus-visible:ring-q3/45",
+    onDark: "text-brand",
     navIdle:
-      "border-amber-300/80 bg-gradient-to-br from-amber-100/95 to-amber-50/90",
-    navNumberIdle: "text-amber-800",
-    navLabelIdle: "text-amber-950/85",
+      "border-q3/40 bg-gradient-to-br from-q3-soft to-white",
+    navNumberIdle: "text-q3-strong",
+    navLabelIdle: "text-q3-deep",
     navActive:
-      "border-amber-400 bg-gradient-to-br from-amber-600 via-amber-500 to-yellow-400 shadow-md shadow-amber-900/20 ring-1 ring-inset ring-white/30",
-    navNumberActive: "text-amber-50",
+      "border-q3-strong bg-gradient-to-br from-q3-strong to-q3-deep shadow-md shadow-q3-deep/20 ring-1 ring-inset ring-white/20",
+    navNumberActive: "text-white",
     navLabelActive: "text-white",
     hubPageWash:
-      "bg-gradient-to-b from-amber-100/75 via-[#fbf7f0] to-[#eef2f6]",
+      "bg-gradient-to-b from-q3-soft/85 via-[#f4f7fb] to-[#eef3f8]",
     hubHero:
-      "bg-gradient-to-br from-[#78350f] via-[#d97706] to-[#fbbf24] text-white shadow-lg shadow-amber-900/25",
+      "bg-gradient-to-br from-q3-deep via-q3-strong to-q3 text-white shadow-lg shadow-q3-deep/20",
     hubAnswer:
-      "border border-amber-300/70 bg-gradient-to-br from-amber-100 via-white to-yellow-50 shadow-md shadow-amber-900/10 border-l-[5px] border-l-amber-600",
-    hubAnswerEyebrow: "text-amber-900",
+      "border border-q3/35 bg-gradient-to-br from-q3-soft via-white to-white shadow-md shadow-q3-deep/8 border-l-[5px] border-l-q3-strong",
+    hubAnswerEyebrow: "text-q3-strong",
     hubTintSection:
-      "border border-amber-200/70 bg-gradient-to-br from-amber-50/90 via-white to-white",
-    hubAccentText: "text-amber-900",
-    hubAccentIcon: "text-amber-700",
-    hubRowHover: "hover:bg-amber-50/90",
-    hubDot: "bg-amber-500",
+      "border border-q3/25 bg-gradient-to-br from-q3-soft/80 via-white to-white",
+    hubAccentText: "text-q3-strong",
+    hubAccentIcon: "text-q3-strong",
+    hubRowHover: "hover:bg-q3-soft/80",
+    hubDot: "bg-q3-strong",
     expandPanel:
-      "border-t border-amber-200/60 bg-gradient-to-b from-amber-50/90 via-white to-white",
+      "border-t border-q3/25 bg-gradient-to-b from-q3-soft/70 via-white to-white",
     expandHigh:
-      "border border-amber-300/55 bg-gradient-to-br from-amber-100/95 via-amber-50/70 to-white border-l-[4px] border-l-amber-700",
+      "border border-q3/35 bg-gradient-to-br from-q3-soft via-white to-white border-l-[4px] border-l-q3-strong",
     expandSupporting:
-      "border-l-[3px] border-l-amber-400/80 bg-amber-50/45",
+      "border-l-[3px] border-l-q3/70 bg-q3-soft/55",
     expandLow: "border-l-2 border-l-slate-300 bg-slate-50/70",
-    expandClickable: "hover:bg-amber-100/75 hover:shadow-sm",
-    expandLabel: "text-amber-900",
+    expandClickable: "hover:bg-q3-soft hover:shadow-sm",
+    expandLabel: "text-q3-strong",
     completeTease:
-      "border border-amber-700/30 bg-gradient-to-r from-amber-800 via-amber-600 to-yellow-500 text-white shadow-sm shadow-amber-900/20",
+      "border border-q3-deep/30 bg-gradient-to-r from-q3-deep via-q3-strong to-q3 text-white shadow-sm shadow-q3-deep/20",
   },
   whats_ahead: {
-    card: "overflow-hidden rounded-[24px] border-2 border-teal-300 bg-gradient-to-br from-teal-100 via-emerald-50 to-white shadow-[0_12px_32px_-16px_rgba(15,118,110,0.45)]",
+    card: "overflow-hidden rounded-[24px] border-2 border-q4-strong/45 bg-gradient-to-br from-q4-soft via-white to-white shadow-[0_12px_32px_-16px_rgba(11,31,58,0.18)]",
     iconWell:
-      "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-teal-600 text-white shadow-md shadow-teal-800/30",
-    answer: "text-teal-950",
+      "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-q4-deep text-white shadow-md shadow-q4-deep/25",
+    answer: "text-q4-deep",
     panel:
-      "border-2 border-teal-300 bg-gradient-to-br from-teal-100 via-emerald-50 to-white",
-    number: "text-teal-800",
-    eyebrow: "text-teal-900/55",
-    hover: "hover:bg-teal-50/45",
-    ring: "focus-visible:ring-teal-400/40",
-    onDark: "text-teal-300",
+      "border-2 border-q4-strong/45 bg-gradient-to-br from-q4-soft via-white to-white",
+    number: "text-q4-strong",
+    eyebrow: "text-q4-deep/75",
+    hover: "hover:bg-q4-soft/80",
+    ring: "focus-visible:ring-q4/45",
+    onDark: "text-brand",
     navIdle:
-      "border-teal-300/80 bg-gradient-to-br from-teal-100/95 to-teal-50/90",
-    navNumberIdle: "text-teal-700",
-    navLabelIdle: "text-teal-950/85",
+      "border-q4/40 bg-gradient-to-br from-q4-soft to-white",
+    navNumberIdle: "text-q4-strong",
+    navLabelIdle: "text-q4-deep",
     navActive:
-      "border-teal-400 bg-gradient-to-br from-teal-700 via-teal-500 to-emerald-400 shadow-md shadow-teal-900/20 ring-1 ring-inset ring-white/25",
-    navNumberActive: "text-teal-50",
+      "border-q4-strong bg-gradient-to-br from-q4-strong to-q4-deep shadow-md shadow-q4-deep/20 ring-1 ring-inset ring-white/15",
+    navNumberActive: "text-white",
     navLabelActive: "text-white",
     hubPageWash:
-      "bg-gradient-to-b from-teal-100/70 via-[#f0f8f7] to-[#eef2f6]",
+      "bg-gradient-to-b from-q4-soft/85 via-[#f4f7fb] to-[#eef3f8]",
     hubHero:
-      "bg-gradient-to-br from-[#115e59] via-[#0d9488] to-[#2dd4bf] text-white shadow-lg shadow-teal-900/25",
+      "bg-gradient-to-br from-q4-deep via-q4-strong to-q4 text-white shadow-lg shadow-q4-deep/25",
     hubAnswer:
-      "border border-teal-300/70 bg-gradient-to-br from-teal-100 via-white to-emerald-50 shadow-md shadow-teal-900/10 border-l-[5px] border-l-teal-600",
-    hubAnswerEyebrow: "text-teal-800",
+      "border border-q4/35 bg-gradient-to-br from-q4-soft via-white to-white shadow-md shadow-q4-deep/8 border-l-[5px] border-l-q4-strong",
+    hubAnswerEyebrow: "text-q4-strong",
     hubTintSection:
-      "border border-teal-200/70 bg-gradient-to-br from-teal-50/90 via-white to-white",
-    hubAccentText: "text-teal-800",
-    hubAccentIcon: "text-teal-600",
-    hubRowHover: "hover:bg-teal-50/90",
-    hubDot: "bg-teal-500",
+      "border border-q4/25 bg-gradient-to-br from-q4-soft/80 via-white to-white",
+    hubAccentText: "text-q4-strong",
+    hubAccentIcon: "text-q4-strong",
+    hubRowHover: "hover:bg-q4-soft/80",
+    hubDot: "bg-q4-strong",
     expandPanel:
-      "border-t border-teal-200/60 bg-gradient-to-b from-teal-50/90 via-white to-white",
+      "border-t border-q4/25 bg-gradient-to-b from-q4-soft/70 via-white to-white",
     expandHigh:
-      "border border-teal-300/55 bg-gradient-to-br from-teal-100/95 via-teal-50/70 to-white border-l-[4px] border-l-teal-700",
+      "border border-q4/35 bg-gradient-to-br from-q4-soft via-white to-white border-l-[4px] border-l-q4-strong",
     expandSupporting:
-      "border-l-[3px] border-l-teal-400/80 bg-teal-50/45",
+      "border-l-[3px] border-l-q4/70 bg-q4-soft/55",
     expandLow: "border-l-2 border-l-slate-300 bg-slate-50/70",
-    expandClickable: "hover:bg-teal-100/75 hover:shadow-sm",
-    expandLabel: "text-teal-800",
+    expandClickable: "hover:bg-q4-soft hover:shadow-sm",
+    expandLabel: "text-q4-strong",
     completeTease:
-      "border border-teal-700/30 bg-gradient-to-r from-teal-800 via-teal-600 to-emerald-500 text-white shadow-sm shadow-teal-900/20",
+      "border border-q4-deep/30 bg-gradient-to-r from-q4-deep via-q4-strong to-q4 text-white shadow-sm shadow-q4-deep/20",
   },
 };

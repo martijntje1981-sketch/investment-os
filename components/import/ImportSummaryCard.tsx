@@ -27,7 +27,7 @@ export function ImportSummaryCard({
 
   return (
     <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
-      <div className="border-b border-slate-200 bg-gradient-to-br from-slate-950 to-slate-800 px-5 py-6 text-white sm:px-7">
+      <div className="border-b border-slate-200 bg-gradient-to-br from-brand-navy to-slate-800 px-5 py-6 text-white sm:px-7">
         <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[13px] font-semibold uppercase tracking-[0.12em] text-slate-200">
           <Sparkles className="h-3.5 w-3.5" />
           Import ready

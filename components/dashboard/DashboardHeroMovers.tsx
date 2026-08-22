@@ -46,7 +46,7 @@ function MoverTile({
   return (
     <Link
       href={resolveHoldingHref(mover)}
-      className={`block min-w-0 rounded-xl border bg-white/[0.03] px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 ${borderClass}`}
+      className={`block min-w-0 rounded-xl border bg-white/[0.03] px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-navy-hero ${borderClass}`}
       aria-label={`Open ${displayName} holding details`}
       title={displayName}
     >

@@ -70,8 +70,8 @@ export function PortfolioHistoryNavCard({
       titleId="portfolio-history-preview-heading"
       subtitle={quietNote ?? "How your portfolio developed"}
         icon={<History className="h-5 w-5" />}
-        iconToneClassName="bg-cyan-600 text-white shadow-md shadow-cyan-800/30"
-        shellClassName="overflow-hidden rounded-[24px] border-2 border-cyan-300 bg-gradient-to-br from-cyan-100 via-sky-50 to-white shadow-[0_12px_32px_-16px_rgba(8,145,178,0.45)]"
+        iconToneClassName="bg-q1-strong text-white shadow-md shadow-q1-deep/25"
+        shellClassName="overflow-hidden rounded-[24px] border-2 border-q1/45 bg-gradient-to-br from-q1-soft via-white to-white shadow-[0_12px_32px_-16px_rgba(12,111,168,0.22)]"
       deepLink={{
         href: PORTFOLIO_HISTORY_PATH,
         label: "View history",
@@ -84,7 +84,7 @@ export function PortfolioHistoryNavCard({
               <p className={appSectionLabelClass}>
                 {keyStatisticLabel ?? "Recorded contributions"}
               </p>
-              <p className="mt-0.5 break-words text-[20px] font-bold tracking-[-0.03em] text-cyan-950">
+              <p className="mt-0.5 break-words text-[20px] font-bold tracking-[-0.03em] text-q1-deep">
                 {keyStatisticValue}
               </p>
               {supportingMeta ? (
@@ -107,7 +107,7 @@ export function PortfolioHistoryNavCard({
               <button
                 type="button"
                 onClick={onAddContribution}
-                className="inline-flex min-h-[44px] items-center text-[16px] font-semibold text-cyan-800 transition hover:text-cyan-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2"
+                className="inline-flex min-h-[44px] items-center text-[16px] font-semibold text-q1-strong transition hover:text-q1-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-q1 focus-visible:ring-offset-2"
               >
                 {addContributionLabel}
               </button>
@@ -120,7 +120,7 @@ export function PortfolioHistoryNavCard({
                 aria-busy={isExporting}
                 data-testid="dashboard-export-portfolio"
                 aria-label="Export portfolio as Excel workbook (.xlsx)"
-                className="inline-flex min-h-[44px] items-center gap-1.5 text-[16px] font-semibold text-cyan-800 transition hover:text-cyan-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2 disabled:opacity-70"
+                className="inline-flex min-h-[44px] items-center gap-1.5 text-[16px] font-semibold text-q1-strong transition hover:text-q1-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-q1 focus-visible:ring-offset-2 disabled:opacity-70"
               >
                 <Download className="h-4 w-4" aria-hidden />
                 {isExporting ? "Exporting…" : "Export"}

@@ -89,7 +89,7 @@ function formatScorecardTimestamp(value: string) {
 
 function alignmentTone(label: GoalAlignmentLabel): string {
   if (label === "Limited alignment") return "text-rose-300";
-  if (label === "Strong alignment") return "text-sky-200";
+  if (label === "Strong alignment") return "text-brand";
   if (label === "Partial alignment") return "text-amber-200";
   return "text-white/75";
 }
@@ -464,7 +464,7 @@ export default function PortfolioHealthPage() {
                       ) : null}
                       <Link
                         href={scorecard.scores.health.context.href}
-                        className="mt-3 inline-flex min-h-[44px] items-center text-[13px] font-semibold text-sky-200 underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+                        className="mt-3 inline-flex min-h-[44px] items-center text-[13px] font-semibold text-brand underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
                       >
                         {scorecard.scores.health.context.linkLabel}
                       </Link>
@@ -505,7 +505,7 @@ export default function PortfolioHealthPage() {
                         </div>
                         <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
                           <div
-                            className="h-full rounded-full bg-sky-500"
+                            className="h-full rounded-full bg-brand"
                             style={{ width: `${dimension.score ?? 0}%` }}
                           />
                         </div>
@@ -661,7 +661,7 @@ export default function PortfolioHealthPage() {
               >
                 <div className={`${appCardClass} ${appCardPaddingClass}`}>
                   <div className="flex items-start gap-3">
-                    <div className="rounded-2xl bg-sky-50 p-3 text-sky-700">
+                    <div className="rounded-2xl bg-q1-soft p-3 text-q1-strong">
                       <Sparkles className="h-5 w-5" aria-hidden="true" />
                     </div>
                     <div>
@@ -735,7 +735,7 @@ export default function PortfolioHealthPage() {
                     {!hasSavedGoal ? (
                       <Link
                         href="/goals"
-                        className="mt-5 inline-flex min-h-[44px] items-center gap-1.5 text-[15px] font-semibold text-sky-300"
+                        className="mt-5 inline-flex min-h-[44px] items-center gap-1.5 text-[15px] font-semibold text-brand"
                       >
                         Set a goal
                         <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -770,7 +770,7 @@ export default function PortfolioHealthPage() {
                 aria-labelledby="volatility-heading"
               >
                 <div className="flex items-start gap-3">
-                  <div className="rounded-2xl bg-violet-50 p-3 text-violet-700">
+                  <div className="rounded-2xl bg-q2-soft p-3 text-q2-strong">
                     <Waves className="h-5 w-5" aria-hidden="true" />
                   </div>
                   <div>
@@ -879,7 +879,7 @@ export default function PortfolioHealthPage() {
             <p className={`px-1 ${appSectionMetaClass}`}>
               <Link
                 href="/goals"
-                className="inline-flex min-h-[44px] items-center gap-1.5 font-semibold text-sky-700"
+                className="inline-flex min-h-[44px] items-center gap-1.5 font-semibold text-q1-strong"
               >
                 Edit goal settings
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -895,7 +895,7 @@ export default function PortfolioHealthPage() {
             <p className={`px-1 ${appSectionMetaClass}`}>
               <Link
                 href={DASHBOARD_DEEP_LINKS.portfolioPerformance}
-                className="inline-flex min-h-[44px] items-center gap-1.5 font-semibold text-sky-700"
+                className="inline-flex min-h-[44px] items-center gap-1.5 font-semibold text-q1-strong"
               >
                 Open portfolio performance
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -915,7 +915,7 @@ export default function PortfolioHealthPage() {
                   <li>
                     <Link
                       href="/goals"
-                      className="inline-flex min-h-[44px] items-center gap-1.5 font-semibold text-sky-700"
+                      className="inline-flex min-h-[44px] items-center gap-1.5 font-semibold text-q1-strong"
                     >
                       Set a savings goal
                       <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -925,7 +925,7 @@ export default function PortfolioHealthPage() {
                 <li>
                   <Link
                     href="/portfolio"
-                    className="inline-flex min-h-[44px] items-center gap-1.5 font-semibold text-sky-700"
+                    className="inline-flex min-h-[44px] items-center gap-1.5 font-semibold text-q1-strong"
                   >
                     Review holdings and prices
                     <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -934,7 +934,7 @@ export default function PortfolioHealthPage() {
                 <li>
                   <Link
                     href={DASHBOARD_DEEP_LINKS.portfolioPerformance}
-                    className="inline-flex min-h-[44px] items-center gap-1.5 font-semibold text-sky-700"
+                    className="inline-flex min-h-[44px] items-center gap-1.5 font-semibold text-q1-strong"
                   >
                     Check performance history
                     <ArrowRight className="h-4 w-4" aria-hidden="true" />

@@ -53,9 +53,9 @@ export function CashIntelligenceSection({
       className={`mt-7 scroll-mt-24 overflow-hidden ${appCardClass}`}
       aria-labelledby="cash-intelligence-heading"
     >
-      <div className="border-b border-slate-200 bg-gradient-to-br from-sky-800 to-slate-950 px-5 py-5 text-white sm:px-8">
+      <div className="border-b border-slate-200 bg-gradient-to-br from-q3-deep to-brand-navy px-5 py-5 text-white sm:px-8">
         <div
-          className={`inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 ${appHeroMetricLabelClass} text-sky-100`}
+          className={`inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 ${appHeroMetricLabelClass} text-brand`}
         >
           <Landmark className="h-3.5 w-3.5" aria-hidden="true" />
           Cash intelligence
@@ -67,7 +67,7 @@ export function CashIntelligenceSection({
           Cash intelligence
         </h2>
         <p
-          className={`mt-2 max-w-2xl ${appAnalysisDarkHeaderCopyClass} text-sky-50/95`}
+          className={`mt-2 max-w-2xl ${appAnalysisDarkHeaderCopyClass} text-white/90`}
         >
           Objective overnight and central-bank benchmarks for EUR, USD and GBP —
           not a personal savings offer.

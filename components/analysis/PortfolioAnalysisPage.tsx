@@ -105,11 +105,11 @@ function formatUpdatedAt(value: string | null) {
 function allocationBarColor(index: number) {
   const palette = [
     "bg-brand-navy",
-    "bg-blue-600",
+    "bg-q1-strong",
     "bg-emerald-600",
     "bg-amber-500",
     "bg-slate-600",
-    "bg-sky-600",
+    "bg-q2-strong",
   ];
   return palette[index % palette.length];
 }

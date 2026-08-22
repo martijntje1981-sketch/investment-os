@@ -92,7 +92,7 @@ export function NewsHoldingGroups({ groups }: { groups: HoldingNewsGroup[] }) {
                           href={item.canonicalUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex min-h-[44px] items-center gap-1 text-sm font-semibold text-violet-700"
+                          className="inline-flex min-h-[44px] items-center gap-1 text-sm font-semibold text-q1-strong"
                         >
                           {item.title}
                           <ArrowUpRight className="h-4 w-4" aria-hidden />

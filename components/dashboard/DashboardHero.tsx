@@ -128,7 +128,7 @@ export function DashboardPortfolioHero({
                 ? `Target ${formatEur(summary.goalTarget)}`
                 : "Set a goal to track progress"
             }
-            valueClassName="text-cyan-800"
+            valueClassName="text-q1-strong"
             icon={<Target className="h-4 w-4" />}
           />
           <HeroMetric
@@ -157,7 +157,7 @@ function HeroMetric({
   icon?: React.ReactNode;
 }) {
   return (
-    <div className="min-w-0 rounded-[18px] border border-cyan-100 bg-white/80 px-4 py-3.5">
+    <div className="min-w-0 rounded-[18px] border border-brand/20 bg-white/80 px-4 py-3.5">
       <div
         className={`flex items-center gap-2 ${appSectionLabelClass} text-slate-400`}
       >

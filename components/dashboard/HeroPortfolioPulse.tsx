@@ -50,7 +50,7 @@ export function HeroPortfolioPulse({
         </p>
         <Link
           href={DASHBOARD_DEEP_LINKS.scorecard}
-          className="inline-flex min-h-11 items-center text-[15px] font-semibold text-cyan-800 underline-offset-2 hover:underline"
+          className="inline-flex min-h-11 items-center text-[15px] font-semibold text-q1-strong underline-offset-2 hover:underline"
         >
           Scorecard
         </Link>

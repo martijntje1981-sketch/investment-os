@@ -29,7 +29,7 @@ export default function SupportedInstrumentsPage() {
             <div className="mb-6 flex justify-start">
               <BackButton variant="light" />
             </div>
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-950 text-white shadow-xl">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-navy-hero text-white shadow-xl">
               <ListChecks className="h-7 w-7" />
             </div>
 
@@ -165,7 +165,7 @@ export default function SupportedInstrumentsPage() {
           </div>
         </section>
 
-        <section className="border-t border-slate-200 bg-slate-950 px-5 py-16 text-white sm:px-8 sm:py-20">
+        <section className="border-t border-slate-200 bg-navy-hero px-5 py-16 text-white sm:px-8 sm:py-20">
           <div className="mx-auto flex max-w-4xl flex-col items-start gap-5 rounded-[28px] border border-white/10 bg-white/5 p-8 sm:p-10">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10">
               <Mail className="h-6 w-6" />

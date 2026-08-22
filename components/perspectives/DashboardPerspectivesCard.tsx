@@ -191,7 +191,7 @@ export function DashboardPerspectivesCard({
           </span>
           <Link
             href="/perspectives"
-            className="inline-flex min-h-11 items-center text-[15px] font-semibold text-cyan-800 underline-offset-2 hover:underline"
+            className="inline-flex min-h-11 items-center text-[15px] font-semibold text-q1-strong underline-offset-2 hover:underline"
           >
             Open Perspectives
           </Link>

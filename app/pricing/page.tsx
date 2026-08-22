@@ -32,7 +32,7 @@ export default function PricingPage() {
               <BackButton variant="light" />
             </div>
 
-            <p className="text-sm font-bold uppercase tracking-[0.16em] text-violet-700">
+            <p className="text-sm font-bold uppercase tracking-[0.16em] text-q1-strong">
               {PRODUCT_POSITIONING.eyebrow}
             </p>
             <h1 className="mt-3 max-w-3xl text-4xl font-black tracking-[-0.045em] text-slate-950 sm:text-5xl">
@@ -49,14 +49,14 @@ export default function PricingPage() {
                   key={model.id}
                   className={`flex flex-col overflow-hidden rounded-[32px] border shadow-xl ${
                     model.featured
-                      ? "border-slate-900 bg-slate-950 text-white"
+                      ? "border-brand-navy bg-gradient-to-br from-brand-navy via-brand-deep to-q4-deep text-white"
                       : "border-slate-200 bg-white text-slate-950"
                   }`}
                 >
                   <div className="p-8 sm:p-10">
                     <p
                       className={`text-sm font-bold uppercase tracking-[0.16em] ${
-                        model.featured ? "text-violet-300" : "text-slate-500"
+                        model.featured ? "text-brand" : "text-slate-600"
                       }`}
                     >
                       {model.shortName}
@@ -104,7 +104,7 @@ export default function PricingPage() {
                       className={`mt-8 inline-flex w-full items-center justify-center gap-2 rounded-xl px-6 py-4 text-sm font-bold transition ${
                         model.featured
                           ? "bg-brand text-brand-navy hover:bg-brand-hover"
-                          : "bg-slate-950 text-white hover:bg-slate-800"
+                          : "bg-navy-hero text-white hover:bg-navy-card"
                       }`}
                     >
                       {model.ctaLabel}

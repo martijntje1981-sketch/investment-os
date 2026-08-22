@@ -179,7 +179,7 @@ export function PortfolioEvolutionChart({
         role="group"
         aria-label="Portfolio evolution chart. Arrow keys move between recorded funding events."
         onKeyDown={handleKeyDown}
-        className="relative min-w-0 overflow-x-clip rounded-[20px] bg-gradient-to-b from-cyan-50/90 to-white"
+        className="relative min-w-0 overflow-x-clip rounded-[20px] bg-gradient-to-b from-brand-soft/90 to-white"
       >
         {selected ? (
           <div

@@ -57,7 +57,7 @@ function DataLimitationsDisclosure({ lines }: { lines: string[] }) {
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => setOpen((value) => !value)}
-        className="inline-flex min-h-11 w-full items-center justify-between gap-3 rounded-xl border border-teal-200 bg-white/70 px-4 text-left font-semibold text-teal-950"
+        className="inline-flex min-h-11 w-full items-center justify-between gap-3 rounded-xl border border-q3/30 bg-white/70 px-4 text-left font-semibold text-q3-deep"
       >
         <span className={appSectionBodyClass}>Data & limitations</span>
         <ChevronDown
@@ -171,7 +171,7 @@ export function BondsRatesSection({
                 >
                   <Link
                     href={row.href}
-                    className={`min-w-0 truncate font-semibold text-teal-950 underline-offset-2 hover:underline ${appSectionBodyClass}`}
+                    className={`min-w-0 truncate font-semibold text-q3-deep underline-offset-2 hover:underline ${appSectionBodyClass}`}
                   >
                     {row.symbol}
                     <span className="font-normal text-slate-600"> · {row.name}</span>
@@ -218,7 +218,7 @@ export function BondsRatesSection({
                 href={view.officialContext.canonicalUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`mt-2 inline-flex min-h-11 min-w-0 items-center font-semibold text-teal-900 underline-offset-2 hover:underline ${appSectionBodyClass}`}
+                className={`mt-2 inline-flex min-h-11 min-w-0 items-center font-semibold text-q3-deep underline-offset-2 hover:underline ${appSectionBodyClass}`}
               >
                 {view.officialContext.title}
               </a>
@@ -249,7 +249,7 @@ export function BondsRatesSection({
           <p className={appSectionBodyClass}>{view.emptyBody}</p>
           <Link
             href={view.addHoldingHref}
-            className="inline-flex min-h-11 items-center justify-center rounded-xl bg-teal-800 px-4 font-semibold text-white"
+            className="inline-flex min-h-11 items-center justify-center rounded-xl bg-q3-strong px-4 font-semibold text-white"
           >
             Add Fixed Income holding
           </Link>
@@ -257,7 +257,7 @@ export function BondsRatesSection({
       )}
 
       <aside
-        className="mt-5 min-w-0 rounded-2xl border border-teal-200 bg-white/80 px-4 py-3.5"
+        className="mt-5 min-w-0 rounded-2xl border border-q3/30 bg-white/80 px-4 py-3.5"
         data-testid="bonds-rates-education"
       >
         <p className={appSectionLabelClass}>{view.educationHeadline}</p>

@@ -24,7 +24,7 @@ export function NewsArticleCard({
     >
       <div className="p-6 sm:p-7">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="rounded-full bg-slate-950 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.12em] text-white">
+          <span className="rounded-full bg-navy-hero px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.12em] text-white">
             {item.sourceName}
           </span>
           <ImpactBadge level={item.impactLevel} />
@@ -63,8 +63,8 @@ export function NewsArticleCard({
             <p className="mt-3 line-clamp-3 text-sm leading-7 text-slate-700">{item.summary}</p>
           </div>
 
-          <div className="rounded-[22px] border border-violet-100 bg-violet-50/70 p-5">
-            <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-violet-700">
+          <div className="rounded-[22px] border border-q2/25 bg-q2-soft/80 p-5">
+            <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-q2-strong">
               <BookOpen className="h-3.5 w-3.5" />
               Interpretation
             </div>
@@ -80,7 +80,7 @@ export function NewsArticleCard({
             href={item.canonicalUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-[15px] font-bold text-slate-700 transition hover:bg-slate-50"
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 transition hover:bg-slate-50"
           >
             Open original
             <ExternalLink className="h-3.5 w-3.5" />
