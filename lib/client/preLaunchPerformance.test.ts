@@ -46,7 +46,7 @@ describe("pre-launch performance batch", () => {
   it("C. logout / missing user clears holdings", () => {
     expect(hook).toContain("if (!userSub)");
     expect(hook).toContain("setHoldings([])");
-    expect(hook).toContain("[authReady, hydrateFromRemote, userSub]");
+    expect(hook).toContain("[activePortfolioId, authReady, bookOptions, bookReady, hydrateFromRemote, userSub]");
   });
 
   it("D. cache-first path renders last-known-good then refreshes in background", () => {

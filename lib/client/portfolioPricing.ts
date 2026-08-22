@@ -110,8 +110,10 @@ export type HoldingProviderSymbolChange = {
 /** Central read path for all portfolio surfaces. */
 export function loadUserPortfolioHoldings(
   userSub: string,
+  portfolioId?: string | null,
+  options?: { isPrimary?: boolean },
 ): StoredPortfolioHolding[] {
-  const raw = readPortfolioFromStorage(userSub);
+  const raw = readPortfolioFromStorage(userSub, portfolioId, options);
   const enriched = enrichHoldingsWithVerifiedMappings(raw);
   const migrated = migrateLegacyCryptoHoldings(enriched);
   const withQuoteCurrency = backfillListingQuoteCurrencies(migrated.holdings);
@@ -135,7 +137,7 @@ export function loadUserPortfolioHoldings(
     migrated.migratedCount > 0 ||
     listingQuoteCurrenciesChanged(enriched, withQuoteCurrency)
   ) {
-    writePortfolioToStorage(userSub, withQuoteCurrency);
+    writePortfolioToStorage(userSub, withQuoteCurrency, portfolioId, options);
     writePortfolioBackupIfComplete(userSub, withQuoteCurrency);
     const meta = readPortfolioSyncMeta(userSub);
     recordLocalPortfolioSave(

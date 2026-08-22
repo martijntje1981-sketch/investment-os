@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 
 import { EXAMPLE_STATUS_CHANGED_EVENT } from "@/lib/client/exampleFirstRun";
 import {
+  maxPortfoliosForTier,
   resolveProductAccess,
   type ProductAccess,
   type ProductAccessTier,
@@ -80,6 +81,7 @@ export function useProductAccess(enabled = true): ProductAccess {
           upgradeCtaLabel: pa.upgradeCtaLabel,
           isDemo: pa.isDemo,
           preservesUserData: true,
+          maxPortfolios: maxPortfoliosForTier(pa.tier),
         });
         return;
       }

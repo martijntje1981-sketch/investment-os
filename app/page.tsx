@@ -183,7 +183,7 @@ export default async function MarketingHomePage({
                   href="/signup?intent=trial"
                   className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-brand px-6 py-4 text-sm font-bold text-brand-navy shadow-lg transition hover:-translate-y-0.5 hover:bg-brand-hover"
                 >
-                  Start your 14-day trial
+                  Start with 14 days of Complete
                   <ArrowRight className="h-4 w-4" />
                 </Link>
 
@@ -342,7 +342,7 @@ export default async function MarketingHomePage({
                 href="/signup?intent=trial"
                 className="mt-9 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-brand px-6 py-4 text-sm font-bold text-brand-navy transition hover:bg-brand-hover"
               >
-                Start your 14-day trial
+                Start with 14 days of Complete
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
@@ -453,7 +453,7 @@ export default async function MarketingHomePage({
                   href="/signup?intent=trial"
                   className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-brand px-6 py-4 text-sm font-bold text-brand-navy shadow-lg"
                 >
-                  Start your 14-day trial
+                  Start with 14 days of Complete
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link

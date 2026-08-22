@@ -17,6 +17,7 @@ import type {
   PortfolioContributionEntry,
 } from "@/lib/services/contributions/types";
 import { createClient } from "@/lib/supabase/client";
+import { useActivePortfolioOptional } from "@/lib/client/useActivePortfolio";
 
 const EMPTY_SUMMARY: ContributionSummary = {
   totalContributed: 0,
@@ -39,6 +40,8 @@ export function usePortfolioContributions(
 ) {
   const supabase = useMemo(() => createClient(), []);
   const { userSub, baseCurrency, convertEur } = useBaseCurrencyDisplay();
+  const activePortfolioId =
+    useActivePortfolioOptional()?.activePortfolioId ?? null;
   const [entries, setEntries] = useState<PortfolioContributionEntry[]>([]);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [error, setError] = useState<string | null>(null);
@@ -75,7 +78,11 @@ export function usePortfolioContributions(
     setError(null);
 
     try {
-      const nextEntries = await listPortfolioContributions(supabase, userSub);
+      const nextEntries = await listPortfolioContributions(
+        supabase,
+        userSub,
+        activePortfolioId,
+      );
       setEntries(nextEntries);
       setStatus("ready");
     } catch (err) {
@@ -87,7 +94,7 @@ export function usePortfolioContributions(
           : "Could not load contribution entries.",
       );
     }
-  }, [enabled, supabase, userSub]);
+  }, [activePortfolioId, enabled, supabase, userSub]);
 
   useEffect(() => {
     void reload();
@@ -103,7 +110,10 @@ export function usePortfolioContributions(
       setMutationError(null);
 
       try {
-        const saveOptions = { allowedHoldings };
+        const saveOptions = {
+          allowedHoldings,
+          portfolioId: activePortfolioId,
+        };
         const saved = entryId
           ? await updatePortfolioContribution(
               supabase,
@@ -144,7 +154,7 @@ export function usePortfolioContributions(
         setIsMutating(false);
       }
     },
-    [allowedHoldings, baseCurrency, supabase, userSub],
+    [activePortfolioId, allowedHoldings, baseCurrency, supabase, userSub],
   );
 
   const removeEntry = useCallback(

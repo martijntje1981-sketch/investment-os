@@ -311,7 +311,7 @@ export default function ExplorePage() {
               className={appSolidButtonClass}
               data-testid="start-trial-cta"
             >
-              Start your 14-day trial
+              Start with 14 days of Complete
               <ArrowRight className="h-4 w-4" aria-hidden />
             </Link>
             <button
@@ -348,7 +348,7 @@ export default function ExplorePage() {
             className={`mt-4 ${appSolidButtonClass}`}
             data-testid="create-own-portfolio-cta"
           >
-            Start your 14-day trial
+            Start with 14 days of Complete
             <ArrowRight className="h-4 w-4" aria-hidden />
           </Link>
         </section>
@@ -514,7 +514,7 @@ export default function ExplorePage() {
                     href={PERSONAL_TRIAL_SIGNUP_HREF}
                     className="font-semibold text-blue-700 hover:text-blue-900"
                   >
-                    Start your 14-day trial
+                    Start with 14 days of Complete
                   </Link>
                 </p>
               </div>

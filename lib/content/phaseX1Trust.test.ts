@@ -49,7 +49,7 @@ describe("Phase X.1 trust and terminology", () => {
     expect(landing).toContain("Export portfolio");
     expect(landing).toContain("Your Review");
     expect(landing).toMatch(/not financial advice/i);
-    expect(landing).toContain("Start your 14-day trial");
+    expect(landing).toContain("Start with 14 days of Complete");
     expect(landing).toContain("Explore Demo Portfolio");
   });
 

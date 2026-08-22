@@ -6,6 +6,7 @@ import {
   annualContributionKey,
   assertUserSub,
   goalStorageKey,
+  isValidPortfolioId,
   isValidUserSub,
 } from "@/lib/client/portfolioStorageKeys";
 import { normalizePassiveIncomeTarget } from "@/lib/client/goalPassiveIncome";
@@ -68,10 +69,21 @@ export function sanitizeGoalForSave(goal: GoalSettings): GoalSettings | null {
   return normalized;
 }
 
-export function readSavedUserGoal(userSub: string): GoalSettings | null {
+export function readSavedUserGoal(
+  userSub: string,
+  portfolioId?: string | null,
+  options?: { isPrimary?: boolean },
+): GoalSettings | null {
   assertUserSub(userSub);
 
   try {
+    if (isValidPortfolioId(portfolioId)) {
+      const scoped = localStorage.getItem(goalStorageKey(userSub, portfolioId));
+      if (scoped != null) {
+        return normalizeGoal(JSON.parse(scoped) as Partial<GoalSettings>);
+      }
+      if (options?.isPrimary === false) return null;
+    }
     const stored = localStorage.getItem(goalStorageKey(userSub));
     if (!stored) return null;
     return normalizeGoal(JSON.parse(stored) as Partial<GoalSettings>);
@@ -80,36 +92,67 @@ export function readSavedUserGoal(userSub: string): GoalSettings | null {
   }
 }
 
-export function writeUserGoal(userSub: string, goal: GoalSettings): void {
+export function writeUserGoal(
+  userSub: string,
+  goal: GoalSettings,
+  portfolioId?: string | null,
+  options?: { isPrimary?: boolean },
+): void {
   assertUserSub(userSub);
-  localStorage.setItem(goalStorageKey(userSub), JSON.stringify(goal));
+  if (isValidPortfolioId(portfolioId)) {
+    localStorage.setItem(goalStorageKey(userSub, portfolioId), JSON.stringify(goal));
+    if (options?.isPrimary !== false) {
+      localStorage.setItem(goalStorageKey(userSub), JSON.stringify(goal));
+    }
+  } else {
+    localStorage.setItem(goalStorageKey(userSub), JSON.stringify(goal));
+  }
   localStorage.setItem(
     annualContributionKey(userSub),
     String(goal.monthlyContribution * 12),
   );
 }
 
-export function clearUserGoal(userSub: string): void {
+export function clearUserGoal(
+  userSub: string,
+  portfolioId?: string | null,
+  options?: { isPrimary?: boolean },
+): void {
   assertUserSub(userSub);
-  localStorage.removeItem(goalStorageKey(userSub));
+  if (isValidPortfolioId(portfolioId)) {
+    localStorage.removeItem(goalStorageKey(userSub, portfolioId));
+    if (options?.isPrimary !== false) {
+      localStorage.removeItem(goalStorageKey(userSub));
+    }
+  } else {
+    localStorage.removeItem(goalStorageKey(userSub));
+  }
   localStorage.removeItem(annualContributionKey(userSub));
 }
 
-export function dispatchGoalUpdated(userSub: string): void {
+export function dispatchGoalUpdated(
+  userSub: string,
+  portfolioId?: string | null,
+): void {
   assertUserSub(userSub);
   window.dispatchEvent(
     new CustomEvent(GOAL_UPDATED_EVENT, {
-      detail: { userSub },
+      detail: { userSub, portfolioId: portfolioId ?? null },
     }),
   );
 }
 
-export function saveUserGoal(userSub: string, goal: GoalSettings): void {
+export function saveUserGoal(
+  userSub: string,
+  goal: GoalSettings,
+  portfolioId?: string | null,
+  options?: { isPrimary?: boolean },
+): void {
   const normalized = sanitizeGoalForSave(goal);
   if (!normalized) return;
 
-  writeUserGoal(userSub, normalized);
-  dispatchGoalUpdated(userSub);
+  writeUserGoal(userSub, normalized, portfolioId, options);
+  dispatchGoalUpdated(userSub, portfolioId);
 }
 
 export function computeGoalProgress(
@@ -149,8 +192,17 @@ export function formatGoalCurrency(value: number): string {
 export function shouldHandleGoalUpdatedEvent(
   eventUserSub: string | undefined,
   currentUserSub: string,
+  eventPortfolioId?: string | null,
+  currentPortfolioId?: string | null,
 ): boolean {
   if (eventUserSub && eventUserSub !== currentUserSub) {
+    return false;
+  }
+  if (
+    eventPortfolioId &&
+    currentPortfolioId &&
+    eventPortfolioId !== currentPortfolioId
+  ) {
     return false;
   }
 

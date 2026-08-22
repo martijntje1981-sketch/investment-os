@@ -2,7 +2,11 @@ import { NextResponse } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
 import { sanitizeLocalHoldings } from "@/lib/services/portfolio/mappers";
-import { createPortfolioRepository } from "@/lib/services/portfolio/repository";
+import { resolveProductAccessFromAuthUser } from "@/lib/services/productAccess";
+import {
+  PortfolioAccessError,
+  createPortfolioRepository,
+} from "@/lib/services/portfolio/repository";
 import {
   formatSupabaseError,
   supabaseErrorCode,
@@ -19,7 +23,7 @@ import { assertExamplePortfolioApiAccess } from "@/lib/services/examplePortfolio
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const supabase = await createClient();
     const {
@@ -29,11 +33,23 @@ export async function GET() {
     const access = assertExamplePortfolioApiAccess(user);
     if (!access.ok) return access.response;
 
+    const productAccess = await resolveProductAccessFromAuthUser(access.user);
+    const requestedId = new URL(request.url).searchParams.get("portfolioId");
     const repo = createPortfolioRepository(supabase);
-    const snapshot = await repo.fetchSnapshot(access.user.id);
+    const snapshot = await repo.fetchSnapshot(
+      access.user.id,
+      requestedId,
+      { maxPortfolios: productAccess.maxPortfolios },
+    );
 
     return NextResponse.json({ success: true, snapshot });
   } catch (error) {
+    if (error instanceof PortfolioAccessError) {
+      return NextResponse.json(
+        { success: false, code: error.code, error: error.message },
+        { status: error.status },
+      );
+    }
     console.error("[portfolio GET]", error);
     return NextResponse.json(
       {
@@ -56,9 +72,11 @@ export async function PUT(request: Request) {
     const access = assertExamplePortfolioApiAccess(user);
     if (!access.ok) return access.response;
 
+    const productAccess = await resolveProductAccessFromAuthUser(access.user);
     const body = (await request.json()) as PortfolioSyncRequest & {
       goal?: GoalSettings | null;
       importMappings?: SavedImportMapping[];
+      portfolioId?: string | null;
     };
 
     if (!body.idempotencyKey) {
@@ -73,6 +91,9 @@ export async function PUT(request: Request) {
     }
 
     const repo = createPortfolioRepository(supabase);
+    await repo.resolvePortfolioForAccess(access.user.id, body.portfolioId, {
+      maxPortfolios: productAccess.maxPortfolios,
+    });
     const snapshot = await syncPortfolioSnapshot(
       repo,
       access.user.id,
@@ -81,6 +102,7 @@ export async function PUT(request: Request) {
         holdings: sanitizeLocalHoldings(body.holdings),
         goal: body.goal,
         importMappings: body.importMappings,
+        portfolioId: body.portfolioId,
       },
       body.goal,
       body.importMappings,
@@ -88,6 +110,13 @@ export async function PUT(request: Request) {
 
     return NextResponse.json({ success: true, snapshot });
   } catch (error) {
+    if (error instanceof PortfolioAccessError) {
+      return NextResponse.json(
+        { success: false, code: error.code, error: error.message },
+        { status: error.status },
+      );
+    }
+
     if (error instanceof PortfolioSyncError) {
       const status =
         error.code === SYNC_ERROR_CODES.CONFLICT

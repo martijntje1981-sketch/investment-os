@@ -91,11 +91,10 @@ describe("phase 16 first five minutes", () => {
 
     expect(dashboard).toContain("FirstIntelligenceMoment");
     expect(dashboard).toContain("FourQuestionsSection");
-    expect(moment).toContain("Your portfolio is ready");
-    expect(moment).toContain("Here’s what Tobailey sees");
-    expect(moment).toContain("Want Tobailey to track what you’re investing toward?");
-    expect(moment).toContain("Skip");
-    expect(moment).toContain("GOALS_PATH");
+    expect(moment).toContain("COMPLETE_PERIOD_COPY.firstValueTitle");
+    expect(moment).toContain("FOUR_QUESTIONS");
+    expect(moment).toContain("Skip for now");
+    expect(moment).toContain("persistGoal");
     expect(moment).toContain("shouldShowFirstIntelligence");
     expect(portfolio).toContain("markFirstIntelligencePending");
     expect(portfolio).toContain("firstIntelligenceDashboardHref");

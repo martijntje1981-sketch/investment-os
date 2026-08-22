@@ -32,7 +32,9 @@ export async function verifyPersistedPortfolioSnapshot(
     }
 
     const snapshot =
-      attempt === 0 ? initialSnapshot : await repo.fetchSnapshot(userId);
+      attempt === 0
+        ? initialSnapshot
+        : await repo.fetchSnapshot(userId, initialSnapshot.portfolioId);
 
     if (portfoliosPersistedMatch(writtenHoldings, snapshot.holdings, userId)) {
       return true;

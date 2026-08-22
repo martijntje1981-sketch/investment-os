@@ -17,4 +17,11 @@ export {
   resolveProductAccess,
   resolveProductAccessFromMetadata,
 } from "./types";
+export {
+  COMPLETE_MAX_PORTFOLIOS,
+  FREE_MAX_PORTFOLIOS,
+  canCreateAnotherPortfolio,
+  maxPortfoliosForAccess,
+  maxPortfoliosForTier,
+} from "./portfolioEntitlement";
 export { resolveProductAccessFromAuthUser } from "./resolveFromAuthUser";

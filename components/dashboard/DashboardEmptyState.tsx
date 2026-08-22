@@ -14,6 +14,7 @@ export function DashboardEmptyState({ userSub = null }: DashboardEmptyStateProps
   return (
     <PortfolioSetupOnboarding
       variant={variant}
+      userSub={userSub}
       footer={<DashboardMarketStatus lastUpdatedAt={null} />}
     />
   );

@@ -19,6 +19,7 @@ export type RemotePortfolioSnapshot = {
   migrationCompletedAt: string | null;
   remoteUpdatedAt: string | null;
   portfolioId: string | null;
+  isPrimary?: boolean;
   holdingCount: number;
 };
 
@@ -54,6 +55,7 @@ export type PortfolioMigrateRequest = {
   goal?: GoalSettings | null;
   importMappings?: SavedImportMapping[];
   localFingerprint: string;
+  portfolioId?: string | null;
 };
 
 export type PortfolioSyncRequest = {
@@ -61,6 +63,7 @@ export type PortfolioSyncRequest = {
   holdings: StoredPortfolioHolding[];
   goal?: GoalSettings | null;
   importMappings?: SavedImportMapping[];
+  portfolioId?: string | null;
 };
 
 export type DbHoldingRow = {
@@ -99,6 +102,7 @@ export type DbMappingRow = {
 
 export type DbGoalRow = {
   id: string;
+  portfolio_id?: string | null;
   target_value: number | string;
   target_year: number;
   monthly_contribution: number | string;
@@ -132,4 +136,7 @@ export const SYNC_ERROR_CODES = {
   IDEMPOTENT_REPLAY: "idempotent_replay",
   PARTIAL_SAVE: "partial_save",
   SYNC_VERIFICATION_FAILED: "sync_verification_failed",
+  PORTFOLIO_LIMIT: "portfolio_limit",
+  PORTFOLIO_LOCKED: "portfolio_locked",
+  PORTFOLIO_NOT_FOUND: "portfolio_not_found",
 } as const;

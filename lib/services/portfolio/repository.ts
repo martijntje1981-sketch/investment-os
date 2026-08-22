@@ -35,6 +35,17 @@ import {
 
 export type PortfolioRepository = ReturnType<typeof createPortfolioRepository>;
 
+export class PortfolioAccessError extends Error {
+  code: string;
+  status: number;
+
+  constructor(code: string, message: string, status: number) {
+    super(message);
+    this.code = code;
+    this.status = status;
+  }
+}
+
 function toNumber(value: number | string | null | undefined): number {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
@@ -70,7 +81,7 @@ export function createPortfolioRepository(supabase: SupabaseClient) {
       .from("portfolios")
       .insert({
         user_id: userId,
-        name: "Main portfolio",
+        name: "My Portfolio",
         is_primary: true,
       })
       .select("id")
@@ -80,7 +91,167 @@ export function createPortfolioRepository(supabase: SupabaseClient) {
     return created.id;
   }
 
-  async function fetchHoldings(userId: string): Promise<DbHoldingRow[]> {
+  async function listPortfolios(userId: string): Promise<
+    Array<{ id: string; name: string; isPrimary: boolean; createdAt: string }>
+  > {
+    const { data, error } = await supabase
+      .from("portfolios")
+      .select("id, name, is_primary, created_at")
+      .eq("user_id", userId)
+      .order("is_primary", { ascending: false })
+      .order("created_at", { ascending: true })
+      .order("id", { ascending: true });
+    if (error) throw error;
+    return (data ?? []).map((row) => ({
+      id: row.id as string,
+      name: typeof row.name === "string" && row.name.trim() ? row.name.trim() : "My Portfolio",
+      isPrimary: row.is_primary === true,
+      createdAt: String(row.created_at ?? ""),
+    }));
+  }
+
+  async function getOwnedPortfolio(
+    userId: string,
+    portfolioId: string,
+  ): Promise<{ id: string; name: string; isPrimary: boolean } | null> {
+    const { data, error } = await supabase
+      .from("portfolios")
+      .select("id, name, is_primary")
+      .eq("id", portfolioId)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (error) throw error;
+    if (!data?.id) return null;
+    return {
+      id: data.id as string,
+      name: typeof data.name === "string" ? data.name : "My Portfolio",
+      isPrimary: data.is_primary === true,
+    };
+  }
+
+  async function resolvePortfolioForAccess(
+    userId: string,
+    requestedId: string | null | undefined,
+    options?: { allowLocked?: boolean; maxPortfolios?: number },
+  ): Promise<{ id: string; isPrimary: boolean; name: string }> {
+    const primaryId = await getPrimaryPortfolioId(userId);
+    const owned = requestedId
+      ? await getOwnedPortfolio(userId, requestedId)
+      : await getOwnedPortfolio(userId, primaryId);
+
+    if (requestedId && !owned) {
+      throw new PortfolioAccessError(
+        "portfolio_not_found",
+        "Portfolio not found.",
+        404,
+      );
+    }
+
+    const resolved = owned ?? (await getOwnedPortfolio(userId, primaryId));
+    if (!resolved) {
+      throw new PortfolioAccessError(
+        "portfolio_not_found",
+        "Portfolio not found.",
+        404,
+      );
+    }
+
+    if (!options?.allowLocked && options?.maxPortfolios != null) {
+      const listed = await listPortfolios(userId);
+      const annotated = listed.map((portfolio) => {
+        const withinLimit = listed.length <= options.maxPortfolios!;
+        const accessible = withinLimit || portfolio.isPrimary;
+        return { ...portfolio, accessible };
+      });
+      const current = annotated.find((portfolio) => portfolio.id === resolved.id);
+      if (current && !current.accessible) {
+        throw new PortfolioAccessError(
+          "portfolio_locked",
+          "This portfolio is saved. Complete gives you access to up to 3 portfolios.",
+          403,
+        );
+      }
+    }
+
+    return resolved;
+  }
+
+  async function createPortfolio(
+    userId: string,
+    name: string,
+    maxPortfolios: number,
+  ): Promise<{ id: string; name: string; isPrimary: boolean }> {
+    const existing = await listPortfolios(userId);
+    if (existing.length >= maxPortfolios) {
+      throw new PortfolioAccessError(
+        "portfolio_limit",
+        maxPortfolios <= 1
+          ? "Multiple portfolios are part of Tobailey Complete. Your Free portfolio stays exactly as it is."
+          : "Complete includes up to 3 portfolios.",
+        403,
+      );
+    }
+
+    const next =
+      typeof name === "string" && name.trim().length > 0
+        ? name.trim().slice(0, 60)
+        : "My Portfolio";
+
+    const { data, error } = await supabase
+      .from("portfolios")
+      .insert({
+        user_id: userId,
+        name: next,
+        is_primary: false,
+      })
+      .select("id, name, is_primary")
+      .single();
+    if (error) throw error;
+    return {
+      id: data.id as string,
+      name: typeof data.name === "string" ? data.name : next,
+      isPrimary: false,
+    };
+  }
+
+  async function renamePortfolio(
+    userId: string,
+    portfolioId: string,
+    name: string,
+  ): Promise<{ id: string; name: string }> {
+    const owned = await getOwnedPortfolio(userId, portfolioId);
+    if (!owned) {
+      throw new PortfolioAccessError(
+        "portfolio_not_found",
+        "Portfolio not found.",
+        404,
+      );
+    }
+    const next =
+      typeof name === "string" && name.trim().length > 0
+        ? name.trim().slice(0, 60)
+        : "My Portfolio";
+    const { error } = await supabase
+      .from("portfolios")
+      .update({ name: next, updated_at: new Date().toISOString() })
+      .eq("id", owned.id)
+      .eq("user_id", userId);
+    if (error) throw error;
+    return { id: owned.id, name: next };
+  }
+
+  async function renamePrimaryPortfolio(
+    userId: string,
+    name: string,
+  ): Promise<{ id: string; name: string }> {
+    const id = await getPrimaryPortfolioId(userId);
+    return renamePortfolio(userId, id, name);
+  }
+
+  async function fetchHoldings(
+    userId: string,
+    portfolioId?: string,
+  ): Promise<DbHoldingRow[]> {
     const { data, error } = await supabase
       .from("holdings")
       .select(
@@ -116,6 +287,7 @@ export function createPortfolioRepository(supabase: SupabaseClient) {
       `,
       )
       .eq("user_id", userId)
+      .eq("portfolio_id", portfolioId ?? (await getPrimaryPortfolioId(userId)))
       .is("deleted_at", null)
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: true });
@@ -124,13 +296,18 @@ export function createPortfolioRepository(supabase: SupabaseClient) {
     return (data ?? []) as DbHoldingRow[];
   }
 
-  async function fetchActiveGoal(userId: string): Promise<DbGoalRow | null> {
+  async function fetchActiveGoal(
+    userId: string,
+    portfolioId?: string,
+  ): Promise<DbGoalRow | null> {
+    const resolvedId = portfolioId ?? (await getPrimaryPortfolioId(userId));
     const { data, error } = await supabase
       .from("financial_goals")
       .select(
-        "id, target_value, target_year, monthly_contribution, expected_annual_return, passive_income_target, is_active, updated_at",
+        "id, portfolio_id, target_value, target_year, monthly_contribution, expected_annual_return, passive_income_target, is_active, updated_at",
       )
       .eq("user_id", userId)
+      .eq("portfolio_id", resolvedId)
       .eq("is_active", true)
       .maybeSingle();
 
@@ -164,22 +341,29 @@ export function createPortfolioRepository(supabase: SupabaseClient) {
     return data?.migration_completed_at ?? null;
   }
 
-  async function fetchSnapshot(userId: string): Promise<RemotePortfolioSnapshot> {
-    const [portfolioId, rows, goal, importMappings, migrationCompletedAt] =
-      await Promise.all([
-        getPrimaryPortfolioId(userId),
-        fetchHoldings(userId),
-        fetchActiveGoal(userId),
-        fetchImportMappings(userId),
-        fetchMigrationCompletedAt(userId),
-      ]);
+  async function fetchSnapshot(
+    userId: string,
+    portfolioId?: string | null,
+    options?: { maxPortfolios?: number },
+  ): Promise<RemotePortfolioSnapshot> {
+    const resolved = await resolvePortfolioForAccess(userId, portfolioId, {
+      allowLocked: false,
+      maxPortfolios: options?.maxPortfolios,
+    });
+    const [rows, goal, importMappings, migrationCompletedAt] = await Promise.all([
+      fetchHoldings(userId, resolved.id),
+      fetchActiveGoal(userId, resolved.id),
+      fetchImportMappings(userId),
+      fetchMigrationCompletedAt(userId),
+    ]);
 
     return buildRemoteSnapshot(
       rows,
       goal,
       importMappings,
       migrationCompletedAt,
-      portfolioId,
+      resolved.id,
+      resolved.isPrimary,
     );
   }
 
@@ -233,9 +417,14 @@ export function createPortfolioRepository(supabase: SupabaseClient) {
     if (error) throw error;
   }
 
-  async function upsertGoal(userId: string, goal: GoalSettings | null) {
+  async function upsertGoal(
+    userId: string,
+    goal: GoalSettings | null,
+    portfolioId?: string,
+  ) {
+    const resolvedId = portfolioId ?? (await getPrimaryPortfolioId(userId));
     if (!goal) {
-      const existing = await fetchActiveGoal(userId);
+      const existing = await fetchActiveGoal(userId, resolvedId);
       if (existing?.id) {
         const { error } = await supabase
           .from("financial_goals")
@@ -247,8 +436,8 @@ export function createPortfolioRepository(supabase: SupabaseClient) {
       return;
     }
 
-    const existing = await fetchActiveGoal(userId);
-    const payload = mapGoalToDbInsert(goal, userId);
+    const existing = await fetchActiveGoal(userId, resolvedId);
+    const payload = mapGoalToDbInsert(goal, userId, resolvedId);
 
     if (existing?.id) {
       const { error } = await supabase
@@ -637,11 +826,13 @@ export function createPortfolioRepository(supabase: SupabaseClient) {
   async function softDeleteMissingHoldings(
     userId: string,
     keepIds: Set<string>,
+    portfolioId: string,
   ) {
     const { data: existing, error } = await supabase
       .from("holdings")
       .select("id")
       .eq("user_id", userId)
+      .eq("portfolio_id", portfolioId)
       .is("deleted_at", null);
 
     if (error) throw error;
@@ -668,9 +859,14 @@ export function createPortfolioRepository(supabase: SupabaseClient) {
     goal: GoalSettings | null | undefined,
     importMappings: SavedImportMapping[] | undefined,
     prefix: "migrate" | "sync",
+    portfolioId?: string | null,
+    options?: { maxPortfolios?: number },
   ): Promise<RemotePortfolioSnapshot> {
-    const portfolioId = await getPrimaryPortfolioId(userId);
-    const remoteRows = await fetchHoldings(userId);
+    const resolved = await resolvePortfolioForAccess(userId, portfolioId, {
+      allowLocked: false,
+      maxPortfolios: options?.maxPortfolios,
+    });
+    const remoteRows = await fetchHoldings(userId, resolved.id);
     const remoteById = new Map(
       remoteRows.map((row) => [row.id, row]),
     );
@@ -684,7 +880,7 @@ export function createPortfolioRepository(supabase: SupabaseClient) {
         const holding = holdings[index]!;
         const holdingId = await reconcileHolding(
           userId,
-          portfolioId,
+          resolved.id,
           holding,
           remoteById,
           prefix,
@@ -697,11 +893,11 @@ export function createPortfolioRepository(supabase: SupabaseClient) {
       }
 
       if (prefix === "sync") {
-        await softDeleteMissingHoldings(userId, keepIds);
+        await softDeleteMissingHoldings(userId, keepIds, resolved.id);
       }
 
       if (goal !== undefined) {
-        await upsertGoal(userId, goal ?? null);
+        await upsertGoal(userId, goal ?? null, resolved.id);
       }
 
       if (importMappings) {
@@ -714,11 +910,17 @@ export function createPortfolioRepository(supabase: SupabaseClient) {
       throw error;
     }
 
-    return fetchSnapshot(userId);
+    return fetchSnapshot(userId, resolved.id);
   }
 
   return {
     getPrimaryPortfolioId,
+    listPortfolios,
+    getOwnedPortfolio,
+    resolvePortfolioForAccess,
+    createPortfolio,
+    renamePortfolio,
+    renamePrimaryPortfolio,
     fetchHoldings,
     fetchActiveGoal,
     fetchImportMappings,

@@ -162,7 +162,7 @@ export default function MarketingHeader({
             href="/signup?intent=trial"
             className="inline-flex items-center gap-2 rounded-xl bg-brand px-5 py-3 text-sm font-bold text-brand-navy shadow-sm transition hover:bg-brand-hover"
           >
-            Start your 14-day trial
+            Start with Complete
             <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
@@ -267,7 +267,7 @@ export default function MarketingHeader({
                 onClick={closeMenu}
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand px-4 py-3 text-sm font-bold text-brand-navy"
               >
-                Start your 14-day trial
+                Start with Complete
                 <ArrowRight className="h-4 w-4" />
               </Link>
 

@@ -24,8 +24,9 @@ export async function saveImportedPortfolio(input: {
   holdings: StoredPortfolioHolding[];
   newProviderSymbols?: string[];
   idempotencyKey?: string;
+  portfolioId?: string | null;
 }): Promise<ImportSaveResult> {
-  const goal = readSavedUserGoal(input.userSub);
+  const goal = readSavedUserGoal(input.userSub, input.portfolioId);
   const importMappings = readImportMappingsFromCache(input.userSub);
 
   const pushResult = await pushPortfolioToRemote({
@@ -34,6 +35,7 @@ export async function saveImportedPortfolio(input: {
     holdings: input.holdings,
     goal,
     importMappings,
+    portfolioId: input.portfolioId,
   });
 
   if (!pushResult.ok) {

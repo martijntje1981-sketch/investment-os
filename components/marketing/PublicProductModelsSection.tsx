@@ -103,8 +103,8 @@ export function PublicProductModelsSection() {
         </div>
 
         <p className="mx-auto mt-8 max-w-2xl text-center text-sm leading-6 text-slate-500">
-          New eligible accounts start with a 14-day Complete trial. After that,
-          subscribe to Complete or continue with Tobailey Free. Personal trial
+          New eligible accounts start with 14 days of Complete. After that,
+          choose Complete or continue with Tobailey Free. Personal Complete
           starts with an empty portfolio — Demo remains a separate read-only
           explore path.
         </p>

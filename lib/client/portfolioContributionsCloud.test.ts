@@ -88,20 +88,22 @@ function createMockClient(state: {
       return {
         select: () => ({
           eq: () => ({
-            order: () => ({
-              order: async (): Promise<
-                QueryResult<DbPortfolioContributionRow[]>
-              > => ({
-                data: [...state.rows].sort((left, right) => {
-                  const dateCompare = right.entry_date.localeCompare(
-                    left.entry_date,
-                  );
-                  if (dateCompare !== 0) {
-                    return dateCompare;
-                  }
-                  return right.created_at.localeCompare(left.created_at);
+            eq: () => ({
+              order: () => ({
+                order: async (): Promise<
+                  QueryResult<DbPortfolioContributionRow[]>
+                > => ({
+                  data: [...state.rows].sort((left, right) => {
+                    const dateCompare = right.entry_date.localeCompare(
+                      left.entry_date,
+                    );
+                    if (dateCompare !== 0) {
+                      return dateCompare;
+                    }
+                    return right.created_at.localeCompare(left.created_at);
+                  }),
+                  error: null,
                 }),
-                error: null,
               }),
             }),
           }),

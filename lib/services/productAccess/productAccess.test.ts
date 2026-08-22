@@ -19,6 +19,7 @@ describe("product access resolver", () => {
     expect(complete.tier).toBe("complete");
     expect(complete.intelligenceDepth).toBe("complete");
     expect(complete.isCompleteTrial).toBe(false);
+    expect(complete.maxPortfolios).toBe(3);
 
     const trial = resolveProductAccess({
       exampleKind: "active",
@@ -29,6 +30,7 @@ describe("product access resolver", () => {
     expect(trial.tier).toBe("trial");
     expect(trial.intelligenceDepth).toBe("complete");
     expect(trial.isCompleteTrial).toBe(true);
+    expect(trial.maxPortfolios).toBe(3);
     expect(trial.trialIndicatorLabel).toBe("Complete trial · 11 days remaining");
   });
 
@@ -42,6 +44,7 @@ describe("product access resolver", () => {
     expect(free.tier).toBe("free");
     expect(free.intelligenceDepth).toBe("free");
     expect(free.preservesUserData).toBe(true);
+    expect(free.maxPortfolios).toBe(1);
     expect(free.upgradeCtaLabel).toContain(COMPLETE_MONTHLY_PRICE_LABEL);
   });
 
@@ -59,6 +62,7 @@ describe("product access resolver", () => {
     const none = resolveProductAccess({ exampleKind: "none" });
     expect(none.tier).toBe("free");
     expect(none.intelligenceDepth).toBe("free");
+    expect(none.maxPortfolios).toBe(1);
 
     const reserved = resolveProductAccess({ exampleKind: "reserved" });
     expect(reserved.tier).toBe("free");

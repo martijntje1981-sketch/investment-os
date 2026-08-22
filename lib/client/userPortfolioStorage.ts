@@ -11,6 +11,7 @@ import {
   assertUserSub,
   isValidUserSub,
   legacyMigrationFlagKey,
+  isValidPortfolioId,
   portfolioStorageKey,
 } from "@/lib/client/portfolioStorageKeys";
 import { isCryptoHolding } from "@/lib/services/portfolio/cryptoHolding";
@@ -67,18 +68,39 @@ function normalizeStoredHoldings(
 
 export { normalizeStoredHoldings };
 
-export function readScopedHoldingsRaw(
-  userSub: string,
-): StoredPortfolioHolding[] {
-  assertUserSub(userSub);
-
+function readHoldingsAtKey(key: string): StoredPortfolioHolding[] {
   try {
-    const stored = localStorage.getItem(portfolioStorageKey(userSub));
+    const stored = localStorage.getItem(key);
     if (!stored) return [];
     return normalizeStoredHoldings(JSON.parse(stored));
   } catch {
     return [];
   }
+}
+
+export function readScopedHoldingsRaw(
+  userSub: string,
+  portfolioId?: string | null,
+  options?: { isPrimary?: boolean },
+): StoredPortfolioHolding[] {
+  assertUserSub(userSub);
+
+  if (isValidPortfolioId(portfolioId)) {
+    const scopedKey = portfolioStorageKey(userSub, portfolioId);
+    try {
+      const stored = localStorage.getItem(scopedKey);
+      if (stored != null) {
+        return normalizeStoredHoldings(JSON.parse(stored));
+      }
+    } catch {
+      return [];
+    }
+    if (options?.isPrimary === false) {
+      return [];
+    }
+  }
+
+  return readHoldingsAtKey(portfolioStorageKey(userSub));
 }
 
 export function isScopedPortfolioEmpty(userSub: string): boolean {
@@ -142,19 +164,33 @@ export function tryExplicitLegacyPortfolioMigration(
 
 export function readPortfolioFromStorage(
   userSub: string,
+  portfolioId?: string | null,
+  options?: { isPrimary?: boolean },
 ): StoredPortfolioHolding[] {
   assertUserSub(userSub);
 
   tryExplicitLegacyPortfolioMigration(userSub);
 
-  return readScopedHoldingsRaw(userSub);
+  return readScopedHoldingsRaw(userSub, portfolioId, options);
 }
 
 export function writePortfolioToStorage(
   userSub: string,
   holdings: StoredPortfolioHolding[],
+  portfolioId?: string | null,
+  options?: { isPrimary?: boolean },
 ): void {
   assertUserSub(userSub);
+  if (isValidPortfolioId(portfolioId)) {
+    localStorage.setItem(
+      portfolioStorageKey(userSub, portfolioId),
+      JSON.stringify(holdings),
+    );
+    if (options?.isPrimary !== false) {
+      localStorage.setItem(portfolioStorageKey(userSub), JSON.stringify(holdings));
+    }
+    return;
+  }
   localStorage.setItem(
     portfolioStorageKey(userSub),
     JSON.stringify(holdings),

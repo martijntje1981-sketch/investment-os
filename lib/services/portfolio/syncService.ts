@@ -60,13 +60,13 @@ export async function migrateLocalPortfolio(
     idempotencyKey,
   );
   if (existingEvent?.status === "completed") {
-    const snapshot = await repo.fetchSnapshot(userId);
+    const snapshot = await repo.fetchSnapshot(userId, request.portfolioId);
     if (portfoliosPersistedMatch(holdings, snapshot.holdings, userId)) {
       return snapshot;
     }
   }
 
-  const remoteBefore = await repo.fetchSnapshot(userId);
+  const remoteBefore = await repo.fetchSnapshot(userId, request.portfolioId);
   if (remoteBefore.holdingCount > 0) {
     const localFingerprint = portfolioFingerprint(holdings, userId);
     const remoteFingerprint = portfolioFingerprint(
@@ -94,6 +94,7 @@ export async function migrateLocalPortfolio(
       goal,
       importMappings,
       "migrate",
+      request.portfolioId,
     );
   } catch (error) {
     await repo.recordSyncEvent(
@@ -153,13 +154,13 @@ export async function syncPortfolioSnapshot(
     request.idempotencyKey,
   );
   if (existingEvent?.status === "completed") {
-    const snapshot = await repo.fetchSnapshot(userId);
+    const snapshot = await repo.fetchSnapshot(userId, request.portfolioId);
     if (portfoliosPersistedMatch(holdings, snapshot.holdings, userId)) {
       return snapshot;
     }
   }
 
-  const remoteBefore = await repo.fetchSnapshot(userId);
+  const remoteBefore = await repo.fetchSnapshot(userId, request.portfolioId);
   if (
     remoteBefore.holdingCount > 0 &&
     isSuspiciousCashOnlyShrink(remoteBefore.holdings, holdings)
@@ -185,6 +186,7 @@ export async function syncPortfolioSnapshot(
       goal,
       importMappings,
       "sync",
+      request.portfolioId,
     );
   } catch (error) {
     await repo.recordSyncEvent(

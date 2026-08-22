@@ -101,8 +101,8 @@ describe("middleware and private API wiring", () => {
   it("holdings-required empty guide points users to add holdings and explore", () => {
     const source = readProjectFile("components/onboarding/EmptyPortfolioGuide.tsx");
     expect(source).toContain("holdingsRequiredBody");
-    expect(source).toContain("Explore the market");
-    expect(source).toContain("primaryCta");
+    expect(source).toContain("PORTFOLIO_SETUP_ROUTES.import");
+    expect(source).toContain("Add manually");
   });
 
   it("exposes guest chrome on public routes without duplicating guest pages", () => {
@@ -133,8 +133,8 @@ describe("middleware and private API wiring", () => {
     expect(explore).toContain("/signup?intent=trial");
     expect(marketingHeader).toContain("Explore");
     expect(marketingHeader).toContain("PUBLIC_EXPLORE_DESTINATIONS");
-    expect(marketingHeader).toContain("Start your 14-day trial");
-    expect(landing).toContain("Start your 14-day trial");
+    expect(marketingHeader).toContain("Start with Complete");
+    expect(landing).toContain("Start with 14 days of Complete");
     expect(landing).toContain("Explore Demo Portfolio");
     expect(landing).toContain('href="/explore"');
     expect(landing).not.toContain("Explore the dashboard");

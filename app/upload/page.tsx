@@ -74,6 +74,7 @@ export default function UploadPage() {
   const router = useRouter();
   const {
     userSub,
+    activePortfolioId,
     holdings: storedHoldings,
     recoveryOffer,
     recoverPortfolio,
@@ -463,6 +464,7 @@ export default function UploadPage() {
       const saved = await saveImportedPortfolio({
         userSub,
         holdings: next,
+        portfolioId: activePortfolioId,
         idempotencyKey: importIdempotencyKeyRef.current ?? undefined,
         newProviderSymbols: syncFailed
           ? []

@@ -46,9 +46,15 @@ function isNetworkError(error: unknown): boolean {
   );
 }
 
-export async function fetchRemotePortfolio(): Promise<FetchRemotePortfolioResult> {
+export async function fetchRemotePortfolio(
+  portfolioId?: string | null,
+): Promise<FetchRemotePortfolioResult> {
   try {
-    const response = await fetch("/api/portfolio", {
+    const query =
+      typeof portfolioId === "string" && portfolioId.trim()
+        ? `?portfolioId=${encodeURIComponent(portfolioId.trim())}`
+        : "";
+    const response = await fetch(`/api/portfolio${query}`, {
       method: "GET",
       credentials: "include",
       cache: "no-store",
@@ -143,6 +149,7 @@ export async function pushPortfolioToRemote(input: {
   holdings: StoredPortfolioHolding[];
   goal?: GoalSettings | null;
   importMappings?: SavedImportMapping[];
+  portfolioId?: string | null;
 }): Promise<PushPortfolioResult> {
   try {
     const response = await fetch("/api/portfolio", {

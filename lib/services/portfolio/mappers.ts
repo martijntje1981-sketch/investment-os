@@ -310,9 +310,14 @@ export function mapSavedImportMappingToDbInsert(
   };
 }
 
-export function mapGoalToDbInsert(goal: GoalSettings, userId: string) {
+export function mapGoalToDbInsert(
+  goal: GoalSettings,
+  userId: string,
+  portfolioId?: string | null,
+) {
   return {
     user_id: userId,
+    ...(portfolioId ? { portfolio_id: portfolioId } : {}),
     target_value: goal.targetValue,
     target_year: goal.targetYear,
     monthly_contribution: goal.monthlyContribution,
@@ -352,6 +357,7 @@ export function buildRemoteSnapshot(
   importMappings: DbImportMappingRow[],
   migrationCompletedAt: string | null,
   portfolioId: string | null,
+  isPrimary = true,
 ): RemotePortfolioSnapshot {
   const holdings = rows.map((row) => mapDbHoldingToStored(row));
 
@@ -368,6 +374,7 @@ export function buildRemoteSnapshot(
     migrationCompletedAt,
     remoteUpdatedAt,
     portfolioId,
+    isPrimary,
     holdingCount: holdings.length,
   };
 }

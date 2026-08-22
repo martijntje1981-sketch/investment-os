@@ -143,8 +143,8 @@ export function PublicPortfolioMixer() {
               <ArrowRight className="h-4 w-4" />
             </Link>
             <p className="mt-3 text-center text-xs leading-5 text-slate-500">
-              Continues into the existing 14-day Complete trial. Free after
-              that, or Complete at €5.99/month. No card required to start.
+              Continues into 14 days of Complete. After that, choose Complete
+              or continue with Free. No card required to start.
             </p>
           </div>
         </div>

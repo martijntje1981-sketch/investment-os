@@ -83,7 +83,7 @@ describe("Phase 2 public homepage Four Questions + plans", () => {
   it("preserves Demo vs Trial CTAs without billing or scope gating", () => {
     const home = read("app/page.tsx");
     const products = read("components/marketing/PublicProductModelsSection.tsx");
-    expect(home).toContain("Start your 14-day trial");
+    expect(home).toContain("Start with 14 days of Complete");
     expect(home).toContain("Explore Demo Portfolio");
     expect(home).toContain("/signup?intent=trial");
     expect(home).toContain("/explore");
@@ -109,7 +109,7 @@ describe("Phase 2 public homepage Four Questions + plans", () => {
     expect(models).not.toContain("Tobailey Invest");
     expect(models).not.toContain("Tobailey Crypto");
     expect(products).toContain("PRODUCT_POSITIONING.title");
-    expect(products).toContain("14-day Complete trial");
+    expect(products).toContain("14 days of Complete");
     expect(products).not.toContain("Three ways to use Tobailey");
     expect(products).not.toContain("Product choice is positioning for now");
     expect(home).not.toContain("Three ways to use Tobailey");

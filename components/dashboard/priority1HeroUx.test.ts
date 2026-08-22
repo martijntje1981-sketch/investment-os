@@ -85,13 +85,13 @@ describe("Priority 1 demo vs trial entry", () => {
     const callback = read("app/auth/callback/route.ts");
     const header = read("components/marketing/MarketingHeader.tsx");
 
-    expect(landing).toContain("Start your 14-day trial");
+    expect(landing).toContain("Start with 14 days of Complete");
     expect(landing).toContain("Explore Demo Portfolio");
     expect(landing).toContain("/signup?intent=trial");
-    expect(explore).toContain("Start your 14-day trial");
+    expect(explore).toContain("Start with 14 days of Complete");
     expect(explore).toContain("Demo Portfolio");
     expect(explore).toContain("/signup?intent=trial");
-    expect(header).toContain("Start your 14-day trial");
+    expect(header).toContain("Start with Complete");
     expect(header).toContain("/signup?intent=trial");
     expect(callback).toContain("seedHoldings: wantsDemoPortfolio");
     expect(callback).toContain("wantsPersonalTrial");

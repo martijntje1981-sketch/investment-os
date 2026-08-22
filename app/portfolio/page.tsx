@@ -139,6 +139,7 @@ import type { ResolvedInstrument } from "@/lib/types/instrument";
 import { usePortfolioDividends } from "@/lib/client/usePortfolioDividends";
 import { usePortfolioAnalyst } from "@/lib/client/usePortfolioAnalyst";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
+import { useActivePortfolioOptional } from "@/lib/client/useActivePortfolio";
 import { resolvePortfolioDisplayFreshness } from "@/lib/client/portfolioDisplayFreshness";
 import { holdingDetailPath } from "@/lib/navigation/appRoutes";
 import { ViewHoldingCue } from "@/components/holding/ViewHoldingCue";
@@ -193,6 +194,8 @@ export default function PortfolioPage() {
     recoverPortfolio,
     dismissRecovery,
   } = useUserPortfolio();
+  const activePortfolioName =
+    useActivePortfolioOptional()?.activePortfolio?.name ?? null;
   const addParamHandledRef = useRef(false);
   const [isMigrating, setIsMigrating] = useState(false);
   const { quotes: dividendQuotes } = usePortfolioDividends(
@@ -626,6 +629,7 @@ export default function PortfolioPage() {
                     portfolioValueAvailable: performance.totalValueAvailable,
                     baseCurrency,
                     convertEur,
+                    portfolioName: activePortfolioName,
                   })
                 }
               />

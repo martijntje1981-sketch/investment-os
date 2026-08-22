@@ -26,6 +26,7 @@ export type RunPortfolioExportInput = {
   currentProgressPercent?: number | null;
   remainingAmount?: number | null;
   statusLabel?: string | null;
+  portfolioName?: string | null;
 };
 
 export async function runPortfolioExport(
@@ -65,6 +66,7 @@ export async function runPortfolioExport(
     timeline,
     fundingHistory,
     convertEur: input.convertEur,
+    portfolioName: input.portfolioName,
     goals:
       input.hasSavedGoal && input.goal
         ? {

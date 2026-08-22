@@ -68,7 +68,7 @@ export function TrialStepsCard({
       <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
         {showCreateCta ? (
           <Link href="/signup?intent=trial" className={appSolidButtonClass}>
-            Start your 14-day trial
+            Start with 14 days of Complete
           </Link>
         ) : (
           <Link href={PORTFOLIO_SETUP_ROUTES.import} className={appSolidButtonClass}>

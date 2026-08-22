@@ -309,14 +309,14 @@ export default async function SignupPage({
 
           <div className="relative rounded-[28px] border border-white/10 bg-white/5 p-6">
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
-              14-day Complete trial
+              14 days of Complete
             </p>
 
             <p className="mt-3 text-xl font-bold">Start with everything</p>
 
             <p className="mt-3 text-sm leading-6 text-slate-300">
-              Try Tobailey Complete free for 14 days. After that, continue with
-              Complete for €5.99/month or keep using Tobailey Free.
+              Experience everything Tobailey can do. After 14 days, choose
+              Complete for €5.99/month or continue with Free.
             </p>
           </div>
         </section>

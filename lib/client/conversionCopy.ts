@@ -12,10 +12,10 @@ export const CONVERSION_COPY = {
   softLine:
     "General market intelligence is available to everyone. Personal insights begin when you add your holdings.",
   holdingsRequiredBody:
-    "Add your holdings to unlock portfolio analysis, relevance and tailored insights.",
-  zeroHoldingsHeroTitle: "Welcome to Tobailey",
+    "Add your first investment to start your personal Tobailey briefing.",
+  zeroHoldingsHeroTitle: "Add your first investment",
   zeroHoldingsHeroCopy:
-    "Upload your portfolio or add holdings manually to unlock your personal investment command centre.",
+    "Upload a file or add a few holdings to start your personal Tobailey briefing.",
   zeroHoldingsPrimaryCta: "Upload portfolio",
   zeroHoldingsSecondaryCta: "Add manually",
   primaryHref: "/upload",

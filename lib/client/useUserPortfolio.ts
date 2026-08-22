@@ -6,6 +6,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type ReactNode,
@@ -59,6 +60,7 @@ import {
   validatePortfolioBeforeSave,
 } from "@/lib/services/portfolio/portfolioPersistenceGuard";
 import { useAuthenticatedUserSub } from "@/lib/client/useAuthenticatedUserSub";
+import { useActivePortfolioOptional } from "@/lib/client/useActivePortfolio";
 import { readSavedUserGoal } from "@/lib/client/userGoalStorage";
 import { markPortfolioSetupCompleted } from "@/lib/client/portfolioSetup";
 import { readImportMappingsFromCache } from "@/lib/services/import/mappingMemory";
@@ -80,6 +82,14 @@ export function __resetUserPortfolioRemoteHydratesForTests(): void {
 
 function useUserPortfolioState() {
   const { userSub, authReady } = useAuthenticatedUserSub();
+  const activePortfolio = useActivePortfolioOptional();
+  const activePortfolioId = activePortfolio?.activePortfolioId ?? null;
+  const isPrimaryBook = activePortfolio?.activePortfolio?.isPrimary ?? true;
+  const bookOptions = useMemo(
+    () => ({ isPrimary: isPrimaryBook }),
+    [isPrimaryBook],
+  );
+  const bookReady = !activePortfolio || activePortfolio.ready;
   const [holdings, setHoldings] = useState<StoredPortfolioHolding[]>([]);
   const [portfolioReady, setPortfolioReady] = useState(false);
   const [recoveryOffer, setRecoveryOffer] =
@@ -107,20 +117,20 @@ function useUserPortfolioState() {
       return;
     }
 
-    setHoldings(loadUserPortfolioHoldings(userSub));
+    setHoldings(loadUserPortfolioHoldings(userSub, activePortfolioId, bookOptions));
     setRecoveryOffer(
       getLegacyRecoveryOffer(userSub) ?? getPortfolioBackupRecoveryOffer(userSub),
     );
-  }, [userSub]);
+  }, [activePortfolioId, bookOptions, userSub]);
 
   const hydrateFromRemote = useCallback(
     async (force = false) => {
-      if (!userSub || (!force && remoteHydratedRef.current)) return;
+      if (!userSub || !bookReady || (!force && remoteHydratedRef.current)) return;
       remoteHydrateStartsForTests += 1;
 
       setSyncState({ status: "loading" });
-      const localHoldings = loadUserPortfolioHoldings(userSub);
-      const goal = readSavedUserGoal(userSub);
+      const localHoldings = loadUserPortfolioHoldings(userSub, activePortfolioId, bookOptions);
+      const goal = readSavedUserGoal(userSub, activePortfolioId, bookOptions);
       const importMappings = readImportMappingsFromCache(userSub);
 
       if (localHoldings.length > 0) {
@@ -129,7 +139,7 @@ function useUserPortfolioState() {
         markAppEntryCachedPortfolioReady();
       }
 
-      const remoteResult = await fetchRemotePortfolio();
+      const remoteResult = await fetchRemotePortfolio(activePortfolioId);
 
       if (!remoteResult.ok) {
         if ("unauthorized" in remoteResult && remoteResult.unauthorized) {
@@ -224,6 +234,7 @@ function useUserPortfolioState() {
             holdings: merged,
             goal,
             importMappings,
+            portfolioId: activePortfolioId,
           });
         }
 
@@ -244,7 +255,7 @@ function useUserPortfolioState() {
       setPortfolioReady(true);
       setRecoveryOffer(getLegacyRecoveryOffer(userSub));
     },
-    [userSub],
+    [activePortfolioId, bookOptions, bookReady, userSub],
   );
 
   useEffect(() => {
@@ -254,7 +265,7 @@ function useUserPortfolioState() {
     saveRequestRef.current = null;
     saveSequenceRef.current = 0;
 
-    if (!authReady) {
+    if (!authReady || !bookReady) {
       setHoldings([]);
       setRecoveryOffer(null);
       setPortfolioReady(false);
@@ -272,15 +283,16 @@ function useUserPortfolioState() {
       return;
     }
 
+    setHoldings(loadUserPortfolioHoldings(userSub, activePortfolioId, bookOptions));
     void hydrateFromRemote();
-  }, [authReady, hydrateFromRemote, userSub]);
+  }, [activePortfolioId, authReady, bookOptions, bookReady, hydrateFromRemote, userSub]);
 
   useEffect(() => {
     if (!userSub || !portfolioReady || snapshotSyncedRef.current) {
       return;
     }
 
-    const currentHoldings = loadUserPortfolioHoldings(userSub);
+    const currentHoldings = loadUserPortfolioHoldings(userSub, activePortfolioId, bookOptions);
     if (currentHoldings.length === 0) {
       return;
     }
@@ -297,7 +309,7 @@ function useUserPortfolioState() {
         // A newer local save / live refresh landed while this snapshot sync was
         // in flight — do not clobber React state with the stale closure result.
         if (generationAtStart !== holdingsGenerationRef.current) {
-          setHoldings(loadUserPortfolioHoldings(userSub));
+          setHoldings(loadUserPortfolioHoldings(userSub, activePortfolioId, bookOptions));
           return;
         }
 
@@ -309,7 +321,7 @@ function useUserPortfolioState() {
           )
         ) {
           persistVerifiedListingQuoteCorrections(userSub, result.holdings);
-          const goal = readSavedUserGoal(userSub);
+          const goal = readSavedUserGoal(userSub, activePortfolioId, bookOptions);
           const importMappings = readImportMappingsFromCache(userSub);
           const meta = readPortfolioSyncMeta(userSub);
           const revision = (meta.lastLocalRevision ?? 0) + 1;
@@ -324,13 +336,14 @@ function useUserPortfolioState() {
             holdings: result.holdings,
             goal,
             importMappings,
+            portfolioId: activePortfolioId,
           });
         }
 
         setHoldings(result.holdings);
       },
     );
-  }, [portfolioReady, userSub]);
+  }, [activePortfolioId, bookOptions, portfolioReady, userSub]);
 
   useEffect(() => {
     if (!userSub) return;
@@ -360,7 +373,7 @@ function useUserPortfolioState() {
     ) => {
       if (!userSub) return;
 
-      const goal = readSavedUserGoal(userSub);
+      const goal = readSavedUserGoal(userSub, activePortfolioId, bookOptions);
       const importMappings = readImportMappingsFromCache(userSub);
 
       logPortfolioPersistenceEvent("cloud push started", {
@@ -375,6 +388,7 @@ function useUserPortfolioState() {
         holdings: next,
         goal,
         importMappings,
+        portfolioId: activePortfolioId,
       });
 
       if (saveRequestRef.current?.sequence !== options.sequence) {
@@ -434,7 +448,7 @@ function useUserPortfolioState() {
         retryable: result.retryable,
       });
     },
-    [userSub],
+    [activePortfolioId, bookOptions, userSub],
   );
 
   const saveHoldings = useCallback(
@@ -483,7 +497,7 @@ function useUserPortfolioState() {
         return;
       }
 
-      const goal = readSavedUserGoal(userSub);
+      const goal = readSavedUserGoal(userSub, activePortfolioId, bookOptions);
       const idempotencyKey = buildPortfolioSaveIdempotencyKey(
         userSub,
         next,
@@ -494,7 +508,7 @@ function useUserPortfolioState() {
 
       void pushRemoteHoldings(next, { idempotencyKey, sequence: revision });
     },
-    [pushRemoteHoldings, syncState.status, userSub],
+    [activePortfolioId, bookOptions, pushRemoteHoldings, syncState.status, userSub],
   );
 
   useEffect(() => {
@@ -502,16 +516,16 @@ function useUserPortfolioState() {
       return;
     }
 
-    setHoldings(loadUserPortfolioHoldings(userSub));
-  }, [authReady, portfolioReady, userSub]);
+    setHoldings(loadUserPortfolioHoldings(userSub, activePortfolioId, bookOptions));
+  }, [activePortfolioId, authReady, bookOptions, portfolioReady, userSub]);
 
   const migratePortfolio = useCallback(async () => {
     if (!userSub || syncRequestRef.current) return false;
 
-    const localHoldings = loadUserPortfolioHoldings(userSub);
+    const localHoldings = loadUserPortfolioHoldings(userSub, activePortfolioId, bookOptions);
     if (localHoldings.length === 0) return false;
 
-    const goal = readSavedUserGoal(userSub);
+    const goal = readSavedUserGoal(userSub, activePortfolioId, bookOptions);
     const importMappings = readImportMappingsFromCache(userSub);
     const localFingerprint = portfolioFingerprint(localHoldings, userSub);
     const meta = readPortfolioSyncMeta(userSub);
@@ -568,7 +582,7 @@ function useUserPortfolioState() {
       retryable: true,
     });
     return false;
-  }, [userSub]);
+  }, [activePortfolioId, bookOptions, userSub]);
 
   const retrySync = useCallback(async () => {
     remoteHydratedRef.current = false;
@@ -581,7 +595,7 @@ function useUserPortfolioState() {
     const conflict = syncState;
     setSyncState({ status: "syncing" });
 
-    const goal = readSavedUserGoal(userSub);
+    const goal = readSavedUserGoal(userSub, activePortfolioId, bookOptions);
     logPortfolioSyncDiagnostics("use cloud portfolio clicked", {
       action: "use_cloud_portfolio",
       localFingerprint: conflict.localFingerprint,
@@ -606,7 +620,9 @@ function useUserPortfolioState() {
 
     const verified = await verifyPortfolioSyncAfterReRead(
       userSub,
-      fetchRemotePortfolio,
+      () => fetchRemotePortfolio(activePortfolioId),
+      activePortfolioId,
+      bookOptions.isPrimary,
     );
 
     if (!verified.ok) {
@@ -618,7 +634,7 @@ function useUserPortfolioState() {
       return false;
     }
 
-    const goalAfterVerify = readSavedUserGoal(userSub);
+    const goalAfterVerify = readSavedUserGoal(userSub, activePortfolioId, bookOptions);
     markConflictResolutionVerified(
       userSub,
       resolved.holdings,
@@ -630,7 +646,7 @@ function useUserPortfolioState() {
     setSyncState({ status: "ready", source: "remote" });
     dispatchPortfolioUpdated(userSub);
     return true;
-  }, [syncState, userSub]);
+  }, [activePortfolioId, bookOptions, syncState, userSub]);
 
   const keepLocalPortfolio = useCallback(async () => {
     if (!userSub || syncState.status !== "conflict") return false;
@@ -638,8 +654,8 @@ function useUserPortfolioState() {
     const conflict = syncState;
     setSyncState({ status: "syncing" });
 
-    const localHoldings = loadUserPortfolioHoldings(userSub);
-    const goal = readSavedUserGoal(userSub);
+    const localHoldings = loadUserPortfolioHoldings(userSub, activePortfolioId, bookOptions);
+    const goal = readSavedUserGoal(userSub, activePortfolioId, bookOptions);
     const importMappings = readImportMappingsFromCache(userSub);
 
     logPortfolioSyncDiagnostics("keep device copy clicked", {
@@ -653,6 +669,7 @@ function useUserPortfolioState() {
       holdings: localHoldings,
       goal,
       importMappings,
+      portfolioId: activePortfolioId,
     });
 
     logPortfolioSyncDiagnostics("keep device copy cloud write", {
@@ -692,7 +709,9 @@ function useUserPortfolioState() {
 
     const verified = await verifyPortfolioSyncAfterReRead(
       userSub,
-      fetchRemotePortfolio,
+      () => fetchRemotePortfolio(activePortfolioId),
+      activePortfolioId,
+      bookOptions.isPrimary,
     );
 
     if (!verified.ok) {
@@ -704,7 +723,7 @@ function useUserPortfolioState() {
       return false;
     }
 
-    const goalAfterVerify = readSavedUserGoal(userSub);
+    const goalAfterVerify = readSavedUserGoal(userSub, activePortfolioId, bookOptions);
     markConflictResolutionVerified(
       userSub,
       resolved.holdings,
@@ -716,7 +735,7 @@ function useUserPortfolioState() {
     setSyncState({ status: "ready", source: "local" });
     dispatchPortfolioUpdated(userSub);
     return true;
-  }, [syncState, userSub]);
+  }, [activePortfolioId, bookOptions, syncState, userSub]);
 
   const recoverPortfolio = useCallback(() => {
     if (!userSub) return false;
@@ -747,6 +766,7 @@ function useUserPortfolioState() {
     authReady,
     holdings,
     setHoldings,
+    activePortfolioId,
     portfolioReady,
     recoveryOffer,
     syncState,

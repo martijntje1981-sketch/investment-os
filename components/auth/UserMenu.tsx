@@ -60,6 +60,7 @@ import {
 } from "@/lib/navigation/discoverDestinations";
 import { useProductAccess } from "@/lib/client/useProductAccess";
 import { PlanStatusBadge } from "@/components/product/ProductAccessNotes";
+import { PortfolioSwitcher } from "@/components/portfolio/PortfolioSwitcher";
 import { createClient } from "@/lib/supabase/client";
 
 type MenuLink = {
@@ -402,14 +403,15 @@ export default function UserMenu() {
   return (
     <header className="fixed inset-x-0 top-0 z-[60] border-b border-slate-200/80 bg-white/90 backdrop-blur-xl">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 sm:h-16 sm:px-6">
-        <div className="flex min-w-0 items-center gap-3 lg:gap-5">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3 lg:gap-5">
           <Link
             href="/dashboard"
-            className="min-w-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+            className="min-w-0 shrink-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
             aria-label="Tobailey dashboard"
           >
             <TobaileyLogo size={36} showWordmark className="sm:gap-3" />
           </Link>
+          <PortfolioSwitcher />
 
           <nav
             className="hidden items-center gap-0.5 lg:flex"

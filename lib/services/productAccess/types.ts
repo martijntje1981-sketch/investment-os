@@ -16,6 +16,7 @@ import type {
   ExampleTrialKind,
 } from "@/lib/services/examplePortfolio/types";
 import { EXAMPLE_KEEP_PORTFOLIO_HREF } from "@/lib/services/examplePortfolio/types";
+import { maxPortfoliosForTier } from "@/lib/services/productAccess/portfolioEntitlement";
 
 /** Permanent product levels + trial + demo showroom. */
 export type ProductAccessTier = "free" | "trial" | "complete" | "demo";
@@ -63,6 +64,8 @@ export type ProductAccess = {
   isDemo: boolean;
   /** Account/portfolio data must remain intact regardless of tier. */
   preservesUserData: true;
+  /** Free = 1; Complete and the initial 14-day Complete period = 3. */
+  maxPortfolios: number;
 };
 
 export type ResolveProductAccessInput = {
@@ -125,6 +128,15 @@ export function formatCompleteTrialIndicatorLabel(
   return `Complete trial · ${days} days remaining`;
 }
 
+function withPortfolioEntitlement(
+  access: Omit<ProductAccess, "maxPortfolios">,
+): ProductAccess {
+  return {
+    ...access,
+    maxPortfolios: maxPortfoliosForTier(access.tier),
+  };
+}
+
 /**
  * Single resolver for product access. Prefer this over ad-hoc trial/paid checks.
  */
@@ -142,7 +154,7 @@ export function resolveProductAccess(
   };
 
   if (input.exampleKind === "converted") {
-    return {
+    return withPortfolioEntitlement({
       ...base,
       tier: "complete",
       intelligenceDepth: "complete",
@@ -151,12 +163,12 @@ export function resolveProductAccess(
       expiresAt,
       trialIndicatorLabel: null,
       isDemo: false,
-    };
+    });
   }
 
   if (input.exampleKind === "active") {
     if (trialKind === "personal") {
-      return {
+      return withPortfolioEntitlement({
         ...base,
         tier: "trial",
         intelligenceDepth: "complete",
@@ -169,9 +181,9 @@ export function resolveProductAccess(
           now,
         ),
         isDemo: false,
-      };
+      });
     }
-    return {
+    return withPortfolioEntitlement({
       ...base,
       tier: "demo",
       intelligenceDepth: "complete",
@@ -180,12 +192,12 @@ export function resolveProductAccess(
       expiresAt,
       trialIndicatorLabel: null,
       isDemo: true,
-    };
+    });
   }
 
   if (input.exampleKind === "expired") {
     if (trialKind === "personal") {
-      return {
+      return withPortfolioEntitlement({
         ...base,
         tier: "free",
         intelligenceDepth: "free",
@@ -194,10 +206,10 @@ export function resolveProductAccess(
         expiresAt,
         trialIndicatorLabel: null,
         isDemo: false,
-      };
+      });
     }
     // Demo expired — still demo-isolated; callers keep hard expiry UX.
-    return {
+    return withPortfolioEntitlement({
       ...base,
       tier: "demo",
       intelligenceDepth: "free",
@@ -206,11 +218,11 @@ export function resolveProductAccess(
       expiresAt,
       trialIndicatorLabel: null,
       isDemo: true,
-    };
+    });
   }
 
   // none | reserved — Free until a trial is activated or conversion exists.
-  return {
+  return withPortfolioEntitlement({
     ...base,
     tier: "free",
     intelligenceDepth: "free",
@@ -219,7 +231,7 @@ export function resolveProductAccess(
     expiresAt: null,
     trialIndicatorLabel: null,
     isDemo: false,
-  };
+  });
 }
 
 export function resolveProductAccessFromMetadata(input: {

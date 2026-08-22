@@ -28,7 +28,7 @@ type EmptyPortfolioGuideProps = {
  * Shared empty-portfolio guidance for holdings-required surfaces.
  */
 export function EmptyPortfolioGuide({
-  title = "Add your holdings",
+  title = "Add your first investment",
   body = CONVERSION_COPY.holdingsRequiredBody,
   density = "default",
   availableWithoutHoldings,

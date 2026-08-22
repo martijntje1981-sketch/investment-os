@@ -13,11 +13,15 @@ import { loadUserPortfolioHoldings } from "@/lib/client/portfolioPricing";
 import { pushPortfolioToRemote } from "@/lib/client/portfolioSyncApi";
 import { applyRemoteSnapshotToLocalCache } from "@/lib/client/portfolioSyncState";
 import { useAuthenticatedUserSub } from "@/lib/client/useAuthenticatedUserSub";
+import { useActivePortfolioOptional } from "@/lib/client/useActivePortfolio";
 import { readImportMappingsFromCache } from "@/lib/services/import/mappingMemory";
 import type { GoalSettings } from "@/lib/types/portfolioStorage";
 
 export function useUserGoal() {
   const { userSub, authReady } = useAuthenticatedUserSub();
+  const activePortfolio = useActivePortfolioOptional();
+  const activePortfolioId = activePortfolio?.activePortfolioId ?? null;
+  const isPrimaryBook = activePortfolio?.activePortfolio?.isPrimary ?? true;
   const [goal, setGoal] = useState<GoalSettings | null>(null);
   const [hasSavedGoal, setHasSavedGoal] = useState(false);
   const [goalReady, setGoalReady] = useState(false);
@@ -30,10 +34,12 @@ export function useUserGoal() {
       return;
     }
 
-    const saved = readSavedUserGoal(userSub);
+    const saved = readSavedUserGoal(userSub, activePortfolioId, {
+      isPrimary: isPrimaryBook,
+    });
     setGoal(saved);
     setHasSavedGoal(saved !== null);
-  }, [userSub]);
+  }, [activePortfolioId, isPrimaryBook, userSub]);
 
   useEffect(() => {
     if (!authReady) {
@@ -58,8 +64,16 @@ export function useUserGoal() {
     if (!userSub) return;
 
     const handleGoalUpdated = (event: Event) => {
-      const detail = (event as CustomEvent<{ userSub?: string }>).detail;
-      if (!shouldHandleGoalUpdatedEvent(detail?.userSub, userSub)) return;
+      const detail = (event as CustomEvent<{ userSub?: string; portfolioId?: string | null }>).detail;
+      if (
+        !shouldHandleGoalUpdatedEvent(
+          detail?.userSub,
+          userSub,
+          detail?.portfolioId,
+          activePortfolioId,
+        )
+      )
+        return;
       reloadGoal();
     };
 
@@ -67,12 +81,14 @@ export function useUserGoal() {
     return () => {
       window.removeEventListener(GOAL_UPDATED_EVENT, handleGoalUpdated);
     };
-  }, [reloadGoal, userSub]);
+  }, [activePortfolioId, reloadGoal, userSub]);
 
   const persistGoal = useCallback(
     (nextGoal: GoalSettings) => {
       if (!userSub) return;
-      saveUserGoal(userSub, nextGoal);
+      saveUserGoal(userSub, nextGoal, activePortfolioId, {
+        isPrimary: isPrimaryBook,
+      });
       setGoal(nextGoal);
       setHasSavedGoal(true);
 
@@ -81,9 +97,12 @@ export function useUserGoal() {
 
       void pushPortfolioToRemote({
         idempotencyKey: `goal:${userSub}:${saveKey}`,
-        holdings: loadUserPortfolioHoldings(userSub),
+        holdings: loadUserPortfolioHoldings(userSub, activePortfolioId, {
+          isPrimary: isPrimaryBook,
+        }),
         goal: nextGoal,
         importMappings: readImportMappingsFromCache(userSub),
+        portfolioId: activePortfolioId,
       }).then((result) => {
         if (saveRequestRef.current !== saveKey) return;
         saveRequestRef.current = null;
@@ -92,7 +111,7 @@ export function useUserGoal() {
         }
       });
     },
-    [userSub],
+    [activePortfolioId, isPrimaryBook, userSub],
   );
 
   return {

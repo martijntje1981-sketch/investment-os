@@ -33,8 +33,20 @@ export function assertUserSub(
   }
 }
 
-export function portfolioStorageKey(userSub: string): string {
+export function isValidPortfolioId(
+  portfolioId: string | null | undefined,
+): portfolioId is string {
+  return typeof portfolioId === "string" && portfolioId.trim().length > 0;
+}
+
+export function portfolioStorageKey(
+  userSub: string,
+  portfolioId?: string | null,
+): string {
   assertUserSub(userSub);
+  if (isValidPortfolioId(portfolioId)) {
+    return `investment-os-holdings:${userSub}:${portfolioId}`;
+  }
   return `investment-os-holdings:${userSub}`;
 }
 
@@ -43,8 +55,14 @@ export function priceCacheKey(userSub: string): string {
   return `investment-os-market-price-cache:${userSub}`;
 }
 
-export function goalStorageKey(userSub: string): string {
+export function goalStorageKey(
+  userSub: string,
+  portfolioId?: string | null,
+): string {
   assertUserSub(userSub);
+  if (isValidPortfolioId(portfolioId)) {
+    return `investment-os-goal:${userSub}:${portfolioId}`;
+  }
   return `investment-os-goal:${userSub}`;
 }
 

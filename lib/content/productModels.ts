@@ -3,6 +3,7 @@
  * Positioning only. Does not gate access or change IntelligenceScope.
  */
 
+import { COMPLETE_PERIOD_COPY } from "@/lib/content/completePeriodCopy";
 import {
   COMPLETE_MONTHLY_PRICE_DISPLAY,
   COMPLETE_MONTHLY_PRICE_LABEL,
@@ -32,7 +33,7 @@ export const PRODUCT_MODEL_TRIAL_HREF = "/signup?intent=trial" as const;
 export const PRODUCT_POSITIONING = {
   eyebrow: "Free and Complete",
   title: "Start with everything. Keep what you need.",
-  description: `Try Tobailey Complete free for 14 days. After that, continue with Complete for ${COMPLETE_MONTHLY_PRICE_DISPLAY} or keep using Tobailey Free.`,
+  description: `${COMPLETE_PERIOD_COPY.supporting} Complete is ${COMPLETE_MONTHLY_PRICE_DISPLAY} after the first 14 days.`,
 } as const;
 
 export const PRODUCT_MODELS: readonly ProductModelDefinition[] = [
@@ -54,7 +55,7 @@ export const PRODUCT_MODELS: readonly ProductModelDefinition[] = [
       "Limited intelligence depth",
     ],
     ctaHref: PRODUCT_MODEL_TRIAL_HREF,
-    ctaLabel: "Start with a 14-day trial",
+    ctaLabel: COMPLETE_PERIOD_COPY.compactCta,
     featured: false,
   },
   {
@@ -63,7 +64,7 @@ export const PRODUCT_MODELS: readonly ProductModelDefinition[] = [
     shortName: "Complete",
     priceLabel: COMPLETE_MONTHLY_PRICE_LABEL,
     priceSuffix: "per month",
-    headline: "Full intelligence depth after a 14-day trial.",
+    headline: "Full intelligence depth for 14 days, then you choose.",
     shortDescription:
       "Everything in Free, plus the deeper Four Questions analysis already in Tobailey — more context behind conclusions, and scenario and goal views where your data supports them.",
     highlights: [
@@ -74,7 +75,7 @@ export const PRODUCT_MODELS: readonly ProductModelDefinition[] = [
       "Goal views where you have a goal",
     ],
     ctaHref: PRODUCT_MODEL_TRIAL_HREF,
-    ctaLabel: "Start your 14-day trial",
+    ctaLabel: COMPLETE_PERIOD_COPY.primaryCta,
     featured: true,
   },
 ] as const;

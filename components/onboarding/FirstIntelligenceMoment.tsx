@@ -1,22 +1,25 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import { Sparkles, Target } from "lucide-react";
+import { Sparkles } from "lucide-react";
 
+import { OnboardingProgress } from "@/components/onboarding/OnboardingProgress";
 import {
+  appHeroGhostButtonClass,
   appHeroShellClass,
   appPageHeroSubtitleClass,
   appPageHeroTitleClass,
   appPrimaryButtonClass,
-  appHeroGhostButtonClass,
   appSectionLabelClass,
 } from "@/components/layout/appSurface";
-import { GOALS_PATH } from "@/lib/navigation/appRoutes";
+import { COMPLETE_PERIOD_COPY } from "@/lib/content/completePeriodCopy";
 import {
   dismissFirstIntelligence,
   shouldShowFirstIntelligence,
 } from "@/lib/client/firstIntelligence";
+import { GOAL_FORM_DEFAULT, useUserGoal } from "@/lib/client/useUserGoal";
+import { FOUR_QUESTIONS } from "@/lib/services/fourQuestions/catalog";
+import type { GoalSettings } from "@/lib/types/portfolioStorage";
 
 type FirstIntelligenceMomentProps = {
   userSub: string | null;
@@ -26,8 +29,8 @@ type FirstIntelligenceMomentProps = {
 };
 
 /**
- * Post-setup aha moment: portfolio is ready, Four Questions are next.
- * Goal invite is optional and skippable. Never shown for Demo books.
+ * First real product moment after holdings exist.
+ * Optional goal uses the canonical Goals model. Skip is always available.
  */
 export function FirstIntelligenceMoment({
   userSub,
@@ -35,8 +38,10 @@ export function FirstIntelligenceMoment({
   exampleActive,
   hasSavedGoal,
 }: FirstIntelligenceMomentProps) {
+  const { persistGoal } = useUserGoal();
   const [visible, setVisible] = useState(false);
-  const [showGoalInvite, setShowGoalInvite] = useState(false);
+  const [goalDraft, setGoalDraft] = useState<GoalSettings>(GOAL_FORM_DEFAULT);
+  const [showGoal, setShowGoal] = useState(false);
 
   useEffect(() => {
     const search =
@@ -48,7 +53,7 @@ export function FirstIntelligenceMoment({
       search,
     });
     setVisible(show);
-    setShowGoalInvite(show && !hasSavedGoal);
+    setShowGoal(show && !hasSavedGoal);
   }, [userSub, hasHoldings, exampleActive, hasSavedGoal]);
 
   if (!visible || !userSub) return null;
@@ -56,6 +61,16 @@ export function FirstIntelligenceMoment({
   function close() {
     dismissFirstIntelligence(userSub);
     setVisible(false);
+  }
+
+  function skipGoal() {
+    setShowGoal(false);
+  }
+
+  function saveGoal(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    persistGoal(goalDraft);
+    setShowGoal(false);
   }
 
   return (
@@ -72,56 +87,127 @@ export function FirstIntelligenceMoment({
         }}
       />
       <div className="relative">
+        <OnboardingProgress currentStep={showGoal ? 3 : 4} />
+
         <p
-          className={`inline-flex items-center gap-2 rounded-full bg-brand-soft px-3 py-1 ${appSectionLabelClass} text-emerald-800`}
+          className={`mt-5 inline-flex items-center gap-2 rounded-full bg-brand-soft px-3 py-1 ${appSectionLabelClass} text-q1-strong`}
         >
           <Sparkles className="h-3.5 w-3.5" aria-hidden />
-          Your portfolio is ready
+          {showGoal ? "Almost there" : "Tobailey Complete"}
         </p>
         <h2
           id="first-intelligence-heading"
           className={`mt-4 ${appPageHeroTitleClass}`}
         >
-          Here’s what Tobailey sees
+          {showGoal ? "Make Am I on track? meaningful" : COMPLETE_PERIOD_COPY.firstValueTitle}
         </h2>
         <p className={appPageHeroSubtitleClass}>
-          Your Four Questions are below. If history is still thin, Tobailey
-          stays honest instead of inventing a story.
+          {showGoal
+            ? "A target value, year and monthly contribution are enough. You can refine this later."
+            : COMPLETE_PERIOD_COPY.firstValueBody}
         </p>
 
-        {showGoalInvite ? (
-          <div className="mt-6 rounded-2xl border border-brand/25 bg-white/80 px-4 py-4">
-            <p className="text-[16px] font-semibold leading-relaxed text-slate-950">
-              Want Tobailey to track what you’re investing toward?
-            </p>
-            <p className="mt-1.5 text-[15px] font-medium leading-relaxed text-slate-700">
-              Optional. Skip this and keep using Dashboard and Four Questions.
-            </p>
-            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-              <Link
-                href={GOALS_PATH}
-                className={appPrimaryButtonClass}
-                onClick={close}
-              >
-                <Target className="h-4 w-4" aria-hidden />
-                Set a goal
-              </Link>
+        {showGoal ? (
+          <form className="mt-6 space-y-4" onSubmit={saveGoal}>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <label className="block">
+                <span className="text-[13px] font-bold text-brand-navy">
+                  Target value
+                </span>
+                <input
+                  type="number"
+                  min={1}
+                  inputMode="decimal"
+                  value={goalDraft.targetValue}
+                  onChange={(event) =>
+                    setGoalDraft((current) => ({
+                      ...current,
+                      targetValue: Number(event.target.value),
+                    }))
+                  }
+                  className="mt-2 min-h-12 w-full rounded-xl border border-slate-300 bg-white px-3 text-[16px] font-semibold text-brand-navy outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                />
+              </label>
+              <label className="block">
+                <span className="text-[13px] font-bold text-brand-navy">
+                  Target year
+                </span>
+                <input
+                  type="number"
+                  min={new Date().getFullYear()}
+                  inputMode="numeric"
+                  value={goalDraft.targetYear}
+                  onChange={(event) =>
+                    setGoalDraft((current) => ({
+                      ...current,
+                      targetYear: Number(event.target.value),
+                    }))
+                  }
+                  className="mt-2 min-h-12 w-full rounded-xl border border-slate-300 bg-white px-3 text-[16px] font-semibold text-brand-navy outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                />
+              </label>
+              <label className="block">
+                <span className="text-[13px] font-bold text-brand-navy">
+                  Monthly contribution
+                </span>
+                <input
+                  type="number"
+                  min={0}
+                  inputMode="decimal"
+                  value={goalDraft.monthlyContribution}
+                  onChange={(event) =>
+                    setGoalDraft((current) => ({
+                      ...current,
+                      monthlyContribution: Number(event.target.value),
+                    }))
+                  }
+                  className="mt-2 min-h-12 w-full rounded-xl border border-slate-300 bg-white px-3 text-[16px] font-semibold text-brand-navy outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                />
+              </label>
+            </div>
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+              <button type="submit" className={appPrimaryButtonClass}>
+                Save goal
+              </button>
               <button
                 type="button"
                 className={appHeroGhostButtonClass}
-                onClick={() => setShowGoalInvite(false)}
+                onClick={skipGoal}
               >
-                Skip
+                Skip for now
               </button>
             </div>
-          </div>
-        ) : null}
-
-        <div className="mt-5">
-          <button type="button" className={appHeroGhostButtonClass} onClick={close}>
-            Continue
-          </button>
-        </div>
+          </form>
+        ) : (
+          <>
+            <ol className="mt-6 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+              {FOUR_QUESTIONS.map((question) => (
+                <li
+                  key={question.id}
+                  className={`rounded-2xl border px-3 py-2.5 ${question.visual.panel}`}
+                >
+                  <p
+                    className={`text-[10px] font-black uppercase tracking-[0.14em] ${question.visual.eyebrow}`}
+                  >
+                    {question.numberLabel}
+                  </p>
+                  <p className="mt-1 text-sm font-bold text-brand-navy">
+                    {question.question}
+                  </p>
+                </li>
+              ))}
+            </ol>
+            <div className="mt-5">
+              <button
+                type="button"
+                className={appHeroGhostButtonClass}
+                onClick={close}
+              >
+                Continue
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </section>
   );

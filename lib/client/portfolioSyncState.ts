@@ -155,8 +155,16 @@ export function applyRemoteSnapshotToLocalCache(
     force?: boolean;
   },
 ): StoredPortfolioHolding[] {
-  const localHoldings = options?.preserveLocalPrices ?? readPortfolioFromStorage(userSub);
-  const localGoal = readSavedUserGoal(userSub);
+  const snapshotPortfolioId = snapshot.portfolioId;
+  const snapshotIsPrimary = snapshot.isPrimary !== false;
+  const localHoldings =
+    options?.preserveLocalPrices ??
+    readPortfolioFromStorage(userSub, snapshotPortfolioId, {
+      isPrimary: snapshotIsPrimary,
+    });
+  const localGoal = readSavedUserGoal(userSub, snapshotPortfolioId, {
+    isPrimary: snapshotIsPrimary,
+  });
   const decision = options?.force
     ? { apply: true as const, reason: "forced", stale: false }
     : shouldApplyRemoteSnapshot(localHoldings, snapshot.holdings, {
@@ -311,12 +319,18 @@ export function applyRemoteSnapshotToLocalCache(
     return localHoldings;
   }
 
-  writePortfolioToStorage(userSub, holdings);
+  writePortfolioToStorage(userSub, holdings, snapshotPortfolioId, {
+    isPrimary: snapshotIsPrimary,
+  });
 
   if (snapshot.goal) {
-    writeUserGoal(userSub, snapshot.goal);
+    writeUserGoal(userSub, snapshot.goal, snapshotPortfolioId, {
+      isPrimary: snapshotIsPrimary,
+    });
   } else {
-    clearUserGoal(userSub);
+    clearUserGoal(userSub, snapshotPortfolioId, {
+      isPrimary: snapshotIsPrimary,
+    });
   }
 
   if (snapshot.importMappings.length > 0) {
@@ -358,9 +372,13 @@ export type ReReadVerificationResult =
 export async function verifyPortfolioSyncAfterReRead(
   userSub: string,
   fetchRemotePortfolio: () => Promise<FetchRemotePortfolioResult>,
+  portfolioId?: string | null,
+  isPrimary?: boolean,
 ): Promise<ReReadVerificationResult> {
-  const localHoldings = readPortfolioFromStorage(userSub);
-  const localGoal = readSavedUserGoal(userSub);
+  const localHoldings = readPortfolioFromStorage(userSub, portfolioId, {
+    isPrimary,
+  });
+  const localGoal = readSavedUserGoal(userSub, portfolioId, { isPrimary });
   const localFingerprint = portfolioContentFingerprint(localHoldings, localGoal);
 
   const remoteResult = await fetchRemotePortfolio();

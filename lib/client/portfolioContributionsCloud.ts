@@ -50,14 +50,18 @@ async function assertOwnedHolding(
   client: PortfolioContributionsClient,
   userId: string,
   holdingId: string,
+  portfolioId?: string | null,
 ): Promise<{ id: string; symbol: string }> {
-  const { data, error } = await client
+  let query = client
     .from("holdings")
     .select("id, symbol, user_id, asset_type, deleted_at")
     .eq("id", holdingId)
     .eq("user_id", userId)
-    .is("deleted_at", null)
-    .maybeSingle();
+    .is("deleted_at", null);
+  if (portfolioId) {
+    query = query.eq("portfolio_id", portfolioId);
+  }
+  const { data, error } = await query.maybeSingle();
 
   if (error) {
     throw new Error(error.message || "Could not verify holding.");
@@ -102,11 +106,14 @@ function destinationPayload(draft: ContributionEntryDraft) {
 export async function listPortfolioContributions(
   client: PortfolioContributionsClient,
   userId: string,
+  portfolioId?: string | null,
 ): Promise<PortfolioContributionEntry[]> {
+  const resolvedId = portfolioId ?? (await getPrimaryPortfolioId(client, userId));
   const { data, error } = await client
     .from("portfolio_contributions")
     .select(CONTRIBUTION_SELECT)
     .eq("user_id", userId)
+    .eq("portfolio_id", resolvedId)
     .order("entry_date", { ascending: false })
     .order("created_at", { ascending: false });
 
@@ -125,6 +132,7 @@ export async function createPortfolioContribution(
   portfolioBaseCurrency: PortfolioBaseCurrency,
   options?: {
     allowedHoldings?: ContributionHoldingOption[];
+    portfolioId?: string | null;
   },
 ): Promise<PortfolioContributionEntry> {
   const validation = validateContributionDraft(
@@ -142,6 +150,7 @@ export async function createPortfolioContribution(
       client,
       userId,
       validatedDraft.destinationHoldingId!,
+      options?.portfolioId,
     );
     if (!holding.symbol) {
       throw new Error("Selected holding is missing a symbol.");
@@ -153,7 +162,8 @@ export async function createPortfolioContribution(
     };
   }
 
-  const portfolioId = await getPrimaryPortfolioId(client, userId);
+  const portfolioId =
+    options?.portfolioId ?? (await getPrimaryPortfolioId(client, userId));
   const currencyFields = buildContributionCurrencyFields(
     validatedDraft,
     portfolioBaseCurrency,
@@ -193,6 +203,7 @@ export async function updatePortfolioContribution(
   portfolioBaseCurrency: PortfolioBaseCurrency,
   options?: {
     allowedHoldings?: ContributionHoldingOption[];
+    portfolioId?: string | null;
   },
 ): Promise<PortfolioContributionEntry> {
   const validation = validateContributionDraft(
@@ -210,6 +221,7 @@ export async function updatePortfolioContribution(
       client,
       userId,
       validatedDraft.destinationHoldingId!,
+      options?.portfolioId,
     );
     if (!holding.symbol) {
       throw new Error("Selected holding is missing a symbol.");

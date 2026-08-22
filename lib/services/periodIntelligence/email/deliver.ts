@@ -187,6 +187,7 @@ async function deliverOne(input: {
       upgradeCtaLabel: "Get Complete",
       isDemo: false,
       preservesUserData: true,
+      maxPortfolios: 1,
     },
     optedIn,
     email,

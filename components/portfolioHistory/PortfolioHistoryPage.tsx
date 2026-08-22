@@ -44,6 +44,7 @@ import { usePortfolioDividends } from "@/lib/client/usePortfolioDividends";
 import { usePortfolioPerformanceHistory } from "@/lib/client/usePortfolioPerformanceHistory";
 import { useUserGoal } from "@/lib/client/useUserGoal";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
+import { useActivePortfolioOptional } from "@/lib/client/useActivePortfolio";
 import {
   ANALYSIS_PATH,
   holdingDetailPath,
@@ -86,6 +87,8 @@ export default function PortfolioHistoryPage() {
   const { formatEur, convertToEur, convertEur, baseCurrency } =
     useBaseCurrencyDisplay();
   const { holdings, portfolioReady, userSub } = useUserPortfolio();
+  const activePortfolioName =
+    useActivePortfolioOptional()?.activePortfolio?.name ?? null;
   const { goal, hasSavedGoal } = useUserGoal();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
@@ -210,6 +213,7 @@ export default function PortfolioHistoryPage() {
         currentProgressPercent: goalProgress.currentProgressPercent,
         remainingAmount: goalProgress.remainingAmount,
         statusLabel: goalProgress.status,
+        portfolioName: activePortfolioName,
       });
       if (!ok) {
         setExportError(PORTFOLIO_EXPORT_EMPTY_MESSAGE);
