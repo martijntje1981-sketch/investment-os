@@ -32,6 +32,7 @@ import {
   holdingUniqueKey,
   canReuseHoldingForPortfolio,
   resolveHoldingIdForSync,
+  targetBookHasRequestedHoldings,
 } from "@/lib/services/portfolio/holdingUniqueness";
 
 export type PortfolioRepository = ReturnType<typeof createPortfolioRepository>;
@@ -479,17 +480,21 @@ export function createPortfolioRepository(supabase: SupabaseClient) {
     options?: { includeSoftDeleted?: boolean },
   ): Promise<{ id: string } | null> {
     if (holding.assetType === "crypto") {
-      const holdingId = resolveHoldingIdForSync(userId, holding);
-      const { data, error } = await supabase
-        .from("holdings")
-        .select("id")
-        .eq("user_id", userId)
-        .eq("portfolio_id", portfolioId)
-        .eq("id", holdingId)
-        .is("deleted_at", null)
-        .maybeSingle();
-      if (error) throw error;
-      return data ?? null;
+      const scopedId = resolveHoldingIdForSync(userId, holding, portfolioId);
+      const legacyId = resolveHoldingIdForSync(userId, holding);
+      for (const holdingId of [...new Set([scopedId, legacyId])]) {
+        const { data, error } = await supabase
+          .from("holdings")
+          .select("id")
+          .eq("user_id", userId)
+          .eq("portfolio_id", portfolioId)
+          .eq("id", holdingId)
+          .is("deleted_at", null)
+          .maybeSingle();
+        if (error) throw error;
+        if (data) return data;
+      }
+      return null;
     }
 
     const key = holdingUniqueKey(holding);
@@ -679,7 +684,9 @@ export function createPortfolioRepository(supabase: SupabaseClient) {
       .from("holding_instrument_mappings")
       .upsert(mapping, { onConflict: "holding_id" });
 
-    if (error) throw error;
+    // Same ISIN in this book is already mapped (often a stale row from an
+    // earlier cross-book id collision). The holding write already succeeded.
+    if (error && !isUniqueViolation(error)) throw error;
   }
 
   async function applyHoldingLedger(
@@ -913,6 +920,12 @@ export function createPortfolioRepository(supabase: SupabaseClient) {
         await upsertImportMappings(userId, importMappings);
       }
     } catch (error) {
+      if (isUniqueViolation(error as { code?: string })) {
+        const snapshot = await fetchSnapshot(userId, resolved.id);
+        if (targetBookHasRequestedHoldings(holdings, snapshot.holdings)) {
+          return snapshot;
+        }
+      }
       if (newlyCreatedIds.size > 0) {
         await softDeleteHoldingsByIds(userId, newlyCreatedIds);
       }

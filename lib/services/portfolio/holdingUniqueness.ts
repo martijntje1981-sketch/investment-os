@@ -56,6 +56,33 @@ export function canReuseHoldingForPortfolio(
   );
 }
 
+function sameBookSlot(
+  left: StoredPortfolioHolding,
+  right: StoredPortfolioHolding,
+): boolean {
+  const a = holdingUniqueKey(left);
+  const b = holdingUniqueKey(right);
+  return (
+    a.assetType === b.assetType &&
+    a.symbol === b.symbol &&
+    a.currency === b.currency
+  );
+}
+
+/**
+ * True when every requested slot already exists in this book's snapshot.
+ * Duplicate detection stays portfolio-scoped — same ticker in another book does not match.
+ */
+export function targetBookHasRequestedHoldings(
+  requested: StoredPortfolioHolding[],
+  bookHoldings: StoredPortfolioHolding[],
+): boolean {
+  if (requested.length === 0) return false;
+  return requested.every((holding) =>
+    bookHoldings.some((row) => sameBookSlot(holding, row)),
+  );
+}
+
 /** Natural key for active holdings — matches partial unique indexes in Postgres. */
 export function holdingUniqueKey(
   holding: StoredPortfolioHolding,

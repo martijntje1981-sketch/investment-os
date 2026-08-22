@@ -68,6 +68,7 @@ import {
   buildMigrationIdempotencyKey,
   portfolioFingerprint,
 } from "@/lib/services/portfolio/idempotency";
+import { targetBookHasRequestedHoldings } from "@/lib/services/portfolio/holdingUniqueness";
 import type { PortfolioSyncPreview } from "@/lib/services/portfolio/types";
 
 let remoteHydrateStartsForTests = 0;
@@ -431,6 +432,8 @@ function useUserPortfolioState() {
 
         setHoldings(applyCachedPrices(userSub, merged));
         recordSyncFailure(userSub, "");
+        setSyncState({ status: "ready", source: "remote" });
+        setMigrationPreview(null);
         logPortfolioPersistenceEvent("cloud push applied", {
           userSub,
           revision: options.sequence,
@@ -440,6 +443,30 @@ function useUserPortfolioState() {
       }
 
       if ("unauthorized" in result) return;
+
+      if (result.code === "23505" && activePortfolioId) {
+        const remote = await fetchRemotePortfolio(activePortfolioId);
+        if (
+          remote.ok &&
+          targetBookHasRequestedHoldings(next, remote.snapshot.holdings)
+        ) {
+          const merged = applyRemoteSnapshotToLocalCache(userSub, remote.snapshot, {
+            preserveLocalPrices: next,
+            sentHoldings: next,
+            context: "push_response",
+          });
+          setHoldings(applyCachedPrices(userSub, merged));
+          recordSyncFailure(userSub, "");
+          setSyncState({ status: "ready", source: "remote" });
+          setMigrationPreview(null);
+          logPortfolioPersistenceEvent("cloud push unique conflict reconciled", {
+            userSub,
+            revision: options.sequence,
+            ...summarizePortfolioHoldings(merged),
+          });
+          return;
+        }
+      }
 
       recordSyncFailure(userSub, result.error);
       setSyncState({
@@ -585,9 +612,66 @@ function useUserPortfolioState() {
   }, [activePortfolioId, bookOptions, userSub]);
 
   const retrySync = useCallback(async () => {
+    if (!userSub || !activePortfolioId) {
+      remoteHydratedRef.current = false;
+      await hydrateFromRemote(true);
+      return;
+    }
+
+    const localHoldings = loadUserPortfolioHoldings(
+      userSub,
+      activePortfolioId,
+      bookOptions,
+    );
+    const remoteResult = await fetchRemotePortfolio(activePortfolioId);
+
+    if (
+      remoteResult.ok &&
+      localHoldings.length > 0 &&
+      targetBookHasRequestedHoldings(localHoldings, remoteResult.snapshot.holdings)
+    ) {
+      const merged = applyRemoteSnapshotToLocalCache(userSub, remoteResult.snapshot, {
+        preserveLocalPrices: localHoldings,
+        context: "hydrate",
+      });
+      setHoldings(applyCachedPrices(userSub, merged));
+      recordSyncFailure(userSub, "");
+      setSyncState({ status: "ready", source: "remote" });
+      setMigrationPreview(null);
+      return;
+    }
+
+    if (localHoldings.length > 0) {
+      const revision =
+        Math.max(
+          saveSequenceRef.current,
+          readPortfolioSyncMeta(userSub).lastLocalRevision ?? 0,
+        ) + 1;
+      saveSequenceRef.current = revision;
+      const goal = readSavedUserGoal(userSub, activePortfolioId, bookOptions);
+      const idempotencyKey = buildPortfolioSaveIdempotencyKey(
+        userSub,
+        localHoldings,
+        goal,
+        revision,
+      );
+      saveRequestRef.current = { sequence: revision, key: idempotencyKey };
+      await pushRemoteHoldings(localHoldings, {
+        idempotencyKey,
+        sequence: revision,
+      });
+      return;
+    }
+
     remoteHydratedRef.current = false;
     await hydrateFromRemote(true);
-  }, [hydrateFromRemote]);
+  }, [
+    activePortfolioId,
+    bookOptions,
+    hydrateFromRemote,
+    pushRemoteHoldings,
+    userSub,
+  ]);
 
   const useRemotePortfolio = useCallback(async () => {
     if (!userSub || syncState.status !== "conflict") return false;

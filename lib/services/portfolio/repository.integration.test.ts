@@ -529,4 +529,32 @@ describe("createPortfolioRepository natural-key sync", () => {
     ).resolves.toBeDefined();
     expect(holdings.filter((row) => !row.deleted_at)).toHaveLength(1);
   });
+
+  it("B/D. a stale ISIN mapping does not fail or duplicate a successful holding write", async () => {
+    const { supabase, holdings, mappings } = createMockSupabase([]);
+    mappings.push({
+      holding_id: "99999999-9999-4999-8999-999999999999",
+      user_id: USER_ID,
+      portfolio_id: PORTFOLIO_ID,
+      isin: "IE00BK5BQT80",
+      provider_symbol: "VWCE.XETRA",
+    });
+
+    const repo = createPortfolioRepository(supabase);
+    const first = holding({ symbol: "VWCE", quantity: 10 });
+
+    await expect(
+      repo.applySnapshot(USER_ID, [first], null, [], "sync", PORTFOLIO_ID),
+    ).resolves.toBeDefined();
+
+    const activeAfterWrite = holdings.filter((row) => !row.deleted_at);
+    expect(activeAfterWrite).toHaveLength(1);
+    expect(activeAfterWrite[0]?.symbol).toBe("VWCE");
+    expect(activeAfterWrite[0]?.portfolio_id).toBe(PORTFOLIO_ID);
+
+    await expect(
+      repo.applySnapshot(USER_ID, [first], null, [], "sync", PORTFOLIO_ID),
+    ).resolves.toBeDefined();
+    expect(holdings.filter((row) => !row.deleted_at)).toHaveLength(1);
+  });
 });
