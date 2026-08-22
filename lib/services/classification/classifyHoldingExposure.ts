@@ -10,6 +10,7 @@ import {
 } from "@/lib/services/classification/classifyFixedIncome";
 import {
   lookupInstrumentResearchProfile,
+  lookupInstrumentResearchProfileBySymbol,
   type InstrumentResearchProfile,
 } from "@/lib/services/discover/instrumentResearchMetadata";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
@@ -316,7 +317,9 @@ export function classifyHoldingExposure(
     return result("crypto", "asset_type", "high", "assetType is crypto");
   }
 
-  const profile = lookupInstrumentResearchProfile(holding.providerSymbol);
+  const profile =
+    lookupInstrumentResearchProfile(holding.providerSymbol) ??
+    lookupInstrumentResearchProfileBySymbol(holding.symbol);
   if (profile) {
     return mapResearchProfile(profile);
   }

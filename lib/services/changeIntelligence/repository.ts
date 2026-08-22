@@ -56,6 +56,25 @@ export async function getPrimaryPortfolioId(
   return data?.id ?? null;
 }
 
+/** Explicit owned portfolio_id always wins. Missing id falls back to primary. */
+export async function resolveSnapshotPortfolioId(
+  client: SnapshotClient,
+  userId: string,
+  requestedId?: string | null,
+): Promise<string | null> {
+  if (requestedId) {
+    const { data, error } = await client
+      .from("portfolios")
+      .select("id")
+      .eq("id", requestedId)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (error) throw new Error(error.message || "Could not load portfolio.");
+    return data?.id ?? null;
+  }
+  return getPrimaryPortfolioId(client, userId);
+}
+
 export async function getIntelligenceStateSnapshot(
   client: SnapshotClient,
   input: {
@@ -82,6 +101,7 @@ export async function listIntelligenceStateSnapshots(
   client: SnapshotClient,
   input: {
     userId: string;
+    portfolioId: string;
     snapshotKind?: IntelligenceSnapshotKind;
     limit?: number;
   },
@@ -90,6 +110,7 @@ export async function listIntelligenceStateSnapshots(
     .from("intelligence_state_snapshots")
     .select("*")
     .eq("user_id", input.userId)
+    .eq("portfolio_id", input.portfolioId)
     .order("period_key", { ascending: false });
 
   if (input.snapshotKind) {

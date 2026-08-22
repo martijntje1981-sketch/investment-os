@@ -24,6 +24,7 @@ export type CaptureIntelligenceSnapshotsInput = {
   weeklyReady: boolean;
   monthlyReady: boolean;
   monthlyPeriodKind: string | null;
+  portfolioId?: string | null;
 };
 
 export type DashboardSafetyNetCaptureInput = {
@@ -34,6 +35,7 @@ export type DashboardSafetyNetCaptureInput = {
   snapshotsLoaded: boolean;
   snapshots: IntelligenceStateSnapshot[];
   now?: Date;
+  portfolioId?: string | null;
 };
 
 async function postIntelligenceSnapshotKinds(input: {
@@ -41,6 +43,7 @@ async function postIntelligenceSnapshotKinds(input: {
   holdings: StoredPortfolioHolding[];
   goal: GoalSettings | null;
   hasSavedGoal: boolean;
+  portfolioId?: string | null;
 }): Promise<IntelligenceSnapshotKind[]> {
   if (input.kinds.length === 0) return [];
 
@@ -60,7 +63,11 @@ async function postIntelligenceSnapshotKinds(input: {
         method: "POST",
         credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ snapshotKind, payload }),
+        body: JSON.stringify({
+          snapshotKind,
+          payload,
+          portfolioId: input.portfolioId ?? null,
+        }),
       }).catch(() => undefined),
     ),
   );
@@ -79,6 +86,7 @@ export async function captureIntelligenceSnapshotsFromReview(
     holdings: input.holdings,
     goal: input.goal,
     hasSavedGoal: input.hasSavedGoal,
+    portfolioId: input.portfolioId,
   });
   return { attempted };
 }
@@ -94,6 +102,7 @@ export async function captureIntelligenceSnapshotsDashboardSafetyNet(
     holdings: input.holdings,
     goal: input.goal,
     hasSavedGoal: input.hasSavedGoal,
+    portfolioId: input.portfolioId,
   });
   return { attempted };
 }

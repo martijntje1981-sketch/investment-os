@@ -18,6 +18,7 @@ import type {
   IntelligenceStateSnapshot,
 } from "@/lib/services/changeIntelligence/types";
 import type { GoalSettings, StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
+import { useActivePortfolioOptional } from "@/lib/client/useActivePortfolio";
 
 export type ChangeIntelligenceCaptureInput = {
   holdings: StoredPortfolioHolding[];
@@ -56,6 +57,8 @@ export function useChangeIntelligence(input: {
   capture?: ChangeIntelligenceCaptureInput | null;
   dashboardCapture?: DashboardSafetyNetCaptureFields | null;
 }): UseChangeIntelligenceResult {
+  const activePortfolioId =
+    useActivePortfolioOptional()?.activePortfolioId ?? null;
   const [snapshots, setSnapshots] = useState<IntelligenceStateSnapshot[]>([]);
   const [loading, setLoading] = useState(false);
   const [listReady, setListReady] = useState(false);
@@ -75,18 +78,28 @@ export function useChangeIntelligence(input: {
     input.enabled && !input.isDemo && input.dashboardCapture,
   );
 
+  useEffect(() => {
+    lastDashboardAttemptKey.current = "";
+    lastCaptureSignature.current = "";
+    setSnapshots([]);
+    setListReady(false);
+  }, [activePortfolioId]);
+
   const load = useCallback(async (): Promise<boolean> => {
-    if (!input.enabled || input.isDemo) {
+    if (!input.enabled || input.isDemo || !activePortfolioId) {
       setSnapshots([]);
       setListReady(false);
       return false;
     }
     setLoading(true);
     try {
-      const response = await fetch("/api/intelligence/snapshots?limit=24", {
-        credentials: "same-origin",
-        cache: "no-store",
-      });
+      const response = await fetch(
+        `/api/intelligence/snapshots?limit=24&portfolioId=${encodeURIComponent(activePortfolioId)}`,
+        {
+          credentials: "same-origin",
+          cache: "no-store",
+        },
+      );
       if (!response.ok) {
         setSnapshots([]);
         setListReady(false);
@@ -95,7 +108,11 @@ export function useChangeIntelligence(input: {
       const payload = (await response.json()) as {
         snapshots?: IntelligenceStateSnapshot[];
       };
-      setSnapshots(payload.snapshots ?? []);
+      setSnapshots(
+        (payload.snapshots ?? []).filter(
+          (row) => row.portfolioId === activePortfolioId,
+        ),
+      );
       setListReady(true);
       return true;
     } catch {
@@ -105,7 +122,7 @@ export function useChangeIntelligence(input: {
     } finally {
       setLoading(false);
     }
-  }, [input.enabled, input.isDemo]);
+  }, [activePortfolioId, input.enabled, input.isDemo]);
 
   useEffect(() => {
     let cancelled = false;
@@ -121,6 +138,7 @@ export function useChangeIntelligence(input: {
         await captureIntelligenceSnapshotsFromReview({
           isDemo: input.isDemo,
           ...capture,
+          portfolioId: activePortfolioId,
         });
       }
       if (!cancelled) await load();
@@ -129,7 +147,7 @@ export function useChangeIntelligence(input: {
     return () => {
       cancelled = true;
     };
-  }, [captureSignature, input.enabled, input.isDemo, load]);
+  }, [activePortfolioId, captureSignature, input.enabled, input.isDemo, load]);
 
   useEffect(() => {
     if (!dashboardCaptureEnabled || !listReady) return;
@@ -158,6 +176,7 @@ export function useChangeIntelligence(input: {
         hasSavedGoal: fields.hasSavedGoal,
         snapshotsLoaded: true,
         snapshots,
+        portfolioId: activePortfolioId,
       });
       finished = true;
       if (!cancelled) await load();
@@ -169,6 +188,7 @@ export function useChangeIntelligence(input: {
       }
     };
   }, [
+    activePortfolioId,
     dashboardCaptureEnabled,
     input.isDemo,
     listReady,

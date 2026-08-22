@@ -41,6 +41,7 @@ export {
   getPrimaryPortfolioId,
   insertIntelligenceStateSnapshotIfAbsent,
   listIntelligenceStateSnapshots,
+  resolveSnapshotPortfolioId,
 } from "@/lib/services/changeIntelligence/repository";
 export {
   selectComparableSnapshotPair,

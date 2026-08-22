@@ -16,9 +16,9 @@ import {
 } from "@/lib/services/changeIntelligence/config";
 import { resolveCompletedIntelligencePeriod } from "@/lib/services/changeIntelligence/periodKeys";
 import {
-  getPrimaryPortfolioId,
   insertIntelligenceStateSnapshotIfAbsent,
   listIntelligenceStateSnapshots,
+  resolveSnapshotPortfolioId,
 } from "@/lib/services/changeIntelligence/repository";
 import type {
   IntelligenceSnapshotKind,
@@ -56,17 +56,34 @@ export async function GET(request: Request) {
   const access = assertExamplePortfolioApiAccess(user);
   if (!access.ok) return access.response;
 
-  const kind = new URL(request.url).searchParams.get("kind");
+  const params = new URL(request.url).searchParams;
+  const kind = params.get("kind");
   const snapshotKind = isSnapshotKind(kind) ? kind : undefined;
-  const limitParam = new URL(request.url).searchParams.get("limit");
+  const requestedPortfolioId = params.get("portfolioId");
+  const limitParam = params.get("limit");
   const parsedLimit = limitParam ? Number(limitParam) : NaN;
   const limit = Number.isFinite(parsedLimit)
     ? Math.min(24, Math.max(1, Math.floor(parsedLimit)))
     : 8;
 
   try {
+    const portfolioId = await resolveSnapshotPortfolioId(
+      supabase,
+      access.user.id,
+      requestedPortfolioId,
+    );
+    if (requestedPortfolioId && !portfolioId) {
+      return NextResponse.json(
+        { success: false, error: "Portfolio not found." },
+        { status: 404 },
+      );
+    }
+    if (!portfolioId) {
+      return NextResponse.json({ success: true, snapshots: [] });
+    }
     const snapshots = await listIntelligenceStateSnapshots(supabase, {
       userId: access.user.id,
+      portfolioId,
       snapshotKind,
       limit,
     });
@@ -93,6 +110,7 @@ export async function POST(request: Request) {
   let body: {
     snapshotKind?: unknown;
     payload?: unknown;
+    portfolioId?: unknown;
   };
   try {
     body = (await request.json()) as typeof body;
@@ -131,7 +149,19 @@ export async function POST(request: Request) {
   };
 
   try {
-    const portfolioId = await getPrimaryPortfolioId(supabase, access.user.id);
+    const requestedPortfolioId =
+      typeof body.portfolioId === "string" ? body.portfolioId : null;
+    const portfolioId = await resolveSnapshotPortfolioId(
+      supabase,
+      access.user.id,
+      requestedPortfolioId,
+    );
+    if (requestedPortfolioId && !portfolioId) {
+      return NextResponse.json(
+        { error: "Portfolio not found." },
+        { status: 404 },
+      );
+    }
     if (!portfolioId) {
       return NextResponse.json(
         { error: "No primary portfolio found." },
