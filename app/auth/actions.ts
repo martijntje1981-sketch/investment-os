@@ -1,5 +1,6 @@
 ﻿"use server";
 
+import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -35,6 +36,7 @@ export async function login(formData: FormData) {
     redirectWithError("/login", "The email address or password is incorrect.");
   }
 
+  revalidatePath("/", "layout");
   redirect(safeAuthRedirectPath(nextRaw, "/dashboard"));
 }
 
@@ -117,6 +119,7 @@ export async function signup(formData: FormData) {
 export async function logout() {
   const supabase = await createClient();
   await supabase.auth.signOut();
+  revalidatePath("/", "layout");
   redirect("/");
 }
 

@@ -519,7 +519,7 @@ export default function DashboardPage() {
     portfolioReady && Boolean(userSub),
   );
 
-  if (!portfolioReady) {
+  if (!portfolioReady || (Boolean(userSub) && !productAccess.accessReady)) {
     return <AppPageLoading />;
   }
 

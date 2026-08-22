@@ -86,11 +86,11 @@ export function PortfolioSwitcher() {
         aria-haspopup="listbox"
         aria-label={`${MULTI_PORTFOLIO_COPY.switcherLabel}: ${currentName}`}
         data-testid="portfolio-switcher"
-        className="flex min-h-[40px] w-full min-w-0 items-center gap-1 rounded-lg px-2 py-1.5 text-left text-[13px] font-semibold text-brand-navy transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 sm:min-h-[44px] sm:px-2.5"
+        className="flex min-h-[40px] w-full min-w-0 items-center gap-1.5 rounded-xl border border-brand/40 bg-brand-soft px-2 py-1.5 text-left text-[13px] font-semibold text-brand-navy transition hover:border-brand/70 hover:bg-brand-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 sm:min-h-[44px] sm:px-2.5"
       >
         <span className="min-w-0 truncate">{currentName}</span>
         <ChevronDown
-          className={`h-3.5 w-3.5 shrink-0 text-slate-500 transition ${open ? "rotate-180" : ""}`}
+          className={`h-3.5 w-3.5 shrink-0 text-brand-strong transition ${open ? "rotate-180" : ""}`}
           aria-hidden
         />
       </button>

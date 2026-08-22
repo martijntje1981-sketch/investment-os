@@ -40,13 +40,20 @@ const DEFAULT_FREE_ACCESS: ProductAccess = resolveProductAccess({
  * Uses the example-portfolio status endpoint — never invents entitlements.
  * Until status loads (or if it fails), treat the user as Free.
  */
-export function useProductAccess(enabled = true): ProductAccess {
+export type ClientProductAccess = ProductAccess & {
+  /** True after the first status resolve (success or fallback). */
+  accessReady: boolean;
+};
+
+export function useProductAccess(enabled = true): ClientProductAccess {
   const pathname = usePathname();
   const [access, setAccess] = useState<ProductAccess>(DEFAULT_FREE_ACCESS);
+  const [fetched, setFetched] = useState(false);
 
   const load = useCallback(async () => {
     if (!enabled) {
       setAccess(DEFAULT_FREE_ACCESS);
+      setFetched(false);
       return;
     }
     try {
@@ -57,6 +64,7 @@ export function useProductAccess(enabled = true): ProductAccess {
       });
       if (!response.ok) {
         setAccess(DEFAULT_FREE_ACCESS);
+        setFetched(true);
         return;
       }
       const payload = (await response.json()) as {
@@ -65,6 +73,7 @@ export function useProductAccess(enabled = true): ProductAccess {
       };
       if (!payload.success || !payload.status) {
         setAccess(DEFAULT_FREE_ACCESS);
+        setFetched(true);
         return;
       }
 
@@ -83,6 +92,7 @@ export function useProductAccess(enabled = true): ProductAccess {
           preservesUserData: true,
           maxPortfolios: maxPortfoliosForTier(pa.tier),
         });
+        setFetched(true);
         return;
       }
 
@@ -94,8 +104,10 @@ export function useProductAccess(enabled = true): ProductAccess {
           daysRemaining: payload.status.daysRemaining ?? 0,
         }),
       );
+      setFetched(true);
     } catch {
       setAccess(DEFAULT_FREE_ACCESS);
+      setFetched(true);
     }
   }, [enabled]);
 
@@ -108,7 +120,7 @@ export function useProductAccess(enabled = true): ProductAccess {
     return () => {
       window.removeEventListener(EXAMPLE_STATUS_CHANGED_EVENT, onStatusChanged);
     };
-  }, [load, pathname]);
+  }, [enabled, load, pathname]);
 
-  return access;
+  return { ...access, accessReady: !enabled || fetched };
 }
