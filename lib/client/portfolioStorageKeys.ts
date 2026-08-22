@@ -1,0 +1,133 @@
+/**
+ * User-scoped localStorage keys for portfolio state.
+ *
+ * Supabase Auth exposes a stable `user.id` (UUID) — the equivalent of a
+ * Cognito `sub`. All portfolio keys are scoped to that identifier.
+ */
+
+/** Legacy unscoped key — legacy test/demo data; never read for authenticated users. */
+export const LEGACY_PORTFOLIO_STORAGE_KEY = "investment-os-holdings";
+export const LEGACY_PRICE_CACHE_KEY = "investment-os-market-price-cache";
+export const LEGACY_GOAL_STORAGE_KEY = "investment-os-goal";
+export const LEGACY_ANNUAL_CONTRIBUTION_KEY = "investment-os-annual-contribution";
+
+export const PORTFOLIO_HOLDINGS_UPDATED_EVENT =
+  "investment-os-holdings-updated";
+
+export const LEGACY_MIGRATION_SESSION_FLAG =
+  "investment-os-request-legacy-migration";
+
+export function isValidUserSub(
+  userSub: string | null | undefined,
+): userSub is string {
+  return typeof userSub === "string" && userSub.trim().length > 0;
+}
+
+export function assertUserSub(
+  userSub: string | null | undefined,
+): asserts userSub is string {
+  if (!isValidUserSub(userSub)) {
+    throw new Error(
+      "Authenticated user sub is required for portfolio storage.",
+    );
+  }
+}
+
+export function isValidPortfolioId(
+  portfolioId: string | null | undefined,
+): portfolioId is string {
+  return typeof portfolioId === "string" && portfolioId.trim().length > 0;
+}
+
+export function portfolioStorageKey(
+  userSub: string,
+  portfolioId?: string | null,
+): string {
+  assertUserSub(userSub);
+  if (isValidPortfolioId(portfolioId)) {
+    return `investment-os-holdings:${userSub}:${portfolioId}`;
+  }
+  return `investment-os-holdings:${userSub}`;
+}
+
+export function priceCacheKey(userSub: string): string {
+  assertUserSub(userSub);
+  return `investment-os-market-price-cache:${userSub}`;
+}
+
+export function goalStorageKey(
+  userSub: string,
+  portfolioId?: string | null,
+): string {
+  assertUserSub(userSub);
+  if (isValidPortfolioId(portfolioId)) {
+    return `investment-os-goal:${userSub}:${portfolioId}`;
+  }
+  return `investment-os-goal:${userSub}`;
+}
+
+export function annualContributionKey(userSub: string): string {
+  assertUserSub(userSub);
+  return `investment-os-annual-contribution:${userSub}`;
+}
+
+export function legacyMigrationFlagKey(userSub: string): string {
+  assertUserSub(userSub);
+  return `investment-os-legacy-migrated:${userSub}`;
+}
+
+export function dividendCacheKey(userSub: string): string {
+  assertUserSub(userSub);
+  return `investment-os-dividend-cache:${userSub}`;
+}
+
+export function analystCacheKey(userSub: string): string {
+  assertUserSub(userSub);
+  return `investment-os-analyst-cache:${userSub}`;
+}
+
+export function marketConsensusCacheKey(userSub: string): string {
+  assertUserSub(userSub);
+  return `investment-os-market-consensus-cache:${userSub}`;
+}
+
+export function newsCacheKey(userSub: string): string {
+  assertUserSub(userSub);
+  return `investment-os-news-cache:${userSub}`;
+}
+
+export function discoverCacheKey(userSub: string, portfolioFingerprint: string): string {
+  assertUserSub(userSub);
+  return `investment-os-discover-cache:${userSub}:${portfolioFingerprint}`;
+}
+
+export function legacyRecoveryDismissedKey(userSub: string): string {
+  assertUserSub(userSub);
+  return `investment-os-legacy-recovery-dismissed:${userSub}`;
+}
+
+export function portfolioSyncMetaKey(userSub: string): string {
+  assertUserSub(userSub);
+  return `investment-os-portfolio-sync-meta:${userSub}`;
+}
+
+export function baseCurrencyStorageKey(userSub: string): string {
+  assertUserSub(userSub);
+  return `investment-os-base-currency:${userSub}`;
+}
+
+export function lastLivePriceRefreshKey(userSub: string): string {
+  assertUserSub(userSub);
+  return `investment-os-last-live-price-refresh:${userSub}`;
+}
+
+/** Last successful usable portfolio reconciliation shown in Dashboard/Portfolio heroes. */
+export function portfolioDisplayFreshnessKey(userSub: string): string {
+  assertUserSub(userSub);
+  return `investment-os-portfolio-display-freshness:${userSub}`;
+}
+
+export function pendingImportSessionKey(userSub: string): string {
+  assertUserSub(userSub);
+  return `investment-os-pending-import:${userSub}`;
+}

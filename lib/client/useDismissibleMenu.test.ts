@@ -1,0 +1,355 @@
+import { createElement, useEffect } from "react";
+import { createRoot, type Root } from "react-dom/client";
+import { act } from "react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+import { useDismissibleMenu } from "@/lib/client/useDismissibleMenu";
+
+function MenuHarness({
+  closeOnChangeKey = "/dashboard",
+  onState,
+}: {
+  closeOnChangeKey?: string;
+  onState?: (state: { open: boolean }) => void;
+}) {
+  const menu = useDismissibleMenu({ closeOnChangeKey });
+
+  useEffect(() => {
+    onState?.({ open: menu.open });
+  }, [menu.open, onState]);
+
+  return createElement(
+    "div",
+    { ref: menu.containerRef, "data-testid": "menu-root" },
+    createElement(
+      "button",
+      {
+        ref: menu.triggerRef,
+        type: "button",
+        "aria-expanded": menu.open,
+        "aria-controls": menu.menuId,
+        "aria-label": "Profile menu",
+        onClick: menu.toggle,
+        "data-testid": "menu-trigger",
+      },
+      "Profile",
+    ),
+    menu.open
+      ? createElement(
+          "div",
+          {
+            id: menu.menuId,
+            role: "menu",
+            "data-testid": "menu-panel",
+          },
+          createElement(
+            "a",
+            {
+              href: "/settings",
+              role: "menuitem",
+              onClick: menu.close,
+              "data-testid": "menu-settings",
+            },
+            "Settings",
+          ),
+          createElement(
+            "a",
+            {
+              href: "/news",
+              role: "menuitem",
+              onClick: menu.close,
+              "data-testid": "menu-news",
+            },
+            "News",
+          ),
+          createElement(
+            "button",
+            {
+              type: "button",
+              role: "menuitem",
+              onClick: menu.close,
+              "data-testid": "menu-signout",
+            },
+            "Sign out",
+          ),
+        )
+      : null,
+  );
+}
+
+describe("useDismissibleMenu", () => {
+  let container: HTMLDivElement;
+  let root: Root | null = null;
+  let outside: HTMLButtonElement;
+
+  afterEach(() => {
+    if (root) {
+      act(() => {
+        root?.unmount();
+      });
+      root = null;
+    }
+    container?.remove();
+    outside?.remove();
+    vi.restoreAllMocks();
+  });
+
+  function mount(closeOnChangeKey = "/dashboard") {
+    container = document.createElement("div");
+    document.body.appendChild(container);
+    outside = document.createElement("button");
+    outside.type = "button";
+    outside.textContent = "Outside";
+    document.body.appendChild(outside);
+    root = createRoot(container);
+
+    act(() => {
+      root!.render(createElement(MenuHarness, { closeOnChangeKey }));
+    });
+  }
+
+  it("toggles open state from the trigger", () => {
+    mount();
+    const trigger = container.querySelector(
+      "[data-testid='menu-trigger']",
+    ) as HTMLButtonElement;
+
+    expect(trigger.getAttribute("aria-expanded")).toBe("false");
+
+    act(() => {
+      trigger.click();
+    });
+    expect(trigger.getAttribute("aria-expanded")).toBe("true");
+    expect(container.querySelector("[data-testid='menu-panel']")).toBeTruthy();
+
+    act(() => {
+      trigger.click();
+    });
+    expect(trigger.getAttribute("aria-expanded")).toBe("false");
+    expect(container.querySelector("[data-testid='menu-panel']")).toBeNull();
+  });
+
+  it("locks page scroll while open and restores scroll position on close", () => {
+    const scrollToSpy = vi
+      .spyOn(window, "scrollTo")
+      .mockImplementation(() => undefined);
+    Object.defineProperty(window, "scrollY", {
+      configurable: true,
+      get: () => 240,
+    });
+
+    mount();
+    const trigger = container.querySelector(
+      "[data-testid='menu-trigger']",
+    ) as HTMLButtonElement;
+
+    act(() => {
+      trigger.click();
+    });
+    expect(document.body.style.overflow).toBe("hidden");
+    expect(document.body.style.position).toBe("fixed");
+    expect(document.body.style.top).toBe("-240px");
+    expect(document.documentElement.style.overflow).toBe("hidden");
+    expect(document.documentElement.style.overscrollBehavior).toBe("none");
+
+    act(() => {
+      trigger.click();
+    });
+    expect(document.body.style.overflow).toBe("");
+    expect(document.body.style.position).toBe("");
+    expect(document.documentElement.style.overflow).toBe("");
+    expect(scrollToSpy).toHaveBeenCalledWith(0, 240);
+  });
+
+  it("closes on outside pointerdown without closing on inside interaction", () => {
+    vi.useFakeTimers();
+    mount();
+    const trigger = container.querySelector(
+      "[data-testid='menu-trigger']",
+    ) as HTMLButtonElement;
+
+    act(() => {
+      trigger.click();
+    });
+    expect(container.querySelector("[data-testid='menu-panel']")).toBeTruthy();
+
+    // Outside-close is deferred so the opening tap cannot dismiss immediately.
+    act(() => {
+      vi.runAllTimers();
+    });
+
+    const settings = container.querySelector(
+      "[data-testid='menu-settings']",
+    ) as HTMLAnchorElement;
+    act(() => {
+      settings.dispatchEvent(
+        new PointerEvent("pointerdown", { bubbles: true }),
+      );
+    });
+    expect(container.querySelector("[data-testid='menu-panel']")).toBeTruthy();
+
+    act(() => {
+      outside.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+    });
+    expect(container.querySelector("[data-testid='menu-panel']")).toBeNull();
+    vi.useRealTimers();
+  });
+
+  it("does not instantly close from the opening interaction", () => {
+    vi.useFakeTimers();
+    mount();
+    const trigger = container.querySelector(
+      "[data-testid='menu-trigger']",
+    ) as HTMLButtonElement;
+
+    act(() => {
+      trigger.click();
+      // Same-tick outside pointerdown must be ignored until deferred attach.
+      outside.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+    });
+    expect(container.querySelector("[data-testid='menu-panel']")).toBeTruthy();
+
+    act(() => {
+      vi.runAllTimers();
+    });
+    expect(container.querySelector("[data-testid='menu-panel']")).toBeTruthy();
+    vi.useRealTimers();
+  });
+
+  it("closes on Escape and returns focus to the trigger", () => {
+    mount();
+    const trigger = container.querySelector(
+      "[data-testid='menu-trigger']",
+    ) as HTMLButtonElement;
+
+    act(() => {
+      trigger.click();
+    });
+    expect(container.querySelector("[data-testid='menu-panel']")).toBeTruthy();
+
+    act(() => {
+      document.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+      );
+    });
+
+    expect(container.querySelector("[data-testid='menu-panel']")).toBeNull();
+    expect(document.activeElement).toBe(trigger);
+  });
+
+  it("closes when navigation key changes and keeps Settings/News/Sign out actions", () => {
+    mount("/dashboard");
+    const trigger = container.querySelector(
+      "[data-testid='menu-trigger']",
+    ) as HTMLButtonElement;
+
+    act(() => {
+      trigger.click();
+    });
+    expect(
+      container.querySelector("[data-testid='menu-settings']")?.textContent,
+    ).toBe("Settings");
+    expect(
+      container.querySelector("[data-testid='menu-news']")?.textContent,
+    ).toBe("News");
+    expect(
+      container.querySelector("[data-testid='menu-signout']")?.textContent,
+    ).toBe("Sign out");
+
+    act(() => {
+      root!.render(
+        createElement(MenuHarness, { closeOnChangeKey: "/settings" }),
+      );
+    });
+    expect(container.querySelector("[data-testid='menu-panel']")).toBeNull();
+  });
+
+  it("closes from inside navigation/action clicks and cleans up listeners", () => {
+    const removeSpy = vi.spyOn(document, "removeEventListener");
+    mount();
+    const trigger = container.querySelector(
+      "[data-testid='menu-trigger']",
+    ) as HTMLButtonElement;
+
+    act(() => {
+      trigger.click();
+    });
+
+    const settings = container.querySelector(
+      "[data-testid='menu-settings']",
+    ) as HTMLAnchorElement;
+    act(() => {
+      settings.click();
+    });
+    expect(container.querySelector("[data-testid='menu-panel']")).toBeNull();
+
+    act(() => {
+      root?.unmount();
+    });
+    root = null;
+
+    expect(
+      removeSpy.mock.calls.some(
+        (call) => call[0] === "pointerdown" || call[0] === "keydown",
+      ),
+    ).toBe(true);
+  });
+});
+
+describe("UserMenu profile wiring", () => {
+  it("uses the shared dismissible menu with accessible controls", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { resolve } = await import("node:path");
+    const source = readFileSync(
+      resolve(process.cwd(), "components/auth/UserMenu.tsx"),
+      "utf8",
+    );
+
+    expect(source).toContain("useDismissibleMenu");
+    expect(source).toContain("aria-expanded={open}");
+    expect(source).toContain("aria-controls={menuId}");
+    expect(source).toContain('aria-label="Profile menu"');
+    expect(source).toContain("TobaileyLogo");
+    expect(source).toContain('href="/dashboard"');
+    expect(source).toContain("Log out");
+    expect(source).toContain("Signed in as");
+    expect(source).toContain("profile-menu-footer");
+    expect(source).toContain("profile-menu-scroll");
+    expect(source).toContain("overscroll-contain");
+    expect(source).toContain("[-webkit-overflow-scrolling:touch]");
+    expect(source).not.toContain("<details");
+  });
+
+  it("exposes Account and Explore secondary destinations", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { resolve } = await import("node:path");
+    const source = readFileSync(
+      resolve(process.cwd(), "components/auth/UserMenu.tsx"),
+      "utf8",
+    );
+
+    expect(source).toContain("SETTINGS_PATH");
+    expect(source).toContain('label: "Settings"');
+    expect(source).toContain("NEWS_PATH");
+    expect(source).toContain("DISCOVER_HUB_PATH");
+    expect(source).toContain("PERSPECTIVES_PATH");
+    expect(source).toContain('label: "Perspectives"');
+    expect(source).toContain("PORTFOLIO_HEALTH_PATH");
+    expect(source).toContain("MARKET_PULSE_PATH");
+    expect(source).toContain("SUPPORTED_INSTRUMENTS_PATH");
+    expect(source).toContain('href: "/events"');
+    expect(source).toContain('label: "Upcoming Events"');
+    expect(source).toContain("UPLOAD_PATH");
+    expect(source).toContain('title="My portfolio"');
+    expect(source).toContain('title="Understand"');
+    expect(source).toContain('title="Account"');
+    expect(source).toContain('title="Resources"');
+    expect(source).toContain('label: "Ideas"');
+    expect(source).toContain('aria-current={active ? "page" : undefined}');
+    expect(source).toContain("w-[min(100vw-1.5rem,16.5rem)]");
+    expect(source).toContain("createPortal");
+    expect(source).toContain("fixed right-3");
+    expect(source).toContain("grid-rows-[auto_minmax(0,1fr)_auto]");
+    expect(source).toContain("z-[80]");
+  });
+});

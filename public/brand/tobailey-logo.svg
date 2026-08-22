@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 64" role="img" aria-label="Tobailey">
+  <circle cx="32" cy="32" r="32" fill="#5DB7FF"/>
+  <path fill="#FFFFFF" d="M18 18h28v7.5H36.5V46h-9V25.5H18V18z"/>
+  <text x="80" y="40" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="28" font-weight="700" letter-spacing="-0.03em" fill="#0B1F3A">Tobailey</text>
+</svg>

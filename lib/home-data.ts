@@ -57,7 +57,7 @@ export const homeData = {
 };
 
 export function formatEuro(value: number, options?: { signed?: boolean }) {
-  const formatted = new Intl.NumberFormat("nl-NL", {
+  const formatted = new Intl.NumberFormat("en-GB", {
     style: "currency",
     currency: "EUR",
     maximumFractionDigits: 0,
