@@ -13,6 +13,10 @@ import { buildAmIOnTrackQuestion } from "@/lib/services/fourQuestions/buildAmIOn
 import { buildWhatHappenedQuestion } from "@/lib/services/fourQuestions/buildWhatHappened";
 import { buildWhatMattersNowQuestion } from "@/lib/services/fourQuestions/buildWhatMattersNow";
 import { buildWhatsAheadQuestion } from "@/lib/services/fourQuestions/buildWhatsAhead";
+import {
+  selectWhatMattersAttention,
+  themeKeyForSymbol,
+} from "@/lib/services/fourQuestions/briefingSelection";
 import { applyFourQuestionsIntelligenceDepth } from "@/lib/services/fourQuestions/applyIntelligenceDepth";
 import { buildResilienceProfile } from "@/lib/services/resilience";
 import type {
@@ -139,12 +143,45 @@ export function buildFourQuestions(
   const leadingWeight = personalIntelligence?.holdingsWeights
     .slice()
     .sort((left, right) => right.weightPercent - left.weightPercent)[0];
+  const usedAfterQ1 = [
+    themeKeyForSymbol(dominantToday?.symbol, scopedHoldings),
+  ].filter((key): key is string => Boolean(key));
+  const attentionPick = personalIntelligence
+    ? selectWhatMattersAttention({
+        holdings: scopedHoldings,
+        intelligence: personalIntelligence,
+        newsItems: input.newsItems,
+        perspectiveVideos: input.perspectiveVideos,
+        avoidDailyDriverSymbol: dominantToday?.symbol ?? null,
+        usedThemeKeys: usedAfterQ1,
+        changeIntelligence: input.changeIntelligence,
+      })
+    : null;
+  const pickedHolding =
+    attentionPick && !attentionPick.quiet
+      ? scopedHoldings.find((row) =>
+          attentionPick.symbols.some(
+            (symbol) =>
+              row.symbol.trim().toUpperCase() === symbol.trim().toUpperCase(),
+          ),
+        )
+      : null;
   const q2Subject = {
-    symbols: leadingWeight?.symbol
-      ? [leadingWeight.symbol]
-      : q1Subject.symbols,
-    names: leadingWeight?.name ? [leadingWeight.name] : q1Subject.names,
+    symbols: pickedHolding
+      ? [pickedHolding.symbol]
+      : leadingWeight?.symbol
+        ? [leadingWeight.symbol]
+        : q1Subject.symbols,
+    names: pickedHolding
+      ? [pickedHolding.name]
+      : leadingWeight?.name
+        ? [leadingWeight.name]
+        : q1Subject.names,
   };
+  const usedAfterQ2 = [
+    ...usedAfterQ1,
+    ...(attentionPick?.themeKey ? [attentionPick.themeKey] : []),
+  ];
 
   const q1Candidate = dominantToday?.symbol
     ? findHoldingIntelligenceCandidate(
@@ -189,6 +226,7 @@ export function buildFourQuestions(
       changeIntelligence: input.changeIntelligence,
       intelligenceDepth,
       evolutionTimeline: input.evolutionTimeline,
+      attentionPick,
     }),
     buildAmIOnTrackQuestion({
       scope,
@@ -210,6 +248,7 @@ export function buildFourQuestions(
       nextEventHref: input.nextEventHref,
       changeIntelligence: input.changeIntelligence,
       intelligenceDepth,
+      usedThemeKeys: usedAfterQ2,
     }),
   ];
 

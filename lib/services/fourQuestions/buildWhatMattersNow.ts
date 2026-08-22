@@ -29,6 +29,7 @@ import type {
   FourQuestionsIntelligenceDepth,
 } from "@/lib/services/fourQuestions/types";
 import type { IntelligenceTraceLayer } from "@/lib/services/intelligenceTrace";
+import type { BriefingAttentionPick } from "@/lib/services/fourQuestions/briefingSelection";
 import type { ResilienceProfile } from "@/lib/services/resilience";
 import type {
   GoalSettings,
@@ -89,6 +90,11 @@ export function buildWhatMattersNowQuestion(input: {
   intelligenceDepth?: FourQuestionsIntelligenceDepth;
   /** Candidate evidence only — never wins the Q2 glance. */
   evolutionTimeline?: PortfolioEvolutionTimeline | null;
+  /**
+   * Portfolio-wide information-value pick. When present, glance follows it
+   * (including a valid quiet result) instead of repeating Q1 structure.
+   */
+  attentionPick?: BriefingAttentionPick | null;
 }): FourQuestionAnswer {
   const { scope, holdings, intelligence, cryptoDashboardLine } = input;
 
@@ -132,6 +138,8 @@ export function buildWhatMattersNowQuestion(input: {
 
   let answer = conclusion.primaryConclusion;
   let quiet = conclusion.isQuiet;
+  const attentionPick = input.attentionPick ?? null;
+  const usedAttentionPick = Boolean(attentionPick) && scope !== "crypto";
 
   if (
     scope === "crypto" &&
@@ -146,6 +154,9 @@ export function buildWhatMattersNowQuestion(input: {
   ) {
     answer = cryptoDashboardLine.trim();
     quiet = false;
+  } else if (usedAttentionPick && attentionPick) {
+    answer = attentionPick.answer;
+    quiet = attentionPick.quiet;
   } else if (conclusion.isQuiet) {
     answer = QUIET_ANSWER;
   }
@@ -163,10 +174,13 @@ export function buildWhatMattersNowQuestion(input: {
 
   // Q1 owns today's realized driver. Never leave Q2 on daily-driver wording,
   // even when the concentrated holding is a different name from Q1's mover.
+  // When the briefing pick already searched the book, honor a quiet result
+  // instead of falling back to the same-theme concentration sentence.
   if (
-    isDailyDriverWording(answer) ||
-    repeatsQ1Driver ||
-    (isPortfolioMoveHeadline(answer) && structural)
+    !usedAttentionPick &&
+    (isDailyDriverWording(answer) ||
+      repeatsQ1Driver ||
+      (isPortfolioMoveHeadline(answer) && structural))
   ) {
     if (structural) {
       answer = structural.answer;
@@ -181,14 +195,31 @@ export function buildWhatMattersNowQuestion(input: {
       ? input.changeIntelligence.primaryStory
       : null;
   const depth = input.intelligenceDepth === "free" ? "free" : "complete";
-  if (structuralChange) {
+  const usedChangeStory =
+    Boolean(structuralChange) &&
+    (!usedAttentionPick ||
+      attentionPick?.answer === structuralChange?.headline ||
+      attentionPick?.answer === structuralChange?.freeHeadline);
+  if (structuralChange && usedChangeStory && !usedAttentionPick) {
     answer =
       depth === "free" ? structuralChange.freeHeadline : structuralChange.headline;
+    quiet = false;
+  } else if (
+    structuralChange &&
+    usedChangeStory &&
+    usedAttentionPick &&
+    depth === "free"
+  ) {
+    answer = structuralChange.freeHeadline;
     quiet = false;
   }
 
   const support =
-    !quiet && structuralChange
+    !quiet && usedAttentionPick
+      ? depth === "complete"
+        ? attentionPick?.support ?? null
+        : null
+      : !quiet && structuralChange && usedChangeStory
       ? depth === "complete"
         ? structuralChange.relatedLines[0] ?? structuralChange.meaning
         : null
@@ -216,13 +247,14 @@ export function buildWhatMattersNowQuestion(input: {
             : null;
 
   const exploreHref = fourQuestionHubPath("what_matters_now");
-  const changeTrace = structuralChange
-    ? buildChangeTrace({
-        insight: answer,
-        story: structuralChange,
-        extraLayers: input.relevantContext ? [input.relevantContext] : [],
-      })
-    : null;
+  const changeTrace =
+    structuralChange && usedChangeStory
+      ? buildChangeTrace({
+          insight: answer,
+          story: structuralChange,
+          extraLayers: input.relevantContext ? [input.relevantContext] : [],
+        })
+      : null;
   const trace =
     changeTrace ??
     buildWhatMattersTrace({

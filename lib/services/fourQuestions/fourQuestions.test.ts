@@ -10,6 +10,7 @@ import {
   buildWhatHappenedQuestion,
   buildWhatMattersNowQuestion,
   buildWhatsAheadQuestion,
+  selectWhatMattersAttention,
 } from "@/lib/services/fourQuestions";
 import { deriveGoalProgress } from "@/lib/client/useGoalProgress";
 import { buildResilienceProfile } from "@/lib/services/resilience";
@@ -239,6 +240,11 @@ describe("Four Questions builders", () => {
       attentionItems: [],
       dataNotes: [],
     };
+    const attentionPick = selectWhatMattersAttention({
+      holdings: [invest, crypto],
+      intelligence,
+      avoidDailyDriverSymbol: "BTC",
+    });
     const q2 = buildWhatMattersNowQuestion({
       scope: "complete",
       holdings: [invest, crypto],
@@ -252,9 +258,12 @@ describe("Four Questions builders", () => {
         hasSavedGoal: true,
       }),
       avoidDailyDriverSymbol: "BTC",
+      attentionPick,
     });
-    expect(q2.answer.toLowerCase()).toMatch(/concentration/);
     expect(q2.answer).not.toMatch(/main driver/i);
+    expect(q2.answer).toMatch(/nothing else requires special attention/i);
+    expect(attentionPick.quiet).toBe(true);
+    expect(attentionPick.angle).not.toBe("concentration");
   });
 
   it("Q2 does not call a different holding today's main driver when Q1 already owns the day", () => {

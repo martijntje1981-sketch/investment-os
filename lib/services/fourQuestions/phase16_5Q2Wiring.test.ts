@@ -121,8 +121,10 @@ describe("Phase 16.5 Q2 / Phase 15 wiring", () => {
     });
     const q2 = bundle.questions.find((question) => question.id === "what_matters_now")!;
 
-    expect(q2.answer).toMatch(/Vanguard FTSE All-World|largest portfolio concentration/i);
-    expect(q2.answer).not.toMatch(/bitcoin is today/i);
+    expect(q2.answer).not.toMatch(/bitcoin is today|Bitcoin ETF inflows/i);
+    expect(q2.answer).toMatch(
+      /nothing else requires special attention|Vanguard FTSE All-World|largest portfolio concentration/i,
+    );
   });
 
   it("expanded Q2 context for the largest holding is not the most-available Bitcoin story", () => {

@@ -3,6 +3,11 @@
  */
 
 import { fourQuestionHubPath } from "@/lib/services/fourQuestions/catalog";
+import {
+  selectForwardScenario,
+  themeKeyForScenarioId,
+  usedThemeKeysInclude,
+} from "@/lib/services/fourQuestions/briefingSelection";
 import type { IntelligenceScopeId } from "@/lib/services/intelligenceScope";
 import {
   buildChangeTrace,
@@ -39,6 +44,8 @@ export function buildWhatsAheadQuestion(input: {
   nextEventHref?: string | null;
   changeIntelligence?: ChangeIntelligenceSummary | null;
   intelligenceDepth?: FourQuestionsIntelligenceDepth;
+  /** Themes already used by earlier questions — skip repeating the same risk. */
+  usedThemeKeys?: readonly string[];
 }): FourQuestionAnswer {
   const {
     scope,
@@ -79,10 +86,19 @@ export function buildWhatsAheadQuestion(input: {
   let answer = QUIET_ANSWER;
   let support: string | null = null;
   let quiet = true;
+  const usedThemeKeys = input.usedThemeKeys ?? [];
+  const mostSensitiveTheme = themeKeyForScenarioId(
+    resilience.mostSensitive?.scenarioId,
+  );
+  const mostSensitiveThemeUsed = usedThemeKeysInclude(
+    usedThemeKeys,
+    mostSensitiveTheme,
+  );
 
   if (
     resilience.status === "ok" &&
-    resilience.mostSensitive?.scenarioName
+    resilience.mostSensitive?.scenarioName &&
+    !mostSensitiveThemeUsed
   ) {
     answer = `Your portfolio is most sensitive to ${resilience.mostSensitive.scenarioName}.`;
     support =
@@ -92,11 +108,36 @@ export function buildWhatsAheadQuestion(input: {
           ? `Resilience ${resilience.score}/100${resilience.bandLabel ? ` · ${resilience.bandLabel}` : ""}`
           : null;
     quiet = false;
-  } else if (resilience.status === "ok" && resilience.summary) {
+  } else if (
+    resilience.status === "ok" &&
+    resilience.summary &&
+    !mostSensitiveThemeUsed
+  ) {
     answer = resilience.summary;
     support =
       resilience.score != null ? `Resilience ${resilience.score}/100` : null;
     quiet = false;
+  }
+
+  const eventLabel = nextEventLabel?.trim() || null;
+  if (mostSensitiveThemeUsed && eventLabel) {
+    answer = eventLabel;
+    support = "Upcoming event already on your calendar — not a forecast.";
+    quiet = false;
+  } else if (mostSensitiveThemeUsed) {
+    const forward = selectForwardScenario(resilience, usedThemeKeys);
+    if (forward?.scenarioName) {
+      answer = `A further modeled risk is ${forward.scenarioName}.`;
+      support =
+        forward.estimatedPortfolioImpactPercent != null
+          ? `Modeled impact about ${forward.estimatedPortfolioImpactPercent.toFixed(1)}% under that scenario.`
+          : null;
+      quiet = false;
+    } else {
+      answer = QUIET_ANSWER;
+      support = null;
+      quiet = true;
+    }
   }
 
   const depth = input.intelligenceDepth === "free" ? "free" : "complete";
@@ -104,6 +145,8 @@ export function buildWhatsAheadQuestion(input: {
     input.changeIntelligence?.status === "ready"
       ? input.changeIntelligence.resilienceChange
       : null;
+  // Period-over-period sensitivity change is a different fact from today's
+  // move or the static "most sensitive" scenario, so it may still win.
   const usableForwardChange =
     Boolean(resilienceChange) &&
     depth === "complete" &&

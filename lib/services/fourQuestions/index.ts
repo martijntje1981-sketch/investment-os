@@ -34,6 +34,24 @@ export type {
 export { buildFourQuestions } from "./buildFourQuestions";
 export type { BuildFourQuestionsInput } from "./buildFourQuestions";
 export {
+  briefingThemesOverlap,
+  evaluateBriefingSelection,
+  informationValueScore,
+  selectForwardScenario,
+  selectWhatMattersAttention,
+  themeKeyForHolding,
+  themeKeyForScenarioId,
+  themeKeyForSymbol,
+  usedThemeKeysInclude,
+} from "./briefingSelection";
+export type {
+  BriefingAttentionPick,
+  BriefingInsightAngle,
+  BriefingInsightCandidate,
+  BriefingRejection,
+  BriefingSelectionTrace,
+} from "./briefingSelection";
+export {
   applyFourQuestionsIntelligenceDepth,
   applyFourQuestionsProductAccess,
 } from "./applyIntelligenceDepth";
