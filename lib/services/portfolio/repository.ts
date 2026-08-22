@@ -30,6 +30,7 @@ import type {
 import { PORTFOLIO_SYNC_VERSION } from "@/lib/services/portfolio/types";
 import {
   holdingUniqueKey,
+  canReuseHoldingForPortfolio,
   resolveHoldingIdForSync,
 } from "@/lib/services/portfolio/holdingUniqueness";
 
@@ -524,6 +525,7 @@ export function createPortfolioRepository(supabase: SupabaseClient) {
     holdingId: string,
     holding: StoredPortfolioHolding,
     sortOrder: number,
+    portfolioId: string,
   ) {
     const payload: Record<string, unknown> = {
       name: holding.name.trim() || holding.symbol,
@@ -545,88 +547,33 @@ export function createPortfolioRepository(supabase: SupabaseClient) {
       .from("holdings")
       .update(payload)
       .eq("id", holdingId)
-      .eq("user_id", userId);
+      .eq("user_id", userId)
+      .eq("portfolio_id", portfolioId);
 
     if (updateError) throw updateError;
   }
 
-  async function ensureHoldingExists(
+  async function lookupHoldingById(
+    userId: string,
+    holdingId: string,
+  ): Promise<{ id: string; portfolio_id: string; deleted_at: string | null } | null> {
+    const { data, error } = await supabase
+      .from("holdings")
+      .select("id, portfolio_id, deleted_at")
+      .eq("id", holdingId)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (error) throw error;
+    return data ?? null;
+  }
+
+  async function insertHoldingRow(
     userId: string,
     portfolioId: string,
     holding: StoredPortfolioHolding,
     sortOrder: number,
-  ) {
-    if (isCryptoHolding(holding)) {
-      const holdingId = resolveHoldingIdForSync(userId, holding);
-      const { data: existing, error: readError } = await supabase
-        .from("holdings")
-        .select("id, deleted_at")
-        .eq("id", holdingId)
-        .eq("user_id", userId)
-        .maybeSingle();
-
-      if (readError) throw readError;
-
-      if (existing) {
-        await updateHoldingRow(userId, holdingId, holding, sortOrder);
-        return holdingId;
-      }
-
-      const insertRow = mapStoredHoldingToDbInsert(
-        holding,
-        userId,
-        portfolioId,
-        sortOrder,
-        holdingId,
-      );
-
-      const { error: insertError } = await supabase
-        .from("holdings")
-        .insert(insertRow as Record<string, unknown>);
-
-      if (insertError) {
-        if (!isUniqueViolation(insertError)) throw insertError;
-
-        const raced = await findHoldingByUniqueKey(userId, portfolioId, holding);
-        if (!raced) throw insertError;
-
-        await updateHoldingRow(userId, raced.id, holding, sortOrder);
-        return raced.id;
-      }
-
-      return holdingId;
-    }
-
-    const active = await findHoldingByUniqueKey(userId, portfolioId, holding);
-    if (active) {
-      await updateHoldingRow(userId, active.id, holding, sortOrder);
-      return active.id;
-    }
-
-    const softDeleted = await findHoldingByUniqueKey(userId, portfolioId, holding, {
-      includeSoftDeleted: true,
-    });
-    if (softDeleted) {
-      await updateHoldingRow(userId, softDeleted.id, holding, sortOrder);
-      return softDeleted.id;
-    }
-
-    const holdingId = resolveHoldingIdForSync(userId, holding);
-    // Primary-key lookup: may return a soft-deleted tombstone to revive by deterministic id.
-    const { data: existing, error: readError } = await supabase
-      .from("holdings")
-      .select("id, deleted_at")
-      .eq("id", holdingId)
-      .eq("user_id", userId)
-      .maybeSingle();
-
-    if (readError) throw readError;
-
-    if (existing) {
-      await updateHoldingRow(userId, holdingId, holding, sortOrder);
-      return holdingId;
-    }
-
+    holdingId: string,
+  ): Promise<string> {
     const insertRow = mapStoredHoldingToDbInsert(
       holding,
       userId,
@@ -645,11 +592,73 @@ export function createPortfolioRepository(supabase: SupabaseClient) {
       const raced = await findHoldingByUniqueKey(userId, portfolioId, holding);
       if (!raced) throw insertError;
 
-      await updateHoldingRow(userId, raced.id, holding, sortOrder);
+      await updateHoldingRow(userId, raced.id, holding, sortOrder, portfolioId);
       return raced.id;
     }
 
     return holdingId;
+  }
+
+  async function allocateHoldingId(
+    userId: string,
+    portfolioId: string,
+    holding: StoredPortfolioHolding,
+  ): Promise<string> {
+    const legacyId = resolveHoldingIdForSync(userId, holding);
+    const scopedId = resolveHoldingIdForSync(userId, holding, portfolioId);
+    const legacyRow = await lookupHoldingById(userId, legacyId);
+
+    if (canReuseHoldingForPortfolio(legacyRow?.portfolio_id, portfolioId)) {
+      return legacyId;
+    }
+
+    if (legacyRow && legacyRow.portfolio_id !== portfolioId) {
+      return scopedId;
+    }
+
+    return legacyId;
+  }
+
+  async function ensureHoldingExists(
+    userId: string,
+    portfolioId: string,
+    holding: StoredPortfolioHolding,
+    sortOrder: number,
+  ) {
+    const active = await findHoldingByUniqueKey(userId, portfolioId, holding);
+    if (active) {
+      await updateHoldingRow(userId, active.id, holding, sortOrder, portfolioId);
+      return active.id;
+    }
+
+    const softDeleted = await findHoldingByUniqueKey(userId, portfolioId, holding, {
+      includeSoftDeleted: true,
+    });
+    if (softDeleted) {
+      await updateHoldingRow(
+        userId,
+        softDeleted.id,
+        holding,
+        sortOrder,
+        portfolioId,
+      );
+      return softDeleted.id;
+    }
+
+    const holdingId = await allocateHoldingId(userId, portfolioId, holding);
+    const existing = await lookupHoldingById(userId, holdingId);
+
+    if (canReuseHoldingForPortfolio(existing?.portfolio_id, portfolioId)) {
+      await updateHoldingRow(userId, holdingId, holding, sortOrder, portfolioId);
+      return holdingId;
+    }
+
+    if (existing && existing.portfolio_id !== portfolioId) {
+      const scopedId = resolveHoldingIdForSync(userId, holding, portfolioId);
+      return insertHoldingRow(userId, portfolioId, holding, sortOrder, scopedId);
+    }
+
+    return insertHoldingRow(userId, portfolioId, holding, sortOrder, holdingId);
   }
 
   async function upsertHoldingMapping(

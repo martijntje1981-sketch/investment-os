@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  canReuseHoldingForPortfolio,
   holdingIdentityKey,
   holdingUniqueKey,
   resolveHoldingIdForSync,
@@ -40,5 +41,28 @@ describe("holdingUniqueness", () => {
 
     expect(first).toBe(second);
     expect(holdingIdentityKey(holding())).toBe("investment:VWCE:EUR");
+  });
+
+  it("scopes the same ticker to different portfolios so Main is not reused", () => {
+    const mainId = resolveHoldingIdForSync(USER_ID, holding());
+    const kidsId = resolveHoldingIdForSync(
+      USER_ID,
+      holding(),
+      "eb9c9aaf-ce47-4c06-aca2-1f59b14e8b87",
+    );
+
+    expect(mainId).not.toBe(kidsId);
+    expect(
+      canReuseHoldingForPortfolio(
+        "11111111-1111-4111-8111-111111111111",
+        "eb9c9aaf-ce47-4c06-aca2-1f59b14e8b87",
+      ),
+    ).toBe(false);
+    expect(
+      canReuseHoldingForPortfolio(
+        "eb9c9aaf-ce47-4c06-aca2-1f59b14e8b87",
+        "eb9c9aaf-ce47-4c06-aca2-1f59b14e8b87",
+      ),
+    ).toBe(true);
   });
 });

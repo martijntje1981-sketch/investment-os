@@ -8,6 +8,7 @@ export type PendingImportSession = {
   source: ImportSource | null;
   mode: "replace" | "merge";
   idempotencyKey: string;
+  portfolioId?: string | null;
   syncError?: string | null;
   syncErrorCode?: string | null;
   updatedAt: string;

@@ -102,6 +102,31 @@ describe("user-scoped portfolio storage", () => {
     expect(localStorage.getItem(portfolioStorageKey(USER_A))).not.toBeNull();
   });
 
+  it("does not write a non-primary book onto the user cache key", () => {
+    const kidsId = "eb9c9aaf-ce47-4c06-aca2-1f59b14e8b87";
+    writePortfolioToStorage(
+      USER_A,
+      [holdingForUser(USER_A, "MAIN")],
+      "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      { isPrimary: true },
+    );
+    writePortfolioToStorage(
+      USER_A,
+      [holdingForUser(USER_A, "KIDS")],
+      kidsId,
+      { isPrimary: false },
+    );
+
+    expect(readPortfolioFromStorage(USER_A).map((row) => row.symbol)).toEqual([
+      "MAIN",
+    ]);
+    expect(
+      readPortfolioFromStorage(USER_A, kidsId, { isPrimary: false }).map(
+        (row) => row.symbol,
+      ),
+    ).toEqual(["KIDS"]);
+  });
+
   it("does not auto-migrate legacy holdings without an explicit request", () => {
     localStorage.setItem(
       LEGACY_PORTFOLIO_STORAGE_KEY,

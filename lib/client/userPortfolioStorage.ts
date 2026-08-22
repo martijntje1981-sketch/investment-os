@@ -186,7 +186,7 @@ export function writePortfolioToStorage(
       portfolioStorageKey(userSub, portfolioId),
       JSON.stringify(holdings),
     );
-    if (options?.isPrimary !== false) {
+    if (options?.isPrimary === true) {
       localStorage.setItem(portfolioStorageKey(userSub), JSON.stringify(holdings));
     }
     return;

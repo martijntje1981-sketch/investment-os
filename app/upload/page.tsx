@@ -35,6 +35,7 @@ import { parseProviderSymbolInput } from "@/lib/services/instruments/providerSym
 import { normalizeExchange } from "@/lib/services/instruments/exchangeNormalizer";
 import { mergeImportedHoldings } from "@/lib/client/importMergeHoldings";
 import { saveImportedPortfolio } from "@/lib/client/importSavePortfolio";
+import { useActivePortfolioOptional } from "@/lib/client/useActivePortfolio";
 import {
   clearPendingImportSession,
   createImportIdempotencyKey,
@@ -80,6 +81,7 @@ export default function UploadPage() {
     recoverPortfolio,
     dismissRecovery,
   } = useUserPortfolio();
+  const activePortfolio = useActivePortfolioOptional();
 
   const sheetInput = useRef<HTMLInputElement>(null);
   const importIdempotencyKeyRef = useRef<string | null>(null);
@@ -104,6 +106,19 @@ export default function UploadPage() {
     const pending = readPendingImportSession(userSub);
     if (!pending || pending.rows.length === 0) return;
 
+    if (
+      pending.portfolioId &&
+      activePortfolio?.ready &&
+      pending.portfolioId !== activePortfolioId
+    ) {
+      const restored = activePortfolio.selectPortfolio(pending.portfolioId);
+      if (!restored) {
+        setError(
+          "This import belongs to a saved portfolio that is not available right now. Your file is still here — switch back to that portfolio to retry.",
+        );
+      }
+    }
+
     setRows(pending.rows);
     setBroker(pending.broker);
     setSource(pending.source);
@@ -114,13 +129,14 @@ export default function UploadPage() {
       setSyncFailed(true);
       setError(pending.syncError);
     }
-  }, [userSub]);
+  }, [activePortfolio, activePortfolioId, userSub]);
 
   function persistImportSession(
     nextRows: ImportRow[],
     mode: "replace" | "merge",
     syncError?: string | null,
     syncErrorCode?: string | null,
+    portfolioId?: string | null,
   ) {
     if (!userSub || nextRows.length === 0) return;
 
@@ -135,6 +151,7 @@ export default function UploadPage() {
       source,
       mode,
       idempotencyKey: importIdempotencyKeyRef.current,
+      portfolioId: portfolioId ?? activePortfolioId,
       syncError: syncError ?? null,
       syncErrorCode: syncErrorCode ?? null,
       updatedAt: new Date().toISOString(),
@@ -435,12 +452,29 @@ export default function UploadPage() {
       return;
     }
 
+    const pendingSession = readPendingImportSession(userSub);
+    const targetPortfolioId =
+      pendingSession?.portfolioId ?? activePortfolioId ?? null;
+    if (!targetPortfolioId) {
+      setError("Select a portfolio before importing.");
+      return;
+    }
+    if (targetPortfolioId !== activePortfolioId) {
+      const restored = activePortfolio?.selectPortfolio(targetPortfolioId);
+      if (!restored) {
+        setError(
+          "This import belongs to another portfolio. Switch back to that portfolio to retry.",
+        );
+        return;
+      }
+    }
+
     importModeRef.current = mode;
     setIsSaving(true);
     setError("");
     setImportNotice("");
     setSyncFailed(false);
-    persistImportSession(rowsToImport, mode);
+    persistImportSession(rowsToImport, mode, null, null, targetPortfolioId);
 
     try {
       const prepared = finalizeImportRowsForSave(rowsToImport);
@@ -464,7 +498,7 @@ export default function UploadPage() {
       const saved = await saveImportedPortfolio({
         userSub,
         holdings: next,
-        portfolioId: activePortfolioId,
+        portfolioId: targetPortfolioId,
         idempotencyKey: importIdempotencyKeyRef.current ?? undefined,
         newProviderSymbols: syncFailed
           ? []
@@ -480,7 +514,7 @@ export default function UploadPage() {
             : `${saved.message} Your import was not completed.`;
         setSyncFailed(true);
         setError(message);
-        persistImportSession(rows, mode, message);
+        persistImportSession(rows, mode, message, null, targetPortfolioId);
         return;
       }
 
@@ -511,7 +545,7 @@ export default function UploadPage() {
           : "Your portfolio could not be saved.";
       setSyncFailed(true);
       setError(message);
-      persistImportSession(rowsToImport, mode, message);
+      persistImportSession(rowsToImport, mode, message, null, targetPortfolioId);
     } finally {
       setIsSaving(false);
     }

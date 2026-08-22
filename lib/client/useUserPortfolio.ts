@@ -471,7 +471,7 @@ function useUserPortfolioState() {
         ) + 1;
       saveSequenceRef.current = revision;
 
-      writePortfolioToStorage(userSub, next);
+      writePortfolioToStorage(userSub, next, activePortfolioId, bookOptions);
       writePortfolioBackupIfComplete(userSub, next);
       recordLocalPortfolioSave(userSub, next, revision);
       holdingsGenerationRef.current += 1;

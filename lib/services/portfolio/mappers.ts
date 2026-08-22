@@ -222,7 +222,7 @@ export function mapStoredHoldingToDbInsert(
   userId: string,
   portfolioId: string,
   sortOrder: number,
-  holdingId = resolveHoldingIdForSync(userId, holding),
+  holdingId = resolveHoldingIdForSync(userId, holding, portfolioId),
 ) {
   if (isCryptoHolding(holding)) {
     return {
@@ -267,7 +267,7 @@ export function mapStoredMappingToDbInsert(
   holding: StoredPortfolioHolding,
   userId: string,
   portfolioId: string,
-  holdingId = resolveHoldingIdForSync(userId, holding),
+  holdingId = resolveHoldingIdForSync(userId, holding, portfolioId),
 ) {
   if (holding.assetType === "cash" || isCryptoHolding(holding)) return null;
   if (!holding.providerSymbol) return null;

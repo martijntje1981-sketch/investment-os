@@ -65,9 +65,13 @@ export async function saveImportedPortfolio(input: {
     };
   }
 
+  const snapshotPortfolioId =
+    pushResult.snapshot.portfolioId ?? input.portfolioId ?? null;
   const priceResult = await tryRefreshPortfolioPrices(
     input.userSub,
-    loadUserPortfolioHoldings(input.userSub),
+    loadUserPortfolioHoldings(input.userSub, snapshotPortfolioId, {
+      isPrimary: pushResult.snapshot.isPrimary === true,
+    }),
     {
       onlyProviderSymbols: input.newProviderSymbols,
       skipIfCacheFresh: true,

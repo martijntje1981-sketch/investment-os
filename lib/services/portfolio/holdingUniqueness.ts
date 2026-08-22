@@ -20,17 +20,40 @@ export function holdingIdentityKey(holding: StoredPortfolioHolding): string {
 
 /**
  * Deterministic holding primary key for cloud sync.
- * Crypto uses its stable client UUID as the primary identity.
+ * Crypto uses its stable client UUID as the primary identity when no
+ * portfolio is supplied (legacy single-book). When `portfolioId` is set,
+ * the id is scoped so the same asset can exist independently in another book.
  */
 export function resolveHoldingIdForSync(
   userId: string,
   holding: StoredPortfolioHolding,
+  portfolioId?: string | null,
 ): string {
   if (isCryptoHolding(holding) && isUuid(holding.id)) {
+    if (portfolioId) {
+      return resolveRemoteHoldingId(
+        userId,
+        `crypto:id:${holding.id.toLowerCase()}:portfolio:${portfolioId}`,
+      );
+    }
     return holding.id.toLowerCase();
   }
 
-  return resolveRemoteHoldingId(userId, holdingIdentityKey(holding));
+  const slot = holdingIdentityKey(holding);
+  if (portfolioId) {
+    return resolveRemoteHoldingId(userId, `${slot}:portfolio:${portfolioId}`);
+  }
+  return resolveRemoteHoldingId(userId, slot);
+}
+
+/** A cloud holding row may be reused only when it already belongs to the target book. */
+export function canReuseHoldingForPortfolio(
+  existingPortfolioId: string | null | undefined,
+  targetPortfolioId: string,
+): boolean {
+  return Boolean(
+    existingPortfolioId && existingPortfolioId === targetPortfolioId,
+  );
 }
 
 /** Natural key for active holdings — matches partial unique indexes in Postgres. */

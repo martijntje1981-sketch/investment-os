@@ -58,7 +58,9 @@ describe("mapStoredMappingToDbInsert", () => {
     const item = holding();
     const mapped = mapStoredMappingToDbInsert(item, USER_ID, PORTFOLIO_ID);
 
-    expect(mapped?.holding_id).toBe(resolveHoldingIdForSync(USER_ID, item));
+    expect(mapped?.holding_id).toBe(
+      resolveHoldingIdForSync(USER_ID, item, PORTFOLIO_ID),
+    );
   });
 
   it("uses an explicit holding id when provided", () => {
