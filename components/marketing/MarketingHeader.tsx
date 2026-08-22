@@ -39,7 +39,14 @@ const navigationItems = [
   },
 ];
 
-export default function MarketingHeader() {
+type MarketingHeaderProps = {
+  /** When the visitor already has a session on a public marketing page. */
+  signedIn?: boolean;
+};
+
+export default function MarketingHeader({
+  signedIn = false,
+}: MarketingHeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const {
     open: exploreOpen,
@@ -133,12 +140,23 @@ export default function MarketingHeader() {
         </nav>
 
         <div className="hidden items-center gap-3 lg:flex">
-          <Link
-            href="/login"
-            className="rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-brand-soft hover:text-brand-navy"
-          >
-            Log in
-          </Link>
+          {signedIn ? (
+            <Link
+              href="/dashboard"
+              data-analytics="desktop-open-tobailey"
+              className="rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-brand-soft hover:text-brand-navy"
+            >
+              Open Tobailey
+            </Link>
+          ) : (
+            <Link
+              href="/login"
+              data-analytics="desktop-signin"
+              className="rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-brand-soft hover:text-brand-navy"
+            >
+              Sign in
+            </Link>
+          )}
 
           <Link
             href="/signup?intent=trial"
@@ -149,21 +167,40 @@ export default function MarketingHeader() {
           </Link>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setIsMenuOpen((current) => !current)}
-          className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-brand-navy lg:hidden"
-          aria-label={
-            isMenuOpen ? "Close navigation menu" : "Open navigation menu"
-          }
-          aria-expanded={isMenuOpen}
-        >
-          {isMenuOpen ? (
-            <X className="h-5 w-5" />
+        <div className="flex items-center gap-2 lg:hidden">
+          {signedIn ? (
+            <Link
+              href="/dashboard"
+              data-analytics="mobile-open-tobailey"
+              className="rounded-xl px-3 py-2 text-sm font-bold text-slate-700"
+            >
+              Open Tobailey
+            </Link>
           ) : (
-            <Menu className="h-5 w-5" />
+            <Link
+              href="/login"
+              data-analytics="mobile-signin"
+              className="rounded-xl px-3 py-2 text-sm font-bold text-slate-700"
+            >
+              Sign in
+            </Link>
           )}
-        </button>
+          <button
+            type="button"
+            onClick={() => setIsMenuOpen((current) => !current)}
+            className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-brand-navy"
+            aria-label={
+              isMenuOpen ? "Close navigation menu" : "Open navigation menu"
+            }
+            aria-expanded={isMenuOpen}
+          >
+            {isMenuOpen ? (
+              <X className="h-5 w-5" />
+            ) : (
+              <Menu className="h-5 w-5" />
+            )}
+          </button>
+        </div>
       </div>
 
       {isMenuOpen ? (
@@ -206,14 +243,24 @@ export default function MarketingHeader() {
               </Link>
             ))}
 
-            <div className="mt-3 grid gap-3 border-t border-slate-200 pt-5 sm:grid-cols-2">
-              <Link
-                href={PUBLIC_EXPLORE_PATH}
-                onClick={closeMenu}
-                className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-brand-navy"
-              >
-                Explore Demo Portfolio
-              </Link>
+            <div className="mt-3 grid gap-3 border-t border-slate-200 pt-5">
+              {signedIn ? (
+                <Link
+                  href="/dashboard"
+                  onClick={closeMenu}
+                  className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-brand-navy"
+                >
+                  Open Tobailey
+                </Link>
+              ) : (
+                <Link
+                  href="/login"
+                  onClick={closeMenu}
+                  className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-brand-navy"
+                >
+                  Sign in
+                </Link>
+              )}
 
               <Link
                 href="/signup?intent=trial"
@@ -222,6 +269,14 @@ export default function MarketingHeader() {
               >
                 Start your 14-day trial
                 <ArrowRight className="h-4 w-4" />
+              </Link>
+
+              <Link
+                href={PUBLIC_EXPLORE_PATH}
+                onClick={closeMenu}
+                className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-brand-navy"
+              >
+                Explore Demo Portfolio
               </Link>
             </div>
           </nav>

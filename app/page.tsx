@@ -16,6 +16,7 @@ import {
 
 import MarketingHeader from "@/components/marketing/MarketingHeader";
 import { PublicFourQuestionsSection } from "@/components/marketing/PublicFourQuestionsSection";
+import { PublicPortfolioMixer } from "@/components/marketing/PublicPortfolioMixer";
 import { PublicProductModelsSection } from "@/components/marketing/PublicProductModelsSection";
 import { TobaileyLogo } from "@/components/brand/TobaileyLogo";
 import {
@@ -194,6 +195,12 @@ export default async function MarketingHomePage({
                   <ChevronRight className="h-4 w-4" />
                 </Link>
               </div>
+              <Link
+                href="#portfolio-mixer"
+                className="mt-3 inline-flex min-h-11 items-center text-sm font-bold text-brand-navy underline-offset-4 hover:underline"
+              >
+                Try the Portfolio Mixer
+              </Link>
               <p className="mt-3 max-w-xl text-sm leading-6 text-slate-600">
                 Personal trial starts with your own empty portfolio. Demo is a
                 separate read-only showroom.
@@ -238,6 +245,8 @@ export default async function MarketingHomePage({
             </div>
           </div>
         </section>
+
+        <PublicPortfolioMixer />
 
         {/* FOUR QUESTIONS */}
         <PublicFourQuestionsSection />
@@ -474,6 +483,7 @@ export default async function MarketingHomePage({
           </div>
 
           <nav className="flex flex-wrap gap-x-6 gap-y-3 text-sm font-semibold text-slate-600">
+            <Link href="#portfolio-mixer">Portfolio Mixer</Link>
             <Link href="#four-questions">Four Questions</Link>
             <Link href="#plans">Plans</Link>
             <Link href="#pricing">Pricing</Link>
