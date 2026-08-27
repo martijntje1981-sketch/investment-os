@@ -35,6 +35,7 @@ import type {
   GoalSettings,
   StoredPortfolioHolding,
 } from "@/lib/types/portfolioStorage";
+import { findHoldingByInsightSubject } from "@/lib/services/instruments/confirmedListingIdentity";
 
 const QUIET_ANSWER = "Nothing requires special attention right now.";
 const CONCENTRATION_WEIGHT_THRESHOLD = 35;
@@ -51,6 +52,7 @@ function isPortfolioMoveHeadline(text: string): boolean {
 
 function buildStructuralAttention(input: {
   intelligence: PersonalIntelligenceToday;
+  holdings: StoredPortfolioHolding[];
 }): { answer: string; support: string } | null {
   const leadingWeight = input.intelligence.holdingsWeights
     .slice()
@@ -60,8 +62,14 @@ function buildStructuralAttention(input: {
   }
 
   const symbol = leadingWeight.symbol.trim().toUpperCase();
+  const holding = findHoldingByInsightSubject(symbol, input.holdings);
   const group = input.intelligence.exposure?.groups.find((row) =>
-    row.holdings.some((holding) => holding.symbol.trim().toUpperCase() === symbol),
+    row.holdings.some((item) =>
+      holding
+        ? item.id === holding.id ||
+          item.symbol.trim().toUpperCase() === holding.symbol.trim().toUpperCase()
+        : item.symbol.trim().toUpperCase() === symbol,
+    ),
   );
 
   const support =
@@ -161,7 +169,7 @@ export function buildWhatMattersNowQuestion(input: {
     answer = QUIET_ANSWER;
   }
 
-  const structural = buildStructuralAttention({ intelligence });
+  const structural = buildStructuralAttention({ intelligence, holdings });
   const avoidSymbol = input.avoidDailyDriverSymbol?.trim().toUpperCase() || null;
   const repeatsQ1Driver = Boolean(
     avoidSymbol &&

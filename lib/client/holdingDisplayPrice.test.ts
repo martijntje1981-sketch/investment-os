@@ -16,6 +16,7 @@ import {
   isEstimatedHoldingPrice,
   resolveHoldingDisplayPrice,
   resolveHoldingPriceTrustStatus,
+  resolveListedVenueExchange,
 } from "@/lib/client/holdingDisplayPrice";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
@@ -370,5 +371,42 @@ describe("portfolio totals with unpriced crypto", () => {
     expect(cryptoRow?.currentValue).toBeNull();
     expect(cryptoRow?.priceStatus).toBe("unavailable");
     expect(cryptoRow?.portfolioWeightPercent).toBeNull();
+  });
+});
+
+describe("holdingDisplayPrice confirmed listing venue", () => {
+  it("keeps a confirmed VUSA.LSE listing on LSE instead of the unique VUSA.AS registry venue", () => {
+    expect(
+      resolveListedVenueExchange({
+        symbol: "VUSA",
+        providerSymbol: "VUSA.LSE",
+        exchange: "LSE",
+        pricingExchange: "LSE",
+        isin: "IE00B3XXRP09",
+      }),
+    ).toBe("LSE");
+  });
+
+  it("does not rewrite confirmed STRC.PA to the unique STRC.AS registry venue", () => {
+    expect(
+      resolveListedVenueExchange({
+        symbol: "STRC",
+        providerSymbol: "STRC.PA",
+        exchange: "PA",
+        pricingExchange: "PA",
+      }),
+    ).toBe("PA");
+  });
+
+  it("keeps the VUSA.AS kids listing on Amsterdam", () => {
+    expect(
+      resolveListedVenueExchange({
+        symbol: "VUSA",
+        providerSymbol: "VUSA.AS",
+        exchange: "AS",
+        pricingExchange: "AS",
+        isin: "IE00B3XXRP09",
+      }),
+    ).toBe("AS");
   });
 });

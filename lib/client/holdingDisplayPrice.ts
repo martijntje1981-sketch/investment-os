@@ -1,6 +1,8 @@
 import { getExchangeRegistryEntry } from "@/lib/services/instruments/exchangeRegistry";
+import { hasPersistedProviderListing } from "@/lib/services/instruments/confirmedListingIdentity";
 import {
   lookupUniqueVerifiedByTicker,
+  lookupVerifiedByProviderSymbol,
   lookupVerifiedInstrument,
 } from "@/lib/services/instruments/verifiedInstrumentRegistry";
 import { isCryptoHolding } from "@/lib/services/portfolio/cryptoHolding";
@@ -57,9 +59,29 @@ function exchangeCodeFromProviderSymbol(
   return normalized.split(".").pop() || null;
 }
 
-function resolveListedVenueExchange(
+export function resolveListedVenueExchange(
   holding: ListedVenueHolding,
 ): string | null {
+  if (hasPersistedProviderListing(holding)) {
+    const verified = lookupVerifiedByProviderSymbol(holding.providerSymbol);
+    for (const raw of [
+      holding.pricingExchange,
+      holding.exchange,
+      exchangeCodeFromProviderSymbol(holding.providerSymbol),
+      verified?.exchange,
+    ]) {
+      if (getExchangeRegistryEntry(raw)) {
+        return raw?.trim() ? raw : null;
+      }
+    }
+    return (
+      exchangeCodeFromProviderSymbol(holding.providerSymbol) ??
+      holding.pricingExchange ??
+      holding.exchange ??
+      null
+    );
+  }
+
   const verified =
     lookupVerifiedInstrument({
       ticker: holding.symbol,

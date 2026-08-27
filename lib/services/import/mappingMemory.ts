@@ -9,6 +9,10 @@ import type { ResolvedInstrument } from "@/lib/types/instrument";
 import type { PriceCurrency } from "@/lib/services/prices/types";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 import { importMappingStorageKey } from "@/lib/client/importMappingStorageKeys";
+import {
+  listingsAreSame,
+  savedMappingMatchesListing,
+} from "@/lib/services/instruments/confirmedListingIdentity";
 
 export type SavedImportMapping = {
   id: string;
@@ -98,7 +102,7 @@ export function findSavedMappingForHolding(
   userSub: string,
   holding: Pick<
     StoredPortfolioHoldingLike,
-    "symbol" | "isin" | "exchange" | "name"
+    "symbol" | "isin" | "exchange" | "name" | "providerSymbol"
   >,
 ): SavedImportMapping | null {
   const mappings = readMappings(userSub);
@@ -108,18 +112,29 @@ export function findSavedMappingForHolding(
   const isin = normalizeKeyPart(holding.isin);
   if (isin) {
     const match = byKey.get(`isin:${isin}`);
-    if (match) return match;
+    if (match && savedMappingMatchesListing(holding.providerSymbol, match)) {
+      return match;
+    }
   }
 
   const symbol = normalizeKeyPart(holding.symbol);
   const exchange = normalizeKeyPart(holding.exchange);
   if (symbol && exchange) {
     const match = byKey.get(`ticker:${symbol}@${exchange}`);
-    if (match) return match;
+    if (match && savedMappingMatchesListing(holding.providerSymbol, match)) {
+      return match;
+    }
   }
   if (symbol) {
     const match = byKey.get(`ticker:${symbol}`);
-    if (match) return match;
+    if (
+      match &&
+      !normalizeKeyPart(holding.exchange) &&
+      !holding.providerSymbol &&
+      savedMappingMatchesListing(holding.providerSymbol, match)
+    ) {
+      return match;
+    }
   }
 
   const name = String(holding.name ?? "")
@@ -127,7 +142,10 @@ export function findSavedMappingForHolding(
     .toLowerCase()
     .replace(/\s+/g, " ");
   if (name.length >= 4) {
-    return byKey.get(`name:${name}`) ?? null;
+    const match = byKey.get(`name:${name}`) ?? null;
+    if (match && savedMappingMatchesListing(holding.providerSymbol, match)) {
+      return match;
+    }
   }
 
   return null;
@@ -138,12 +156,20 @@ type StoredPortfolioHoldingLike = {
   isin?: string | null;
   exchange?: string | null;
   name?: string;
+  providerSymbol?: string | null;
 };
 
 export function applySavedMappingToRow(
   row: ImportRow,
   mapping: SavedImportMapping,
 ): ImportRow {
+  if (
+    row.providerSymbol &&
+    !listingsAreSame(row.providerSymbol, mapping.providerSymbol)
+  ) {
+    return row;
+  }
+
   const providerCode = mapping.providerSymbol.split(".")[0] ?? mapping.symbol;
 
   return {
@@ -193,6 +219,14 @@ export function rememberConfirmedImportMappings(
     const lookupKey = buildImportMappingKey(row);
     if (!lookupKey) continue;
 
+    const existing = byKey.get(lookupKey);
+    const quoteCurrency =
+      row.quoteCurrency ??
+      (existing && listingsAreSame(existing.providerSymbol, row.providerSymbol)
+        ? existing.quoteCurrency
+        : null) ??
+      null;
+
     byKey.set(lookupKey, {
       id: crypto.randomUUID(),
       lookupKey,
@@ -201,7 +235,7 @@ export function rememberConfirmedImportMappings(
       exchange: row.exchange ?? null,
       instrumentName: row.instrumentName ?? null,
       providerSymbol: row.providerSymbol,
-      quoteCurrency: row.quoteCurrency ?? null,
+      quoteCurrency,
       matchMethod: row.matchMethod ?? "ticker_exchange",
       confirmationSource: row.confirmationSource,
       confirmedAt: new Date().toISOString(),

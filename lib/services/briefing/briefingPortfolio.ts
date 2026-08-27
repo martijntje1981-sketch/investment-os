@@ -75,7 +75,11 @@ export function matchNewsToPortfolioHoldings(
         return true;
       }
 
-      if (holding.symbol && text.includes(holding.symbol.toLowerCase())) {
+      if (
+        !holding.providerSymbol &&
+        holding.symbol &&
+        text.includes(holding.symbol.toLowerCase())
+      ) {
         return true;
       }
 

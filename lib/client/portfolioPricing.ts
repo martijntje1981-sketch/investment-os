@@ -35,6 +35,7 @@ import { logHoldingDailyData } from "@/lib/client/holdingDailyDataDebug";
 import { enrichPriceApiQuotes } from "@/lib/client/enrichPriceApiQuotes";
 import { CLIENT_PRICE_CACHE_FRESH_MS } from "@/lib/services/marketData/cachePolicy";
 import { findSavedMappingForHolding } from "@/lib/services/import/mappingMemory";
+import { mergeConfirmedListingIdentity } from "@/lib/services/instruments/confirmedListingIdentity";
 import { NO_QUOTABLE_HOLDINGS_MESSAGE } from "@/lib/services/prices/types";
 import { syncPortfolioPricesFromSnapshot } from "@/lib/client/marketSnapshotSync";
 import {
@@ -390,6 +391,7 @@ export function buildPriceRequestPayload(
         holding.assetType === "crypto"
           ? resolveCanonicalCryptoPair(holding)
           : null;
+      const listing = mergeConfirmedListingIdentity(holding, savedMapping);
 
       return {
         id: holding.id,
@@ -397,13 +399,12 @@ export function buildPriceRequestPayload(
         name: holding.name,
         assetType: holding.assetType,
         pairCurrency: canonical?.quote ?? holding.pairCurrency ?? null,
-        isin: holding.isin ?? savedMapping?.isin ?? null,
-        exchange: holding.exchange ?? savedMapping?.exchange ?? null,
-        providerSymbol:
-          holding.providerSymbol ?? savedMapping?.providerSymbol ?? null,
+        isin: listing.isin,
+        exchange: listing.exchange,
+        providerSymbol: listing.providerSymbol,
         instrumentName:
-          holding.instrumentName ?? savedMapping?.instrumentName ?? null,
-        quoteCurrency: holding.quoteCurrency ?? savedMapping?.quoteCurrency ?? null,
+          holding.instrumentName ?? listing.instrumentName ?? null,
+        quoteCurrency: listing.quoteCurrency,
       };
     });
 }

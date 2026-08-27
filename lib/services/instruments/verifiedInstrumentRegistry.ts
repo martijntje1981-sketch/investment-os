@@ -193,17 +193,17 @@ export function lookupVerifiedByIsin(
 
   const entries = byIsin.get(normalizedIsin);
   if (!entries || entries.length === 0) return null;
-  if (entries.length === 1) return entries[0]!;
 
   const normalizedExchange = resolveExchangeForMatching(preferredExchange);
   if (normalizedExchange) {
-    const onExchange = entries.find((entry) =>
-      exchangesMatch(entry.exchange, normalizedExchange),
+    return (
+      entries.find((entry) =>
+        exchangesMatch(entry.exchange, normalizedExchange),
+      ) ?? null
     );
-    if (onExchange) return onExchange;
   }
 
-  return null;
+  return entries.length === 1 ? entries[0]! : null;
 }
 
 export function lookupVerifiedByTickerExchange(

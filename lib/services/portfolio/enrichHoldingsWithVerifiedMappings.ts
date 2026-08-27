@@ -3,6 +3,10 @@
  */
 
 import {
+  enrichQuoteCurrencyFromVerifiedListing,
+  hasPersistedProviderListing,
+} from "@/lib/services/instruments/confirmedListingIdentity";
+import {
   resolveVerifiedInstrument,
   verifiedEntryToResolved,
 } from "@/lib/services/instruments/verifiedInstrumentRegistry";
@@ -17,6 +21,10 @@ export function enrichHoldingWithVerifiedMapping(
     return holding;
   }
 
+  if (hasPersistedProviderListing(holding)) {
+    return enrichQuoteCurrencyFromVerifiedListing(holding);
+  }
+
   const resolution = resolveVerifiedInstrument({
     ticker: holding.symbol,
     isin: holding.isin,
@@ -25,19 +33,6 @@ export function enrichHoldingWithVerifiedMapping(
   });
 
   if (!resolution) {
-    return holding;
-  }
-
-  const verifiedProvider = resolution.entry.providerSymbol.trim().toUpperCase();
-  const existingProvider = holding.providerSymbol?.trim().toUpperCase() ?? null;
-
-  if (existingProvider === verifiedProvider) {
-    if (!holding.quoteCurrency && resolution.entry.quoteCurrency) {
-      return {
-        ...holding,
-        quoteCurrency: resolution.entry.quoteCurrency,
-      };
-    }
     return holding;
   }
 

@@ -4,6 +4,7 @@
  */
 
 import { STRONG_PORTFOLIO_MATCH_SCORE } from "@/lib/services/news/relevanceMatching";
+import { newsItemMatchesConfirmedHolding } from "@/lib/services/instruments/confirmedListingIdentity";
 import type { NewsContentItem } from "@/lib/types/newsContent";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
@@ -21,22 +22,9 @@ const DIRECT_INSTRUMENT_SCORE = 22;
 
 export function newsItemMatchesHolding(
   item: NewsContentItem,
-  holding: Pick<StoredPortfolioHolding, "id" | "symbol">,
+  holding: Pick<StoredPortfolioHolding, "id" | "symbol" | "providerSymbol" | "assetType">,
 ): boolean {
-  const symbol = holding.symbol.trim().toUpperCase();
-  if (item.matchedHoldingIds.includes(holding.id)) return true;
-  if (
-    item.matchedSymbols.some(
-      (matched) => matched.trim().toUpperCase() === symbol,
-    )
-  ) {
-    return true;
-  }
-  return item.matchedHoldings.some(
-    (matched) =>
-      matched.id === holding.id ||
-      matched.symbol.trim().toUpperCase() === symbol,
-  );
+  return newsItemMatchesConfirmedHolding(item, holding);
 }
 
 export function classifyHoldingNewsMatchType(
@@ -145,7 +133,7 @@ export function resolveHoldingExplanation(input: {
 
 export function selectBestHoldingNewsItem(
   items: NewsContentItem[],
-  holding: Pick<StoredPortfolioHolding, "id" | "symbol">,
+  holding: Pick<StoredPortfolioHolding, "id" | "symbol" | "providerSymbol" | "assetType">,
 ): { item: NewsContentItem | null; matchedCount: number } {
   const matched = items.filter((item) => newsItemMatchesHolding(item, holding));
   if (matched.length === 0) {

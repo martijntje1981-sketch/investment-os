@@ -9,6 +9,7 @@ import {
   resolveIntelligenceScope,
   type IntelligenceScopeId,
 } from "@/lib/services/intelligenceScope";
+import { findHoldingByInsightSubject } from "@/lib/services/instruments/confirmedListingIdentity";
 import { buildAmIOnTrackQuestion } from "@/lib/services/fourQuestions/buildAmIOnTrack";
 import { buildWhatHappenedQuestion } from "@/lib/services/fourQuestions/buildWhatHappened";
 import { buildWhatMattersNowQuestion } from "@/lib/services/fourQuestions/buildWhatMattersNow";
@@ -159,16 +160,19 @@ export function buildFourQuestions(
     : null;
   const pickedHolding =
     attentionPick && !attentionPick.quiet
-      ? scopedHoldings.find((row) =>
-          attentionPick.symbols.some(
-            (symbol) =>
-              row.symbol.trim().toUpperCase() === symbol.trim().toUpperCase(),
-          ),
-        )
+      ? attentionPick.symbols
+          .map((symbol) => findHoldingByInsightSubject(symbol, scopedHoldings))
+          .find((row): row is NonNullable<typeof row> => row != null) ?? null
       : null;
   const q2Subject = {
     symbols: pickedHolding
-      ? [pickedHolding.symbol]
+      ? Array.from(
+          new Set(
+            [pickedHolding.providerSymbol, pickedHolding.symbol].filter(
+              (value): value is string => Boolean(value?.trim()),
+            ),
+          ),
+        )
       : leadingWeight?.symbol
         ? [leadingWeight.symbol]
         : q1Subject.symbols,

@@ -97,6 +97,7 @@ export function buildHoldingIntelligenceCandidates(input: {
       holdingId: holding.id,
       symbol: holding.symbol,
       name: holding.name || holding.symbol,
+      providerSymbol: holding.providerSymbol ?? null,
       assetType: holding.assetType ?? "investment",
       exposureGroupId: classified.normalizedGroupId,
       isBitcoin: bitcoin,

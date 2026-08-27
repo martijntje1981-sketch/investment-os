@@ -80,4 +80,36 @@ describe("import mapping memory", () => {
     expect(unmatched[0]?.fromSavedMapping).toBe(true);
     expect(unmatched[0]?.reviewTier).toBe("auto");
   });
+
+  it("does not overwrite a confirmed row with a different saved listing", () => {
+    rememberConfirmedImportMappings(USER, [row()]);
+
+    const [kept] = applySavedMappingsToRows(USER, [
+      row({
+        providerSymbol: "VWCE.LSE",
+        exchange: "LSE",
+        quoteCurrency: "GBP",
+      }),
+    ]);
+
+    expect(kept?.providerSymbol).toBe("VWCE.LSE");
+    expect(kept?.quoteCurrency).toBe("GBP");
+  });
+
+  it("preserves an existing mapping quote when a later save omits it", () => {
+    rememberConfirmedImportMappings(USER, [row({ quoteCurrency: "EUR" })]);
+    rememberConfirmedImportMappings(USER, [row({ quoteCurrency: null })]);
+
+    const unmatched = applySavedMappingsToRows(USER, [
+      row({
+        providerSymbol: null,
+        quoteCurrency: null,
+        matchMethod: undefined,
+        reviewTier: undefined,
+        userConfirmed: false,
+      }),
+    ]);
+
+    expect(unmatched[0]?.quoteCurrency).toBe("EUR");
+  });
 });

@@ -33,6 +33,9 @@ function holding(
     assetType: overrides.assetType ?? "investment",
     providerSymbol: overrides.providerSymbol ?? null,
     exchange: overrides.exchange ?? null,
+    pricingExchange: overrides.pricingExchange,
+    isin: overrides.isin,
+    quoteCurrency: overrides.quoteCurrency,
     confirmationSource: overrides.confirmationSource,
   };
 }
@@ -233,5 +236,84 @@ describe("portfolio persistence and sync safety", () => {
 
     expect(meta.lastHydratedSyncVersion).toBe(2);
     expect(meta.lastLocalRevision).toBe(124);
+  });
+
+  it("restores quoteCurrency, pricingExchange, and confirmationSource on sync round-trip", () => {
+    const local = [
+      holding({
+        id: "kids-vusa",
+        symbol: "VUSA",
+        providerSymbol: "VUSA.AS",
+        exchange: "AS",
+        pricingExchange: "AS",
+        isin: "IE00B3XXRP09",
+        quoteCurrency: "EUR",
+        confirmationSource: "manual_exact_listing",
+      }),
+    ];
+
+    const merged = applyRemoteSnapshotToLocalCache(
+      USER,
+      snapshotWith([
+        holding({
+          id: "kids-vusa",
+          symbol: "VUSA",
+          providerSymbol: "VUSA.AS",
+          exchange: "AS",
+          quoteCurrency: null,
+          confirmationSource: undefined,
+          pricingExchange: undefined,
+        }),
+      ]),
+      {
+        preserveLocalPrices: local,
+        context: "hydrate",
+      },
+    );
+
+    expect(merged[0]?.providerSymbol).toBe("VUSA.AS");
+    expect(merged[0]?.exchange).toBe("AS");
+    expect(merged[0]?.pricingExchange).toBe("AS");
+    expect(merged[0]?.quoteCurrency).toBe("EUR");
+    expect(merged[0]?.confirmationSource).toBe("manual_exact_listing");
+    expect(merged[0]?.isin).toBe("IE00B3XXRP09");
+  });
+
+  it("does not cross-merge the same ticker listed on two exchanges", () => {
+    const local = [
+      holding({
+        id: "kids-vusa",
+        symbol: "VUSA",
+        providerSymbol: "VUSA.AS",
+        exchange: "AS",
+        quoteCurrency: "EUR",
+        confirmationSource: "manual_exact_listing",
+      }),
+    ];
+
+    const merged = applyRemoteSnapshotToLocalCache(
+      USER,
+      snapshotWith([
+        holding({
+          id: "lse-vusa",
+          symbol: "VUSA",
+          providerSymbol: "VUSA.LSE",
+          exchange: "LSE",
+          quoteCurrency: "GBP",
+          confirmationSource: "verified_mapping",
+        }),
+      ]),
+      {
+        preserveLocalPrices: local,
+        context: "hydrate",
+        force: true,
+      },
+    );
+
+    expect(merged).toHaveLength(1);
+    expect(merged[0]?.id).toBe("lse-vusa");
+    expect(merged[0]?.providerSymbol).toBe("VUSA.LSE");
+    expect(merged[0]?.quoteCurrency).toBe("GBP");
+    expect(merged[0]?.exchange).toBe("LSE");
   });
 });

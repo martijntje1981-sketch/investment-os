@@ -1,8 +1,8 @@
 import {
-  lookupInstrumentResearchProfile,
-  lookupInstrumentResearchProfileBySymbol,
-  type InstrumentResearchProfile,
-} from "@/lib/services/discover/instrumentResearchMetadata";
+  listingAwareMatchSymbol,
+  lookupResearchProfileForHolding,
+} from "@/lib/services/instruments/confirmedListingIdentity";
+import type { InstrumentResearchProfile } from "@/lib/services/discover/instrumentResearchMetadata";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 import type { NewsContentItem } from "@/lib/types/newsContent";
 
@@ -10,6 +10,8 @@ export type HoldingMatchProfile = {
   id: string;
   symbol: string;
   name: string;
+  providerSymbol: string | null;
+  isin: string | null;
   strongKeywords: string[];
   /** Lower-confidence sector/theme or generic-market context. Never a strong match. */
   contextualKeywords?: string[];
@@ -129,10 +131,7 @@ function uniqueNormalized(values: string[]): string[] {
 function verifiedResearchProfileForHolding(
   holding: StoredPortfolioHolding,
 ): InstrumentResearchProfile | null {
-  return (
-    lookupInstrumentResearchProfile(holding.providerSymbol) ??
-    lookupInstrumentResearchProfileBySymbol(holding.symbol)
-  );
+  return lookupResearchProfileForHolding(holding);
 }
 
 function contextualKeywordsFromVerifiedProfile(
@@ -179,6 +178,8 @@ export function buildHoldingMatchProfiles(
         id: holding.id,
         symbol,
         name: holding.name.trim(),
+        providerSymbol: holding.providerSymbol?.trim().toUpperCase() || null,
+        isin: holding.isin?.trim().toUpperCase() || null,
         strongKeywords,
         contextualKeywords,
       };
@@ -213,8 +214,24 @@ function containsSymbol(text: string, symbol: string): boolean {
 export function isStrongPortfolioMatch(
   haystack: string,
   profile: HoldingMatchProfile,
+  _profiles: HoldingMatchProfile[] = [profile],
 ): boolean {
-  if (containsSymbol(haystack, profile.symbol)) {
+  const provider = profile.providerSymbol?.trim().toUpperCase() || null;
+  const ticker = profile.symbol.trim().toUpperCase();
+  if (provider) {
+    if (containsSymbol(haystack, provider)) {
+      return true;
+    }
+    if (profile.isin && haystack.includes(profile.isin.toLowerCase())) {
+      return true;
+    }
+    return profile.strongKeywords.some((keyword) => {
+      if (keyword.toUpperCase() === ticker) return false;
+      return containsPhrase(haystack, keyword);
+    });
+  }
+
+  if (containsSymbol(haystack, ticker)) {
     return true;
   }
 
@@ -226,8 +243,9 @@ export function isStrongPortfolioMatch(
 export function isContextualPortfolioMatch(
   haystack: string,
   profile: HoldingMatchProfile,
+  profiles: HoldingMatchProfile[] = [profile],
 ): boolean {
-  if (isStrongPortfolioMatch(haystack, profile)) {
+  if (isStrongPortfolioMatch(haystack, profile, profiles)) {
     return false;
   }
 
@@ -256,10 +274,10 @@ export function scoreNewsItemRelevance(
 
   const haystack = `${item.title} ${item.description ?? ""}`.toLowerCase();
   const strongProfiles = profiles.filter((profile) =>
-    isStrongPortfolioMatch(haystack, profile),
+    isStrongPortfolioMatch(haystack, profile, profiles),
   );
   const contextualProfiles = profiles.filter((profile) =>
-    isContextualPortfolioMatch(haystack, profile),
+    isContextualPortfolioMatch(haystack, profile, profiles),
   );
   const matchedProfiles =
     strongProfiles.length > 0 ? strongProfiles : contextualProfiles;
@@ -281,12 +299,14 @@ export function scoreNewsItemRelevance(
   return {
     ...item,
     matchedHoldingIds: matchedProfiles.map((profile) => profile.id),
-    matchedSymbols: matchedProfiles.map((profile) => profile.symbol),
+    matchedSymbols: matchedProfiles.map((profile) =>
+      listingAwareMatchSymbol(profile, profiles),
+    ),
     matchedHoldings: matchedProfiles.map((profile) => ({
       id: profile.id,
       symbol: profile.symbol,
       name: profile.name,
-      providerSymbol: null,
+      providerSymbol: profile.providerSymbol,
     })),
     relevanceLabel: `Relevant to ${primary.symbol}`,
     relevanceScore: strong

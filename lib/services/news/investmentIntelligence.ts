@@ -88,11 +88,14 @@ function detectSentiment(text: string): HoldingSentiment {
 function uniqueSymbols(items: NewsContentItem[]): Set<string> {
   const symbols = new Set<string>();
   for (const item of items) {
+    if (item.matchedHoldings.length > 0) {
+      for (const holding of item.matchedHoldings) {
+        symbols.add((holding.providerSymbol || holding.symbol).toUpperCase());
+      }
+      continue;
+    }
     for (const symbol of item.matchedSymbols) {
       symbols.add(symbol.toUpperCase());
-    }
-    for (const holding of item.matchedHoldings) {
-      symbols.add(holding.symbol.toUpperCase());
     }
   }
   return symbols;
@@ -112,16 +115,19 @@ function buildHoldingInsights(
       item.relevanceScore +
       (item.impactLevel === "High Impact" ? 3 : item.impactLevel === "Medium Impact" ? 1 : 0);
 
-    for (const symbol of item.matchedSymbols) {
-      const key = symbol.toUpperCase();
-      const existing = bySymbol.get(key);
-      if (!existing || weight > existing.score) {
-        bySymbol.set(key, { sentiment, score: weight });
+    if (item.matchedHoldings.length > 0) {
+      for (const holding of item.matchedHoldings) {
+        const key = (holding.providerSymbol || holding.symbol).toUpperCase();
+        const existing = bySymbol.get(key);
+        if (!existing || weight > existing.score) {
+          bySymbol.set(key, { sentiment, score: weight });
+        }
       }
+      continue;
     }
 
-    for (const holding of item.matchedHoldings) {
-      const key = holding.symbol.toUpperCase();
+    for (const symbol of item.matchedSymbols) {
+      const key = symbol.toUpperCase();
       const existing = bySymbol.get(key);
       if (!existing || weight > existing.score) {
         bySymbol.set(key, { sentiment, score: weight });

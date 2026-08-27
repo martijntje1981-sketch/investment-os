@@ -59,16 +59,15 @@ describe("enrichHoldingsWithVerifiedMappings", () => {
     });
   });
 
-  it("corrects a wrong verified listing to the canonical providerSymbol", () => {
-    const enriched = enrichHoldingWithVerifiedMapping(
-      manualHolding({
-        providerSymbol: "STRC.PA",
-        exchange: "Amsterdam",
-      }),
-    );
+  it("does not rewrite a confirmed listing to a different registry venue", () => {
+    const confirmed = manualHolding({
+      providerSymbol: "STRC.PA",
+      exchange: "Amsterdam",
+    });
+    const enriched = enrichHoldingWithVerifiedMapping(confirmed);
 
-    expect(enriched.providerSymbol).toBe("STRC.AS");
-    expect(enriched.confirmationSource).toBe("verified_mapping");
+    expect(enriched.providerSymbol).toBe("STRC.PA");
+    expect(enriched.confirmationSource).toBe("manual_entry");
   });
 
   it("does not enrich unknown instruments", () => {

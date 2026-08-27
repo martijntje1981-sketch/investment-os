@@ -69,7 +69,14 @@ export function findHoldingIntelligenceCandidate(
   symbol: string,
 ): HoldingIntelligenceCandidate | null {
   const key = symbol.trim().toUpperCase();
-  return (
-    candidates.find((row) => row.symbol.trim().toUpperCase() === key) ?? null
+  const byProvider = candidates.find(
+    (row) => row.providerSymbol?.trim().toUpperCase() === key,
   );
+  if (byProvider) return byProvider;
+
+  const tickerMatches = candidates.filter(
+    (row) => row.symbol.trim().toUpperCase() === key,
+  );
+  if (tickerMatches.length === 1) return tickerMatches[0] ?? null;
+  return null;
 }

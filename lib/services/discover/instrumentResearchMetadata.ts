@@ -148,6 +148,10 @@ export function lookupInstrumentResearchProfile(
   return byProviderSymbol.get(normalized) ?? null;
 }
 
+/**
+ * Ticker-only catalog lookup. Unsafe for confirmed listings — the same ticker
+ * can exist on multiple venues. Prefer lookupResearchProfileForHolding.
+ */
 export function lookupInstrumentResearchProfileBySymbol(
   symbol: string | null | undefined,
 ): InstrumentResearchProfile | null {

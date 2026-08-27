@@ -96,6 +96,8 @@ function itemMatchesSubject(
     item.matchedHoldings.some(
       (holding) =>
         symbols.has(holding.symbol.trim().toUpperCase()) ||
+        (holding.providerSymbol != null &&
+          symbols.has(holding.providerSymbol.trim().toUpperCase())) ||
         subject.names.some(
           (name) => normalize(holding.name) === normalize(name),
         ),

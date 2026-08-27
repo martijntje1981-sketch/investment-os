@@ -24,6 +24,7 @@ import type { ScenarioId, ScenarioResult } from "@/lib/services/scenarioEngine";
 import type { NewsContentItem } from "@/lib/types/newsContent";
 import type { PerspectiveVideo } from "@/lib/services/perspectives/types";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
+import { findHoldingByInsightSubject } from "@/lib/services/instruments/confirmedListingIdentity";
 
 const UNUSUAL_MOVE_PERCENT = 2.5;
 const MIN_COVERAGE_WEIGHT_PERCENT = 4;
@@ -108,9 +109,7 @@ export function themeKeyForSymbol(
   symbol: string | null | undefined,
   holdings: StoredPortfolioHolding[],
 ): string | null {
-  const key = symbol?.trim().toUpperCase();
-  if (!key) return null;
-  const holding = holdings.find((row) => row.symbol.trim().toUpperCase() === key);
+  const holding = findHoldingByInsightSubject(symbol, holdings);
   if (holding) return themeKeyForHolding(holding);
   return null;
 }
@@ -311,9 +310,18 @@ export function buildWhatMattersCoverageCandidates(input: {
       Math.abs(input.intelligence.portfolioMove?.todayPercent ?? 0) >= 0.5;
     if (!sameAsDriver && driverWasMaterial) {
       const symbol = leadingWeight.symbol.trim().toUpperCase();
-      const group = input.intelligence.exposure?.groups.find((row) =>
-        row.holdings.some((holding) => holding.symbol.trim().toUpperCase() === symbol),
-      );
+      const holding = findHoldingByInsightSubject(symbol, input.holdings);
+      const group = holding
+        ? input.intelligence.exposure?.groups.find((row) =>
+            row.holdings.some(
+              (item) =>
+                item.id === holding.id ||
+                item.symbol.trim().toUpperCase() === holding.symbol.trim().toUpperCase(),
+            ),
+          )
+        : input.intelligence.exposure?.groups.find((row) =>
+            row.holdings.some((item) => item.symbol.trim().toUpperCase() === symbol),
+          );
       candidates.push({
         id: `concentration-${symbol}`,
         lens: "what_matters_now",

@@ -3,6 +3,7 @@
  */
 
 import { resolveBriefingPortfolio } from "@/lib/services/briefing/briefingPortfolio";
+import { listingAwareMatchSymbol } from "@/lib/services/instruments/confirmedListingIdentity";
 import {
   buildHoldingMatchProfiles,
   isContextualPortfolioMatch,
@@ -47,15 +48,19 @@ export async function resolveNewsHoldingProfiles(
       })),
     );
 
-    return keywordProfiles.map((profile, index) => ({
-      id: profile.id,
-      symbol: profile.symbol,
-      name: profile.name,
-      providerSymbol: resolved[index]?.providerSymbol ?? null,
-      isin: resolved[index]?.isin ?? null,
-      strongKeywords: profile.strongKeywords,
-      contextualKeywords: profile.contextualKeywords,
-    }));
+    return keywordProfiles.map((profile, index) => {
+      const holding = investments.find((item) => item.id === profile.id);
+      return {
+        id: profile.id,
+        symbol: profile.symbol,
+        name: profile.name,
+        providerSymbol:
+          holding?.providerSymbol ?? resolved[index]?.providerSymbol ?? null,
+        isin: holding?.isin ?? resolved[index]?.isin ?? null,
+        strongKeywords: profile.strongKeywords,
+        contextualKeywords: profile.contextualKeywords,
+      };
+    });
   } catch {
     return keywordProfiles.map((profile) => {
       const holding = investments.find((item) => item.id === profile.id);
@@ -76,10 +81,26 @@ function normalizeSymbol(value: string): string {
   return value.trim().toUpperCase();
 }
 
-function providerCodes(providerSymbol: string): string[] {
-  const upper = providerSymbol.toUpperCase();
-  const base = upper.split(".")[0] ?? upper;
-  return [upper, base].filter(Boolean);
+function listingMatchCodes(
+  profile: NewsHoldingProfile,
+  profiles: NewsHoldingProfile[],
+): string[] {
+  if (!profile.providerSymbol) {
+    return [normalizeSymbol(profile.symbol)];
+  }
+
+  const full = normalizeSymbol(profile.providerSymbol);
+  const base = full.split(".")[0] ?? full;
+  const tickerShared = profiles.some(
+    (other) =>
+      other.id !== profile.id &&
+      (normalizeSymbol(other.symbol) === base ||
+        normalizeSymbol(other.providerSymbol ?? "").split(".")[0] === base),
+  );
+  if (tickerShared) {
+    return [full];
+  }
+  return [full, base];
 }
 
 function matchProfilesForItem(
@@ -92,11 +113,10 @@ function matchProfilesForItem(
   );
 
   return profiles.filter((profile) => {
-    if (profile.providerSymbol) {
-      for (const code of providerCodes(profile.providerSymbol)) {
-        if (articleSymbols.has(code)) return true;
-        if (haystack.includes(code.toLowerCase())) return true;
-      }
+    const codes = listingMatchCodes(profile, profiles);
+    for (const code of codes) {
+      if (articleSymbols.has(code)) return true;
+      if (code.includes(".") && haystack.includes(code.toLowerCase())) return true;
     }
 
     if (profile.isin && haystack.includes(profile.isin.toLowerCase())) {
@@ -104,8 +124,8 @@ function matchProfilesForItem(
     }
 
     return (
-      isStrongPortfolioMatch(haystack, profile) ||
-      isContextualPortfolioMatch(haystack, profile)
+      isStrongPortfolioMatch(haystack, profile, profiles) ||
+      isContextualPortfolioMatch(haystack, profile, profiles)
     );
   });
 }
@@ -114,19 +134,19 @@ function scoreMatch(
   item: NewsContentItem,
   profile: NewsHoldingProfile,
   haystack: string,
+  profiles: NewsHoldingProfile[],
 ): number {
   const articleSymbols = new Set(
     (item.articleSymbols ?? []).map((symbol) => normalizeSymbol(symbol)),
   );
 
-  if (profile.providerSymbol) {
-    for (const code of providerCodes(profile.providerSymbol)) {
-      if (articleSymbols.has(code)) {
-        return ARTICLE_SYMBOL_MATCH_SCORE;
-      }
-      if (haystack.includes(code.toLowerCase())) {
-        return PROVIDER_SYMBOL_MATCH_SCORE;
-      }
+  const codes = listingMatchCodes(profile, profiles);
+  for (const code of codes) {
+    if (articleSymbols.has(code)) {
+      return ARTICLE_SYMBOL_MATCH_SCORE;
+    }
+    if (code.includes(".") && haystack.includes(code.toLowerCase())) {
+      return PROVIDER_SYMBOL_MATCH_SCORE;
     }
   }
 
@@ -134,23 +154,25 @@ function scoreMatch(
     return PROVIDER_SYMBOL_MATCH_SCORE;
   }
 
-  const symbolPattern = new RegExp(
-    `\\b${profile.symbol.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`,
-    "i",
-  );
-  if (symbolPattern.test(haystack)) {
-    return STRONG_PORTFOLIO_MATCH_SCORE + TICKER_MATCH_BONUS;
+  if (isStrongPortfolioMatch(haystack, profile, profiles)) {
+    return containsTickerToken(haystack, profile.symbol)
+      ? STRONG_PORTFOLIO_MATCH_SCORE + TICKER_MATCH_BONUS
+      : STRONG_PORTFOLIO_MATCH_SCORE;
   }
 
-  if (isStrongPortfolioMatch(haystack, profile)) {
-    return STRONG_PORTFOLIO_MATCH_SCORE;
-  }
-
-  if (isContextualPortfolioMatch(haystack, profile)) {
+  if (isContextualPortfolioMatch(haystack, profile, profiles)) {
     return CONTEXTUAL_PORTFOLIO_MATCH_SCORE;
   }
 
   return 0;
+}
+
+function containsTickerToken(haystack: string, symbol: string): boolean {
+  const symbolPattern = new RegExp(
+    `\\b${symbol.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`,
+    "i",
+  );
+  return symbolPattern.test(haystack);
 }
 
 export function scoreNewsItemWithProfiles(
@@ -187,7 +209,7 @@ export function scoreNewsItemWithProfiles(
 
   const scores = matchedProfiles.map((profile) => ({
     profile,
-    score: scoreMatch(item, profile, haystack),
+    score: scoreMatch(item, profile, haystack, profiles),
   }));
 
   scores.sort((a, b) => b.score - a.score);
@@ -209,7 +231,9 @@ export function scoreNewsItemWithProfiles(
   return {
     ...item,
     matchedHoldingIds: matchedProfiles.map((profile) => profile.id),
-    matchedSymbols: matchedProfiles.map((profile) => profile.symbol),
+    matchedSymbols: matchedProfiles.map((profile) =>
+      listingAwareMatchSymbol(profile, profiles),
+    ),
     matchedHoldings,
     relevanceLabel: `Relevant to ${symbolsLabel}`,
     relevanceScore: bestScore,

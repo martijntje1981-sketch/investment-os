@@ -36,6 +36,7 @@ describe("verifiedInstrumentRegistry", () => {
     expect(lookupVerifiedByIsin("IE00B3XXRP09", "AS")?.providerSymbol).toBe(
       "VUSA.AS",
     );
+    expect(lookupVerifiedByIsin("IE00B3XXRP09", "LSE")).toBeNull();
     expect(lookupVerifiedByIsin("IE00BK5BQT80", "XETRA")?.providerSymbol).toBe(
       "VWCE.XETRA",
     );

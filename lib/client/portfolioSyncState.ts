@@ -1,5 +1,9 @@
 import type { GoalSettings, StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 import type { SavedImportMapping } from "@/lib/services/import/mappingMemory";
+import {
+  findLocalListingCounterpart,
+  mergeRemoteListingIdentity,
+} from "@/lib/services/instruments/confirmedListingIdentity";
 import { buildSyncPreview } from "@/lib/services/portfolio/mappers";
 import { resolvePortfolioSyncState } from "@/lib/services/portfolio/conflictDetection";
 import type {
@@ -218,35 +222,9 @@ export function applyRemoteSnapshotToLocalCache(
     return localHoldings;
   }
 
-  const priceById = new Map(
-    localHoldings.map((holding) => [holding.id, holding]),
-  );
-  const priceBySymbol = new Map(
-    localHoldings.map((holding) => [
-      `${holding.symbol}:${holding.assetType ?? "investment"}`,
-      holding,
-    ]),
-  );
-
   const mergedHoldings = snapshot.holdings.map((holding) => {
-    const localHolding =
-      priceById.get(holding.id) ??
-      priceBySymbol.get(`${holding.symbol}:${holding.assetType ?? "investment"}`);
-    const effectiveHolding: StoredPortfolioHolding = {
-      ...holding,
-      providerSymbol: holding.providerSymbol ?? localHolding?.providerSymbol ?? null,
-      exchange: holding.exchange ?? localHolding?.exchange ?? null,
-      instrumentName:
-        holding.instrumentName ?? localHolding?.instrumentName ?? null,
-      isin: holding.isin ?? localHolding?.isin ?? null,
-      confirmationSource:
-        holding.confirmationSource ?? localHolding?.confirmationSource,
-      matchMethod: holding.matchMethod ?? localHolding?.matchMethod,
-      matchConfidence: holding.matchConfidence ?? localHolding?.matchConfidence,
-      requiresConfirmation:
-        holding.requiresConfirmation ?? localHolding?.requiresConfirmation,
-      matchWarnings: holding.matchWarnings ?? localHolding?.matchWarnings,
-    };
+    const localHolding = findLocalListingCounterpart(holding, localHoldings);
+    const effectiveHolding = mergeRemoteListingIdentity(holding, localHolding);
 
     if (holding.assetType === "crypto") {
       if (

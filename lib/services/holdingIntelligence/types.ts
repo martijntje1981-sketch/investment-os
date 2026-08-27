@@ -34,6 +34,7 @@ export type HoldingIntelligenceCandidate = {
   holdingId: string;
   symbol: string;
   name: string;
+  providerSymbol?: string | null;
   assetType: "investment" | "cash" | "crypto" | null;
   exposureGroupId: ExposureGroupId | null;
   isBitcoin: boolean;

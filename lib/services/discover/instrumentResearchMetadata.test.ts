@@ -4,6 +4,7 @@ import {
   lookupInstrumentResearchProfile,
   lookupInstrumentResearchProfileBySymbol,
 } from "@/lib/services/discover/instrumentResearchMetadata";
+import { lookupResearchProfileForHolding } from "@/lib/services/instruments/confirmedListingIdentity";
 import { resolveExchangeFallbackQuoteCurrency } from "@/lib/services/instruments/exchangeQuoteCurrencyFallback";
 
 describe("VUSA.AS research profile", () => {
@@ -20,6 +21,20 @@ describe("VUSA.AS research profile", () => {
     expect(lookupInstrumentResearchProfileBySymbol("VUSA")?.providerSymbol).toBe(
       "VUSA.LSE",
     );
+    expect(
+      lookupResearchProfileForHolding({
+        symbol: "VUSA",
+        providerSymbol: "VUSA.AS",
+        assetType: "investment",
+      })?.providerSymbol,
+    ).toBe("VUSA.AS");
+    expect(
+      lookupResearchProfileForHolding({
+        symbol: "VUSA",
+        providerSymbol: "VUSA.PA",
+        assetType: "investment",
+      }),
+    ).toBeNull();
   });
 
   it("does not add a generic Amsterdam exchange quote-currency fallback", () => {

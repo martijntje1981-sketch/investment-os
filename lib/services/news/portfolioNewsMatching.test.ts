@@ -147,4 +147,65 @@ describe("portfolioNewsMatching", () => {
       }),
     ]);
   });
+
+  it("scores VUSA.LSE news against the London listing, not Amsterdam", async () => {
+    const { resolveNewsHoldingProfiles } = await import(
+      "@/lib/services/news/portfolioNewsMatching"
+    );
+
+    const profiles = await resolveNewsHoldingProfiles([
+      {
+        id: "kids-vusa",
+        symbol: "VUSA",
+        name: "Vanguard S&P 500 UCITS ETF",
+        quantity: 86,
+        purchasePrice: 100,
+        currentPrice: 120,
+        currency: "EUR",
+        assetType: "investment",
+        providerSymbol: "VUSA.AS",
+        exchange: "AS",
+        isin: "IE00B3XXRP09",
+        quoteCurrency: "EUR",
+      },
+      {
+        id: "lse-vusa",
+        symbol: "VUSA",
+        name: "Vanguard S&P 500 UCITS ETF",
+        quantity: 10,
+        purchasePrice: 80,
+        currentPrice: 90,
+        currency: "GBP",
+        assetType: "investment",
+        providerSymbol: "VUSA.LSE",
+        exchange: "LSE",
+        isin: "IE00B3XXRP09",
+        quoteCurrency: "GBP",
+      },
+    ]);
+
+    const londonArticle = scoreNewsItemWithProfiles(
+      article({
+        id: "vusa-lse",
+        title: "London-listed VUSA.LSE sees fresh inflows",
+        articleSymbols: ["VUSA.LSE"],
+      }),
+      profiles,
+    );
+    const amsterdamArticle = scoreNewsItemWithProfiles(
+      article({
+        id: "vusa-as",
+        title: "Euronext Amsterdam VUSA.AS trading update",
+        articleSymbols: ["VUSA.AS"],
+      }),
+      profiles,
+    );
+
+    expect(londonArticle.matchedHoldingIds).toEqual(["lse-vusa"]);
+    expect(londonArticle.matchedHoldings[0]?.providerSymbol).toBe("VUSA.LSE");
+    expect(londonArticle.matchedSymbols).toEqual(["VUSA.LSE"]);
+    expect(amsterdamArticle.matchedHoldingIds).toEqual(["kids-vusa"]);
+    expect(amsterdamArticle.matchedHoldings[0]?.providerSymbol).toBe("VUSA.AS");
+    expect(amsterdamArticle.matchedSymbols).toEqual(["VUSA.AS"]);
+  });
 });

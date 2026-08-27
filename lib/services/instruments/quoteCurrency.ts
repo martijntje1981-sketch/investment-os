@@ -52,6 +52,7 @@ export function normalizeProviderQuoteCurrency(
 export function resolveListingQuoteCurrency(input: {
   liveQuoteCurrency?: string | null;
   persistedQuoteCurrency?: PriceCurrency | null;
+  savedMappingQuoteCurrency?: PriceCurrency | null;
   providerSymbol?: string | null;
   exchange?: string | null;
   listingMetadata?: Pick<ListingMetadataRecord, "quoteCurrency"> | null;
@@ -68,6 +69,17 @@ export function resolveListingQuoteCurrency(input: {
   if (input.persistedQuoteCurrency) {
     return {
       currency: input.persistedQuoteCurrency,
+      source: "persisted_listing",
+      requiresReview: false,
+    };
+  }
+
+  const savedMapping = normalizeProviderQuoteCurrency(
+    input.savedMappingQuoteCurrency,
+  );
+  if (savedMapping) {
+    return {
+      currency: savedMapping,
       source: "persisted_listing",
       requiresReview: false,
     };

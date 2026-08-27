@@ -355,4 +355,28 @@ describe("Four Questions briefing quality", () => {
     expect(q2.answer).not.toMatch(/remains your largest/i);
     expect(q2.support ?? "").toMatch(/context, not proof|not a confirmed explanation/i);
   });
+
+  it("does not collapse VUSA.AS and VUSA.LSE into one Four Questions subject", () => {
+    const amsterdam = holding({
+      id: "kids-vusa",
+      symbol: "VUSA",
+      name: "Vanguard S&P 500 UCITS ETF",
+      providerSymbol: "VUSA.AS",
+    });
+    const london = holding({
+      id: "lse-vusa",
+      symbol: "VUSA",
+      name: "Vanguard S&P 500 UCITS ETF",
+      providerSymbol: "VUSA.LSE",
+    });
+    const both = [amsterdam, london];
+
+    expect(themeKeyForSymbol("VUSA.AS", both)).toBe(
+      themeKeyForHolding(amsterdam),
+    );
+    expect(themeKeyForSymbol("VUSA.LSE", both)).toBe(
+      themeKeyForHolding(london),
+    );
+    expect(themeKeyForSymbol("VUSA", both)).toBeNull();
+  });
 });

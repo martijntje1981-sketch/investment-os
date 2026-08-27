@@ -287,13 +287,12 @@ function groupItemsByHolding(input: {
 }): HoldingNewsGroup[] {
   const groups = new Map<string, HoldingNewsGroup>();
 
-  function ensureGroup(symbol: string, name: string): HoldingNewsGroup {
-    const key = symbol.toUpperCase();
+  function ensureGroup(key: string, symbol: string, name: string): HoldingNewsGroup {
     const existing = groups.get(key);
     if (existing) return existing;
 
     const created: HoldingNewsGroup = {
-      symbol: key,
+      symbol: symbol.toUpperCase(),
       name,
       articles: [],
       videos: [],
@@ -305,21 +304,42 @@ function groupItemsByHolding(input: {
     return created;
   }
 
+  function groupForMatchedHolding(holding: {
+    id: string;
+    symbol: string;
+    name: string;
+    providerSymbol: string | null;
+  }): HoldingNewsGroup {
+    const key = holding.id
+      ? `id:${holding.id}`
+      : holding.providerSymbol
+        ? `listing:${holding.providerSymbol.toUpperCase()}`
+        : `ticker:${holding.symbol.toUpperCase()}`;
+    return ensureGroup(key, holding.symbol, holding.name);
+  }
+
+  function groupForTicker(symbol: string): HoldingNewsGroup | null {
+    const ticker = symbol.toUpperCase();
+    const matching = [...groups.values()].filter(
+      (group) => group.symbol.toUpperCase() === ticker,
+    );
+    if (matching.length === 1) return matching[0]!;
+    if (matching.length > 1) return null;
+    return ensureGroup(`ticker:${ticker}`, ticker, ticker);
+  }
+
   function addItems(
     items: NewsContentItem[],
     bucket: "articles" | "videos" | "analystUpdates" | "dividendUpdates",
   ) {
     for (const item of items) {
-      const holdings =
+      const targets = (
         item.matchedHoldings.length > 0
-          ? item.matchedHoldings.map((holding) => ({
-              symbol: holding.symbol,
-              name: holding.name,
-            }))
-          : item.matchedSymbols.map((symbol) => ({ symbol, name: symbol }));
+          ? item.matchedHoldings.map((holding) => groupForMatchedHolding(holding))
+          : item.matchedSymbols.map((symbol) => groupForTicker(symbol))
+      ).filter((group): group is HoldingNewsGroup => group != null);
 
-      for (const holding of holdings) {
-        const group = ensureGroup(holding.symbol, holding.name);
+      for (const group of targets) {
         if (bucket === "articles") group.articles.push(item);
         if (bucket === "videos") group.videos.push(item);
         if (bucket === "analystUpdates") group.analystUpdates.push(item);
@@ -554,8 +574,11 @@ export function findSupportingBriefingItems(input: {
       }
       if (
         item.matchedSymbols.some((symbol) => symbols.has(symbol.toUpperCase())) ||
-        item.matchedHoldings.some((holding) =>
-          symbols.has(holding.symbol.toUpperCase()),
+        item.matchedHoldings.some(
+          (holding) =>
+            symbols.has(holding.symbol.toUpperCase()) ||
+            (holding.providerSymbol != null &&
+              symbols.has(holding.providerSymbol.toUpperCase())),
         )
       ) {
         return true;

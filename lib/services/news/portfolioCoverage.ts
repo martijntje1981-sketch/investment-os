@@ -8,10 +8,7 @@ import {
   classifyHoldingExposure,
   isBitcoinHolding,
 } from "@/lib/services/classification";
-import {
-  lookupInstrumentResearchProfile,
-  lookupInstrumentResearchProfileBySymbol,
-} from "@/lib/services/discover/instrumentResearchMetadata";
+import { lookupResearchProfileForHolding } from "@/lib/services/instruments/confirmedListingIdentity";
 import { ATTRIBUTION_DISPLAY_MIN_PP } from "@/lib/services/personalIntelligence/attribution";
 import { newsItemMatchesHolding } from "@/lib/services/holdingIntelligence/attachHoldingNews";
 import { buildHoldingIntelligenceCandidates } from "@/lib/services/holdingIntelligence/buildHoldingIntelligenceCandidates";
@@ -83,9 +80,7 @@ function researchTextForHolding(
     "symbol" | "name" | "instrumentName" | "providerSymbol" | "providerInstrumentType"
   >,
 ): string {
-  const profile =
-    lookupInstrumentResearchProfile(holding.providerSymbol) ??
-    lookupInstrumentResearchProfileBySymbol(holding.symbol);
+  const profile = lookupResearchProfileForHolding(holding);
   return [
     profile?.fundCategory,
     ...(profile?.sectorExposure ?? []),

@@ -131,7 +131,7 @@ describe("investmentIntelligence", () => {
     expect(intelligence.todayMatters.some((bullet) => bullet.canonicalUrl)).toBe(
       true,
     );
-    expect(intelligence.holdingInsights.positive).toContain("NUKL");
+    expect(intelligence.holdingInsights.positive).toContain("NUKL.XETRA");
     expect(intelligence.holdingInsights.negative).toContain("VWCE");
   });
 
