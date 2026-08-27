@@ -1,5 +1,8 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { DEFAULT_MARKET_DATA_CACHE_POLICY } from "@/lib/services/marketData/cachePolicy";
+import {
+  getInstrumentLookupTtlMs,
+  isInstrumentLookupStillFresh,
+} from "@/lib/services/marketData/cachePolicy";
 import type {
   EodhdExchangeSymbolListRow,
   EodhdIdMappingRow,
@@ -101,11 +104,21 @@ export async function readPersistedInstrumentLookupEntry<T>(
 
   const { data, error } = await admin
     .from("instrument_lookup_cache")
-    .select("result_json, expires_at")
+    .select("result_json, expires_at, fetched_at, lookup_type")
     .eq("lookup_key", lookupKey)
     .maybeSingle();
 
   if (error || !data) return null;
+  if (
+    !isInstrumentLookupStillFresh({
+      lookupType: data.lookup_type ?? lookupKey.split("|")[0] ?? "",
+      result: data.result_json,
+      fetchedAt: data.fetched_at,
+      expiresAt: data.expires_at,
+    })
+  ) {
+    return null;
+  }
   return {
     result: data.result_json as T,
     expiresAt: data.expires_at,
@@ -123,7 +136,9 @@ export async function writePersistedInstrumentLookup(input: {
 
   const now = Date.now();
   const expiresAt = new Date(
-    now + (input.ttlMs ?? DEFAULT_MARKET_DATA_CACHE_POLICY.instrumentMappingFreshMs),
+    now +
+      (input.ttlMs ??
+        getInstrumentLookupTtlMs(input.lookupType, input.result)),
   ).toISOString();
 
   await admin.from("instrument_lookup_cache").upsert(

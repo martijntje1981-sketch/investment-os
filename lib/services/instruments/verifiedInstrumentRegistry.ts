@@ -206,6 +206,14 @@ export function lookupVerifiedByIsin(
   return entries.length === 1 ? entries[0]! : null;
 }
 
+export function listVerifiedByIsin(
+  isin: string | null | undefined,
+): VerifiedInstrumentEntry[] {
+  const normalizedIsin = normalizeIsin(isin);
+  if (!normalizedIsin) return [];
+  return [...(byIsin.get(normalizedIsin) ?? [])];
+}
+
 export function lookupVerifiedByTickerExchange(
   ticker: string | null | undefined,
   exchange: string | null | undefined,

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  listVerifiedByIsin,
   lookupVerifiedByIsin,
   lookupVerifiedByProviderSymbol,
   lookupVerifiedByTickerExchange,
@@ -27,6 +28,12 @@ describe("verifiedInstrumentRegistry", () => {
   ] as const)("maps %s + %s to %s", (ticker, exchange, providerSymbol) => {
     const entry = lookupVerifiedByTickerExchange(ticker, exchange);
     expect(entry?.providerSymbol).toBe(providerSymbol);
+  });
+
+  it("lists every verified venue for an ISIN without collapsing them", () => {
+    expect(listVerifiedByIsin("IE00B3XXRP09").map((entry) => entry.providerSymbol)).toEqual(
+      ["VUSA.AS"],
+    );
   });
 
   it("looks up by ISIN with exchange disambiguation", () => {

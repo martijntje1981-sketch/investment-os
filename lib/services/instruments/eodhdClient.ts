@@ -6,6 +6,8 @@
  */
 
 import { persistListingMetadataFromProviderRows } from "@/lib/services/instruments/listingMetadata";
+import { normalizeProviderListingRows } from "@/lib/services/instruments/idMappingNormalizer";
+import { getInstrumentLookupTtlMs } from "@/lib/services/marketData/cachePolicy";
 import {
   isKnownProviderExchange,
   normalizeProviderExchangeCode,
@@ -34,6 +36,10 @@ export type EodhdIdMappingRow = {
   Exchange?: string;
   Name?: string;
   ISIN?: string;
+  /** Live EODHD id-mapping field (lowercase). */
+  isin?: string | null;
+  /** Live EODHD id-mapping composite listing, e.g. "VUSA.XETRA". */
+  symbol?: string;
   Currency?: string;
   Type?: string;
   Country?: string;
@@ -47,6 +53,8 @@ export type EodhdSearchRow = {
   Country?: string;
   Currency?: string;
   ISIN?: string;
+  isin?: string | null;
+  symbol?: string;
 };
 
 export type EodhdExchangeSymbolListRow = {
@@ -153,8 +161,9 @@ export async function fetchIdMapping(
     lookupKey,
   );
   if (cached) {
-    await persistListingMetadataFromProviderRows(cached);
-    return cached;
+    const normalized = normalizeProviderListingRows(cached, filters.isin);
+    await persistListingMetadataFromProviderRows(normalized);
+    return normalized;
   }
 
   const url = new URL("https://eodhd.com/api/id-mapping");
@@ -199,9 +208,11 @@ export async function fetchIdMapping(
     lookupKey,
     lookupType: "id_mapping",
     result: rows,
+    ttlMs: getInstrumentLookupTtlMs("id_mapping", rows),
   });
-  await persistListingMetadataFromProviderRows(rows);
-  return rows;
+  const normalized = normalizeProviderListingRows(rows, filters.isin);
+  await persistListingMetadataFromProviderRows(normalized);
+  return normalized;
 }
 
 /**
@@ -271,6 +282,7 @@ export async function fetchSearch(
     lookupKey,
     lookupType: "search",
     result: rows,
+    ttlMs: getInstrumentLookupTtlMs("search", rows),
   });
   await persistListingMetadataFromProviderRows(rows);
   return rows;

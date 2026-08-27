@@ -18,6 +18,10 @@ export type MarketDataCachePolicy = {
   };
   fxFreshMs: number;
   instrumentMappingFreshMs: number;
+  /** Empty id-mapping / search responses must not stay authoritative for weeks. */
+  instrumentMappingEmptyFreshMs: number;
+  /** Skinny search responses (few hits) are treated as incomplete. */
+  instrumentMappingIncompleteFreshMs: number;
   providerCooldownMs: {
     quotaExceeded: number;
     rateLimitedDefault: number;
@@ -39,6 +43,8 @@ export const DEFAULT_MARKET_DATA_CACHE_POLICY: MarketDataCachePolicy = {
   },
   fxFreshMs: 60 * 60 * 1000,
   instrumentMappingFreshMs: 30 * 24 * 60 * 60 * 1000,
+  instrumentMappingEmptyFreshMs: 15 * 60 * 1000,
+  instrumentMappingIncompleteFreshMs: 6 * 60 * 60 * 1000,
   providerCooldownMs: {
     quotaExceeded: 6 * 60 * 60 * 1000,
     rateLimitedDefault: 15 * 60 * 1000,
@@ -62,6 +68,52 @@ export function isLikelyMarketOpen(now = new Date()): boolean {
     return false;
   }
   return utcHour >= 8 && utcHour <= 22;
+}
+
+export function isInstrumentLookupResultIncomplete(
+  lookupType: string,
+  result: unknown,
+): boolean {
+  if (!Array.isArray(result)) return false;
+  if (result.length === 0) return true;
+  return lookupType === "search" && result.length < 3;
+}
+
+export function getInstrumentLookupTtlMs(
+  lookupType: string,
+  result: unknown,
+  policy: MarketDataCachePolicy = DEFAULT_MARKET_DATA_CACHE_POLICY,
+): number {
+  if (!Array.isArray(result) || result.length === 0) {
+    return policy.instrumentMappingEmptyFreshMs;
+  }
+  if (isInstrumentLookupResultIncomplete(lookupType, result)) {
+    return policy.instrumentMappingIncompleteFreshMs;
+  }
+  return policy.instrumentMappingFreshMs;
+}
+
+export function isInstrumentLookupStillFresh(input: {
+  lookupType: string;
+  result: unknown;
+  fetchedAt: string;
+  expiresAt: string;
+  now?: number;
+  policy?: MarketDataCachePolicy;
+}): boolean {
+  const now = input.now ?? Date.now();
+  if (Date.parse(input.expiresAt) <= now) {
+    return false;
+  }
+  if (!isInstrumentLookupResultIncomplete(input.lookupType, input.result)) {
+    return true;
+  }
+  const ttl = getInstrumentLookupTtlMs(
+    input.lookupType,
+    input.result,
+    input.policy,
+  );
+  return Date.parse(input.fetchedAt) + ttl > now;
 }
 
 export function classifyQuoteAsset(providerSymbol: string): QuoteAssetClass {

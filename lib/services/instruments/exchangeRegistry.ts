@@ -259,6 +259,17 @@ export function listUserSelectableExchanges(): ExchangeRegistryEntry[] {
   return EXCHANGE_REGISTRY.filter((entry) => entry.userSelectable);
 }
 
+/** Distinct EODHD pricing exchanges from the registry (no purchase-only venues). */
+export function listUniqueProviderPricingCodes(): string[] {
+  const codes = new Set<string>();
+  for (const entry of EXCHANGE_REGISTRY) {
+    if (entry.providerPricingCode) {
+      codes.add(entry.providerPricingCode);
+    }
+  }
+  return [...codes];
+}
+
 export function formatRegistryExchangeLabel(
   raw: string | null | undefined,
 ): string {

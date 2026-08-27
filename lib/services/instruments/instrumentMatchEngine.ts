@@ -5,11 +5,15 @@
  * Reusable by screenshot OCR, CSV import, manual entry, and future brokers.
  *
  * Resolution priority (strict order):
- *   1. ISIN  → EODHD ID Mapping
- *   2. Ticker + Exchange → ID Mapping / Search
- *   3. Instrument Name + Exchange → Search
+ *   1. Exact provider symbol (TICKER.EXCHANGE)
+ *   2. Ticker + purchase/pricing exchange against verified mappings
+ *   3. ISIN → enumerate provider listings (registry is enrichment only)
+ *   4. Ticker + Exchange → ID Mapping / Search
+ *   5. Instrument Name + Exchange → Search
  *
- * Never invents missing tickers or provider symbols.
+ * A supplied ISIN is the primary security identity. Conflicting ISINs are
+ * never offered. Multi-venue securities are not collapsed unless the user
+ * selected that venue.
  */
 
 import {
@@ -26,7 +30,6 @@ import {
 } from "./eodhdQuotaGuard";
 import {
   exchangeResolutionMessage,
-  normalizeProviderExchangeCode,
   providerExchangesMatch,
   resolveExchangeForMatching,
 } from "./exchangeNormalizer";
@@ -35,6 +38,7 @@ import {
   parseProviderSymbolInput,
 } from "./providerSymbolInput";
 import {
+  listVerifiedByIsin,
   lookupVerifiedByIsin,
   lookupVerifiedByProviderSymbol,
   lookupVerifiedByTickerExchange,
@@ -43,15 +47,19 @@ import {
   verifiedEntryToResolved,
 } from "./verifiedInstrumentRegistry";
 import { isValidIsin, normalizeIsin } from "./validation";
-import {
-  QUOTE_CURRENCY_REVIEW_WARNING,
-  resolveMatchQuoteCurrency,
-} from "./quoteCurrency";
 import type {
   InstrumentMatchInput,
   InstrumentMatchResult,
   ResolvedInstrument,
 } from "@/lib/types/instrument";
+import {
+  listingRowConflictsIsin,
+} from "./idMappingNormalizer";
+import {
+  discoverListingsForIsin,
+  resolveDiscoveredIsinListings,
+} from "./isinListingDiscovery";
+import { providerRowToResolved } from "./providerRowToResolved";
 
 /** Minimum confidence below which user confirmation is required. */
 const CONFIRMATION_THRESHOLD = 0.85;
@@ -131,34 +139,7 @@ function rowToResolved(
   inputIsin: string | null,
   warnings: string[] = [],
 ): ResolvedInstrument {
-  const code = row.Code?.trim().toUpperCase() ?? "";
-  const exchange =
-    normalizeProviderExchangeCode(row.Exchange) ??
-    null;
-  const providerSymbol =
-    code && exchange ? buildProviderSymbol(code, exchange) : null;
-  const quoteCurrency = resolveMatchQuoteCurrency({
-    providerCurrency: row.Currency,
-    providerSymbol,
-  });
-  const nextWarnings = [...warnings];
-  if (providerSymbol && !quoteCurrency) {
-    nextWarnings.push(QUOTE_CURRENCY_REVIEW_WARNING);
-  }
-
-  return finalize({
-    providerSymbol,
-    instrumentName: row.Name?.trim() ?? null,
-    exchange,
-    isin: normalizeIsin(row.ISIN) ?? inputIsin,
-    quoteCurrency,
-    providerInstrumentType: row.Type?.trim() || null,
-    matchMethod,
-    confidence: providerSymbol && !quoteCurrency
-      ? Math.min(confidence, CONFIRMATION_THRESHOLD - 0.01)
-      : confidence,
-    warnings: nextWarnings,
-  });
+  return providerRowToResolved(row, matchMethod, confidence, inputIsin, warnings);
 }
 
 /** Picks the best row when EODHD returns multiple listings for one ISIN. */
@@ -214,6 +195,7 @@ async function buildTickerListingCandidates(
   ticker: string,
   instrumentName: string | null,
   limit = 6,
+  userIsin: string | null = null,
 ): Promise<ResolvedInstrument[]> {
   const searchRows = await safeFetchSearch(ticker, { limit: 15 });
   if (!searchRows) return [];
@@ -221,7 +203,9 @@ async function buildTickerListingCandidates(
   const exactCodeRows = searchRows.filter(
     (row) => row.Code?.trim().toUpperCase() === ticker,
   );
-  const rows = exactCodeRows.length > 0 ? exactCodeRows : searchRows;
+  const rows = (exactCodeRows.length > 0 ? exactCodeRows : searchRows).filter(
+    (row) => !listingRowConflictsIsin(row, userIsin),
+  );
 
   const scored = rows
     .map((row) => ({
@@ -235,7 +219,7 @@ async function buildTickerListingCandidates(
     .sort((a, b) => b.score - a.score);
 
   return scored.slice(0, limit).map(({ row, score }) =>
-    rowToResolved(row, "ticker_exchange", Math.max(0.55, score * 0.75), normalizeIsin(row.ISIN), [
+    rowToResolved(row, "ticker_exchange", Math.max(0.55, score * 0.75), normalizeIsin(row.ISIN) ?? userIsin, [
       "Possible listing",
     ]),
   );
@@ -267,40 +251,11 @@ function nameSimilarity(a: string, b: string): number {
   return Math.min(0.75, rightWords.length / Math.max(leftWords.size, 1));
 }
 
-async function resolveByIsin(
-  isin: string,
-  preferredExchange: string | null,
-): Promise<ResolvedInstrument> {
-  const rows = await safeFetchIdMapping({ isin });
-  if (rows === null) {
-    return unresolved([MATCHING_UNAVAILABLE_WARNING]);
-  }
-
-  const { best, ambiguous } = disambiguateRows(rows, preferredExchange);
-
-  if (best) {
-    return rowToResolved(best, "isin", 0.97, isin);
-  }
-
-  if (ambiguous.length > 1) {
-    return finalize({
-      ...unresolved([
-        "Multiple listings found for this ISIN — confirm the exchange.",
-      ]),
-      isin,
-      candidates: ambiguous.map((row) =>
-        rowToResolved(row, "isin", 0.6, isin, ["Possible listing"]),
-      ),
-    });
-  }
-
-  return unresolved(["No EODHD listing found for this ISIN."]);
-}
-
 async function resolveByTickerAndExchange(
   ticker: string,
   exchange: string,
   instrumentName: string | null = null,
+  userIsin: string | null = null,
 ): Promise<ResolvedInstrument> {
   const normalizedExchange = resolveExchangeForMatching(exchange);
   if (!normalizedExchange) {
@@ -314,7 +269,11 @@ async function resolveByTickerAndExchange(
     return unresolved([MATCHING_UNAVAILABLE_WARNING]);
   }
 
-  const { best, ambiguous } = disambiguateRows(mapped, normalizedExchange);
+  const mappedForUser = mapped.filter(
+    (row) => !listingRowConflictsIsin(row, userIsin),
+  );
+
+  const { best, ambiguous } = disambiguateRows(mappedForUser, normalizedExchange);
   if (best) {
     return rowToResolved(best, "ticker_exchange", 0.92, normalizeIsin(best.ISIN));
   }
@@ -339,14 +298,16 @@ async function resolveByTickerAndExchange(
     return unresolved([MATCHING_UNAVAILABLE_WARNING]);
   }
 
-  const exchangeMatchedRows = searchRows.filter((row) =>
-    providerExchangesMatch(row.Exchange, normalizedExchange),
+  const exchangeMatchedRows = searchRows.filter(
+    (row) =>
+      providerExchangesMatch(row.Exchange, normalizedExchange) &&
+      !listingRowConflictsIsin(row, userIsin),
   );
 
   if (exchangeMatchedRows.length === 0) {
     return unresolvedWithCandidates(
       [`No listing found for ${ticker} on ${normalizedExchange}.`],
-      await buildTickerListingCandidates(ticker, instrumentName),
+      await buildTickerListingCandidates(ticker, instrumentName, 6, userIsin),
     );
   }
 
@@ -388,13 +349,14 @@ async function resolveByTickerAndExchange(
 
   return unresolvedWithCandidates(
     [`No listing found for ${ticker} on ${normalizedExchange}.`],
-    await buildTickerListingCandidates(ticker, instrumentName),
+      await buildTickerListingCandidates(ticker, instrumentName, 6, userIsin),
   );
 }
 
 async function resolveByTickerOnly(
   ticker: string,
   instrumentName: string | null,
+  userIsin: string | null = null,
 ): Promise<ResolvedInstrument> {
   const searchRows = await safeFetchSearch(ticker, { limit: 15 });
   if (searchRows === null) {
@@ -402,7 +364,9 @@ async function resolveByTickerOnly(
   }
 
   const exactCodeRows = searchRows.filter(
-    (row) => row.Code?.trim().toUpperCase() === ticker,
+    (row) =>
+      row.Code?.trim().toUpperCase() === ticker &&
+      !listingRowConflictsIsin(row, userIsin),
   );
 
   if (exactCodeRows.length === 1) {
@@ -520,7 +484,7 @@ async function resolveByNameAndExchange(
 
   if (searchRows.length === 0) {
     const candidates = ticker
-      ? await buildTickerListingCandidates(ticker, instrumentName)
+      ? await buildTickerListingCandidates(ticker, instrumentName, 6, null)
       : [];
     return unresolvedWithCandidates(
       [`No listing found for "${instrumentName}" on ${normalizedExchange}.`],
@@ -598,20 +562,7 @@ export async function matchInstrument(
     effectiveTicker = "";
   }
 
-  // 1. ISIN against verified mappings.
-  if (effectiveIsin) {
-    const verified = lookupVerifiedByIsin(effectiveIsin, exchange);
-    if (verified) {
-      return appendWarnings(
-        verifiedEntryToResolved(verified, "isin", {
-          purchaseExchange: resolveVerifiedPurchaseExchange(rawExchange, verified),
-        }),
-        [exchangeWarning],
-      );
-    }
-  }
-
-  // 2. Exact provider symbol input.
+  // 1. Exact provider symbol input.
   if (looksLikeProviderSymbolInput(effectiveTicker)) {
     const parsed = parseProviderSymbolInput(effectiveTicker);
     if (parsed.ok) {
@@ -623,38 +574,83 @@ export async function matchInstrument(
     }
   }
 
-  // 3. Ticker + purchase exchange alias (e.g. Tradegate → Xetra pricing).
+  // 2. Ticker + purchase exchange alias (e.g. Tradegate → Xetra pricing).
   if (effectiveTicker && rawExchange) {
     const purchaseMatch = lookupVerifiedByTickerPurchaseExchange(
       effectiveTicker,
       rawExchange,
     );
     if (purchaseMatch) {
+      const purchaseIsin = normalizeIsin(purchaseMatch.entry.isin);
+      if (!effectiveIsin || !purchaseIsin || purchaseIsin === effectiveIsin) {
+        return appendWarnings(
+          verifiedEntryToResolved(purchaseMatch.entry, "ticker_exchange", {
+            purchaseExchange: purchaseMatch.purchaseExchange,
+          }),
+          [exchangeWarning],
+        );
+      }
+    }
+  }
+
+  // 3. Ticker + normalized exchange against verified mappings.
+  if (effectiveTicker && exchange) {
+    const verified = lookupVerifiedByTickerExchange(effectiveTicker, exchange);
+    if (verified) {
+      const verifiedIsin = normalizeIsin(verified.isin);
+      if (!effectiveIsin || !verifiedIsin || verifiedIsin === effectiveIsin) {
+        return appendWarnings(
+          verifiedEntryToResolved(verified, "ticker_exchange"),
+          [exchangeWarning],
+        );
+      }
+    }
+  }
+
+  // 4. ISIN + explicitly selected venue against verified mappings.
+  if (effectiveIsin && exchange) {
+    const verified = lookupVerifiedByIsin(effectiveIsin, exchange);
+    if (verified) {
       return appendWarnings(
-        verifiedEntryToResolved(purchaseMatch.entry, "ticker_exchange", {
-          purchaseExchange: purchaseMatch.purchaseExchange,
+        verifiedEntryToResolved(verified, "isin", {
+          purchaseExchange: resolveVerifiedPurchaseExchange(rawExchange, verified),
         }),
         [exchangeWarning],
       );
     }
   }
 
-  // 4. Ticker + normalized exchange against verified mappings.
-  if (effectiveTicker && exchange) {
-    const verified = lookupVerifiedByTickerExchange(effectiveTicker, exchange);
-    if (verified) {
-      return appendWarnings(
-        verifiedEntryToResolved(verified, "ticker_exchange"),
-        [exchangeWarning],
-      );
+  // 5. ISIN-first provider discovery. Registry listings are merged as enrichment.
+  if (effectiveIsin) {
+    const discovered = await discoverListingsForIsin({
+      isin: effectiveIsin,
+      ticker: effectiveTicker || null,
+      instrumentName: instrumentName || null,
+      preferredExchange: exchange,
+    });
+    const resolved = resolveDiscoveredIsinListings(
+      discovered.listings,
+      exchange,
+    );
+    if (discovered.providerUnavailable && discovered.listings.length === 0) {
+      return appendWarnings(unresolved([MATCHING_UNAVAILABLE_WARNING]), [
+        exchangeWarning,
+      ]);
     }
-  }
-
-  // 5. External provider search when the instrument circuit is available.
-  if (effectiveIsin && !instrumentUnavailable) {
-    const result = await resolveByIsin(effectiveIsin, exchange);
-    if (externalResultUsable(result)) {
-      return appendWarnings(result, [exchangeWarning]);
+    if (externalResultUsable(resolved)) {
+      return appendWarnings(resolved, [exchangeWarning]);
+    }
+    if (discovered.providerUnavailable) {
+      const verifiedOnly = listVerifiedByIsin(effectiveIsin);
+      if (verifiedOnly.length > 0) {
+        return appendWarnings(
+          resolveDiscoveredIsinListings(
+            verifiedOnly.map((entry) => verifiedEntryToResolved(entry, "isin")),
+            exchange,
+          ),
+          [exchangeWarning, MATCHING_UNAVAILABLE_WARNING],
+        );
+      }
     }
   }
 
@@ -663,6 +659,7 @@ export async function matchInstrument(
       effectiveTicker,
       exchange,
       instrumentName || null,
+      effectiveIsin,
     );
     if (externalResultUsable(result)) {
       return appendWarnings(result, [exchangeWarning]);
@@ -673,6 +670,7 @@ export async function matchInstrument(
     const tickerOnly = await resolveByTickerOnly(
       effectiveTicker,
       instrumentName || null,
+      effectiveIsin,
     );
     if (externalResultUsable(tickerOnly)) {
       return appendWarnings(tickerOnly, [exchangeWarning]);
@@ -725,6 +723,8 @@ export async function matchInstrument(
       ? await buildTickerListingCandidates(
           effectiveTicker,
           instrumentName || null,
+          6,
+          effectiveIsin,
         )
       : [];
 
