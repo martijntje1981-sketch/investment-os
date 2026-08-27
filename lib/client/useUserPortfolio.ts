@@ -1022,7 +1022,7 @@ function useUserPortfolioState() {
     });
 
     if (!result.ok) {
-      if (result.staleVersion && result.snapshot) {
+      if ("staleVersion" in result && result.staleVersion && result.snapshot) {
         if (!isLiveBookWork(requestPortfolioId, requestEpoch, result.snapshot.portfolioId)) {
           return false;
         }
