@@ -358,6 +358,7 @@ export function buildRemoteSnapshot(
   migrationCompletedAt: string | null,
   portfolioId: string | null,
   isPrimary = true,
+  syncVersion = 0,
 ): RemotePortfolioSnapshot {
   const holdings = rows.map((row) => mapDbHoldingToStored(row));
 
@@ -376,6 +377,7 @@ export function buildRemoteSnapshot(
     portfolioId,
     isPrimary,
     holdingCount: holdings.length,
+    syncVersion,
   };
 }
 

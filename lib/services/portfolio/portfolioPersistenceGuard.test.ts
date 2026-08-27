@@ -73,7 +73,23 @@ describe("portfolioPersistenceGuard", () => {
     const holdings = [holding({ symbol: "STRC", providerSymbol: "STRC.AS" })];
     const keyA = buildPortfolioSaveIdempotencyKey("user-1", holdings, null, 1);
     const keyB = buildPortfolioSaveIdempotencyKey("user-1", holdings, null, 2);
+    expect(keyA).toContain("user-1");
     expect(keyA).not.toBe(keyB);
+    const keyMain = buildPortfolioSaveIdempotencyKey(
+      "user-1",
+      holdings,
+      null,
+      1,
+      "main-id",
+    );
+    const keyKids = buildPortfolioSaveIdempotencyKey(
+      "user-1",
+      holdings,
+      null,
+      1,
+      "kids-id",
+    );
+    expect(keyMain).not.toBe(keyKids);
   });
 
   it("validates portfolio payloads require ids", () => {

@@ -3,13 +3,17 @@ import type { SavedImportMapping } from "@/lib/services/import/mappingMemory";
 import {
   buildMigrationIdempotencyKey,
   hashPayload,
+  portfolioContentFingerprint,
   portfolioFingerprint,
 } from "@/lib/services/portfolio/idempotency";
 import { describePersistedVerificationMismatch } from "@/lib/services/portfolio/persistedVerification";
 import { portfoliosPersistedMatch } from "@/lib/services/portfolio/persistedVerification";
 import { buildSyncPreview, sanitizeLocalHoldings } from "@/lib/services/portfolio/mappers";
 import { isSuspiciousCashOnlyShrink } from "@/lib/services/portfolio/portfolioPersistenceGuard";
-import type { PortfolioRepository } from "@/lib/services/portfolio/repository";
+import {
+  isStaleVersionRpcError,
+  type PortfolioRepository,
+} from "@/lib/services/portfolio/repository";
 import { verifyPersistedPortfolioSnapshot } from "@/lib/services/portfolio/syncVerification";
 import type {
   PortfolioMigrateRequest,
@@ -23,10 +27,16 @@ const SYNC_VERIFICATION_FAILED_MESSAGE =
 
 export class PortfolioSyncError extends Error {
   code: string;
+  snapshot?: RemotePortfolioSnapshot;
 
-  constructor(code: string, message: string) {
+  constructor(
+    code: string,
+    message: string,
+    snapshot?: RemotePortfolioSnapshot,
+  ) {
     super(message);
     this.code = code;
+    this.snapshot = snapshot;
   }
 }
 
@@ -67,6 +77,14 @@ export async function migrateLocalPortfolio(
   }
 
   const remoteBefore = await repo.fetchSnapshot(userId, request.portfolioId);
+  const eventDiagnostics = {
+    portfolioId: request.portfolioId ?? remoteBefore.portfolioId,
+    baseVersion: request.baseVersion ?? remoteBefore.syncVersion,
+    clientId: request.clientId ?? null,
+    holdingCount: holdings.length,
+    contentFingerprint: portfolioContentFingerprint(holdings, goal).slice(0, 16),
+  };
+
   if (remoteBefore.holdingCount > 0) {
     const localFingerprint = portfolioFingerprint(holdings, userId);
     const remoteFingerprint = portfolioFingerprint(
@@ -76,7 +94,10 @@ export async function migrateLocalPortfolio(
 
     if (localFingerprint === remoteFingerprint) {
       await repo.markMigrationCompleted(userId);
-      await repo.recordSyncEvent(userId, "migrate", idempotencyKey, payloadHash);
+      await repo.recordSyncEvent(userId, "migrate", idempotencyKey, payloadHash, "completed", {
+        ...eventDiagnostics,
+        resultingVersion: remoteBefore.syncVersion,
+      });
       return remoteBefore;
     }
 
@@ -95,6 +116,12 @@ export async function migrateLocalPortfolio(
       importMappings,
       "migrate",
       request.portfolioId,
+      {
+        baseVersion: request.baseVersion ?? remoteBefore.syncVersion,
+        clientId: request.clientId,
+        idempotencyKey,
+        payloadHash,
+      },
     );
   } catch (error) {
     await repo.recordSyncEvent(
@@ -103,6 +130,7 @@ export async function migrateLocalPortfolio(
       idempotencyKey,
       payloadHash,
       "failed",
+      { ...eventDiagnostics, errorCode: SYNC_ERROR_CODES.PROVIDER_FAILURE },
     );
     throw error;
   }
@@ -126,6 +154,11 @@ export async function migrateLocalPortfolio(
       idempotencyKey,
       payloadHash,
       "failed",
+      {
+        ...eventDiagnostics,
+        resultingVersion: snapshot.syncVersion,
+        errorCode: SYNC_ERROR_CODES.SYNC_VERIFICATION_FAILED,
+      },
     );
     throw new PortfolioSyncError(
       SYNC_ERROR_CODES.SYNC_VERIFICATION_FAILED,
@@ -136,7 +169,14 @@ export async function migrateLocalPortfolio(
   }
 
   await repo.markMigrationCompleted(userId);
-  await repo.recordSyncEvent(userId, "migrate", idempotencyKey, payloadHash);
+  await repo.recordSyncEvent(
+    userId,
+    "migrate",
+    idempotencyKey,
+    payloadHash,
+    "completed",
+    { ...eventDiagnostics, resultingVersion: snapshot.syncVersion },
+  );
   return snapshot;
 }
 
@@ -161,6 +201,66 @@ export async function syncPortfolioSnapshot(
   }
 
   const remoteBefore = await repo.fetchSnapshot(userId, request.portfolioId);
+  const eventDiagnostics = {
+    portfolioId: request.portfolioId ?? remoteBefore.portfolioId,
+    baseVersion: request.baseVersion ?? null,
+    clientId: request.clientId ?? null,
+    holdingCount: holdings.length,
+    contentFingerprint: portfolioContentFingerprint(
+      holdings,
+      goal ?? null,
+    ).slice(0, 16),
+  };
+
+  if (
+    typeof request.baseVersion !== "number" ||
+    !Number.isFinite(request.baseVersion)
+  ) {
+    await repo.recordSyncEvent(
+      userId,
+      "sync",
+      request.idempotencyKey,
+      hashPayload({
+        holdings,
+        goal,
+        importMappings,
+        idempotencyKey: request.idempotencyKey,
+      }),
+      "failed",
+      { ...eventDiagnostics, errorCode: SYNC_ERROR_CODES.STALE_VERSION },
+    );
+    throw new PortfolioSyncError(
+      SYNC_ERROR_CODES.STALE_VERSION,
+      "Cloud portfolio has changed. Rehydrate before saving.",
+      remoteBefore,
+    );
+  }
+
+  if (request.baseVersion !== remoteBefore.syncVersion) {
+    await repo.recordSyncEvent(
+      userId,
+      "sync",
+      request.idempotencyKey,
+      hashPayload({
+        holdings,
+        goal,
+        importMappings,
+        idempotencyKey: request.idempotencyKey,
+      }),
+      "failed",
+      {
+        ...eventDiagnostics,
+        resultingVersion: remoteBefore.syncVersion,
+        errorCode: SYNC_ERROR_CODES.STALE_VERSION,
+      },
+    );
+    throw new PortfolioSyncError(
+      SYNC_ERROR_CODES.STALE_VERSION,
+      "Cloud portfolio has changed. Rehydrate before saving.",
+      remoteBefore,
+    );
+  }
+
   if (
     remoteBefore.holdingCount > 0 &&
     isSuspiciousCashOnlyShrink(remoteBefore.holdings, holdings)
@@ -187,14 +287,41 @@ export async function syncPortfolioSnapshot(
       importMappings,
       "sync",
       request.portfolioId,
+      {
+        baseVersion: request.baseVersion,
+        clientId: request.clientId,
+        idempotencyKey: request.idempotencyKey,
+        payloadHash,
+      },
     );
   } catch (error) {
+    if (isStaleVersionRpcError(error)) {
+      const current = await repo.fetchSnapshot(userId, request.portfolioId);
+      await repo.recordSyncEvent(
+        userId,
+        "sync",
+        request.idempotencyKey,
+        payloadHash,
+        "failed",
+        {
+          ...eventDiagnostics,
+          resultingVersion: current.syncVersion,
+          errorCode: SYNC_ERROR_CODES.STALE_VERSION,
+        },
+      );
+      throw new PortfolioSyncError(
+        SYNC_ERROR_CODES.STALE_VERSION,
+        "Cloud portfolio has changed. Rehydrate before saving.",
+        current,
+      );
+    }
     await repo.recordSyncEvent(
       userId,
       "sync",
       request.idempotencyKey,
       payloadHash,
       "failed",
+      { ...eventDiagnostics, errorCode: SYNC_ERROR_CODES.PROVIDER_FAILURE },
     );
     throw error;
   }
@@ -218,6 +345,11 @@ export async function syncPortfolioSnapshot(
       request.idempotencyKey,
       payloadHash,
       "failed",
+      {
+        ...eventDiagnostics,
+        resultingVersion: snapshot.syncVersion,
+        errorCode: SYNC_ERROR_CODES.SYNC_VERIFICATION_FAILED,
+      },
     );
     throw new PortfolioSyncError(
       SYNC_ERROR_CODES.SYNC_VERIFICATION_FAILED,
@@ -227,12 +359,6 @@ export async function syncPortfolioSnapshot(
     );
   }
 
-  await repo.recordSyncEvent(
-    userId,
-    "sync",
-    request.idempotencyKey,
-    payloadHash,
-  );
   return snapshot;
 }
 

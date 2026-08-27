@@ -58,14 +58,31 @@ export type ClientPortfolioSyncState =
   | { status: "sync_error"; message: string; retryable: boolean }
   | { status: "offline"; message: string };
 
-export function readPortfolioSyncMeta(userSub: string): PortfolioSyncMeta {
+export function readPortfolioSyncMeta(
+  userSub: string,
+  portfolioId?: string | null,
+): PortfolioSyncMeta {
   try {
-    const raw = localStorage.getItem(portfolioSyncMetaKey(userSub));
-    if (!raw) {
-      return { version: PORTFOLIO_SYNC_VERSION };
+    const scopedRaw = localStorage.getItem(
+      portfolioSyncMetaKey(userSub, portfolioId),
+    );
+    if (scopedRaw) {
+      const parsed = JSON.parse(scopedRaw) as PortfolioSyncMeta;
+      return { ...parsed, version: PORTFOLIO_SYNC_VERSION };
     }
-    const parsed = JSON.parse(raw) as PortfolioSyncMeta;
-    return { ...parsed, version: PORTFOLIO_SYNC_VERSION };
+    if (portfolioId) {
+      const legacyRaw = localStorage.getItem(portfolioSyncMetaKey(userSub));
+      if (legacyRaw) {
+        const parsed = JSON.parse(legacyRaw) as PortfolioSyncMeta;
+        return {
+          ...parsed,
+          version: PORTFOLIO_SYNC_VERSION,
+          lastHydratedSyncVersion: undefined,
+          cloudHydratedAt: undefined,
+        };
+      }
+    }
+    return { version: PORTFOLIO_SYNC_VERSION };
   } catch {
     return { version: PORTFOLIO_SYNC_VERSION };
   }
@@ -74,9 +91,10 @@ export function readPortfolioSyncMeta(userSub: string): PortfolioSyncMeta {
 export function writePortfolioSyncMeta(
   userSub: string,
   meta: PortfolioSyncMeta,
+  portfolioId?: string | null,
 ): void {
   localStorage.setItem(
-    portfolioSyncMetaKey(userSub),
+    portfolioSyncMetaKey(userSub, portfolioId),
     JSON.stringify({ ...meta, version: PORTFOLIO_SYNC_VERSION }),
   );
 }
@@ -337,14 +355,20 @@ export function applyRemoteSnapshotToLocalCache(
     writeImportMappingsToCache(userSub, snapshot.importMappings);
   }
 
-  writePortfolioSyncMeta(userSub, {
-    ...readPortfolioSyncMeta(userSub),
-    version: PORTFOLIO_SYNC_VERSION,
-    lastSuccessfulRemoteAt: snapshot.remoteUpdatedAt ?? new Date().toISOString(),
-    lastSyncError: null,
-    lastLocalInvestmentCount: remoteSummary.investments,
-    lastLocalTotalCount: remoteSummary.total,
-  });
+  writePortfolioSyncMeta(
+    userSub,
+    {
+      ...readPortfolioSyncMeta(userSub, snapshotPortfolioId),
+      version: PORTFOLIO_SYNC_VERSION,
+      lastSuccessfulRemoteAt: snapshot.remoteUpdatedAt ?? new Date().toISOString(),
+      lastSyncError: null,
+      lastLocalInvestmentCount: remoteSummary.investments,
+      lastLocalTotalCount: remoteSummary.total,
+      lastHydratedSyncVersion: snapshot.syncVersion,
+      cloudHydratedAt: new Date().toISOString(),
+    },
+    snapshotPortfolioId,
+  );
 
   logPortfolioPersistenceEvent("remote snapshot applied", {
     userSub,
@@ -549,25 +573,52 @@ export function resolveConflictWithPushedSnapshot(
   return { ok: true, holdings: merged, remoteSnapshot: snapshot };
 }
 
+export function recordCloudHydrate(
+  userSub: string,
+  snapshot: RemotePortfolioSnapshot,
+): void {
+  const portfolioId = snapshot.portfolioId;
+  writePortfolioSyncMeta(
+    userSub,
+    {
+      ...readPortfolioSyncMeta(userSub, portfolioId),
+      version: PORTFOLIO_SYNC_VERSION,
+      lastHydratedSyncVersion: snapshot.syncVersion,
+      cloudHydratedAt: new Date().toISOString(),
+    },
+    portfolioId,
+  );
+}
+
 export function markConflictResolutionVerified(
   userSub: string,
   holdings: StoredPortfolioHolding[],
   goal: GoalSettings | null,
   remoteSnapshot: RemotePortfolioSnapshot,
 ): void {
-  writePortfolioSyncMeta(userSub, {
-    ...readPortfolioSyncMeta(userSub),
-    version: PORTFOLIO_SYNC_VERSION,
-    lastResolvedContentFingerprint: portfolioContentFingerprint(holdings, goal),
-    lastSuccessfulRemoteAt:
-      remoteSnapshot.remoteUpdatedAt ?? new Date().toISOString(),
-    lastSyncError: null,
-  });
+  const portfolioId = remoteSnapshot.portfolioId;
+  writePortfolioSyncMeta(
+    userSub,
+    {
+      ...readPortfolioSyncMeta(userSub, portfolioId),
+      version: PORTFOLIO_SYNC_VERSION,
+      lastResolvedContentFingerprint: portfolioContentFingerprint(holdings, goal),
+      lastSuccessfulRemoteAt:
+        remoteSnapshot.remoteUpdatedAt ?? new Date().toISOString(),
+      lastSyncError: null,
+      lastHydratedSyncVersion: remoteSnapshot.syncVersion,
+      cloudHydratedAt: new Date().toISOString(),
+    },
+    portfolioId,
+  );
 }
 
 /** Clears obsolete conflict-resolution markers without touching preferences. */
-export function clearObsoletePortfolioConflictMarkers(userSub: string): void {
-  const meta = readPortfolioSyncMeta(userSub);
+export function clearObsoletePortfolioConflictMarkers(
+  userSub: string,
+  portfolioId?: string | null,
+): void {
+  const meta = readPortfolioSyncMeta(userSub, portfolioId);
   if (
     meta.lastResolvedContentFingerprint === undefined &&
     meta.lastSyncError === null
@@ -579,36 +630,53 @@ export function clearObsoletePortfolioConflictMarkers(userSub: string): void {
     ...rest
   } = meta;
   void _;
-  writePortfolioSyncMeta(userSub, {
-    ...rest,
-    version: PORTFOLIO_SYNC_VERSION,
-    lastSyncError: null,
-  });
+  writePortfolioSyncMeta(
+    userSub,
+    {
+      ...rest,
+      version: PORTFOLIO_SYNC_VERSION,
+      lastSyncError: null,
+    },
+    portfolioId,
+  );
 }
 
-export function recordSyncFailure(userSub: string, message: string): void {
-  const meta = readPortfolioSyncMeta(userSub);
-  writePortfolioSyncMeta(userSub, {
-    ...meta,
-    lastSyncError: message,
-  });
+export function recordSyncFailure(
+  userSub: string,
+  message: string,
+  portfolioId?: string | null,
+): void {
+  const meta = readPortfolioSyncMeta(userSub, portfolioId);
+  writePortfolioSyncMeta(
+    userSub,
+    {
+      ...meta,
+      lastSyncError: message,
+    },
+    portfolioId,
+  );
 }
 
 export function recordLocalPortfolioSave(
   userSub: string,
   holdings: StoredPortfolioHolding[],
   revision: number,
+  portfolioId?: string | null,
 ): void {
   const summary = summarizePortfolioHoldings(holdings);
-  writePortfolioSyncMeta(userSub, {
-    ...readPortfolioSyncMeta(userSub),
-    version: PORTFOLIO_SYNC_VERSION,
-    lastLocalRevision: revision,
-    lastLocalSaveAt: new Date().toISOString(),
-    lastLocalInvestmentCount: summary.investments,
-    lastLocalTotalCount: summary.total,
-    lastSyncError: null,
-  });
+  writePortfolioSyncMeta(
+    userSub,
+    {
+      ...readPortfolioSyncMeta(userSub, portfolioId),
+      version: PORTFOLIO_SYNC_VERSION,
+      lastLocalRevision: revision,
+      lastLocalSaveAt: new Date().toISOString(),
+      lastLocalInvestmentCount: summary.investments,
+      lastLocalTotalCount: summary.total,
+      lastSyncError: null,
+    },
+    portfolioId,
+  );
 
   logPortfolioPersistenceEvent("local portfolio saved", {
     userSub,
@@ -623,12 +691,18 @@ export function recordMigrationSuccess(
   userSub: string,
   idempotencyKey: string,
   fingerprint: string,
+  portfolioId?: string | null,
 ): void {
-  writePortfolioSyncMeta(userSub, {
-    version: PORTFOLIO_SYNC_VERSION,
-    lastMigrationIdempotencyKey: idempotencyKey,
-    lastMigrationFingerprint: fingerprint,
-    lastSuccessfulRemoteAt: new Date().toISOString(),
-    lastSyncError: null,
-  });
+  writePortfolioSyncMeta(
+    userSub,
+    {
+      ...readPortfolioSyncMeta(userSub, portfolioId),
+      version: PORTFOLIO_SYNC_VERSION,
+      lastMigrationIdempotencyKey: idempotencyKey,
+      lastMigrationFingerprint: fingerprint,
+      lastSuccessfulRemoteAt: new Date().toISOString(),
+      lastSyncError: null,
+    },
+    portfolioId,
+  );
 }

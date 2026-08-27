@@ -26,7 +26,6 @@ export async function GET() {
 
     const productAccess = await resolveProductAccessFromAuthUser(access.user);
     const repo = createPortfolioRepository(supabase);
-    await repo.getPrimaryPortfolioId(access.user.id);
     const records = await repo.listPortfolios(access.user.id);
     const portfolios = annotatePortfolioAccess(
       records,

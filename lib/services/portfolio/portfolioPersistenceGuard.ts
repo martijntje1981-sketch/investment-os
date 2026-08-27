@@ -44,14 +44,17 @@ export function isSuspiciousCashOnlyShrink(
   return beforeNonCash > 0 && afterNonCash === 0 && after.cash > 0;
 }
 
+/** Device-local save counter only. Never used to accept a cloud write. */
 export function buildPortfolioSaveIdempotencyKey(
   userSub: string,
   holdings: StoredPortfolioHolding[],
   goal: GoalSettings | null,
   revision: number,
+  portfolioId?: string | null,
 ): string {
   const fingerprint = portfolioContentFingerprint(holdings, goal).slice(0, 16);
-  return `save:${userSub}:${revision}:${fingerprint}`;
+  const book = portfolioId?.trim() ? portfolioId.trim() : "primary";
+  return `save:${userSub}:${book}:${revision}:${fingerprint}`;
 }
 
 export function validatePortfolioBeforeSave(

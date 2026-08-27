@@ -248,6 +248,7 @@ export async function activateExamplePortfolioForUser(input: {
       goal,
       importMappings: [],
       idempotencyKey,
+      baseVersion: snapshot.syncVersion,
     },
     goal,
     [],

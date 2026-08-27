@@ -10,8 +10,9 @@ import {
   shouldHandleGoalUpdatedEvent,
 } from "@/lib/client/userGoalStorage";
 import { loadUserPortfolioHoldings } from "@/lib/client/portfolioPricing";
-import { pushPortfolioToRemote } from "@/lib/client/portfolioSyncApi";
-import { applyRemoteSnapshotToLocalCache } from "@/lib/client/portfolioSyncState";
+import { getOrCreateSyncClientId, pushPortfolioToRemote } from "@/lib/client/portfolioSyncApi";
+import { applyRemoteSnapshotToLocalCache, readPortfolioSyncMeta } from "@/lib/client/portfolioSyncState";
+import { shouldApplyAsyncBookResult } from "@/lib/client/portfolioBookGuard";
 import { useAuthenticatedUserSub } from "@/lib/client/useAuthenticatedUserSub";
 import { useActivePortfolioOptional } from "@/lib/client/useActivePortfolio";
 import { readImportMappingsFromCache } from "@/lib/services/import/mappingMemory";
@@ -25,6 +26,9 @@ export function useUserGoal() {
   const [goal, setGoal] = useState<GoalSettings | null>(null);
   const [hasSavedGoal, setHasSavedGoal] = useState(false);
   const [goalReady, setGoalReady] = useState(false);
+  const activePortfolioIdRef = useRef(activePortfolioId);
+  activePortfolioIdRef.current = activePortfolioId;
+  const goalEpochRef = useRef(0);
   const saveRequestRef = useRef<string | null>(null);
 
   const reloadGoal = useCallback(() => {
@@ -42,6 +46,7 @@ export function useUserGoal() {
   }, [activePortfolioId, isPrimaryBook, userSub]);
 
   useEffect(() => {
+    goalEpochRef.current += 1;
     if (!authReady) {
       setGoal(null);
       setHasSavedGoal(false);
@@ -92,19 +97,39 @@ export function useUserGoal() {
       setGoal(nextGoal);
       setHasSavedGoal(true);
 
+      const persistBookId = activePortfolioId;
+      const persistEpoch = goalEpochRef.current;
       const saveKey = saveRequestRef.current ?? crypto.randomUUID();
       saveRequestRef.current = saveKey;
+      const baseVersion = readPortfolioSyncMeta(userSub, persistBookId)
+        .lastHydratedSyncVersion;
+      if (typeof baseVersion !== "number") {
+        return;
+      }
 
       void pushPortfolioToRemote({
         idempotencyKey: `goal:${userSub}:${saveKey}`,
-        holdings: loadUserPortfolioHoldings(userSub, activePortfolioId, {
+        holdings: loadUserPortfolioHoldings(userSub, persistBookId, {
           isPrimary: isPrimaryBook,
         }),
         goal: nextGoal,
         importMappings: readImportMappingsFromCache(userSub),
-        portfolioId: activePortfolioId,
+        portfolioId: persistBookId,
+        baseVersion,
+        clientId: getOrCreateSyncClientId(),
       }).then((result) => {
         if (saveRequestRef.current !== saveKey) return;
+        if (
+          !shouldApplyAsyncBookResult({
+            activePortfolioId: activePortfolioIdRef.current,
+            requestPortfolioId: persistBookId,
+            responsePortfolioId: result.ok ? result.snapshot.portfolioId : null,
+            requestEpoch: persistEpoch,
+            activeEpoch: goalEpochRef.current,
+          }).apply
+        ) {
+          return;
+        }
         saveRequestRef.current = null;
         if (result.ok) {
           applyRemoteSnapshotToLocalCache(userSub, result.snapshot);

@@ -106,9 +106,19 @@ export function legacyRecoveryDismissedKey(userSub: string): string {
   return `investment-os-legacy-recovery-dismissed:${userSub}`;
 }
 
-export function portfolioSyncMetaKey(userSub: string): string {
+export function portfolioSyncMetaKey(
+  userSub: string,
+  portfolioId?: string | null,
+): string {
   assertUserSub(userSub);
+  if (isValidPortfolioId(portfolioId)) {
+    return `investment-os-portfolio-sync-meta:${userSub}:${portfolioId}`;
+  }
   return `investment-os-portfolio-sync-meta:${userSub}`;
+}
+
+export function syncClientIdKey(): string {
+  return "investment-os-sync-client-id";
 }
 
 export function baseCurrencyStorageKey(userSub: string): string {

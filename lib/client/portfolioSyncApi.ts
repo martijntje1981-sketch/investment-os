@@ -4,6 +4,8 @@ import type {
   PortfolioSyncPreview,
   RemotePortfolioSnapshot,
 } from "@/lib/services/portfolio/types";
+import { SYNC_ERROR_CODES } from "@/lib/services/portfolio/types";
+import { syncClientIdKey } from "@/lib/client/portfolioStorageKeys";
 
 export type PortfolioSyncMeta = {
   version: string;
@@ -16,6 +18,8 @@ export type PortfolioSyncMeta = {
   lastLocalSaveAt?: string;
   lastLocalInvestmentCount?: number;
   lastLocalTotalCount?: number;
+  lastHydratedSyncVersion?: number;
+  cloudHydratedAt?: string;
 };
 
 export type FetchRemotePortfolioResult =
@@ -37,13 +41,35 @@ export type MigratePortfolioResult =
 export type PushPortfolioResult =
   | { ok: true; snapshot: RemotePortfolioSnapshot }
   | { ok: false; unauthorized: true }
-  | { ok: false; error: string; code?: string; retryable: boolean };
+  | {
+      ok: false;
+      error: string;
+      code?: string;
+      retryable: boolean;
+      snapshot?: RemotePortfolioSnapshot;
+      staleVersion?: boolean;
+    };
 
 function isNetworkError(error: unknown): boolean {
   return (
     error instanceof TypeError ||
     (error instanceof Error && /failed to fetch/i.test(error.message))
   );
+}
+
+export function getOrCreateSyncClientId(): string {
+  try {
+    const existing = localStorage.getItem(syncClientIdKey());
+    if (existing && existing.trim()) return existing.trim();
+    const created =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `client-${Date.now()}`;
+    localStorage.setItem(syncClientIdKey(), created);
+    return created;
+  } catch {
+    return "anonymous-client";
+  }
 }
 
 export async function fetchRemotePortfolio(
@@ -150,13 +176,18 @@ export async function pushPortfolioToRemote(input: {
   goal?: GoalSettings | null;
   importMappings?: SavedImportMapping[];
   portfolioId?: string | null;
+  baseVersion?: number;
+  clientId?: string | null;
 }): Promise<PushPortfolioResult> {
   try {
     const response = await fetch("/api/portfolio", {
       method: "PUT",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(input),
+      body: JSON.stringify({
+        ...input,
+        clientId: input.clientId ?? getOrCreateSyncClientId(),
+      }),
     });
 
     if (response.status === 401) {
@@ -175,7 +206,12 @@ export async function pushPortfolioToRemote(input: {
         ok: false,
         error: payload.error ?? "Sync failed.",
         code: payload.code,
-        retryable: response.status >= 500 || response.status === 408,
+        retryable:
+          payload.code === SYNC_ERROR_CODES.STALE_VERSION ||
+          response.status >= 500 ||
+          response.status === 408,
+        snapshot: payload.snapshot,
+        staleVersion: payload.code === SYNC_ERROR_CODES.STALE_VERSION,
       };
     }
 

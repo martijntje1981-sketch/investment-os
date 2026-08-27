@@ -63,6 +63,7 @@ function emptySnapshot(): RemotePortfolioSnapshot {
     remoteUpdatedAt: null,
     portfolioId: null,
     holdingCount: 0,
+    syncVersion: 0,
   };
 }
 
@@ -112,6 +113,7 @@ function createMockRepo(overrides: Partial<PortfolioRepository> = {}): Portfolio
     markMigrationCompleted: vi.fn(async () => undefined),
     applySnapshot: vi.fn(async (_userId, holdings) => snapshotWith(holdings)),
     getPrimaryPortfolioId: vi.fn(async () => "portfolio-1"),
+    findPrimaryPortfolioId: vi.fn(async () => "portfolio-1"),
     fetchHoldings: vi.fn(async () => []),
     fetchActiveGoal: vi.fn(async () => null),
     fetchImportMappings: vi.fn(async () => []),
@@ -363,6 +365,10 @@ describe("portfolio migration service", () => {
       "migrate:fail",
       expect.any(String),
       "failed",
+      expect.objectContaining({
+        errorCode: SYNC_ERROR_CODES.PROVIDER_FAILURE,
+        holdingCount: 1,
+      }),
     );
   });
 
@@ -433,6 +439,7 @@ describe("portfolio ongoing sync", () => {
       {
         idempotencyKey: "sync:dedupe",
         holdings: [holding("1", "VWCE"), holding("2", "STRC")],
+        baseVersion: 0,
       },
       null,
       [],
@@ -460,11 +467,58 @@ describe("portfolio ongoing sync", () => {
           holdings: [
             holding("cash", "EUR", { assetType: "cash", quantity: 1000, purchasePrice: 1 }),
           ],
+          baseVersion: 0,
         },
         null,
         [],
       ),
     ).rejects.toMatchObject({ code: "partial_save" });
+  });
+
+  it("rejects a missing baseVersion without writing", async () => {
+    const repo = createMockRepo();
+
+    await expect(
+      syncPortfolioSnapshot(
+        repo,
+        USER_ID,
+        {
+          idempotencyKey: "sync:missing-version",
+          holdings: [holding("1", "VWCE")],
+        },
+        null,
+        [],
+      ),
+    ).rejects.toMatchObject({ code: SYNC_ERROR_CODES.STALE_VERSION });
+
+    expect(repo.applySnapshot).not.toHaveBeenCalled();
+  });
+
+  it("rejects a stale baseVersion even when the device local revision is higher", async () => {
+    const cloud = snapshotWith([holding("1", "AIFS")]);
+    cloud.syncVersion = 2;
+    const repo = createMockRepo({
+      fetchSnapshot: vi.fn(async () => cloud),
+    });
+
+    await expect(
+      syncPortfolioSnapshot(
+        repo,
+        USER_ID,
+        {
+          idempotencyKey: "save:user:primary:124:933f39aaaaaaaa",
+          holdings: [holding("1", "VWCE")],
+          baseVersion: 1,
+        },
+        null,
+        [],
+      ),
+    ).rejects.toMatchObject({
+      code: SYNC_ERROR_CODES.STALE_VERSION,
+      snapshot: cloud,
+    });
+
+    expect(repo.applySnapshot).not.toHaveBeenCalled();
   });
 });
 
@@ -526,9 +580,12 @@ describe("client portfolio sync state", () => {
 
     expect(localStorage.getItem(portfolioStorageKey(USER_ID))).toBeTruthy();
     expect(merged[0]?.currentPrice).toBe(125);
-    expect(localStorage.getItem(portfolioSyncMetaKey(USER_ID))).toContain(
-      "lastSuccessfulRemoteAt",
-    );
+    expect(
+      localStorage.getItem(portfolioSyncMetaKey(USER_ID, remote.portfolioId)),
+    ).toContain("lastSuccessfulRemoteAt");
+    expect(
+      localStorage.getItem(portfolioSyncMetaKey(USER_ID, remote.portfolioId)),
+    ).toContain("lastHydratedSyncVersion");
   });
 
   it("restores synced last market price from remote snapshot on second device", () => {
@@ -906,5 +963,26 @@ describe("migration SQL security", () => {
     expect(sql).toMatch(/previous_close/);
     expect(sql).not.toMatch(/DROP TABLE/i);
     expect(sql).not.toMatch(/NOT NULL/i);
+  });
+
+  it("includes per-portfolio sync_version CAS and atomic commit_portfolio_sync", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { resolve } = await import("node:path");
+    const sql = readFileSync(
+      resolve(
+        process.cwd(),
+        "supabase/migrations/20260827120000_portfolio_sync_version_guard.sql",
+      ),
+      "utf8",
+    );
+
+    expect(sql).toMatch(/sync_version bigint NOT NULL DEFAULT 0/);
+    expect(sql).toMatch(/superseded_at/);
+    expect(sql).toMatch(/commit_portfolio_sync/);
+    expect(sql).toMatch(/SET search_path = ''/);
+    expect(sql).toMatch(/GRANT EXECUTE ON FUNCTION public\.commit_portfolio_sync/);
+    expect(sql).toMatch(/REVOKE ALL ON FUNCTION public\.commit_portfolio_sync/);
+    expect(sql).not.toMatch(/DELETE FROM public\.transactions/i);
+    expect(sql).not.toMatch(/DROP TABLE/i);
   });
 });

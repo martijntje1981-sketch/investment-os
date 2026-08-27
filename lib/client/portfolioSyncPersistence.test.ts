@@ -48,6 +48,7 @@ function snapshotWith(
     remoteUpdatedAt: "2026-07-22T10:00:00.000Z",
     migrationCompletedAt: null,
     portfolioId: "portfolio-test",
+    syncVersion: 0,
   };
 }
 
@@ -191,5 +192,46 @@ describe("portfolio persistence and sync safety", () => {
     };
     expect(meta.lastLocalRevision).toBe(3);
     expect(meta.lastLocalInvestmentCount).toBe(1);
+  });
+
+  it("scopes sync meta per portfolio and treats local revision as cache only", () => {
+    const main = "main-book";
+    const kids = "kids-book";
+    const holdings = [holding({ symbol: "STRC", providerSymbol: "STRC.AS" })];
+
+    recordLocalPortfolioSave(USER, holdings, 124, main);
+    recordLocalPortfolioSave(USER, holdings, 1, kids);
+
+    const mainMeta = JSON.parse(
+      localStorage.getItem(portfolioSyncMetaKey(USER, main)) ?? "{}",
+    ) as { lastLocalRevision?: number; lastHydratedSyncVersion?: number };
+    const kidsMeta = JSON.parse(
+      localStorage.getItem(portfolioSyncMetaKey(USER, kids)) ?? "{}",
+    ) as { lastLocalRevision?: number; lastHydratedSyncVersion?: number };
+
+    expect(mainMeta.lastLocalRevision).toBe(124);
+    expect(kidsMeta.lastLocalRevision).toBe(1);
+    expect(mainMeta.lastHydratedSyncVersion).toBeUndefined();
+    expect(kidsMeta.lastHydratedSyncVersion).toBeUndefined();
+    expect(localStorage.getItem(portfolioSyncMetaKey(USER, main))).not.toBe(
+      localStorage.getItem(portfolioSyncMetaKey(USER, kids)),
+    );
+  });
+
+  it("stores lastHydratedSyncVersion from cloud apply without using local revision", () => {
+    const holdings = [holding({ id: "aifs", symbol: "AIFS", quantity: 4, purchasePrice: 20 })];
+    recordLocalPortfolioSave(USER, holdings, 124, "portfolio-test");
+
+    applyRemoteSnapshotToLocalCache(USER, {
+      ...snapshotWith(holdings),
+      syncVersion: 2,
+    }, { context: "hydrate" });
+
+    const meta = JSON.parse(
+      localStorage.getItem(portfolioSyncMetaKey(USER, "portfolio-test")) ?? "{}",
+    ) as { lastLocalRevision?: number; lastHydratedSyncVersion?: number };
+
+    expect(meta.lastHydratedSyncVersion).toBe(2);
+    expect(meta.lastLocalRevision).toBe(124);
   });
 });

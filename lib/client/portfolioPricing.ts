@@ -139,11 +139,12 @@ export function loadUserPortfolioHoldings(
   ) {
     writePortfolioToStorage(userSub, withQuoteCurrency, portfolioId, options);
     writePortfolioBackupIfComplete(userSub, withQuoteCurrency);
-    const meta = readPortfolioSyncMeta(userSub);
+    const meta = readPortfolioSyncMeta(userSub, portfolioId);
     recordLocalPortfolioSave(
       userSub,
       withQuoteCurrency,
       (meta.lastLocalRevision ?? 0) + 1,
+      portfolioId,
     );
   }
 
@@ -152,7 +153,12 @@ export function loadUserPortfolioHoldings(
   const holdings = applyCachedPrices(userSub, withQuoteCurrency);
 
   if (verifiedListingPricesChanged(withQuoteCurrency, holdings, userSub)) {
-    persistVerifiedListingQuoteCorrections(userSub, holdings);
+    persistVerifiedListingQuoteCorrections(
+      userSub,
+      holdings,
+      portfolioId,
+      options,
+    );
   }
 
   logHoldingDailyData(holdings, "after cache apply");
@@ -1074,15 +1080,18 @@ export function remoteVerifiedListingPricesStale(
 export function persistVerifiedListingQuoteCorrections(
   userSub: string,
   holdings: StoredPortfolioHolding[],
+  portfolioId?: string | null,
+  options?: { isPrimary?: boolean },
 ): void {
   assertUserSub(userSub);
-  writePortfolioToStorage(userSub, holdings);
+  writePortfolioToStorage(userSub, holdings, portfolioId, options);
   writePortfolioBackupIfComplete(userSub, holdings);
-  const meta = readPortfolioSyncMeta(userSub);
+  const meta = readPortfolioSyncMeta(userSub, portfolioId);
   recordLocalPortfolioSave(
     userSub,
     holdings,
     (meta.lastLocalRevision ?? 0) + 1,
+    portfolioId,
   );
 }
 

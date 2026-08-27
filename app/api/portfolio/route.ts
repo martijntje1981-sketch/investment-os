@@ -103,6 +103,8 @@ export async function PUT(request: Request) {
         goal: body.goal,
         importMappings: body.importMappings,
         portfolioId: body.portfolioId,
+        baseVersion: body.baseVersion,
+        clientId: body.clientId,
       },
       body.goal,
       body.importMappings,
@@ -119,7 +121,8 @@ export async function PUT(request: Request) {
 
     if (error instanceof PortfolioSyncError) {
       const status =
-        error.code === SYNC_ERROR_CODES.CONFLICT
+        error.code === SYNC_ERROR_CODES.CONFLICT ||
+        error.code === SYNC_ERROR_CODES.STALE_VERSION
           ? 409
           : error.code === SYNC_ERROR_CODES.VALIDATION
             ? 400
@@ -132,6 +135,7 @@ export async function PUT(request: Request) {
           success: false,
           code: error.code,
           error: error.message,
+          snapshot: error.snapshot,
         },
         { status },
       );

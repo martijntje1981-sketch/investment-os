@@ -8,8 +8,8 @@ import {
   tryRefreshPortfolioPrices,
   type StoredPortfolioHolding,
 } from "@/lib/client/portfolioPricing";
-import { pushPortfolioToRemote } from "@/lib/client/portfolioSyncApi";
-import { applyRemoteSnapshotToLocalCache } from "@/lib/client/portfolioSyncState";
+import { getOrCreateSyncClientId, pushPortfolioToRemote } from "@/lib/client/portfolioSyncApi";
+import { applyRemoteSnapshotToLocalCache, readPortfolioSyncMeta } from "@/lib/client/portfolioSyncState";
 import { readSavedUserGoal } from "@/lib/client/userGoalStorage";
 import { readImportMappingsFromCache } from "@/lib/services/import/mappingMemory";
 
@@ -29,6 +29,16 @@ export async function saveImportedPortfolio(input: {
   const goal = readSavedUserGoal(input.userSub, input.portfolioId);
   const importMappings = readImportMappingsFromCache(input.userSub);
 
+  const baseVersion = readPortfolioSyncMeta(input.userSub, input.portfolioId)
+    .lastHydratedSyncVersion;
+  if (typeof baseVersion !== "number") {
+    return {
+      ok: false,
+      stage: "cloud_save",
+      message: "Cloud portfolio must load before import can be saved.",
+    };
+  }
+
   const pushResult = await pushPortfolioToRemote({
     idempotencyKey:
       input.idempotencyKey ?? `import:${input.userSub}:${crypto.randomUUID()}`,
@@ -36,6 +46,8 @@ export async function saveImportedPortfolio(input: {
     goal,
     importMappings,
     portfolioId: input.portfolioId,
+    baseVersion,
+    clientId: getOrCreateSyncClientId(),
   });
 
   if (!pushResult.ok) {
@@ -50,6 +62,18 @@ export async function saveImportedPortfolio(input: {
   }
 
   try {
+    const snapshotBook = pushResult.snapshot.portfolioId ?? null;
+    if (
+      input.portfolioId &&
+      snapshotBook &&
+      snapshotBook !== input.portfolioId
+    ) {
+      return {
+        ok: false,
+        stage: "local_cache",
+        message: "Cloud save returned a different portfolio than the one being imported.",
+      };
+    }
     applyRemoteSnapshotToLocalCache(input.userSub, pushResult.snapshot, {
       preserveLocalPrices: input.holdings,
     });

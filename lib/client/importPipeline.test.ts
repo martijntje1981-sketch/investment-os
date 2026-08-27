@@ -11,6 +11,7 @@ import {
   tryRefreshPortfolioPrices,
 } from "@/lib/client/portfolioPricing";
 import { portfolioStorageKey } from "@/lib/client/portfolioStorageKeys";
+import { writePortfolioSyncMeta } from "@/lib/client/portfolioSyncState";
 import { resetEodhdQuotaGuardForTests } from "@/lib/services/instruments/eodhdQuotaGuard";
 import { resetEodhdDailyQuotaForTests } from "@/lib/services/marketData/eodhdDailyQuota";
 import { resetProviderCircuitForTests } from "@/lib/services/marketData/providerCircuitBreaker";
@@ -36,6 +37,7 @@ vi.mock("@/lib/services/instruments/eodhdClient", async (importOriginal) => {
 
 vi.mock("@/lib/client/portfolioSyncApi", () => ({
   pushPortfolioToRemote: vi.fn(),
+  getOrCreateSyncClientId: () => "import-test-client",
 }));
 
 import { pushPortfolioToRemote } from "@/lib/client/portfolioSyncApi";
@@ -83,6 +85,7 @@ function remoteSnapshot(holdings: StoredPortfolioHolding[]) {
     remoteUpdatedAt: "2026-07-20T12:00:00.000Z",
     portfolioId: "portfolio-1",
     holdingCount: holdings.length,
+    syncVersion: 0,
   };
 }
 
@@ -246,6 +249,11 @@ describe("import save persistence decoupled from live prices", () => {
   beforeEach(() => {
     localStorage.clear();
     vi.restoreAllMocks();
+    writePortfolioSyncMeta(USER, {
+      version: "phase2-v1",
+      lastHydratedSyncVersion: 0,
+      cloudHydratedAt: "2026-08-27T00:00:00.000Z",
+    });
   });
 
   it("saves holdings when cloud push succeeds but price refresh hits 402", async () => {

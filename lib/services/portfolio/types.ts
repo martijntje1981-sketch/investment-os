@@ -21,6 +21,8 @@ export type RemotePortfolioSnapshot = {
   portfolioId: string | null;
   isPrimary?: boolean;
   holdingCount: number;
+  /** Server compare-and-swap version for this portfolio. Device-local revisions are unrelated. */
+  syncVersion: number;
 };
 
 export type PortfolioSyncPreview = {
@@ -56,6 +58,8 @@ export type PortfolioMigrateRequest = {
   importMappings?: SavedImportMapping[];
   localFingerprint: string;
   portfolioId?: string | null;
+  baseVersion?: number;
+  clientId?: string | null;
 };
 
 export type PortfolioSyncRequest = {
@@ -64,6 +68,20 @@ export type PortfolioSyncRequest = {
   goal?: GoalSettings | null;
   importMappings?: SavedImportMapping[];
   portfolioId?: string | null;
+  /** Version this client hydrated. Required for writes; must match server sync_version. */
+  baseVersion?: number;
+  /** Opaque per-origin client id. Not PII. */
+  clientId?: string | null;
+};
+
+export type PortfolioSyncEventDiagnostics = {
+  portfolioId?: string | null;
+  baseVersion?: number | null;
+  resultingVersion?: number | null;
+  clientId?: string | null;
+  holdingCount?: number | null;
+  contentFingerprint?: string | null;
+  errorCode?: string | null;
 };
 
 export type DbHoldingRow = {
@@ -139,4 +157,5 @@ export const SYNC_ERROR_CODES = {
   PORTFOLIO_LIMIT: "portfolio_limit",
   PORTFOLIO_LOCKED: "portfolio_locked",
   PORTFOLIO_NOT_FOUND: "portfolio_not_found",
+  STALE_VERSION: "stale_version",
 } as const;

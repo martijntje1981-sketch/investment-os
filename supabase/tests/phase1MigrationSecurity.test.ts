@@ -167,4 +167,23 @@ describe("Phase 1 migration security verification", () => {
       /set_config\('investment_os\.allow_aggregate_update', 'off', true\)/i,
     );
   });
+
+  it("ships a non-destructive stale-client overwrite guard", () => {
+    expect(migrationFiles.some((file) =>
+      file.includes("portfolio_sync_version_guard"),
+    )).toBe(true);
+    expect(migrationSql).toMatch(/commit_portfolio_sync/);
+    expect(migrationSql).toMatch(
+      /CREATE OR REPLACE FUNCTION public\.commit_portfolio_sync[\s\S]*SET search_path = ''/,
+    );
+    expect(migrationSql).toMatch(/portfolios\.sync_version|ADD COLUMN IF NOT EXISTS sync_version/);
+    expect(migrationSql).toMatch(/superseded_at/);
+    expect(migrationSql).toMatch(
+      /REVOKE ALL ON FUNCTION public\.commit_portfolio_sync\(jsonb\) FROM PUBLIC/i,
+    );
+    expect(migrationSql).not.toMatch(/DELETE FROM public\.transactions/i);
+    expect(migrationSql).not.toMatch(
+      /UPDATE public\.(holdings|transactions) SET quantity/i,
+    );
+  });
 });

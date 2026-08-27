@@ -88,6 +88,19 @@ function naturalKeyMatches(
 function createMockSupabase(initialHoldings: Array<Record<string, unknown>>) {
   const holdings = [...initialHoldings];
   const mappings: Array<Record<string, unknown>> = [];
+  const transactions: Array<Record<string, unknown>> = [];
+  const tableWrites = {
+    insert: [] as string[],
+    update: [] as string[],
+    delete: [] as string[],
+  };
+  const portfolio = {
+    id: PORTFOLIO_ID,
+    user_id: USER_ID,
+    name: "Main",
+    is_primary: true,
+    sync_version: 0,
+  };
 
   const from = vi.fn((table: string) => {
     const state: Record<string, unknown> = {};
@@ -112,7 +125,15 @@ function createMockSupabase(initialHoldings: Array<Record<string, unknown>>) {
       order: vi.fn(() => builder),
       maybeSingle: vi.fn(async (): Promise<QueryResult> => {
         if (table === "portfolios") {
-          return { data: { id: PORTFOLIO_ID }, error: null };
+          return {
+            data: {
+              id: PORTFOLIO_ID,
+              name: "Main",
+              is_primary: true,
+              sync_version: portfolio.sync_version,
+            },
+            error: null,
+          };
         }
 
         if (table === "holdings") {
@@ -170,11 +191,20 @@ function createMockSupabase(initialHoldings: Array<Record<string, unknown>>) {
       }),
       single: vi.fn(async (): Promise<QueryResult> => {
         if (table === "portfolios") {
-          return { data: { id: PORTFOLIO_ID }, error: null };
+          return {
+            data: {
+              id: PORTFOLIO_ID,
+              name: "Main",
+              is_primary: true,
+              sync_version: portfolio.sync_version,
+            },
+            error: null,
+          };
         }
         return { data: null, error: null };
       }),
       insert: vi.fn(async (payload: Record<string, unknown> | Record<string, unknown>[]) => {
+        tableWrites.insert.push(table);
         const rows = Array.isArray(payload) ? payload : [payload];
 
         if (table === "holdings") {
@@ -210,6 +240,7 @@ function createMockSupabase(initialHoldings: Array<Record<string, unknown>>) {
         return { data: rows[0], error: null };
       }),
       upsert: vi.fn(async (payload: Record<string, unknown>) => {
+        tableWrites.update.push(table);
         if (table === "holding_instrument_mappings") {
           const holdingId = payload.holding_id as string;
           const portfolioId = payload.portfolio_id as string;
@@ -244,6 +275,7 @@ function createMockSupabase(initialHoldings: Array<Record<string, unknown>>) {
         return { data: payload, error: null };
       }),
       update: vi.fn((payload: Record<string, unknown>) => {
+        tableWrites.update.push(table);
         const chain = {
           eq: vi.fn((column: string, value: unknown) => {
             if (table === "holdings") {
@@ -265,6 +297,7 @@ function createMockSupabase(initialHoldings: Array<Record<string, unknown>>) {
         return chain;
       }),
       delete: vi.fn(() => {
+        tableWrites.delete.push(table);
         const chain = {
           eq: vi.fn(() => chain),
           in: vi.fn(async () => ({ data: null, error: null })),
@@ -274,7 +307,16 @@ function createMockSupabase(initialHoldings: Array<Record<string, unknown>>) {
       then(onFulfilled?: (value: QueryResult) => unknown, onRejected?: (reason: unknown) => unknown) {
         if (table === "portfolios") {
           return Promise.resolve({
-            data: [{ id: PORTFOLIO_ID, user_id: USER_ID, is_primary: true }],
+            data: [
+              {
+                id: PORTFOLIO_ID,
+                user_id: USER_ID,
+                is_primary: true,
+                name: "Main",
+                created_at: "2026-01-01T00:00:00.000Z",
+                sync_version: portfolio.sync_version,
+              },
+            ],
             error: null,
           }).then(onFulfilled, onRejected);
         }
@@ -297,10 +339,102 @@ function createMockSupabase(initialHoldings: Array<Record<string, unknown>>) {
     return builder;
   });
 
+  const rpc = vi.fn(async (fn: string, args: { p_plan?: Record<string, unknown> }) => {
+    if (fn !== "commit_portfolio_sync") {
+      return { data: null, error: { message: "unknown rpc" } };
+    }
+    const plan = args.p_plan ?? {};
+    const baseVersion = Number(plan.base_version);
+    if (baseVersion !== portfolio.sync_version) {
+      return { data: null, error: { code: "PT409", message: "stale_version" } };
+    }
+
+    const plannedHoldings = (plan.holdings as Array<Record<string, unknown>>) ?? [];
+    for (const row of plannedHoldings) {
+      const existing = holdings.find((item) => item.id === row.id);
+      if (existing) {
+        Object.assign(existing, {
+          name: row.name ?? existing.name,
+          symbol: row.symbol ?? existing.symbol,
+          sort_order: row.sort_order ?? existing.sort_order,
+          deleted_at: null,
+          metadata: row.metadata ?? existing.metadata,
+        });
+      } else {
+        holdings.push({
+          id: row.id,
+          portfolio_id: PORTFOLIO_ID,
+          user_id: USER_ID,
+          asset_type: row.asset_type,
+          symbol: row.symbol,
+          name: row.name,
+          quantity: 0,
+          average_cost: row.asset_type === "cash" ? 1 : 0,
+          currency: row.currency ?? "EUR",
+          sort_order: row.sort_order ?? 0,
+          deleted_at: null,
+          metadata: row.metadata ?? {},
+        });
+      }
+    }
+
+    const ledgers = (plan.ledgers as Array<Record<string, unknown>>) ?? [];
+    for (const ledger of ledgers) {
+      if (ledger.supersede_existing) {
+        for (const txn of transactions) {
+          if (
+            txn.holding_id === ledger.holding_id &&
+            !txn.superseded_at &&
+            (txn.source === "client_sync" || txn.source === "client_migration")
+          ) {
+            txn.superseded_at = new Date().toISOString();
+          }
+        }
+      }
+      if (Number(ledger.quantity) > 0) {
+        transactions.push({ ...ledger, superseded_at: null });
+        const holding = holdings.find((item) => item.id === ledger.holding_id);
+        if (holding) {
+          holding.quantity = ledger.quantity;
+          holding.average_cost =
+            ledger.type === "deposit" ? 1 : ledger.unit_price;
+        }
+      }
+    }
+
+    const softDeleteIds = (plan.soft_delete_ids as string[]) ?? [];
+    const deletedAt = new Date().toISOString();
+    for (const id of softDeleteIds) {
+      const row = holdings.find((item) => item.id === id);
+      if (row) row.deleted_at = deletedAt;
+    }
+
+    const mappingRows = (plan.mappings as Array<Record<string, unknown>>) ?? [];
+    for (const mapping of mappingRows) {
+      const existingIndex = mappings.findIndex(
+        (row) => row.holding_id === mapping.holding_id,
+      );
+      if (existingIndex >= 0) mappings[existingIndex] = mapping;
+      else mappings.push(mapping);
+    }
+
+    portfolio.sync_version += 1;
+    return {
+      data: {
+        portfolio_id: PORTFOLIO_ID,
+        resulting_version: portfolio.sync_version,
+      },
+      error: null,
+    };
+  });
+
   return {
-    supabase: { from } as unknown as SupabaseClient,
+    supabase: { from, rpc } as unknown as SupabaseClient,
     holdings,
     mappings,
+    transactions,
+    portfolio,
+    tableWrites,
   };
 }
 
@@ -313,7 +447,7 @@ describe("createPortfolioRepository natural-key sync", () => {
     const naturalId = resolveHoldingIdForSync(USER_ID, holding());
     expect(naturalId).not.toBe(LEGACY_HOLDING_ID);
 
-    const { supabase, holdings, mappings } = createMockSupabase([
+    const { supabase, holdings, mappings, portfolio } = createMockSupabase([
       {
         id: LEGACY_HOLDING_ID,
         portfolio_id: PORTFOLIO_ID,
@@ -331,7 +465,7 @@ describe("createPortfolioRepository natural-key sync", () => {
 
     const repo = createPortfolioRepository(supabase);
 
-    await repo.applySnapshot(USER_ID, [holding()], null, [], "sync");
+    await repo.applySnapshot(USER_ID, [holding()], null, [], "sync", undefined, { baseVersion: portfolio.sync_version });
 
     expect(holdings.filter((row) => !row.deleted_at)).toHaveLength(1);
     expect(holdings.some((row) => row.id === naturalId)).toBe(false);
@@ -340,7 +474,7 @@ describe("createPortfolioRepository natural-key sync", () => {
   });
 
   it("findHoldingByUniqueKey returns the active row when a tombstone shares the natural key (no PGRST116)", async () => {
-    const { supabase, holdings, mappings } = createMockSupabase([
+    const { supabase, holdings, mappings, portfolio } = createMockSupabase([
       {
         id: LEGACY_HOLDING_ID,
         portfolio_id: PORTFOLIO_ID,
@@ -372,7 +506,7 @@ describe("createPortfolioRepository natural-key sync", () => {
     const repo = createPortfolioRepository(supabase);
 
     await expect(
-      repo.applySnapshot(USER_ID, [holding()], null, [], "sync"),
+      repo.applySnapshot(USER_ID, [holding()], null, [], "sync", undefined, { baseVersion: portfolio.sync_version }),
     ).resolves.toBeDefined();
 
     expect(holdings.filter((row) => !row.deleted_at)).toHaveLength(1);
@@ -385,7 +519,7 @@ describe("createPortfolioRepository natural-key sync", () => {
   it("revives the deterministic row after a failed sync soft-delete without PGRST116", async () => {
     const naturalId = resolveHoldingIdForSync(USER_ID, holding());
 
-    const { supabase, holdings, mappings } = createMockSupabase([
+    const { supabase, holdings, mappings, portfolio } = createMockSupabase([
       {
         id: naturalId,
         portfolio_id: PORTFOLIO_ID,
@@ -404,7 +538,7 @@ describe("createPortfolioRepository natural-key sync", () => {
     const repo = createPortfolioRepository(supabase);
 
     await expect(
-      repo.applySnapshot(USER_ID, [holding()], null, [], "sync"),
+      repo.applySnapshot(USER_ID, [holding()], null, [], "sync", undefined, { baseVersion: portfolio.sync_version }),
     ).resolves.toBeDefined();
 
     expect(holdings.filter((row) => !row.deleted_at)).toHaveLength(1);
@@ -414,7 +548,7 @@ describe("createPortfolioRepository natural-key sync", () => {
   });
 
   it("remains idempotent when the same import is applied repeatedly", async () => {
-    const { supabase, holdings, mappings } = createMockSupabase([]);
+    const { supabase, holdings, mappings, portfolio } = createMockSupabase([]);
     const repo = createPortfolioRepository(supabase);
     const payload = [
       holding(),
@@ -426,8 +560,8 @@ describe("createPortfolioRepository natural-key sync", () => {
       }),
     ];
 
-    await repo.applySnapshot(USER_ID, payload, null, [], "sync");
-    await repo.applySnapshot(USER_ID, payload, null, [], "sync");
+    await repo.applySnapshot(USER_ID, payload, null, [], "sync", undefined, { baseVersion: portfolio.sync_version });
+    await repo.applySnapshot(USER_ID, payload, null, [], "sync", undefined, { baseVersion: portfolio.sync_version });
 
     expect(holdings.filter((row) => !row.deleted_at)).toHaveLength(2);
     expect(mappings).toHaveLength(2);
@@ -435,7 +569,7 @@ describe("createPortfolioRepository natural-key sync", () => {
 
   it("retry sync after partial failure does not create duplicate active holdings", async () => {
     const naturalId = resolveHoldingIdForSync(USER_ID, holding());
-    const { supabase, holdings } = createMockSupabase([
+    const { supabase, holdings, portfolio } = createMockSupabase([
       {
         id: naturalId,
         portfolio_id: PORTFOLIO_ID,
@@ -453,20 +587,20 @@ describe("createPortfolioRepository natural-key sync", () => {
     const repo = createPortfolioRepository(supabase);
     const payload = [holding()];
 
-    await repo.applySnapshot(USER_ID, payload, null, [], "sync");
-    await repo.applySnapshot(USER_ID, payload, null, [], "sync");
+    await repo.applySnapshot(USER_ID, payload, null, [], "sync", undefined, { baseVersion: portfolio.sync_version });
+    await repo.applySnapshot(USER_ID, payload, null, [], "sync", undefined, { baseVersion: portfolio.sync_version });
 
     expect(holdings.filter((row) => !row.deleted_at)).toHaveLength(1);
     expect(holdings.filter((row) => row.symbol === "VWCE" && !row.deleted_at)).toHaveLength(1);
   });
 
   it("importing the same five-instrument screenshot twice keeps one active row per instrument", async () => {
-    const { supabase, holdings } = createMockSupabase([]);
+    const { supabase, holdings, portfolio } = createMockSupabase([]);
     const repo = createPortfolioRepository(supabase);
     const payload = importScreenshotHoldings();
 
-    await repo.applySnapshot(USER_ID, payload, null, [], "sync");
-    await repo.applySnapshot(USER_ID, payload, null, [], "sync");
+    await repo.applySnapshot(USER_ID, payload, null, [], "sync", undefined, { baseVersion: portfolio.sync_version });
+    await repo.applySnapshot(USER_ID, payload, null, [], "sync", undefined, { baseVersion: portfolio.sync_version });
 
     const active = holdings.filter((row) => !row.deleted_at);
     expect(active).toHaveLength(5);
@@ -485,7 +619,7 @@ describe("createPortfolioRepository natural-key sync", () => {
     const naturalId = resolveHoldingIdForSync(USER_ID, holding());
     expect(naturalId).not.toBe(legacyId);
 
-    const { supabase, holdings, mappings } = createMockSupabase([
+    const { supabase, holdings, mappings, portfolio } = createMockSupabase([
       {
         id: legacyId,
         portfolio_id: PORTFOLIO_ID,
@@ -511,7 +645,7 @@ describe("createPortfolioRepository natural-key sync", () => {
     const repo = createPortfolioRepository(supabase);
 
     await expect(
-      repo.applySnapshot(USER_ID, [holding()], null, [], "sync"),
+      repo.applySnapshot(USER_ID, [holding()], null, [], "sync", undefined, { baseVersion: portfolio.sync_version }),
     ).resolves.toBeDefined();
 
     const active = holdings.filter((row) => !row.deleted_at);
@@ -525,13 +659,13 @@ describe("createPortfolioRepository natural-key sync", () => {
     expect(mappings[0]?.isin).toBe("IE00BK5BQT80");
 
     await expect(
-      repo.applySnapshot(USER_ID, [holding()], null, [], "sync"),
+      repo.applySnapshot(USER_ID, [holding()], null, [], "sync", undefined, { baseVersion: portfolio.sync_version }),
     ).resolves.toBeDefined();
     expect(holdings.filter((row) => !row.deleted_at)).toHaveLength(1);
   });
 
   it("B/D. a stale ISIN mapping does not fail or duplicate a successful holding write", async () => {
-    const { supabase, holdings, mappings } = createMockSupabase([]);
+    const { supabase, holdings, mappings, portfolio } = createMockSupabase([]);
     mappings.push({
       holding_id: "99999999-9999-4999-8999-999999999999",
       user_id: USER_ID,
@@ -544,7 +678,7 @@ describe("createPortfolioRepository natural-key sync", () => {
     const first = holding({ symbol: "VWCE", quantity: 10 });
 
     await expect(
-      repo.applySnapshot(USER_ID, [first], null, [], "sync", PORTFOLIO_ID),
+      repo.applySnapshot(USER_ID, [first], null, [], "sync", PORTFOLIO_ID, { baseVersion: portfolio.sync_version }),
     ).resolves.toBeDefined();
 
     const activeAfterWrite = holdings.filter((row) => !row.deleted_at);
@@ -553,8 +687,34 @@ describe("createPortfolioRepository natural-key sync", () => {
     expect(activeAfterWrite[0]?.portfolio_id).toBe(PORTFOLIO_ID);
 
     await expect(
-      repo.applySnapshot(USER_ID, [first], null, [], "sync", PORTFOLIO_ID),
+      repo.applySnapshot(USER_ID, [first], null, [], "sync", PORTFOLIO_ID, { baseVersion: portfolio.sync_version }),
     ).resolves.toBeDefined();
     expect(holdings.filter((row) => !row.deleted_at)).toHaveLength(1);
+  });
+
+  it("findPrimaryPortfolioId and fetchSnapshot do not insert or update portfolios", async () => {
+    const { supabase, tableWrites } = createMockSupabase([]);
+    const repo = createPortfolioRepository(supabase);
+
+    await expect(repo.findPrimaryPortfolioId(USER_ID)).resolves.toBe(PORTFOLIO_ID);
+    await expect(repo.fetchSnapshot(USER_ID)).resolves.toMatchObject({
+      portfolioId: PORTFOLIO_ID,
+      syncVersion: 0,
+    });
+
+    expect(tableWrites.insert.filter((table) => table === "portfolios")).toEqual([]);
+    expect(tableWrites.update.filter((table) => table === "portfolios")).toEqual([]);
+    expect(tableWrites.delete.filter((table) => table === "portfolios")).toEqual([]);
+  });
+
+  it("applySnapshot never hard-deletes ledger rows", async () => {
+    const { supabase, tableWrites, portfolio } = createMockSupabase([]);
+    const repo = createPortfolioRepository(supabase);
+
+    await repo.applySnapshot(USER_ID, [holding()], null, [], "sync", PORTFOLIO_ID, {
+      baseVersion: portfolio.sync_version,
+    });
+
+    expect(tableWrites.delete).not.toContain("transactions");
   });
 });

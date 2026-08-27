@@ -372,6 +372,7 @@ function createMockRepo(
     markMigrationCompleted: vi.fn(async () => undefined),
     applySnapshot: vi.fn(async (_userId, holdings) => snapshotWithHoldings(holdings)),
     getPrimaryPortfolioId: vi.fn(async () => PORTFOLIO_ID),
+    findPrimaryPortfolioId: vi.fn(async () => PORTFOLIO_ID),
     fetchHoldings: vi.fn(async () => []),
     fetchActiveGoal: vi.fn(async () => null),
     fetchImportMappings: vi.fn(async () => []),
@@ -520,6 +521,7 @@ describe("crypto sync and merge", () => {
       {
         idempotencyKey: "sync:crypto-once",
         holdings: local,
+        baseVersion: 0,
       },
       null,
       [],
@@ -566,7 +568,7 @@ describe("crypto sync and merge", () => {
       syncPortfolioSnapshot(
         repo,
         USER_ID,
-        { idempotencyKey: "sync:crypto-fail", holdings: local },
+        { idempotencyKey: "sync:crypto-fail", holdings: local, baseVersion: 0 },
         null,
         [],
       ),
