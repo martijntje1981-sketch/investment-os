@@ -67,8 +67,8 @@ import {
   getEodhdDailyUsage,
 } from "@/lib/services/marketData/eodhdDailyQuota";
 import {
-  estimateFxProviderCalls,
-  requiredFxCurrenciesForSymbols,
+  estimateFxProviderCallsForTargets,
+  requiredFxCurrenciesForTargets,
 } from "@/lib/services/marketSnapshot/snapshotSymbolFilter";
 import {
   buildBaseCurrencyFxSnapshot,
@@ -473,18 +473,8 @@ export async function getNormalizedQuote(
     return cached.quote;
   }
 
-  if (snapshotOnly && !forceRefresh) {
-    if (cached) {
-      recordPriceCacheHit();
-      return cached.quote;
-    }
-    recordPriceCacheMiss();
-    return buildUnavailableQuote(
-      target,
-      provider.id,
-      "No cached market snapshot is available yet.",
-    );
-  }
+  // Snapshot-only page loads stay cache-backed. A complete miss (or expired
+  // stale window) performs one live fetch and persists it for later reads.
 
   recordPriceCacheMiss();
 
@@ -652,9 +642,7 @@ export async function loadPricesForTargets(
 
   const forceRefresh = effectiveForceRefresh(options?.forceRefresh ?? false);
   const snapshotOnly = options?.snapshotOnly ?? false;
-  const requiredFxCurrencies = requiredFxCurrenciesForSymbols(
-    uniqueTargets.map((target) => target.providerSymbol),
-  );
+  const requiredFxCurrencies = requiredFxCurrenciesForTargets(uniqueTargets);
   const fxEntry = await getFxRates({
     forceRefresh,
     snapshotOnly,
@@ -741,9 +729,7 @@ export async function loadPricesForHoldings(
   }
 
   const estimate = await estimatePriceRefreshForTargets(targets);
-  const fxCallsRequired = estimateFxProviderCalls(
-    targets.map((target) => target.providerSymbol),
-  );
+  const fxCallsRequired = estimateFxProviderCallsForTargets(targets);
   const totalCallsRequired =
     estimate.providerCallsRequired + fxCallsRequired;
 

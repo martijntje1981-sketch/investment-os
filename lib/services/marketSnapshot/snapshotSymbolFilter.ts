@@ -5,7 +5,7 @@
 import { isCryptoProviderSymbol } from "@/lib/services/marketData/cachePolicy";
 import { resolveQuoteCurrencyForProviderSymbol } from "@/lib/services/instruments/quoteCurrency";
 import type { MarketSnapshotSlot } from "@/lib/services/marketSnapshot/amsterdamSchedule";
-import type { PriceCurrency } from "@/lib/services/prices/types";
+import type { PriceCurrency, ResolvedPriceTarget } from "@/lib/services/prices/types";
 
 export type ProviderSymbolRegion = "us" | "eu" | "crypto" | "fx" | "other";
 
@@ -87,15 +87,38 @@ export function requiredFxCurrenciesForSymbols(
   return [...required];
 }
 
+export function requiredFxCurrenciesForTargets(
+  targets: Array<Pick<ResolvedPriceTarget, "providerSymbol" | "currency">>,
+): PriceCurrency[] {
+  const required = new Set<PriceCurrency>(
+    requiredFxCurrenciesForSymbols(targets.map((target) => target.providerSymbol)),
+  );
+  for (const target of targets) {
+    if (target.currency) {
+      required.add(target.currency);
+    }
+  }
+  return [...required];
+}
+
+function countNonEurFxCalls(currencies: PriceCurrency[]): number {
+  let calls = 0;
+  if (currencies.includes("USD")) calls += 1;
+  if (currencies.includes("GBP")) calls += 1;
+  if (currencies.includes("CHF")) calls += 1;
+  return calls;
+}
+
 export function estimateFxProviderCalls(
   symbols: string[],
 ): number {
-  const required = requiredFxCurrenciesForSymbols(symbols);
-  let calls = 0;
-  if (required.includes("USD")) calls += 1;
-  if (required.includes("GBP")) calls += 1;
-  if (required.includes("CHF")) calls += 1;
-  return calls;
+  return countNonEurFxCalls(requiredFxCurrenciesForSymbols(symbols));
+}
+
+export function estimateFxProviderCallsForTargets(
+  targets: Array<Pick<ResolvedPriceTarget, "providerSymbol" | "currency">>,
+): number {
+  return countNonEurFxCalls(requiredFxCurrenciesForTargets(targets));
 }
 
 export const REQUIRED_FOREX_SYMBOLS = ["EURUSD.FOREX"] as const;

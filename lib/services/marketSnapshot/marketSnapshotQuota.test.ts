@@ -12,12 +12,13 @@ vi.mock("@/lib/services/prices/priceService", async (importOriginal) => {
   };
 });
 
-import * as marketSnapshotService from "@/lib/services/marketSnapshot/marketSnapshotService";
+import * as snapshotListings from "@/lib/services/marketSnapshot/snapshotListingTargets";
 import {
   resetMarketSnapshotServiceForTests,
   runScheduledMarketSnapshot,
 } from "@/lib/services/marketSnapshot/marketSnapshotService";
 import { resetEodhdDailyQuotaForTests } from "@/lib/services/marketData/eodhdDailyQuota";
+import type { SnapshotListingIdentity } from "@/lib/services/marketSnapshot/snapshotListingTargets";
 
 const US_OPEN = new Date("2026-07-23T13:35:00.000Z");
 
@@ -41,20 +42,38 @@ function mockPriceLoadResult(requested: number, received: number) {
   };
 }
 
+function listing(
+  providerSymbol: string,
+  exchange: string,
+  quoteCurrency: SnapshotListingIdentity["quoteCurrency"],
+): SnapshotListingIdentity {
+  return {
+    providerSymbol,
+    exchange,
+    quoteCurrency,
+    isin: null,
+    name: providerSymbol,
+    matchMethod: "ticker_exchange",
+    matchConfidence: 1,
+    confirmedAt: "2026-07-01T00:00:00.000Z",
+  };
+}
+
 describe("market snapshot quota safety", () => {
   beforeEach(() => {
+    vi.restoreAllMocks();
     resetMarketSnapshotServiceForTests();
     resetEodhdDailyQuotaForTests();
     loadPricesForTargetsMock.mockReset();
     loadPricesForTargetsMock.mockResolvedValue(mockPriceLoadResult(1, 1));
-    vi.restoreAllMocks();
   });
 
   it("completes US run with zero provider calls for EU-only portfolios", async () => {
-    vi.spyOn(
-      marketSnapshotService,
-      "collectSnapshotProviderSymbols",
-    ).mockResolvedValue(["VWCE.XETRA", "STRC.AS", "NUKL.XETRA"]);
+    vi.spyOn(snapshotListings, "collectSnapshotListings").mockResolvedValue([
+      listing("VWCE.XETRA", "XETRA", "EUR"),
+      listing("STRC.AS", "AS", "USD"),
+      listing("NUKL.XETRA", "XETRA", "EUR"),
+    ]);
 
     const result = await runScheduledMarketSnapshot({
       slot: "us_open",
@@ -68,6 +87,10 @@ describe("market snapshot quota safety", () => {
   });
 
   it("skips duplicate cron invocations without additional provider calls", async () => {
+    vi.spyOn(snapshotListings, "collectSnapshotListings").mockResolvedValue([
+      listing("VWCE.XETRA", "XETRA", "EUR"),
+    ]);
+
     const first = await runScheduledMarketSnapshot({
       slot: "us_open",
       now: US_OPEN,

@@ -1,5 +1,6 @@
 import { matchInstrument } from "@/lib/services/instruments";
-import { resolveListingQuoteCurrency, QUOTE_CURRENCY_REVIEW_WARNING } from "@/lib/services/instruments/quoteCurrency";
+import { resolveQuoteCurrencyForConfirmedListing } from "@/lib/services/instruments/confirmedListingIdentity";
+import { QUOTE_CURRENCY_REVIEW_WARNING } from "@/lib/services/instruments/quoteCurrency";
 import { getDefaultPortfolioPriceSeed } from "@/lib/services/portfolio/priceSeed";
 import {
   dedupeCryptoTargets,
@@ -17,7 +18,7 @@ function resolveTargetQuoteCurrency(
   providerSymbol: string,
   exchange?: string | null,
 ): PriceCurrency | null {
-  return resolveListingQuoteCurrency({
+  return resolveQuoteCurrencyForConfirmedListing({
     persistedQuoteCurrency: input.quoteCurrency ?? null,
     providerSymbol,
     exchange,

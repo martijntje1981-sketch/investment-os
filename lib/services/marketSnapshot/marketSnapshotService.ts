@@ -9,9 +9,9 @@ import {
   type MarketSnapshotSlot,
 } from "@/lib/services/marketSnapshot/amsterdamSchedule";
 import {
-  estimateFxProviderCalls,
-  filterProviderSymbolsForSnapshotSlot,
+  estimateFxProviderCallsForTargets,
 } from "@/lib/services/marketSnapshot/snapshotSymbolFilter";
+import * as snapshotListings from "@/lib/services/marketSnapshot/snapshotListingTargets";
 import {
   assertCanSpendEodhdCalls,
 } from "@/lib/services/marketData/eodhdDailyQuota";
@@ -19,9 +19,7 @@ import {
   loadPricesForTargets,
   resetPriceServiceStateForTests,
 } from "@/lib/services/prices/priceService";
-import { resolveDefaultWatchlist } from "@/lib/services/prices/resolvePriceTargets";
-import { resolveQuoteCurrencyForProviderSymbol } from "@/lib/services/instruments/quoteCurrency";
-import type { PriceHoldingInput, ResolvedPriceTarget } from "@/lib/services/prices/types";
+import type { PriceHoldingInput } from "@/lib/services/prices/types";
 import { getPriceServiceMetricsSnapshot } from "@/lib/services/prices/observability";
 
 export type MarketSnapshotMetadata = {
@@ -69,76 +67,9 @@ export function resetMarketSnapshotRunsForTests(): void {
   memorySnapshotRuns = new Map();
 }
 
-function dedupeProviderSymbols(symbols: string[]): string[] {
-  return [
-    ...new Set(
-      symbols
-        .map((symbol) => symbol.trim().toUpperCase())
-        .filter(Boolean),
-    ),
-  ];
-}
-
 export async function collectSnapshotProviderSymbols(): Promise<string[]> {
-  const admin = createAdminClient();
-  const symbols = new Set<string>();
-
-  if (admin) {
-    const { data, error } = await admin
-      .from("holdings")
-      .select(
-        "asset_type, deleted_at, holding_instrument_mappings(provider_symbol)",
-      )
-      .is("deleted_at", null)
-      .eq("asset_type", "investment");
-
-    if (!error && Array.isArray(data)) {
-      for (const row of data) {
-        const mappings = row.holding_instrument_mappings as
-          | { provider_symbol?: string | null }
-          | Array<{ provider_symbol?: string | null }>
-          | null;
-        const mappingList = Array.isArray(mappings)
-          ? mappings
-          : mappings
-            ? [mappings]
-            : [];
-
-        for (const mapping of mappingList) {
-          const providerSymbol = String(mapping.provider_symbol ?? "").trim();
-          if (providerSymbol) {
-            symbols.add(providerSymbol.toUpperCase());
-          }
-        }
-      }
-    }
-  }
-
-  const watchlist = await resolveDefaultWatchlist();
-  for (const target of watchlist) {
-    if (target.providerSymbol) {
-      symbols.add(target.providerSymbol.toUpperCase());
-    }
-  }
-
-  return dedupeProviderSymbols([...symbols]);
-}
-
-function targetsFromProviderSymbols(symbols: string[]): ResolvedPriceTarget[] {
-  return symbols.flatMap((providerSymbol) => {
-    const currency = resolveQuoteCurrencyForProviderSymbol(providerSymbol);
-    if (!currency) {
-      return [];
-    }
-
-    return [{
-      symbol: providerSymbol.split(".")[0] ?? providerSymbol,
-      providerSymbol,
-      isin: null,
-      name: providerSymbol,
-      currency,
-    }];
-  });
+  const listings = await snapshotListings.collectSnapshotListings();
+  return listings.map((listing) => listing.providerSymbol);
 }
 
 export function holdingsFromProviderSymbols(
@@ -363,10 +294,14 @@ export async function runScheduledMarketSnapshot(input?: {
     };
   }
 
-  const allSymbols = await collectSnapshotProviderSymbols();
-  const symbols = filterProviderSymbolsForSnapshotSlot(allSymbols, slot);
+  const allListings = await snapshotListings.collectSnapshotListings();
+  const listings = snapshotListings.filterSnapshotListingsForSlot(
+    allListings,
+    slot,
+  );
+  const targets = snapshotListings.snapshotListingsToPriceTargets(listings);
 
-  if (symbols.length === 0) {
+  if (targets.length === 0) {
     await finalizeSnapshotRun({
       slot,
       amsterdamDate: clock.date,
@@ -387,7 +322,7 @@ export async function runScheduledMarketSnapshot(input?: {
   }
 
   const estimatedCalls =
-    symbols.length + estimateFxProviderCalls(symbols);
+    targets.length + estimateFxProviderCallsForTargets(targets);
 
   try {
     await assertCanSpendEodhdCalls(estimatedCalls);
@@ -398,7 +333,7 @@ export async function runScheduledMarketSnapshot(input?: {
       slot,
       amsterdamDate: clock.date,
       status: "failed",
-      symbolsRequested: symbols.length,
+      symbolsRequested: targets.length,
       symbolsReceived: 0,
       providerCalls: 0,
       lastError: message,
@@ -408,7 +343,7 @@ export async function runScheduledMarketSnapshot(input?: {
       skipped: false,
       slot,
       amsterdamDate: clock.date,
-      symbolsRequested: symbols.length,
+      symbolsRequested: targets.length,
       symbolsReceived: 0,
       providerCalls: 0,
       error: message,
@@ -418,10 +353,7 @@ export async function runScheduledMarketSnapshot(input?: {
   const metricsBefore = getPriceServiceMetricsSnapshot();
 
   try {
-    const payload = await loadPricesForTargets(
-      targetsFromProviderSymbols(symbols),
-      { forceRefresh: true },
-    );
+    const payload = await loadPricesForTargets(targets, { forceRefresh: true });
 
     const providerCalls =
       (payload.metrics?.providerCalls ?? getPriceServiceMetricsSnapshot().providerCalls) -
@@ -431,7 +363,7 @@ export async function runScheduledMarketSnapshot(input?: {
       slot,
       amsterdamDate: clock.date,
       status: "completed",
-      symbolsRequested: symbols.length,
+      symbolsRequested: targets.length,
       symbolsReceived: payload.received,
       providerCalls,
     });
@@ -441,7 +373,7 @@ export async function runScheduledMarketSnapshot(input?: {
       skipped: false,
       slot,
       amsterdamDate: clock.date,
-      symbolsRequested: symbols.length,
+      symbolsRequested: targets.length,
       symbolsReceived: payload.received,
       providerCalls,
     };
@@ -453,7 +385,7 @@ export async function runScheduledMarketSnapshot(input?: {
       slot,
       amsterdamDate: clock.date,
       status: "failed",
-      symbolsRequested: symbols.length,
+      symbolsRequested: targets.length,
       symbolsReceived: 0,
       providerCalls:
         getPriceServiceMetricsSnapshot().providerCalls - metricsBefore.providerCalls,
@@ -465,7 +397,7 @@ export async function runScheduledMarketSnapshot(input?: {
       skipped: false,
       slot,
       amsterdamDate: clock.date,
-      symbolsRequested: symbols.length,
+      symbolsRequested: targets.length,
       symbolsReceived: 0,
       error: message,
     };

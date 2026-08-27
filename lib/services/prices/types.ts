@@ -27,6 +27,8 @@ export type PriceHoldingInput = {
   assetType?: "investment" | "cash" | "crypto";
   /** Crypto pair quote currency (USDC, USDT, etc.). Authoritative for crypto pricing. */
   pairCurrency?: string | null;
+  matchMethod?: string | null;
+  matchConfidence?: number | null;
 };
 
 export type ResolvedPriceTarget = {

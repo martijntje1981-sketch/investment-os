@@ -326,18 +326,23 @@ describe("PriceService", () => {
     expect(quote.changePercent).toBe(10);
   });
 
-  it("does not call the provider in snapshotOnly mode without cache", async () => {
+  it("self-heals a snapshotOnly cache miss with one live fetch and then stays cache-backed", async () => {
     const provider = createMockProvider(async (symbol) =>
       mockRawQuote(symbol, 110, 100),
     );
     configureMarketDataProvidersForTests([provider]);
 
     const quote = await getNormalizedQuote(VWCE, { snapshotOnly: true });
-    expect(provider.calls).toEqual([]);
-    expect(quote.dataStatus).toBe("unavailable");
+    expect(provider.calls).toEqual(["VWCE.XETRA"]);
+    expect(quote.currentPrice).toBe(110);
+    expect(quote.dataStatus).toBe("live");
+
+    const cached = await getNormalizedQuote(VWCE, { snapshotOnly: true });
+    expect(provider.calls).toEqual(["VWCE.XETRA"]);
+    expect(cached.currentPrice).toBe(110);
   });
 
-  it("serves cached quotes in snapshotOnly mode", async () => {
+  it("does not live-fetch on a snapshotOnly cache hit", async () => {
     const provider = createMockProvider(async (symbol) =>
       mockRawQuote(symbol, 110, 100),
     );
@@ -349,6 +354,49 @@ describe("PriceService", () => {
     const snapshotQuote = await getNormalizedQuote(VWCE, { snapshotOnly: true });
     expect(provider.calls).toEqual(["VWCE.XETRA"]);
     expect(snapshotQuote.currentPrice).toBe(110);
+  });
+
+  it("self-heals an expired snapshot cache with one live fetch", async () => {
+    const provider = createMockProvider(async (symbol) =>
+      mockRawQuote(symbol, 125.648, 124.856),
+    );
+    configureMarketDataProvidersForTests([provider]);
+
+    const vusa: ResolvedPriceTarget = {
+      symbol: "VUSA",
+      providerSymbol: "VUSA.AS",
+      isin: "IE00B3XXRP09",
+      name: "Vanguard S&P 500 UCITS ETF",
+      currency: "EUR",
+    };
+
+    await getNormalizedQuote(vusa);
+    expect(provider.calls).toEqual(["VUSA.AS"]);
+
+    vi.advanceTimersByTime(8 * 24 * 60 * 60 * 1000);
+
+    const healed = await getNormalizedQuote(vusa, { snapshotOnly: true });
+    expect(provider.calls).toEqual(["VUSA.AS", "VUSA.AS"]);
+    expect(healed.currentPrice).toBe(125.648);
+    expect(healed.previousClose).toBe(124.856);
+
+    await getNormalizedQuote(vusa, { snapshotOnly: true });
+    expect(provider.calls).toEqual(["VUSA.AS", "VUSA.AS"]);
+  });
+
+  it("serves stale-within-window snapshotOnly quotes without a live fetch", async () => {
+    const provider = createMockProvider(async (symbol) =>
+      mockRawQuote(symbol, 110, 100),
+    );
+    configureMarketDataProvidersForTests([provider]);
+
+    await getNormalizedQuote(VWCE);
+    vi.advanceTimersByTime(13 * 60 * 60 * 1000);
+
+    const stale = await getNormalizedQuote(VWCE, { snapshotOnly: true });
+    expect(stale.isStale).toBe(true);
+    expect(stale.currentPrice).toBe(110);
+    expect(provider.calls).toEqual(["VWCE.XETRA"]);
   });
 });
 
