@@ -49,6 +49,18 @@ const PROFILES: InstrumentResearchProfile[] = [
     verified: true,
   },
   {
+    providerSymbol: "VUSA.AS",
+    symbol: "VUSA",
+    assetClass: "equity_etf",
+    fundCategory: "S&P 500 diversified equity ETF",
+    sectorExposure: ["Broad market"],
+    regionExposure: ["United States"],
+    marketCapExposure: "broad",
+    incomeProfile: "growth",
+    cyclicalProfile: "mixed",
+    verified: true,
+  },
+  {
     providerSymbol: "IB1T.XETRA",
     symbol: "IB1T",
     assetClass: "digital_assets",

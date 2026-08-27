@@ -6,6 +6,7 @@ import {
   buildPortfolioExposureAllocation,
   classifyHoldingExposure,
 } from "@/lib/services/classification";
+import { lookupInstrumentResearchProfile } from "@/lib/services/discover/instrumentResearchMetadata";
 import { buildEvolutionNowState } from "@/lib/services/portfolioEvolution";
 import { buildPortfolioEvolutionTimeline } from "@/lib/services/portfolioEvolution/buildPortfolioEvolutionTimeline";
 import { buildPortfolioStance } from "@/lib/services/portfolioStance";
@@ -78,8 +79,16 @@ function mainHistorySnapshot(): IntelligenceStateSnapshot {
 
 describe("multi-portfolio exposure and history isolation", () => {
   it("A. kids VUSA-only current allocation is diversified equity, not unclassified", () => {
+    const amsterdamProfile = lookupInstrumentResearchProfile("VUSA.AS");
+    expect(amsterdamProfile?.providerSymbol).toBe("VUSA.AS");
+    expect(amsterdamProfile?.assetClass).toBe("equity_etf");
+    expect(amsterdamProfile?.providerSymbol).not.toBe("VUSA.LSE");
+
     expect(classifyHoldingExposure(vusa()).normalizedGroupId).toBe(
       "diversified_equity",
+    );
+    expect(classifyHoldingExposure(vusa()).classificationSource).toBe(
+      "research_profile",
     );
     expect(classifyHoldingExposure(vusa({ providerSymbol: null })).normalizedGroupId).toBe(
       "diversified_equity",

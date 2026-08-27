@@ -16,6 +16,9 @@ describe("verifiedInstrumentRegistry", () => {
     ["STRC", "Euronext Amsterdam", "STRC.AS"],
     ["STRC", "Amsterdam", "STRC.AS"],
     ["STRC", "AS", "STRC.AS"],
+    ["VUSA", "Euronext Amsterdam", "VUSA.AS"],
+    ["VUSA", "Amsterdam", "VUSA.AS"],
+    ["VUSA", "AS", "VUSA.AS"],
     ["AIFS", "Xetra", "AIFS.XETRA"],
     ["AIFS", "XETRA", "AIFS.XETRA"],
     ["NUKL", "xetra", "NUKL.XETRA"],
@@ -29,6 +32,9 @@ describe("verifiedInstrumentRegistry", () => {
   it("looks up by ISIN with exchange disambiguation", () => {
     expect(lookupVerifiedByIsin("NL0015001K93", "Amsterdam")?.providerSymbol).toBe(
       "STRC.AS",
+    );
+    expect(lookupVerifiedByIsin("IE00B3XXRP09", "AS")?.providerSymbol).toBe(
+      "VUSA.AS",
     );
     expect(lookupVerifiedByIsin("IE00BK5BQT80", "XETRA")?.providerSymbol).toBe(
       "VWCE.XETRA",
@@ -46,8 +52,13 @@ describe("verifiedInstrumentRegistry", () => {
     expect(entry?.quoteCurrencyNote).toMatch(/USD/i);
   });
 
-  it("does not require VUSA.AS in the verified registry", () => {
-    expect(lookupVerifiedByProviderSymbol("VUSA.AS")).toBeNull();
+  it("maps VUSA.AS as EUR-denominated Euronext Amsterdam", () => {
+    const entry = lookupVerifiedByProviderSymbol("VUSA.AS");
+    expect(entry?.ticker).toBe("VUSA");
+    expect(entry?.exchange).toBe("AS");
+    expect(entry?.isin).toBe("IE00B3XXRP09");
+    expect(entry?.quoteCurrency).toBe("EUR");
+    expect(entry?.providerSymbol).toBe("VUSA.AS");
   });
 
   it("returns null for unknown instruments", () => {

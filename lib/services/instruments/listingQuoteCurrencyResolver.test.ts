@@ -132,7 +132,7 @@ describe("listing quote currency resolver", () => {
     expect(saved.currency).toBe("EUR");
   });
 
-  it("resolves manual exact VUSA.AS to EUR from cached listing metadata", async () => {
+  it("resolves manual exact VUSA.AS to EUR from the verified registry", async () => {
     metadataStore.set("VUSA.AS", { quoteCurrency: "EUR", exchange: "AS" });
 
     const resolution = await resolveListingQuoteCurrencyAsync({
@@ -142,13 +142,13 @@ describe("listing quote currency resolver", () => {
     });
 
     expect(resolution.currency).toBe("EUR");
-    expect(resolution.source).toBe("listing_metadata");
+    expect(resolution.source).toBe("verified_registry");
     expect(fetchIdMappingCalls).toBe(0);
     expect(fetchSearchCalls).toBe(0);
   });
 
-  it("resolves VUSA.AS refresh from metadata without a verified registry entry", async () => {
-    expect(lookupVerifiedByProviderSymbol("VUSA.AS")).toBeNull();
+  it("resolves VUSA.AS refresh from the verified registry without a provider fetch", async () => {
+    expect(lookupVerifiedByProviderSymbol("VUSA.AS")?.quoteCurrency).toBe("EUR");
 
     metadataStore.set("VUSA.AS", { quoteCurrency: "EUR", exchange: "AS" });
 
@@ -222,30 +222,30 @@ describe("listing quote currency resolver", () => {
   });
 
   it("resolves from cached id-mapping rows without provider calls and writes metadata", async () => {
-    idMappingStore.set("IE00B3XXRP09", [
+    idMappingStore.set("IE00B4L5Y983", [
       {
-        Code: "VUSA",
+        Code: "IWDA",
         Exchange: "AS",
         Currency: "EUR",
-        ISIN: "IE00B3XXRP09",
+        ISIN: "IE00B4L5Y983",
       },
     ]);
 
     const first = await enrichHoldingsWithListingQuoteCurrency(
       [
         {
-          symbol: "VUSA",
-          providerSymbol: "VUSA.AS",
-          isin: "IE00B3XXRP09",
+          symbol: "IWDA",
+          providerSymbol: "IWDA.AS",
+          isin: "IE00B4L5Y983",
           exchange: "AS",
-          name: "VUSA",
+          name: "IWDA",
         },
         {
-          symbol: "VUSA",
-          providerSymbol: "VUSA.AS",
-          isin: "IE00B3XXRP09",
+          symbol: "IWDA",
+          providerSymbol: "IWDA.AS",
+          isin: "IE00B4L5Y983",
           exchange: "AS",
-          name: "VUSA duplicate",
+          name: "IWDA duplicate",
         },
       ],
       { allowProviderLookup: true },
@@ -254,7 +254,7 @@ describe("listing quote currency resolver", () => {
     expect(first.holdings.every((holding) => holding.quoteCurrency === "EUR")).toBe(true);
     expect(fetchIdMappingCalls).toBe(0);
     expect(fetchSearchCalls).toBe(0);
-    expect(metadataStore.get("VUSA.AS")?.quoteCurrency).toBe("EUR");
+    expect(metadataStore.get("IWDA.AS")?.quoteCurrency).toBe("EUR");
 
     fetchIdMappingCalls = 0;
     const second = await enrichHoldingsWithListingQuoteCurrency(first.holdings, {
@@ -266,23 +266,23 @@ describe("listing quote currency resolver", () => {
   });
 
   it("uses one provider id-mapping call per unique unresolved ISIN when cache is empty", async () => {
-    idMappingStore.set("IE00B3XXRP09", [
+    idMappingStore.set("IE00B4L5Y983", [
       {
-        Code: "VUSA",
+        Code: "IWDA",
         Exchange: "AS",
         Currency: "EUR",
-        ISIN: "IE00B3XXRP09",
+        ISIN: "IE00B4L5Y983",
       },
     ]);
 
     const { holdings } = await enrichHoldingsWithListingQuoteCurrency(
       [
         {
-          symbol: "VUSA",
-          providerSymbol: "VUSA.AS",
-          isin: "IE00B3XXRP09",
+          symbol: "IWDA",
+          providerSymbol: "IWDA.AS",
+          isin: "IE00B4L5Y983",
           exchange: "AS",
-          name: "VUSA",
+          name: "IWDA",
         },
       ],
       { allowProviderLookup: true },
@@ -301,10 +301,10 @@ describe("listing quote currency resolver", () => {
       fetchIdMappingCalls += 1;
       return [
         {
-          Code: "VUSA",
+          Code: "IWDA",
           Exchange: "AS",
           Currency: "EUR",
-          ISIN: "IE00B3XXRP09",
+          ISIN: "IE00B4L5Y983",
         },
       ] as never;
     });
@@ -312,11 +312,11 @@ describe("listing quote currency resolver", () => {
     const resolved = await enrichHoldingsWithListingQuoteCurrency(
       [
         {
-          symbol: "VUSA",
-          providerSymbol: "VUSA.AS",
-          isin: "IE00B3XXRP09",
+          symbol: "IWDA",
+          providerSymbol: "IWDA.AS",
+          isin: "IE00B4L5Y983",
           exchange: "AS",
-          name: "VUSA",
+          name: "IWDA",
         },
       ],
       { allowProviderLookup: true },
@@ -325,7 +325,7 @@ describe("listing quote currency resolver", () => {
     expect(resolved.holdings[0]?.quoteCurrency).toBe("EUR");
     expect(fetchIdMappingCalls).toBe(1);
     expect(fetchSearchCalls).toBe(0);
-    expect(metadataStore.get("VUSA.AS")?.quoteCurrency).toBe("EUR");
+    expect(metadataStore.get("IWDA.AS")?.quoteCurrency).toBe("EUR");
   });
 
   it("persists live quote currency on holdings after a successful response", () => {

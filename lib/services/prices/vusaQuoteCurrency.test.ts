@@ -4,6 +4,7 @@ import {
   backfillListingQuoteCurrency,
   resolveListingQuoteCurrency,
 } from "@/lib/services/instruments/quoteCurrency";
+import { resolveExchangeFallbackQuoteCurrency } from "@/lib/services/instruments/exchangeQuoteCurrencyFallback";
 import { lookupVerifiedByProviderSymbol } from "@/lib/services/instruments/verifiedInstrumentRegistry";
 import { applyPricesToHoldings } from "@/lib/client/portfolioPricing";
 import { createEodhdMarketDataProvider } from "@/lib/services/prices/providers/eodhdMarketDataProvider";
@@ -44,8 +45,31 @@ function manualVusaHolding() {
 }
 
 describe("VUSA.AS Euronext Amsterdam quote currency", () => {
-  it("does not rely on the verified registry for VUSA.AS", () => {
-    expect(lookupVerifiedByProviderSymbol("VUSA.AS")).toBeNull();
+  it("resolves VUSA.AS as EUR from the verified registry, not an AS exchange fallback", () => {
+    const entry = lookupVerifiedByProviderSymbol("VUSA.AS");
+    expect(entry?.quoteCurrency).toBe("EUR");
+    expect(entry?.exchange).toBe("AS");
+    expect(entry?.isin).toBe("IE00B3XXRP09");
+    expect(resolveExchangeFallbackQuoteCurrency("AS")).toBeNull();
+  });
+
+  it("resolves quote targets to EUR when persisted quoteCurrency is null", () => {
+    const { targets, errors, skipped } = resolveQuotePriceTargets([
+      {
+        symbol: "VUSA",
+        providerSymbol: "VUSA.AS",
+        isin: "IE00B3XXRP09",
+        exchange: "AS",
+        quoteCurrency: null,
+        name: "Vanguard S&P 500 UCITS ETF",
+      },
+    ]);
+
+    expect(errors).toEqual([]);
+    expect(skipped).toBe(0);
+    expect(targets).toHaveLength(1);
+    expect(targets[0]?.providerSymbol).toBe("VUSA.AS");
+    expect(targets[0]?.currency).toBe("EUR");
   });
 
   it("resolves quote targets when persisted quoteCurrency is present", () => {
