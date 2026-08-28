@@ -8,15 +8,28 @@ import {
   resolveNewsMediaFallbackCategory,
   type NewsMediaFallbackCategory,
 } from "@/components/news/newsMediaFallback";
-import type { NewsHubHoldingRow } from "@/lib/services/holdingIntelligence";
-import { compareHoldingIntelligenceCandidates } from "@/lib/services/holdingIntelligence";
+import type {
+  HoldingIntelligenceCandidate,
+  NewsHubHoldingRow,
+} from "@/lib/services/holdingIntelligence";
+import {
+  buildHoldingIntelligenceCandidates,
+  compareHoldingIntelligenceCandidates,
+} from "@/lib/services/holdingIntelligence";
 import { newsItemsAreSameDevelopment } from "@/lib/services/holdingIntelligence/storyIdentity";
 import {
   buildPortfolioCoverageCandidates,
+  coverageThemeFromCandidate,
   isMeaningfulCoverage,
 } from "@/lib/services/news/portfolioCoverage";
 import type { InvestmentIntelligence } from "@/lib/services/news/investmentIntelligence";
 import { buildNewsBriefingLayout } from "@/lib/services/news/newsBriefingLayout";
+import {
+  clampMarketsTodayText,
+  type MarketsTodayRegion,
+  type MarketsTodaySentiment,
+} from "@/lib/services/news/newsMarketsToday";
+import { NEWS_MARKETS_TODAY_HREF } from "@/lib/navigation/discoverDestinations";
 import { selectStoredNewsThumbnail } from "@/lib/services/news/newsThumbnail";
 import { isNavigableNewsUrl } from "@/lib/services/news/sanitizeNewsUrl";
 import type {
@@ -27,15 +40,27 @@ import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
 import {
   NEWS_GLANCE_BIGGER_PICTURE_LIMIT,
+  NEWS_GLANCE_MARKET_REGION_IDS,
   NEWS_GLANCE_NO_MATERIAL,
   type NewsGlanceBiggerPictureItem,
   type NewsGlanceHoldingRow,
+  type NewsGlanceMarketRegionId,
+  type NewsGlanceMarketTile,
   type NewsGlanceMatchKind,
   type NewsGlanceMoveDirection,
   type NewsGlanceSynthesis,
   type NewsGlanceView,
   type NewsGlanceVisualFamily,
 } from "@/lib/services/newsGlance/types";
+
+const MEANINGFUL_MOVE_PERCENT = 1;
+const MATERIAL_SLEEVE_WEIGHT = 10;
+const MARKET_TILE_LABELS: Record<NewsGlanceMarketRegionId, string> = {
+  us: "US",
+  europe: "Europe",
+  asia: "Asia",
+  crypto: "Crypto",
+};
 
 export function buildNewsGlance(input: {
   payload: NewsApiResponse;
@@ -58,14 +83,21 @@ export function buildNewsGlance(input: {
       ...briefing.macroGroups.flatMap((group) => group.items),
     ],
   });
+  const coverageCandidates = buildHoldingIntelligenceCandidates({
+    holdings: input.holdings,
+    newsItems: [...input.payload.portfolioNews, ...input.payload.macroNews],
+  });
 
   return {
     holdingRows,
+    aroundTheMarkets: buildAroundTheMarkets(briefing.marketsToday),
     biggerPicture,
     synthesis: buildNewsSynthesis({
       holdingRows,
+      biggerPicture,
       intelligence: input.intelligence,
       holdings: input.holdings,
+      coverageCandidates,
     }),
     fetchedAt: input.payload.fetchedAt || null,
   };
@@ -91,6 +123,10 @@ function toGlanceHoldingRow(row: NewsHubHoldingRow): NewsGlanceHoldingRow {
     weightPercent:
       row.candidate.weightPercent != null && Number.isFinite(row.candidate.weightPercent)
         ? row.candidate.weightPercent
+        : null,
+    changePercent:
+      row.candidate.changePercent != null && Number.isFinite(row.candidate.changePercent)
+        ? row.candidate.changePercent
         : null,
     moveLabel: row.moveLabel,
     moveDirection: moveDirectionFromPercent(row.candidate.changePercent),
@@ -128,8 +164,8 @@ function classificationLabelFromKind(
   kind: NewsGlanceMatchKind,
 ): NewsGlanceHoldingRow["classificationLabel"] {
   if (kind === "direct") return "Direct";
-  if (kind === "sector") return "Sector / theme context";
-  if (kind === "macro") return "Macro context";
+  if (kind === "sector") return "Context";
+  if (kind === "macro") return "Macro";
   return null;
 }
 
@@ -300,10 +336,62 @@ function relevanceCueForCoverage(
   return `Relevant to your ${label.toLowerCase()} exposure`;
 }
 
+function marketStatusLabel(
+  sentiment: MarketsTodaySentiment,
+  available: boolean,
+): string {
+  if (!available) return "Unavailable";
+  if (sentiment === "Positive") return "Higher";
+  if (sentiment === "Negative") return "Lower";
+  return "Mixed";
+}
+
+function marketVisualFamily(
+  id: NewsGlanceMarketRegionId,
+): NewsGlanceVisualFamily {
+  if (id === "crypto") return "crypto";
+  return "macro";
+}
+
+function buildAroundTheMarkets(
+  regions: MarketsTodayRegion[],
+): NewsGlanceMarketTile[] {
+  const byId = new Map(regions.map((region) => [region.id, region]));
+  return NEWS_GLANCE_MARKET_REGION_IDS.map((id) => {
+    const region = byId.get(id);
+    const available = Boolean(region && region.stories.length > 0);
+    const sentiment = region?.sentiment ?? "unavailable";
+    const signal = available
+      ? clampMarketsTodayText(region?.highestImpactStory?.title ?? "", 42) || null
+      : null;
+
+    return {
+      id,
+      label: MARKET_TILE_LABELS[id],
+      href: NEWS_MARKETS_TODAY_HREF,
+      sentiment: available ? sentiment : "unavailable",
+      statusLabel: marketStatusLabel(sentiment, available),
+      signal,
+      available,
+      visualFamily: marketVisualFamily(id),
+    };
+  });
+}
+
+function hasMeaningfulMove(row: NewsGlanceHoldingRow): boolean {
+  return (
+    row.changePercent != null &&
+    Number.isFinite(row.changePercent) &&
+    Math.abs(row.changePercent) >= MEANINGFUL_MOVE_PERCENT
+  );
+}
+
 function buildNewsSynthesis(input: {
   holdingRows: NewsGlanceHoldingRow[];
+  biggerPicture: NewsGlanceBiggerPictureItem[];
   intelligence: InvestmentIntelligence;
   holdings: StoredPortfolioHolding[];
+  coverageCandidates: HoldingIntelligenceCandidate[];
 }): NewsGlanceSynthesis {
   if (input.intelligence.quietMarket) return null;
   if (input.holdings.length === 0) return null;
@@ -311,47 +399,59 @@ function buildNewsSynthesis(input: {
   const withNews = input.holdingRows.filter(
     (row) => row.matchKind !== "none" && row.sourceItem,
   );
-  if (withNews.length === 0) return null;
-
-  const lead = withNews[0]!;
-  const leadWeight = weightFromRow(lead);
-  const otherWeights = withNews.slice(1).map(weightFromRow);
-  const maxOther = otherWeights.reduce((max, value) => Math.max(max, value), 0);
-  const distinctThemes = uniqueLabels(withNews.map((row) => row.exposureLabel));
-
+  const coveredCandidates = input.coverageCandidates.filter(
+    (candidate) =>
+      candidate.newsItem &&
+      candidate.matchType !== "none" &&
+      (candidate.weightPercent ?? 0) >= 1,
+  );
   if (
-    leadWeight >= 25 &&
-    (withNews.length === 1 || leadWeight >= maxOther * 1.5)
+    withNews.length === 0 &&
+    coveredCandidates.length === 0 &&
+    input.biggerPicture.length === 0
   ) {
+    return null;
+  }
+
+  const moveAndCoverage = withNews.filter(
+    (row) => hasMeaningfulMove(row) && (row.weightPercent ?? 0) >= MATERIAL_SLEEVE_WEIGHT,
+  );
+  if (moveAndCoverage.length > 0) {
+    const lead = moveAndCoverage[0]!;
     return {
       kicker: "Today’s theme",
-      text: `${lead.exposureLabel} has relevant coverage today and represents ${Math.round(leadWeight)}% of portfolio value.`,
+      text: `${lead.exposureLabel} moved ${lead.moveLabel} today, with relevant coverage.`,
     };
   }
 
-  if (distinctThemes.length >= 2) {
-    const shown = distinctThemes.slice(0, 2);
+  const themeGroups = new Map<string, HoldingIntelligenceCandidate[]>();
+  for (const candidate of coveredCandidates) {
+    const key = coverageThemeFromCandidate(candidate).label.trim();
+    if (!key) continue;
+    const list = themeGroups.get(key) ?? [];
+    list.push(candidate);
+    themeGroups.set(key, list);
+  }
+  const sharedTheme = [...themeGroups.entries()].find(([, rows]) => rows.length >= 2);
+  if (sharedTheme) {
     return {
       kicker: "Today’s theme",
-      text: `Relevant coverage spans ${shown.join(" and ")} today.`,
+      text: `${sharedTheme[0]} coverage reaches more than one holding today.`,
+    };
+  }
+
+  const materialContext = withNews.find(
+    (row) =>
+      (row.matchKind === "sector" || row.matchKind === "macro") &&
+      (row.weightPercent ?? 0) >= MATERIAL_SLEEVE_WEIGHT,
+  );
+  if (input.biggerPicture.length > 0 && materialContext) {
+    const theme = input.biggerPicture[0]!;
+    return {
+      kicker: "Today’s theme",
+      text: `${theme.themeLabel} is relevant to your ${materialContext.exposureLabel.toLowerCase()} exposure.`,
     };
   }
 
   return null;
-}
-
-function weightFromRow(row: NewsGlanceHoldingRow): number {
-  return row.weightPercent ?? 0;
-}
-
-function uniqueLabels(values: string[]): string[] {
-  const seen = new Set<string>();
-  const result: string[] = [];
-  for (const value of values) {
-    const key = value.trim();
-    if (!key || seen.has(key)) continue;
-    seen.add(key);
-    result.push(key);
-  }
-  return result;
 }

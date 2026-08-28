@@ -5,8 +5,10 @@ import { describe, expect, it } from "vitest";
 import { contributionPpFromMove } from "@/lib/services/personalIntelligence/contribution";
 import {
   buildHoldingIntelligenceCandidates,
+  classifyHoldingNewsMatchType,
   compareHoldingIntelligenceCandidates,
   ETF_CONTEXTUAL_NOTE,
+  hasDirectInstrumentEvidence,
   HOLDING_EXPLANATION_NOTES,
   rankHoldingIntelligenceCandidates,
   resolveHoldingExplanation,
@@ -318,5 +320,56 @@ describe("holding intelligence foundation", () => {
     expect(compareHoldingIntelligenceCandidates(left!, right!)).toBe(
       compareHoldingIntelligenceCandidates(left!, noisy),
     );
+  });
+});
+
+describe("holding news Direct vs Context evidence", () => {
+  it("requires instrument identity in article copy for Direct", () => {
+    const product = holding({
+      symbol: "YLDX",
+      name: "Strategy Yield ETP",
+      providerSymbol: "YLDX.XETRA",
+    });
+    const taggedOnly = newsItem({
+      id: "bonds-wire",
+      title:
+        "Warsh Doesn’t Run Much Risk of Losing Control of Bonds, Says Strategist",
+      matchedSymbols: ["YLDX"],
+      matchedHoldingIds: ["YLDX-id"],
+      relevanceScore: 22,
+    });
+    expect(hasDirectInstrumentEvidence(taggedOnly, product)).toBe(false);
+    expect(classifyHoldingNewsMatchType(22, taggedOnly, product)).toBe(
+      "instrument_alias",
+    );
+
+    const named = newsItem({
+      id: "yield-direct",
+      title: "YLDX Strategy Yield ETP adds a new share class",
+      matchedSymbols: ["YLDX"],
+      matchedHoldingIds: ["YLDX-id"],
+      relevanceScore: 22,
+    });
+    expect(hasDirectInstrumentEvidence(named, product)).toBe(true);
+    expect(classifyHoldingNewsMatchType(22, named, product)).toBe(
+      "direct_instrument",
+    );
+  });
+
+  it("does not let assignment to a holding row turn macro context into Direct", () => {
+    const bond = holding({
+      symbol: "IBGS",
+      name: "iShares Euro Government Bond UCITS ETF",
+      providerSymbol: "IBGS.XETRA",
+    });
+    const rates = newsItem({
+      id: "ecb-rates",
+      title: "ECB keeps key interest rates unchanged",
+      matchedSymbols: ["IBGS"],
+      matchedHoldingIds: ["IBGS-id"],
+      relevanceScore: 22,
+      contextKind: "macro_official",
+    });
+    expect(classifyHoldingNewsMatchType(22, rates, bond)).toBe("macro_context");
   });
 });

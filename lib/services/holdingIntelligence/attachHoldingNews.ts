@@ -20,6 +20,43 @@ import {
 
 const DIRECT_INSTRUMENT_SCORE = 22;
 
+type HoldingIdentity = Pick<
+  StoredPortfolioHolding,
+  "symbol" | "name" | "providerSymbol" | "isin"
+>;
+
+function identityHaystack(
+  item: Pick<NewsContentItem, "title" | "description">,
+): string {
+  return `${item.title} ${item.description ?? ""}`.toLowerCase();
+}
+
+function containsIdentityToken(haystack: string, value: string): boolean {
+  const token = value.trim();
+  if (token.length < 4) return false;
+  const escaped = token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`\\b${escaped}\\b`, "i").test(haystack);
+}
+
+/**
+ * Direct requires the article copy to name the instrument, listing, ISIN, or product.
+ * Wire `articleSymbols` / keyword scores alone are not Direct evidence.
+ */
+export function hasDirectInstrumentEvidence(
+  item: Pick<NewsContentItem, "title" | "description">,
+  holding: HoldingIdentity,
+): boolean {
+  const haystack = identityHaystack(item);
+  if (containsIdentityToken(haystack, holding.symbol)) return true;
+  const provider = holding.providerSymbol?.trim();
+  if (provider && haystack.includes(provider.toLowerCase())) return true;
+  const isin = holding.isin?.trim();
+  if (isin && isin.length >= 8 && haystack.includes(isin.toLowerCase())) return true;
+  const name = holding.name.trim();
+  if (name.length >= 8 && haystack.includes(name.toLowerCase())) return true;
+  return false;
+}
+
 export function newsItemMatchesHolding(
   item: NewsContentItem,
   holding: Pick<StoredPortfolioHolding, "id" | "symbol" | "providerSymbol" | "assetType">,
@@ -29,10 +66,20 @@ export function newsItemMatchesHolding(
 
 export function classifyHoldingNewsMatchType(
   relevanceScore: number,
-  item?: Pick<NewsContentItem, "contextKind"> | null,
+  item?: Pick<NewsContentItem, "contextKind" | "title" | "description"> | null,
+  holding?: HoldingIdentity | null,
 ): HoldingNewsMatchType {
   if (item?.contextKind === "macro_official") return "macro_context";
-  if (relevanceScore >= DIRECT_INSTRUMENT_SCORE) return "direct_instrument";
+  if (relevanceScore <= 0) return "none";
+  if (
+    holding &&
+    item &&
+    relevanceScore >= STRONG_PORTFOLIO_MATCH_SCORE &&
+    hasDirectInstrumentEvidence(item, holding)
+  ) {
+    return "direct_instrument";
+  }
+  if (relevanceScore >= DIRECT_INSTRUMENT_SCORE) return "instrument_alias";
   if (relevanceScore >= STRONG_PORTFOLIO_MATCH_SCORE) {
     return "instrument_alias";
   }

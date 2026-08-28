@@ -4,6 +4,7 @@ import { useMemo } from "react";
 
 import { NewsIntro } from "@/components/news/glance/NewsIntro";
 import { NewsHoldingsBlock } from "@/components/news/glance/NewsHoldingsBlock";
+import { NewsAroundTheMarkets } from "@/components/news/glance/NewsAroundTheMarkets";
 import { NewsBiggerPictureBlock } from "@/components/news/glance/NewsBiggerPictureBlock";
 import { NewsSynthesisBlock } from "@/components/news/glance/NewsSynthesisBlock";
 import { NewsExploreNav } from "@/components/news/glance/NewsExploreNav";
@@ -95,7 +96,10 @@ export default function NewsPage() {
         ) : (
           <div className="flex min-w-0 flex-col gap-3 md:gap-5" data-testid="news-primary">
             <NewsHoldingsBlock rows={glance.holdingRows} />
-            <NewsBiggerPictureBlock items={glance.biggerPicture} />
+            <NewsAroundTheMarkets tiles={glance.aroundTheMarkets} />
+            {glance.biggerPicture.length > 0 ? (
+              <NewsBiggerPictureBlock items={glance.biggerPicture} />
+            ) : null}
             {glance.synthesis ? (
               <NewsSynthesisBlock synthesis={glance.synthesis} />
             ) : null}

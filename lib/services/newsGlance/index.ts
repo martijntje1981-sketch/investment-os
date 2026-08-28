@@ -1,6 +1,8 @@
 export type {
   NewsGlanceBiggerPictureItem,
   NewsGlanceHoldingRow,
+  NewsGlanceMarketRegionId,
+  NewsGlanceMarketTile,
   NewsGlanceMatchKind,
   NewsGlanceMoveDirection,
   NewsGlanceSynthesis,
@@ -8,8 +10,10 @@ export type {
   NewsGlanceVisualFamily,
 } from "@/lib/services/newsGlance/types";
 export {
-  NEWS_GLANCE_BIGGER_PICTURE_EMPTY,
   NEWS_GLANCE_BIGGER_PICTURE_LIMIT,
+  NEWS_GLANCE_HOLDING_LIMIT_DESKTOP,
+  NEWS_GLANCE_HOLDING_LIMIT_MOBILE,
+  NEWS_GLANCE_MARKET_REGION_IDS,
   NEWS_GLANCE_NO_MATERIAL,
 } from "@/lib/services/newsGlance/types";
 export { buildNewsGlance } from "@/lib/services/newsGlance/buildNewsGlance";

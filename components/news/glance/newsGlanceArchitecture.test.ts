@@ -22,12 +22,15 @@ describe("News glance architecture", () => {
   const thumbnail = read("components/news/NewsMediaThumbnail.tsx");
   const fallback = read("components/news/newsMediaFallback.ts");
   const glance = read("lib/services/newsGlance/buildNewsGlance.ts");
+  const aroundMarkets = read("components/news/glance/NewsAroundTheMarkets.tsx");
+  const biggerBlock = read("components/news/glance/NewsBiggerPictureBlock.tsx");
   const deepLink = read("lib/client/useSectionDeepLink.ts");
 
-  it("keeps primary News to holdings, bigger picture, optional synthesis, then Explore", () => {
+  it("keeps primary News to holdings, around the markets, then conditional intelligence and Explore", () => {
     const intro = page.indexOf("<NewsIntro");
     const primary = page.indexOf('data-testid="news-primary"');
     const holdingsIdx = page.indexOf("<NewsHoldingsBlock");
+    const around = page.indexOf("<NewsAroundTheMarkets");
     const bigger = page.indexOf("<NewsBiggerPictureBlock");
     const synthesis = page.indexOf("<NewsSynthesisBlock");
     const exploreIdx = page.indexOf("<NewsExploreNav");
@@ -35,9 +38,11 @@ describe("News glance architecture", () => {
     expect(intro).toBeGreaterThan(-1);
     expect(primary).toBeGreaterThan(intro);
     expect(holdingsIdx).toBeGreaterThan(primary);
-    expect(bigger).toBeGreaterThan(holdingsIdx);
+    expect(around).toBeGreaterThan(holdingsIdx);
+    expect(bigger).toBeGreaterThan(around);
     expect(synthesis).toBeGreaterThan(bigger);
     expect(exploreIdx).toBeGreaterThan(synthesis);
+    expect(page).toContain("glance.biggerPicture.length > 0");
     expect(page).toContain("glance.synthesis ?");
     expect(page).not.toContain("<PageHero");
     expect(page).not.toContain("AuthenticatedFourQuestionsNav");
@@ -77,6 +82,32 @@ describe("News glance architecture", () => {
     expect(resolveNewsDetailId("news-search")).toBe("news-search");
     expect(resolveNewsDetailId("news-macro")).toBe("news-macro");
     expect(resolveNewsDetailId("news-videos")).toBe("news-videos");
+  });
+
+  it("caps the mobile holdings glance and keeps View all holding news", () => {
+    expect(holdings).toContain("NEWS_GLANCE_HOLDING_LIMIT_MOBILE");
+    expect(holdings).toContain("data-mobile-limit={NEWS_GLANCE_HOLDING_LIMIT_MOBILE}");
+    expect(holdings).toContain("View all holding news →");
+    expect(holdings).toContain("news-holdings-view-all");
+    expect(holdings).toContain("NEWS_EXPLORE_DESTINATIONS.holdings");
+    expect(holdings).toContain("hidden lg:list-item");
+  });
+
+  it("reuses Markets Today for Around the Markets and never invents a percent", () => {
+    expect(glance).toContain("briefing.marketsToday");
+    expect(glance).toContain("clampMarketsTodayText");
+    expect(glance).toContain("NEWS_MARKETS_TODAY_HREF");
+    expect(glance).not.toContain("fetch(");
+    expect(aroundMarkets).toContain("overflow-x-auto");
+    expect(aroundMarkets).toContain("overflow-x-clip");
+    expect(aroundMarkets).toContain("data-region={tile.id}");
+    expect(aroundMarkets).toContain("tile.href");
+  });
+
+  it("omits empty Bigger Picture instead of rendering a placeholder card", () => {
+    expect(biggerBlock).toContain("if (items.length === 0) return null");
+    expect(biggerBlock).not.toContain("No meaningful broader context");
+    expect(page).not.toContain("No meaningful broader context");
   });
 
   it("opens original articles via canonical URLs and designed fallback media", () => {

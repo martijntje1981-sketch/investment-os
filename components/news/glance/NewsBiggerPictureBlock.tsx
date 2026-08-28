@@ -1,23 +1,24 @@
 import { ArrowUpRight } from "lucide-react";
 
 import { NewsMediaThumbnail } from "@/components/news/NewsMediaThumbnail";
-import { NEWS_GLANCE_FAMILY_ACCENT } from "@/components/news/glance/newsGlanceVisuals";
+import {
+  NEWS_GLANCE_FAMILY_ACCENT,
+} from "@/components/news/glance/newsGlanceVisuals";
 import {
   appDarkCardClass,
   appDashboardDarkMetaClass,
   appHeroMetricLabelClass,
 } from "@/components/layout/appSurface";
 import { formatNewsPublishedAt } from "@/components/news/newsFormatting";
-import {
-  NEWS_GLANCE_BIGGER_PICTURE_EMPTY,
-  type NewsGlanceBiggerPictureItem,
-} from "@/lib/services/newsGlance";
+import type { NewsGlanceBiggerPictureItem } from "@/lib/services/newsGlance";
 
 export function NewsBiggerPictureBlock({
   items,
 }: {
   items: NewsGlanceBiggerPictureItem[];
 }) {
+  if (items.length === 0) return null;
+
   return (
     <section
       className={`${appDarkCardClass} min-w-0`}
@@ -28,20 +29,11 @@ export function NewsBiggerPictureBlock({
         <p className={appHeroMetricLabelClass} id="news-bigger-picture-heading">
           The bigger picture
         </p>
-        {items.length === 0 ? (
-          <p
-            className={`mt-2 ${appDashboardDarkMetaClass}`}
-            data-testid="news-bigger-picture-empty"
-          >
-            {NEWS_GLANCE_BIGGER_PICTURE_EMPTY}
-          </p>
-        ) : (
-          <ul className="mt-3 space-y-3">
-            {items.map((item) => (
-              <BiggerPictureRow key={item.id} item={item} />
-            ))}
-          </ul>
-        )}
+        <ul className="mt-3 space-y-3">
+          {items.map((item) => (
+            <BiggerPictureRow key={item.id} item={item} />
+          ))}
+        </ul>
       </div>
     </section>
   );

@@ -56,15 +56,13 @@ export function isNewsHubMaterialHolding(
 function hasStrongHoldingContext(
   candidate: HoldingIntelligenceCandidate,
 ): boolean {
-  return (
-    candidate.matchType === "direct_instrument" ||
-    candidate.matchType === "instrument_alias"
-  );
+  return candidate.matchType === "direct_instrument";
 }
 
 function isVerifiedThematicContext(
   candidate: HoldingIntelligenceCandidate,
 ): boolean {
+  if (candidate.matchType === "instrument_alias") return true;
   return candidate.matchType === "sector_theme" && !candidate.isBitcoin;
 }
 

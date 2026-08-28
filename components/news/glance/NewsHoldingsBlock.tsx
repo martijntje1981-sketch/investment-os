@@ -13,6 +13,9 @@ import {
 import { formatNewsPublishedAt } from "@/components/news/newsFormatting";
 import { holdingDetailPath } from "@/lib/navigation/appRoutes";
 import {
+  NEWS_EXPLORE_DESTINATIONS,
+  NEWS_GLANCE_HOLDING_LIMIT_DESKTOP,
+  NEWS_GLANCE_HOLDING_LIMIT_MOBILE,
   NEWS_GLANCE_NO_MATERIAL,
   type NewsGlanceHoldingRow,
 } from "@/lib/services/newsGlance";
@@ -23,6 +26,13 @@ export function NewsHoldingsBlock({
 }: {
   rows: NewsGlanceHoldingRow[];
 }) {
+  const mobileRows = rows.slice(0, NEWS_GLANCE_HOLDING_LIMIT_MOBILE);
+  const desktopExtra = rows.slice(
+    NEWS_GLANCE_HOLDING_LIMIT_MOBILE,
+    NEWS_GLANCE_HOLDING_LIMIT_DESKTOP,
+  );
+  const showViewAll = rows.length > NEWS_GLANCE_HOLDING_LIMIT_MOBILE;
+
   return (
     <section
       className={`${appDarkCardClass} min-w-0`}
@@ -41,18 +51,46 @@ export function NewsHoldingsBlock({
             {NEWS_GLANCE_NO_MATERIAL}
           </p>
         ) : (
-          <ul className="mt-3 divide-y divide-white/8">
-            {rows.map((row) => (
-              <HoldingRow key={row.holdingId} row={row} />
-            ))}
-          </ul>
+          <>
+            <ul
+              className="mt-3 divide-y divide-white/8"
+              data-testid="news-holdings-list"
+              data-mobile-limit={NEWS_GLANCE_HOLDING_LIMIT_MOBILE}
+            >
+              {mobileRows.map((row) => (
+                <HoldingRow key={row.holdingId} row={row} />
+              ))}
+              {desktopExtra.map((row) => (
+                <HoldingRow
+                  key={row.holdingId}
+                  row={row}
+                  className="hidden lg:list-item"
+                />
+              ))}
+            </ul>
+            {showViewAll ? (
+              <Link
+                href={NEWS_EXPLORE_DESTINATIONS.holdings}
+                className="mt-2 inline-flex min-h-11 items-center text-[14px] font-medium text-white/70 underline-offset-2 hover:text-white hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
+                data-testid="news-holdings-view-all"
+              >
+                View all holding news →
+              </Link>
+            ) : null}
+          </>
         )}
       </div>
     </section>
   );
 }
 
-function HoldingRow({ row }: { row: NewsGlanceHoldingRow }) {
+function HoldingRow({
+  row,
+  className = "",
+}: {
+  row: NewsGlanceHoldingRow;
+  className?: string;
+}) {
   const accent = NEWS_GLANCE_FAMILY_ACCENT[row.visualFamily];
   const articleHref = row.canonicalUrl;
   const media = (
@@ -68,7 +106,7 @@ function HoldingRow({ row }: { row: NewsGlanceHoldingRow }) {
 
   return (
     <li
-      className="relative min-w-0 py-3 first:pt-1 last:pb-0"
+      className={`relative min-w-0 py-3 first:pt-1 last:pb-0 ${className}`}
       data-testid="news-glance-holding-row"
       data-symbol={row.symbol}
       data-match-role={row.matchRole}

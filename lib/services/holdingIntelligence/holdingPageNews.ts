@@ -66,7 +66,10 @@ export function isDisplayableHoldingPageNewsMatch(
 
 export function selectHoldingPageNewsItems(
   items: NewsContentItem[],
-  holding: Pick<StoredPortfolioHolding, "id" | "symbol">,
+  holding: Pick<
+    StoredPortfolioHolding,
+    "id" | "symbol" | "name" | "providerSymbol" | "isin"
+  >,
   options?: { isBitcoin?: boolean; limit?: number },
 ): HoldingPageNewsItem[] {
   const isBitcoin = options?.isBitcoin ?? false;
@@ -80,7 +83,7 @@ export function selectHoldingPageNewsItems(
     .filter((item) => newsItemMatchesHolding(item, holding))
     .map((item) => {
       const relevanceScore = item.relevanceScore ?? 0;
-      const matchType = classifyHoldingNewsMatchType(relevanceScore, item);
+      const matchType = classifyHoldingNewsMatchType(relevanceScore, item, holding);
       return { item, matchType, relevanceScore };
     })
     .filter((row) =>

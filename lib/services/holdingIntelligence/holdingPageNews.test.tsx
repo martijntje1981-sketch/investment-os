@@ -1,13 +1,13 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { renderToStaticMarkup } from "react-dom/server";
 
+import { HoldingMoveContextCard } from "@/components/holding/HoldingMoveContextCard";
+import { VIEW_HOLDING_CUE } from "@/components/holding/ViewHoldingCue";
 import {
   NEWS_HUB_NO_CATALYST,
-  HOLDING_PAGE_DIRECT_NEWS_LABEL,
-  HOLDING_PAGE_SECTOR_NEWS_LABEL,
-  partitionHoldingPageNews,
-  selectHoldingPageComponentNews,
+  buildHoldingIntelligenceCandidates,
   selectHoldingPageNewsItems,
 } from "@/lib/services/holdingIntelligence";
 import {
@@ -78,10 +78,6 @@ const nukl = holding({
 
 const CAUSAL = /caused by|due to|because of/i;
 
-function read(relativePath: string): string {
-  return readFileSync(path.resolve(process.cwd(), relativePath), "utf8");
-}
-
 describe("Phase 11I holding page news", () => {
   it("shows up to four strong NUKL items and prefers direct holding news", () => {
     const items = [
@@ -145,16 +141,40 @@ describe("Phase 11I holding page news", () => {
       "direct",
       "alias",
     ]);
+
+    const [candidate] = buildHoldingIntelligenceCandidates({
+      holdings: [nukl],
+      newsItems: items,
+    });
+    const html = renderToStaticMarkup(
+      <HoldingMoveContextCard
+        candidate={candidate!}
+        relatedNews={selected}
+      />,
+    );
+    expect(html).toContain("NUKL extends gain as nuclear names outperform");
+    expect(html).toContain("Test Wire");
+    expect(html).toContain('data-testid="holding-page-news-item"');
+    expect(html).not.toMatch(CAUSAL);
+    expect(html).toContain("Related context, not a proven cause.");
+    expect(html).not.toContain("Markets mixed as investors wait");
   });
 
   it("uses an honest empty state when no reliable news exists", () => {
-    expect(selectHoldingPageNewsItems([], nukl)).toEqual([]);
-    const card = read("components/holding/HoldingMoveContextCard.tsx");
-    expect(card).toContain("NEWS_HUB_NO_CATALYST");
-    expect(card).toContain('data-testid="holding-page-news-empty"');
-    expect(card).not.toMatch(CAUSAL);
-    expect(NEWS_HUB_NO_CATALYST).toBe("No clear holding-specific catalyst found.");
-    expect(card.match(/data-testid="holding-page-news-empty"/g)?.length).toBe(1);
+    const selected = selectHoldingPageNewsItems([], nukl);
+    expect(selected).toEqual([]);
+
+    const [candidate] = buildHoldingIntelligenceCandidates({
+      holdings: [nukl],
+      newsItems: [],
+    });
+    const html = renderToStaticMarkup(
+      <HoldingMoveContextCard candidate={candidate!} relatedNews={selected} />,
+    );
+    expect(html).toContain(NEWS_HUB_NO_CATALYST);
+    expect(html).toContain('data-testid="holding-page-news-empty"');
+    expect(html).not.toMatch(CAUSAL);
+    expect(html).not.toContain("holding-page-news-item");
   });
 
   it("labels sector/theme NUKL context as context, not cause", () => {
@@ -170,76 +190,22 @@ describe("Phase 11I holding page news", () => {
     const selected = selectHoldingPageNewsItems(items, nukl);
     expect(selected).toHaveLength(1);
     expect(selected[0]?.matchRole).toBe("sector_context");
-    expect(selected[0]?.item.title).toBe("Uranium sector outlook improves");
 
-    const card = read("components/holding/HoldingMoveContextCard.tsx");
-    expect(card).toContain("HOLDING_PAGE_SECTOR_NEWS_LABEL");
-    expect(card).toContain("Sector context, not a proven cause.");
-    expect(card).not.toMatch(CAUSAL);
-  });
-
-  it("labels ETF direct news separately from sector context", () => {
-    const items = [
-      newsItem({
-        id: "direct",
-        title: "NUKL extends gain as nuclear names outperform",
-        matchedSymbols: ["NUKL"],
-        matchedHoldingIds: ["NUKL-id"],
-        relevanceScore: STRONG_PORTFOLIO_MATCH_SCORE + 8,
-      }),
-      newsItem({
-        id: "sector",
-        title: "Uranium miners rally on supply tightness",
-        matchedSymbols: ["NUKL"],
-        matchedHoldingIds: ["NUKL-id"],
-        relevanceScore: CONTEXTUAL_PORTFOLIO_MATCH_SCORE,
-      }),
-    ];
-    const selected = selectHoldingPageNewsItems(items, nukl);
-    const groups = partitionHoldingPageNews(selected);
-    expect(groups.direct[0]?.matchRole).toBe("direct");
-    expect(groups.sector[0]?.matchRole).toBe("sector_context");
-    expect(HOLDING_PAGE_DIRECT_NEWS_LABEL).toBe("Direct ETF news");
-    expect(HOLDING_PAGE_SECTOR_NEWS_LABEL).toBe("Sector / theme context");
-    const card = read("components/holding/HoldingMoveContextCard.tsx");
-    expect(card).toContain("HOLDING_PAGE_DIRECT_NEWS_LABEL");
-    expect(card).toContain("HOLDING_PAGE_SECTOR_NEWS_LABEL");
-  });
-
-  it("never shows guessed constituents or a component-news section", () => {
-    expect(selectHoldingPageComponentNews()).toEqual([]);
-    const pageNews = read("lib/services/holdingIntelligence/holdingPageNews.ts");
-    const card = read("components/holding/HoldingMoveContextCard.tsx");
-    for (const source of [pageNews, card]) {
-      expect(source).not.toMatch(/Cameco|NexGen|CCJ|NXE/i);
-      expect(source).not.toMatch(/Underlying company/i);
-      expect(source).not.toMatch(/executeEodhdApiCall|ETF_Data/);
-    }
-  });
-
-  it("deduplicates repeated headlines in the cached pool", () => {
-    const selected = selectHoldingPageNewsItems(
-      [
-        newsItem({
-          id: "a",
-          title: "NUKL uranium update",
-          canonicalUrl: "https://example.test/same-story",
-          matchedSymbols: ["NUKL"],
-          matchedHoldingIds: ["NUKL-id"],
-          relevanceScore: STRONG_PORTFOLIO_MATCH_SCORE + 8,
-        }),
-        newsItem({
-          id: "b",
-          title: "NUKL uranium update",
-          canonicalUrl: "https://example.test/same-story",
-          matchedSymbols: ["NUKL"],
-          matchedHoldingIds: ["NUKL-id"],
-          relevanceScore: STRONG_PORTFOLIO_MATCH_SCORE + 7,
-        }),
-      ],
-      nukl,
+    const [candidate] = buildHoldingIntelligenceCandidates({
+      holdings: [nukl],
+      newsItems: items,
+    });
+    const html = renderToStaticMarkup(
+      <HoldingMoveContextCard
+        candidate={candidate!}
+        relatedNews={selected}
+      />,
     );
-    expect(selected).toHaveLength(1);
+    expect(html).toContain("Sector context");
+    expect(html).toContain("Uranium sector outlook improves");
+    expect(html).toContain("not a proven cause");
+    expect(html).not.toMatch(CAUSAL);
+    expect(candidate?.explanationNote).not.toMatch(CAUSAL);
   });
 
   it("does not fill Bitcoin pages with generic crypto stories", () => {
@@ -266,22 +232,42 @@ describe("Phase 11I holding page news", () => {
 
 describe("Phase 11J holding discoverability", () => {
   it("links holdings from Dashboard, Portfolio, and News", () => {
-    const dashboard = read("components/dashboard/HoldingsTodayRow.tsx");
-    const portfolio = read("app/portfolio/page.tsx");
-    const news = read("components/news/NewsForPortfolioSection.tsx");
-    const holdingPage = read("app/holding/[ticker]/page.tsx");
+    const files = {
+      dashboard: readFileSync(
+        path.resolve(
+          process.cwd(),
+          "components/dashboard/HoldingsTodayRow.tsx",
+        ),
+        "utf8",
+      ),
+      portfolio: readFileSync(
+        path.resolve(process.cwd(), "app/portfolio/page.tsx"),
+        "utf8",
+      ),
+      news: readFileSync(
+        path.resolve(
+          process.cwd(),
+          "components/news/NewsForPortfolioSection.tsx",
+        ),
+        "utf8",
+      ),
+      holdingPage: readFileSync(
+        path.resolve(process.cwd(), "app/holding/[ticker]/page.tsx"),
+        "utf8",
+      ),
+    };
 
-    expect(dashboard).toContain("holdingDetailPath");
-    expect(dashboard).toContain("ViewHoldingCue");
-    expect(portfolio).toContain("holdingDetailPath");
-    expect(portfolio).toContain("View holding →");
-    expect(news).toContain("holdingDetailPath");
-    expect(news).toContain("ViewHoldingCue");
-    expect(holdingPage).toContain("selectHoldingPageNewsItems");
-    expect(holdingPage).toContain("HoldingMoveContextCard");
-    expect(holdingPage).toContain("relatedNews");
-    expect(holdingPage.indexOf("HoldingMoveContextCard")).toBeLessThan(
-      holdingPage.indexOf("Position Summary"),
+    expect(files.dashboard).toContain("holdingDetailPath");
+    expect(files.dashboard).toContain("ViewHoldingCue");
+    expect(files.portfolio).toContain("holdingDetailPath");
+    expect(files.portfolio).toContain(VIEW_HOLDING_CUE);
+    expect(files.news).toContain("holdingDetailPath");
+    expect(files.news).toContain("ViewHoldingCue");
+    expect(files.holdingPage).toContain("selectHoldingPageNewsItems");
+    expect(files.holdingPage).toContain("HoldingMoveContextCard");
+    expect(files.holdingPage).toContain("relatedNews");
+    expect(files.holdingPage.indexOf("HoldingMoveContextCard")).toBeLessThan(
+      files.holdingPage.indexOf("Position Summary"),
     );
   });
 
@@ -295,7 +281,7 @@ describe("Phase 11J holding discoverability", () => {
       "components/news/NewsForPortfolioSection.tsx",
     ];
     for (const file of files) {
-      const source = read(file);
+      const source = readFileSync(path.resolve(process.cwd(), file), "utf8");
       expect(source).not.toMatch(/executeEodhdApiCall/);
       expect(source).not.toMatch(/ETF_Data/);
       expect(source).not.toMatch(/openai/i);

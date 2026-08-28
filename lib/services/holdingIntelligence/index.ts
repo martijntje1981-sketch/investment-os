@@ -15,6 +15,7 @@ export {
 export { buildHoldingIntelligenceCandidates } from "@/lib/services/holdingIntelligence/buildHoldingIntelligenceCandidates";
 export {
   classifyHoldingNewsMatchType,
+  hasDirectInstrumentEvidence,
   newsItemMatchesHolding,
   resolveHoldingExplanation,
   selectBestHoldingNewsItem,
