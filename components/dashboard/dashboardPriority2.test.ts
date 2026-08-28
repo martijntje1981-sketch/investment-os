@@ -24,16 +24,9 @@ describe("Priority 2 Dashboard progressive disclosure", () => {
   it("keeps conclusion-first Dashboard section order", () => {
     const order = [
       "<DashboardSummary",
-      "<FourQuestionsSection",
-      "<NewAndNotableSection",
-      "<DashboardPortfolioEvolutionCard",
-      "<LookingAheadSection",
       "<HoldingsToday",
-      "<DashboardMarketPulseCard",
-      "<DashboardPerspectivesWidget",
-      "<DashboardCashIntelligenceCard",
-      "<DashboardExploreTools",
-      "<DashboardMarketStatus",
+      "<DashboardPersonalIntelligence",
+      "<DashboardSecondaryNav",
     ].map((token) => dashboard.indexOf(token));
 
     for (let i = 0; i < order.length; i += 1) {
@@ -74,16 +67,16 @@ describe("Priority 2 Dashboard progressive disclosure", () => {
     expect(expandable).toContain("deepLink");
   });
 
-  it("defaults holdings to compact mobile/desktop preview limits", () => {
+  it("defaults holdings to a coverage-first list with optional show-all", () => {
     expect(limits).toContain("HOLDINGS_COLLAPSE_MOBILE_LIMIT");
     expect(limits).toContain("HOLDINGS_COLLAPSE_DESKTOP_LIMIT");
     expect(limits).toContain("MOBILE_LIMIT = 2");
     expect(limits).toContain("DESKTOP_LIMIT = 3");
-    expect(holdings).toContain("useCollapsedListLimit");
-    expect(holdings).toContain("useExpandedListLimit");
+    expect(holdings).toContain("HOLDINGS_TODAY_COLLAPSE_AFTER");
+    expect(holdings).not.toContain("useCollapsedListLimit");
     expect(holdings).toContain("View portfolio");
     expect(holdings).toContain("View all holdings");
-    expect(holdings).toContain('aria-expanded={expanded}');
+    expect(holdings).toContain("aria-expanded={expanded}");
     expect(holdings).not.toContain("min-w-[720px]");
   });
 
@@ -109,7 +102,7 @@ describe("Priority 2 Dashboard progressive disclosure", () => {
 
   it("hides Trading Hours on mobile and removes duplicate Related navigation", () => {
     expect(dashboard).not.toContain("PageRelatedLinks");
-    expect(dashboard).toContain("DashboardMarketStatus");
+    expect(dashboard).not.toContain("DashboardMarketStatus");
     const marketStatus = read("components/dashboard/DashboardMarketStatus.tsx");
     expect(marketStatus).toContain("hidden md:block");
     expect(marketStatus).toContain("resolveMarketUpdateDisplay");

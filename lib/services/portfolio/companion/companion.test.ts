@@ -373,11 +373,12 @@ describe("integration surfaces", () => {
     expect(access).toContain('"/review"');
     expect(page).toContain("CompanionPeriodTabs");
     expect(page).toContain("buildCompanionBundle");
-    expect(dashboard).toContain("PortfolioThirtySeconds");
+    expect(dashboard).toContain("DashboardSecondaryNav");
+    expect(dashboard).not.toContain("PortfolioThirtySeconds");
     expect(dashboard).not.toContain("DashboardReviewTeaser");
-    expect(
-      read("components/dashboard/PortfolioThirtySeconds.tsx"),
-    ).toContain("View full review");
+    expect(read("components/dashboard/DashboardSecondaryNav.tsx")).toContain(
+      "REVIEW_PATH",
+    );
     expect(teaser).toContain("resolveCompanionDashboardTeaser");
     expect(teaser).toContain("dashboard-review-teaser");
     const builder = read(

@@ -91,7 +91,7 @@ describe("product architecture cohesion", () => {
     expect(explore).toContain("Portfolio Scorecard");
     expect(explore).not.toContain("Portfolio Health");
     expect(explore).toContain("Understand your portfolio");
-    expect(portfolio).toContain("Portfolio Scorecard");
+    expect(portfolio).toContain("Scorecard");
     expect(destinations).toContain("Ideas");
     expect(destinations).not.toContain("Discover");
   });

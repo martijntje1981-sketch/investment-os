@@ -517,22 +517,20 @@ describe("Dashboard Portfolio Pulse wiring", () => {
     const hero = read("components/dashboard/PortfolioValueCard.tsx");
     const ring = read("components/dashboard/DynamicScoreRing.tsx");
 
+    expect(dashboard).toContain("pulse={portfolioPulse}");
     expect(dashboard).not.toContain("DashboardPortfolioScorecard");
     expect(dashboard).not.toContain("buildPortfolioScorecard");
-    expect(dashboard).toContain("pulse={portfolioPulse}");
-    expect(dashboard).toContain("buildPortfolioPulse");
     expect(dashboard).toContain("HoldingsToday");
-    expect(dashboard).toContain("FourQuestionsSection");
+    expect(dashboard).toContain("DashboardSecondaryNav");
     expect(dashboard).not.toContain("DashboardTodaysDecision");
     expect(dashboard).not.toContain("DashboardIntelligencePreview");
     expect(dashboard).not.toContain("DashboardPortfolioPulseCard");
 
     const pulseIdx = dashboard.indexOf("pulse={portfolioPulse}");
     const holdingsIdx = dashboard.indexOf("<HoldingsToday");
-    const fourQuestionsIdx = dashboard.indexOf("<FourQuestionsSection");
     expect(pulseIdx).toBeGreaterThan(-1);
-    expect(fourQuestionsIdx).toBeGreaterThan(pulseIdx);
-    expect(holdingsIdx).toBeGreaterThan(fourQuestionsIdx);
+    expect(holdingsIdx).toBeGreaterThan(pulseIdx);
+    expect(dashboard).not.toContain("FourQuestionsSection");
 
     expect(scorecardPage).toContain("buildPortfolioScorecard");
     expect(scorecardPage).toContain("ScoreRing");

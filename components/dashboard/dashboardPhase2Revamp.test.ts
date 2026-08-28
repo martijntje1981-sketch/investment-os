@@ -90,14 +90,13 @@ describe("dashboard phase 2 compact previews", () => {
     expect(briefingSource).not.toContain("macroHighlights");
   });
 
-  it("places Four Questions before holdings; hero pulse remains in DashboardSummary", () => {
+  it("places Four Questions hubs in secondary navigation; hero pulse remains in DashboardSummary", () => {
     const pulseIdx = dashboardSource.indexOf("pulse={portfolioPulse}");
-    const fourIdx = dashboardSource.indexOf("<FourQuestionsSection");
     const holdingsIdx = dashboardSource.indexOf("<HoldingsToday");
     expect(pulseIdx).toBeGreaterThan(-1);
-    expect(fourIdx).toBeGreaterThan(pulseIdx);
-    expect(holdingsIdx).toBeGreaterThan(fourIdx);
-    expect(dashboardSource).not.toContain("DashboardTodaysDecision");
+    expect(holdingsIdx).toBeGreaterThan(pulseIdx);
+    expect(dashboardSource).not.toContain("<FourQuestionsSection");
+    expect(dashboardSource).toContain("DashboardSecondaryNav");
     expect(dashboardSource).not.toContain("DashboardIntelligencePreview");
     expect(dashboardSource).not.toMatch(/overflow-x-auto|overflow-x-scroll/);
   });
@@ -139,7 +138,6 @@ describe("dashboard phase 2 compact previews", () => {
 
   it("keeps Trading Hours and insight module files; omits Dashboard insight card and duplicate movers", () => {
     expect(dashboardSource).not.toContain("DashboardInsightCard");
-    expect(dashboardSource).toContain("DashboardMarketStatus");
     expect(insightSource.length).toBeGreaterThan(0);
     expect(marketStatusSource.length).toBeGreaterThan(0);
     expect(dashboardSource).not.toContain("DashboardMoverCard");
@@ -149,20 +147,12 @@ describe("dashboard phase 2 compact previews", () => {
     expect(dashboardSource).not.toContain("groupBySector");
   });
 
-  it("places Portfolio Evolution after Four Questions without Dividend or Goal Progress cards", () => {
-    const fourIdx = dashboardSource.indexOf("<FourQuestionsSection");
-    const evolutionIdx = dashboardSource.indexOf(
-      "<DashboardPortfolioEvolutionCard",
-    );
-    const holdingsIdx = dashboardSource.indexOf("<HoldingsToday");
-    expect(fourIdx).toBeGreaterThan(-1);
-    expect(evolutionIdx).toBeGreaterThan(fourIdx);
-    expect(dashboardSource.indexOf("<LookingAheadSection")).toBeGreaterThan(
-      evolutionIdx,
-    );
-    expect(holdingsIdx).toBeGreaterThan(
-      dashboardSource.indexOf("<LookingAheadSection"),
-    );
+  it("keeps Evolution, Looking Ahead and Goal Progress off the primary Dashboard", () => {
+    expect(dashboardSource).not.toContain("<FourQuestionsSection");
+    expect(dashboardSource).not.toContain("<DashboardPortfolioEvolutionCard");
+    expect(dashboardSource).not.toContain("<LookingAheadSection");
+    expect(dashboardSource).toContain("<HoldingsToday");
+    expect(dashboardSource).toContain("DashboardSecondaryNav");
     expect(dashboardSource).not.toContain("DashboardPortfolioExposureCard");
     expect(dashboardSource).not.toContain("DashboardPortfolioHistorySection");
     expect(dashboardSource).not.toContain("DashboardContributionsCard");

@@ -4,15 +4,12 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  Banknote,
   BarChart3,
   CircleDollarSign,
   History,
   Loader2,
   Pencil,
-  PieChart,
   Search,
-  Sparkles,
   Trash2,
   Upload,
   X,
@@ -20,7 +17,6 @@ import {
 import { ConversionDetailsDisclosure } from "@/components/currency/ConversionDetailsDisclosure";
 import { PortfolioFundingSection } from "@/components/contributions/PortfolioFundingSection";
 import { PortfolioHistoryNavCard } from "@/components/portfolioHistory/PortfolioHistoryNavCard";
-import { PortfolioAllocationNavCard } from "@/components/portfolio/PortfolioAllocationNavCard";
 import { formatListingLookupGuidance } from "@/lib/client/listingLookupGuidance";
 import { needsManualPricingSelection } from "@/lib/client/holdingVenuePresentation";
 import {
@@ -38,10 +34,14 @@ import {
 import { ExportPortfolioButton } from "@/components/export/ExportPortfolioButton";
 import {
   ANALYSIS_PATH,
+  GOALS_PATH,
   MARKET_PULSE_PATH,
+  NEWS_PATH,
   PORTFOLIO_HISTORY_PATH,
   PORTFOLIO_HEALTH_PATH,
+  REVIEW_PATH,
 } from "@/lib/navigation/appRoutes";
+import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 import { PAGE_PURPOSE } from "@/lib/navigation/productArchitecture";
 import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
 import {
@@ -62,10 +62,6 @@ import { IDENTITY_EUR_FX_SNAPSHOT } from "@/lib/services/prices/baseCurrencyFxSn
 import { portfolioBaseCurrencySymbol } from "@/lib/types/portfolioBaseCurrency";
 import {
   appCardValueClass,
-  appDarkCardClass,
-  appDarkCardPaddingClass,
-  appDashboardDarkBodyClass,
-  appHeroMetricLabelClass,
   appSectionLabelClass,
   appSectionMetaClass,
   appSectionTitleClass,
@@ -277,9 +273,6 @@ export default function PortfolioPage() {
   const totalReturn = performance.totalReturn;
   const totalReturnPercent = performance.totalReturnPercent;
   const cashValue = performance.cashValue;
-  const largest = portfolioAnalysis.largestPosition?.holding ?? null;
-  const largestWeightPercent =
-    portfolioAnalysis.largestPosition?.weightPercent ?? 0;
   const listingLookupMessages = useMemo(
     () =>
       formatListingLookupGuidance(listingWarnings, {
@@ -644,18 +637,6 @@ export default function PortfolioPage() {
           }
         />
 
-        <PageRelatedLinks
-          purpose={PAGE_PURPOSE.portfolio}
-          links={[
-            { href: PORTFOLIO_HISTORY_PATH, label: "Portfolio History" },
-            { href: PORTFOLIO_HEALTH_PATH, label: "Portfolio Scorecard" },
-            { href: ANALYSIS_PATH, label: "Open Analysis" },
-            { href: MARKET_PULSE_PATH, label: "Market Pulse" },
-          ]}
-        />
-
-        <AuthenticatedFourQuestionsNav />
-
         <PortfolioSyncBanner
           syncState={syncState}
           migrationPreview={migrationPreview}
@@ -690,16 +671,32 @@ export default function PortfolioPage() {
           ) : null}
         </div>
 
-        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <section
+          className="grid gap-4 sm:grid-cols-2"
+          data-testid="portfolio-at-a-glance"
+        >
           <Metric
             icon={<CircleDollarSign className="h-5 w-5" />}
-            label="Total value"
+            label="Portfolio value"
             value={
               performance.totalValueAvailable
                 ? formatEur(totalValue)
                 : "Unavailable"
             }
-            detail={performance.totalValueCoverageMessage ?? undefined}
+            detail={
+              [
+                performance.totalValueCoverageMessage,
+                cashValue > 0
+                  ? `Cash ${formatEur(cashValue)}${
+                      performance.totalValueAvailable && totalValue > 0
+                        ? ` · ${((cashValue / totalValue) * 100).toFixed(1)}%`
+                        : ""
+                    }`
+                  : null,
+              ]
+                .filter(Boolean)
+                .join(" · ") || undefined
+            }
           />
           <Metric
             icon={<BarChart3 className="h-5 w-5" />}
@@ -722,46 +719,8 @@ export default function PortfolioPage() {
                 : "neutral"
             }
           />
-          <Metric
-            icon={<Banknote className="h-5 w-5" />}
-            label="Cash"
-            value={formatEur(cashValue)}
-            detail={
-              performance.totalValueAvailable && totalValue > 0
-                ? `${((cashValue / totalValue) * 100).toFixed(1)}% of portfolio`
-                : performance.totalValueAvailable
-                  ? "Share unavailable"
-                  : "Portfolio value unavailable"
-            }
-          />
-          <Metric
-            icon={<PieChart className="h-5 w-5" />}
-            label="Largest position"
-            value={largest?.symbol ?? "—"}
-            detail={
-              largest && totalValue > 0
-                ? `${largestWeightPercent.toFixed(1)}% of portfolio`
-                : holdings.length > 0
-                  ? "Awaiting price data"
-                  : "No holdings"
-            }
-          />
         </section>
         <ConversionDetailsDisclosure compactTrigger />
-
-        <PortfolioHistoryNavCard variant="card" />
-        <PortfolioAllocationNavCard />
-
-        <PortfolioFundingSection
-          portfolioValueEur={totalValue}
-          portfolioValueAvailable={performance.totalValueAvailable}
-          holdings={holdings.map((holding) => ({
-            id: holding.id,
-            symbol: holding.symbol,
-            name: holding.name,
-            assetType: holding.assetType,
-          }))}
-        />
 
         <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
           <div className="flex items-center justify-between border-b border-slate-200 px-5 py-5 sm:px-7">
@@ -1117,26 +1076,47 @@ export default function PortfolioPage() {
           )}
         </section>
 
-        <section className={`${appDarkCardClass} ${appDarkCardPaddingClass}`}>
-          <div className="flex items-start gap-4">
-            <div className="rounded-2xl bg-white/10 p-3 text-brand">
-              <Sparkles className="h-5 w-5" />
-            </div>
-            <div>
-              <p className={appHeroMetricLabelClass}>Portfolio insight</p>
-              <p className={`mt-3 max-w-3xl ${appDashboardDarkBodyClass}`}>
-                {largest && totalValue > 0
-                  ? `${largest.symbol} is your largest position at ${largestWeightPercent.toFixed(1)}%. `
-                  : performance.hasUnvaluedInvestments
-                    ? "Some holdings are excluded until market prices are available. "
-                    : ""}
-                {cashValue > 0 && totalValue > 0
-                  ? `Cash represents ${((cashValue / totalValue) * 100).toFixed(1)}% of total portfolio value.`
-                  : "No cash holding is currently recorded."}
-              </p>
-            </div>
-          </div>
+        <section data-testid="portfolio-activity" className="min-w-0">
+          <h2 className={appSectionTitleClass}>Activity</h2>
+          <p className={`mt-1.5 mb-3 ${appSectionMetaClass}`}>
+            Recent portfolio history. Full record stays on Portfolio History.
+          </p>
+          <PortfolioHistoryNavCard variant="card" />
         </section>
+
+        <PageRelatedLinks
+          purpose={PAGE_PURPOSE.portfolio}
+          links={[
+            { href: ANALYSIS_PATH, label: "Analysis" },
+            { href: NEWS_PATH, label: "News" },
+            { href: GOALS_PATH, label: "Goals" },
+            { href: REVIEW_PATH, label: "Reports" },
+            { href: PORTFOLIO_HISTORY_PATH, label: "Portfolio history" },
+            { href: PORTFOLIO_HEALTH_PATH, label: "Scorecard" },
+            { href: DASHBOARD_DEEP_LINKS.portfolioExposure, label: "Allocation" },
+            { href: MARKET_PULSE_PATH, label: "Market Pulse" },
+          ]}
+        />
+
+        <AuthenticatedFourQuestionsNav />
+
+        <details className="rounded-[24px] border border-slate-200/80 bg-white px-4 py-3 sm:px-5">
+          <summary className="cursor-pointer list-none text-[15px] font-semibold text-slate-800 underline-offset-2 hover:underline">
+            Contributions and withdrawals
+          </summary>
+          <div className="mt-4">
+            <PortfolioFundingSection
+              portfolioValueEur={totalValue}
+              portfolioValueAvailable={performance.totalValueAvailable}
+              holdings={holdings.map((holding) => ({
+                id: holding.id,
+                symbol: holding.symbol,
+                name: holding.name,
+                assetType: holding.assetType,
+              }))}
+            />
+          </div>
+        </details>
       </PageContainer>
 
       {cryptoEditorOpen ? (

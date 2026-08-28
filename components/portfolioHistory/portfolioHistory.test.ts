@@ -48,7 +48,7 @@ describe("portfolio history UI", () => {
   it("keeps Portfolio History discoverable in Portfolio, User Menu, and Evolution", () => {
     expect(menu).toContain("PORTFOLIO_HISTORY_PATH");
     expect(menu).toContain("Portfolio History");
-    expect(dashboard).toContain("DashboardPortfolioEvolutionCard");
+    expect(dashboard).toContain("DashboardSecondaryNav");
     expect(dashboard).not.toContain("DashboardPortfolioHistorySection");
     expect(portfolio).toContain("PortfolioHistoryNavCard");
     expect(portfolio).toContain("Portfolio History");

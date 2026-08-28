@@ -581,7 +581,8 @@ describe("Portfolio Evolution", () => {
     const section = read("components/portfolioEvolution/PortfolioEvolutionSection.tsx");
     expect(card).not.toContain("usePortfolioPerformanceHistory");
     expect(card).not.toContain("/api/prices");
-    expect(dashboard).toContain("DashboardPortfolioEvolutionCard");
+    expect(dashboard).not.toContain("DashboardPortfolioEvolutionCard");
+    expect(dashboard).toContain("DashboardSecondaryNav");
     expect(section).toContain("usePortfolioPerformanceHistory");
     expect(section).toContain("historyEnabled");
   });

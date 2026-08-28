@@ -177,7 +177,8 @@ describe("Step 2 — goal skip/save and first value (J, K, L)", () => {
     expect(moment).toContain("COMPLETE_PERIOD_COPY.firstValueTitle");
     expect(moment).toContain("FOUR_QUESTIONS");
     expect(firstIntelligenceDashboardHref()).toBe("/dashboard?ready=1");
-    expect(read("app/dashboard/page.tsx")).toContain("FourQuestionsSection");
+    expect(read("app/dashboard/page.tsx")).toContain("FirstIntelligenceMoment");
+    expect(read("app/dashboard/page.tsx")).toContain("DashboardSecondaryNav");
   });
 
   it("writes a saved goal through the canonical Goals model", () => {

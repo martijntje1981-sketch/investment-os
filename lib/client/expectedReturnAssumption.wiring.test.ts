@@ -40,12 +40,11 @@ describe("Phase 3C central expected return assumption wiring", () => {
   });
 
   it("keeps Dashboard compact with optional assumption context only", () => {
-    expect(dashboard).toContain(
-      "<DashboardGoalConclusionCard progress={goalProgress} goal={goal} />",
-    );
+    expect(dashboard).toContain("DashboardSecondaryNav");
     expect(conclusionCard).toContain("buildGoalConclusion(progress, goal)");
     expect(dashboard).not.toContain("ExpectedReturnAssumptionPanel");
     expect(dashboard).not.toContain("ExpectedReturnAssumptionEditor");
+    expect(dashboard).not.toContain("DashboardGoalConclusionCard");
   });
 
   it("avoids Tobailey-prediction wording in helpers and Goals form hint", () => {

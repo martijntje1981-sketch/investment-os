@@ -14,22 +14,14 @@ describe("Phase 3C Smart Dashboard Intelligence wiring", () => {
     "components/dashboard/DashboardTodaysMarketBriefing.tsx",
   );
   const holdings = read("components/dashboard/HoldingsToday.tsx");
-  const explore = read("components/dashboard/DashboardExploreTools.tsx");
   const smart = read("lib/client/smartDashboardIntelligence.ts");
 
   it("keeps conclusion-first Dashboard section order without remounting Goal Progress card", () => {
     const order = [
       "<DashboardSummary",
-      "<FourQuestionsSection",
-      "<NewAndNotableSection",
-      "<DashboardPortfolioEvolutionCard",
-      "<LookingAheadSection",
       "<HoldingsToday",
-      "<DashboardMarketPulseCard",
-      "<DashboardPerspectivesWidget",
-      "<DashboardCashIntelligenceCard",
-      "<DashboardExploreTools",
-      "<DashboardMarketStatus",
+      "<DashboardPersonalIntelligence",
+      "<DashboardSecondaryNav",
     ].map((token) => dashboard.indexOf(token));
 
     for (let i = 0; i < order.length; i += 1) {
@@ -72,17 +64,13 @@ describe("Phase 3C Smart Dashboard Intelligence wiring", () => {
   });
 
   it("applies emphasis without reordering sections", () => {
-    expect(dashboard).toContain("DashboardPortfolioEvolutionCard");
-    expect(dashboard).toContain(
-      "emphasizeGoals={smartDashboard.emphasis.exploreGoalsHighlight}",
-    );
-    expect(explore).toContain("emphasizeGoals");
+    expect(dashboard).toContain("DashboardSecondaryNav");
     expect(hero).toContain("data-hero-emphasis");
   });
 
   it("keeps holdings mobile-friendly without denser information", () => {
     expect(holdings).toContain("min-h-[44px]");
-    expect(holdings).toContain("useCollapsedListLimit");
+    expect(holdings).toContain("HOLDINGS_TODAY_COLLAPSE_AFTER");
     expect(holdings).not.toContain("min-w-[720px]");
     expect(holdings).not.toMatch(/overflow-x-(auto|scroll)/);
   });

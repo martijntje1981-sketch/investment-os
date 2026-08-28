@@ -118,10 +118,10 @@ describe("Dashboard Portfolio Resilience summary", () => {
     expect(conclusionsSource).toContain("DASHBOARD_DEEP_LINKS.scenarioStress");
     expect(conclusionsSource).toContain("Explore scenarios & resilience");
 
-    const fourIdx = dashboardSource.indexOf("<FourQuestionsSection");
+    const fourIdx = dashboardSource.indexOf("<DashboardPersonalIntelligence");
     const holdingsIdx = dashboardSource.indexOf("<HoldingsToday");
-    expect(fourIdx).toBeGreaterThan(-1);
-    expect(holdingsIdx).toBeGreaterThan(fourIdx);
-    expect(dashboardSource).toContain("buildFourQuestions");
+    expect(holdingsIdx).toBeGreaterThan(-1);
+    expect(fourIdx).toBeGreaterThan(holdingsIdx);
+    expect(dashboardSource).not.toContain("buildFourQuestions");
   });
 });

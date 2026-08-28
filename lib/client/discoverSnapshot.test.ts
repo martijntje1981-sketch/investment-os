@@ -88,7 +88,7 @@ describe("discover UI integration", () => {
     expect(preview).not.toContain("DiscoverMissedTeaser");
     expect(preview).toContain("DASHBOARD_DEEP_LINKS.marketBriefing");
     expect(dashboard).not.toContain("useDiscoverSnapshot");
-    expect(dashboard).toContain("FourQuestionsSection");
+    expect(dashboard).toContain("DashboardSecondaryNav");
     expect(dashboard).not.toContain("<DashboardTodaysMarketBriefing");
     expect(discoverPage).not.toMatch(/innerWidth|matchMedia|useMediaQuery/);
   });

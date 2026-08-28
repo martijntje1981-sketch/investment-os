@@ -238,7 +238,7 @@ describe("investment intelligence reuse", () => {
     );
 
     expect(dashboard).toContain("useInvestmentIntelligence");
-    expect(dashboard).toContain("FourQuestionsSection");
+    expect(dashboard).toContain("DashboardSecondaryNav");
     expect(dashboard).not.toContain("<DashboardTodaysMarketBriefing");
     expect(dashboard).not.toContain("PortfolioIntelligencePanel");
     expect(news).toContain("useInvestmentIntelligence");

@@ -100,32 +100,30 @@ describe("Dashboard UX polish phase", () => {
   const pulse = read("components/dashboard/DashboardMarketPulseCard.tsx");
   const insight = read("components/dashboard/DashboardInsightCard.tsx");
 
-  it("places Cash Intelligence after Market Pulse without duplicating Health", () => {
+  it("places Cash Intelligence behind Dashboard secondary navigation", () => {
     expect(dashboard).not.toContain("DashboardTopStoryCard");
-    expect(dashboard).toContain("DashboardCashIntelligenceCard");
+    expect(dashboard).not.toContain("DashboardCashIntelligenceCard");
     expect(dashboard).toContain("pulse={portfolioPulse}");
     expect(dashboard).not.toContain("DashboardPortfolioScorecard");
     expect(dashboard).not.toContain("DashboardPortfolioHealthCard");
     const pulseIdx = dashboard.indexOf("pulse={portfolioPulse}");
-    const marketPulseIdx = dashboard.indexOf("<DashboardMarketPulseCard");
-    const cashIdx = dashboard.indexOf(
-      "<DashboardCashIntelligenceCard holdings={holdings} />",
-    );
+    const holdingsIdx = dashboard.indexOf("<HoldingsToday");
     expect(pulseIdx).toBeGreaterThan(-1);
-    expect(marketPulseIdx).toBeGreaterThan(pulseIdx);
-    expect(cashIdx).toBeGreaterThan(marketPulseIdx);
+    expect(holdingsIdx).toBeGreaterThan(pulseIdx);
+    expect(read("components/dashboard/DashboardSecondaryNav.tsx")).toContain(
+      "cashIntelligence",
+    );
   });
 
   it("keeps holdings compact by default with accessible expand controls", () => {
-    expect(holdings).toContain("useCollapsedListLimit");
+    expect(holdings).toContain("HOLDINGS_TODAY_COLLAPSE_AFTER");
     expect(holdings).toContain("aria-expanded={expanded}");
     expect(holdings).toContain("aria-controls={listId}");
     expect(holdings).toContain("Show less");
-    expect(holdings).toContain("Show ${hiddenCount} more");
+    expect(holdings).toContain("Show all ${total} holdings");
     expect(holdings).toContain("showToggle");
     expect(holdings).toContain("View portfolio");
     expect(holdings).toContain("View all holdings");
-    expect(holdings).toContain("slice(0, visibleLimit)");
   });
 
   it("does not invent sparkline history for the hero trend mark", () => {
@@ -178,21 +176,16 @@ describe("Dashboard UX polish phase", () => {
     expect(cash).toContain("Allocation");
   });
 
-  it("orders hero, Four Questions, holdings, then secondary modules", () => {
+  it("orders hero, holdings, personal intelligence, then secondary links", () => {
     const summaryIdx = dashboard.indexOf("<DashboardSummary");
     const pulseIdx = dashboard.indexOf("pulse={portfolioPulse}");
-    const fourIdx = dashboard.indexOf("<FourQuestionsSection");
     const holdingsIdx = dashboard.indexOf("<HoldingsToday");
-    const marketPulseIdx = dashboard.indexOf(
-      "<DashboardMarketPulseCard",
-      holdingsIdx,
-    );
-    const cashIdx = dashboard.indexOf("<DashboardCashIntelligenceCard");
+    const intelligenceIdx = dashboard.indexOf("<DashboardPersonalIntelligence");
+    const secondaryIdx = dashboard.indexOf("<DashboardSecondaryNav");
     expect(summaryIdx).toBeLessThan(pulseIdx);
-    expect(pulseIdx).toBeLessThan(fourIdx);
-    expect(fourIdx).toBeLessThan(holdingsIdx);
-    expect(holdingsIdx).toBeLessThan(marketPulseIdx);
-    expect(marketPulseIdx).toBeLessThan(cashIdx);
+    expect(pulseIdx).toBeLessThan(holdingsIdx);
+    expect(holdingsIdx).toBeLessThan(intelligenceIdx);
+    expect(intelligenceIdx).toBeLessThan(secondaryIdx);
   });
 });
 

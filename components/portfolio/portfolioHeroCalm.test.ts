@@ -55,7 +55,7 @@ describe("calm Portfolio hero", () => {
 
   it("N. Scorecard remains discoverable outside the hero cluster", () => {
     expect(portfolio).toContain("PORTFOLIO_HEALTH_PATH");
-    expect(portfolio).toContain("Portfolio Scorecard");
+    expect(portfolio).toContain("Scorecard");
     expect(portfolio).toContain("PageRelatedLinks");
   });
 

@@ -19,7 +19,7 @@ describe("Phase 1 dashboard UI refinement", () => {
   const globals = read("app/globals.css");
   const surface = read("components/layout/appSurface.ts");
 
-  it("keeps Portfolio Pulse and Cash Intelligence outside the portfolio hero", () => {
+  it("keeps Portfolio Pulse outside the portfolio hero; Cash Intelligence stays a destination", () => {
     expect(hero).not.toContain("HeroHealthRing");
     expect(hero).not.toContain("HeroTopStoryPreviewCard");
     expect(hero).not.toContain("buildHeroHealthPreview");
@@ -27,18 +27,16 @@ describe("Phase 1 dashboard UI refinement", () => {
     expect(dashboard).toContain("pulse={portfolioPulse}");
     expect(dashboard).not.toContain("DashboardPortfolioScorecard");
     expect(dashboard).not.toContain("DashboardPortfolioHealthCard");
-    expect(dashboard).toContain("DashboardCashIntelligenceCard");
+    expect(dashboard).not.toContain("DashboardCashIntelligenceCard");
     expect(dashboard).not.toContain("DashboardTopStoryCard");
     expect(dashboard.indexOf("<DashboardSummary")).toBeLessThan(
       dashboard.indexOf("pulse={portfolioPulse}"),
     );
-    expect(dashboard.indexOf("<DashboardSummary")).toBeLessThan(
-      dashboard.indexOf("<DashboardCashIntelligenceCard"),
-    );
   });
 
-  it("places Four Questions under hero pulse; Market Briefing remains as Explore destination module", () => {
-    expect(dashboard).toContain("<FourQuestionsSection");
+  it("places holdings under the hero; Market Briefing remains as Explore destination module", () => {
+    expect(dashboard).not.toContain("<FourQuestionsSection");
+    expect(dashboard).toContain("<HoldingsToday");
     expect(dashboard).not.toContain("<DashboardTodaysMarketBriefing");
     expect(dashboard).not.toContain("<DashboardTodaysDecision");
     expect(dashboard).not.toContain("<DashboardIntelligencePreview");

@@ -217,7 +217,7 @@ describe("Phase 16.5 Dashboard presentation contracts", () => {
     const card = read("components/portfolioHistory/PortfolioHistoryNavCard.tsx");
     const holdingsRow = read("components/dashboard/HoldingsTodayRow.tsx");
 
-    expect(dashboard).toContain("DashboardPortfolioEvolutionCard");
+    expect(dashboard).not.toContain("DashboardPortfolioEvolutionCard");
     expect(dashboard).not.toContain("DashboardPortfolioHistorySection");
     expect(dashboard).not.toContain("DashboardContributionsCard");
     expect(history).toContain("CONTRIBUTIONS_RECORDED_LABEL");

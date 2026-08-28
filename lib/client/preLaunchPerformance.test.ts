@@ -79,7 +79,7 @@ describe("pre-launch performance batch", () => {
   it("H/I. Dashboard defers EOD history until after first paint", () => {
     expect(dashboard).toContain("useAfterFirstPaint");
     expect(dashboard).toContain("historyEnabled");
-    expect(dashboard).toContain("historyEnabled && scopedHoldings.length > 0 && hasSavedGoal");
+    expect(dashboard).toContain("portfolioReady && holdings.length > 0");
     expect(historyHook).toContain("enabled = true");
     expect(historyHook).toContain("if (!enabled || period === \"1D\" || !userSub)");
     expect(dashboard).toContain("usePortfolioPerformanceHistory");

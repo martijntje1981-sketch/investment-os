@@ -38,7 +38,7 @@ describe("premium navigation and visual discovery", () => {
     const tools = read("components/dashboard/DashboardExploreTools.tsx");
     const dashboard = read("app/dashboard/page.tsx");
 
-    expect(dashboard).toContain("DashboardExploreTools");
+    expect(dashboard).toContain("DashboardSecondaryNav");
     expect(tools).toContain("Understand your portfolio");
     expect(tools).toContain("Analysis");
     expect(tools).toContain("Goals");

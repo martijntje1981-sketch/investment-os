@@ -151,11 +151,12 @@ describe("home and dashboard hierarchy", () => {
       dashboard.indexOf("pulse={portfolioPulse}"),
     );
     expect(dashboard.indexOf("pulse={portfolioPulse}")).toBeLessThan(
-      dashboard.indexOf("<FourQuestionsSection"),
-    );
-    expect(dashboard.indexOf("<FourQuestionsSection")).toBeLessThan(
       dashboard.indexOf("<HoldingsToday"),
     );
+    expect(dashboard.indexOf("<HoldingsToday")).toBeLessThan(
+      dashboard.indexOf("<DashboardPersonalIntelligence"),
+    );
+    expect(dashboard).not.toContain("<FourQuestionsSection");
     expect(dashboard).not.toContain("<DashboardTodaysMarketBriefing");
     expect(dashboard).not.toContain("DashboardQuickActions");
     expect(dashboard).not.toContain("PortfolioIntelligencePanel");
@@ -168,8 +169,7 @@ describe("home and dashboard hierarchy", () => {
     expect(summary).toContain("PortfolioValueCard");
     expect(summary).not.toContain("GoalProgressCard");
     expect(summary).not.toContain("TodayCard");
-    expect(holdingsToday).toContain("Your holdings");
-    expect(holdingsToday).not.toContain("Your holdings today");
+    expect(holdingsToday).toContain("Your holdings today");
     expect(holdingsToday).toContain("md:hidden");
     expect(holdingsToday).toContain("hidden md:block");
     expect(preview).not.toContain("Also worth noting");

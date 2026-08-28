@@ -448,7 +448,7 @@ describe("perspectives polish wiring", () => {
     expect(dashboard).not.toContain("DashboardPortfolioScorecard");
     expect(dashboard).not.toContain("DashboardPortfolioHealthCard");
     expect(dashboard).not.toContain("DashboardTopStoryCard");
-    expect(dashboard).toContain("DashboardCashIntelligenceCard");
+    expect(dashboard).not.toContain("DashboardCashIntelligenceCard");
     expect(page).toContain(
       "External views are presented for informational purposes",
     );

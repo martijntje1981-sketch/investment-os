@@ -918,12 +918,12 @@ describe("Phase 21 safety + integration contracts", () => {
     const evolutionCard = read(
       "components/portfolioEvolution/DashboardPortfolioEvolutionCard.tsx",
     );
-    expect(dashboard).toContain("buildPortfolioStanceHistory");
-    expect(dashboard).toContain("stanceHistory={stanceHistory}");
+    expect(dashboard).not.toContain("buildPortfolioStanceHistory");
+    expect(dashboard).not.toContain("stanceHistory={stanceHistory}");
     expect(dashboard).not.toContain("<DashboardPortfolioStance");
     expect(evolutionCard).toContain("DashboardPortfolioStance");
     expect(dashboard.match(/usePortfolioPerformanceHistory\(/g)?.length).toBe(2);
-    expect(dashboard).toContain("stanceHistory");
+    expect(dashboard).not.toContain("stanceHistory");
     expect(read("lib/services/fourQuestions/buildFourQuestions.ts")).toContain(
       "mergeStanceIntoFourQuestions",
     );

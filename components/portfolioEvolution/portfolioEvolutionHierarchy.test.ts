@@ -179,18 +179,15 @@ describe("Portfolio Evolution Dashboard hierarchy", () => {
   const holdingPage = read("app/holding/[ticker]/page.tsx");
   const engine = read("lib/services/portfolioEvolution/buildPortfolioEvolutionTimeline.ts");
 
-  it("A. Dashboard Evolution renders as the major lower intelligence visual", () => {
-    expect(dashboard).toContain("<DashboardPortfolioEvolutionCard");
+  it("A. Dashboard no longer mounts Evolution as a primary block", () => {
+    expect(dashboard).not.toContain("<DashboardPortfolioEvolutionCard");
     expect(card).toContain("Portfolio Evolution");
     expect(card).toContain("See how your portfolio changed");
     expect(card).toContain("View full evolution");
     expect(card).toContain("PORTFOLIO_EVOLUTION_HREF");
-    expect(dashboard.indexOf("<FourQuestionsSection")).toBeGreaterThan(-1);
-    expect(dashboard.indexOf("<DashboardPortfolioEvolutionCard")).toBeGreaterThan(
-      dashboard.indexOf("<FourQuestionsSection"),
-    );
+    expect(dashboard).toContain("DashboardSecondaryNav");
     expect(dashboard.indexOf("<HoldingsToday")).toBeGreaterThan(
-      dashboard.indexOf("<DashboardPortfolioEvolutionCard"),
+      dashboard.indexOf("<DashboardSummary"),
     );
   });
 
@@ -299,7 +296,6 @@ describe("Portfolio Evolution Dashboard hierarchy", () => {
   it("J. unsupported timeframes stay disabled", () => {
     expect(section).toContain("disabled={!timeline.timeframeEnabled[id]");
     expect(section).toContain('complete ? "90D" : "30D"');
-    expect(dashboard).toContain('timeframe: "30D"');
     expect(dashboard).not.toContain('"3M"');
   });
 
@@ -321,15 +317,15 @@ describe("Portfolio Evolution Dashboard hierarchy", () => {
     expect(holdingPage).toContain("DASHBOARD_DEEP_LINKS.cashIntelligence");
   });
 
-  it("N. large Dashboard Cash card is demoted to a compact teaser", () => {
+  it("N. large Dashboard Cash card remains a compact teaser off the primary Dashboard", () => {
     expect(cashCard).toContain("Compact Dashboard Cash Intelligence teaser");
     expect(cashCard).toContain("appCardPaddingCompactClass");
-    expect(dashboard).toContain("DashboardCashIntelligenceCard");
+    expect(dashboard).not.toContain("DashboardCashIntelligenceCard");
   });
 
   it("O. generic Dashboard Portfolio History card is demoted", () => {
     expect(dashboard).not.toContain("DashboardPortfolioHistorySection");
-    expect(dashboard).toContain("DashboardPortfolioEvolutionCard");
+    expect(dashboard).not.toContain("DashboardPortfolioEvolutionCard");
     expect(read("components/dashboard/DashboardPortfolioHistorySection.tsx")).toContain(
       "export function DashboardPortfolioHistorySection",
     );

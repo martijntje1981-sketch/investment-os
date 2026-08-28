@@ -37,9 +37,9 @@ describe("contributions ledger UI", () => {
     "utf8",
   );
 
-  it("places recorded contributions on Portfolio and Evolution, not a duplicate Dashboard ledger card", () => {
-    expect(dashboardSource).toContain("usePortfolioContributions");
-    expect(dashboardSource).toContain("DashboardPortfolioEvolutionCard");
+  it("places recorded contributions on Portfolio, not a duplicate Dashboard ledger card", () => {
+    expect(dashboardSource).not.toContain("usePortfolioContributions");
+    expect(dashboardSource).not.toContain("DashboardPortfolioEvolutionCard");
     expect(dashboardSource).not.toContain("DashboardPortfolioHistorySection");
     expect(dashboardSource).not.toContain("DashboardContributionsCard");
     expect(dashboardSource).not.toContain("DashboardGoalProgressCard");
@@ -47,11 +47,13 @@ describe("contributions ledger UI", () => {
     expect(dashboardSource).not.toContain("DashboardDividendCard");
   });
 
-  it("renders portfolio funding before the holdings list", () => {
+  it("keeps portfolio funding available after holdings", () => {
     expect(portfolioSource).toContain("PortfolioFundingSection");
-    expect(portfolioSource).toMatch(
-      /PortfolioFundingSection[\s\S]*<section className="overflow-hidden rounded-\[28px\] border border-slate-200 bg-white shadow-sm">[\s\S]*<h2 className=\{appSectionTitleClass\}>Holdings<\/h2>/,
-    );
+    expect(portfolioSource).toContain("Contributions and withdrawals");
+    const holdingsIdx = portfolioSource.indexOf(">Holdings</h2>");
+    const fundingIdx = portfolioSource.indexOf("<PortfolioFundingSection");
+    expect(holdingsIdx).toBeGreaterThan(-1);
+    expect(fundingIdx).toBeGreaterThan(holdingsIdx);
   });
 
   it("shows portfolio empty state and opening contribution action", () => {

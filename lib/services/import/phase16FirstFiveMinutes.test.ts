@@ -90,7 +90,8 @@ describe("phase 16 first five minutes", () => {
     const portfolio = readProjectFile("app/portfolio/page.tsx");
 
     expect(dashboard).toContain("FirstIntelligenceMoment");
-    expect(dashboard).toContain("FourQuestionsSection");
+    expect(dashboard).toContain("FirstIntelligenceMoment");
+    expect(dashboard).toContain("DashboardSecondaryNav");
     expect(moment).toContain("COMPLETE_PERIOD_COPY.firstValueTitle");
     expect(moment).toContain("FOUR_QUESTIONS");
     expect(moment).toContain("Skip for now");

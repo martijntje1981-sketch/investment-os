@@ -84,7 +84,7 @@ describe("Pre-launch light hero contrast and action alignment", () => {
     expect(portfolio).toContain("<PageHero");
     expect(portfolio).toContain("ExportPortfolioButton");
     expect(portfolio).toContain("aria-label=\"Portfolio History\"");
-    expect(portfolio).toContain("Portfolio Scorecard");
+    expect(portfolio).toContain("Scorecard");
     expect(portfolio).toContain("RefreshPricesButton");
     expect(portfolio).toContain("PortfolioHeroAddMenu");
     expect(addMenu).toContain("Add cash");

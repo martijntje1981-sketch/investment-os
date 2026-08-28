@@ -150,14 +150,14 @@ describe("dashboard phase 1 revamp", () => {
     expect(movers.lowestMover?.changePeriodLabel).toBe("24h");
   });
 
-  it("keeps Portfolio Pulse and Trading Hours; Four Questions replace stacked briefing cards", () => {
+  it("keeps Portfolio Pulse and Trading Hours modules; Four Questions are no longer a primary Dashboard block", () => {
     expect(dashboardSource).toContain("pulse={portfolioPulse}");
-    expect(dashboardSource).toContain("FourQuestionsSection");
+    expect(dashboardSource).not.toContain("FourQuestionsSection");
     expect(dashboardSource).not.toContain("DashboardPortfolioScorecard");
     expect(dashboardSource).not.toContain("DashboardIntelligencePreview");
     expect(dashboardSource).not.toContain("DashboardInsightCard");
-    expect(dashboardSource).toContain("DashboardMarketStatus");
     expect(dashboardSource).toContain("HoldingsToday");
+    expect(dashboardSource).toContain("DashboardSecondaryNav");
     expect(dashboardSource).not.toContain("DashboardGoalProgressCard");
     expect(dashboardSource).not.toContain("DashboardDividendCard");
   });

@@ -806,17 +806,16 @@ describe("Phase 13 portfolio change detection", () => {
 });
 
 describe("Phase 13 UI wiring", () => {
-  it("renders a compact New & Notable surface on Dashboard", () => {
+  it("renders selected personal intelligence on Dashboard from existing change attention", () => {
     const dashboard = read("app/dashboard/page.tsx");
-    const ui = read("components/dashboard/NewAndNotableSection.tsx");
-    expect(dashboard).toContain("NewAndNotableSection");
+    const ui = read("components/dashboard/DashboardPersonalIntelligence.tsx");
+    expect(dashboard).toContain("DashboardPersonalIntelligence");
     expect(dashboard).toContain("buildPortfolioChangeAttention");
-    expect(ui).toContain("New & Notable");
+    expect(dashboard).toContain("selectDashboardPersonalIntelligence");
+    expect(ui).toContain("Personal intelligence");
     expect(ui).not.toContain("Since your last check");
     expect(ui).not.toContain("Last opened");
     expect(ui).toContain("min-h-11");
-    expect(ui).toContain("appIdentityHappenedCardClass");
-    expect(ui).toContain("Why am I seeing this?");
     expect(ui).not.toMatch(/buy|sell|rebalance/i);
   });
 });

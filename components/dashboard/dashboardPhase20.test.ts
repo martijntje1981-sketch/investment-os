@@ -39,8 +39,10 @@ describe("Phase 20 Dashboard intelligence refinement", () => {
     expect(notable).not.toContain("Since your last check");
   });
 
-  it("B. New & Notable renders", () => {
-    expect(dashboard).toContain("NewAndNotableSection");
+  it("B. New & Notable remains available; Dashboard uses selected personal intelligence", () => {
+    expect(dashboard).toContain("selectDashboardPersonalIntelligence");
+    expect(dashboard).toContain("DashboardPersonalIntelligence");
+    expect(dashboard).not.toContain("NewAndNotableSection");
     expect(notable).toContain("New & Notable");
     expect(notable).toContain("Changes worth knowing about");
     expect(notable).toContain('id="new-and-notable"');
@@ -83,12 +85,13 @@ describe("Phase 20 Dashboard intelligence refinement", () => {
   it("K. allocation remains discoverable", () => {
     expect(evolutionCard).toContain("View allocation");
     expect(evolutionCard).toContain("DASHBOARD_DEEP_LINKS.portfolioExposure");
-    expect(portfolioPage).toContain("PortfolioAllocationNavCard");
+    expect(portfolioPage).toContain("DASHBOARD_DEEP_LINKS.portfolioExposure");
     expect(PORTFOLIO_EVOLUTION_HREF).toBe("/portfolio-history#portfolio-evolution");
   });
 
-  it("L. Looking Ahead renders", () => {
-    expect(dashboard).toContain("LookingAheadSection");
+  it("L. Looking Ahead engine remains; Dashboard selects it only when useful", () => {
+    expect(dashboard).toContain("buildLookingAhead");
+    expect(dashboard).not.toContain("LookingAheadSection");
     expect(ahead).toContain("Looking Ahead");
     expect(ahead).toContain("model.headline");
   });
@@ -114,14 +117,15 @@ describe("Phase 20 Dashboard intelligence refinement", () => {
   });
 
   it("R. Portfolio Evolution engine is unchanged in this phase", () => {
-    expect(dashboard).toContain("buildPortfolioEvolutionTimeline");
-    expect(dashboard).toContain('timeframe: "30D"');
-    expect(dashboard).toContain("monthHistory.data?.chartPoints");
+    expect(dashboard).not.toContain("buildPortfolioEvolutionTimeline");
     expect(evolutionEngine).toContain("EVOLUTION_DAILY_MIX_BLOCK_REASON");
   });
 
-  it("S. Cash Intelligence is preserved", () => {
-    expect(dashboard).toContain("DashboardCashIntelligenceCard");
+  it("S. Cash Intelligence is preserved off the primary Dashboard", () => {
+    expect(dashboard).not.toContain("DashboardCashIntelligenceCard");
+    expect(read("components/dashboard/DashboardSecondaryNav.tsx")).toContain(
+      "cashIntelligence",
+    );
     expect(cashCard).toContain("View cash intelligence");
     expect(analysisCash).toContain('id="cash-intelligence"');
   });
@@ -151,11 +155,9 @@ describe("Phase 20 Dashboard intelligence refinement", () => {
   it("Y. Dashboard narrative order", () => {
     const order = [
       "<DashboardSummary",
-      "<FourQuestionsSection",
-      "<NewAndNotableSection",
-      "<DashboardPortfolioEvolutionCard",
-      "<LookingAheadSection",
       "<HoldingsToday",
+      "<DashboardPersonalIntelligence",
+      "<DashboardSecondaryNav",
     ].map((token) => dashboard.indexOf(token));
     for (let i = 0; i < order.length; i += 1) {
       expect(order[i], `missing token ${i}`).toBeGreaterThan(-1);

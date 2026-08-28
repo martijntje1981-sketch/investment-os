@@ -1,11 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import type { KeyboardEvent } from "react";
+import type { MouseEvent } from "react";
 
 import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
-import { holdingPricePeriodCaption, holdingPriceHoldingsLabel, holdingValueUnavailableLabel } from "@/lib/client/holdingDisplayPrice";
+import { holdingPricePeriodCaption, holdingPriceHoldingsLabel } from "@/lib/client/holdingDisplayPrice";
 import { formatHoldingTodayChange } from "@/lib/client/portfolioMovementFormat";
 import { formatCrypto24hChange } from "@/lib/client/cryptoPriceDisplay";
 import { resolveSmartMoneyFractionDigits } from "@/lib/client/smartPriceFormat";
@@ -13,10 +12,13 @@ import {
   appSectionMetaClass,
   appTableChangeClass,
   appTableNameClass,
-  appTableValueClass,
   appTickerClass,
 } from "@/components/layout/appSurface";
 import type { DashboardHoldingRow } from "@/lib/client/dashboardPortfolioSnapshot";
+import {
+  HOLDINGS_TODAY_NO_NEWS,
+  type HoldingsTodayNewsContext,
+} from "@/lib/client/holdingsTodayContext";
 import { holdingDetailPath } from "@/lib/navigation/appRoutes";
 import { ViewHoldingCue } from "@/components/holding/ViewHoldingCue";
 
@@ -50,37 +52,6 @@ function rowSurfaceClass(index: number, layout: "mobile" | "desktop"): string {
   }
 
   return `${zebra} ${hover} rounded-2xl px-3.5 -mx-1`;
-}
-
-function HoldingPriceQualityBadge({ row }: { row: DashboardHoldingRow }) {
-  const label = holdingPriceHoldingsLabel(row.priceQuality);
-  if (!label) return null;
-
-  return (
-    <span className="ml-1.5 text-[13px] font-semibold text-amber-800">
-      {label}
-    </span>
-  );
-}
-
-function HoldingValueLabel({
-  row,
-  formatEur,
-}: {
-  row: DashboardHoldingRow;
-  formatEur: (value: number, decimals?: number) => string;
-}) {
-  if (row.priceStatus !== "available" || row.currentValue === null) {
-    return <>{holdingValueUnavailableLabel(row)}</>;
-  }
-
-  const decimals = resolveSmartMoneyFractionDigits(row.currentValue);
-  return (
-    <>
-      {formatEur(row.currentValue, decimals)}
-      <HoldingPriceQualityBadge row={row} />
-    </>
-  );
 }
 
 function holdingSecondaryLabel(row: DashboardHoldingRow): string {
@@ -133,16 +104,99 @@ function holdingPeriodMeta(row: DashboardHoldingRow): string | null {
   return holdingPricePeriodCaption(row.priceQuality, row.changePeriodLabel);
 }
 
+function stopNewsNavigation(event: MouseEvent<HTMLAnchorElement>) {
+  event.stopPropagation();
+}
+
+function HoldingsTodayNews({
+  news,
+}: {
+  news: HoldingsTodayNewsContext | null;
+}) {
+  if (!news || news.isCash) {
+    return (
+      <span className={`${appSectionMetaClass} text-slate-400`}>—</span>
+    );
+  }
+
+  if (news.href && news.headline) {
+    return (
+      <a
+        href={news.href}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={stopNewsNavigation}
+        className="block min-w-0 text-[13px] font-medium leading-snug text-brand-navy underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
+        data-testid="holdings-today-news-link"
+      >
+        <span className="line-clamp-2">{news.headline}</span>
+        {news.sourceName ? (
+          <span className={`mt-0.5 block font-normal ${appSectionMetaClass}`}>
+            {news.sourceName}
+          </span>
+        ) : null}
+      </a>
+    );
+  }
+
+  return (
+    <span className={appSectionMetaClass} data-testid="holdings-today-no-news">
+      {news.emptyLabel ?? HOLDINGS_TODAY_NO_NEWS}
+    </span>
+  );
+}
+
+function HoldingIdentity({
+  row,
+  href,
+}: {
+  row: DashboardHoldingRow;
+  href: string | null;
+}) {
+  const quality = holdingPriceHoldingsLabel(row.priceQuality);
+  const name = (
+    <>
+      <p className={`truncate ${appTableNameClass}`}>{row.name}</p>
+      <p className={`mt-0.5 ${appTickerClass}`}>
+        {holdingSecondaryLabel(row)}
+        {quality ? (
+          <span className="ml-1.5 text-[13px] font-semibold text-amber-800">
+            {quality}
+          </span>
+        ) : null}
+      </p>
+    </>
+  );
+
+  if (!href) {
+    return <div className="min-w-0">{name}</div>;
+  }
+
+  return (
+    <div className="min-w-0">
+      <Link
+        href={href}
+        className="block min-w-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
+        aria-label={`Open ${row.name} holding details`}
+      >
+        {name}
+        <ViewHoldingCue className="mt-1 block" />
+      </Link>
+    </div>
+  );
+}
+
 export function HoldingsTodayRow({
   row,
+  news = null,
   layout,
   index = 0,
 }: {
   row: DashboardHoldingRow;
+  news?: HoldingsTodayNewsContext | null;
   layout: "mobile" | "desktop";
   index?: number;
 }) {
-  const router = useRouter();
   const { formatEur } = useBaseCurrencyDisplay();
   const changeLabel = holdingTodayLabel(row, formatEur);
   const periodMeta = holdingPeriodMeta(row);
@@ -150,116 +204,48 @@ export function HoldingsTodayRow({
   const canOpenDetail = row.assetType !== "cash";
   const href = canOpenDetail ? holdingDetailPath(row.symbol) : null;
 
-  function openDetail() {
-    if (href) router.push(href);
-  }
-
-  function onRowKeyDown(event: KeyboardEvent<HTMLElement>) {
-    if (!href) return;
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      openDetail();
-    }
-  }
-
   if (layout === "desktop") {
     return (
-      <tr
-        className={`border-b border-slate-100/90 last:border-b-0 ${surfaceClass} ${href ? "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand/40" : ""}`}
-        onClick={href ? openDetail : undefined}
-        onKeyDown={href ? onRowKeyDown : undefined}
-        tabIndex={href ? 0 : undefined}
-        role={href ? "link" : undefined}
-        aria-label={href ? `Open ${row.name} holding details` : undefined}
-      >
-        <td className="px-4 py-4 align-middle">
-          <div className="min-w-0">
-            <p className={`truncate ${appTableNameClass}`}>{row.name}</p>
-            <p className={`mt-0.5 ${appTickerClass}`}>
-              {holdingSecondaryLabel(row)}
-            </p>
-            {href ? <ViewHoldingCue className="mt-1 block" /> : null}
-          </div>
+      <tr className={`border-b border-slate-100/90 last:border-b-0 ${surfaceClass}`}>
+        <td className="px-4 py-3 align-top">
+          <HoldingIdentity row={row} href={href} />
         </td>
         <td
-          className={`whitespace-nowrap px-4 py-4 text-right align-middle ${appTableValueClass}`}
-        >
-          <HoldingValueLabel row={row} formatEur={formatEur} />
-        </td>
-        <td
-          className={`px-4 py-4 text-right align-middle ${appTableChangeClass} ${changeToneClass(row)}`}
+          className={`px-4 py-3 text-right align-top ${appTableChangeClass} ${changeToneClass(row)}`}
           title={row.changePeriodAccessibleDescription || undefined}
         >
           <p className="whitespace-nowrap">{changeLabel}</p>
           {periodMeta ? (
-            <p className={`mt-0.5 ${appSectionMetaClass}`}>
-              {periodMeta}
-            </p>
+            <p className={`mt-0.5 ${appSectionMetaClass}`}>{periodMeta}</p>
           ) : null}
+        </td>
+        <td className="px-4 py-3 align-top">
+          <HoldingsTodayNews news={news} />
         </td>
       </tr>
     );
   }
 
-  if (href) {
-    return (
-      <Link
-        href={href}
-        className={`flex min-h-[56px] min-w-0 items-center justify-between gap-4 border-b border-slate-100/90 py-3.5 last:border-b-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 ${surfaceClass}`}
-        aria-label={`Open ${row.name} holding details`}
-      >
-        <div className="min-w-0 flex-1 pr-2">
-          <p className={`truncate ${appTableNameClass}`}>{row.name}</p>
-          <p className={`mt-0.5 ${appTickerClass}`}>
-            {holdingSecondaryLabel(row)}
-          </p>
-          <ViewHoldingCue className="mt-1 block" />
-        </div>
+  return (
+    <div
+      className={`min-h-[56px] min-w-0 border-b border-slate-100/90 py-3 last:border-b-0 ${surfaceClass}`}
+    >
+      <div className="flex min-w-0 items-start justify-between gap-4">
+        <HoldingIdentity row={row} href={href} />
         <div
           className="shrink-0 text-right"
           title={row.changePeriodAccessibleDescription || undefined}
         >
-          <p className={appTableValueClass}>
-            <HoldingValueLabel row={row} formatEur={formatEur} />
-          </p>
-          <p className={`mt-1 ${appTableChangeClass} ${changeToneClass(row)}`}>
+          <p className={`${appTableChangeClass} ${changeToneClass(row)}`}>
             {changeLabel}
           </p>
           {periodMeta ? (
-            <p className={`mt-0.5 ${appSectionMetaClass}`}>
-              {periodMeta}
-            </p>
+            <p className={`mt-0.5 ${appSectionMetaClass}`}>{periodMeta}</p>
           ) : null}
         </div>
-      </Link>
-    );
-  }
-
-  return (
-    <div
-      className={`flex min-h-[56px] min-w-0 items-center justify-between gap-4 border-b border-slate-100/90 py-3.5 last:border-b-0 ${surfaceClass}`}
-    >
-      <div className="min-w-0 flex-1 pr-2">
-        <p className={`truncate ${appTableNameClass}`}>{row.name}</p>
-        <p className={`mt-0.5 ${appTickerClass}`}>
-          {holdingSecondaryLabel(row)}
-        </p>
       </div>
-      <div
-        className="shrink-0 text-right"
-        title={row.changePeriodAccessibleDescription || undefined}
-      >
-        <p className={appTableValueClass}>
-          <HoldingValueLabel row={row} formatEur={formatEur} />
-        </p>
-        <p className={`mt-1 ${appTableChangeClass} ${changeToneClass(row)}`}>
-          {changeLabel}
-        </p>
-        {periodMeta ? (
-          <p className={`mt-0.5 ${appSectionMetaClass}`}>
-            {periodMeta}
-          </p>
-        ) : null}
+      <div className="mt-2 min-w-0">
+        <HoldingsTodayNews news={news} />
       </div>
     </div>
   );

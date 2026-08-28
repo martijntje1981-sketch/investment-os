@@ -57,19 +57,19 @@ describe("Four Questions Dashboard UI wiring", () => {
     expect(section).toContain('data-external="true"');
   });
 
-  it("wires Four Questions under hero and above holdings", () => {
+  it("wires Four Questions engines without a primary Dashboard accordion", () => {
     const summaryIdx = dashboard.indexOf("<DashboardSummary");
-    const fourIdx = dashboard.indexOf("<FourQuestionsSection");
     const holdingsIdx = dashboard.indexOf("<HoldingsToday");
     expect(summaryIdx).toBeGreaterThan(-1);
-    expect(fourIdx).toBeGreaterThan(summaryIdx);
-    expect(holdingsIdx).toBeGreaterThan(fourIdx);
+    expect(holdingsIdx).toBeGreaterThan(summaryIdx);
+    expect(dashboard).not.toContain("FourQuestionsSection");
+    expect(dashboard).toContain("DashboardSecondaryNav");
     expect(dashboard).toContain("productAccess.intelligenceDepth");
     expect(dashboard).toContain("useProductAccess");
   });
 
   it("retires redundant conclusion cards once Four Questions exist", () => {
-    expect(dashboard).toContain("FourQuestionsSection");
+    expect(dashboard).not.toContain("FourQuestionsSection");
     expect(dashboard).not.toContain("<PortfolioThirtySeconds");
     expect(dashboard).not.toContain("<DashboardPortfolioResilienceCard");
     expect(dashboard).not.toContain("<DashboardGoalConclusionCard");
@@ -80,7 +80,6 @@ describe("Four Questions Dashboard UI wiring", () => {
   it("uses scope foundation without subscription gating", () => {
     expect(dashboard).toContain("resolveIntelligenceScope");
     expect(dashboard).toContain("filterHoldingsByIntelligenceScope");
-    expect(dashboard).toContain("useGoalRealityCheck");
     expect(dashboard).not.toMatch(/stripe|checkout|subscriptionTier|entitlement/i);
     expect(types).toContain('"free" | "complete"');
   });

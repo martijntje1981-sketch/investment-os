@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { useId, useMemo } from "react";
 import Link from "next/link";
 import { Upload, Wallet } from "lucide-react";
 
@@ -16,20 +16,25 @@ import {
   appTextLinkClass,
 } from "@/components/layout/appSurface";
 import type { DashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
-import { buildHoldingsConclusion } from "@/lib/client/dashboardConclusions";
-import { resolveHoldingsMoveColumnLabel } from "@/lib/client/performancePeriod";
 import {
-  useCollapsedListLimit,
-  useExpandedListLimit,
-} from "@/lib/client/useCollapsedListLimit";
+  HOLDINGS_TODAY_COLLAPSE_AFTER,
+  buildHoldingsTodayNewsById,
+} from "@/lib/client/holdingsTodayContext";
+import { resolveHoldingsMoveColumnLabel } from "@/lib/client/performancePeriod";
 import { useDashboardSectionExpanded } from "@/lib/client/useDashboardSectionExpanded";
 import { PORTFOLIO_PATH } from "@/lib/navigation/appRoutes";
+import type { NewsContentItem } from "@/lib/types/newsContent";
+import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
 export function HoldingsToday({
   snapshot,
+  holdings = [],
+  newsItems = [],
   isLoading = false,
 }: {
   snapshot: DashboardPortfolioSnapshot;
+  holdings?: StoredPortfolioHolding[];
+  newsItems?: NewsContentItem[] | null;
   isLoading?: boolean;
 }) {
   const listId = useId();
@@ -37,14 +42,21 @@ export function HoldingsToday({
     "your-holdings",
     false,
   );
-  const collapsedLimit = useCollapsedListLimit();
-  const expandedLimit = useExpandedListLimit();
   const moveColumnLabel = resolveHoldingsMoveColumnLabel(
     snapshot.marketHoldings.map((row) => ({
       assetType: row.assetType,
       marketPriceUpdatedAt: row.marketPriceUpdatedAt ?? undefined,
       priceUpdatedAt: row.priceUpdatedAt ?? undefined,
     })),
+  );
+  const newsById = useMemo(
+    () =>
+      buildHoldingsTodayNewsById(
+        snapshot.marketHoldings,
+        holdings,
+        newsItems,
+      ),
+    [holdings, newsItems, snapshot.marketHoldings],
   );
 
   if (isLoading) {
@@ -56,14 +68,14 @@ export function HoldingsToday({
       <section className={appDashboardLightCardClass}>
         <DashboardSectionHeader
           variant="holdings"
-          title="Your holdings"
-          subtitle="Latest available values and movement"
+          title="Your holdings today"
+          subtitle="Today’s move and relevant context"
           icon={<Wallet className="h-5 w-5" />}
           bordered={false}
         />
         <div className={appCardPaddingClass}>
           <p className={appSectionBodyClass}>
-            Add market-priced holdings to see latest available values and movement.
+            Add market-priced holdings to see today’s move and relevant context.
           </p>
           <Link href="/upload" className={`mt-5 ${appSolidButtonClass}`}>
             <Upload className="h-4 w-4" aria-hidden />
@@ -75,25 +87,23 @@ export function HoldingsToday({
   }
 
   const total = snapshot.marketHoldings.length;
-  const showToggle = total > collapsedLimit;
-  const visibleLimit = expanded
-    ? Math.min(total, expandedLimit)
-    : Math.min(total, collapsedLimit);
-  const visibleHoldings = snapshot.marketHoldings.slice(0, visibleLimit);
-  const hiddenCount = Math.max(0, total - collapsedLimit);
-  const holdingsConclusion = buildHoldingsConclusion(snapshot);
-  const positionSubtitle =
-    holdingsConclusion?.summaryLine ??
-    `${total} ${total === 1 ? "position" : "positions"} monitored`;
+  const showToggle = total > HOLDINGS_TODAY_COLLAPSE_AFTER;
+  const visibleHoldings = showToggle && !expanded
+    ? snapshot.marketHoldings.slice(0, HOLDINGS_TODAY_COLLAPSE_AFTER)
+    : snapshot.marketHoldings;
+  const hiddenCount = Math.max(0, total - HOLDINGS_TODAY_COLLAPSE_AFTER);
+  const positionSubtitle = `${total} ${total === 1 ? "position" : "positions"} · today’s move and relevant context`;
 
   return (
     <section
       className={appDashboardLightCardClass}
       data-testid="dashboard-holdings-summary"
+      aria-labelledby="your-holdings-today-heading"
     >
       <DashboardSectionHeader
         variant="holdings"
-        title="Holdings"
+        title="Your holdings today"
+        titleId="your-holdings-today-heading"
         subtitle={positionSubtitle}
         icon={<Wallet className="h-5 w-5" />}
         trailing={
@@ -112,6 +122,7 @@ export function HoldingsToday({
             <HoldingsTodayRow
               key={row.id}
               row={row}
+              news={newsById.get(row.id) ?? null}
               layout="mobile"
               index={index}
             />
@@ -123,20 +134,16 @@ export function HoldingsToday({
             <table className="w-full min-w-0 table-fixed border-collapse">
               <thead>
                 <tr className="border-b border-slate-200/80 bg-slate-50/90 text-left">
-                  <th
-                    className={`px-4 py-3 text-left ${appSectionLabelClass}`}
-                  >
+                  <th className={`w-[28%] px-4 py-3 text-left ${appSectionLabelClass}`}>
                     Holding
                   </th>
                   <th
-                    className={`w-[28%] px-4 py-3 text-right ${appSectionLabelClass}`}
-                  >
-                    Value
-                  </th>
-                  <th
-                    className={`w-[32%] px-4 py-3 text-right ${appSectionLabelClass}`}
+                    className={`w-[18%] px-4 py-3 text-right ${appSectionLabelClass}`}
                   >
                     {moveColumnLabel}
+                  </th>
+                  <th className={`px-4 py-3 text-left ${appSectionLabelClass}`}>
+                    News / context
                   </th>
                 </tr>
               </thead>
@@ -145,6 +152,7 @@ export function HoldingsToday({
                   <HoldingsTodayRow
                     key={row.id}
                     row={row}
+                    news={newsById.get(row.id) ?? null}
                     layout="desktop"
                     index={index}
                   />
@@ -168,7 +176,7 @@ export function HoldingsToday({
               ? "Show less"
               : hiddenCount === 1
                 ? "Show 1 more"
-                : `Show ${hiddenCount} more`}
+                : `Show all ${total} holdings`}
           </button>
           <Link
             href={PORTFOLIO_PATH}

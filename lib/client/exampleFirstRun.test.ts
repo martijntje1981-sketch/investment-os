@@ -84,7 +84,7 @@ describe("first-run dashboard wiring", () => {
     expect(dashboard).toContain("DashboardFirstRunCue");
     expect(dashboard).toContain("DemoHoldingsCallout");
     expect(dashboard).toContain("TrialStepsCard");
-    expect(dashboard).toContain("DashboardExploreTools");
+    expect(dashboard).toContain("DashboardSecondaryNav");
     expect(dashboard).toContain("useExampleActiveStatus");
   });
 
@@ -103,10 +103,10 @@ describe("first-run dashboard wiring", () => {
     expect(tools).toContain("Understand your portfolio");
     expect(tools).toContain("Structure, health and resilience");
     expect(tools).toContain("Track progress toward your target");
-    expect(dashboard).toContain("DashboardPortfolioEvolutionCard");
+    expect(dashboard).toContain("DashboardSecondaryNav");
     expect(dashboard).not.toContain("DashboardPortfolioHistorySection");
-    expect(dashboard).toContain("DashboardMarketPulseCard");
-    expect(dashboard).toContain("DashboardPerspectivesWidget");
+    expect(dashboard).not.toContain("DashboardMarketPulseCard");
+    expect(dashboard).not.toContain("DashboardPerspectivesWidget");
     expect(menu).toContain('title="My portfolio"');
     expect(menu).toContain('title="Understand"');
     expect(menu).toContain('title="Account"');

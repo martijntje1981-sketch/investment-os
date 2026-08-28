@@ -55,9 +55,12 @@ describe("Four Questions product architecture Phase 1 wiring", () => {
     expect(hub).toContain("hubHero");
   });
 
-  it("Dashboard Explore destinations point at hubs via builders", () => {
-    expect(dashboard).toContain("AuthenticatedFourQuestionsNav");
-    expect(dashboard).toContain("FourQuestionsSection");
+  it("Dashboard Explore destinations point at hubs via secondary navigation", () => {
+    expect(dashboard).toContain("DashboardSecondaryNav");
+    expect(dashboard).not.toContain("FourQuestionsSection");
+    expect(read("components/dashboard/DashboardSecondaryNav.tsx")).toContain(
+      "WHAT_HAPPENED_HUB_PATH",
+    );
     const q1 = read("lib/services/fourQuestions/buildWhatHappened.ts");
     const q2 = read("lib/services/fourQuestions/buildWhatMattersNow.ts");
     const q3 = read("lib/services/fourQuestions/buildAmIOnTrack.ts");
