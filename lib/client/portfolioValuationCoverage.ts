@@ -144,3 +144,55 @@ export function resolvePortfolioValuationCoverage(
     coverageMessage: incompleteMessage,
   };
 }
+
+const ZERO_CURRENTLY_PRICED_MESSAGE =
+  /^Portfolio coverage incomplete — 0 of \d+ holdings currently priced\.?$/;
+
+export const HERO_COVERAGE_CHECKING_LABEL = "Checking prices…";
+
+export type PresentedCoveragePriceQuality =
+  | "live"
+  | "delayed"
+  | "last_session"
+  | "estimated"
+  | "unavailable";
+
+/**
+ * Hero presentation only. Does not change Phase 3 coverage counts.
+ * Never show a contradictory 0-of-N "currently priced" line once live or
+ * delayed-current quotes are already on the same snapshot. While quotes are
+ * still settling, prefer a neutral checking state over a false zero.
+ */
+export function presentDashboardValuationCoverageMessage(input: {
+  coverageMessage: string | null | undefined;
+  priceQualities: readonly PresentedCoveragePriceQuality[];
+  pricesInitializing?: boolean;
+  hasSettledMarketTimestamp?: boolean;
+}): string | null {
+  const message = input.coverageMessage?.trim() || null;
+  if (!message) return null;
+  if (!ZERO_CURRENTLY_PRICED_MESSAGE.test(message)) return message;
+
+  const hasUsableCurrentOrDelayed = input.priceQualities.some(
+    (quality) => quality === "live" || quality === "delayed",
+  );
+  if (hasUsableCurrentOrDelayed) {
+    return null;
+  }
+
+  if (input.pricesInitializing) {
+    return HERO_COVERAGE_CHECKING_LABEL;
+  }
+
+  const hasSettledQuote = input.priceQualities.some(
+    (quality) =>
+      quality === "last_session" ||
+      quality === "estimated" ||
+      (quality === "unavailable" && input.hasSettledMarketTimestamp),
+  );
+  if (!hasSettledQuote) {
+    return HERO_COVERAGE_CHECKING_LABEL;
+  }
+
+  return message;
+}

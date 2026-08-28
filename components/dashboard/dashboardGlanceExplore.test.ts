@@ -48,10 +48,11 @@ describe("Dashboard glance → explore polish", () => {
   });
 
   it("makes conversion details a quiet secondary control", () => {
+    expect(hero).toContain("presentDashboardValuationCoverageMessage");
     expect(hero).toContain("quietTrigger");
     expect(conversion).toContain("quietTrigger");
     expect(conversion).toContain("text-[12px]");
-    expect(conversion).toContain("text-white/45");
+    expect(conversion).toContain("text-white/70");
   });
 
   it("does not aggressively truncate holding names and tones delayed freshness quietly", () => {
@@ -75,6 +76,7 @@ describe("Dashboard glance → explore polish", () => {
 
   it("exposes existing destinations in Explore Tobailey, including Scorecard", () => {
     expect(explore).toContain("Explore Tobailey");
+    expect(explore).toContain("max-w-[calc(100%-3.25rem)]");
     expect(explore).toContain("ANALYSIS_PATH");
     expect(explore).toContain("NEWS_PATH");
     expect(explore).toContain("GOALS_PATH");

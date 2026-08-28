@@ -48,7 +48,7 @@ export function ConversionDetailsDisclosure({
     (snapshot.status === "unavailable" || rateLines == null);
 
   const quietButtonClass = isDark
-    ? "inline-flex min-h-[44px] -my-2 items-center gap-1 rounded-lg px-0.5 text-[12px] font-medium text-white/45 underline-offset-2 hover:text-white/70 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300"
+    ? "inline-flex min-h-[44px] -my-2 items-center gap-1 rounded-lg px-0.5 text-[12px] font-medium text-white/70 underline-offset-2 hover:text-white/90 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300"
     : "inline-flex min-h-[44px] -my-2 items-center gap-1 rounded-lg px-0.5 text-[12px] font-medium text-slate-500 underline-offset-2 hover:text-slate-700 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700";
 
   const compactButtonClass = isDark

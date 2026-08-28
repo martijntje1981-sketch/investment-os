@@ -22,6 +22,7 @@ import {
   appHeroPaddingCompactClass,
 } from "@/components/layout/appSurface";
 import type { DashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
+import { presentDashboardValuationCoverageMessage } from "@/lib/client/portfolioValuationCoverage";
 
 function moveToneClass(snapshot: DashboardPortfolioSnapshot): string {
   if (!snapshot.hasDailyData) {
@@ -120,6 +121,18 @@ export function PortfolioValueCard({
 
   const isStaleDisplay = Boolean(snapshot.isStale && !refresh?.liveRefreshAt);
   const heroElevated = smart.emphasis.heroElevated;
+  const marketRows = snapshot.marketHoldings.filter(
+    (row) => row.assetType !== "cash",
+  );
+  const presentedCoverageMessage = presentDashboardValuationCoverageMessage({
+    coverageMessage: snapshot.portfolioValueCoverageMessage,
+    priceQualities: marketRows.map((row) => row.priceQuality),
+    pricesInitializing:
+      refresh?.isRefreshing === true || refresh?.status === "loading",
+    hasSettledMarketTimestamp: marketRows.some((row) =>
+      Boolean(row.marketPriceUpdatedAt || row.priceUpdatedAt),
+    ),
+  });
 
   return (
     <article
@@ -145,9 +158,9 @@ export function PortfolioValueCard({
                 ? formatEur(snapshot.portfolioValue)
                 : "Unavailable"}
             </p>
-            {snapshot.portfolioValueCoverageMessage ? (
+            {presentedCoverageMessage ? (
               <p className={`mt-1 ${appDashboardDarkMetaClass}`}>
-                {snapshot.portfolioValueCoverageMessage}
+                {presentedCoverageMessage}
               </p>
             ) : null}
           </div>

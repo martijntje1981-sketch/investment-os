@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import { buildDashboardSummary } from "@/lib/client/dashboardSummary";
 import { buildLookingAhead } from "@/lib/services/lookingAhead/buildLookingAhead";
 import {
+  HERO_COVERAGE_CHECKING_LABEL,
+  presentDashboardValuationCoverageMessage,
   resolvePortfolioValuationCoverage,
 } from "@/lib/client/portfolioValuationCoverage";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
@@ -126,5 +128,64 @@ describe("portfolioValuationCoverage", () => {
     expect(coverage.status).toBe("partial");
     expect(coverage.allowsValuationConclusions).toBe(true);
     expect(coverage.coverageMessage).toMatch(/excluded until market prices/i);
+  });
+});
+
+describe("presentDashboardValuationCoverageMessage", () => {
+  const zeroOfSeven =
+    "Portfolio coverage incomplete — 0 of 7 holdings currently priced.";
+
+  it("does not show a contradictory 0-of-N conclusion once delayed-current quotes exist", () => {
+    expect(
+      presentDashboardValuationCoverageMessage({
+        coverageMessage: zeroOfSeven,
+        priceQualities: ["delayed", "delayed", "live"],
+      }),
+    ).toBeNull();
+  });
+
+  it("uses a neutral checking state while quotes are still initializing", () => {
+    expect(
+      presentDashboardValuationCoverageMessage({
+        coverageMessage: zeroOfSeven,
+        priceQualities: ["unavailable", "unavailable"],
+        pricesInitializing: true,
+      }),
+    ).toBe(HERO_COVERAGE_CHECKING_LABEL);
+
+    expect(
+      presentDashboardValuationCoverageMessage({
+        coverageMessage: zeroOfSeven,
+        priceQualities: ["unavailable", "unavailable"],
+      }),
+    ).toBe(HERO_COVERAGE_CHECKING_LABEL);
+
+    expect(
+      presentDashboardValuationCoverageMessage({
+        coverageMessage: zeroOfSeven,
+        priceQualities: [],
+      }),
+    ).toBe(HERO_COVERAGE_CHECKING_LABEL);
+  });
+
+  it("keeps an honest 0-of-N message for settled stale or unavailable quotes", () => {
+    expect(
+      presentDashboardValuationCoverageMessage({
+        coverageMessage: zeroOfSeven,
+        priceQualities: ["unavailable", "last_session", "unavailable"],
+        hasSettledMarketTimestamp: true,
+      }),
+    ).toBe(zeroOfSeven);
+  });
+
+  it("does not weaken a genuine partial coverage message", () => {
+    const partial = "1 holding excluded until market prices are available.";
+    expect(
+      presentDashboardValuationCoverageMessage({
+        coverageMessage: partial,
+        priceQualities: ["delayed", "unavailable"],
+        pricesInitializing: true,
+      }),
+    ).toBe(partial);
   });
 });

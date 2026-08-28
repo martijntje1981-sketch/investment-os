@@ -174,7 +174,7 @@ export function DashboardSecondaryNav() {
       data-zone="explore-tobailey"
     >
       <p className={appHeroMetricLabelClass}>Explore Tobailey</p>
-      <p className={`mt-1 ${appDashboardDarkMetaClass}`}>
+      <p className={`mt-1 max-w-[calc(100%-3.25rem)] sm:max-w-none ${appDashboardDarkMetaClass}`}>
         Deeper analysis, evidence, history and tools when you want them.
       </p>
 
