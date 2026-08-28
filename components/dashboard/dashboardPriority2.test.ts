@@ -37,9 +37,9 @@ describe("Priority 2 Dashboard progressive disclosure", () => {
     }
   });
 
-  it("integrates the Daily Portfolio Briefing inside the hero", () => {
-    expect(hero).toContain("DailyPortfolioBriefing");
-    expect(hero).toContain("smart.briefing");
+  it("keeps Daily Portfolio Briefing available without showing it on the primary hero", () => {
+    expect(hero).not.toContain("DailyPortfolioBriefing");
+    expect(hero).not.toContain("smart.briefing");
     expect(dashboard).toContain("buildSmartDashboardIntelligence");
     expect(briefingUi).toContain('data-testid="daily-portfolio-briefing"');
     expect(dashboard).not.toContain("<DailyPortfolioBriefing");
@@ -108,10 +108,13 @@ describe("Priority 2 Dashboard progressive disclosure", () => {
     expect(marketStatus).toContain("resolveMarketUpdateDisplay");
   });
 
-  it("preserves Priority 1 hero pulse wiring and app-entry refresh import surface", () => {
-    expect(dashboard).toContain("pulse={portfolioPulse}");
+  it("keeps pulse available through Explore rather than the primary hero", () => {
+    expect(dashboard).not.toContain("pulse={portfolioPulse}");
     expect(dashboard).toContain("useLivePortfolioPriceRefresh");
-    expect(hero).toContain("HeroPortfolioPulse");
+    expect(hero).not.toContain("HeroPortfolioPulse");
     expect(hero).toContain("appDashboardHeroShellClass");
+    expect(read("components/dashboard/DashboardSecondaryNav.tsx")).toContain(
+      "DASHBOARD_DEEP_LINKS.scorecard",
+    );
   });
 });

@@ -80,7 +80,7 @@ export function PortfolioSwitcher({
   }
 
   return (
-    <div className="relative min-w-0 max-w-[11rem] sm:max-w-[14rem]" ref={containerRef}>
+    <div className="relative min-w-0 max-w-[9rem] sm:max-w-[14rem]" ref={containerRef}>
       <button
         ref={triggerRef}
         type="button"
@@ -90,7 +90,7 @@ export function PortfolioSwitcher({
         aria-haspopup="listbox"
         aria-label={`${MULTI_PORTFOLIO_COPY.switcherLabel}: ${currentName}`}
         data-testid="portfolio-switcher"
-        className={`flex min-h-[36px] w-full min-w-0 items-center gap-1.5 rounded-xl border px-2 py-1.5 text-left text-[13px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand sm:min-h-[40px] sm:px-2.5 ${
+        className={`flex min-h-[40px] w-full min-w-0 items-center gap-1.5 rounded-xl border px-2 py-1.5 text-left text-[13px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand sm:min-h-[40px] sm:px-2.5 ${
           appearance === "onDark"
             ? "border-white/20 bg-white/10 text-white hover:border-white/35 hover:bg-white/15"
             : "border-brand/40 bg-brand-soft text-brand-navy hover:border-brand/70 hover:bg-brand-soft focus-visible:ring-offset-2"

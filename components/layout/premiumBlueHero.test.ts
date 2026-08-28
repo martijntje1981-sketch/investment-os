@@ -75,13 +75,13 @@ describe("Phase 16.6 / 20 shared Q1 cyan page heroes", () => {
     expect(dashboardHero).toContain("Portfolio value");
     expect(dashboardHero).toContain("Latest move");
     expect(dashboardHero).toContain("HeroPerformanceSparkline");
-    expect(dashboardHero).toContain("HeroPortfolioPulse");
-    expect(dashboardHero).toContain("DailyPortfolioBriefing");
+    expect(dashboardHero).not.toContain("HeroPortfolioPulse");
+    expect(dashboardHero).not.toContain("DailyPortfolioBriefing");
     expect(dashboardHero).toContain("ConversionDetailsDisclosure");
     expect(dashboardHero).toContain("RefreshPricesButton");
     expect(surface).toContain("text-slate-700");
     expect(surface).toContain("appDashboardHeroMetaClass");
     expect(dashboardHero).toContain("appHeroPaddingCompactClass");
-    expect(dashboardHero).toContain("min-h-[56px]");
+    expect(dashboardHero).toContain("quietTrigger");
   });
 });

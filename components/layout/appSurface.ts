@@ -123,7 +123,7 @@ export const appDarkInsetClass =
 
 /** Compact padding for dense dark heroes (dashboard + peers). */
 export const appHeroPaddingCompactClass =
-  "px-3.5 py-3 sm:px-5 sm:py-3.5 md:px-5 md:py-4";
+  "px-3.5 py-2 sm:px-5 sm:py-3 md:px-5 md:py-3.5";
 
 /** Standard padding for dark cards. */
 export const appDarkCardPaddingClass = "px-4 py-5 md:px-6 md:py-6";

@@ -41,13 +41,6 @@ describe("canonical Portfolio navigation", () => {
       path.resolve(process.cwd(), "components/dashboard/HoldingsTodayRow.tsx"),
       "utf8",
     );
-    const movers = readFileSync(
-      path.resolve(
-        process.cwd(),
-        "components/dashboard/PortfolioValueCard.tsx",
-      ),
-      "utf8",
-    );
     const portfolio = readFileSync(
       path.resolve(process.cwd(), "app/portfolio/page.tsx"),
       "utf8",
@@ -66,8 +59,6 @@ describe("canonical Portfolio navigation", () => {
     expect(holdingsRow).toContain("holdingDetailPath");
     expect(holdingsRow).toContain('row.assetType !== "cash"');
     expect(holdingsRow).toContain("ViewHoldingCue");
-    expect(movers).toContain("holdingDetailPath");
-    expect(movers).not.toContain("`/portfolio/${");
     expect(portfolio).toContain("holdingDetailPath");
     expect(portfolio).toContain("View holding");
     expect(portfolio).not.toContain("`/holding/${holding.symbol}`");

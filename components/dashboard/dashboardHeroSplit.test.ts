@@ -11,48 +11,30 @@ describe("Dashboard hero split panels", () => {
     path.resolve(process.cwd(), "components/dashboard/HeroPortfolioPulse.tsx"),
     "utf8",
   );
+  const explore = readFileSync(
+    path.resolve(process.cwd(), "components/dashboard/DashboardSecondaryNav.tsx"),
+    "utf8",
+  );
 
-  it("renders a dark navy value hero and a subordinate navy pulse panel", () => {
+  it("renders a single compact dark navy value hero", () => {
     expect(hero).toContain('data-testid="dashboard-portfolio-hero"');
     expect(hero).toContain('data-testid="hero-zone-primary"');
-    expect(hero).toContain('data-testid="hero-zone-snapshot"');
-    expect(hero).toContain("space-y-2 sm:space-y-3");
+    expect(hero).not.toContain('data-testid="hero-zone-snapshot"');
     expect(hero).toContain("appDashboardHeroShellClass");
-    expect((hero.match(/appDashboardHeroShellClass/g) ?? []).length).toBe(2);
-    expect(hero).toContain("appDashboardHeroSubordinateClass");
-    expect(hero).toContain("className={shellClass}");
+    expect(hero).not.toContain("appDashboardHeroSubordinateClass");
     expect(hero).toContain('appearance="onDark"');
   });
 
-  it("keeps value/move/trend in panel 1 and pulse/focus/movers/briefing in panel 2", () => {
-    const primaryIdx = hero.indexOf('data-testid="hero-zone-primary"');
-    const snapshotIdx = hero.indexOf('data-testid="hero-zone-snapshot"');
-    expect(primaryIdx).toBeGreaterThan(-1);
-    expect(snapshotIdx).toBeGreaterThan(primaryIdx);
-
-    const sparklineInPanel = hero.indexOf(
-      "<HeroPerformanceSparkline",
-      primaryIdx,
-    );
-    const pulseInPanel = hero.indexOf("<HeroPortfolioPulse", snapshotIdx);
-    const moverInPanel = hero.indexOf('label="Biggest mover"', snapshotIdx);
-    const briefingInPanel = hero.indexOf(
-      "<DailyPortfolioBriefing",
-      snapshotIdx,
-    );
-
-    expect(hero.indexOf("Portfolio value", primaryIdx)).toBeGreaterThan(
-      primaryIdx,
-    );
-    expect(hero.indexOf("Latest move", primaryIdx)).toBeGreaterThan(primaryIdx);
-    expect(sparklineInPanel).toBeGreaterThan(primaryIdx);
-    expect(sparklineInPanel).toBeLessThan(snapshotIdx);
-    expect(pulseInPanel).toBeGreaterThan(snapshotIdx);
-    expect(moverInPanel).toBeGreaterThan(snapshotIdx);
-    expect(briefingInPanel).toBeGreaterThan(snapshotIdx);
+  it("keeps value/move/trend in the hero and pulse in Explore", () => {
+    expect(hero).toContain("Portfolio value");
+    expect(hero).toContain("Latest move");
+    expect(hero).toContain("<HeroPerformanceSparkline");
+    expect(hero).not.toContain("<HeroPortfolioPulse");
+    expect(hero).not.toContain("<DailyPortfolioBriefing");
+    expect(explore).toContain("DASHBOARD_DEEP_LINKS.scorecard");
   });
 
-  it("labels the pulse panel Portfolio Pulse without adding extra copy", () => {
+  it("labels the pulse module Portfolio Pulse without adding extra copy", () => {
     expect(pulse).toContain("Portfolio Pulse");
     expect(pulse).not.toContain("How is my portfolio doing");
   });

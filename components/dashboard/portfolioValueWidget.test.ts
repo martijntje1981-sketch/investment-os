@@ -50,10 +50,9 @@ describe("dashboard portfolio value widget", () => {
     expect(summarySource).not.toContain("welcome ?");
     expect(valueSource).toContain("Latest move");
     expect(valueSource).toContain("dailyMoveContextLine");
-    expect(valueSource).toContain("Biggest mover");
-    expect(valueSource).toContain("Weakest mover");
-    expect(valueSource).not.toContain("Lowest mover");
-    expect(valueSource).toContain("DailyPortfolioBriefing");
+    expect(valueSource).not.toContain("Biggest mover");
+    expect(valueSource).not.toContain("Weakest mover");
+    expect(valueSource).not.toContain("DailyPortfolioBriefing");
     expect(valueSource).toContain("RefreshPricesButton");
     expect(valueSource).toContain("formatEur");
     expect(dashboardSource).toContain("DashboardSummary");
@@ -157,8 +156,7 @@ describe("dashboard portfolio value widget", () => {
     expect(valueSource).toContain("appHeroMetricLabelClass");
     expect(valueSource).toContain("appHeroPaddingCompactClass");
     expect(valueSource).toContain("appDisplayClass");
-    expect(valueSource).toContain("tabular-nums");
-    expect(valueSource).toContain("grid-cols-2");
+    expect(valueSource).toContain("lg:grid-cols-");
     expect(valueSource).toContain('variant="icon"');
     expect(valueSource).not.toContain("text-[2.625rem]");
     expect(valueSource).not.toContain("lg:text-[4.25rem]");

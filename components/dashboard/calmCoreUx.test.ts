@@ -52,15 +52,16 @@ describe("Calm Core UX — Dashboard and Portfolio", () => {
     expect(holdings).not.toContain("useCollapsedListLimit");
   });
 
-  it("keeps Dashboard secondary destinations as text links", () => {
+  it("keeps Dashboard Explore destinations as compact tappable tiles", () => {
     const nav = read("components/dashboard/DashboardSecondaryNav.tsx");
+    expect(nav).toContain("Explore Tobailey");
     expect(nav).toContain("Analysis");
     expect(nav).toContain("News");
     expect(nav).toContain("Goals");
     expect(nav).toContain("Reports");
-    expect(nav).toContain("Portfolio history");
     expect(nav).toContain("WHAT_HAPPENED_HUB_PATH");
     expect(nav).toContain("REVIEW_PATH");
+    expect(nav).toContain("DASHBOARD_DEEP_LINKS.scorecard");
   });
 
   it("structures Portfolio as glance, holdings, then activity", () => {

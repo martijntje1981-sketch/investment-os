@@ -51,11 +51,11 @@ describe("Priority 1 dashboard hero", () => {
     expect(globals).toContain("--hero-premium-from:");
     expect(globals).toContain("--navy-hero: #0b1f3a");
     expect(hero).toContain("appDashboardHeroShellClass");
-    expect(hero).toContain("HeroPortfolioPulse");
-    expect(hero).toContain("Biggest mover");
-    expect(hero).toContain("holdingDetailPath");
-    expect(hero).toContain("prefetch");
-    expect(dashboard).toContain("pulse={portfolioPulse}");
+    expect(hero).not.toContain("HeroPortfolioPulse");
+    expect(hero).not.toContain("Biggest mover");
+    expect(hero).toContain("HeroPerformanceSparkline");
+    expect(hero).toContain("quietTrigger");
+    expect(dashboard).not.toContain("pulse={portfolioPulse}");
     expect(dashboard).not.toContain("DashboardPortfolioPulseCard");
   });
 

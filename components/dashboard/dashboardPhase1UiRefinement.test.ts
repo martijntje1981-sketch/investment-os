@@ -24,13 +24,13 @@ describe("Phase 1 dashboard UI refinement", () => {
     expect(hero).not.toContain("HeroTopStoryPreviewCard");
     expect(hero).not.toContain("buildHeroHealthPreview");
     expect(hero).not.toContain("buildHeroTopStoryPreview");
-    expect(dashboard).toContain("pulse={portfolioPulse}");
+    expect(dashboard).not.toContain("pulse={portfolioPulse}");
     expect(dashboard).not.toContain("DashboardPortfolioScorecard");
     expect(dashboard).not.toContain("DashboardPortfolioHealthCard");
     expect(dashboard).not.toContain("DashboardCashIntelligenceCard");
     expect(dashboard).not.toContain("DashboardTopStoryCard");
     expect(dashboard.indexOf("<DashboardSummary")).toBeLessThan(
-      dashboard.indexOf("pulse={portfolioPulse}"),
+      dashboard.indexOf("<HoldingsToday"),
     );
   });
 
@@ -68,10 +68,9 @@ describe("Phase 1 dashboard UI refinement", () => {
   });
 
   it("keeps non-color indicators for portfolio moves", () => {
-    expect(hero).toContain("TrendingUp");
-    expect(hero).toContain("TrendingDown");
-    expect(hero).toContain("signedPercent");
     expect(hero).toContain("HeroPerformanceSparkline");
+    expect(hero).toContain("text-emerald-400");
+    expect(hero).toContain("text-rose-400");
   });
 
   it("keeps progressive disclosure controls keyboard-accessible", () => {

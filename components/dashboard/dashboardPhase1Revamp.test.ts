@@ -61,9 +61,9 @@ describe("dashboard phase 1 revamp", () => {
     expect(summarySource).not.toContain("PageHero");
   });
 
-  it("places the personal greeting inside the Portfolio Value hero briefing", () => {
-    expect(valueSource).toContain("DailyPortfolioBriefing");
-    expect(valueSource).toContain("smart.briefing");
+  it("keeps the personal greeting builder on the Dashboard page, not in the compact hero", () => {
+    expect(valueSource).not.toContain("DailyPortfolioBriefing");
+    expect(valueSource).not.toContain("smart.briefing");
     expect(summarySource).toContain("smart");
     expect(dashboardSource).toContain("buildSmartDashboardIntelligence");
     expect(dashboardSource).toContain("firstName");
@@ -117,11 +117,10 @@ describe("dashboard phase 1 revamp", () => {
     expect(dashboardSource).not.toContain("Biggest loser");
   });
 
-  it("keeps portfolio hero movers rendered", () => {
-    expect(valueSource).toContain("heroTopMover");
-    expect(valueSource).toContain("Biggest mover");
-    expect(valueSource).toContain("Weakest mover");
-    expect(valueSource).toContain("changePeriodAccessibleDescription");
+  it("does not render movers on the compact primary hero", () => {
+    expect(valueSource).not.toContain("heroTopMover");
+    expect(valueSource).not.toContain("Biggest mover");
+    expect(valueSource).not.toContain("Weakest mover");
 
     const recentSession = new Date(
       Date.now() - 2 * 24 * 60 * 60 * 1000,
@@ -151,7 +150,7 @@ describe("dashboard phase 1 revamp", () => {
   });
 
   it("keeps Portfolio Pulse and Trading Hours modules; Four Questions are no longer a primary Dashboard block", () => {
-    expect(dashboardSource).toContain("pulse={portfolioPulse}");
+    expect(dashboardSource).not.toContain("pulse={portfolioPulse}");
     expect(dashboardSource).not.toContain("FourQuestionsSection");
     expect(dashboardSource).not.toContain("DashboardPortfolioScorecard");
     expect(dashboardSource).not.toContain("DashboardIntelligencePreview");

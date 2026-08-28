@@ -11,7 +11,10 @@ import { resolveSmartMoneyFractionDigits } from "@/lib/client/smartPriceFormat";
 import {
   appDashboardDarkMetaClass,
 } from "@/components/layout/appSurface";
-import type { DashboardHoldingRow } from "@/lib/client/dashboardPortfolioSnapshot";
+import type {
+  DashboardHoldingPriceQuality,
+  DashboardHoldingRow,
+} from "@/lib/client/dashboardPortfolioSnapshot";
 import {
   HOLDINGS_TODAY_NO_NEWS,
   type HoldingsTodayNewsContext,
@@ -90,6 +93,17 @@ function holdingPeriodMeta(row: DashboardHoldingRow): string | null {
   return holdingPricePeriodCaption(row.priceQuality, row.changePeriodLabel);
 }
 
+/** Presentation only — Phase 3 freshness strings stay unchanged. */
+function quoteTrustToneClass(source: DashboardHoldingPriceQuality): string {
+  if (source === "live") {
+    return "text-white/40";
+  }
+  if (source === "delayed") {
+    return "text-white/50";
+  }
+  return "text-amber-300";
+}
+
 function stopNewsNavigation(event: MouseEvent<HTMLAnchorElement>) {
   event.stopPropagation();
 }
@@ -98,7 +112,7 @@ function HoldingMonogram({ name }: { name: string }) {
   const letter = (name.trim()[0] || "?").toUpperCase();
   return (
     <div
-      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-[13px] font-bold text-brand md:h-11 md:w-11"
+      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-[12px] font-bold text-brand md:h-10 md:w-10 md:rounded-xl md:text-[13px]"
       aria-hidden
     >
       {letter}
@@ -160,7 +174,7 @@ function HoldingsTodayNews({
 
   return (
     <span
-      className={`block ${appDashboardDarkMetaClass}`}
+      className="block text-[13px] font-medium leading-tight text-white/40"
       data-testid="holdings-today-no-news"
     >
       {news.emptyLabel ?? HOLDINGS_TODAY_NO_NEWS}
@@ -197,37 +211,43 @@ export function HoldingsTodayRow({
       : null;
   void layout;
 
-  const identity = (
+  const nameClass =
+    "line-clamp-2 break-words text-[15px] font-semibold leading-snug text-white md:text-[16px]";
+  const tickerClass =
+    "mt-0.5 text-[12px] font-medium leading-tight tracking-[0.04em] text-white/50";
+
+  const identity = href ? (
+    <Link
+      href={href}
+      className="block min-w-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
+      aria-label={`Open ${row.name} holding details`}
+    >
+      <p className={nameClass}>{row.name}</p>
+      <p className={tickerClass}>
+        <span className="uppercase">{holdingSecondaryLabel(row)}</span>
+        {quality ? (
+          <span
+            className={`ml-1.5 font-medium normal-case tracking-normal ${quoteTrustToneClass(row.priceQuality)}`}
+          >
+            {quality}
+          </span>
+        ) : null}
+      </p>
+      <ViewHoldingCue className="mt-0.5 hidden md:block" tone="onDark" />
+    </Link>
+  ) : (
     <div className="min-w-0">
-      {href ? (
-        <Link
-          href={href}
-          className="block min-w-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
-          aria-label={`Open ${row.name} holding details`}
-        >
-          <p className="truncate text-[15px] font-semibold text-white md:text-[16px]">
-            {row.name}
-          </p>
-          <p className="mt-0.5 truncate text-[12px] font-medium uppercase tracking-[0.06em] text-white/55">
-            {holdingSecondaryLabel(row)}
-            {quality ? (
-              <span className="ml-1.5 normal-case tracking-normal text-amber-300">
-                {quality}
-              </span>
-            ) : null}
-          </p>
-          <ViewHoldingCue className="mt-0.5 hidden md:block" tone="onDark" />
-        </Link>
-      ) : (
-        <>
-          <p className="truncate text-[15px] font-semibold text-white md:text-[16px]">
-            {row.name}
-          </p>
-          <p className="mt-0.5 truncate text-[12px] font-medium uppercase tracking-[0.06em] text-white/55">
-            {holdingSecondaryLabel(row)}
-          </p>
-        </>
-      )}
+      <p className={nameClass}>{row.name}</p>
+      <p className={tickerClass}>
+        <span className="uppercase">{holdingSecondaryLabel(row)}</span>
+        {quality ? (
+          <span
+            className={`ml-1.5 font-medium normal-case tracking-normal ${quoteTrustToneClass(row.priceQuality)}`}
+          >
+            {quality}
+          </span>
+        ) : null}
+      </p>
     </div>
   );
 
@@ -248,26 +268,30 @@ export function HoldingsTodayRow({
   const valueWeight = (
     <div className="min-w-0 text-right md:text-left">
       {valueLabel ? (
-        <p className="truncate text-[13px] font-semibold tabular-nums text-white/90 md:text-[15px]">
+        <p className="truncate text-[13px] font-medium tabular-nums text-white/70 md:text-[15px] md:font-semibold md:text-white/90">
           {valueLabel}
         </p>
       ) : null}
       {weightLabel ? (
-        <p className={`mt-0.5 ${appDashboardDarkMetaClass}`}>{weightLabel}</p>
+        <p className={`mt-px ${appDashboardDarkMetaClass}`}>{weightLabel}</p>
       ) : null}
     </div>
   );
 
   return (
     <div
-      className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-1.5 border-b border-white/8 py-2.5 last:border-b-0 md:grid-cols-[auto_minmax(0,1.15fr)_minmax(7.5rem,auto)_minmax(6.5rem,auto)_minmax(0,1.55fr)] md:gap-x-4 md:py-3"
+      className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-2.5 gap-y-1 border-b border-white/8 py-2 last:border-b-0 md:grid-cols-[auto_minmax(0,1.15fr)_minmax(7.5rem,auto)_minmax(6.5rem,auto)_minmax(0,1.55fr)] md:gap-x-4 md:py-2.5"
       data-layout={layout}
     >
-      <HoldingVisual row={row} news={news} />
-      {identity}
-      {move}
-      <div className="col-start-2 md:col-auto md:row-auto">{valueWeight}</div>
-      <div className="col-span-3 min-w-0 md:col-span-1">
+      <div className="row-span-2 self-start md:row-span-1">
+        <HoldingVisual row={row} news={news} />
+      </div>
+      <div className="min-w-0">{identity}</div>
+      <div className="flex min-w-0 flex-col items-end gap-0.5 md:contents">
+        {move}
+        <div className="md:col-auto md:row-auto">{valueWeight}</div>
+      </div>
+      <div className="col-span-2 col-start-2 min-w-0 md:col-span-1 md:col-start-auto">
         <HoldingsTodayNews news={news} />
       </div>
     </div>

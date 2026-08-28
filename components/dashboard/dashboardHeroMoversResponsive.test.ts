@@ -27,25 +27,25 @@ function holding(
 }
 
 describe("Dashboard hero movers responsive layout", () => {
-  it("renders two movers in a shared responsive grid when both exist", () => {
+  it("does not render movers on the primary Dashboard hero", () => {
     const source = readFileSync(
       path.resolve(process.cwd(), "components/dashboard/PortfolioValueCard.tsx"),
       "utf8",
     );
 
-    expect(source).toContain("grid-cols-2");
-    expect(source).toContain("Biggest mover");
-    expect(source).toContain("Weakest mover");
+    expect(source).not.toContain("Biggest mover");
+    expect(source).not.toContain("Weakest mover");
+    expect(source).not.toContain("hero-zone-snapshot");
   });
 
-  it("keeps a single available mover tile when the second mover is missing", () => {
+  it("does not keep a second hero panel for movers", () => {
     const source = readFileSync(
       path.resolve(process.cwd(), "components/dashboard/PortfolioValueCard.tsx"),
       "utf8",
     );
 
-    expect(source).toContain("snapshot.heroLowestMover");
-    expect(source).toContain("Weakest mover");
+    expect(source).not.toContain("snapshot.heroLowestMover");
+    expect(source).not.toContain("Weakest mover");
     expect(source).not.toContain("No negative mover");
   });
 
@@ -155,18 +155,15 @@ describe("Dashboard hero movers responsive layout", () => {
     expect(movers.hasReliableMoverData).toBe(true);
   });
 
-  it("keeps percentage and period labels in compact supporting mover tiles", () => {
+  it("keeps mover selection logic without rendering mover tiles on the hero", () => {
     const source = readFileSync(
       path.resolve(process.cwd(), "components/dashboard/PortfolioValueCard.tsx"),
       "utf8",
     );
 
-    expect(source).toContain("signedPercent");
-    expect(source).toContain(
-      "truncate text-[14px] font-bold tabular-nums tracking-[-0.02em] sm:text-[15px]",
-    );
-    expect(source).toContain("appDarkInsetClass");
-    expect(source).toContain("TrendingUp");
-    expect(source).toContain("TrendingDown");
+    expect(source).not.toContain("signedPercent");
+    expect(source).not.toContain("TrendingUp");
+    expect(source).not.toContain("TrendingDown");
+    expect(source).not.toContain("appDarkInsetClass");
   });
 });

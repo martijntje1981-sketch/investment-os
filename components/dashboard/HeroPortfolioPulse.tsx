@@ -13,8 +13,8 @@ import type {
 } from "@/lib/services/portfolio/periodScores";
 
 /**
- * Compact Daily + Weekly + Monthly pulse rings for the Dashboard hero.
- * Detail opens in a sheet — keeps Dashboard conclusion-first.
+ * Compact Daily + Weekly + Monthly pulse rings.
+ * Kept for Scorecard / Explore Tobailey — not shown on the primary Dashboard.
  */
 export function HeroPortfolioPulse({
   pulse,

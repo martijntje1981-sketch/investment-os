@@ -508,7 +508,7 @@ describe("Portfolio Pulse snapshot contract", () => {
 });
 
 describe("Dashboard Portfolio Pulse wiring", () => {
-  it("removes structural four-score card and keeps Scorecard page", () => {
+  it("keeps Scorecard/pulse available off the primary Dashboard", () => {
     const dashboard = read("app/dashboard/page.tsx");
     const scorecardPage = read(
       "components/portfolioHealth/PortfolioHealthPage.tsx",
@@ -516,8 +516,9 @@ describe("Dashboard Portfolio Pulse wiring", () => {
     const pulse = read("components/dashboard/HeroPortfolioPulse.tsx");
     const hero = read("components/dashboard/PortfolioValueCard.tsx");
     const ring = read("components/dashboard/DynamicScoreRing.tsx");
+    const explore = read("components/dashboard/DashboardSecondaryNav.tsx");
 
-    expect(dashboard).toContain("pulse={portfolioPulse}");
+    expect(dashboard).not.toContain("pulse={portfolioPulse}");
     expect(dashboard).not.toContain("DashboardPortfolioScorecard");
     expect(dashboard).not.toContain("buildPortfolioScorecard");
     expect(dashboard).toContain("HoldingsToday");
@@ -525,16 +526,13 @@ describe("Dashboard Portfolio Pulse wiring", () => {
     expect(dashboard).not.toContain("DashboardTodaysDecision");
     expect(dashboard).not.toContain("DashboardIntelligencePreview");
     expect(dashboard).not.toContain("DashboardPortfolioPulseCard");
-
-    const pulseIdx = dashboard.indexOf("pulse={portfolioPulse}");
-    const holdingsIdx = dashboard.indexOf("<HoldingsToday");
-    expect(pulseIdx).toBeGreaterThan(-1);
-    expect(holdingsIdx).toBeGreaterThan(pulseIdx);
     expect(dashboard).not.toContain("FourQuestionsSection");
+    expect(explore).toContain("DASHBOARD_DEEP_LINKS.scorecard");
 
     expect(scorecardPage).toContain("buildPortfolioScorecard");
     expect(scorecardPage).toContain("ScoreRing");
-    expect(hero).toContain("HeroPortfolioPulse");
+    expect(hero).not.toContain("HeroPortfolioPulse");
+    expect(hero).not.toContain("DailyPortfolioBriefing");
     expect(pulse).toContain("Scorecard");
     expect(pulse).toContain("DASHBOARD_DEEP_LINKS.scorecard");
     expect(ring).toContain("—");
@@ -550,8 +548,6 @@ describe("Dashboard Portfolio Pulse wiring", () => {
     expect(ring).toContain('appearance?: "onLight" | "onDark"');
     expect(ring).toContain("onActivate");
     expect(dashboard).toContain("buildResilienceProfile");
-    expect(dashboard).toContain("resilienceScore");
-    expect(hero).toContain("DailyPortfolioBriefing");
     expect(pulse).not.toContain("overflow-x-auto");
   });
 });

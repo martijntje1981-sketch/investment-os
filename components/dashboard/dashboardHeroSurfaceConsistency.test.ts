@@ -38,7 +38,7 @@ describe("dashboard hero surface consistency", () => {
     expect(heroShellMatch?.[1]).toContain("bg-gradient-to-br");
     expect(heroShellMatch?.[1]).not.toContain("bg-navy-hero");
     expect(valueSource).toContain("appDashboardHeroShellClass");
-    expect(valueSource).toContain("appDashboardHeroSubordinateClass");
+    expect(valueSource).not.toContain("appDashboardHeroSubordinateClass");
     expect(valueSource).toContain('appearance="onDark"');
     expect(valueSource).not.toContain("ambientGlowClass");
     expect(emptySource).toContain("PortfolioSetupOnboarding");

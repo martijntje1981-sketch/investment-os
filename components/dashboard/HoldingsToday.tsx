@@ -69,9 +69,10 @@ export function HoldingsToday({
       <section className={appDarkCardClass}>
         <DashboardSectionHeader
           variant="feature"
+          density="compact"
           title="Your holdings today"
           subtitle="Today’s move and relevant context"
-          icon={<Wallet className="h-5 w-5" />}
+          icon={<Wallet className="h-4 w-4" />}
           bordered={false}
         />
         <div className={appCardPaddingClass}>
@@ -103,10 +104,11 @@ export function HoldingsToday({
     >
       <DashboardSectionHeader
         variant="feature"
+        density="compact"
         title="Your holdings today"
         titleId="your-holdings-today-heading"
         subtitle={positionSubtitle}
-        icon={<Wallet className="h-5 w-5" />}
+        icon={<Wallet className="h-4 w-4" />}
         trailing={
           <Link href={PORTFOLIO_PATH} className={holdingsLinkClass}>
             View portfolio
@@ -115,7 +117,7 @@ export function HoldingsToday({
       />
 
       <div id={listId}>
-        <div className="px-3.5 pb-2 pt-0 sm:px-5">
+        <div className="px-3.5 pb-1.5 pt-0 sm:px-5">
           <div className="mb-1 hidden grid-cols-[auto_minmax(0,1.15fr)_minmax(7.5rem,auto)_minmax(6.5rem,auto)_minmax(0,1.55fr)] gap-x-4 px-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-white/40 md:grid">
             <span className="col-span-2">Holding</span>
             <span className="text-right">{moveColumnLabel}</span>

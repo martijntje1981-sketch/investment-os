@@ -20,7 +20,6 @@ import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
 import PortfolioSyncBanner from "@/components/PortfolioSyncBanner";
 import { buildDashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
 import { previousClosePhraseFromContextLine } from "@/lib/client/dailyPortfolioBriefing";
-import { areMajorMarketsClosed } from "@/lib/client/todaysDecision";
 import { useAuthenticatedFirstName } from "@/lib/client/useAuthenticatedFirstName";
 import { useInvestmentIntelligence } from "@/lib/client/useInvestmentIntelligence";
 import { useGoalProgress } from "@/lib/client/useGoalProgress";
@@ -33,12 +32,7 @@ import { needsPortfolioSetup } from "@/lib/client/portfolioSetup";
 import { buildSmartDashboardIntelligence } from "@/lib/client/smartDashboardIntelligence";
 import { selectDashboardPersonalIntelligence } from "@/lib/client/dashboardPersonalIntelligence";
 import { buildPortfolioExposureAllocation } from "@/lib/services/classification";
-import { buildPortfolioPulse } from "@/lib/services/portfolio/periodScores";
 import { buildResilienceProfile } from "@/lib/services/resilience";
-import {
-  buildPortfolioPerformanceAttribution,
-  buildPulseAttributionEnrichment,
-} from "@/lib/services/performanceAttribution";
 import { useProductAccess } from "@/lib/client/useProductAccess";
 import { useChangeIntelligence } from "@/lib/client/useChangeIntelligence";
 import { buildLookingAhead } from "@/lib/services/lookingAhead";
@@ -55,7 +49,6 @@ import {
   filterHoldingsByIntelligenceScope,
   resolveIntelligenceScope,
 } from "@/lib/services/intelligenceScope";
-import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 
 export default function DashboardPage() {
   const firstName = useAuthenticatedFirstName();
@@ -136,8 +129,6 @@ export default function DashboardPage() {
     [holdings],
   );
 
-  const marketsClosed = useMemo(() => areMajorMarketsClosed(), []);
-
   const resilienceProfile = useMemo(() => {
     if (holdings.length === 0) return null;
     return buildResilienceProfile({
@@ -146,80 +137,6 @@ export default function DashboardPage() {
       hasSavedGoal,
     });
   }, [goal, hasSavedGoal, holdings]);
-
-  const portfolioPulse = useMemo(() => {
-    if (holdings.length === 0) return null;
-    return buildPortfolioPulse({
-      daily: {
-        holdings,
-        marketsClosed,
-        href: "/review",
-      },
-      weekly: {
-        week: weekHistory.data,
-        month: monthHistory.data,
-        href: DASHBOARD_DEEP_LINKS.portfolioPerformance,
-      },
-      monthly: {
-        month: monthHistory.data,
-        week: weekHistory.data,
-        resilienceScore: resilienceProfile?.score ?? null,
-        largestHoldingWeightPercent:
-          snapshot.concentrationWeightPercent ?? null,
-        goalStatus: goalProgress.hasGoal ? goalProgress.status : null,
-        hasSavedGoal: goalProgress.hasGoal,
-        href: DASHBOARD_DEEP_LINKS.resilienceSleep,
-      },
-    });
-  }, [
-    goalProgress.hasGoal,
-    goalProgress.status,
-    holdings,
-    marketsClosed,
-    monthHistory.data,
-    resilienceProfile?.score,
-    snapshot.concentrationWeightPercent,
-    weekHistory.data,
-  ]);
-
-  const pulseAttributionEnrichment = useMemo(() => {
-    if (holdings.length === 0) return null;
-
-    const dailyAttr = buildPortfolioPerformanceAttribution({
-      period: "1D",
-      holdings,
-    });
-    const weeklyAttr = weekHistory.data?.holdingMoves
-      ? buildPortfolioPerformanceAttribution({
-          period: "1W",
-          holdings,
-          holdingMoves: weekHistory.data.holdingMoves,
-          startingPortfolioValue: weekHistory.data.startingValue,
-          endingPortfolioValue: weekHistory.data.endingValue,
-          totalReturnPercent: weekHistory.data.investmentReturnPercent,
-          totalReturnAmount: weekHistory.data.investmentReturn,
-          historicalFxApproximate: weekHistory.data.historicalFxApproximate,
-        })
-      : null;
-    const monthlyAttr = monthHistory.data?.holdingMoves
-      ? buildPortfolioPerformanceAttribution({
-          period: "1M",
-          holdings,
-          holdingMoves: monthHistory.data.holdingMoves,
-          startingPortfolioValue: monthHistory.data.startingValue,
-          endingPortfolioValue: monthHistory.data.endingValue,
-          totalReturnPercent: monthHistory.data.investmentReturnPercent,
-          totalReturnAmount: monthHistory.data.investmentReturn,
-          historicalFxApproximate: monthHistory.data.historicalFxApproximate,
-        })
-      : null;
-
-    return {
-      daily: buildPulseAttributionEnrichment(dailyAttr),
-      weekly: buildPulseAttributionEnrichment(weeklyAttr),
-      monthly: buildPulseAttributionEnrichment(monthlyAttr),
-    };
-  }, [holdings, weekHistory.data, monthHistory.data]);
 
   const smartDashboard = useMemo(() => {
     const usesPreviousClose =
@@ -410,11 +327,9 @@ export default function DashboardPage() {
 
           <DashboardSummary
             snapshot={snapshot}
-            pulse={portfolioPulse}
             smart={smartDashboard}
             weekPerformancePoints={weekHistory.data?.chartPoints ?? null}
             monthPerformancePoints={monthHistory.data?.chartPoints ?? null}
-            pulseAttributionEnrichment={pulseAttributionEnrichment}
             refresh={{
               onRefresh: () => void refreshPrices(),
               isRefreshing,

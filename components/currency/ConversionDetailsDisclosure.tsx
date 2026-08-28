@@ -27,10 +27,13 @@ function formatProviderTime(value: string | null): string {
 export function ConversionDetailsDisclosure({
   defaultOpen = false,
   compactTrigger = false,
+  quietTrigger = false,
   tone = "light",
 }: {
   defaultOpen?: boolean;
   compactTrigger?: boolean;
+  /** Smaller visual weight; keeps a 44px tap target via negative margin. */
+  quietTrigger?: boolean;
   /** Use dark on slate/hero surfaces so the trigger stays readable. */
   tone?: "light" | "dark";
 }) {
@@ -43,6 +46,10 @@ export function ConversionDetailsDisclosure({
   const ratesUnavailable =
     baseCurrency !== "EUR" &&
     (snapshot.status === "unavailable" || rateLines == null);
+
+  const quietButtonClass = isDark
+    ? "inline-flex min-h-[44px] -my-2 items-center gap-1 rounded-lg px-0.5 text-[12px] font-medium text-white/45 underline-offset-2 hover:text-white/70 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300"
+    : "inline-flex min-h-[44px] -my-2 items-center gap-1 rounded-lg px-0.5 text-[12px] font-medium text-slate-500 underline-offset-2 hover:text-slate-700 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700";
 
   const compactButtonClass = isDark
     ? "inline-flex min-h-[44px] items-center gap-2 rounded-xl px-1 text-[15px] font-semibold text-white underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300"
@@ -64,10 +71,16 @@ export function ConversionDetailsDisclosure({
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => setOpen((value) => !value)}
-        className={compactTrigger ? compactButtonClass : fullButtonClass}
+        className={
+          quietTrigger
+            ? quietButtonClass
+            : compactTrigger
+              ? compactButtonClass
+              : fullButtonClass
+        }
       >
         <span>{open ? "Hide conversion details" : "View conversion details"}</span>
-        {!compactTrigger ? (
+        {!compactTrigger && !quietTrigger ? (
           <ChevronDown
             className={`h-4 w-4 shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
             aria-hidden="true"

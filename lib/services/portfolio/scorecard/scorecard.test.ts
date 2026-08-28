@@ -452,7 +452,7 @@ describe("Dashboard Portfolio Pulse + Scorecard page wiring", () => {
       ),
       "utf8",
     );
-    expect(dashboard).toContain("pulse={portfolioPulse}");
+    expect(dashboard).not.toContain("pulse={portfolioPulse}");
     expect(dashboard).not.toContain("DashboardPortfolioScorecard");
     expect(dashboard).not.toContain("DashboardGoalProgressCard");
     expect(dashboard).not.toContain("DashboardPortfolioHealthCard");

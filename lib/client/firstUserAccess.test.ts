@@ -77,11 +77,11 @@ describe("first-user access — post-login session", () => {
 
   it("I/J. switcher stays a compact selector and keeps max-3 create wiring", () => {
     const switcher = read("components/portfolio/PortfolioSwitcher.tsx");
-    expect(switcher).toContain("border border-brand/40 bg-brand-soft");
+    expect(switcher).toContain("border-brand/40 bg-brand-soft");
     expect(switcher).toContain("text-brand-strong");
     expect(switcher).toContain("data-testid=\"portfolio-switcher\"");
     expect(switcher).toContain("MULTI_PORTFOLIO_COPY.completeIncludes");
-    expect(switcher).toContain("max-w-[11rem] sm:max-w-[14rem]");
+    expect(switcher).toContain("max-w-[9rem] sm:max-w-[14rem]");
     expect(switcher).not.toContain("window.location.reload");
   });
 

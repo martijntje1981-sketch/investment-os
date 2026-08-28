@@ -62,7 +62,7 @@ describe("dashboard phase 2 compact previews", () => {
     expect(summarySource).not.toContain("GoalProgressCard");
     expect(summarySource).toContain("PortfolioValueCard");
     expect(dashboardSource).toContain("DashboardSummary");
-    expect(dashboardSource).toContain("pulse={portfolioPulse}");
+    expect(dashboardSource).not.toContain("pulse={portfolioPulse}");
     expect(dashboardSource).not.toContain("DashboardPortfolioScorecard");
     expect(dashboardSource).not.toContain("DashboardGoalProgressCard");
   });
@@ -90,11 +90,10 @@ describe("dashboard phase 2 compact previews", () => {
     expect(briefingSource).not.toContain("macroHighlights");
   });
 
-  it("places Four Questions hubs in secondary navigation; hero pulse remains in DashboardSummary", () => {
-    const pulseIdx = dashboardSource.indexOf("pulse={portfolioPulse}");
+  it("places Four Questions hubs in Explore Tobailey; pulse is not on the primary Dashboard", () => {
     const holdingsIdx = dashboardSource.indexOf("<HoldingsToday");
-    expect(pulseIdx).toBeGreaterThan(-1);
-    expect(holdingsIdx).toBeGreaterThan(pulseIdx);
+    expect(holdingsIdx).toBeGreaterThan(-1);
+    expect(dashboardSource).not.toContain("pulse={portfolioPulse}");
     expect(dashboardSource).not.toContain("<FourQuestionsSection");
     expect(dashboardSource).toContain("DashboardSecondaryNav");
     expect(dashboardSource).not.toContain("DashboardIntelligencePreview");
@@ -158,7 +157,7 @@ describe("dashboard phase 2 compact previews", () => {
     expect(dashboardSource).not.toContain("DashboardContributionsCard");
     expect(dashboardSource).not.toContain("DashboardDividendCard");
     expect(dashboardSource).not.toContain("DashboardGoalProgressCard");
-    expect(dashboardSource).toContain("pulse={portfolioPulse}");
+    expect(dashboardSource).not.toContain("pulse={portfolioPulse}");
   });
 
   it("uses mobile-first layouts without horizontal scroll utilities", () => {

@@ -81,10 +81,10 @@ export function HeroPerformanceSparkline({
   const series = activePeriod === "1W" ? weekSeries : monthSeries;
 
   const heightClass = compactOnMobile
-    ? "h-[92px] sm:h-[118px] lg:h-[136px]"
+    ? "h-[68px] sm:h-[100px] lg:h-[120px]"
     : "h-[104px] sm:h-[124px]";
   const emptyHeightClass = compactOnMobile
-    ? "h-[92px] sm:h-[118px]"
+    ? "h-[68px] sm:h-[100px]"
     : "h-[104px]";
 
   const periodLabel = activePeriod === "1W" ? "1W trend" : "1M trend";
@@ -118,7 +118,7 @@ export function HeroPerformanceSparkline({
               if (!enabled) return;
               setPreferredPeriod(option);
             }}
-            className={`min-h-[44px] min-w-[44px] rounded-full px-2.5 text-[12px] font-semibold tracking-wide transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 ${
+            className={`min-h-[44px] min-w-[44px] rounded-full px-2 text-[11px] font-semibold tracking-wide transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 ${
               selected
                 ? onLight
                   ? "bg-navy-hero text-white"
@@ -148,7 +148,7 @@ export function HeroPerformanceSparkline({
         aria-label={`${label} unavailable`}
         data-testid="hero-performance-sparkline-empty"
       >
-        <div className="mb-1 flex items-center justify-between gap-2">
+        <div className="mb-0.5 flex items-center justify-between gap-2">
           <p
             className={`text-[12px] font-semibold uppercase tracking-[0.1em] ${
               onLight ? "text-slate-600" : "text-white/55"
@@ -225,7 +225,7 @@ export function HeroPerformanceSparkline({
       data-testid="hero-performance-sparkline"
       data-period={activePeriod}
     >
-      <div className="mb-1 flex min-w-0 items-center justify-between gap-2">
+      <div className="mb-0.5 flex min-w-0 items-center justify-between gap-2">
         <div className="min-w-0">
           <p
             className={`text-[12px] font-semibold uppercase tracking-[0.1em] ${

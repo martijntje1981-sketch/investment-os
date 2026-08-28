@@ -43,7 +43,7 @@ describe("contributions ledger UI", () => {
     expect(dashboardSource).not.toContain("DashboardPortfolioHistorySection");
     expect(dashboardSource).not.toContain("DashboardContributionsCard");
     expect(dashboardSource).not.toContain("DashboardGoalProgressCard");
-    expect(dashboardSource).toContain("pulse={portfolioPulse}");
+    expect(dashboardSource).not.toContain("pulse={portfolioPulse}");
     expect(dashboardSource).not.toContain("DashboardDividendCard");
   });
 

@@ -103,13 +103,12 @@ describe("Dashboard UX polish phase", () => {
   it("places Cash Intelligence behind Dashboard secondary navigation", () => {
     expect(dashboard).not.toContain("DashboardTopStoryCard");
     expect(dashboard).not.toContain("DashboardCashIntelligenceCard");
-    expect(dashboard).toContain("pulse={portfolioPulse}");
+    expect(dashboard).not.toContain("pulse={portfolioPulse}");
     expect(dashboard).not.toContain("DashboardPortfolioScorecard");
     expect(dashboard).not.toContain("DashboardPortfolioHealthCard");
-    const pulseIdx = dashboard.indexOf("pulse={portfolioPulse}");
-    const holdingsIdx = dashboard.indexOf("<HoldingsToday");
-    expect(pulseIdx).toBeGreaterThan(-1);
-    expect(holdingsIdx).toBeGreaterThan(pulseIdx);
+    expect(dashboard.indexOf("<DashboardSummary")).toBeLessThan(
+      dashboard.indexOf("<HoldingsToday"),
+    );
     expect(read("components/dashboard/DashboardSecondaryNav.tsx")).toContain(
       "cashIntelligence",
     );
@@ -163,8 +162,8 @@ describe("Dashboard UX polish phase", () => {
     expect(insight).toContain("DASHBOARD_DEEP_LINKS.goalScore");
     expect(dashboard).not.toContain("usePortfolioInsight");
     expect(dashboard).not.toContain("DashboardInsightCard");
-    expect(dashboard).toContain("buildPortfolioPulse");
-    expect(dashboard).toContain("pulse={portfolioPulse}");
+    expect(dashboard).not.toContain("buildPortfolioPulse");
+    expect(dashboard).not.toContain("pulse={portfolioPulse}");
   });
 
   it("keeps Cash Intelligence metrics and Analysis deep link", () => {
@@ -178,12 +177,10 @@ describe("Dashboard UX polish phase", () => {
 
   it("orders hero, holdings, personal intelligence, then secondary links", () => {
     const summaryIdx = dashboard.indexOf("<DashboardSummary");
-    const pulseIdx = dashboard.indexOf("pulse={portfolioPulse}");
     const holdingsIdx = dashboard.indexOf("<HoldingsToday");
     const intelligenceIdx = dashboard.indexOf("<DashboardPersonalIntelligence");
     const secondaryIdx = dashboard.indexOf("<DashboardSecondaryNav");
-    expect(summaryIdx).toBeLessThan(pulseIdx);
-    expect(pulseIdx).toBeLessThan(holdingsIdx);
+    expect(summaryIdx).toBeLessThan(holdingsIdx);
     expect(holdingsIdx).toBeLessThan(intelligenceIdx);
     expect(intelligenceIdx).toBeLessThan(secondaryIdx);
   });

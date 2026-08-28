@@ -56,8 +56,11 @@ describe("Performance attribution UI", () => {
     expect(sheet).toContain("attributionNotes");
     expect(sheet).toContain("Performance drivers");
     expect(hero).toContain("attributionEnrichment");
-    expect(page).toContain("pulseAttributionEnrichment");
-    expect(page).toContain("buildPulseAttributionEnrichment");
+    expect(page).not.toContain("pulseAttributionEnrichment");
+    expect(page).not.toContain("buildPulseAttributionEnrichment");
+    expect(read("lib/services/performanceAttribution/index.ts")).toContain(
+      "buildPulseAttributionEnrichment",
+    );
     // Score formula files must not import attribution engine.
     expect(dailyScore).not.toContain("performanceAttribution");
   });

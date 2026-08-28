@@ -136,7 +136,7 @@ describe("first-run dashboard wiring", () => {
     expect(surface).toContain("appTintedPanelClass");
     expect(surface).toContain("bg-navy-hero");
     expect(hero).toContain("HeroPerformanceSparkline");
-    expect(hero).toContain("hero-snapshot-strip");
-    expect(hero).toContain("HeroPortfolioPulse");
+    expect(hero).not.toContain("hero-snapshot-strip");
+    expect(hero).not.toContain("HeroPortfolioPulse");
   });
 });

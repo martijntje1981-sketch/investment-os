@@ -146,7 +146,7 @@ describe("goal progress reuse", () => {
     );
 
     expect(dashboard).toContain("useGoalProgress");
-    expect(dashboard).toContain("pulse={portfolioPulse}");
+    expect(dashboard).not.toContain("pulse={portfolioPulse}");
     expect(dashboard).not.toContain("DashboardPortfolioScorecard");
     expect(dashboard).not.toContain("DashboardGoalProgressCard");
   });

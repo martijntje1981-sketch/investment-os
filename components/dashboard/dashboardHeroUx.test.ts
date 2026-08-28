@@ -25,9 +25,9 @@ describe("dashboard hero movers integration", () => {
     );
 
     expect(summarySource).toContain("PortfolioValueCard");
-    expect(valueSource).toContain("heroTopMover");
-    expect(valueSource).toContain("Biggest mover");
-    expect(valueSource).toContain("DailyPortfolioBriefing");
+    expect(valueSource).not.toContain("heroTopMover");
+    expect(valueSource).not.toContain("Biggest mover");
+    expect(valueSource).not.toContain("DailyPortfolioBriefing");
     expect(dashboardSource).not.toContain("Also worth noting");
     expect(dashboardSource).not.toContain("PageHero");
     expect(dashboardSource).not.toContain("DashboardMoverCard");

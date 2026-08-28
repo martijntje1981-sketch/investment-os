@@ -444,7 +444,7 @@ describe("perspectives polish wiring", () => {
     expect(hero).toContain("appHeroPaddingCompactClass");
     expect(hero).not.toContain("HeroHealthRing");
     expect(hero).not.toContain("HeroTopStoryPreviewCard");
-    expect(dashboard).toContain("pulse={portfolioPulse}");
+    expect(dashboard).not.toContain("pulse={portfolioPulse}");
     expect(dashboard).not.toContain("DashboardPortfolioScorecard");
     expect(dashboard).not.toContain("DashboardPortfolioHealthCard");
     expect(dashboard).not.toContain("DashboardTopStoryCard");
@@ -465,6 +465,6 @@ describe("perspectives polish wiring", () => {
     );
     expect(source).toContain("HeroPerformanceSparkline");
     expect(source).not.toMatch(/fakeHistory|Math\.random/i);
-    expect(source).toMatch(/no fabricated intraday 1D series/i);
+    expect(source).toMatch(/no fabricated series/i);
   });
 });

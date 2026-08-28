@@ -40,9 +40,10 @@ describe("Phase 3C Smart Dashboard Intelligence wiring", () => {
   it("builds Smart Hero once on the page and reuses it in the hero", () => {
     expect(dashboard).toContain("buildSmartDashboardIntelligence");
     expect(dashboard).toContain("smart={smartDashboard}");
-    expect(hero).toContain("smart.briefing");
-    expect(hero).toContain("smart.todaysFocus");
-    expect(hero).toContain("todaysFocus={null}");
+    expect(hero).toContain("data-hero-emphasis");
+    expect(hero).not.toContain("smart.briefing");
+    expect(hero).not.toContain("smart.todaysFocus");
+    expect(hero).not.toContain("todaysFocus={null}");
     expect(hero).not.toContain("buildDailyPortfolioBriefing");
     expect(hero).not.toContain("deriveBriefingMarketTopic");
   });

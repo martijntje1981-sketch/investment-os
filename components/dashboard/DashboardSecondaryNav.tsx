@@ -1,4 +1,20 @@
 import Link from "next/link";
+import type { LucideIcon } from "lucide-react";
+import {
+  Activity,
+  BadgeEuro,
+  BookOpen,
+  CalendarDays,
+  ChevronRight,
+  Compass,
+  History,
+  ListChecks,
+  Newspaper,
+  ScanLine,
+  Sparkles,
+  Target,
+  Waves,
+} from "lucide-react";
 
 import { appDashboardDarkMetaClass, appHeroMetricLabelClass } from "@/components/layout/appSurface";
 import {
@@ -8,7 +24,6 @@ import {
   NEWS_PATH,
   ON_TRACK_HUB_PATH,
   PERSPECTIVES_PATH,
-  PORTFOLIO_HEALTH_PATH,
   PORTFOLIO_HISTORY_PATH,
   REVIEW_PATH,
   WHAT_HAPPENED_HUB_PATH,
@@ -17,68 +32,165 @@ import {
 } from "@/lib/navigation/appRoutes";
 import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 
-const PRIMARY_LINKS = [
-  { href: ANALYSIS_PATH, label: "Analysis" },
-  { href: NEWS_PATH, label: "News" },
-  { href: GOALS_PATH, label: "Goals" },
-  { href: REVIEW_PATH, label: "Reports" },
-  { href: PORTFOLIO_HISTORY_PATH, label: "Portfolio history" },
+type ExploreItem = {
+  href: string;
+  title: string;
+  explanation: string;
+  icon: LucideIcon;
+};
+
+type ExploreGroup = {
+  label: string;
+  items: readonly ExploreItem[];
+};
+
+const EXPLORE_GROUPS: readonly ExploreGroup[] = [
+  {
+    label: "Core depth",
+    items: [
+      {
+        href: ANALYSIS_PATH,
+        title: "Analysis",
+        explanation: "Allocation, risk & portfolio structure",
+        icon: ScanLine,
+      },
+      {
+        href: NEWS_PATH,
+        title: "News",
+        explanation: "All portfolio and market news",
+        icon: Newspaper,
+      },
+      {
+        href: GOALS_PATH,
+        title: "Goals",
+        explanation: "Progress & projections",
+        icon: Target,
+      },
+      {
+        href: PORTFOLIO_HISTORY_PATH,
+        title: "History",
+        explanation: "Performance & changes",
+        icon: History,
+      },
+      {
+        href: REVIEW_PATH,
+        title: "Reports",
+        explanation: "Weekly and monthly reviews",
+        icon: CalendarDays,
+      },
+    ],
+  },
+  {
+    label: "Intelligence",
+    items: [
+      {
+        href: WHAT_HAPPENED_HUB_PATH,
+        title: "What happened?",
+        explanation: "Changes since last look",
+        icon: Activity,
+      },
+      {
+        href: WHAT_MATTERS_HUB_PATH,
+        title: "What matters?",
+        explanation: "What deserves attention",
+        icon: Sparkles,
+      },
+      {
+        href: ON_TRACK_HUB_PATH,
+        title: "On track?",
+        explanation: "Goal and plan",
+        icon: ListChecks,
+      },
+      {
+        href: WHATS_AHEAD_HUB_PATH,
+        title: "What’s ahead?",
+        explanation: "Outlook & scenarios",
+        icon: Compass,
+      },
+    ],
+  },
+  {
+    label: "More insight",
+    items: [
+      {
+        href: DASHBOARD_DEEP_LINKS.scorecard,
+        title: "Scorecard",
+        explanation: "Daily, weekly & monthly pulse",
+        icon: Waves,
+      },
+      {
+        href: PERSPECTIVES_PATH,
+        title: "Perspectives",
+        explanation: "External views",
+        icon: BookOpen,
+      },
+      {
+        href: DASHBOARD_DEEP_LINKS.cashIntelligence,
+        title: "Cash intelligence",
+        explanation: "Cash and allocation",
+        icon: BadgeEuro,
+      },
+      {
+        href: MARKET_PULSE_PATH,
+        title: "Market Pulse",
+        explanation: "Markets around your holdings",
+        icon: Activity,
+      },
+    ],
+  },
 ] as const;
 
-const MORE_LINKS = [
-  { href: WHAT_HAPPENED_HUB_PATH, label: "What happened" },
-  { href: WHAT_MATTERS_HUB_PATH, label: "What matters" },
-  { href: ON_TRACK_HUB_PATH, label: "On track" },
-  { href: WHATS_AHEAD_HUB_PATH, label: "What’s ahead" },
-  { href: MARKET_PULSE_PATH, label: "Market Pulse" },
-  { href: PERSPECTIVES_PATH, label: "Perspectives" },
-  { href: PORTFOLIO_HEALTH_PATH, label: "Scorecard" },
-  { href: DASHBOARD_DEEP_LINKS.cashIntelligence, label: "Cash" },
-] as const;
+function ExploreTile({ item }: { item: ExploreItem }) {
+  const Icon = item.icon;
 
-function LinkRow({
-  links,
-}: {
-  links: readonly { href: string; label: string }[];
-}) {
   return (
-    <ul className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
-      {links.map((link, index) => (
-        <li key={link.href} className="inline-flex items-center gap-3">
-          {index > 0 ? (
-            <span className="text-white/20" aria-hidden>
-              ·
-            </span>
-          ) : null}
-          <Link
-            href={link.href}
-            className="inline-flex min-h-[44px] items-center text-[14px] font-semibold text-white/80 underline-offset-2 hover:text-white hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
-          >
-            {link.label}
-          </Link>
-        </li>
-      ))}
-    </ul>
+    <li>
+      <Link
+        href={item.href}
+        className="flex min-h-[52px] items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-2.5 py-2 transition hover:border-white/18 hover:bg-white/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
+      >
+        <Icon className="h-4 w-4 shrink-0 text-white/50" aria-hidden />
+        <span className="min-w-0 flex-1">
+          <span className="block text-[14px] font-semibold leading-tight text-white">
+            {item.title}
+          </span>
+          <span className={`mt-0.5 block text-[12px] leading-snug ${appDashboardDarkMetaClass}`}>
+            {item.explanation}
+          </span>
+        </span>
+        <ChevronRight className="h-4 w-4 shrink-0 text-white/30" aria-hidden />
+      </Link>
+    </li>
   );
 }
 
 export function DashboardSecondaryNav() {
   return (
     <nav
-      aria-label="More in Tobailey"
-      className="min-w-0 px-1"
+      id="explore-tobailey"
+      aria-label="Explore Tobailey"
+      className="min-w-0"
       data-testid="dashboard-secondary-nav"
-      data-zone="explore-more"
+      data-zone="explore-tobailey"
     >
-      <p className={appHeroMetricLabelClass}>More</p>
+      <p className={appHeroMetricLabelClass}>Explore Tobailey</p>
       <p className={`mt-1 ${appDashboardDarkMetaClass}`}>
-        Analysis, news, goals and reports stay available here.
+        Deeper analysis, evidence, history and tools when you want them.
       </p>
-      <div className="mt-1">
-        <LinkRow links={PRIMARY_LINKS} />
-      </div>
-      <div className="mt-0.5">
-        <LinkRow links={MORE_LINKS} />
+
+      <div className="mt-3 space-y-4">
+        {EXPLORE_GROUPS.map((group) => (
+          <div key={group.label}>
+            <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-white/40">
+              {group.label}
+            </p>
+            <ul className="grid grid-cols-2 gap-1.5 lg:grid-cols-3">
+              {group.items.map((item) => (
+                <ExploreTile key={item.href} item={item} />
+              ))}
+            </ul>
+          </div>
+        ))}
       </div>
     </nav>
   );

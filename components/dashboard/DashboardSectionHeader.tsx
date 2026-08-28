@@ -23,6 +23,7 @@ export function DashboardSectionHeader({
   className,
   titleId,
   variant = "default",
+  density = "default",
 }: {
   title: string;
   subtitle?: ReactNode;
@@ -33,14 +34,16 @@ export function DashboardSectionHeader({
   className?: string;
   titleId?: string;
   variant?: DashboardSectionHeaderVariant;
+  density?: "default" | "compact";
 }) {
   const isFeature = variant === "feature";
   const isHoldings = variant === "holdings";
+  const isCompact = density === "compact";
 
   return (
     <div
       className={cn(
-        "flex min-w-0 items-start justify-between gap-4",
+        "flex min-w-0 items-start justify-between gap-3 md:gap-4",
         bordered &&
           (isFeature
             ? "border-b border-white/10"
@@ -48,7 +51,9 @@ export function DashboardSectionHeader({
               ? "border-b border-slate-200/80"
               : "border-b border-slate-100"),
         isFeature
-          ? "bg-white/[0.03] px-4 py-5 md:px-6 md:py-5"
+          ? isCompact
+            ? "bg-white/[0.03] px-3.5 py-2 sm:px-5 sm:py-2.5"
+            : "bg-white/[0.03] px-4 py-5 md:px-6 md:py-5"
           : isHoldings
             ? "bg-gradient-to-r from-slate-50/90 to-white px-4 py-5 md:px-6 md:py-5"
             : variant === "compact"
@@ -57,13 +62,16 @@ export function DashboardSectionHeader({
         className,
       )}
     >
-      <div className="flex min-w-0 items-start gap-3.5 md:gap-4">
+      <div className={cn("flex min-w-0 items-start", isCompact ? "gap-2.5" : "gap-3.5 md:gap-4")}>
         {icon ? (
           <div
             className={cn(
-              "flex shrink-0 items-center justify-center rounded-2xl shadow-sm",
+              "flex shrink-0 items-center justify-center shadow-sm",
+              isCompact ? "rounded-xl" : "rounded-2xl",
               isFeature
-                ? "h-11 w-11 bg-brand/20 text-brand ring-1 ring-brand/30"
+                ? isCompact
+                  ? "h-8 w-8 bg-brand/20 text-brand ring-1 ring-brand/30"
+                  : "h-11 w-11 bg-brand/20 text-brand ring-1 ring-brand/30"
                 : isHoldings
                   ? "h-11 w-11 bg-white text-slate-700 ring-1 ring-slate-200/90"
                   : "h-10 w-10",
@@ -86,7 +94,7 @@ export function DashboardSectionHeader({
           {subtitle ? (
             <div
               className={cn(
-                "mt-1.5",
+                isCompact ? "mt-0.5" : "mt-1.5",
                 isFeature
                   ? appDashboardDarkMutedClass
                   : appSectionSubtitleClass,
