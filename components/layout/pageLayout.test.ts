@@ -5,7 +5,6 @@ import { describe, expect, it } from "vitest";
 const authenticatedPagesWithBackLink = [
   "app/portfolio/page.tsx",
   "app/news/page.tsx",
-  "components/analysis/PortfolioAnalysisPage.tsx",
   "app/goals/page.tsx",
   "app/discover/page.tsx",
   "app/settings/page.tsx",
@@ -20,6 +19,7 @@ const secondaryPagesWithSharedBack = [
 
 const authenticatedPages = [
   "app/dashboard/page.tsx",
+  "components/analysis/PortfolioAnalysisPage.tsx",
   ...authenticatedPagesWithBackLink,
 ];
 
@@ -35,13 +35,21 @@ describe("authenticated page layout", () => {
     }
   });
 
-  it("uses PageHero on authenticated pages except the dashboard portfolio hero", () => {
+  it("uses PageHero on authenticated pages except Dashboard and Analysis glance", () => {
     const dashboardSource = readFileSync(
       path.resolve(process.cwd(), "app/dashboard/page.tsx"),
       "utf8",
     );
     expect(dashboardSource).not.toContain("PageHero");
     expect(dashboardSource).toContain("DashboardSummary");
+
+    const analysisSource = readFileSync(
+      path.resolve(process.cwd(), "components/analysis/PortfolioAnalysisPage.tsx"),
+      "utf8",
+    );
+    expect(analysisSource).not.toContain("PageHero");
+    expect(analysisSource).toContain("canvas=\"dashboard\"");
+    expect(analysisSource).toContain("AnalysisIntro");
 
     for (const relativePath of authenticatedPagesWithBackLink) {
       const source = readFileSync(

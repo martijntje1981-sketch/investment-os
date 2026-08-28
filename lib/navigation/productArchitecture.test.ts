@@ -47,7 +47,7 @@ describe("product architecture cohesion", () => {
 
   it("keeps page purpose one-liners stable for Related strips", () => {
     expect(PAGE_PURPOSE.dashboard).toMatch(/today/i);
-    expect(PAGE_PURPOSE.analysis).toMatch(/four questions/i);
+    expect(PAGE_PURPOSE.analysis).toMatch(/positioned|picture/i);
     expect(PAGE_PURPOSE.review).toMatch(/week|month|today/i);
   });
 
@@ -71,8 +71,11 @@ describe("product architecture cohesion", () => {
       "page-related-links",
     );
     expect(read("app/dashboard/page.tsx")).not.toContain("PageRelatedLinks");
-    expect(read("components/analysis/PortfolioAnalysisPage.tsx")).toContain(
+    expect(read("components/analysis/PortfolioAnalysisPage.tsx")).not.toContain(
       "PageRelatedLinks",
+    );
+    expect(read("components/analysis/glance/AnalysisExploreNav.tsx")).toContain(
+      "PORTFOLIO_HISTORY_PATH",
     );
     expect(read("components/portfolioHistory/PortfolioHistoryPage.tsx")).toContain(
       "PageRelatedLinks",

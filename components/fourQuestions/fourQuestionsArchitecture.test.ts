@@ -71,12 +71,14 @@ describe("Four Questions product architecture Phase 1 wiring", () => {
     expect(q4).toContain('fourQuestionHubPath("whats_ahead")');
   });
 
-  it("Analysis keeps section map and adds compact nav without rewrite", () => {
-    expect(analysis).toContain("AuthenticatedFourQuestionsNav");
-    expect(analysis).toContain("AnalysisFourQuestionsNav");
-    expect(analysis).toContain("item={Q1}");
+  it("Analysis keeps engines and exposes Four Questions through Explore", () => {
     expect(analysis).toContain("PortfolioPerformanceSection");
     expect(analysis).toContain("ScenarioStressSection");
+    expect(analysis).not.toContain("AuthenticatedFourQuestionsNav");
+    expect(analysis).not.toContain("AnalysisFourQuestionsNav");
+    expect(read("components/analysis/glance/AnalysisExploreNav.tsx")).toContain(
+      "WHAT_HAPPENED_HUB_PATH",
+    );
   });
 
   it("wires compact nav on major authenticated product pages", () => {

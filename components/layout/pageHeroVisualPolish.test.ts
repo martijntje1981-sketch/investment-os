@@ -62,10 +62,6 @@ describe("Pre-launch light hero contrast and action alignment", () => {
   it("places PageHero actions in one shared wrap row without nested action stacks", () => {
     expect(pageHero).toContain("appPageHeroActionsClass");
     expect(pageHero).not.toContain("lg:max-w-md lg:justify-end");
-    expect(analysis).toContain("<>");
-    expect(analysis).not.toMatch(
-      /actions=\{\s*<div className="flex flex-wrap gap-2">/,
-    );
     expect(history).not.toMatch(
       /actions=\{\s*<div className="flex flex-wrap gap-2">/,
     );
@@ -91,9 +87,9 @@ describe("Pre-launch light hero contrast and action alignment", () => {
     expect(addMenu).toContain("Add crypto");
     expect(addMenu).toContain("Add investment");
     expect(goals).toContain("<PageHero");
-    expect(analysis).toContain("<PageHero");
+    expect(analysis).not.toContain("<PageHero");
+    expect(analysis).toContain("AnalysisIntro");
     expect(goals).toContain("backToDashboard");
-    expect(analysis).toContain("backToDashboard");
   });
 
   it("keeps hero action controls at a 44px tap target", () => {

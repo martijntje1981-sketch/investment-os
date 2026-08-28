@@ -23,29 +23,27 @@ describe("Analysis under the Four Questions", () => {
   const gateway = read(
     "components/analysis/fourQuestions/AnalysisOnTrackGateway.tsx",
   );
+  const explore = read("components/analysis/glance/AnalysisExploreNav.tsx");
 
-  it("renders the four Analysis question headings in order", () => {
+  it("keeps the Four Questions catalog without rendering it as primary Analysis chrome", () => {
     expect(ANALYSIS_FOUR_QUESTION_NAV.map((item) => item.question)).toEqual([
       "What happened?",
       "What matters now?",
       "Am I on track?",
       "What’s ahead?",
     ]);
-    const q1 = page.indexOf("item={Q1}");
-    const q2 = page.indexOf("item={Q2}");
-    const q3 = page.indexOf("item={Q3}");
-    const q4 = page.indexOf("item={Q4}");
-    expect(q1).toBeGreaterThan(-1);
-    expect(q2).toBeGreaterThan(q1);
-    expect(q3).toBeGreaterThan(q2);
-    expect(q4).toBeGreaterThan(q3);
+    expect(page).not.toContain("AnalysisFourQuestionsNav");
+    expect(page).not.toContain("item={Q1}");
+    expect(explore).toContain("WHAT_HAPPENED_HUB_PATH");
   });
 
-  it("top navigation links to correct section anchors", () => {
+  it("keeps Analysis section anchors for existing deep links", () => {
     expect(nav).toContain('data-testid="analysis-four-questions-nav"');
-    expect(nav).toContain("href={`#${item.sectionId}`}");
-    expect(nav).toContain("ANALYSIS_FOUR_QUESTION_NAV");
     expect(section).toContain("id={item.sectionId}");
+    expect(page).toContain('id="what-happened"');
+    expect(page).toContain('id="what-matters"');
+    expect(page).toContain('id="on-track"');
+    expect(page).toContain('id="whats-ahead"');
     expect(ANALYSIS_FOUR_QUESTION_SECTION_IDS.what_happened).toBe(
       "what-happened",
     );
@@ -56,40 +54,27 @@ describe("Analysis under the Four Questions", () => {
     expect(ANALYSIS_FOUR_QUESTION_SECTION_IDS.whats_ahead).toBe("whats-ahead");
   });
 
-  it("keeps Performance under Q1 and existing performance deep link", () => {
-    const q1Block = page.slice(
-      page.indexOf("item={Q1}"),
-      page.indexOf("item={Q2}"),
-    );
-    expect(q1Block).toContain("<PortfolioPerformanceSection");
-    expect(q1Block).toContain("<TopPerformersByCategorySection");
-    expect(q1Block).toContain("PORTFOLIO_HISTORY_PATH");
+  it("keeps Performance and existing performance deep link", () => {
+    expect(page).toContain("<PortfolioPerformanceSection");
+    expect(page).toContain("<TopPerformersByCategorySection");
+    expect(page).toContain("PORTFOLIO_HISTORY_PATH");
     expect(DASHBOARD_DEEP_LINKS.portfolioPerformance).toBe(
       "/analysis#portfolio-performance",
     );
   });
 
-  it("keeps Exposure / X-Ray / Crypto under Q2", () => {
-    const q2Block = page.slice(
-      page.indexOf("item={Q2}"),
-      page.indexOf("item={Q3}"),
-    );
-    expect(q2Block).toContain("<PortfolioExposureSection");
-    expect(q2Block).toContain("<BondsRatesSection");
-    expect(q2Block).toContain("<PortfolioXRaySection");
-    expect(q2Block).toContain("<CryptoIntelligenceSection");
-    expect(q2Block).toContain('id="portfolio-allocation"');
-    expect(q2Block).toContain("<DividendIntelligenceSection");
-    expect(q2Block).toContain("<CashIntelligenceSection");
+  it("keeps Exposure / X-Ray / Crypto reachable", () => {
+    expect(page).toContain("<PortfolioExposureSection");
+    expect(page).toContain("<BondsRatesSection");
+    expect(page).toContain("<PortfolioXRaySection");
+    expect(page).toContain("<CryptoIntelligenceSection");
+    expect(page).toContain('id="portfolio-allocation"');
+    expect(page).toContain("<DividendIntelligenceSection");
+    expect(page).toContain("<CashIntelligenceSection");
   });
 
-  it("places Goal gateway under Q3 without cloning Goals", () => {
-    const q3Block = page.slice(
-      page.indexOf("item={Q3}"),
-      page.indexOf("item={Q4}"),
-    );
-    expect(q3Block).toContain("<AnalysisOnTrackGateway");
-    expect(q3Block).not.toContain("<ScenarioStressSection");
+  it("places Goal gateway without cloning Goals", () => {
+    expect(page).toContain("<AnalysisOnTrackGateway");
     expect(gateway).toContain("analysis-on-track-gateway");
     expect(gateway).toContain("GOAL_REALITY_HREF");
     expect(gateway).toContain("goal-reality-check");
@@ -98,10 +83,9 @@ describe("Analysis under the Four Questions", () => {
     expect(gateway).not.toContain("persistGoal");
   });
 
-  it("places Scenarios / Resilience / Consensus under Q4", () => {
-    const q4Block = page.slice(page.indexOf("item={Q4}"));
-    expect(q4Block).toContain("<ScenarioStressSection");
-    expect(q4Block).toContain("<MarketConsensusSection");
+  it("keeps Scenarios / Resilience / Consensus reachable", () => {
+    expect(page).toContain("<ScenarioStressSection");
+    expect(page).toContain("<MarketConsensusSection");
     expect(DASHBOARD_DEEP_LINKS.scenarioStress).toBe(
       "/analysis#scenario-stress",
     );
@@ -134,7 +118,7 @@ describe("Analysis under the Four Questions", () => {
     expect(page).not.toMatch(/stripe|checkout|subscriptionTier|entitlement/i);
   });
 
-  it("uses mobile-safe stacked nav and section structure", () => {
+  it("keeps Four Questions nav/section components mobile-safe for other surfaces", () => {
     expect(nav).toContain("sm:grid-cols-2");
     expect(nav).toContain("lg:grid-cols-4");
     expect(nav).not.toContain("overflow-x-scroll");
