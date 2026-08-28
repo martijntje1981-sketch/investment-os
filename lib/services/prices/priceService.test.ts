@@ -73,7 +73,7 @@ function mockRawQuote(
     low: price,
     volume: 1000,
     timestamp: 1_700_000_000,
-    updatedAt: "2026-07-20T10:00:00.000Z",
+    updatedAt: "2026-07-20T11:55:00.000Z",
     marketStatus: "open",
   };
 }
@@ -187,8 +187,8 @@ describe("PriceService", () => {
     vi.advanceTimersByTime(12 * 60 * 60 * 1000 + 30 * 60 * 1000);
 
     const stale = await getNormalizedQuote(VWCE);
-    expect(stale.isStale).toBe(true);
     expect(stale.cacheStatus).toBe("stale");
+    expect(stale.dataStatus).toBe("delayed");
     expect(stale.currentPrice).toBe(120);
     expect(provider.calls).toEqual(["VWCE.XETRA"]);
   });
@@ -394,7 +394,8 @@ describe("PriceService", () => {
     vi.advanceTimersByTime(13 * 60 * 60 * 1000);
 
     const stale = await getNormalizedQuote(VWCE, { snapshotOnly: true });
-    expect(stale.isStale).toBe(true);
+    expect(stale.cacheStatus).toBe("stale");
+    expect(stale.dataStatus).toBe("delayed");
     expect(stale.currentPrice).toBe(110);
     expect(provider.calls).toEqual(["VWCE.XETRA"]);
   });
@@ -488,3 +489,68 @@ describe("loadBaseCurrencyFxSnapshot", () => {
     expect(fetchEodhdFxRates).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("PriceService freshness", () => {
+  beforeEach(() => {
+    resetAllPriceServiceState();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-07-20T12:00:00.000Z"));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    resetAllPriceServiceState();
+  });
+
+  it("forceRefresh uses the newest provider quote instead of an older valid cache", async () => {
+    let price = 100;
+    const provider = createMockProvider(async (symbol) =>
+      mockRawQuote(symbol, price, 95),
+    );
+    configureMarketDataProvidersForTests([provider]);
+
+    const cached = await getNormalizedQuote(VWCE);
+    expect(cached.currentPrice).toBe(100);
+    expect(provider.calls).toHaveLength(1);
+
+    price = 94;
+    const refreshed = await getNormalizedQuote(VWCE, { forceRefresh: true });
+    expect(refreshed.currentPrice).toBe(94);
+    expect(provider.calls).toEqual(["VWCE.XETRA", "VWCE.XETRA"]);
+
+    const payload = await loadPricesForTargets([VWCE], { forceRefresh: true });
+    expect(payload.prices[0]?.currentPrice).toBe(94);
+    expect(provider.calls.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("keeps a delayed provider quote usable as the latest available quote", async () => {
+    const provider = createMockProvider(async (symbol) => ({
+      ...mockRawQuote(symbol, 107.3, 106),
+      updatedAt: "2026-07-20T11:20:00.000Z",
+    }));
+    configureMarketDataProvidersForTests([provider]);
+
+    const quote = await getNormalizedQuote(VWCE, { forceRefresh: true });
+    expect(quote.currentPrice).toBe(107.3);
+    expect(quote.dataStatus).toBe("delayed");
+    expect(quote.isStale).toBe(false);
+  });
+
+  it("does not label a stale quote as live after a cache hit", async () => {
+    const provider = createMockProvider(async (symbol) => ({
+      ...mockRawQuote(symbol, 88, 85),
+      updatedAt: "2026-07-20T11:55:00.000Z",
+    }));
+    configureMarketDataProvidersForTests([provider]);
+
+    await getNormalizedQuote(VWCE);
+    vi.advanceTimersByTime(26 * 60 * 60 * 1000);
+
+    const quote = await getNormalizedQuote(VWCE);
+    expect(quote.currentPrice).toBe(88);
+    expect(quote.dataStatus).toBe("stale");
+    expect(quote.isStale).toBe(true);
+    expect(quote.cacheStatus).toBe("stale");
+  });
+});
+

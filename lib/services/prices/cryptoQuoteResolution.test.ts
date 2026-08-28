@@ -65,9 +65,14 @@ describe("cryptoQuoteResolution", () => {
     expect(fallback?.conversionPath).toBe("USD/EUR");
   });
 
-  it("does not create a fallback for direct USD pairs", () => {
+  it("creates a EUR fallback for direct USD pairs", () => {
     const plan = resolveCryptoQuoteFetchPlan("ETH", "USD")!;
-    expect(resolveCryptoQuoteFallbackPlan(plan)).toBeNull();
+    const fallback = resolveCryptoQuoteFallbackPlan(plan);
+    expect(fallback?.providerSymbol).toBe("ETH-EUR.CC");
+    expect(fallback?.normalizedPair).toBe("ETH/USD");
+    expect(fallback?.sourcePair).toBe("ETH/EUR");
+    expect(fallback?.conversionApplied).toBe(true);
+    expect(fallback?.conversionPath).toBe("EUR/USD");
   });
 
   it("builds SOL/USDC direct plan without treating USDC as USD", () => {

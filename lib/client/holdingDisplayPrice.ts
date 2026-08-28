@@ -341,6 +341,32 @@ export function holdingPriceHoldingsLabel(
   return holdingPriceStatusUserLabel(status);
 }
 
+export function formatHoldingQuoteTrustLine(input: {
+  source: HoldingPriceTrustStatus;
+  updatedAt?: string | null;
+  now?: Date | number;
+}): string | null {
+  const status = holdingPriceHoldingsLabel(input.source);
+  const iso = input.updatedAt?.trim() || null;
+  const parsed = iso ? Date.parse(iso) : NaN;
+  const time = Number.isFinite(parsed)
+    ? new Intl.DateTimeFormat("en-GB", {
+        timeZone: "Europe/Amsterdam",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      }).format(new Date(parsed))
+    : null;
+
+  if (time && status) {
+    return `updated ${time} · ${status.toLowerCase()}`;
+  }
+  if (time) {
+    return `updated ${time}`;
+  }
+  return status;
+}
+
 /** Scan-friendly badge next to a value. Last-session and live have no badge. */
 export function holdingPriceTrustBadgeLabel(
   status: HoldingPriceTrustStatus,

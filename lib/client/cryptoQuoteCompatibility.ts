@@ -1,5 +1,6 @@
 import {
   normalizeTradingPairKey,
+  resolveCanonicalCryptoPair,
   tradingPairsEquivalent,
 } from "@/lib/services/portfolio/cryptoPairIdentity";
 import { isCryptoHolding } from "@/lib/services/portfolio/cryptoHolding";
@@ -24,6 +25,11 @@ export function resolveHoldingTradingPair(
     "symbol" | "pairCurrency" | "tradingPair"
   >,
 ): string | null {
+  const canonical = resolveCanonicalCryptoPair(holding);
+  if (canonical) {
+    return canonical.tradingPair;
+  }
+
   return (
     normalizeTradingPairKey(holding.tradingPair) ??
     (holding.pairCurrency

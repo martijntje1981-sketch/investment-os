@@ -76,6 +76,7 @@ export type NormalizedProviderQuote = {
   dataStatus: MarketDataStatus;
   cacheStatus: CacheStatus;
   crypto?: CryptoQuoteMetadata;
+  fetchedAt?: string | null;
 };
 
 export type HoldingPrice = {

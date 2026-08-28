@@ -16,6 +16,7 @@ import {
   selectRelevantUpcomingEvent,
 } from "@/lib/services/lookingAhead/selectRelevantUpcomingEvent";
 import type { LookingAheadFact, LookingAheadModel } from "@/lib/services/lookingAhead/types";
+import { resolvePortfolioValuationCoverage } from "@/lib/client/portfolioValuationCoverage";
 import type { ResilienceProfile } from "@/lib/services/resilience";
 import { SCENARIO_DEFINITION_BY_ID } from "@/lib/services/scenarioEngine";
 import type { UpcomingMarketEvent } from "@/lib/types/newsContent";
@@ -163,8 +164,11 @@ export function buildLookingAhead(
     Math.abs(sensitive.estimatedPortfolioImpactPercent) >= MATERIAL_SCENARIO_PP;
 
   const largest = largestInvestmentHolding(input.holdings);
+  const coverage = resolvePortfolioValuationCoverage(input.holdings);
   const hasMaterialConcentration =
-    largest != null && largest.weightPercent >= MATERIAL_CONCENTRATION_PERCENT;
+    coverage.allowsValuationConclusions &&
+    largest != null &&
+    largest.weightPercent >= MATERIAL_CONCENTRATION_PERCENT;
 
   const relevantEvent =
     depth === "complete"

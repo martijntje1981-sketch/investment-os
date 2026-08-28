@@ -14,6 +14,7 @@ import {
   formatPortfolioMovePeriodContextLine,
   resolveHoldingMovePeriod,
 } from "@/lib/client/performancePeriod";
+import { resolvePortfolioValuationCoverage } from "@/lib/client/portfolioValuationCoverage";
 import { buildPortfolioPerformance } from "@/lib/client/portfolioPerformance";
 import {
   computeGoalProgress,
@@ -94,6 +95,7 @@ export function buildDashboardSummary(
   const daily = summarizeDailyPerformance(holdings);
   const analysis = buildPortfolioAnalysis(holdings);
   const performance = buildPortfolioPerformance(holdings);
+  const coverage = resolvePortfolioValuationCoverage(holdings);
   const investedCapital = performance.investedCapital;
   const totalReturn = performance.totalReturn;
   const totalReturnPercent = performance.totalReturnPercent;
@@ -167,9 +169,19 @@ export function buildDashboardSummary(
           move: topDailyDriver.move,
         }
       : null,
-    concentrationSymbol: analysis.largestPosition?.holding.symbol ?? null,
-    concentrationWeightPercent:
-      analysis.largestPosition?.weightPercent ?? null,
-    observations: analysis.observations,
+    concentrationSymbol: coverage.allowsValuationConclusions
+      ? analysis.largestPosition?.holding.symbol ?? null
+      : null,
+    concentrationWeightPercent: coverage.allowsValuationConclusions
+      ? analysis.largestPosition?.weightPercent ?? 0
+      : null,
+    observations: coverage.allowsValuationConclusions
+      ? analysis.observations
+      : analysis.observations.filter(
+          (observation) =>
+            !/represents .* of the valued portfolio|top three valued positions/i.test(
+              observation,
+            ),
+        ),
   };
 }

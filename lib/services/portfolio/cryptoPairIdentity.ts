@@ -92,7 +92,9 @@ export function resolveCanonicalCryptoPair(input: {
 }): { base: string; quote: CryptoPairCurrency; tradingPair: string } | null {
   const fromTradingPair =
     parseTradingPairText(input.tradingPair) ??
-    parseCompactCryptoPairSymbol(String(input.tradingPair ?? ""));
+    parseCompactCryptoPairSymbol(String(input.tradingPair ?? "")) ??
+    parseTradingPairText(input.symbol) ??
+    parseCompactCryptoPairSymbol(String(input.symbol ?? ""));
 
   if (fromTradingPair) {
     return {

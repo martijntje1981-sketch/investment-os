@@ -452,4 +452,37 @@ describe("livePortfolioPriceRefresh", () => {
     expect(readPortfolioDisplayFreshness(USER)).toBeNull();
     expect(result.message).toMatch(/last available prices remain visible/i);
   });
+
+  it("does not record display freshness from stale cache-first quotes", async () => {
+    writePortfolioToStorage(USER, [holding("VWCE", "VWCE.XETRA")]);
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        success: true,
+        quoteSource: "cache",
+        prices: [
+          {
+            symbol: "VWCE",
+            providerSymbol: "VWCE.XETRA",
+            priceEur: 121,
+            currentPrice: 121,
+            dataStatus: "stale",
+            updatedAt: "2026-08-01T09:00:00.000Z",
+          },
+        ],
+        requested: 1,
+        received: 1,
+        refreshSummary: { providerCallsMade: 0 },
+      }),
+    } as Response);
+
+    const result = await refreshLivePortfolioPrices(
+      USER,
+      loadUserPortfolioHoldings(USER),
+      { cacheFirst: true },
+    );
+
+    expect(result.updated).toBe(true);
+    expect(readPortfolioDisplayFreshness(USER)).toBeNull();
+  });
 });

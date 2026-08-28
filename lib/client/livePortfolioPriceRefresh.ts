@@ -29,6 +29,7 @@ import {
   recordPortfolioDisplayFreshness,
   resetPortfolioDisplayFreshnessForTests,
 } from "@/lib/client/portfolioDisplayFreshness";
+import { quotesAreCurrentEnough } from "@/lib/services/prices/quoteFreshness";
 import { lastLivePriceRefreshKey } from "@/lib/client/portfolioStorageKeys";
 import { NO_QUOTABLE_HOLDINGS_MESSAGE } from "@/lib/services/prices/types";
 import type {
@@ -37,6 +38,37 @@ import type {
   PriceApiResponse,
   StoredPortfolioHolding,
 } from "@/lib/types/portfolioStorage";
+
+function newestCurrentQuoteTimestamp(
+  quotes: Array<{ updatedAt?: string | null; fetchedAt?: string | null; currentPrice?: number | null }>,
+): string | null {
+  if (!quotesAreCurrentEnough(quotes)) {
+    return null;
+  }
+
+  const timestamps = quotes
+    .flatMap((quote) => [quote.fetchedAt, quote.updatedAt])
+    .filter((value): value is string => Boolean(value?.trim()))
+    .filter((value) => Number.isFinite(Date.parse(value)))
+    .sort();
+
+  return timestamps.at(-1) ?? null;
+}
+
+function recordFreshnessFromQuotes(
+  userSub: string,
+  quotes: Array<{ updatedAt?: string | null; fetchedAt?: string | null; currentPrice?: number | null }>,
+  fallbackNow = false,
+): void {
+  const fromQuotes = newestCurrentQuoteTimestamp(quotes);
+  if (fromQuotes) {
+    recordPortfolioDisplayFreshness(userSub, fromQuotes);
+    return;
+  }
+  if (fallbackNow && quotesAreCurrentEnough(quotes)) {
+    recordPortfolioDisplayFreshness(userSub);
+  }
+}
 
 export const LIVE_PRICE_REFRESH_COOLDOWN_MS = 60_000;
 
@@ -454,7 +486,7 @@ export async function refreshLivePortfolioPrices<
           null,
       });
 
-      recordPortfolioDisplayFreshness(userSub);
+      recordFreshnessFromQuotes(userSub, normalizedQuotes);
 
       return {
         holdings: refreshed,
@@ -560,7 +592,7 @@ export async function refreshLivePortfolioPrices<
       quoteSource: data.quoteSource ?? "provider",
     });
     recordLastLivePriceRefreshAt(userSub);
-    recordPortfolioDisplayFreshness(userSub);
+    recordFreshnessFromQuotes(userSub, normalizedQuotes, data.quoteSource !== "cache");
 
     lastLiveRefreshCompletedAt = Date.now();
 

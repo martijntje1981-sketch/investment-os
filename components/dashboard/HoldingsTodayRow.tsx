@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { MouseEvent } from "react";
 
 import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
-import { holdingPricePeriodCaption, holdingPriceHoldingsLabel } from "@/lib/client/holdingDisplayPrice";
+import { holdingPricePeriodCaption, formatHoldingQuoteTrustLine } from "@/lib/client/holdingDisplayPrice";
 import { formatHoldingTodayChange } from "@/lib/client/portfolioMovementFormat";
 import { formatCrypto24hChange } from "@/lib/client/cryptoPriceDisplay";
 import { resolveSmartMoneyFractionDigits } from "@/lib/client/smartPriceFormat";
@@ -153,7 +153,10 @@ function HoldingIdentity({
   row: DashboardHoldingRow;
   href: string | null;
 }) {
-  const quality = holdingPriceHoldingsLabel(row.priceQuality);
+  const quality = formatHoldingQuoteTrustLine({
+    source: row.priceQuality,
+    updatedAt: row.marketPriceUpdatedAt ?? row.lastUpdatedAt,
+  });
   const name = (
     <>
       <p className={`truncate ${appTableNameClass}`}>{row.name}</p>

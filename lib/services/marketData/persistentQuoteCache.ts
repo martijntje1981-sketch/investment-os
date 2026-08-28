@@ -3,6 +3,7 @@ import {
   getQuoteFreshTtlMs,
   getQuoteStaleWindowMs,
 } from "@/lib/services/marketData/cachePolicy";
+import { overlayQuoteTrust } from "@/lib/services/prices/quoteFreshness";
 import type { NormalizedProviderQuote } from "@/lib/services/prices/types";
 
 export type PersistedQuoteRecord = {
@@ -11,6 +12,8 @@ export type PersistedQuoteRecord = {
   fresh: boolean;
   status: "fresh" | "stale" | "unavailable";
   lastError: string | null;
+  expiresAtMs: number;
+  staleUntilMs: number;
 };
 
 type QuoteRow = {
@@ -46,18 +49,20 @@ export async function readPersistedQuote(
     return null;
   }
 
-  const fresh = now <= Date.parse(row.expires_at);
+  const expiresAtMs = Date.parse(row.expires_at);
+  const fresh = now <= expiresAtMs;
+  const overlayed = overlayQuoteTrust(row.quote_json, now);
   return {
     cacheKey: row.cache_key,
     quote: {
-      ...row.quote_json,
-      isStale: !fresh,
+      ...overlayed,
       cacheStatus: fresh ? "fresh" : "stale",
-      dataStatus: fresh ? row.quote_json.dataStatus : "stale",
     },
     fresh,
     status: row.status,
     lastError: row.last_error,
+    expiresAtMs,
+    staleUntilMs: staleUntil,
   };
 }
 

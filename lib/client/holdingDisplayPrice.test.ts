@@ -13,6 +13,7 @@ import {
   holdingPriceStatusUserLabel,
   holdingPriceTrustBadgeLabel,
   holdingValueUnavailableLabel,
+  formatHoldingQuoteTrustLine,
   isEstimatedHoldingPrice,
   resolveHoldingDisplayPrice,
   resolveHoldingPriceTrustStatus,
@@ -160,6 +161,12 @@ describe("holdingDisplayPrice crypto safety", () => {
     expect(holdingPriceStatusUserLabel("delayed")).toBe("Delayed");
     expect(holdingPriceStatusUserLabel("live")).toBe("Current");
     expect(holdingPriceStatusUserLabel("live")).not.toBe("Live");
+    expect(
+      formatHoldingQuoteTrustLine({
+        source: "delayed",
+        updatedAt: "2026-08-28T07:37:00.000Z",
+      }),
+    ).toMatch(/^updated \d{2}:\d{2} · delayed$/);
     expect(
       resolveHoldingPriceTrustStatus(
         equity({ currentPrice: 0, purchasePrice: 90 }),

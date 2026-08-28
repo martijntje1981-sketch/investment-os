@@ -98,6 +98,7 @@ describe("POST /api/prices", () => {
     expect(payload.success).toBe(true);
     expect(payload.prices[0].cacheStatus).toBe("fresh");
     expect(payload.prices[0].provider).toBe("eodhd");
+    expect(response.headers.get("Cache-Control")).toBe("private, no-store");
   });
 
   it("returns 400 when no holdings are supplied", async () => {
@@ -172,5 +173,21 @@ describe("POST /api/prices", () => {
     expect(payload.success).toBe(true);
     expect(payload.fxSnapshot.baseCurrency).toBe("USD");
     expect(payload.fxSnapshot.status).toBe("current");
+    expect(response.headers.get("Cache-Control")).toMatch(/private/);
+  });
+
+  it("does not publicly cache a forceRefresh holdings response", async () => {
+    const response = await POST(
+      new Request("http://localhost/api/prices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          holdings: [{ symbol: "VWCE", providerSymbol: "VWCE.XETRA" }],
+          forceRefresh: true,
+        }),
+      }),
+    );
+
+    expect(response.headers.get("Cache-Control")).toBe("private, no-store");
   });
 });

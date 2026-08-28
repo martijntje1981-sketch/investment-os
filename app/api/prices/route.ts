@@ -23,15 +23,16 @@ const HTTP_CACHE_SECONDS = 12 * 60;
 function jsonResponse(
   payload: PricePayload,
   status: number,
-  options?: { forceRefresh?: boolean },
+  options?: { forceRefresh?: boolean; shared?: boolean },
 ) {
   const forceRefresh = options?.forceRefresh ?? false;
+  const shared = options?.shared === true && !forceRefresh;
   return NextResponse.json(payload, {
     status,
     headers: {
-      "Cache-Control": forceRefresh
-        ? "private, no-store"
-        : `public, s-maxage=${HTTP_CACHE_SECONDS}, stale-while-revalidate=${HTTP_CACHE_SECONDS * 2}`,
+      "Cache-Control": shared
+        ? `public, s-maxage=${HTTP_CACHE_SECONDS}, stale-while-revalidate=${HTTP_CACHE_SECONDS * 2}`
+        : "private, no-store",
     },
   });
 }
@@ -40,7 +41,7 @@ function jsonResponse(
 export async function GET() {
   try {
     const payload = await loadDefaultWatchlistPrices();
-    return jsonResponse(payload, payload.success ? 200 : 503);
+    return jsonResponse(payload, payload.success ? 200 : 503, { shared: true });
   } catch (error) {
     console.error("Prices API error:", error);
     return NextResponse.json(

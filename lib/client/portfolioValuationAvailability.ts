@@ -1,4 +1,5 @@
 import { buildValuedPositions, type AnalysisHolding } from "@/lib/client/portfolioAnalysis";
+import { resolvePortfolioValuationCoverage } from "@/lib/client/portfolioValuationCoverage";
 
 export type PortfolioTotalValueAvailability = {
   totalValue: number;
@@ -29,6 +30,8 @@ export function resolvePortfolioTotalValueAvailability(
   const hasValuedInvestments = valuedInvestments.length > 0;
   const hasUnvaluedInvestments = unvaluedInvestments.length > 0;
 
+  const coverage = resolvePortfolioValuationCoverage(holdings);
+
   if (!hasInvestments) {
     return {
       totalValue,
@@ -58,7 +61,9 @@ export function resolvePortfolioTotalValueAvailability(
       isPartial: true,
       valuedHoldingCount: valuedPositions.length,
       unvaluedInvestmentCount: unvaluedInvestments.length,
-      coverageMessage: `${unvaluedInvestments.length} holding${unvaluedInvestments.length === 1 ? "" : "s"} excluded until market prices are available.`,
+      coverageMessage:
+        coverage.coverageMessage ??
+        `${unvaluedInvestments.length} holding${unvaluedInvestments.length === 1 ? "" : "s"} excluded until market prices are available.`,
     };
   }
 

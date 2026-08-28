@@ -50,9 +50,11 @@ import {
 } from "@/lib/services/marketData/providerCircuitBreaker";
 import { logMarketDataRefreshTrace } from "@/lib/services/marketData/providerDiagnostics";
 import {
+  markPersistedQuoteUnavailable,
   readPersistedQuote,
   writePersistedQuote,
 } from "@/lib/services/marketData/persistentQuoteCache";
+import { overlayQuoteTrust } from "@/lib/services/prices/quoteFreshness";
 import { EODHD_QUOTE_PROVIDER_ID } from "@/lib/services/instruments/eodhdQuoteGuard";
 import { enrichHoldingsWithListingQuoteCurrency } from "@/lib/services/instruments/listingQuoteCurrencyResolver";
 import {
@@ -161,7 +163,10 @@ async function readQuoteFromCaches(
     return null;
   }
 
-  writeCachedQuote(cacheKey, persisted.quote, persisted.quote.providerSymbol);
+  writeCachedQuote(cacheKey, persisted.quote, persisted.quote.providerSymbol, {
+    expiresAt: persisted.expiresAtMs,
+    staleUntil: persisted.staleUntilMs,
+  });
   return { quote: persisted.quote, fresh: persisted.fresh };
 }
 
@@ -296,6 +301,28 @@ async function fetchAndCacheQuote(
       quote = provider.normalizeQuote(target, raw, fxRates);
     }
 
+    const fetchedAt = new Date().toISOString();
+    quote = overlayQuoteTrust({ ...quote, fetchedAt });
+
+    const unavailable =
+      quote.dataStatus === "unavailable" ||
+      quote.currentPrice == null ||
+      quote.currentPrice <= 0;
+    if (unavailable) {
+      const reason =
+        quote.unavailableReason ??
+        `${target.symbol}: live price is temporarily unavailable.`;
+      writeNegativeCache(cacheKey, reason);
+      await markPersistedQuoteUnavailable({
+        cacheKey,
+        providerId: provider.id,
+        providerSymbol: cacheProviderSymbol,
+        quote,
+        lastError: reason,
+      });
+      return quote;
+    }
+
     writeCachedQuote(cacheKey, quote, cacheProviderSymbol);
     clearNegativeCache(cacheKey);
     recordProviderCircuitSuccess(provider.id);
@@ -375,12 +402,12 @@ async function refreshQuoteInBackground(
 
   const existing = getInFlightQuote(cacheKey);
   if (existing) {
-    await existing.catch(() => undefined);
+    await existing.promise.catch(() => undefined);
     return;
   }
 
   const promise = fetchAndCacheQuote(target, provider, false).catch(() => undefined);
-  setInFlightQuote(cacheKey, promise as Promise<NormalizedProviderQuote>);
+  setInFlightQuote(cacheKey, promise as Promise<NormalizedProviderQuote>, false);
   await promise;
 }
 
@@ -479,17 +506,17 @@ export async function getNormalizedQuote(
   recordPriceCacheMiss();
 
   const inFlight = getInFlightQuote(cacheKey);
-  if (inFlight) {
+  if (inFlight && (!forceRefresh || inFlight.forceRefresh)) {
     recordPriceDedup();
     recordPriceServiceEvent("deduplicated", {
       providerId: provider.id,
       providerSymbol: target.providerSymbol,
     });
-    return inFlight;
+    return inFlight.promise;
   }
 
   const promise = fetchAndCacheQuote(target, provider, forceRefresh);
-  setInFlightQuote(cacheKey, promise);
+  setInFlightQuote(cacheKey, promise, forceRefresh);
   return promise;
 }
 
@@ -497,7 +524,7 @@ async function quoteToHoldingPrice(
   target: ResolvedPriceTarget,
   options?: { forceRefresh?: boolean; snapshotOnly?: boolean },
 ): Promise<HoldingPrice> {
-  const quote = await getNormalizedQuote(target, options);
+  const quote = overlayQuoteTrust(await getNormalizedQuote(target, options));
 
   if (
     quote.dataStatus === "unavailable" ||
@@ -507,21 +534,6 @@ async function quoteToHoldingPrice(
     throw new Error(
       quote.unavailableReason ??
         `${target.symbol}: live price is temporarily unavailable.`,
-    );
-  }
-
-  const forceRefresh = effectiveForceRefresh(options?.forceRefresh ?? false);
-  const snapshotOnly = options?.snapshotOnly ?? false;
-  if (
-    forceRefresh &&
-    !snapshotOnly &&
-    (quote.dataStatus === "stale" ||
-      quote.isStale ||
-      quote.cacheStatus === "stale")
-  ) {
-    throw new Error(
-      quote.unavailableReason ??
-        `${target.symbol}: live price refresh returned stale cached data.`,
     );
   }
 

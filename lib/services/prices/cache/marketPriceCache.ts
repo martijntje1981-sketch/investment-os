@@ -1,4 +1,11 @@
 import type { NormalizedProviderQuote } from "@/lib/services/prices/types";
+import { overlayQuoteTrust } from "@/lib/services/prices/quoteFreshness";
+import {
+  getQuoteFreshTtlMs,
+  getQuoteStaleWindowMs,
+  isCryptoProviderSymbol,
+  isLikelyMarketOpen,
+} from "@/lib/services/marketData/cachePolicy";
 
 type CacheEntry = {
   quote: NormalizedProviderQuote;
@@ -11,9 +18,14 @@ type NegativeEntry = {
   until: number;
 };
 
+type InFlightEntry = {
+  promise: Promise<NormalizedProviderQuote>;
+  forceRefresh: boolean;
+};
+
 const quoteCache = new Map<string, CacheEntry>();
 const negativeCache = new Map<string, NegativeEntry>();
-const inFlight = new Map<string, Promise<NormalizedProviderQuote>>();
+const inFlight = new Map<string, InFlightEntry>();
 
 export function buildQuoteCacheKey(
   providerId: string,
@@ -21,13 +33,6 @@ export function buildQuoteCacheKey(
 ): string {
   return `${providerId}:${providerSymbol.trim().toUpperCase()}`;
 }
-
-import {
-  getQuoteFreshTtlMs,
-  getQuoteStaleWindowMs,
-  isCryptoProviderSymbol,
-  isLikelyMarketOpen,
-} from "@/lib/services/marketData/cachePolicy";
 
 export function getQuoteCacheTtlMs(providerSymbol: string, now = new Date()): number {
   return getQuoteFreshTtlMs(providerSymbol, undefined, now);
@@ -38,6 +43,13 @@ function getQuoteStaleTtlMs(providerSymbol: string, now = new Date()): number {
 }
 
 export { isCryptoProviderSymbol, isLikelyMarketOpen };
+
+function quoteFetchedAtMs(quote: NormalizedProviderQuote): number {
+  const fetched = Date.parse(quote.fetchedAt ?? "");
+  if (Number.isFinite(fetched)) return fetched;
+  const updated = Date.parse(quote.updatedAt ?? "");
+  return Number.isFinite(updated) ? updated : 0;
+}
 
 export function readCachedQuote(key: string): {
   quote: NormalizedProviderQuote;
@@ -55,12 +67,11 @@ export function readCachedQuote(key: string): {
   }
 
   const fresh = now <= entry.expiresAt;
+  const overlayed = overlayQuoteTrust(entry.quote, now);
   return {
     quote: {
-      ...entry.quote,
-      isStale: !fresh,
+      ...overlayed,
       cacheStatus: fresh ? "fresh" : "stale",
-      dataStatus: fresh ? entry.quote.dataStatus : "stale",
     },
     fresh,
   };
@@ -70,14 +81,20 @@ export function writeCachedQuote(
   key: string,
   quote: NormalizedProviderQuote,
   providerSymbol: string,
+  options?: { expiresAt?: number; staleUntil?: number },
 ): void {
   const ttlMs = getQuoteCacheTtlMs(providerSymbol);
   const staleMs = getQuoteStaleTtlMs(providerSymbol);
   const now = Date.now();
+  const existing = quoteCache.get(key);
+  if (existing && quoteFetchedAtMs(quote) < quoteFetchedAtMs(existing.quote)) {
+    return;
+  }
+
   quoteCache.set(key, {
-    quote: { ...quote, isStale: false, cacheStatus: "fresh" },
-    expiresAt: now + ttlMs,
-    staleUntil: now + staleMs,
+    quote: overlayQuoteTrust({ ...quote, cacheStatus: "fresh" }, now),
+    expiresAt: options?.expiresAt ?? now + ttlMs,
+    staleUntil: options?.staleUntil ?? now + staleMs,
   });
 }
 
@@ -108,19 +125,19 @@ export function clearNegativeCache(key: string): void {
   negativeCache.delete(key);
 }
 
-export function getInFlightQuote(
-  key: string,
-): Promise<NormalizedProviderQuote> | null {
+export function getInFlightQuote(key: string): InFlightEntry | null {
   return inFlight.get(key) ?? null;
 }
 
 export function setInFlightQuote(
   key: string,
   promise: Promise<NormalizedProviderQuote>,
+  forceRefresh = false,
 ): void {
-  inFlight.set(key, promise);
+  inFlight.set(key, { promise, forceRefresh });
   void promise.catch(() => undefined).finally(() => {
-    if (inFlight.get(key) === promise) {
+    const current = inFlight.get(key);
+    if (current?.promise === promise) {
       inFlight.delete(key);
     }
   });

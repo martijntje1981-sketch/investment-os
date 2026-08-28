@@ -2,6 +2,7 @@ import {
   resolveCryptoQuoteFetchPlan,
   buildCryptoQuoteCacheKey,
 } from "@/lib/services/prices/cryptoQuoteResolution";
+import { resolveCanonicalCryptoPair } from "@/lib/services/portfolio/cryptoPairIdentity";
 import type {
   PriceHoldingInput,
   ResolvedPriceTarget,
@@ -15,8 +16,14 @@ export function resolveCryptoPriceTarget(
     return null;
   }
 
-  const baseAsset = input.symbol.trim().toUpperCase();
-  const pairCurrency = input.pairCurrency?.trim().toUpperCase() ?? "";
+  const canonical = resolveCanonicalCryptoPair({
+    symbol: input.symbol,
+    name: input.name,
+    pairCurrency: input.pairCurrency,
+  });
+  const baseAsset = canonical?.base ?? input.symbol.trim().toUpperCase();
+  const pairCurrency =
+    canonical?.quote ?? input.pairCurrency?.trim().toUpperCase() ?? "";
 
   if (!baseAsset || !pairCurrency) {
     return null;

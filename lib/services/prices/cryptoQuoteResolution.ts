@@ -117,16 +117,21 @@ export function resolveCryptoQuoteFallbackPlan(
     });
   }
 
-  if (quoteCurrency !== "USD") {
+  if (quoteCurrency === "USD") {
     return buildPlan(baseAsset, quoteCurrency, {
-      providerSymbol: buildEodhdCryptoProviderSymbol(baseAsset, "USD"),
-      sourcePair: buildCryptoNormalizedPair(baseAsset, "USD"),
+      providerSymbol: buildEodhdCryptoProviderSymbol(baseAsset, "EUR"),
+      sourcePair: buildCryptoNormalizedPair(baseAsset, "EUR"),
       conversionApplied: true,
-      conversionPath: `USD/${quoteCurrency}`,
+      conversionPath: "EUR/USD",
     });
   }
 
-  return null;
+  return buildPlan(baseAsset, quoteCurrency, {
+    providerSymbol: buildEodhdCryptoProviderSymbol(baseAsset, "USD"),
+    sourcePair: buildCryptoNormalizedPair(baseAsset, "USD"),
+    conversionApplied: true,
+    conversionPath: `USD/${quoteCurrency}`,
+  });
 }
 
 export function buildCryptoQuoteCacheKey(
