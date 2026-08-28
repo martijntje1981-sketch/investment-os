@@ -28,9 +28,11 @@ export function looksLikeProviderSymbolInput(
   value: string | null | undefined,
 ): boolean {
   const trimmed = value?.trim();
-  if (!trimmed) return false;
-  const dotIndex = trimmed.indexOf(".");
-  return dotIndex > 0 && dotIndex < trimmed.length - 1;
+  if (!trimmed || /\s/.test(trimmed)) return false;
+  const dotIndex = trimmed.lastIndexOf(".");
+  if (dotIndex <= 0 || dotIndex >= trimmed.length - 1) return false;
+  const suffix = trimmed.slice(dotIndex + 1);
+  return /^[A-Za-z0-9]{1,8}$/.test(suffix);
 }
 
 /**

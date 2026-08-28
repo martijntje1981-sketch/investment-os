@@ -9,7 +9,9 @@
  *   2. Ticker + purchase/pricing exchange against verified mappings
  *   3. ISIN → enumerate provider listings (registry is enrichment only)
  *   4. Ticker + Exchange → ID Mapping / Search
- *   5. Instrument Name + Exchange → Search
+ *   5. Ticker-only → Search (never silently pick a registry venue)
+ *   6. Instrument Name + Exchange → Search
+ *   7. Name-only → Search (does not require a venue)
  *
  * A supplied ISIN is the primary security identity. Conflicting ISINs are
  * never offered. Multi-venue securities are not collapsed unless the user
@@ -218,24 +220,32 @@ async function buildTickerListingCandidates(
     }))
     .sort((a, b) => b.score - a.score);
 
-  return scored.slice(0, limit).map(({ row, score }) =>
-    rowToResolved(row, "ticker_exchange", Math.max(0.55, score * 0.75), normalizeIsin(row.ISIN) ?? userIsin, [
-      "Possible listing",
-    ]),
-  );
+  return scored
+    .slice(0, limit)
+    .map(({ row, score }) =>
+      rowToResolved(row, "ticker_exchange", Math.max(0.55, score * 0.75), normalizeIsin(row.ISIN) ?? userIsin, [
+        "Possible listing",
+      ]),
+    )
+    .filter(usableResolvedListing);
+}
+
+function usableResolvedListing(listing: ResolvedInstrument): boolean {
+  return Boolean(listing.providerSymbol?.trim() && listing.exchange?.trim());
 }
 
 function unresolvedWithCandidates(
   warnings: string[],
   candidates: ResolvedInstrument[],
 ): ResolvedInstrument {
-  if (candidates.length === 0) {
+  const usable = candidates.filter(usableResolvedListing);
+  if (usable.length === 0) {
     return unresolved(warnings);
   }
 
   return finalize({
     ...unresolved(warnings),
-    candidates,
+    candidates: usable,
   });
 }
 
@@ -366,7 +376,10 @@ async function resolveByTickerOnly(
   const exactCodeRows = searchRows.filter(
     (row) =>
       row.Code?.trim().toUpperCase() === ticker &&
-      !listingRowConflictsIsin(row, userIsin),
+      !listingRowConflictsIsin(row, userIsin) &&
+      usableResolvedListing(
+        rowToResolved(row, "ticker_exchange", 0.9, normalizeIsin(row.ISIN)),
+      ),
   );
 
   if (exactCodeRows.length === 1) {
@@ -383,11 +396,13 @@ async function resolveByTickerOnly(
       ...unresolved([
         "Multiple listings match this ticker — confirm the exchange.",
       ]),
-      candidates: exactCodeRows.map((row) =>
-        rowToResolved(row, "ticker_exchange", 0.65, normalizeIsin(row.ISIN), [
-          "Possible listing",
-        ]),
-      ),
+      candidates: exactCodeRows
+        .map((row) =>
+          rowToResolved(row, "ticker_exchange", 0.65, normalizeIsin(row.ISIN), [
+            "Possible listing",
+          ]),
+        )
+        .filter(usableResolvedListing),
     });
   }
 
@@ -396,7 +411,7 @@ async function resolveByTickerOnly(
   }
 
   return unresolved([
-    `No EODHD listing found for ticker ${ticker}. Add an ISIN or exchange to resolve.`,
+    `No EODHD listing found for ticker ${ticker}.`,
   ]);
 }
 
@@ -462,6 +477,67 @@ async function resolveByTickerWithNameHint(
       ? ["Matched by ticker and name — confirm before saving."]
       : [],
   );
+}
+
+async function resolveByNameOnly(
+  instrumentName: string,
+  userIsin: string | null = null,
+): Promise<ResolvedInstrument> {
+  const searchRows = await safeFetchSearch(instrumentName, { limit: 15 });
+  if (searchRows === null) {
+    return unresolved([MATCHING_UNAVAILABLE_WARNING]);
+  }
+
+  const scored = searchRows
+    .filter((row) => !listingRowConflictsIsin(row, userIsin))
+    .map((row) => ({
+      row,
+      score: nameSimilarity(instrumentName, row.Name ?? ""),
+    }))
+    .filter((item) => item.score >= 0.5)
+    .sort((a, b) => b.score - a.score);
+
+  if (scored.length === 0) {
+    return unresolved([`No listing found for "${instrumentName}".`]);
+  }
+
+  const topScore = scored[0]!.score;
+  const topMatches = scored.filter((item) => item.score === topScore);
+
+  if (topMatches.length > 1) {
+    return finalize({
+      ...unresolved([
+        "Multiple instruments match this name — confirm the listing.",
+      ]),
+      candidates: topMatches
+        .slice(0, 6)
+        .map(({ row, score }) =>
+          rowToResolved(
+            row,
+            "name_exchange",
+            score * 0.8,
+            normalizeIsin(row.ISIN) ?? userIsin,
+            ["Possible match"],
+          ),
+        )
+        .filter(usableResolvedListing),
+    });
+  }
+
+  const confidence = Math.min(0.84, topScore * 0.9);
+  const resolved = rowToResolved(
+    scored[0]!.row,
+    "name_exchange",
+    confidence,
+    normalizeIsin(scored[0]!.row.ISIN) ?? userIsin,
+    confidence < CONFIRMATION_THRESHOLD
+      ? ["Matched by instrument name — confirm before saving."]
+      : [],
+  );
+  if (!usableResolvedListing(resolved)) {
+    return unresolved([`No listing found for "${instrumentName}".`]);
+  }
+  return resolved;
 }
 
 async function resolveByNameAndExchange(
@@ -698,20 +774,20 @@ export async function matchInstrument(
     }
   }
 
+  const nameQuery = instrumentName;
+  if (nameQuery && !instrumentUnavailable) {
+    const result = await resolveByNameOnly(nameQuery, effectiveIsin);
+    if (externalResultUsable(result)) {
+      return appendWarnings(result, [exchangeWarning]);
+    }
+  }
+
   const warnings: string[] = [];
   if (exchangeWarning) {
     warnings.push(exchangeWarning);
   }
   if (!effectiveIsin && !effectiveTicker && !instrumentName) {
     warnings.push("No ISIN, ticker, or instrument name was provided.");
-  } else if (effectiveTicker && !exchange && !exchangeWarning) {
-    warnings.push(
-      "Ticker provided without exchange — add an exchange or an ISIN to resolve.",
-    );
-  } else if (instrumentName && !exchange && !exchangeWarning) {
-    warnings.push(
-      "Instrument name provided without exchange — add an exchange or an ISIN to resolve.",
-    );
   } else if (instrumentUnavailable) {
     warnings.push(MATCHING_UNAVAILABLE_WARNING);
   } else {

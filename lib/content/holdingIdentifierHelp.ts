@@ -67,6 +67,9 @@ export const AMBIGUOUS_LISTING_BODY =
 export const UNIDENTIFIED_HOLDING_MESSAGE =
   "We couldn’t confidently identify this investment.";
 
+export const UNIDENTIFIED_LISTING_MESSAGE =
+  "We couldn’t confidently identify this listing.";
+
 export const UNIDENTIFIED_HOLDING_HINT =
   "Check the ticker, ISIN or exchange shown by your broker.";
 

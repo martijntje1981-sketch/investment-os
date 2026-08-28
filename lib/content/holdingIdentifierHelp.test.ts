@@ -35,7 +35,9 @@ describe("holding identifier help", () => {
     expect(HOLDING_IDENTIFIER_HELP.ticker.title).toBe("Ticker / Symbol");
     expect(HOLDING_IDENTIFIER_HELP.ticker.summary).toMatch(/VWCE or ASML/);
     expect(HOLDING_IDENTIFIER_HELP.ticker.extra).toMatch(/different tickers/);
-    expect(portfolio).toContain('helpTerm="ticker"');
+    expect(read("components/portfolio/AddInvestmentHoldingForm.tsx")).toContain(
+      'term="ticker"',
+    );
     expect(review).toContain('field === "ticker"');
     expect(review).toContain("HoldingIdentifierLabel");
   });
@@ -44,7 +46,9 @@ describe("holding identifier help", () => {
     expect(HOLDING_IDENTIFIER_HELP.isin.title).toBe("ISIN");
     expect(HOLDING_IDENTIFIER_HELP.isin.summary).toMatch(/passport number/);
     expect(HOLDING_IDENTIFIER_HELP.isin.extra).toMatch(/broker/);
-    expect(portfolio).toContain('helpTerm="isin"');
+    expect(read("components/portfolio/AddInvestmentHoldingForm.tsx")).toContain(
+      'helpTerm="isin"',
+    );
     expect(review).toContain('field === "isin"');
   });
 
@@ -79,10 +83,11 @@ describe("holding identifier help", () => {
   });
 
   it("F. help does not add required fields", () => {
-    expect(portfolio).toContain('label="ISIN (optional)"');
-    expect(portfolio).toContain('helpTerm="isin"');
-    expect(portfolio).toContain("required={false}");
-    expect(portfolio).toContain("allowFreeText");
+    const addForm = read("components/portfolio/AddInvestmentHoldingForm.tsx");
+    expect(addForm).toContain('label="ISIN (optional)"');
+    expect(addForm).toContain('helpTerm="isin"');
+    expect(addForm).toContain("required={false}");
+    expect(addForm).toContain("allowFreeText");
     expect(HOLDING_IDENTIFIER_HELP.isin.summary).not.toMatch(/required/i);
     expect(HOLDING_IDENTIFIER_HELP.ticker.summary).not.toMatch(/required/i);
   });
@@ -95,11 +100,15 @@ describe("holding identifier help", () => {
     expect(upload).not.toContain("What do these fields mean?");
   });
 
-  it("H. manual Add Holding search flow unchanged", () => {
-    expect(portfolio).toContain("Find listing");
+  it("H. manual Add Holding search flow is search-first", () => {
+    const addForm = read("components/portfolio/AddInvestmentHoldingForm.tsx");
     expect(portfolio).toContain("lookupListing");
-    expect(portfolio).toContain("Search by name, ticker or ISIN");
-    expect(portfolio).toContain("ISIN (optional)");
+    expect(addForm).toContain("Find listing");
+    expect(addForm).toContain("Search by name, ticker or ISIN");
+    expect(addForm).toContain("ISIN (optional)");
+    expect(addForm).toContain("More search options");
+    expect(addForm).toContain("add-holding-search");
+    expect(addForm).not.toContain("Tobailey infers the instrument type");
   });
 
   it("I. mobile helper is not hover-only", () => {

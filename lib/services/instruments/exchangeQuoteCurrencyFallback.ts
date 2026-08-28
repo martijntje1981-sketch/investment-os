@@ -1,6 +1,9 @@
 /**
  * Explicit allowlist for exchange → quote currency when metadata is absent.
- * Amsterdam (AS) is intentionally excluded — listings can be EUR or USD (e.g. STRC).
+ * Excluded when a venue can trade more than one listing currency:
+ * - Amsterdam (AS): EUR or USD
+ * - London (LSE): GBP, USD, and EUR
+ * - Stockholm (ST): SEK (unsupported), not EUR
  */
 
 import type { PriceCurrency } from "@/lib/services/prices/types";
@@ -14,11 +17,9 @@ const UNAMBIGUOUS_EXCHANGE_QUOTE_CURRENCY: Partial<Record<string, PriceCurrency>
   MI: "EUR",
   IR: "EUR",
   HE: "EUR",
-  ST: "EUR",
   VI: "EUR",
   US: "USD",
   SW: "CHF",
-  LSE: "GBP",
 };
 
 export function resolveExchangeFallbackQuoteCurrency(

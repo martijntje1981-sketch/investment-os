@@ -77,6 +77,27 @@ describe("resolveListingQuoteCurrency", () => {
     });
   });
 
+  it("does not guess LSE or Stockholm quote currency from the venue", () => {
+    expect(
+      resolveListingQuoteCurrency({
+        providerSymbol: "HSBA.LSE",
+      }),
+    ).toEqual({
+      currency: null,
+      source: "unresolved",
+      requiresReview: true,
+    });
+    expect(
+      resolveListingQuoteCurrency({
+        providerSymbol: "VOLVB.ST",
+      }),
+    ).toEqual({
+      currency: null,
+      source: "unresolved",
+      requiresReview: true,
+    });
+  });
+
   it("uses exchange fallback for unambiguous XETRA listings", () => {
     expect(
       resolveListingQuoteCurrency({

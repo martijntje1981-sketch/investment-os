@@ -57,7 +57,10 @@ export function ListingCandidatePicker({
                   {details.instrumentName}
                 </p>
                 <p className="mt-1 break-words text-[15px] font-medium text-slate-600">
-                  {details.summaryLine}
+                  {details.ticker} · {details.exchange} · {details.currency}
+                </p>
+                <p className="mt-1 break-all text-[13px] font-medium text-slate-500">
+                  {details.providerSymbol}
                 </p>
                 <p className="mt-1 break-all text-[15px] text-slate-500">
                   ISIN: {details.isin}

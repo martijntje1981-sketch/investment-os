@@ -75,7 +75,7 @@ describe("Calm Core UX — Dashboard and Portfolio", () => {
     expect(portfolio).toContain("PortfolioFundingSection");
     expect(portfolioHoldings).toContain("PortfolioHeroAddMenu");
     expect(portfolio).toContain("openAdd");
-    expect(portfolio).toContain("Find listing");
+    expect(portfolio).toContain("AddInvestmentHoldingForm");
 
     const glanceIdx = portfolio.indexOf("<PortfolioGlance");
     const holdingsIdx = portfolio.indexOf("<PortfolioHoldingsList");

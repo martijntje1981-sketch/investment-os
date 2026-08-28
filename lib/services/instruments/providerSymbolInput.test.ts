@@ -31,8 +31,8 @@ describe("providerSymbolInput", () => {
     expect(parsed.message).toMatch(/exchange/i);
   });
 
-  it("does not treat plain tickers as provider symbols", () => {
-    const parsed = parseProviderSymbolInput("VWCE");
-    expect(parsed.ok).toBe(false);
+  it("does not treat company names with spaces as provider symbols", () => {
+    expect(looksLikeProviderSymbolInput("St. Gobain")).toBe(false);
+    expect(looksLikeProviderSymbolInput("U.S. Bancorp")).toBe(false);
   });
 });

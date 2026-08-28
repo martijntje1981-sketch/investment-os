@@ -82,7 +82,8 @@ describe("Premium Portfolio architecture", () => {
   });
 
   it("H. confirmed venue and currency remain visible before Add", () => {
-    expect(page).toContain("<ConfirmedListingIdentity");
+    const addForm = read("components/portfolio/AddInvestmentHoldingForm.tsx");
+    expect(addForm).toContain("<ConfirmedListingIdentity");
     expect(confirmed).toContain("Venue");
     expect(confirmed).toContain("Currency");
     expect(confirmed).toContain("formatListingDetails");
@@ -150,6 +151,9 @@ describe("Premium Portfolio architecture", () => {
     expect(catalog).toContain("PORTFOLIO_HEALTH_PATH");
     expect(PORTFOLIO_EXPLORE_DESTINATIONS.scorecard).toContain("portfolio-health");
     expect(intro).toContain("RefreshPricesButton");
-    expect(page).toContain("Find listing");
+    expect(page).toContain("AddInvestmentHoldingForm");
+    expect(read("components/portfolio/AddInvestmentHoldingForm.tsx")).toContain(
+      "Find listing",
+    );
   });
 });

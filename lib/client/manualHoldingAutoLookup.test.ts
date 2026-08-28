@@ -69,8 +69,8 @@ describe("manual holding auto listing discovery", () => {
     expect(
       shouldTriggerManualListingAutoLookup({
         assetType: "investment",
-        symbol: "",
-        name: "V",
+        symbol: "N",
+        name: "",
         isin: null,
         providerSymbol: null,
       }),
@@ -104,6 +104,18 @@ describe("manual holding auto listing discovery", () => {
       }),
     ];
     expect(canPreselectSingleListing(candidates)).toBe(true);
+
+    expect(
+      canPreselectSingleListing([
+        listing({
+          providerSymbol: "0NRE.LSE",
+          exchange: "LSE",
+          quoteCurrency: "EUR",
+          confidence: 0.55,
+          matchMethod: "ticker_exchange",
+        }),
+      ]),
+    ).toBe(false);
 
     const decision = resolveAutoListingDecision(
       {

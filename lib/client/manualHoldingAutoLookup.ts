@@ -59,7 +59,7 @@ export function listingIdentityReadyToConfirm(
 
 export function isHighConfidenceListing(listing: ResolvedInstrument): boolean {
   if (!listingIdentityReadyToConfirm(listing)) return false;
-  if (listing.matchMethod === "isin" || listing.matchMethod === "ticker_exchange") {
+  if (listing.matchMethod === "isin") {
     return listing.confidence >= 0.55;
   }
   return listing.confidence >= HIGH_CONFIDENCE_LISTING_THRESHOLD;
@@ -86,7 +86,7 @@ export function shouldTriggerManualListingAutoLookup(input: {
   const name = input.name?.trim() ?? "";
   const isin = input.isin?.trim() ?? "";
 
-  if (symbol.length >= 1) return true;
+  if (symbol.length >= 2) return true;
   if (name.length >= 3) return true;
   if (normalizeIsin(isin) || isin.length >= 8) return true;
   return false;

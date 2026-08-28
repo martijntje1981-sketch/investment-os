@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Search, X } from "lucide-react";
+import { X } from "lucide-react";
 import { PortfolioFundingSection } from "@/components/contributions/PortfolioFundingSection";
 import { formatListingLookupGuidance } from "@/lib/client/listingLookupGuidance";
 import { needsManualPricingSelection } from "@/lib/client/holdingVenuePresentation";
@@ -26,7 +26,6 @@ import { PortfolioGlance } from "@/components/portfolio/glance/PortfolioGlance";
 import { PortfolioHoldingsList } from "@/components/portfolio/glance/PortfolioHoldingsList";
 import { PortfolioActivity } from "@/components/portfolio/glance/PortfolioActivity";
 import { PortfolioExploreNav } from "@/components/portfolio/glance/PortfolioExploreNav";
-import { ConfirmedListingIdentity } from "@/components/instruments/ConfirmedListingIdentity";
 import {
   MANUAL_HOLDING_AUTO_LOOKUP_DEBOUNCE_MS,
   resolveAutoListingDecision,
@@ -47,10 +46,9 @@ import NumericInput from "@/components/NumericInput";
 import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
 import PortfolioSyncBanner from "@/components/PortfolioSyncBanner";
 import CryptoRefreshTechnicalDetails from "@/components/portfolio/CryptoRefreshTechnicalDetails";
-import { ListingCandidatePicker } from "@/components/instruments/ListingCandidatePicker";
-import { ExchangeFieldEditor } from "@/components/import/ExchangeFieldEditor";
-import { HoldingIdentifierLabel } from "@/components/import/HoldingIdentifierHelp";
 import { AddCryptoHoldingForm } from "@/components/portfolio/AddCryptoHoldingForm";
+import { AddInvestmentHoldingForm } from "@/components/portfolio/AddInvestmentHoldingForm";
+import { HoldingIdentifierLabel } from "@/components/import/HoldingIdentifierHelp";
 import { buildPortfolioAnalysis } from "@/lib/client/portfolioAnalysis";
 import { isEstimatedHoldingPrice } from "@/lib/client/holdingDisplayPrice";
 import {
@@ -279,14 +277,15 @@ export default function PortfolioPage() {
         providerSymbol: draft.providerSymbol,
       })
     ) {
+      setListingLookupPending(false);
       return;
     }
 
     const controller = new AbortController();
     const draftSnapshot = draft;
+    setListingLookupPending(true);
     const timer = window.setTimeout(() => {
       void (async () => {
-        setListingLookupPending(true);
         setEditorError(null);
         try {
           const result = await lookupManualHoldingListing(draftSnapshot, {
@@ -782,194 +781,27 @@ export default function PortfolioPage() {
                   />
                 </div>
               ) : (
-                <div className="mt-7 space-y-5">
-                  <p className="text-[16px] leading-relaxed text-slate-600">
-                    Search by name, ticker or ISIN, select the listing, then
-                    enter quantity. Tobailey infers the instrument type for you.
-                    Matching listings appear automatically after you pause
-                    typing. ISIN is optional if several listings appear.
-                  </p>
-                  <Field
-                    label="Search instrument"
-                    helpTerm="ticker"
-                    required={false}
-                    value={draft.symbol}
-                    onChange={(value) => {
-                      setDraft({
-                        ...draft,
-                        symbol: value,
-                        providerSymbol: null,
-                      });
-                    }}
-                  />
-                  <Field
-                    label="ISIN (optional)"
-                    helpTerm="isin"
-                    required={false}
-                    value={draft.isin ?? ""}
-                    onChange={(value) => {
-                      setDraft({
-                        ...draft,
-                        isin: value || null,
-                        providerSymbol: null,
-                      });
-                    }}
-                  />
-                  <Field
-                    label="Instrument name (optional)"
-                    required={false}
-                    value={draft.name}
-                    onChange={(value) => {
-                      setDraft({ ...draft, name: value, providerSymbol: null });
-                    }}
-                  />
-                  <ExchangeFieldEditor
-                    exchange={draft.exchange}
-                    providerSymbol={draft.providerSymbol}
-                    allowFreeText
-                    onCommit={(exchangeCode) => {
-                      setDraft({
-                        ...draft,
-                        exchange: exchangeCode,
-                        providerSymbol: null,
-                      });
-                    }}
-                  />
-                  <p className="text-[14px] leading-relaxed text-slate-500">
-                    Exchange is optional unless several listings appear.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => void lookupListing()}
-                    disabled={listingLookupPending}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold disabled:opacity-50"
-                  >
-                    {listingLookupPending ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Search className="h-4 w-4" />
-                    )}
-                    Find listing
-                  </button>
-                  <p className="text-[15px] leading-relaxed text-slate-600">
-                    Bond ETFs and individual bonds use this same flow. Prefer
-                    ISIN or ticker plus exchange (for example EUNA), then
-                    Find listing.
-                  </p>
-
-                  {listingWarnings.length > 0 ? (
-                    <div className="space-y-3">
-                      {listingLookupMessages.guidance.length > 0 ? (
-                        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-                          {listingLookupMessages.guidance.map((message) => (
-                            <p key={message}>{message}</p>
-                          ))}
-                        </div>
-                      ) : null}
-                      {listingLookupMessages.alerts.length > 0 ? (
-                        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                          {listingLookupMessages.alerts.map((warning) => (
-                            <p key={warning}>{warning}</p>
-                          ))}
-                          {lookupUnavailable ? (
-                            <p className="mt-2 font-semibold">
-                              Your entries are kept. You can save without
-                              finding a listing.
-                            </p>
-                          ) : null}
-                        </div>
-                      ) : lookupUnavailable ? (
-                        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                          <p className="font-semibold">
-                            Your entries are kept. You can save without finding
-                            a listing.
-                          </p>
-                        </div>
-                      ) : null}
-                    </div>
-                  ) : null}
-
-                  {showPricingListingPicker ? (
-                    <ListingCandidatePicker
-                      source={{
-                        instrumentName: draft.instrumentName ?? draft.name,
-                        exchange: draft.exchange,
-                        isin: draft.isin,
-                        matchMethod: draft.matchMethod as
-                          ResolvedInstrument["matchMethod"] | undefined,
-                        matchConfidence: draft.matchConfidence,
-                        candidates: listingCandidates,
-                      }}
-                      selectedProviderSymbol={draft.providerSymbol}
-                      onSelect={selectListing}
-                    />
-                  ) : null}
-
-                  {draft.providerSymbol ? (
-                    <ConfirmedListingIdentity holding={draft} />
-                  ) : null}
-
-                  <Field
-                    label="Quantity"
-                    type="number"
-                    min="0"
-                    step="any"
-                    value={draft.quantity}
-                    onChange={(value) =>
-                      setDraft({ ...draft, quantity: Number(value) })
-                    }
-                  />
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <Field
-                      label={`Cost basis, optional (${editorCurrencyLocked})`}
-                      type="number"
-                      prefix={portfolioBaseCurrencySymbol(editorCurrencyLocked)}
-                      min="0"
-                      step="any"
-                      required={false}
-                      value={draft.purchasePrice}
-                      onChange={(value) =>
-                        setDraft({ ...draft, purchasePrice: Number(value) })
-                      }
-                    />
-                    <Field
-                      label={`Current price (${editorCurrencyLocked})`}
-                      type="number"
-                      prefix={portfolioBaseCurrencySymbol(editorCurrencyLocked)}
-                      min="0"
-                      step="any"
-                      required={false}
-                      value={draft.currentPrice}
-                      onChange={(value) =>
-                        setDraft({ ...draft, currentPrice: Number(value) })
-                      }
-                    />
-                  </div>
-
-                  {editorError ? (
-                    <p
-                      className="text-sm font-semibold text-red-700"
-                      role="alert"
-                    >
-                      {editorError}
-                    </p>
-                  ) : null}
-                  {!canPersistMonetary && baseCurrency !== "EUR" ? (
-                    <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-                      <p>{FX_UNAVAILABLE_SAVE_MESSAGE}</p>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          refreshFx();
-                          editorSessionRef.current = snapshot;
-                        }}
-                        className="mt-2 inline-flex min-h-[44px] items-center font-semibold underline"
-                      >
-                        Retry conversion
-                      </button>
-                    </div>
-                  ) : null}
-                </div>
+                <AddInvestmentHoldingForm
+                  key={draft.id}
+                  draft={draft}
+                  listingCandidates={listingCandidates}
+                  listingWarnings={listingWarnings}
+                  listingLookupPending={listingLookupPending}
+                  lookupUnavailable={lookupUnavailable}
+                  listingLookupMessages={listingLookupMessages}
+                  showPricingListingPicker={showPricingListingPicker}
+                  editorError={editorError}
+                  editorCurrencyLocked={editorCurrencyLocked}
+                  canPersistMonetary={canPersistMonetary}
+                  baseCurrency={baseCurrency}
+                  onDraftChange={setDraft}
+                  onSelectListing={selectListing}
+                  onLookupListing={() => void lookupListing()}
+                  onRetryFx={() => {
+                    refreshFx();
+                    editorSessionRef.current = snapshot;
+                  }}
+                />
               )}
 
               {draft.assetType === "cash" && editorError ? (

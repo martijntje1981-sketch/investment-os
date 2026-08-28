@@ -2,9 +2,9 @@
  * Client-side instrument lookup for manual portfolio entry.
  */
 
+import { resolveManualLookupMatchInput } from "@/lib/client/manualHoldingSearchQuery";
 import {
   applyMatchResultToImportRow,
-  importRowToMatchInput,
   selectImportCandidate,
 } from "@/lib/services/import/finalizeImport";
 import { annotateImportRow } from "@/lib/services/import/confidencePolicy";
@@ -18,17 +18,17 @@ import {
   looksLikeProviderSymbolInput,
   parseProviderSymbolInput,
 } from "@/lib/services/instruments/providerSymbolInput";
-import type { ResolvedInstrument } from "@/lib/types/instrument";
+import type { InstrumentMatchInput, ResolvedInstrument } from "@/lib/types/instrument";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
 import {
   humanizeInstrumentMatchMessage,
-  UNIDENTIFIED_HOLDING_USER_MESSAGE,
+  UNIDENTIFIED_LISTING_MESSAGE,
 } from "@/lib/content/holdingIdentifierHelp";
 import { MATCHING_UNAVAILABLE_WARNING } from "@/lib/services/marketData/providerErrors";
 
 type MatchApiResult = {
-  input: ReturnType<typeof importRowToMatchInput>;
+  input: InstrumentMatchInput;
   resolved: ResolvedInstrument;
 };
 
@@ -129,7 +129,7 @@ export async function lookupManualHoldingListing(
   const response = await fetch("/api/instruments/match", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ holdings: [importRowToMatchInput(seedRow)] }),
+    body: JSON.stringify({ holdings: [resolveManualLookupMatchInput(draft)] }),
     signal: options?.signal,
   });
 
@@ -143,7 +143,7 @@ export async function lookupManualHoldingListing(
       warnings: [
         unavailable
           ? "Instrument lookup is temporarily unavailable. You can continue manually and save your holding."
-          : `${UNIDENTIFIED_HOLDING_USER_MESSAGE} You can continue and save this holding.`,
+          : UNIDENTIFIED_LISTING_MESSAGE,
       ],
       quotaUnavailable: unavailable,
     };
@@ -168,7 +168,7 @@ export async function lookupManualHoldingListing(
         ]
       : warnings.length > 0
         ? warnings.map(humanizeInstrumentMatchMessage)
-        : [`${UNIDENTIFIED_HOLDING_USER_MESSAGE} You can continue and save this holding.`],
+        : [UNIDENTIFIED_LISTING_MESSAGE],
     quotaUnavailable: lookupUnavailable,
   };
 }

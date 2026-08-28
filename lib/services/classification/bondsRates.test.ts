@@ -528,7 +528,9 @@ describe("Phase 14 bonds and rates intelligence", () => {
     const match = read("lib/services/instruments/instrumentMatchEngine.ts");
     expect(match).toContain("safeFetchSearch");
     expect(match).not.toMatch(/type:\s*"stock"/);
-    expect(read("app/portfolio/page.tsx")).toMatch(/Bond ETFs and individual bonds/);
+    expect(
+      read("components/portfolio/AddInvestmentHoldingForm.tsx"),
+    ).toMatch(/Bond ETFs and individual bonds/);
     expect(read("components/portfolio/glance/PortfolioHoldingsList.tsx")).toContain("describeHoldingKindLabel");
     expect(read("components/portfolio/glance/PortfolioHoldingsList.tsx")).toContain("formatAllocationPercent");
     expect(read("lib/services/instruments/listingConfirmation.ts")).toContain(

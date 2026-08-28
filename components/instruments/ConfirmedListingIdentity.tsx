@@ -60,6 +60,14 @@ export function ConfirmedListingIdentity({
         </div>
         <div>
           <dt className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
+            Listing
+          </dt>
+          <dd className="break-all font-semibold text-slate-950">
+            {details.providerSymbol}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
             Venue
           </dt>
           <dd className="font-semibold text-slate-950">{details.exchange}</dd>

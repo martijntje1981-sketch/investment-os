@@ -97,13 +97,16 @@ describe("phase 16 first five minutes", () => {
     expect(moment).toContain("Skip for now");
     expect(moment).toContain("persistGoal");
     expect(moment).toContain("shouldShowFirstIntelligence");
+    const addHolding = readProjectFile(
+      "components/portfolio/AddInvestmentHoldingForm.tsx",
+    );
     expect(portfolio).toContain("markFirstIntelligencePending");
     expect(portfolio).toContain("firstIntelligenceDashboardHref");
-    expect(portfolio).toContain("Search instrument");
-    expect(portfolio).toContain("Tobailey infers the instrument type");
+    expect(addHolding).toContain('data-testid="add-holding-search"');
+    expect(addHolding).toContain("Search by name, ticker or ISIN");
     expect(portfolio).not.toMatch(/Choose equity|Bond or ETF|Asset class/i);
-    expect(portfolio).toContain("Bond ETFs and individual bonds use this same flow");
-    expect(portfolio).toContain("EUNA");
+    expect(addHolding).toContain("Bond ETFs and individual bonds use this same flow");
+    expect(addHolding).toContain("EUNA");
   });
 
   it("does not start a trial, seed Demo, or add paid APIs", () => {
