@@ -59,7 +59,9 @@ describe("Scorecard navigation", () => {
     expect(goals).not.toContain("PortfolioScoreDetailSection");
     expect(analysis).not.toContain("PortfolioScoreDetailSection");
     expect(goals).toContain("DASHBOARD_DEEP_LINKS.scorecardGoal");
-    expect(analysis).toContain("DASHBOARD_DEEP_LINKS.scorecard");
+    expect(read("components/analysis/glance/AnalysisExploreNav.tsx")).toContain(
+      "ANALYSIS_EXPLORE_DESTINATIONS.scorecard",
+    );
   });
 
   it("exposes stable section ids for accessibility anchors", () => {

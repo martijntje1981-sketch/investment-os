@@ -95,6 +95,7 @@ function DetailHeader({ title }: { title: string }) {
           event.preventDefault();
           window.history.pushState(null, "", ANALYSIS_PATH);
           window.dispatchEvent(new Event("hashchange"));
+          window.scrollTo(0, 0);
         }}
         className="inline-flex min-h-11 items-center gap-1.5 text-[14px] font-medium text-white/70 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
       >

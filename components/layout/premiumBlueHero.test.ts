@@ -49,7 +49,7 @@ describe("Phase 16.6 / 20 shared Q1 cyan page heroes", () => {
     expect(dashboardHero).toContain('tone="dark"');
     expect(dashboardHero).not.toContain("from-[#f4f9fd]");
     expect(analysis).not.toContain("<PageHero");
-    expect(analysis).toContain("canvas=\"dashboard\"");
+    expect(analysis).toContain("canvas=\"analysis\"");
     expect(news).toContain("<PageHero");
     expect(goals).toContain("<PageHero");
     expect(read("app/portfolio/page.tsx")).toContain("<PageHero");

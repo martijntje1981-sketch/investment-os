@@ -1,8 +1,6 @@
 "use client";
 
 import { useMemo } from "react";
-import Link from "next/link";
-import { ArrowRight } from "lucide-react";
 
 import { AnalysisIntro } from "@/components/analysis/glance/AnalysisIntro";
 import { AnalysisCoverageBanner } from "@/components/analysis/glance/AnalysisCoverageBanner";
@@ -22,9 +20,7 @@ import {
 import { ExportPortfolioButton } from "@/components/export/ExportPortfolioButton";
 import { runPortfolioExport } from "@/lib/client/runPortfolioExport";
 import { usePortfolioContributions } from "@/lib/client/usePortfolioContributions";
-import {
-  appHeroGhostButtonClass,
-} from "@/components/layout/appSurface";
+import { appDashboardDarkMetaClass } from "@/components/layout/appSurface";
 import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
 import { EmptyPortfolioGuide } from "@/components/onboarding/EmptyPortfolioGuide";
 import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
@@ -37,7 +33,6 @@ import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 import { useUserGoal } from "@/lib/client/useUserGoal";
 import { useGoalProgress } from "@/lib/client/useGoalProgress";
 import { useGoalRealityCheck } from "@/lib/client/useGoalRealityCheck";
-import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 import { resolveIntelligenceScope } from "@/lib/services/intelligenceScope";
 
 function formatUpdatedAt(value: string | null) {
@@ -161,7 +156,7 @@ export default function PortfolioAnalysisPage() {
 
   return (
     <>
-      <PageContainer canvas="dashboard">
+      <PageContainer canvas="analysis">
         {!detailId || !hasHoldings ? (
           <AnalysisIntro
             updatedLabel={updatedAt ? `Updated ${updatedAt}` : null}
@@ -253,9 +248,13 @@ export default function PortfolioAnalysisPage() {
 
                 <AnalysisExploreNav
                   tools={
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="min-w-0">
+                      <p className={appDashboardDarkMetaClass}>
+                        Download your portfolio data
+                      </p>
                       <ExportPortfolioButton
-                        variant="hero"
+                        variant="onDark"
+                        className="mt-1.5"
                         onExport={() =>
                           runPortfolioExport({
                             holdings,
@@ -268,13 +267,6 @@ export default function PortfolioAnalysisPage() {
                           })
                         }
                       />
-                      <Link
-                        href={DASHBOARD_DEEP_LINKS.scorecard}
-                        className={appHeroGhostButtonClass}
-                      >
-                        Portfolio Scorecard
-                        <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                      </Link>
                     </div>
                   }
                 />

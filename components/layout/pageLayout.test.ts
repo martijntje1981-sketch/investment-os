@@ -48,7 +48,7 @@ describe("authenticated page layout", () => {
       "utf8",
     );
     expect(analysisSource).not.toContain("PageHero");
-    expect(analysisSource).toContain("canvas=\"dashboard\"");
+    expect(analysisSource).toContain("canvas=\"analysis\"");
     expect(analysisSource).toContain("AnalysisIntro");
 
     for (const relativePath of authenticatedPagesWithBackLink) {

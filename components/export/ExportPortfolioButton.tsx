@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Download } from "lucide-react";
 
 import {
+  appAnalysisUtilityButtonClass,
   appControlDisabledClass,
   appHeroSecondaryButtonClass,
   appSecondaryButtonClass,
@@ -14,7 +15,7 @@ import {
 type ExportPortfolioButtonProps = {
   onExport: () => void | boolean | Promise<void | boolean>;
   disabled?: boolean;
-  variant?: "solid" | "secondary" | "hero" | "text" | "ghost";
+  variant?: "solid" | "secondary" | "hero" | "text" | "ghost" | "onDark";
   className?: string;
   /** Visible label. Accessible name stays "Export portfolio as Excel workbook". */
   label?: string;
@@ -48,9 +49,11 @@ export function ExportPortfolioButton({
       ? appSolidButtonClass
       : variant === "hero"
         ? appHeroSecondaryButtonClass
-        : variant === "text"
-          ? `${appTextLinkClass} ${appControlDisabledClass}`
-          : appSecondaryButtonClass;
+        : variant === "onDark"
+          ? appAnalysisUtilityButtonClass
+          : variant === "text"
+            ? `${appTextLinkClass} ${appControlDisabledClass}`
+            : appSecondaryButtonClass;
 
   return (
     <button

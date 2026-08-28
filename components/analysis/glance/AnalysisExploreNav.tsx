@@ -1,4 +1,6 @@
-import type { ReactNode } from "react";
+"use client";
+
+import { useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -25,6 +27,9 @@ import {
   appHeroMetricLabelClass,
 } from "@/components/layout/appSurface";
 import { ANALYSIS_EXPLORE_DESTINATIONS } from "@/lib/services/analysisGlance";
+import {
+  ANALYSIS_EXPLORE_MOBILE_COMPACT_TITLES,
+} from "@/components/analysis/glance/analysisExploreCatalog";
 
 type ExploreItem = {
   href: string;
@@ -205,7 +210,7 @@ function ExploreTile({ item }: { item: ExploreItem }) {
     <li>
       <Link
         href={item.href}
-        className="flex min-h-[52px] items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-2.5 py-2 transition hover:border-white/18 hover:bg-white/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
+        className="flex min-h-[56px] items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-2.5 py-2 transition hover:border-white/18 hover:bg-white/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
       >
         <Icon className="h-4 w-4 shrink-0 text-white/50" aria-hidden />
         <span className="min-w-0 flex-1">
@@ -224,17 +229,49 @@ function ExploreTile({ item }: { item: ExploreItem }) {
   );
 }
 
+function ExploreGroupList({ groups }: { groups: readonly ExploreGroup[] }) {
+  return (
+    <div className="space-y-4">
+      {groups.map((group) => (
+        <div key={group.label}>
+          <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-white/40">
+            {group.label}
+          </p>
+          <ul className="grid grid-cols-2 gap-1.5 lg:grid-cols-4">
+            {group.items.map((item) => (
+              <ExploreTile key={`${group.label}-${item.title}`} item={item} />
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function AnalysisExploreNav({
   tools,
 }: {
   tools?: ReactNode;
 }) {
+  const [expanded, setExpanded] = useState(false);
+  const compactItems = useMemo(() => {
+    const allItems = EXPLORE_GROUPS.flatMap((group) => [...group.items]);
+    return ANALYSIS_EXPLORE_MOBILE_COMPACT_TITLES.map((title) => {
+      const item = allItems.find((row) => row.title === title);
+      if (!item) {
+        throw new Error(`Missing compact Explore item: ${title}`);
+      }
+      return item;
+    });
+  }, []);
+
   return (
     <nav
       id="explore-analysis"
       aria-label="Explore Analysis"
       className="min-w-0"
       data-testid="analysis-explore"
+      data-expanded={expanded ? "true" : "false"}
     >
       <p className={appHeroMetricLabelClass}>Explore Analysis</p>
       <p
@@ -243,20 +280,34 @@ export function AnalysisExploreNav({
         Deeper models and evidence, one destination at a time.
       </p>
 
-      <div className="mt-3 space-y-4">
-        {EXPLORE_GROUPS.map((group) => (
-          <div key={group.label}>
-            <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-white/40">
-              {group.label}
-            </p>
-            <ul className="grid grid-cols-2 gap-1.5 lg:grid-cols-4">
-              {group.items.map((item) => (
-                <ExploreTile key={`${group.label}-${item.title}`} item={item} />
-              ))}
-            </ul>
-          </div>
-        ))}
+      <div
+        className={expanded ? "mt-3 hidden" : "mt-3 lg:hidden"}
+        data-testid="analysis-explore-compact"
+      >
+        <ul className="grid grid-cols-2 gap-1.5">
+          {compactItems.map((item) => (
+            <ExploreTile key={`compact-${item.title}`} item={item} />
+          ))}
+        </ul>
       </div>
+
+      <div
+        className={expanded ? "mt-3" : "mt-3 hidden lg:block"}
+        data-testid="analysis-explore-full"
+      >
+        <ExploreGroupList groups={EXPLORE_GROUPS} />
+      </div>
+
+      <button
+        type="button"
+        className="mt-3 inline-flex min-h-11 items-center text-[14px] font-medium text-white/70 underline-offset-2 hover:text-white hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 lg:hidden"
+        aria-expanded={expanded}
+        data-testid="analysis-explore-toggle"
+        onClick={() => setExpanded((value) => !value)}
+      >
+        {expanded ? "Show fewer" : "Show all analysis tools"}
+      </button>
+
       {tools ? <div className="mt-4">{tools}</div> : null}
     </nav>
   );

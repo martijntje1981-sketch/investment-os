@@ -17,6 +17,13 @@ export const appPageCanvasClass =
 export const appDashboardPageCanvasClass =
   "min-h-screen w-full max-w-full overflow-x-clip bg-navy-hero-deep px-3 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] pt-[calc(3.25rem+env(safe-area-inset-top,0px))] text-white sm:px-6 sm:pb-28 sm:pt-[4.75rem] [[data-example-banner=true]_&]:pt-[calc(5rem+env(safe-area-inset-top,0px))] sm:[[data-example-banner=true]_&]:pt-[6.5rem]";
 
+/**
+ * Analysis navy canvas — same family as Dashboard, with extra top offset so the
+ * compact intro clears the fixed h-12 header + safe-area without changing Dashboard.
+ */
+export const appAnalysisPageCanvasClass =
+  "min-h-screen w-full max-w-full overflow-x-clip bg-navy-hero-deep px-3 pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] pt-[calc(4rem+env(safe-area-inset-top,0px))] text-white sm:px-6 sm:pb-28 sm:pt-[5.25rem] [[data-example-banner=true]_&]:pt-[calc(5.75rem+env(safe-area-inset-top,0px))] sm:[[data-example-banner=true]_&]:pt-[7rem] scroll-pt-[calc(4rem+env(safe-area-inset-top,0px))] sm:scroll-pt-[5.25rem]";
+
 /** Inner content column. */
 export const appPageStackClass =
   "mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-6 md:gap-8";
@@ -178,6 +185,10 @@ export const appHeroPrimaryButtonClass =
 
 /** Ghost CTA on light page heroes. */
 export const appHeroGhostButtonClass = appSecondaryButtonClass;
+
+/** Quiet utility control on navy Analysis surfaces — not a primary CTA. */
+export const appAnalysisUtilityButtonClass =
+  `inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/[0.04] px-3.5 py-2 text-[14px] font-medium text-white/85 transition hover:border-white/25 hover:bg-white/[0.08] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 ${appControlDisabledClass}`;
 
 export const appTextLinkClass =
   "inline-flex min-h-[44px] items-center gap-1.5 text-[16px] font-semibold text-brand-navy underline-offset-2 transition hover:text-brand hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2";

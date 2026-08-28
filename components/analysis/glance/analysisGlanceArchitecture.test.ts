@@ -108,6 +108,8 @@ describe("Analysis glance → explore architecture", () => {
     expect(detail).toContain('id={SECTION_IDS.whatHappened}');
     expect(explore).toContain("ANALYSIS_EXPLORE_DESTINATIONS.allocation");
     expect(explore).toContain("ANALYSIS_EXPLORE_DESTINATIONS.scenarios");
+    expect(explore).toContain("ANALYSIS_EXPLORE_DESTINATIONS.scorecard");
+    expect(explore).toContain("Show all analysis tools");
     expect(SECTION_IDS.portfolioPerformance).toBe("portfolio-performance");
     expect(DASHBOARD_DEEP_LINKS.whatHappened).toBe("/analysis#what-happened");
   });

@@ -18,6 +18,8 @@ describe("Export Portfolio control", () => {
     expect(source).toContain('variant = "secondary"');
     expect(source).toContain("appSecondaryButtonClass");
     expect(source).toContain("appHeroSecondaryButtonClass");
+    expect(source).toContain("appAnalysisUtilityButtonClass");
+    expect(source).toContain('"onDark"');
     expect(source).toContain("appControlDisabledClass");
     expect(source).toContain('data-testid="export-portfolio-button"');
     expect(source).not.toContain("appGhostButtonClass");

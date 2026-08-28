@@ -8,6 +8,8 @@ import {
   SECTION_DEEP_LINK_HIGHLIGHT_CLASS,
   SECTION_DEEP_LINK_HIGHLIGHT_MS,
 } from "@/lib/navigation/deepLinks";
+import { ANALYSIS_PATH } from "@/lib/navigation/appRoutes";
+import { resolveAnalysisDetailId } from "@/lib/services/analysisGlance";
 
 function prefersReducedMotion(): boolean {
   if (typeof window === "undefined" || !window.matchMedia) {
@@ -28,6 +30,15 @@ export function scrollToSectionHash(options?: {
   const id = parseSectionHash(hash);
   if (!id) {
     return false;
+  }
+
+  if (
+    window.location.pathname === ANALYSIS_PATH &&
+    resolveAnalysisDetailId(id)
+  ) {
+    const behavior: ScrollBehavior = prefersReducedMotion() ? "auto" : "smooth";
+    window.scrollTo({ top: 0, behavior });
+    return true;
   }
 
   const target = document.getElementById(id);
