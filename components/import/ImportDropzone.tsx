@@ -1,5 +1,10 @@
 import { UploadCloud } from "lucide-react";
 
+import {
+  IMPORT_SUPPORTED_FORMATS_DETAIL,
+  IMPORT_SUPPORTED_FORMATS_HEADLINE,
+} from "@/lib/services/import/importFormatCopy";
+
 type ImportDropzoneProps = {
   isDragging: boolean;
   onDragOver: (event: React.DragEvent<HTMLDivElement>) => void;
@@ -18,6 +23,7 @@ export function ImportDropzone({
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
       onDrop={onDrop}
+      data-testid="import-dropzone"
       className={`mt-5 rounded-[24px] border-2 border-dashed px-5 py-8 text-center transition-colors ${
         isDragging
           ? "border-blue-500 bg-blue-50 text-blue-700"
@@ -28,10 +34,19 @@ export function ImportDropzone({
         <UploadCloud className="h-6 w-6" />
       </div>
       <p className="mt-4 text-[16px] font-bold text-slate-800">
-        Drop an Excel or CSV file here
+        Drop a spreadsheet here
+      </p>
+      <p
+        className="mt-1 text-[15px] font-semibold text-slate-800"
+        data-testid="import-supported-formats"
+      >
+        {IMPORT_SUPPORTED_FORMATS_HEADLINE}
       </p>
       <p className="mt-1 text-[15px] text-slate-600">
-        Or use Choose file on your phone. XLSX, XLS or CSV.
+        {IMPORT_SUPPORTED_FORMATS_DETAIL}
+      </p>
+      <p className="mt-1 text-[15px] text-slate-600">
+        Or use Choose file on your phone.
       </p>
     </div>
   );

@@ -88,7 +88,9 @@ describe("product architecture cohesion", () => {
 
   it("standardises Scorecard and Ideas terminology on primary surfaces", () => {
     const explore = read("components/dashboard/DashboardExploreTools.tsx");
-    const portfolio = read("app/portfolio/page.tsx");
+    const portfolio = read(
+      "components/portfolio/glance/portfolioExploreCatalog.ts",
+    );
     const destinations = DISCOVER_DESTINATIONS.map((item) => item.label);
 
     expect(explore).toContain("Portfolio Scorecard");

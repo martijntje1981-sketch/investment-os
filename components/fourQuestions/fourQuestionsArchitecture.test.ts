@@ -85,6 +85,7 @@ describe("Four Questions product architecture Phase 1 wiring", () => {
       "ANALYSIS_EXPLORE_DESTINATIONS.whatHappened",
     );
     expect(read("app/news/page.tsx")).not.toContain("AuthenticatedFourQuestionsNav");
+    expect(read("app/portfolio/page.tsx")).not.toContain("AuthenticatedFourQuestionsNav");
     expect(read("components/news/glance/NewsDetailView.tsx")).toContain(
       "NewsHubContent",
     );
@@ -96,7 +97,6 @@ describe("Four Questions product architecture Phase 1 wiring", () => {
   it("wires compact nav on major authenticated product pages", () => {
     const pages = [
       "app/goals/page.tsx",
-      "app/portfolio/page.tsx",
       "components/portfolioHistory/PortfolioHistoryPage.tsx",
       "components/companion/CompanionReviewPage.tsx",
       "components/portfolioHealth/PortfolioHealthPage.tsx",

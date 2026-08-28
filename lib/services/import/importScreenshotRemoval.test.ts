@@ -136,7 +136,10 @@ describe("screenshot import removal", () => {
 
     expect(dropzone).not.toMatch(/screenshot/i);
     expect(dropzone).not.toMatch(/PNG|JPG|JPEG|WEBP/i);
-    expect(dropzone).toMatch(/Excel or CSV/i);
+    expect(dropzone).toContain("IMPORT_SUPPORTED_FORMATS_HEADLINE");
+    expect(readProjectFile("lib/services/import/importFormatCopy.ts")).toMatch(
+      /CSV or Excel/i,
+    );
 
     expect(uploadPage).not.toMatch(/image\/png|image\/jpeg|image\/webp/);
     expect(uploadPage).not.toMatch(/isSupportedScreenshotFile/);

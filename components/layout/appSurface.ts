@@ -30,6 +30,12 @@ export const appAnalysisPageCanvasClass =
  */
 export const appNewsPageCanvasClass = appAnalysisPageCanvasClass;
 
+/**
+ * Portfolio navy canvas — same family and clearance as Analysis / News.
+ * Do not reuse this token to restyle Dashboard, Analysis, or News.
+ */
+export const appPortfolioPageCanvasClass = appAnalysisPageCanvasClass;
+
 /** Inner content column. */
 export const appPageStackClass =
   "mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-6 md:gap-8";

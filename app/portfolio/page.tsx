@@ -1,55 +1,38 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  BarChart3,
-  CircleDollarSign,
-  History,
-  Loader2,
-  Pencil,
-  Search,
-  Trash2,
-  Upload,
-  X,
-} from "lucide-react";
-import { ConversionDetailsDisclosure } from "@/components/currency/ConversionDetailsDisclosure";
+import { Loader2, Search, X } from "lucide-react";
 import { PortfolioFundingSection } from "@/components/contributions/PortfolioFundingSection";
-import { PortfolioHistoryNavCard } from "@/components/portfolioHistory/PortfolioHistoryNavCard";
 import { formatListingLookupGuidance } from "@/lib/client/listingLookupGuidance";
 import { needsManualPricingSelection } from "@/lib/client/holdingVenuePresentation";
 import {
   AppPageLoading,
   PageContainer,
 } from "@/components/layout/PageContainer";
-import { PageHero } from "@/components/layout/PageHero";
-import { PageRelatedLinks } from "@/components/layout/PageRelatedLinks";
-import { AuthenticatedFourQuestionsNav } from "@/components/fourQuestions/AuthenticatedFourQuestionsNav";
-import { EmptyPortfolioGuide } from "@/components/onboarding/EmptyPortfolioGuide";
 import {
   firstIntelligenceDashboardHref,
   markFirstIntelligencePending,
 } from "@/lib/client/firstIntelligence";
 import { ExportPortfolioButton } from "@/components/export/ExportPortfolioButton";
-import {
-  ANALYSIS_PATH,
-  GOALS_PATH,
-  MARKET_PULSE_PATH,
-  NEWS_PATH,
-  PORTFOLIO_HISTORY_PATH,
-  PORTFOLIO_HEALTH_PATH,
-  REVIEW_PATH,
-} from "@/lib/navigation/appRoutes";
-import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
-import { PAGE_PURPOSE } from "@/lib/navigation/productArchitecture";
 import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
-import {
-  describeHoldingKindLabel,
-  formatAllocationPercent,
-} from "@/lib/services/classification";
+import { buildPortfolioExposureAllocation } from "@/lib/services/classification";
 import { runPortfolioExport } from "@/lib/client/runPortfolioExport";
 import { usePortfolioContributions } from "@/lib/client/usePortfolioContributions";
+import { formatPortfolioMixCue } from "@/lib/client/portfolioMixCue";
+import { buildPortfolioTimeline } from "@/lib/services/portfolio/timeline";
+import { PortfolioIntro } from "@/components/portfolio/glance/PortfolioIntro";
+import { PortfolioGlance } from "@/components/portfolio/glance/PortfolioGlance";
+import { PortfolioHoldingsList } from "@/components/portfolio/glance/PortfolioHoldingsList";
+import { PortfolioActivity } from "@/components/portfolio/glance/PortfolioActivity";
+import { PortfolioExploreNav } from "@/components/portfolio/glance/PortfolioExploreNav";
+import { ConfirmedListingIdentity } from "@/components/instruments/ConfirmedListingIdentity";
+import {
+  MANUAL_HOLDING_AUTO_LOOKUP_DEBOUNCE_MS,
+  resolveAutoListingDecision,
+  shouldTriggerManualListingAutoLookup,
+} from "@/lib/client/manualHoldingAutoLookup";
+import { appDarkCardClass, appSectionLabelClass, appSectionTitleClass } from "@/components/layout/appSurface";
 import {
   convertHoldingBaseDraftToEur,
   convertHoldingEurToBaseDraft,
@@ -60,46 +43,16 @@ import {
 import type { BaseCurrencyFxSnapshot } from "@/lib/services/prices/baseCurrencyFxSnapshot";
 import { IDENTITY_EUR_FX_SNAPSHOT } from "@/lib/services/prices/baseCurrencyFxSnapshot";
 import { portfolioBaseCurrencySymbol } from "@/lib/types/portfolioBaseCurrency";
-import {
-  appCardValueClass,
-  appSectionLabelClass,
-  appSectionMetaClass,
-  appSectionTitleClass,
-  appTableNameClass,
-  appTableValueClass,
-  appTickerClass,
-} from "@/components/layout/appSurface";
 import NumericInput from "@/components/NumericInput";
 import PortfolioRecoveryBanner from "@/components/PortfolioRecoveryBanner";
 import PortfolioSyncBanner from "@/components/PortfolioSyncBanner";
 import CryptoRefreshTechnicalDetails from "@/components/portfolio/CryptoRefreshTechnicalDetails";
-import { RefreshPricesButton } from "@/components/portfolio/RefreshPricesButton";
-import { PortfolioHeroAddMenu } from "@/components/portfolio/PortfolioHeroAddMenu";
-import { HoldingVenueSummary } from "@/components/instruments/HoldingVenueSummary";
 import { ListingCandidatePicker } from "@/components/instruments/ListingCandidatePicker";
-import { HoldingDividendMeta } from "@/components/analysis/DividendIntelligenceSection";
-import { HoldingAnalystMeta } from "@/components/analysis/AnalystIntelligenceSection";
 import { ExchangeFieldEditor } from "@/components/import/ExchangeFieldEditor";
 import { HoldingIdentifierLabel } from "@/components/import/HoldingIdentifierHelp";
 import { AddCryptoHoldingForm } from "@/components/portfolio/AddCryptoHoldingForm";
 import { buildPortfolioAnalysis } from "@/lib/client/portfolioAnalysis";
-import {
-  getHoldingCostBasis,
-  getHoldingMarketValue,
-} from "@/lib/client/holdingValuation";
-import {
-  holdingPriceHoldingsLabel,
-  holdingValueUnavailableLabel,
-  isEstimatedHoldingPrice,
-  resolveHoldingDisplayPrice,
-  resolveHoldingPriceTrustStatus,
-} from "@/lib/client/holdingDisplayPrice";
-import {
-  buildCryptoPriceMetadataLine,
-  CRYPTO_PRICING_DISCLOSURE,
-  formatCrypto24hChange,
-  formatCryptoPairPrice,
-} from "@/lib/client/cryptoPriceDisplay";
+import { isEstimatedHoldingPrice } from "@/lib/client/holdingDisplayPrice";
 import {
   resolveCryptoDraftSearchQuery,
   searchCryptoCatalogForPair,
@@ -114,17 +67,8 @@ import {
   normalizeHoldingForSave,
   type StoredPortfolioHolding,
 } from "@/lib/client/portfolioPricing";
-import { findDividendQuoteForHolding } from "@/lib/client/portfolioDividends";
-import { findAnalystQuoteForHolding } from "@/lib/client/portfolioAnalyst";
-import { calculateImpliedUpsidePercent } from "@/lib/services/analyst/analystCalculations";
-import { formatDividendFrequency } from "@/lib/services/dividends";
 import { rememberConfirmedHolding } from "@/lib/services/import/mappingMemory";
-import { describePricingSource } from "@/lib/services/instruments/listingConfirmation";
-import {
-  holdingMatchStatusLabel,
-  resolveHoldingMatchStatus,
-  validateManualHoldingForSave,
-} from "@/lib/services/portfolio/holdingValidation";
+import { validateManualHoldingForSave } from "@/lib/services/portfolio/holdingValidation";
 import {
   createEmptyCryptoDraft,
   isCryptoHolding,
@@ -132,13 +76,9 @@ import {
 } from "@/lib/services/portfolio/cryptoHolding";
 import { applyCryptoSearchResultToHolding } from "@/lib/services/portfolio/cryptoCatalog";
 import type { ResolvedInstrument } from "@/lib/types/instrument";
-import { usePortfolioDividends } from "@/lib/client/usePortfolioDividends";
-import { usePortfolioAnalyst } from "@/lib/client/usePortfolioAnalyst";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 import { useActivePortfolioOptional } from "@/lib/client/useActivePortfolio";
 import { resolvePortfolioDisplayFreshness } from "@/lib/client/portfolioDisplayFreshness";
-import { holdingDetailPath } from "@/lib/navigation/appRoutes";
-import { ViewHoldingCue } from "@/components/holding/ViewHoldingCue";
 
 type AssetType = "investment" | "cash";
 type Holding = StoredPortfolioHolding;
@@ -153,14 +93,6 @@ const emptyDraft: Holding = {
   currency: "EUR",
   assetType: "investment",
 };
-
-function percent(value: number) {
-  return `${value >= 0 ? "+" : ""}${value.toFixed(1)}%`;
-}
-
-function costOf(holding: Holding) {
-  return getHoldingCostBasis(holding);
-}
 
 export default function PortfolioPage() {
   const router = useRouter();
@@ -194,16 +126,6 @@ export default function PortfolioPage() {
     useActivePortfolioOptional()?.activePortfolio?.name ?? null;
   const addParamHandledRef = useRef(false);
   const [isMigrating, setIsMigrating] = useState(false);
-  const { quotes: dividendQuotes } = usePortfolioDividends(
-    holdings,
-    userSub,
-    holdings.length > 0,
-  );
-  const { quotes: analystQuotes } = usePortfolioAnalyst(
-    holdings,
-    userSub,
-    holdings.length > 0,
-  );
   const {
     refreshPrices,
     isRefreshing,
@@ -264,7 +186,8 @@ export default function PortfolioPage() {
       })),
     [holdings],
   );
-  const { entries: contributionEntries } = usePortfolioContributions(
+  const { entries: contributionEntries, summary: contributionSummary } =
+    usePortfolioContributions(
     totalValue,
     performance.totalValueAvailable,
     holdings.length > 0,
@@ -284,6 +207,27 @@ export default function PortfolioPage() {
     providerSymbol: draft.providerSymbol,
     candidates: listingCandidates,
   });
+  const mixCue = useMemo(() => {
+    if (!performance.totalValueAvailable || holdings.length === 0) return null;
+    return formatPortfolioMixCue(buildPortfolioExposureAllocation(holdings));
+  }, [holdings, performance.totalValueAvailable]);
+  const activityEvents = useMemo(
+    () =>
+      buildPortfolioTimeline({
+        entries: contributionEntries,
+        contributionSummary,
+        currentPortfolioValue: performance.totalValueAvailable
+          ? totalValue
+          : null,
+        portfolioValueAvailable: performance.totalValueAvailable,
+      }).events,
+    [
+      contributionEntries,
+      contributionSummary,
+      performance.totalValueAvailable,
+      totalValue,
+    ],
+  );
 
   useEffect(() => {
     if (!portfolioReady || addParamHandledRef.current) return;
@@ -324,8 +268,77 @@ export default function PortfolioPage() {
     setEditorOpen(true);
   }, [baseCurrency, portfolioReady, snapshot]);
 
+  useEffect(() => {
+    if (!portfolioReady || !editorOpen || draft.assetType === "cash") return;
+    if (
+      !shouldTriggerManualListingAutoLookup({
+        assetType: draft.assetType,
+        symbol: draft.symbol,
+        name: draft.name,
+        isin: draft.isin,
+        providerSymbol: draft.providerSymbol,
+      })
+    ) {
+      return;
+    }
+
+    const controller = new AbortController();
+    const draftSnapshot = draft;
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        setListingLookupPending(true);
+        setEditorError(null);
+        try {
+          const result = await lookupManualHoldingListing(draftSnapshot, {
+            signal: controller.signal,
+          });
+          if (controller.signal.aborted) return;
+          const decision = resolveAutoListingDecision(
+            result,
+            draftSnapshot.isin,
+          );
+          if (decision.kind === "preselect") {
+            setDraft(decision.holding);
+          }
+          setListingCandidates(decision.candidates);
+          setListingWarnings(decision.warnings);
+          setLookupUnavailable(result.quotaUnavailable);
+        } catch (error) {
+          if (error instanceof DOMException && error.name === "AbortError") {
+            return;
+          }
+          if (controller.signal.aborted) return;
+          setLookupUnavailable(true);
+          setListingWarnings([
+            "Instrument lookup is temporarily unavailable. You can continue manually and save your holding.",
+          ]);
+        } finally {
+          if (!controller.signal.aborted) {
+            setListingLookupPending(false);
+          }
+        }
+      })();
+    }, MANUAL_HOLDING_AUTO_LOOKUP_DEBOUNCE_MS);
+
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+    // Identity fields only — quantity/price edits must not retrigger listing search.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    portfolioReady,
+    editorOpen,
+    draft.assetType,
+    draft.symbol,
+    draft.name,
+    draft.isin,
+    draft.exchange,
+    draft.providerSymbol,
+  ]);
+
   if (!portfolioReady) {
-    return <AppPageLoading />;
+    return <AppPageLoading canvas="portfolio" />;
   }
 
   function resetListingState() {
@@ -406,12 +419,13 @@ export default function PortfolioPage() {
 
     try {
       const result = await lookupManualHoldingListing(draft);
-      setDraft(result.holding);
-      setListingCandidates(result.candidates);
-      setListingWarnings(result.warnings);
+      const decision = resolveAutoListingDecision(result, draft.isin);
+      setDraft(decision.holding);
+      setListingCandidates(decision.candidates);
+      setListingWarnings(decision.warnings);
       setLookupUnavailable(result.quotaUnavailable);
 
-      if (result.quotaUnavailable || result.candidates.length === 0) {
+      if (result.quotaUnavailable || decision.candidates.length === 0) {
         setEditorError(null);
       }
     } catch {
@@ -583,58 +597,13 @@ export default function PortfolioPage() {
 
   return (
     <>
-      <PageContainer>
-        <PageHero
-          title="Portfolio"
-          subtitle={
-            <span className="inline-flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
-              {heroFreshness.label ? (
-                <span data-testid="portfolio-hero-freshness">
-                  {heroFreshness.label}
-                </span>
-              ) : null}
-              <RefreshPricesButton
-                variant="compact"
-                appearance="onLight"
-                onClick={() => void refreshPrices()}
-                isRefreshing={isRefreshing}
-                disabled={refreshDisabled}
-                status={refreshStatus}
-              />
-            </span>
-          }
-          backToDashboard
-          actions={
-            <>
-              <Link
-                href={PORTFOLIO_HISTORY_PATH}
-                aria-label="Portfolio History"
-                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-bold text-brand-navy hover:bg-brand-hover"
-              >
-                <History className="h-4 w-4" aria-hidden="true" />
-                History
-              </Link>
-              <ExportPortfolioButton
-                label="Export"
-                onExport={() =>
-                  runPortfolioExport({
-                    holdings,
-                    entries: contributionEntries,
-                    portfolioValueEur: totalValue,
-                    portfolioValueAvailable: performance.totalValueAvailable,
-                    baseCurrency,
-                    convertEur,
-                    portfolioName: activePortfolioName,
-                  })
-                }
-              />
-              <PortfolioHeroAddMenu
-                onAddInvestment={() => openAdd("investment")}
-                onAddCrypto={openAddCrypto}
-                onAddCash={() => openAdd("cash")}
-              />
-            </>
-          }
+      <PageContainer canvas="portfolio">
+        <PortfolioIntro
+          freshnessLabel={heroFreshness.label}
+          onRefreshPrices={() => void refreshPrices()}
+          isRefreshing={isRefreshing}
+          refreshDisabled={refreshDisabled}
+          refreshStatus={refreshStatus}
         />
 
         <PortfolioSyncBanner
@@ -664,447 +633,83 @@ export default function PortfolioPage() {
           onDismiss={dismissRecovery}
         />
 
-        <div className="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-800">
-          <p>{message}</p>
-          {showRefreshDiagnostics && refreshDiagnostics ? (
-            <CryptoRefreshTechnicalDetails diagnostics={refreshDiagnostics} />
-          ) : null}
-        </div>
-
-        <section
-          className="grid gap-4 sm:grid-cols-2"
-          data-testid="portfolio-at-a-glance"
-        >
-          <Metric
-            icon={<CircleDollarSign className="h-5 w-5" />}
-            label="Portfolio value"
-            value={
-              performance.totalValueAvailable
-                ? formatEur(totalValue)
-                : "Unavailable"
-            }
-            detail={
-              [
-                performance.totalValueCoverageMessage,
-                cashValue > 0
-                  ? `Cash ${formatEur(cashValue)}${
-                      performance.totalValueAvailable && totalValue > 0
-                        ? ` · ${((cashValue / totalValue) * 100).toFixed(1)}%`
-                        : ""
-                    }`
-                  : null,
-              ]
-                .filter(Boolean)
-                .join(" · ") || undefined
-            }
-          />
-          <Metric
-            icon={<BarChart3 className="h-5 w-5" />}
-            label="Since purchase"
-            value={
-              performance.canShowPerformance
-                ? `${totalReturn >= 0 ? "+" : ""}${formatEur(totalReturn)}`
-                : "Unavailable"
-            }
-            detail={
-              performance.canShowPerformance
-                ? percent(totalReturnPercent)
-                : "Price data required"
-            }
-            tone={
-              performance.canShowPerformance
-                ? totalReturn >= 0
-                  ? "positive"
-                  : "negative"
-                : "neutral"
-            }
-          />
-        </section>
-        <ConversionDetailsDisclosure compactTrigger />
-
-        <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
-          <div className="flex items-center justify-between border-b border-slate-200 px-5 py-5 sm:px-7">
-            <div>
-              <h2 className={appSectionTitleClass}>Holdings</h2>
-              <p className={`mt-1.5 ${appSectionMetaClass}`}>
-                {holdings.length} positions
-              </p>
-            </div>
-            <Link
-              href="/upload"
-              className="inline-flex items-center gap-2 text-sm font-bold text-brand-navy hover:text-brand"
-            >
-              <Upload className="h-4 w-4" /> Import
-            </Link>
+        {message ? (
+          <div className="rounded-xl border border-white/10 bg-white/[0.04] px-3.5 py-2.5 text-sm text-white/80">
+            <p>{message}</p>
+            {showRefreshDiagnostics && refreshDiagnostics ? (
+              <CryptoRefreshTechnicalDetails diagnostics={refreshDiagnostics} />
+            ) : null}
           </div>
+        ) : null}
 
-          {holdings.length === 0 ? (
-            <div className="px-4 py-6 sm:px-6">
-              <EmptyPortfolioGuide
-                density="compact"
-                title="No holdings yet"
-                body="Import a CSV or Excel file, or add an investment, crypto or cash position to get started."
-                className="border-0 shadow-none"
-              />
-            </div>
-          ) : (
-            <div className="min-w-0 overflow-x-clip">
-              {holdings.some((holding) => isCryptoHolding(holding)) ? (
-                <p
-                  className={`border-b border-slate-100 px-4 py-2.5 text-sm text-slate-600 sm:px-5`}
-                >
-                  {CRYPTO_PRICING_DISCLOSURE}
-                </p>
-              ) : null}
-              <div className="divide-y divide-slate-200">
-                {holdings.map((holding) => {
-                  const holdingValue = getHoldingMarketValue(holding);
-                  const priceTrust = resolveHoldingPriceTrustStatus(holding);
-                  const priceTrustBadge = holdingPriceHoldingsLabel(priceTrust);
-                  const matchStatus = resolveHoldingMatchStatus(holding);
-                  const holdingReturn =
-                    holdingValue === null
-                      ? null
-                      : holdingValue - costOf(holding);
-                  const allocation =
-                    totalValue > 0 && holdingValue !== null
-                      ? (holdingValue / totalValue) * 100
-                      : 0;
-                  const dividendQuote =
-                    holding.assetType === "investment"
-                      ? findDividendQuoteForHolding(holding, dividendQuotes)
-                      : null;
-                  const analystQuote =
-                    holding.assetType === "investment"
-                      ? findAnalystQuoteForHolding(holding, analystQuotes)
-                      : null;
-                  const isCrypto = isCryptoHolding(holding);
-                  const kindLabel = describeHoldingKindLabel(holding);
-                  const allocationLabel =
-                    holdingValue === null
-                      ? "—"
-                      : formatAllocationPercent(allocation);
-                  const cryptoDisplayPrice = isCrypto
-                    ? resolveHoldingDisplayPrice(holding)
-                    : null;
-                  const cryptoMetadataLine = isCrypto
-                    ? buildCryptoPriceMetadataLine(holding)
-                    : null;
-                  const impliedUpsidePercent =
-                    analystQuote && holding.currentPrice > 0
-                      ? calculateImpliedUpsidePercent(
-                          holding.currentPrice,
-                          analystQuote.averagePriceTarget,
-                        )
-                      : null;
-                  const detailHref =
-                    holding.assetType === "cash"
-                      ? null
-                      : holdingDetailPath(holding.symbol);
-                  const quantityLabel =
-                    holding.assetType === "cash"
-                      ? "Cash"
-                      : `${holding.quantity.toLocaleString("en-GB")}${
-                          isCrypto ? "" : " units"
-                        }`;
-                  return (
-                    <article
-                      key={holding.id}
-                      className={`min-w-0 px-4 py-3.5 sm:px-5 sm:py-4 ${detailHref ? "cursor-pointer transition-colors hover:bg-slate-50/80 focus-within:bg-slate-50/80" : ""}`}
-                      onClick={
-                        detailHref
-                          ? () => {
-                              router.push(detailHref);
-                            }
-                          : undefined
-                      }
-                      onKeyDown={
-                        detailHref
-                          ? (event) => {
-                              if (event.key === "Enter" || event.key === " ") {
-                                event.preventDefault();
-                                router.push(detailHref);
-                              }
-                            }
-                          : undefined
-                      }
-                      tabIndex={detailHref ? 0 : undefined}
-                      role={detailHref ? "link" : undefined}
-                      aria-label={
-                        detailHref
-                          ? `Open ${holding.name} holding details`
-                          : undefined
-                      }
-                    >
-                      {/* Mobile-first compact row */}
-                      <div className="flex min-w-0 items-start gap-3 lg:hidden">
-                        <div className="min-w-0 flex-1">
-                          <div className="flex min-w-0 items-center gap-2">
-                            <span
-                              className={`inline-flex shrink-0 rounded-lg px-2 py-1 text-[13px] font-bold ${holding.assetType === "cash" ? "bg-emerald-100 text-emerald-800" : isCrypto ? "bg-q2-soft text-q2-deep" : "bg-navy-hero text-white"}`}
-                            >
-                              {holding.symbol}
-                            </span>
-                            <p className="min-w-0 truncate text-[14px] font-semibold text-slate-900">
-                              {holding.name}
-                            </p>
-                            {kindLabel ? (
-                              <span className="shrink-0 text-[13px] font-medium text-q3-strong">
-                                {kindLabel}
-                              </span>
-                            ) : null}
-                          </div>
-                          {detailHref ? (
-                            <ViewHoldingCue className="mt-1 block" />
-                          ) : null}
-                          <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1.5">
-                            <div className="min-w-0">
-                              <p className={appSectionLabelClass}>
-                                Value
-                              </p>
-                              <p className="truncate text-[14px] font-bold tabular-nums text-slate-950">
-                                {holdingValue === null
-                                  ? holdingValueUnavailableLabel(holding)
-                                  : formatEur(holdingValue)}
-                                {priceTrustBadge && holdingValue !== null ? (
-                                  <span className="ml-1 text-[13px] font-semibold text-amber-800">
-                                    {priceTrustBadge}
-                                  </span>
-                                ) : null}
-                              </p>
-                            </div>
-                            <div className="min-w-0">
-                              <p className={appSectionLabelClass}>
-                                Gain / loss
-                              </p>
-                              <p
-                                className={`truncate text-[14px] font-bold tabular-nums ${holdingReturn === null ? "text-slate-600" : holdingReturn >= 0 ? "text-emerald-700" : "text-red-700"}`}
-                              >
-                                {holding.assetType === "cash"
-                                  ? "Stable"
-                                  : holdingReturn === null
-                                    ? holdingValueUnavailableLabel(holding)
-                                    : `${holdingReturn >= 0 ? "+" : ""}${formatEur(holdingReturn)}`}
-                              </p>
-                            </div>
-                            <div className="min-w-0">
-                              <p className={appSectionLabelClass}>
-                                Qty
-                              </p>
-                              <p className="truncate text-[13px] font-semibold tabular-nums text-slate-700">
-                                {quantityLabel}
-                              </p>
-                            </div>
-                            <div className="min-w-0">
-                              <p className={appSectionLabelClass}>
-                                Allocation
-                              </p>
-                              <p className="truncate text-[13px] font-semibold tabular-nums text-slate-700">
-                                {allocationLabel}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                        <div
-                          className="flex shrink-0 flex-col items-center gap-1"
-                          onClick={(event) => event.stopPropagation()}
-                          onKeyDown={(event) => event.stopPropagation()}
-                        >
-                          <button
-                            type="button"
-                            onClick={() => openEdit(holding)}
-                            aria-label={`Edit ${holding.name}`}
-                            className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => removeHolding(holding)}
-                            aria-label={`Remove ${holding.name}`}
-                            className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-red-600"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Desktop row */}
-                      <div className="hidden min-w-0 gap-4 lg:grid lg:grid-cols-[0.55fr_1.4fr_1fr_0.7fr_1fr_auto] lg:items-start">
-                        <div className="flex items-start">
-                          <span
-                            className={`inline-flex rounded-xl px-3 py-2 ${appTableValueClass} ${holding.assetType === "cash" ? "bg-emerald-100 text-emerald-800" : isCrypto ? "bg-q2-soft text-q2-deep" : "bg-navy-hero text-white"}`}
-                          >
-                            {holding.symbol}
-                          </span>
-                        </div>
-                        <div className="min-w-0">
-                          <p className={appTableNameClass}>{holding.name}</p>
-                          <p className={`mt-1 ${appSectionMetaClass}`}>
-                            {holding.assetType === "cash"
-                              ? "Cash holding"
-                              : isCrypto
-                                ? `${holding.quantity.toLocaleString("en-GB")} · ${holding.tradingPair ?? `${holding.symbol}/${holding.pairCurrency ?? "EUR"}`}`
-                                : `${holding.quantity.toLocaleString("en-GB")} units · ${holdingMatchStatusLabel(matchStatus, holding.assetType)}${kindLabel ? ` · ${kindLabel}` : ""}`}
-                          </p>
-                          {isCrypto ? (
-                            <div className="mt-2 space-y-1">
-                              <p className={`${appTableValueClass}`}>
-                                {formatCryptoPairPrice(
-                                  cryptoDisplayPrice?.price ?? null,
-                                  holding.pairCurrency ?? null,
-                                )}
-                              </p>
-                              <p className={`${appSectionMetaClass}`}>
-                                {formatCrypto24hChange(
-                                  holding.change24hPercent ??
-                                    holding.changePercent,
-                                  holding.change24hAmount,
-                                )}
-                              </p>
-                              {cryptoMetadataLine ? (
-                                <p className={`${appTickerClass} normal-case`}>
-                                  {cryptoMetadataLine}
-                                </p>
-                              ) : holding.pricingStatus !== "manual" ? (
-                                <p className="text-sm font-semibold text-amber-800">
-                                  Live price unavailable
-                                </p>
-                              ) : null}
-                            </div>
-                          ) : null}
-                          {holding.pricingExchange && holding.providerSymbol ? (
-                            <p className={`mt-1 ${appTickerClass} normal-case`}>
-                              {describePricingSource({
-                                exchange: holding.exchange ?? null,
-                                pricingExchange: holding.pricingExchange,
-                                providerSymbol: holding.providerSymbol,
-                              })}
-                            </p>
-                          ) : null}
-                        </div>
-                        <div>
-                          <p className={appTableValueClass}>
-                            {holdingValue === null
-                              ? holdingValueUnavailableLabel(holding)
-                              : formatEur(holdingValue)}
-                            {priceTrustBadge && holdingValue !== null ? (
-                              <span className="ml-1 text-[13px] font-semibold text-amber-800">
-                                {priceTrustBadge}
-                              </span>
-                            ) : null}
-                          </p>
-                        </div>
-                        <div>
-                          <p className={appTableValueClass}>
-                            {allocationLabel}
-                          </p>
-                        </div>
-                        <div>
-                          <p
-                            className={`${appTableValueClass} ${holdingReturn === null ? "text-slate-600" : holdingReturn >= 0 ? "text-emerald-700" : "text-red-700"}`}
-                          >
-                            {holding.assetType === "cash"
-                              ? "Stable"
-                              : holdingReturn === null
-                                ? holdingValueUnavailableLabel(holding)
-                                : `${holdingReturn >= 0 ? "+" : ""}${formatEur(holdingReturn)}`}
-                          </p>
-                        </div>
-                        <div
-                          className="flex items-center justify-end gap-1"
-                          onClick={(event) => event.stopPropagation()}
-                          onKeyDown={(event) => event.stopPropagation()}
-                        >
-                          {detailHref ? (
-                            <Link
-                              href={detailHref}
-                              aria-label={`View ${holding.name} holding`}
-                              className="inline-flex items-center rounded-lg px-2 py-2 text-[13px] font-semibold text-brand-navy hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
-                            >
-                              View holding →
-                            </Link>
-                          ) : null}
-                          <button
-                            type="button"
-                            onClick={() => openEdit(holding)}
-                            aria-label={`Edit ${holding.name}`}
-                            className="rounded-lg p-2 text-slate-500 hover:bg-slate-100"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => removeHolding(holding)}
-                            aria-label={`Remove ${holding.name}`}
-                            className="rounded-lg p-2 text-red-600 hover:bg-red-50"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </div>
-                      {dividendQuote?.paysDividends ? (
-                        <HoldingDividendMeta
-                          yieldPercent={dividendQuote.dividendYield}
-                          annualIncomeEur={
-                            dividendQuote.estimatedAnnualDividendEur
-                          }
-                          nextPaymentEur={dividendQuote.estimatedNextPaymentEur}
-                          nextExDate={dividendQuote.nextExDate}
-                          nextPaymentDate={dividendQuote.nextPaymentDate}
-                          frequency={formatDividendFrequency(
-                            dividendQuote.frequency,
-                          )}
-                        />
-                      ) : null}
-                      {analystQuote ? (
-                        <HoldingAnalystMeta
-                          quote={analystQuote}
-                          currentPriceEur={
-                            holding.currentPrice > 0
-                              ? holding.currentPrice
-                              : null
-                          }
-                          impliedUpsidePercent={impliedUpsidePercent}
-                        />
-                      ) : null}
-                    </article>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </section>
-
-        <section data-testid="portfolio-activity" className="min-w-0">
-          <h2 className={appSectionTitleClass}>Activity</h2>
-          <p className={`mt-1.5 mb-3 ${appSectionMetaClass}`}>
-            Recent portfolio history. Full record stays on Portfolio History.
-          </p>
-          <PortfolioHistoryNavCard variant="card" />
-        </section>
-
-        <PageRelatedLinks
-          purpose={PAGE_PURPOSE.portfolio}
-          links={[
-            { href: ANALYSIS_PATH, label: "Analysis" },
-            { href: NEWS_PATH, label: "News" },
-            { href: GOALS_PATH, label: "Goals" },
-            { href: REVIEW_PATH, label: "Reports" },
-            { href: PORTFOLIO_HISTORY_PATH, label: "Portfolio history" },
-            { href: PORTFOLIO_HEALTH_PATH, label: "Scorecard" },
-            { href: DASHBOARD_DEEP_LINKS.portfolioExposure, label: "Allocation" },
-            { href: MARKET_PULSE_PATH, label: "Market Pulse" },
-          ]}
+        <PortfolioGlance
+          valueLabel={formatEur(totalValue)}
+          valueAvailable={performance.totalValueAvailable}
+          coverageMessage={performance.totalValueCoverageMessage}
+          resultLabel={`${totalReturn >= 0 ? "+" : ""}${formatEur(totalReturn)}`}
+          resultAvailable={performance.canShowPerformance}
+          resultTone={
+            performance.canShowPerformance
+              ? totalReturn >= 0
+                ? "positive"
+                : "negative"
+              : "neutral"
+          }
+          resultDetail={
+            performance.canShowPerformance
+              ? `${totalReturnPercent >= 0 ? "+" : ""}${totalReturnPercent.toFixed(1)}%`
+              : "Price data required"
+          }
+          cashLabel={
+            cashValue > 0
+              ? `${formatEur(cashValue)}${
+                  performance.totalValueAvailable && totalValue > 0
+                    ? ` · ${((cashValue / totalValue) * 100).toFixed(1)}%`
+                    : ""
+                }`
+              : null
+          }
+          mixCue={mixCue}
         />
 
-        <AuthenticatedFourQuestionsNav />
+        <PortfolioHoldingsList
+          holdings={holdings}
+          totalValue={totalValue}
+          formatEur={formatEur}
+          onAddInvestment={() => openAdd("investment")}
+          onAddCrypto={openAddCrypto}
+          onAddCash={() => openAdd("cash")}
+          onEdit={openEdit}
+          onRemove={removeHolding}
+        />
 
-        <details className="rounded-[24px] border border-slate-200/80 bg-white px-4 py-3 sm:px-5">
-          <summary className="cursor-pointer list-none text-[15px] font-semibold text-slate-800 underline-offset-2 hover:underline">
-            Contributions and withdrawals
-          </summary>
-          <div className="mt-4">
+        <PortfolioActivity events={activityEvents} formatEur={formatEur} />
+
+        <PortfolioExploreNav
+          tools={
+            <ExportPortfolioButton
+              variant="onDark"
+              label="Export"
+              onExport={() =>
+                runPortfolioExport({
+                  holdings,
+                  entries: contributionEntries,
+                  portfolioValueEur: totalValue,
+                  portfolioValueAvailable: performance.totalValueAvailable,
+                  baseCurrency,
+                  convertEur,
+                  portfolioName: activePortfolioName,
+                })
+              }
+            />
+          }
+        />
+
+        <section
+          id="money-in-out"
+          className={`${appDarkCardClass} p-3.5 sm:p-4`}
+        >
+          <div className="rounded-xl bg-white p-4 text-slate-950">
             <PortfolioFundingSection
               portfolioValueEur={totalValue}
               portfolioValueAvailable={performance.totalValueAvailable}
@@ -1116,7 +721,7 @@ export default function PortfolioPage() {
               }))}
             />
           </div>
-        </details>
+        </section>
       </PageContainer>
 
       {cryptoEditorOpen ? (
@@ -1181,6 +786,8 @@ export default function PortfolioPage() {
                   <p className="text-[16px] leading-relaxed text-slate-600">
                     Search by name, ticker or ISIN, select the listing, then
                     enter quantity. Tobailey infers the instrument type for you.
+                    Matching listings appear automatically after you pause
+                    typing. ISIN is optional if several listings appear.
                   </p>
                   <Field
                     label="Search instrument"
@@ -1228,6 +835,9 @@ export default function PortfolioPage() {
                       });
                     }}
                   />
+                  <p className="text-[14px] leading-relaxed text-slate-500">
+                    Exchange is optional unless several listings appear.
+                  </p>
                   <button
                     type="button"
                     onClick={() => void lookupListing()}
@@ -1296,14 +906,7 @@ export default function PortfolioPage() {
                   ) : null}
 
                   {draft.providerSymbol ? (
-                    <HoldingVenueSummary
-                      exchange={draft.exchange}
-                      pricingExchange={draft.pricingExchange}
-                      providerSymbol={draft.providerSymbol}
-                      instrumentName={draft.instrumentName ?? draft.name}
-                      confirmationSource={draft.confirmationSource}
-                      showPurchaseExchange={false}
-                    />
+                    <ConfirmedListingIdentity holding={draft} />
                   ) : null}
 
                   <Field
@@ -1414,35 +1017,6 @@ export default function PortfolioPage() {
         </div>
       )}
     </>
-  );
-}
-
-function Metric({
-  icon,
-  label,
-  value,
-  detail,
-  tone = "neutral",
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  detail?: string;
-  tone?: "neutral" | "positive" | "negative";
-}) {
-  return (
-    <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
-        {icon}
-      </div>
-      <p className={`mt-4 ${appSectionLabelClass}`}>{label}</p>
-      <p
-        className={`mt-2 ${appCardValueClass} ${tone === "positive" ? "text-emerald-700" : tone === "negative" ? "text-red-700" : "text-slate-950"}`}
-      >
-        {value}
-      </p>
-      {detail && <p className={`mt-1.5 ${appSectionMetaClass}`}>{detail}</p>}
-    </article>
   );
 }
 

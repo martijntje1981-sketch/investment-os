@@ -49,8 +49,8 @@ describe("contributions ledger UI", () => {
 
   it("keeps portfolio funding available after holdings", () => {
     expect(portfolioSource).toContain("PortfolioFundingSection");
-    expect(portfolioSource).toContain("Contributions and withdrawals");
-    const holdingsIdx = portfolioSource.indexOf(">Holdings</h2>");
+    expect(portfolioSource).toContain("id=\"money-in-out\"");
+    const holdingsIdx = portfolioSource.indexOf("<PortfolioHoldingsList");
     const fundingIdx = portfolioSource.indexOf("<PortfolioFundingSection");
     expect(holdingsIdx).toBeGreaterThan(-1);
     expect(fundingIdx).toBeGreaterThan(holdingsIdx);
@@ -60,7 +60,7 @@ describe("contributions ledger UI", () => {
     expect(fundingSource).toContain("PORTFOLIO_FUNDING_EMPTY_COPY");
     expect(fundingSource).toContain("PORTFOLIO_FUNDING_OPENING_ACTION");
     expect(copySource).toContain(
-      "Record contributions and withdrawals for this portfolio.",
+      "Record deposits and withdrawals for this portfolio.",
     );
   });
 

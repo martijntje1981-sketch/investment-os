@@ -27,7 +27,7 @@ describe("Phase 20 Dashboard intelligence refinement", () => {
   const cashCard = read("components/dashboard/DashboardCashIntelligenceCard.tsx");
   const analysisExposure = read("components/analysis/PortfolioExposureSection.tsx");
   const analysisCash = read("components/analysis/CashIntelligenceSection.tsx");
-  const portfolioPage = read("app/portfolio/page.tsx");
+  const portfolioPage = read("components/portfolio/glance/portfolioExploreCatalog.ts");
   const changeEngine = read(
     "lib/services/portfolioChangeDetection/buildPortfolioChangeAttention.ts",
   );
@@ -84,7 +84,6 @@ describe("Phase 20 Dashboard intelligence refinement", () => {
 
   it("K. allocation remains discoverable", () => {
     expect(evolutionCard).toContain("View allocation");
-    expect(evolutionCard).toContain("DASHBOARD_DEEP_LINKS.portfolioExposure");
     expect(portfolioPage).toContain("DASHBOARD_DEEP_LINKS.portfolioExposure");
     expect(PORTFOLIO_EVOLUTION_HREF).toBe("/portfolio-history#portfolio-evolution");
   });

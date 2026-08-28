@@ -68,6 +68,15 @@ import {
   firstIntelligenceDashboardHref,
   markFirstIntelligencePending,
 } from "@/lib/client/firstIntelligence";
+import {
+  IMPORT_SUPPORTED_FORMATS_DETAIL,
+  IMPORT_SUPPORTED_FORMATS_HEADLINE,
+  IMPORT_UNSUPPORTED_FILE_MESSAGE,
+} from "@/lib/services/import/importFormatCopy";
+import {
+  preventBrowserFileNavigation,
+  usePreventBrowserFileNavigation,
+} from "@/lib/client/usePreventBrowserFileNavigation";
 
 type ImportPhase = "choose" | "processing" | "ready";
 
@@ -99,6 +108,8 @@ export default function UploadPage() {
   const [successMessage, setSuccessMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [syncFailed, setSyncFailed] = useState(false);
+
+  usePreventBrowserFileNavigation(phase === "choose");
 
   useEffect(() => {
     if (!userSub) return;
@@ -168,6 +179,13 @@ export default function UploadPage() {
   }
 
   async function processFile(file: File) {
+    const validation = validateSpreadsheetImportFile(file);
+    if (!validation.ok) {
+      setError(validation.message ?? IMPORT_UNSUPPORTED_FILE_MESSAGE);
+      setPhase("choose");
+      return;
+    }
+
     setError("");
     setImportNotice("");
     setSuccessMessage("");
@@ -176,9 +194,6 @@ export default function UploadPage() {
     setProcessingMessage("Reading your spreadsheet…");
 
     try {
-      const validation = validateSpreadsheetImportFile(file);
-      if (!validation.ok) throw new Error(validation.message);
-
       setProcessingStep("Matching instruments");
       setProcessingMessage("Matching every holding to the correct instrument…");
 
@@ -240,10 +255,15 @@ export default function UploadPage() {
   }
 
   function onDrop(event: DragEvent<HTMLDivElement>) {
-    event.preventDefault();
+    preventBrowserFileNavigation(event);
+    event.stopPropagation();
     setIsDragging(false);
     const file = event.dataTransfer.files?.[0];
-    if (file) processDroppedOrSelected(file);
+    if (!file) {
+      setError(IMPORT_UNSUPPORTED_FILE_MESSAGE);
+      return;
+    }
+    processDroppedOrSelected(file);
   }
 
   function resetImport() {
@@ -573,7 +593,7 @@ export default function UploadPage() {
       <PageContainer>
         <PageHero
           title="Upload portfolio"
-          subtitle="Choose a CSV or Excel file. Tobailey matches holdings; you only review the uncertain ones."
+          subtitle="CSV or Excel (.csv, .xlsx). Images and PDFs are not supported."
           backToDashboard
         />
 
@@ -587,12 +607,21 @@ export default function UploadPage() {
 
           {phase === "choose" ? (
             <>
+              <p
+                className="text-[16px] font-semibold text-slate-800"
+                data-testid="import-supported-formats-banner"
+              >
+                {IMPORT_SUPPORTED_FORMATS_HEADLINE}
+              </p>
+              <p className="mt-1 text-[15px] leading-relaxed text-slate-600">
+                {IMPORT_SUPPORTED_FORMATS_DETAIL}
+              </p>
               <ImportMethodPicker onSpreadsheetClick={() => sheetInput.current?.click()} />
 
               <ImportDropzone
                 isDragging={isDragging}
                 onDragOver={(event) => {
-                  event.preventDefault();
+                  preventBrowserFileNavigation(event);
                   setIsDragging(true);
                 }}
                 onDragLeave={() => setIsDragging(false)}

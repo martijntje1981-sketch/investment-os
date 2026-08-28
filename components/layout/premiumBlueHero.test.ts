@@ -53,7 +53,8 @@ describe("Phase 16.6 / 20 shared Q1 cyan page heroes", () => {
     expect(news).not.toContain("<PageHero");
     expect(news).toContain("canvas=\"news\"");
     expect(goals).toContain("<PageHero");
-    expect(read("app/portfolio/page.tsx")).toContain("<PageHero");
+    expect(read("app/portfolio/page.tsx")).not.toContain("<PageHero");
+    expect(read("app/portfolio/page.tsx")).toContain("canvas=\"portfolio\"");
     expect(read("components/portfolioHistory/PortfolioHistoryPage.tsx")).toContain(
       "<PageHero",
     );

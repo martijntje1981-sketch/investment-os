@@ -4,7 +4,6 @@ import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import { HoldingMoveContextCard } from "@/components/holding/HoldingMoveContextCard";
-import { VIEW_HOLDING_CUE } from "@/components/holding/ViewHoldingCue";
 import {
   NEWS_HUB_NO_CATALYST,
   buildHoldingIntelligenceCandidates,
@@ -241,7 +240,10 @@ describe("Phase 11J holding discoverability", () => {
         "utf8",
       ),
       portfolio: readFileSync(
-        path.resolve(process.cwd(), "app/portfolio/page.tsx"),
+        path.resolve(
+          process.cwd(),
+          "components/portfolio/glance/PortfolioHoldingsList.tsx",
+        ),
         "utf8",
       ),
       news: readFileSync(
@@ -260,7 +262,6 @@ describe("Phase 11J holding discoverability", () => {
     expect(files.dashboard).toContain("holdingDetailPath");
     expect(files.dashboard).toContain("ViewHoldingCue");
     expect(files.portfolio).toContain("holdingDetailPath");
-    expect(files.portfolio).toContain(VIEW_HOLDING_CUE);
     expect(files.news).toContain("holdingDetailPath");
     expect(files.news).toContain("ViewHoldingCue");
     expect(files.holdingPage).toContain("selectHoldingPageNewsItems");

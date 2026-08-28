@@ -77,20 +77,17 @@ describe("Pre-launch light hero contrast and action alignment", () => {
     expect(pageHero).not.toContain("lg:grid-cols-[minmax(0,1fr)_auto]");
     expect(surface).toContain("lg:max-w-xl");
     expect(surface).toContain("flex-wrap");
-    expect(portfolio).toContain("<PageHero");
-    expect(portfolio).toContain("ExportPortfolioButton");
-    expect(portfolio).toContain("aria-label=\"Portfolio History\"");
-    expect(portfolio).toContain("Scorecard");
-    expect(portfolio).toContain("RefreshPricesButton");
-    expect(portfolio).toContain("PortfolioHeroAddMenu");
-    expect(addMenu).toContain("Add cash");
-    expect(addMenu).toContain("Add crypto");
-    expect(addMenu).toContain("Add investment");
     expect(goals).toContain("<PageHero");
     expect(analysis).not.toContain("<PageHero");
     expect(analysis).toContain("AnalysisIntro");
     expect(news).not.toContain("<PageHero");
     expect(news).toContain("NewsIntro");
+    expect(portfolio).not.toContain("<PageHero");
+    expect(portfolio).toContain("PortfolioIntro");
+    expect(portfolio).toContain("ExportPortfolioButton");
+    expect(addMenu).toContain("Add cash");
+    expect(addMenu).toContain("Add crypto");
+    expect(addMenu).toContain("Add investment");
     expect(goals).toContain("backToDashboard");
   });
 

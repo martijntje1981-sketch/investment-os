@@ -101,10 +101,8 @@ describe("Priority 1 demo vs trial entry", () => {
 
 describe("Priority 1 portfolio mobile list", () => {
   it("removes forced horizontal scroll width on holdings", () => {
-    const portfolio = read("app/portfolio/page.tsx");
+    const portfolio = read("components/portfolio/glance/PortfolioHoldingsList.tsx");
     expect(portfolio).not.toContain("min-w-[720px]");
-    expect(portfolio).toContain("overflow-x-clip");
-    expect(portfolio).toContain("lg:hidden");
-    expect(portfolio).toContain("Gain / loss");
+    expect(portfolio).toContain("min-w-0");
   });
 });

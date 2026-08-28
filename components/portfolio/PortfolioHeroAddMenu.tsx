@@ -4,17 +4,22 @@ import { useLayoutEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Banknote, ChevronDown, Coins, Plus } from "lucide-react";
 
-import { appSecondaryButtonClass } from "@/components/layout/appSurface";
+import {
+  appAnalysisUtilityButtonClass,
+  appSecondaryButtonClass,
+} from "@/components/layout/appSurface";
 import { useDismissibleMenu } from "@/lib/client/useDismissibleMenu";
 
 export function PortfolioHeroAddMenu({
   onAddInvestment,
   onAddCrypto,
   onAddCash,
+  appearance = "onLight",
 }: {
   onAddInvestment: () => void;
   onAddCrypto: () => void;
   onAddCash: () => void;
+  appearance?: "onLight" | "onDark";
 }) {
   const { open, toggle, close, containerRef, triggerRef, panelRef, menuId } =
     useDismissibleMenu({ lockScroll: false });
@@ -88,7 +93,11 @@ export function PortfolioHeroAddMenu({
       <button
         ref={triggerRef}
         type="button"
-        className={appSecondaryButtonClass}
+        className={
+          appearance === "onDark"
+            ? appAnalysisUtilityButtonClass
+            : appSecondaryButtonClass
+        }
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={menuId}

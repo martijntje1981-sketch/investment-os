@@ -12,6 +12,9 @@ describe("Calm Core UX — Dashboard and Portfolio", () => {
   const holdingsRow = read("components/dashboard/HoldingsTodayRow.tsx");
   const context = read("lib/client/holdingsTodayContext.ts");
   const portfolio = read("app/portfolio/page.tsx");
+  const portfolioHoldings = read(
+    "components/portfolio/glance/PortfolioHoldingsList.tsx",
+  );
 
   it("keeps hero then Your Holdings Today then at most one intelligence block", () => {
     const order = [
@@ -64,26 +67,27 @@ describe("Calm Core UX — Dashboard and Portfolio", () => {
     expect(nav).toContain("DASHBOARD_DEEP_LINKS.scorecard");
   });
 
-  it("structures Portfolio as glance, holdings, then activity", () => {
-    expect(portfolio).toContain('data-testid="portfolio-at-a-glance"');
-    expect(portfolio).toContain('data-testid="portfolio-activity"');
-    expect(portfolio).toContain("PortfolioHistoryNavCard");
+  it("structures Portfolio as glance, holdings, activity, then Explore", () => {
+    expect(portfolio).toContain("PortfolioGlance");
+    expect(portfolio).toContain("PortfolioActivity");
+    expect(portfolio).toContain("PortfolioHoldingsList");
+    expect(portfolio).toContain("PortfolioExploreNav");
     expect(portfolio).toContain("PortfolioFundingSection");
-    expect(portfolio).toContain("PortfolioHeroAddMenu");
+    expect(portfolioHoldings).toContain("PortfolioHeroAddMenu");
     expect(portfolio).toContain("openAdd");
     expect(portfolio).toContain("Find listing");
 
-    const glanceIdx = portfolio.indexOf('data-testid="portfolio-at-a-glance"');
-    const holdingsIdx = portfolio.indexOf(">Holdings</h2>");
-    const activityIdx = portfolio.indexOf('data-testid="portfolio-activity"');
-    const relatedIdx = portfolio.indexOf("<PageRelatedLinks");
+    const glanceIdx = portfolio.indexOf("<PortfolioGlance");
+    const holdingsIdx = portfolio.indexOf("<PortfolioHoldingsList");
+    const activityIdx = portfolio.indexOf("<PortfolioActivity");
+    const exploreIdx = portfolio.indexOf("<PortfolioExploreNav");
     const fundingIdx = portfolio.indexOf("<PortfolioFundingSection");
 
     expect(glanceIdx).toBeGreaterThan(-1);
     expect(holdingsIdx).toBeGreaterThan(glanceIdx);
     expect(activityIdx).toBeGreaterThan(holdingsIdx);
-    expect(relatedIdx).toBeGreaterThan(activityIdx);
-    expect(fundingIdx).toBeGreaterThan(relatedIdx);
+    expect(exploreIdx).toBeGreaterThan(activityIdx);
+    expect(fundingIdx).toBeGreaterThan(exploreIdx);
     expect(portfolio).not.toContain("Largest position");
     expect(portfolio).not.toContain("is your largest position");
     expect(portfolio).not.toContain("<PortfolioAllocationNavCard");

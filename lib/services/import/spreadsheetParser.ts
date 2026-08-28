@@ -9,6 +9,10 @@ import {
   splitIsinFromTicker,
 } from "@/lib/services/instruments/validation";
 import type { ImportRow } from "@/lib/services/import/types";
+import {
+  IMPORT_PDF_NOT_SUPPORTED_MESSAGE,
+  IMPORT_UNSUPPORTED_FILE_MESSAGE,
+} from "@/lib/services/import/importFormatCopy";
 
 function numberValue(value: unknown): number {
   if (typeof value === "number") return Number.isFinite(value) ? value : 0;
@@ -240,6 +244,8 @@ const SPREADSHEET_EXTENSIONS = ["xlsx", "xls", "csv"] as const;
 
 const IMAGE_EXTENSIONS = ["png", "jpg", "jpeg", "webp", "gif", "bmp"] as const;
 
+const PDF_EXTENSIONS = ["pdf"] as const;
+
 const MAX_IMPORT_FILE_BYTES = 10 * 1024 * 1024;
 
 export function isSupportedSpreadsheetFileName(fileName: string): boolean {
@@ -257,6 +263,13 @@ export function validateSpreadsheetImportFile(
 } {
   const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
 
+  if (file.type === "application/pdf" || PDF_EXTENSIONS.includes(extension as (typeof PDF_EXTENSIONS)[number])) {
+    return {
+      ok: false,
+      message: IMPORT_PDF_NOT_SUPPORTED_MESSAGE,
+    };
+  }
+
   if (file.type.startsWith("image/") || IMAGE_EXTENSIONS.includes(extension as (typeof IMAGE_EXTENSIONS)[number])) {
     return {
       ok: false,
@@ -268,8 +281,7 @@ export function validateSpreadsheetImportFile(
   if (!isSupportedSpreadsheetFileName(file.name)) {
     return {
       ok: false,
-      message:
-        "This file format isn’t supported yet. Upload a CSV or Excel file, or add holdings manually.",
+      message: IMPORT_UNSUPPORTED_FILE_MESSAGE,
     };
   }
 

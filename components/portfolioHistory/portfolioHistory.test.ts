@@ -12,7 +12,9 @@ describe("portfolio history UI", () => {
   const menu = read("components/auth/UserMenu.tsx");
   const tools = read("components/dashboard/DashboardExploreTools.tsx");
   const dashboard = read("app/dashboard/page.tsx");
-  const portfolio = read("app/portfolio/page.tsx");
+  const portfolio = read(
+    "components/portfolio/glance/portfolioExploreCatalog.ts",
+  );
   const navCard = read(
     "components/portfolioHistory/PortfolioHistoryNavCard.tsx",
   );
@@ -50,7 +52,7 @@ describe("portfolio history UI", () => {
     expect(menu).toContain("Portfolio History");
     expect(dashboard).toContain("DashboardSecondaryNav");
     expect(dashboard).not.toContain("DashboardPortfolioHistorySection");
-    expect(portfolio).toContain("PortfolioHistoryNavCard");
+    expect(portfolio).toContain("PORTFOLIO_HISTORY_PATH");
     expect(portfolio).toContain("Portfolio History");
     expect(navCard).toContain('PORTFOLIO_HISTORY_LABEL = "Portfolio History"');
     expect(navCard).toContain("PORTFOLIO_HISTORY_PATH");

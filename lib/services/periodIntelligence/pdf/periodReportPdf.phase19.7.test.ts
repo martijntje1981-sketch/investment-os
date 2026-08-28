@@ -231,7 +231,7 @@ describe("Phase 19.7 report/export price-status consumption", () => {
     const dashboard = read("lib/client/dashboardPortfolioSnapshot.ts");
     const holdingsRow = read("components/dashboard/HoldingsTodayRow.tsx");
     const holdingPage = read("app/holding/[ticker]/page.tsx");
-    const portfolioPage = read("app/portfolio/page.tsx");
+    const portfolioPage = read("components/portfolio/glance/PortfolioHoldingsList.tsx");
     const portfolioSymbol = read("app/portfolio/[symbol]/page.tsx");
 
     expect(brief).toContain("resolveHoldingPriceTrustStatus");

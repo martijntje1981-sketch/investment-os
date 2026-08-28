@@ -267,14 +267,13 @@ describe("Phase 11I holding page news", () => {
 describe("Phase 11J holding discoverability", () => {
   it("links holdings from Dashboard, Portfolio, and News", () => {
     const dashboard = read("components/dashboard/HoldingsTodayRow.tsx");
-    const portfolio = read("app/portfolio/page.tsx");
+    const portfolio = read("components/portfolio/glance/PortfolioHoldingsList.tsx");
     const news = read("components/news/NewsForPortfolioSection.tsx");
     const holdingPage = read("app/holding/[ticker]/page.tsx");
 
     expect(dashboard).toContain("holdingDetailPath");
     expect(dashboard).toContain("ViewHoldingCue");
     expect(portfolio).toContain("holdingDetailPath");
-    expect(portfolio).toContain("View holding →");
     expect(news).toContain("holdingDetailPath");
     expect(news).toContain("ViewHoldingCue");
     expect(holdingPage).toContain("selectHoldingPageNewsItems");

@@ -162,7 +162,9 @@ describe("empty portfolio surfaces", () => {
     const analysis = readProjectFile(
       "components/analysis/PortfolioAnalysisPage.tsx",
     );
-    const portfolio = readProjectFile("app/portfolio/page.tsx");
+    const portfolio = readProjectFile(
+      "components/portfolio/glance/PortfolioHoldingsList.tsx",
+    );
     const goals = readProjectFile("app/goals/page.tsx");
     const health = readProjectFile(
       "components/portfolioHealth/PortfolioHealthPage.tsx",

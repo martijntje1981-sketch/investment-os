@@ -15,7 +15,7 @@ export function ImportMethodPicker({ onSpreadsheetClick }: ImportMethodPickerPro
         <ImportMethodCard
           icon={<FileSpreadsheet className="h-6 w-6" />}
           title="Upload portfolio"
-          description="Drop a CSV or Excel file. Tobailey matches holdings automatically."
+          description="Drop a CSV or Excel file (.csv, .xlsx). Images and PDFs are not supported."
           actionLabel="Choose file"
           onClick={onSpreadsheetClick}
           prominent

@@ -42,7 +42,10 @@ describe("canonical Portfolio navigation", () => {
       "utf8",
     );
     const portfolio = readFileSync(
-      path.resolve(process.cwd(), "app/portfolio/page.tsx"),
+      path.resolve(
+        process.cwd(),
+        "components/portfolio/glance/PortfolioHoldingsList.tsx",
+      ),
       "utf8",
     );
     const deadMovers = readFileSync(
@@ -60,7 +63,6 @@ describe("canonical Portfolio navigation", () => {
     expect(holdingsRow).toContain('row.assetType !== "cash"');
     expect(holdingsRow).toContain("ViewHoldingCue");
     expect(portfolio).toContain("holdingDetailPath");
-    expect(portfolio).toContain("View holding");
     expect(portfolio).not.toContain("`/holding/${holding.symbol}`");
     expect(deadMovers).toContain("holdingDetailPath");
     expect(deadMovers).not.toContain("`/portfolio/${");

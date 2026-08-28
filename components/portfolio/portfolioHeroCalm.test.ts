@@ -1,5 +1,5 @@
 /**
- * Calm Portfolio hero — bounded actions, Add menu, Refresh with freshness.
+ * Portfolio glance actions — Add, Refresh, History, Scorecard, Export.
  */
 
 import { readFileSync } from "node:fs";
@@ -10,26 +10,23 @@ function read(relativePath: string): string {
   return readFileSync(path.resolve(process.cwd(), relativePath), "utf8");
 }
 
-describe("calm Portfolio hero", () => {
+describe("calm Portfolio glance actions", () => {
   const portfolio = read("app/portfolio/page.tsx");
+  const intro = read("components/portfolio/glance/PortfolioIntro.tsx");
+  const holdings = read("components/portfolio/glance/PortfolioHoldingsList.tsx");
+  const explore = read("components/portfolio/glance/PortfolioExploreNav.tsx");
+  const catalog = read(
+    "components/portfolio/glance/portfolioExploreCatalog.ts",
+  );
   const addMenu = read("components/portfolio/PortfolioHeroAddMenu.tsx");
-  const pageHero = read("components/layout/PageHero.tsx");
   const refresh = read("components/portfolio/RefreshPricesButton.tsx");
 
-  it("K. Portfolio hero has at most four visible actions plus Back", () => {
-    const hero = portfolio.slice(
-      portfolio.indexOf("<PageHero"),
-      portfolio.indexOf("<PageRelatedLinks"),
-    );
-    const actions = hero.slice(hero.indexOf("actions={"));
-    expect(portfolio).toContain("backToDashboard");
-    expect(actions).toContain("aria-label=\"Portfolio History\"");
-    expect(actions).toContain('label="Export"');
-    expect(actions).toContain("PortfolioHeroAddMenu");
-    expect(actions).not.toContain("Portfolio Scorecard");
-    expect(actions).not.toContain("Add cash");
-    expect(actions).not.toContain("RefreshPricesButton");
-    expect(hero).toContain("RefreshPricesButton");
+  it("keeps Add, Refresh, History and Export reachable without a PageHero cluster", () => {
+    expect(portfolio).not.toContain("<PageHero");
+    expect(holdings).toContain("PortfolioHeroAddMenu");
+    expect(portfolio).toContain('label="Export"');
+    expect(catalog).toContain("PORTFOLIO_HISTORY_PATH");
+    expect(catalog).toContain("Portfolio History");
   });
 
   it("L. Add investment / crypto / cash remain reachable", () => {
@@ -39,32 +36,24 @@ describe("calm Portfolio hero", () => {
     expect(addMenu).toContain("useDismissibleMenu");
     expect(addMenu).toContain("min-h-[44px]");
     expect(addMenu).toContain('role="menu"');
+    expect(holdings).toContain('onAddInvestment={onAddInvestment}');
     expect(portfolio).toContain('onAddInvestment={() => openAdd("investment")}');
     expect(portfolio).toContain("onAddCrypto={openAddCrypto}");
     expect(portfolio).toContain('onAddCash={() => openAdd("cash")}');
   });
 
   it("M. Refresh stays the same action, placed with freshness", () => {
-    expect(portfolio).toContain("RefreshPricesButton");
-    expect(portfolio).toContain("heroFreshness.label");
-    expect(portfolio).toContain('variant="compact"');
+    expect(intro).toContain("RefreshPricesButton");
+    expect(intro).toContain("freshnessLabel");
+    expect(intro).toContain('variant="compact"');
     expect(portfolio).toContain("void refreshPrices()");
     expect(refresh).toContain("Refresh prices");
     expect(refresh).not.toContain("setInterval");
   });
 
-  it("N. Scorecard remains discoverable outside the hero cluster", () => {
-    expect(portfolio).toContain("PORTFOLIO_HEALTH_PATH");
-    expect(portfolio).toContain("Scorecard");
-    expect(portfolio).toContain("PageRelatedLinks");
-  });
-
-  it("O. mobile action layout cannot overflow or collapse the title", () => {
-    expect(pageHero).toContain(
-      "lg:grid-cols-[minmax(14rem,1fr)_minmax(0,36rem)]",
-    );
-    expect(pageHero).toContain("lg:min-w-[14rem]");
-    expect(pageHero).toContain("appPageHeroActionsClass");
-    expect(portfolio).toContain("flex-wrap items-center");
+  it("N. Scorecard remains discoverable in Explore", () => {
+    expect(catalog).toContain("PORTFOLIO_HEALTH_PATH");
+    expect(catalog).toContain("Scorecard");
+    expect(explore).toContain("PORTFOLIO_EXPLORE_GROUPS");
   });
 });

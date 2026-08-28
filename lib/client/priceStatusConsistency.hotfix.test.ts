@@ -366,7 +366,7 @@ describe("price status consistency hotfix", () => {
 
   it("uses the canonical holdings label on Dashboard, Portfolio, and holding detail", () => {
     const holdingsRow = read("components/dashboard/HoldingsTodayRow.tsx");
-    const portfolio = read("app/portfolio/page.tsx");
+    const portfolio = read("components/portfolio/glance/PortfolioHoldingsList.tsx");
     const holdingPage = read("app/holding/[ticker]/page.tsx");
     const symbolPage = read("app/portfolio/[symbol]/page.tsx");
     expect(holdingsRow).toContain("formatHoldingQuoteTrustLine");
@@ -383,7 +383,7 @@ describe("price status consistency hotfix", () => {
     const action = read("lib/client/livePortfolioPriceRefreshAction.ts");
     const display = read("lib/client/holdingDisplayPrice.ts");
     const holdingsRow = read("components/dashboard/HoldingsTodayRow.tsx");
-    const portfolio = read("app/portfolio/page.tsx");
+    const portfolio = read("components/portfolio/glance/PortfolioHoldingsList.tsx");
     expect(action).toContain("refreshLivePortfolioPrices");
     expect(action).not.toMatch(/fetch\("\/api\/prices"/);
     expect(display).toContain("getMarketStatuses");

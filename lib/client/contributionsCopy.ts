@@ -26,16 +26,16 @@ export const CONTRIBUTIONS_EXPORT_SCOPE_COPY =
 
 export const CONTRIBUTIONS_OPENING_LABEL = "Opening contribution";
 
-export const CONTRIBUTIONS_MANAGE_LABEL = "Manage contributions";
+export const CONTRIBUTIONS_MANAGE_LABEL = "Manage money in & out";
 
 export const CONTRIBUTIONS_ADD_LABEL = "Add contribution";
 
-export const PORTFOLIO_FUNDING_TITLE = "Portfolio funding";
+export const PORTFOLIO_FUNDING_TITLE = "Money in & out";
 
 export const PORTFOLIO_FUNDING_DESCRIPTION =
-  "Recorded contributions and withdrawals.";
+  "Deposits and withdrawals you have recorded.";
 
 export const PORTFOLIO_FUNDING_EMPTY_COPY =
-  "Record contributions and withdrawals for this portfolio.";
+  "Record deposits and withdrawals for this portfolio.";
 
 export const PORTFOLIO_FUNDING_OPENING_ACTION = "Add opening contribution";

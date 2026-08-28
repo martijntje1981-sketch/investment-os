@@ -72,6 +72,7 @@ function mergeLookupResult(
 
 export async function lookupManualHoldingListing(
   draft: StoredPortfolioHolding,
+  options?: { signal?: AbortSignal },
 ): Promise<ManualListingLookupResult> {
   if (draft.assetType === "cash") {
     return {
@@ -129,6 +130,7 @@ export async function lookupManualHoldingListing(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ holdings: [importRowToMatchInput(seedRow)] }),
+    signal: options?.signal,
   });
 
   const data = (await response.json()) as MatchApiResponse;
