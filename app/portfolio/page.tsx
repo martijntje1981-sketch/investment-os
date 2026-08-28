@@ -583,7 +583,9 @@ export default function PortfolioPage() {
 
   function removeHolding(holding: Holding) {
     if (!window.confirm(`Remove ${holding.name} from your portfolio?`)) return;
-    saveHoldings(holdings.filter((item) => item.id !== holding.id));
+    saveHoldings((current) =>
+      current.filter((item) => item.id !== holding.id),
+    );
   }
 
   return (

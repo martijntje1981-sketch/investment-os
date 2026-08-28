@@ -45,6 +45,10 @@ import {
   summarizePortfolioHoldings,
   validatePortfolioBeforeSave,
 } from "@/lib/services/portfolio/portfolioPersistenceGuard";
+import {
+  omitDeletedHoldings,
+  shouldPreserveLocalOnlyCrypto,
+} from "@/lib/client/portfolioDeletePersistence";
 
 export type ClientPortfolioSyncState =
   | { status: "loading" }
@@ -175,6 +179,8 @@ export function applyRemoteSnapshotToLocalCache(
     sentHoldings?: StoredPortfolioHolding[];
     context?: "hydrate" | "push_response" | "conflict_resolution";
     force?: boolean;
+    deletedIds?: Set<string>;
+    lastHydratedSyncVersion?: number;
   },
 ): StoredPortfolioHolding[] {
   const snapshotPortfolioId = snapshot.portfolioId;
@@ -293,18 +299,38 @@ export function applyRemoteSnapshotToLocalCache(
   });
 
   const remoteIds = new Set(mergedHoldings.map((holding) => holding.id));
-  // Keep local crypto rows that have not yet appeared in a confirmed remote snapshot.
-  const preservedLocalCrypto = localHoldings.filter(
-    (holding) => holding.assetType === "crypto" && !remoteIds.has(holding.id),
-  );
+  const deletedIds = options?.deletedIds ?? new Set<string>();
+  const remoteIsNewerThanLastHydrate =
+    typeof snapshot.syncVersion === "number" &&
+    typeof options?.lastHydratedSyncVersion === "number" &&
+    snapshot.syncVersion > options.lastHydratedSyncVersion;
+  // Keep local crypto rows that have not yet appeared in a confirmed remote
+  // snapshot (unsynced adds). Never reattach ids the user already deleted.
+  const preservedLocalCrypto =
+    shouldPreserveLocalOnlyCrypto({
+      localHoldings,
+      remoteHoldings: snapshot.holdings,
+      deletedIds,
+      remoteIsNewerThanLastHydrate,
+    })
+      ? localHoldings.filter(
+          (holding) =>
+            holding.assetType === "crypto" &&
+            !remoteIds.has(holding.id) &&
+            !deletedIds.has(holding.id),
+        )
+      : [];
 
   const migratedMerged = migrateLegacyCryptoHoldings(mergedHoldings);
   const migratedPreserved = migrateLegacyCryptoHoldings(preservedLocalCrypto);
 
-  const holdings = applyCachedPrices(userSub, [
-    ...migratedMerged.holdings,
-    ...migratedPreserved.holdings,
-  ]);
+  const holdings = omitDeletedHoldings(
+    applyCachedPrices(userSub, [
+      ...migratedMerged.holdings,
+      ...migratedPreserved.holdings,
+    ]),
+    deletedIds,
+  );
 
   const validation = validatePortfolioBeforeSave(holdings);
   if (!validation.ok) {

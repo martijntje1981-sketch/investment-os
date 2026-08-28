@@ -175,6 +175,22 @@ export function shouldApplyRemoteSnapshot(
     options?.context === "hydrate" &&
     local.total > 0 &&
     remote.total > 0 &&
+    local.total < remote.total &&
+    localHoldings.every((holding) =>
+      remoteHoldings.some((row) => row.id === holding.id),
+    )
+  ) {
+    return {
+      apply: false,
+      stale: false,
+      reason: "hydrate_local_deletions",
+    };
+  }
+
+  if (
+    options?.context === "hydrate" &&
+    local.total > 0 &&
+    remote.total > 0 &&
     remoteCoversLocalContent(
       localHoldings,
       remoteHoldings,

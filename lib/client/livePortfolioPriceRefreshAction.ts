@@ -16,6 +16,7 @@ import {
 import type { BaseCurrencyFxStatus } from "@/lib/services/prices/baseCurrencyFxSnapshot";
 import type { PortfolioBaseCurrency } from "@/lib/types/portfolioBaseCurrency";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
+import { applyPricesOntoCurrentHoldings } from "@/lib/client/portfolioDeletePersistence";
 
 export const NO_QUOTABLE_REFRESH_MESSAGE =
   "No holdings are eligible for live pricing yet. Add a matched listing or provider symbol, then refresh again.";
@@ -26,6 +27,7 @@ export type LivePortfolioPriceRefreshActionInput = {
   userSub: string;
   holdings: StoredPortfolioHolding[];
   saveHoldings: (next: StoredPortfolioHolding[]) => void;
+  getCurrentHoldings?: () => StoredPortfolioHolding[];
   baseCurrency: PortfolioBaseCurrency;
   fxStatus: BaseCurrencyFxStatus;
   refreshFx: () => void;
@@ -122,6 +124,7 @@ export async function runLivePortfolioPriceRefreshAction(
     userSub,
     holdings,
     saveHoldings,
+    getCurrentHoldings,
     baseCurrency,
     fxStatus,
     refreshFx,
@@ -160,8 +163,10 @@ export async function runLivePortfolioPriceRefreshAction(
   let nextHoldings = result.holdings;
 
   if (result.updated) {
-    saveHoldings(result.holdings);
-    nextHoldings = result.holdings;
+    const liveHoldings = getCurrentHoldings?.() ?? holdings;
+    const merged = applyPricesOntoCurrentHoldings(liveHoldings, result.holdings);
+    saveHoldings(merged);
+    nextHoldings = merged;
     liveRefreshAt = readLastLivePriceRefreshAt(userSub);
 
     // Keep market-price refresh separate from presentation FX, but recover a

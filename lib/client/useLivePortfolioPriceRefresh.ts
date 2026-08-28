@@ -121,6 +121,7 @@ export function useLivePortfolioPriceRefresh({
         userSub,
         holdings: currentHoldings,
         saveHoldings,
+        getCurrentHoldings: () => holdingsRef.current,
         baseCurrency,
         fxStatus: snapshot.status,
         refreshFx,

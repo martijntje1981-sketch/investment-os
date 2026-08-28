@@ -69,6 +69,23 @@ describe("portfolioPersistenceGuard", () => {
     expect(decision.apply).toBe(true);
   });
 
+  it("does not apply a hydrate snapshot that would restore locally deleted holdings", () => {
+    const local = [
+      holding({ id: "kept", symbol: "ETH", assetType: "crypto" }),
+    ];
+    const remote = [
+      holding({ id: "kept", symbol: "ETH", assetType: "crypto" }),
+      holding({ id: "deleted", symbol: "BTC", assetType: "crypto" }),
+    ];
+
+    const decision = shouldApplyRemoteSnapshot(local, remote, {
+      context: "hydrate",
+    });
+
+    expect(decision.apply).toBe(false);
+    expect(decision.reason).toBe("hydrate_local_deletions");
+  });
+
   it("builds unique save idempotency keys per revision", () => {
     const holdings = [holding({ symbol: "STRC", providerSymbol: "STRC.AS" })];
     const keyA = buildPortfolioSaveIdempotencyKey("user-1", holdings, null, 1);
