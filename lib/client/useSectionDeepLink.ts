@@ -8,8 +8,13 @@ import {
   SECTION_DEEP_LINK_HIGHLIGHT_CLASS,
   SECTION_DEEP_LINK_HIGHLIGHT_MS,
 } from "@/lib/navigation/deepLinks";
-import { ANALYSIS_PATH } from "@/lib/navigation/appRoutes";
+import { ANALYSIS_PATH, NEWS_PATH } from "@/lib/navigation/appRoutes";
 import { resolveAnalysisDetailId } from "@/lib/services/analysisGlance";
+import { resolveNewsDetailId } from "@/lib/services/newsGlance";
+import {
+  installSectionHashNavigation,
+  subscribeSectionHash,
+} from "@/lib/client/sectionHashNavigation";
 
 function prefersReducedMotion(): boolean {
   if (typeof window === "undefined" || !window.matchMedia) {
@@ -33,8 +38,9 @@ export function scrollToSectionHash(options?: {
   }
 
   if (
-    window.location.pathname === ANALYSIS_PATH &&
-    resolveAnalysisDetailId(id)
+    (window.location.pathname === ANALYSIS_PATH &&
+      resolveAnalysisDetailId(id)) ||
+    (window.location.pathname === NEWS_PATH && resolveNewsDetailId(id))
   ) {
     const behavior: ScrollBehavior = prefersReducedMotion() ? "auto" : "smooth";
     window.scrollTo({ top: 0, behavior });
@@ -70,6 +76,7 @@ export function SectionDeepLinkEffect() {
   const pathname = usePathname();
 
   useEffect(() => {
+    installSectionHashNavigation();
     let cancelled = false;
     let attempts = 0;
     const maxAttempts = 12;
@@ -86,16 +93,15 @@ export function SectionDeepLinkEffect() {
     // Defer past first paint / layout.
     const start = window.setTimeout(run, 0);
 
-    const onHashChange = () => {
+    const unsubscribe = subscribeSectionHash(() => {
       attempts = 0;
       run();
-    };
-    window.addEventListener("hashchange", onHashChange);
+    });
 
     return () => {
       cancelled = true;
       window.clearTimeout(start);
-      window.removeEventListener("hashchange", onHashChange);
+      unsubscribe();
     };
   }, [pathname]);
 
