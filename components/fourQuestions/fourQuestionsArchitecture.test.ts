@@ -71,7 +71,7 @@ describe("Four Questions product architecture Phase 1 wiring", () => {
     expect(q4).toContain('fourQuestionHubPath("whats_ahead")');
   });
 
-  it("Analysis keeps engines and exposes Four Questions through Explore", () => {
+  it("Analysis and News keep engines and expose destinations through Explore", () => {
     expect(analysis).toContain("AnalysisDetailView");
     expect(read("components/analysis/glance/AnalysisDetailView.tsx")).toContain(
       "PortfolioPerformanceSection",
@@ -84,11 +84,17 @@ describe("Four Questions product architecture Phase 1 wiring", () => {
     expect(read("components/analysis/glance/AnalysisExploreNav.tsx")).toContain(
       "ANALYSIS_EXPLORE_DESTINATIONS.whatHappened",
     );
+    expect(read("app/news/page.tsx")).not.toContain("AuthenticatedFourQuestionsNav");
+    expect(read("components/news/glance/NewsDetailView.tsx")).toContain(
+      "NewsHubContent",
+    );
+    expect(read("components/news/glance/NewsExploreNav.tsx")).toContain(
+      "NEWS_EXPLORE_DESTINATIONS.marketsToday",
+    );
   });
 
   it("wires compact nav on major authenticated product pages", () => {
     const pages = [
-      "app/news/page.tsx",
       "app/goals/page.tsx",
       "app/portfolio/page.tsx",
       "components/portfolioHistory/PortfolioHistoryPage.tsx",

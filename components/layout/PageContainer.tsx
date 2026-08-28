@@ -4,6 +4,7 @@ import {
   appAnalysisPageCanvasClass,
   appDashboardPageCanvasClass,
   appDashboardPageStackClass,
+  appNewsPageCanvasClass,
   appPageCanvasClass,
   appPageStackClass,
 } from "@/components/layout/appSurface";
@@ -21,16 +22,18 @@ export function PageContainer({
   children: ReactNode;
   className?: string;
   stackClassName?: string;
-  canvas?: "default" | "dashboard" | "analysis";
+  canvas?: "default" | "dashboard" | "analysis" | "news";
 }) {
   const canvasClass =
-    canvas === "analysis"
-      ? appAnalysisPageCanvasClass
-      : canvas === "dashboard"
-        ? appDashboardPageCanvasClass
-        : appPageCanvasClass;
+    canvas === "news"
+      ? appNewsPageCanvasClass
+      : canvas === "analysis"
+        ? appAnalysisPageCanvasClass
+        : canvas === "dashboard"
+          ? appDashboardPageCanvasClass
+          : appPageCanvasClass;
   const stackClass =
-    canvas === "analysis" || canvas === "dashboard"
+    canvas === "analysis" || canvas === "dashboard" || canvas === "news"
       ? appDashboardPageStackClass
       : appPageStackClass;
 

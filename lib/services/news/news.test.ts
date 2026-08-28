@@ -520,7 +520,8 @@ describe("news safety boundaries", () => {
     const newsSource = readFileSync(newsPagePath, "utf8");
 
     expect(analysisSource).toContain("PortfolioAnalysisPage");
-    expect(newsSource).toContain("NewsHubContent");
+    expect(newsSource).toContain("NewsDetailView");
+    expect(newsSource).toContain("buildNewsGlance");
     expect(newsSource).not.toContain("/api/briefing");
   });
 

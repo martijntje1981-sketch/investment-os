@@ -38,6 +38,8 @@ export type NewsMediaFallbackTone =
   | "video"
   | "general";
 
+export type NewsMediaFallbackSurface = "light" | "onDark";
+
 export type NewsMediaFallbackStyle = {
   tone: NewsMediaFallbackTone;
   surfaceClass: string;
@@ -87,6 +89,48 @@ export const NEWS_MEDIA_FALLBACK_TONE_STYLES: Record<
   },
 };
 
+/** Designed on-dark fallback tiles — complete surfaces, never blank media. */
+export const NEWS_MEDIA_FALLBACK_TONE_STYLES_ON_DARK: Record<
+  NewsMediaFallbackTone,
+  Omit<NewsMediaFallbackStyle, "tone">
+> = {
+  macro: {
+    surfaceClass: "bg-violet-500/15",
+    borderClass: "border border-violet-400/30",
+    iconClass: "text-violet-300",
+  },
+  portfolio: {
+    surfaceClass: "bg-sky-500/15",
+    borderClass: "border border-sky-400/30",
+    iconClass: "text-sky-300",
+  },
+  markets: {
+    surfaceClass: "bg-sky-500/12",
+    borderClass: "border border-sky-400/25",
+    iconClass: "text-sky-200",
+  },
+  crypto: {
+    surfaceClass: "bg-amber-500/15",
+    borderClass: "border border-amber-400/30",
+    iconClass: "text-amber-300",
+  },
+  commodities: {
+    surfaceClass: "bg-yellow-500/12",
+    borderClass: "border border-yellow-400/30",
+    iconClass: "text-yellow-200",
+  },
+  video: {
+    surfaceClass: "bg-white/[0.08]",
+    borderClass: "border border-white/15",
+    iconClass: "text-white/70",
+  },
+  general: {
+    surfaceClass: "bg-white/[0.06]",
+    borderClass: "border border-white/12",
+    iconClass: "text-white/55",
+  },
+};
+
 export const NEWS_MEDIA_FALLBACK_CATEGORY_TONES: Record<
   NewsMediaFallbackCategory,
   NewsMediaFallbackTone
@@ -124,11 +168,16 @@ export function getNewsMediaFallbackTone(
 
 export function getNewsMediaFallbackStyle(
   category: NewsMediaFallbackCategory,
+  surface: NewsMediaFallbackSurface = "light",
 ): NewsMediaFallbackStyle {
   const tone = getNewsMediaFallbackTone(category);
+  const styles =
+    surface === "onDark"
+      ? NEWS_MEDIA_FALLBACK_TONE_STYLES_ON_DARK[tone]
+      : NEWS_MEDIA_FALLBACK_TONE_STYLES[tone];
   return {
     tone,
-    ...NEWS_MEDIA_FALLBACK_TONE_STYLES[tone],
+    ...styles,
   };
 }
 

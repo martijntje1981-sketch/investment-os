@@ -43,8 +43,10 @@ describe("news hub UI structure", () => {
     expect(hubSource).not.toContain("PortfolioNewsPreview");
     expect(newsPage).not.toContain("BottomNavigation");
     expect(newsPage).toContain("PageContainer");
-    expect(newsPage).toContain("PageHero");
-    expect(newsPage).toContain('title="News"');
+    expect(newsPage).toContain("NewsIntro");
+    expect(newsPage).toContain('canvas="news"');
+    expect(newsPage).not.toContain("PageHero");
+    expect(newsPage).not.toContain('title="News"');
   });
 
   it("uses a premium light portfolio intelligence card with readable headings", () => {
@@ -131,7 +133,7 @@ describe("news safety boundaries", () => {
       "utf8",
     );
 
-    expect(newsPage).toContain("NewsHubContent");
+    expect(newsPage).toContain("NewsDetailView");
     expect(newsPage).not.toContain("AnalysisIntro");
     expect(analysisPage).toContain("AnalysisIntro");
   });

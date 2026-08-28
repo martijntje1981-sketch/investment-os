@@ -24,6 +24,12 @@ export const appDashboardPageCanvasClass =
 export const appAnalysisPageCanvasClass =
   "min-h-screen w-full max-w-full overflow-x-clip bg-navy-hero-deep px-3 pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] pt-[calc(4rem+env(safe-area-inset-top,0px))] text-white sm:px-6 sm:pb-28 sm:pt-[5.25rem] [[data-example-banner=true]_&]:pt-[calc(5.75rem+env(safe-area-inset-top,0px))] sm:[[data-example-banner=true]_&]:pt-[7rem] scroll-pt-[calc(4rem+env(safe-area-inset-top,0px))] sm:scroll-pt-[5.25rem]";
 
+/**
+ * News navy canvas — same family and clearance as Analysis.
+ * Do not reuse this token to restyle Dashboard or Analysis.
+ */
+export const appNewsPageCanvasClass = appAnalysisPageCanvasClass;
+
 /** Inner content column. */
 export const appPageStackClass =
   "mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-6 md:gap-8";

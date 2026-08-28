@@ -66,7 +66,7 @@ describe("Pre-launch light hero contrast and action alignment", () => {
       /actions=\{\s*<div className="flex flex-wrap gap-2">/,
     );
     expect(portfolio).toContain("<>");
-    expect(news).toContain("backToDashboard");
+    expect(analysis).not.toContain("backToDashboard");
   });
 
   it("many hero actions cannot collapse PageHero content", () => {
@@ -89,6 +89,8 @@ describe("Pre-launch light hero contrast and action alignment", () => {
     expect(goals).toContain("<PageHero");
     expect(analysis).not.toContain("<PageHero");
     expect(analysis).toContain("AnalysisIntro");
+    expect(news).not.toContain("<PageHero");
+    expect(news).toContain("NewsIntro");
     expect(goals).toContain("backToDashboard");
   });
 

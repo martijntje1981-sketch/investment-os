@@ -7,6 +7,7 @@ import {
   getNewsMediaFallbackIcon,
   getNewsMediaFallbackStyle,
   type NewsMediaFallbackCategory,
+  type NewsMediaFallbackSurface,
 } from "@/components/news/newsMediaFallback";
 import { selectStoredNewsThumbnail, selectTrustedNewsThumbnailFromUrl } from "@/lib/services/news/newsThumbnail";
 import type { NewsSourceType } from "@/lib/types/newsContent";
@@ -31,6 +32,7 @@ export function NewsMediaThumbnail({
   alt = "",
   priority = false,
   allowProviderStoredUrl = false,
+  surface = "light",
 }: {
   thumbnailUrl?: string | null;
   sourceType?: NewsSourceType;
@@ -41,6 +43,7 @@ export function NewsMediaThumbnail({
   priority?: boolean;
   /** Use a thumbnail already stored on the fetched item (HTTPS, not the article URL). */
   allowProviderStoredUrl?: boolean;
+  surface?: NewsMediaFallbackSurface;
 }) {
   const trustedUrl = allowProviderStoredUrl
     ? selectStoredNewsThumbnail({ thumbnailUrl, sourceType })
@@ -49,11 +52,12 @@ export function NewsMediaThumbnail({
   const [loaded, setLoaded] = useState(false);
   const showImage = Boolean(trustedUrl) && !failed;
   const FallbackIcon = getNewsMediaFallbackIcon(fallbackCategory);
-  const fallbackStyle = getNewsMediaFallbackStyle(fallbackCategory);
+  const fallbackStyle = getNewsMediaFallbackStyle(fallbackCategory, surface);
   const sizeClass =
     size === "editorial" && !showImage
       ? SIZE_CLASSES.compact
       : SIZE_CLASSES[size];
+  const placeholderClass = surface === "onDark" ? "bg-white/10" : "bg-slate-100";
 
   return (
     <div
@@ -61,15 +65,16 @@ export function NewsMediaThumbnail({
         size === "square" ? "rounded-xl" : "rounded-lg"
       } ${
         showImage
-          ? "bg-slate-100"
+          ? placeholderClass
           : `${fallbackStyle.surfaceClass} ${fallbackStyle.borderClass}`
       } ${sizeClass}`}
+      data-news-media={showImage ? "thumbnail" : "fallback"}
     >
       {showImage ? (
         <>
           {!loaded ? (
             <div
-              className="absolute inset-0 bg-slate-100 motion-reduce:animate-none"
+              className={`absolute inset-0 ${placeholderClass} motion-reduce:animate-none`}
               aria-hidden
             />
           ) : null}

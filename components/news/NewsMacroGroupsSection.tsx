@@ -13,7 +13,11 @@ export function NewsMacroGroupsSection({
   groups: MacroTopicGroup[];
 }) {
   return (
-    <section aria-labelledby="news-macro-heading" className="min-w-0 space-y-4">
+    <section
+      id="news-macro"
+      aria-labelledby="news-macro-heading"
+      className="min-w-0 scroll-mt-24 space-y-4"
+    >
       <div>
         <h2 id="news-macro-heading" className={appSectionTitleClass}>
           Macro

@@ -182,7 +182,10 @@ export function NewsHubContent({
         <NewsMarketsTodaySection regions={briefing.marketsToday} />
       ) : null}
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div
+        id="news-search"
+        className="flex flex-wrap items-center justify-between gap-3"
+      >
         <NewsSearchBar
           query={searchQuery}
           scopeFilter={searchScope}

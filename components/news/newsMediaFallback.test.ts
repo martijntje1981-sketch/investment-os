@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   NEWS_MEDIA_FALLBACK_CATEGORY_TONES,
   NEWS_MEDIA_FALLBACK_TONE_STYLES,
+  NEWS_MEDIA_FALLBACK_TONE_STYLES_ON_DARK,
   getNewsMediaFallbackStyle,
   getNewsMediaFallbackTone,
   resolveNewsMediaFallbackCategory,
@@ -55,6 +56,19 @@ describe("newsMediaFallback styles", () => {
     expect(getNewsMediaFallbackStyle("commodities").surfaceClass).toContain("bg-orange-50");
     expect(getNewsMediaFallbackStyle("video").surfaceClass).toContain("bg-red-50");
     expect(getNewsMediaFallbackStyle("general").surfaceClass).toContain("bg-slate-100");
+  });
+
+  it("uses designed on-dark fallback tiles instead of blank media", () => {
+    const dark = getNewsMediaFallbackStyle("portfolio", "onDark");
+    expect(dark.surfaceClass).toContain("bg-sky-500/15");
+    expect(dark.borderClass).toContain("border");
+    expect(dark.iconClass).toContain("sky");
+    expect(NEWS_MEDIA_FALLBACK_TONE_STYLES_ON_DARK.macro.surfaceClass).toContain(
+      "violet",
+    );
+    expect(NEWS_MEDIA_FALLBACK_TONE_STYLES_ON_DARK.crypto.surfaceClass).toContain(
+      "amber",
+    );
   });
 
   it("covers every fallback category with a shared tone mapping", () => {
