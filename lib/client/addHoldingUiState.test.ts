@@ -68,6 +68,18 @@ describe("Add Holding UI phase contract", () => {
     expect(canSubmitAddInvestmentHolding(phase)).toBe(false);
   });
 
+  it("searching wins over a stale confirmed listing while the new query resolves", () => {
+    const phase = resolveAddHoldingUiPhase({
+      listingSelected: true,
+      listingLookupPending: true,
+      candidateCount: 1,
+      searchActive: true,
+    });
+    expect(phase).toBe("searching");
+    expect(shouldShowAddHoldingEntryFields(phase)).toBe(false);
+    expect(canSubmitAddInvestmentHolding(phase)).toBe(false);
+  });
+
   it("idle empty search does not show Quantity/Cost/Add", () => {
     const phase = resolveAddHoldingUiPhase({
       listingSelected: false,

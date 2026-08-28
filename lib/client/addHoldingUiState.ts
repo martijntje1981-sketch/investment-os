@@ -19,8 +19,8 @@ export function resolveAddHoldingUiPhase(input: {
   searchActive: boolean;
   lookupUnavailable?: boolean;
 }): AddHoldingUiPhase {
-  if (input.listingSelected) return "resolved";
   if (input.listingLookupPending) return "searching";
+  if (input.listingSelected) return "resolved";
   if (input.candidateCount > 0) return "ambiguous";
   if (input.searchActive || input.lookupUnavailable) return "unresolved";
   return "idle";

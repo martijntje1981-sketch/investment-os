@@ -12,6 +12,7 @@ import {
   LISTING_LOOKUP_UNAVAILABLE_MESSAGE,
   UNIDENTIFIED_LISTING_MESSAGE,
 } from "@/lib/content/holdingIdentifierHelp";
+import { applyAddHoldingAdvancedQueryChange } from "@/lib/client/addHoldingSearchInvalidation";
 import { shouldTriggerManualListingAutoLookup } from "@/lib/client/manualHoldingAutoLookup";
 import {
   resolveAddHoldingUiPhase,
@@ -42,6 +43,8 @@ export function AddInvestmentHoldingForm({
   baseCurrency,
   isEditing = false,
   onDraftChange,
+  onSearchQueryChange,
+  onIdentityQueryChange,
   onSelectListing,
   onLookupListing,
   onRetryFx,
@@ -59,6 +62,8 @@ export function AddInvestmentHoldingForm({
   baseCurrency: PortfolioBaseCurrency;
   isEditing?: boolean;
   onDraftChange: (next: StoredPortfolioHolding) => void;
+  onSearchQueryChange: (nextSymbol: string) => void;
+  onIdentityQueryChange: (next: StoredPortfolioHolding) => void;
   onSelectListing: (candidate: ResolvedInstrument) => void;
   onLookupListing: () => void;
   onRetryFx: () => void;
@@ -105,11 +110,7 @@ export function AddInvestmentHoldingForm({
             autoCorrect="off"
             spellCheck={false}
             onChange={(event) => {
-              onDraftChange({
-                ...draft,
-                symbol: event.target.value,
-                providerSymbol: null,
-              });
+              onSearchQueryChange(event.target.value);
             }}
             onKeyDown={(event) => {
               if (event.key === "Enter") {
@@ -196,7 +197,9 @@ export function AddInvestmentHoldingForm({
         />
       ) : null}
 
-      {listingSelected ? <ConfirmedListingIdentity holding={draft} /> : null}
+      {uiPhase === "resolved" ? (
+        <ConfirmedListingIdentity holding={draft} />
+      ) : null}
 
       {showQuantity ? (
         <div data-testid="add-holding-entry-fields">
@@ -252,11 +255,11 @@ export function AddInvestmentHoldingForm({
               required={false}
               value={draft.isin ?? ""}
               onChange={(value) => {
-                onDraftChange({
-                  ...draft,
-                  isin: value || null,
-                  providerSymbol: null,
-                });
+                onIdentityQueryChange(
+                  applyAddHoldingAdvancedQueryChange(draft, {
+                    isin: value || null,
+                  }),
+                );
               }}
             />
             <Field
@@ -264,11 +267,11 @@ export function AddInvestmentHoldingForm({
               required={false}
               value={draft.name}
               onChange={(value) => {
-                onDraftChange({
-                  ...draft,
-                  name: value,
-                  providerSymbol: null,
-                });
+                onIdentityQueryChange(
+                  applyAddHoldingAdvancedQueryChange(draft, {
+                    name: value,
+                  }),
+                );
               }}
             />
             <ExchangeFieldEditor
@@ -276,11 +279,11 @@ export function AddInvestmentHoldingForm({
               providerSymbol={draft.providerSymbol}
               allowFreeText
               onCommit={(exchangeCode) => {
-                onDraftChange({
-                  ...draft,
-                  exchange: exchangeCode,
-                  providerSymbol: null,
-                });
+                onIdentityQueryChange(
+                  applyAddHoldingAdvancedQueryChange(draft, {
+                    exchange: exchangeCode,
+                  }),
+                );
               }}
             />
             <Field

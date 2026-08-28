@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 import { LISTING_LOOKUP_UNAVAILABLE_MESSAGE } from "@/lib/content/holdingIdentifierHelp";
@@ -27,6 +27,16 @@ import { PortfolioGlance } from "@/components/portfolio/glance/PortfolioGlance";
 import { PortfolioHoldingsList } from "@/components/portfolio/glance/PortfolioHoldingsList";
 import { PortfolioActivity } from "@/components/portfolio/glance/PortfolioActivity";
 import { PortfolioExploreNav } from "@/components/portfolio/glance/PortfolioExploreNav";
+import {
+  addHoldingSearchQueryKey,
+  applyAddHoldingSearchInputChange,
+  canSaveAddHoldingListing,
+  captureAddHoldingSearchBinding,
+  searchQueryChangedMeaningfully,
+  shouldApplyListingLookupResult,
+  STALE_LISTING_SAVE_MESSAGE,
+  type AddHoldingSearchBinding,
+} from "@/lib/client/addHoldingSearchInvalidation";
 import {
   MANUAL_HOLDING_AUTO_LOOKUP_DEBOUNCE_MS,
   resolveAutoListingDecision,
@@ -165,6 +175,32 @@ export default function PortfolioPage() {
   const [listingLookupPending, setListingLookupPending] = useState(false);
   const [lookupUnavailable, setLookupUnavailable] = useState(false);
   const [editorError, setEditorError] = useState<string | null>(null);
+  const listingLookupGenerationRef = useRef(0);
+  const listingLookupAbortRef = useRef<AbortController | null>(null);
+  const userSearchQueryKeyRef = useRef("");
+  const boundListingQueryRef = useRef<AddHoldingSearchBinding | null>(null);
+
+  const invalidateListingQuery = useCallback((nextDraft: Holding) => {
+    listingLookupGenerationRef.current += 1;
+    listingLookupAbortRef.current?.abort();
+    listingLookupAbortRef.current = null;
+    userSearchQueryKeyRef.current = addHoldingSearchQueryKey(nextDraft);
+    boundListingQueryRef.current = null;
+    setDraft(nextDraft);
+    setListingCandidates([]);
+    setListingWarnings([]);
+    setLookupUnavailable(false);
+    setEditorError(null);
+    setListingLookupPending(
+      shouldTriggerManualListingAutoLookup({
+        assetType: nextDraft.assetType,
+        symbol: nextDraft.symbol,
+        name: nextDraft.name,
+        isin: nextDraft.isin,
+        providerSymbol: null,
+      }),
+    );
+  }, []);
 
   const portfolioAnalysis = useMemo(
     () => buildPortfolioAnalysis(holdings),
@@ -283,7 +319,11 @@ export default function PortfolioPage() {
     }
 
     const controller = new AbortController();
+    listingLookupAbortRef.current = controller;
     const draftSnapshot = draft;
+    const requestGeneration = listingLookupGenerationRef.current;
+    const requestQueryKey = addHoldingSearchQueryKey(draftSnapshot);
+    userSearchQueryKeyRef.current = requestQueryKey;
     setListingLookupPending(true);
     const timer = window.setTimeout(() => {
       void (async () => {
@@ -292,13 +332,30 @@ export default function PortfolioPage() {
           const result = await lookupManualHoldingListing(draftSnapshot, {
             signal: controller.signal,
           });
-          if (controller.signal.aborted) return;
+          if (
+            !shouldApplyListingLookupResult({
+              aborted: controller.signal.aborted,
+              requestGeneration,
+              currentGeneration: listingLookupGenerationRef.current,
+              requestQueryKey,
+              currentQueryKey: userSearchQueryKeyRef.current,
+            })
+          ) {
+            return;
+          }
           const decision = resolveAutoListingDecision(
             result,
             draftSnapshot.isin,
           );
           if (decision.kind === "preselect") {
+            boundListingQueryRef.current =
+              captureAddHoldingSearchBinding(draftSnapshot);
             setDraft(decision.holding);
+          } else {
+            boundListingQueryRef.current = null;
+            if (decision.kind === "choose") {
+              setDraft(decision.holding);
+            }
           }
           setListingCandidates(decision.candidates);
           setListingWarnings(decision.warnings);
@@ -308,10 +365,29 @@ export default function PortfolioPage() {
             return;
           }
           if (controller.signal.aborted) return;
+          if (
+            !shouldApplyListingLookupResult({
+              aborted: false,
+              requestGeneration,
+              currentGeneration: listingLookupGenerationRef.current,
+              requestQueryKey,
+              currentQueryKey: userSearchQueryKeyRef.current,
+            })
+          ) {
+            return;
+          }
           setLookupUnavailable(true);
           setListingWarnings([LISTING_LOOKUP_UNAVAILABLE_MESSAGE]);
         } finally {
-          if (!controller.signal.aborted) {
+          if (
+            shouldApplyListingLookupResult({
+              aborted: controller.signal.aborted,
+              requestGeneration,
+              currentGeneration: listingLookupGenerationRef.current,
+              requestQueryKey,
+              currentQueryKey: userSearchQueryKeyRef.current,
+            })
+          ) {
             setListingLookupPending(false);
           }
         }
@@ -323,6 +399,7 @@ export default function PortfolioPage() {
       controller.abort();
     };
     // Identity fields only — quantity/price edits must not retrigger listing search.
+    // providerSymbol is omitted so applying a listing does not restart discovery.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     portfolioReady,
@@ -332,7 +409,6 @@ export default function PortfolioPage() {
     draft.name,
     draft.isin,
     draft.exchange,
-    draft.providerSymbol,
   ]);
 
   if (!portfolioReady) {
@@ -340,6 +416,10 @@ export default function PortfolioPage() {
   }
 
   function resetListingState() {
+    listingLookupAbortRef.current?.abort();
+    listingLookupAbortRef.current = null;
+    listingLookupGenerationRef.current += 1;
+    boundListingQueryRef.current = null;
     setListingCandidates([]);
     setListingWarnings([]);
     setListingLookupPending(false);
@@ -410,14 +490,39 @@ export default function PortfolioPage() {
   async function lookupListing() {
     if (draft.assetType === "cash") return;
 
+    listingLookupAbortRef.current?.abort();
+    listingLookupGenerationRef.current += 1;
+    const controller = new AbortController();
+    listingLookupAbortRef.current = controller;
+    const requestGeneration = listingLookupGenerationRef.current;
+    const requestQueryKey = addHoldingSearchQueryKey(draft);
+    userSearchQueryKeyRef.current = requestQueryKey;
     setListingLookupPending(true);
     setEditorError(null);
     setListingWarnings([]);
     setLookupUnavailable(false);
 
     try {
-      const result = await lookupManualHoldingListing(draft);
+      const result = await lookupManualHoldingListing(draft, {
+        signal: controller.signal,
+      });
+      if (
+        !shouldApplyListingLookupResult({
+          aborted: controller.signal.aborted,
+          requestGeneration,
+          currentGeneration: listingLookupGenerationRef.current,
+          requestQueryKey,
+          currentQueryKey: userSearchQueryKeyRef.current,
+        })
+      ) {
+        return;
+      }
       const decision = resolveAutoListingDecision(result, draft.isin);
+      if (decision.kind === "preselect") {
+        boundListingQueryRef.current = captureAddHoldingSearchBinding(draft);
+      } else {
+        boundListingQueryRef.current = null;
+      }
       setDraft(decision.holding);
       setListingCandidates(decision.candidates);
       setListingWarnings(decision.warnings);
@@ -427,15 +532,49 @@ export default function PortfolioPage() {
         setEditorError(null);
       }
     } catch {
+      if (
+        !shouldApplyListingLookupResult({
+          aborted: false,
+          requestGeneration,
+          currentGeneration: listingLookupGenerationRef.current,
+          requestQueryKey,
+          currentQueryKey: userSearchQueryKeyRef.current,
+        })
+      ) {
+        return;
+      }
       setLookupUnavailable(true);
       setListingWarnings([LISTING_LOOKUP_UNAVAILABLE_MESSAGE]);
       setEditorError(null);
     } finally {
-      setListingLookupPending(false);
+      if (
+        shouldApplyListingLookupResult({
+          aborted: false,
+          requestGeneration,
+          currentGeneration: listingLookupGenerationRef.current,
+          requestQueryKey,
+          currentQueryKey: userSearchQueryKeyRef.current,
+        })
+      ) {
+        setListingLookupPending(false);
+      }
     }
   }
 
+  function handleSearchQueryChange(nextSymbol: string) {
+    if (!searchQueryChangedMeaningfully(draft.symbol, nextSymbol)) {
+      setDraft({ ...draft, symbol: nextSymbol });
+      return;
+    }
+    invalidateListingQuery(applyAddHoldingSearchInputChange(draft, nextSymbol));
+  }
+
+  function handleIdentityQueryChange(nextDraft: Holding) {
+    invalidateListingQuery(nextDraft);
+  }
+
   function selectListing(candidate: ResolvedInstrument) {
+    boundListingQueryRef.current = captureAddHoldingSearchBinding(draft);
     const next = applyManualListingSelection(draft, candidate);
     setDraft(next);
     setEditorError(null);
@@ -446,12 +585,20 @@ export default function PortfolioPage() {
     event.preventDefault();
 
     const isEditingHolding = holdings.some((item) => item.id === draft.id);
-    if (
-      draft.assetType !== "cash" &&
-      !isEditingHolding &&
-      !draft.providerSymbol?.trim()
-    ) {
-      return;
+    if (draft.assetType !== "cash" && !isEditingHolding) {
+      if (
+        !canSaveAddHoldingListing({
+          providerSymbol: draft.providerSymbol,
+          searchSymbol: draft.symbol,
+          listingIsin: draft.isin,
+          boundQuery: boundListingQueryRef.current,
+        })
+      ) {
+        if (draft.providerSymbol?.trim()) {
+          setEditorError(STALE_LISTING_SAVE_MESSAGE);
+        }
+        return;
+      }
     }
 
     const sessionSnapshot = editorSessionRef.current ?? snapshot;
@@ -802,6 +949,8 @@ export default function PortfolioPage() {
                   baseCurrency={baseCurrency}
                   isEditing={holdings.some((item) => item.id === draft.id)}
                   onDraftChange={setDraft}
+                  onSearchQueryChange={handleSearchQueryChange}
+                  onIdentityQueryChange={handleIdentityQueryChange}
                   onSelectListing={selectListing}
                   onLookupListing={() => void lookupListing()}
                   onRetryFx={() => {
@@ -838,7 +987,12 @@ export default function PortfolioPage() {
             <div className="shrink-0 border-t border-slate-100 bg-white p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-6">
               {draft.assetType === "cash" ||
               holdings.some((item) => item.id === draft.id) ||
-              Boolean(draft.providerSymbol?.trim()) ? (
+              canSaveAddHoldingListing({
+                providerSymbol: draft.providerSymbol,
+                searchSymbol: draft.symbol,
+                listingIsin: draft.isin,
+                boundQuery: boundListingQueryRef.current,
+              }) ? (
                 <button
                   type="submit"
                   data-testid="add-holding-submit"

@@ -57,8 +57,18 @@ describe("Add Holding simplification", () => {
   it("B/C. Quantity/Cost/Add are not actionable until a listing is resolved", () => {
     expect(form).toContain("shouldShowAddHoldingEntryFields(uiPhase) || isEditing");
     expect(page).toContain('data-testid="add-holding-submit"');
-    expect(page).toContain("!draft.providerSymbol?.trim()");
-    expect(page).toContain("Boolean(draft.providerSymbol?.trim())");
+    expect(page).toContain("canSaveAddHoldingListing");
+  });
+
+  it("clears listing identity immediately when Search changes and ignores stale responses", () => {
+    expect(form).toContain("onSearchQueryChange");
+    expect(form).toContain("applyAddHoldingAdvancedQueryChange");
+    expect(page).toContain("applyAddHoldingSearchInputChange");
+    expect(page).toContain("shouldApplyListingLookupResult");
+    expect(page).toContain("listingLookupAbortRef");
+    expect(page).toContain("listingLookupGenerationRef");
+    expect(page).toContain("userSearchQueryKeyRef");
+    expect(page).toContain("boundListingQueryRef");
   });
 
   it("F. advanced search collapses back to the compact resolved state", () => {
@@ -71,7 +81,9 @@ describe("Add Holding simplification", () => {
     expect(form).not.toMatch(/\bHSBA\b/);
     expect(page).not.toMatch(/\bHSBA\b/);
     const uiState = read("lib/client/addHoldingUiState.ts");
+    const invalidation = read("lib/client/addHoldingSearchInvalidation.ts");
     expect(uiState).not.toMatch(/\bHSBA\b|\bMSFT\b/);
+    expect(invalidation).not.toMatch(/\bHSBA\b|\bMSFT\b|\bHSBC\b/);
   });
 
   it("A. missing quote currency is labeled unavailable, not unidentified", () => {
@@ -92,8 +104,11 @@ describe("Add Holding simplification", () => {
     expect(autoLookup).not.toContain("saveHoldings");
     expect(form).not.toContain("saveHoldings");
     const uiState = read("lib/client/addHoldingUiState.ts");
+    const invalidation = read("lib/client/addHoldingSearchInvalidation.ts");
     expect(uiState).not.toContain("saveHoldings");
     expect(uiState).not.toContain("writePortfolioToStorage");
+    expect(invalidation).not.toContain("saveHoldings");
+    expect(invalidation).not.toContain("writePortfolioToStorage");
   });
 
   it("does not redesign Glance, Holdings, Activity, or Explore", () => {
