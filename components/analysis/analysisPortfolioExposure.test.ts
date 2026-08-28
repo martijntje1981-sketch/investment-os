@@ -30,6 +30,10 @@ const analysisPageSource = readFileSync(
   path.resolve(process.cwd(), "components/analysis/PortfolioAnalysisPage.tsx"),
   "utf8",
 );
+const analysisDetailSource = readFileSync(
+  path.resolve(process.cwd(), "components/analysis/glance/AnalysisDetailView.tsx"),
+  "utf8",
+);
 const exposureSectionSource = readFileSync(
   path.resolve(
     process.cwd(),
@@ -46,56 +50,56 @@ const dashboardCardSource = readFileSync(
 );
 
 describe("Analysis portfolio exposure section", () => {
-  it("places Portfolio Performance first, then Top performers, then Exposure, then Scenario stress", () => {
-    const performanceIdx = analysisPageSource.indexOf(
+  it("keeps Performance, Top performers, Exposure, and Scenario stress reachable once each", () => {
+    const performanceIdx = analysisDetailSource.indexOf(
       "<PortfolioPerformanceSection",
     );
-    const topPerformersIdx = analysisPageSource.indexOf(
+    const topPerformersIdx = analysisDetailSource.indexOf(
       "<TopPerformersByCategorySection",
     );
-    const exposureIdx = analysisPageSource.indexOf("<PortfolioExposureSection");
-    const scenarioIdx = analysisPageSource.indexOf("<ScenarioStressSection");
+    const exposureIdx = analysisDetailSource.indexOf("<PortfolioExposureSection");
+    const scenarioIdx = analysisDetailSource.indexOf("<ScenarioStressSection");
 
     expect(performanceIdx).toBeGreaterThan(-1);
     expect(topPerformersIdx).toBeGreaterThan(performanceIdx);
-    expect(exposureIdx).toBeGreaterThan(topPerformersIdx);
-    expect(scenarioIdx).toBeGreaterThan(exposureIdx);
+    expect(exposureIdx).toBeGreaterThan(-1);
+    expect(scenarioIdx).toBeGreaterThan(-1);
 
-    expect(analysisPageSource).not.toContain('label="Total portfolio value"');
-    expect(analysisPageSource).not.toContain("Portfolio composition");
-    expect(analysisPageSource).not.toContain(
+    expect(analysisDetailSource).not.toContain('label="Total portfolio value"');
+    expect(analysisDetailSource).not.toContain("Portfolio composition");
+    expect(analysisDetailSource).not.toContain(
       'className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.4fr)]"',
     );
 
     const performanceCount = (
-      analysisPageSource.match(/<PortfolioPerformanceSection/g) ?? []
+      analysisDetailSource.match(/<PortfolioPerformanceSection/g) ?? []
     ).length;
     const topPerformersCount = (
-      analysisPageSource.match(/<TopPerformersByCategorySection/g) ?? []
+      analysisDetailSource.match(/<TopPerformersByCategorySection/g) ?? []
     ).length;
     const exposureCount = (
-      analysisPageSource.match(/<PortfolioExposureSection/g) ?? []
+      analysisDetailSource.match(/<PortfolioExposureSection/g) ?? []
     ).length;
     const scenarioCount = (
-      analysisPageSource.match(/<ScenarioStressSection/g) ?? []
+      analysisDetailSource.match(/<ScenarioStressSection/g) ?? []
     ).length;
     expect(performanceCount).toBe(1);
     expect(topPerformersCount).toBe(1);
     expect(exposureCount).toBe(1);
     expect(scenarioCount).toBe(1);
 
-    expect(analysisPageSource).toContain("<ScenarioStressSection");
-    expect(analysisPageSource).toContain("goal={goal}");
-    expect(analysisPageSource).toContain("hasSavedGoal={hasSavedGoal}");
+    expect(analysisDetailSource).toContain("<ScenarioStressSection");
+    expect(analysisDetailSource).toContain("goal={goal}");
+    expect(analysisDetailSource).toContain("hasSavedGoal={hasSavedGoal}");
     expect(analysisPageSource).toContain("useUserGoal");
-    expect(analysisPageSource).toContain("compositionMeta={{");
+    expect(analysisDetailSource).toContain("compositionMeta={{");
   });
 
   it("renders the portfolio-exposure section with shared allocation wiring", () => {
     expect(analysisPageSource).toContain("buildPortfolioExposureAllocation");
-    expect(analysisPageSource).toContain("<PortfolioExposureSection");
-    expect(analysisPageSource).toContain("allocation={exposureAllocation}");
-    expect(analysisPageSource).toContain(
+    expect(analysisDetailSource).toContain("<PortfolioExposureSection");
+    expect(analysisDetailSource).toContain("allocation={exposureAllocation}");
+    expect(analysisDetailSource).toContain(
       'showSubgroups={productAccess.intelligenceDepth === "complete"}',
     );
     expect(exposureSectionSource).toContain('id="portfolio-exposure"');
@@ -228,10 +232,10 @@ describe("Analysis portfolio exposure section", () => {
       '<ConversionDetailsDisclosure compactTrigger tone="dark" />',
     );
 
-    expect(analysisPageSource).toContain("analysis.investmentCount");
-    expect(analysisPageSource).toContain("analysis.cashCurrencyCount");
-    expect(analysisPageSource).toContain("analysis.largestPosition");
-    expect(analysisPageSource).toContain("compositionMeta={{");
+    expect(analysisDetailSource).toContain("analysis.investmentCount");
+    expect(analysisDetailSource).toContain("analysis.cashCurrencyCount");
+    expect(analysisDetailSource).toContain("analysis.largestPosition");
+    expect(analysisDetailSource).toContain("compositionMeta={{");
 
     const conversionSource = readFileSync(
       path.resolve(

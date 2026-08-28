@@ -12,7 +12,7 @@ function read(relativePath: string) {
 
 describe("Portfolio X-Ray UI", () => {
   it("wires X-Ray into Analysis without a giant default table", () => {
-    const page = read("components/analysis/PortfolioAnalysisPage.tsx");
+    const page = read("components/analysis/glance/AnalysisDetailView.tsx");
     const section = read("components/analysis/PortfolioXRaySection.tsx");
     const links = read("lib/navigation/deepLinks.ts");
 

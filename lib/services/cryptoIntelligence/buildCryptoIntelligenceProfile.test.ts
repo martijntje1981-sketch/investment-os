@@ -182,7 +182,7 @@ describe("Crypto Intelligence Analysis wiring", () => {
     const analysis = readFileSync(
       path.resolve(
         process.cwd(),
-        "components/analysis/PortfolioAnalysisPage.tsx",
+        "components/analysis/glance/AnalysisDetailView.tsx",
       ),
       "utf8",
     );

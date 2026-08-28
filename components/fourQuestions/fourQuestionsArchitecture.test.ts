@@ -72,12 +72,17 @@ describe("Four Questions product architecture Phase 1 wiring", () => {
   });
 
   it("Analysis keeps engines and exposes Four Questions through Explore", () => {
-    expect(analysis).toContain("PortfolioPerformanceSection");
-    expect(analysis).toContain("ScenarioStressSection");
+    expect(analysis).toContain("AnalysisDetailView");
+    expect(read("components/analysis/glance/AnalysisDetailView.tsx")).toContain(
+      "PortfolioPerformanceSection",
+    );
+    expect(read("components/analysis/glance/AnalysisDetailView.tsx")).toContain(
+      "ScenarioStressSection",
+    );
     expect(analysis).not.toContain("AuthenticatedFourQuestionsNav");
     expect(analysis).not.toContain("AnalysisFourQuestionsNav");
     expect(read("components/analysis/glance/AnalysisExploreNav.tsx")).toContain(
-      "WHAT_HAPPENED_HUB_PATH",
+      "ANALYSIS_EXPLORE_DESTINATIONS.whatHappened",
     );
   });
 

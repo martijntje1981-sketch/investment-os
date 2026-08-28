@@ -124,7 +124,7 @@ describe("Phase 14 bonds and rates intelligence", () => {
     expect(read("components/analysis/BondsRatesSection.tsx")).toContain(
       "Fixed Income",
     );
-    expect(read("components/analysis/PortfolioAnalysisPage.tsx")).toContain(
+    expect(read("components/analysis/glance/AnalysisDetailView.tsx")).toContain(
       "<BondsRatesSection",
     );
   });

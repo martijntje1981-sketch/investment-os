@@ -75,7 +75,7 @@ describe("Dashboard deep links", () => {
     expect(read("components/analysis/BondsRatesSection.tsx")).toContain(
       `id={BONDS_RATES_SECTION_ID}`,
     );
-    expect(read("components/analysis/PortfolioAnalysisPage.tsx")).toContain(
+    expect(read("components/analysis/PortfolioAllocationSection.tsx")).toContain(
       `id="${SECTION_IDS.portfolioAllocation}"`,
     );
     expect(

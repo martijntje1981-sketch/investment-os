@@ -11,6 +11,7 @@ import { resolvePortfolioValuationCoverage } from "@/lib/client/portfolioValuati
 import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 import { buildAnalysisAttention } from "@/lib/services/analysisGlance/buildAnalysisAttention";
 import {
+  ANALYSIS_BLOCK_LIMITED_COPY,
   ANALYSIS_HYPOTHETICAL_DISCLAIMER,
   ANALYSIS_INCOMPLETE_COVERAGE_COPY,
   type AnalysisGlanceMetric,
@@ -128,9 +129,10 @@ function buildStanceView(input: {
   if (!input.coverageAllowsConclusions) {
     const view: AnalysisStanceView = {
       status: "incomplete",
+      score: null,
       bandId: null,
       bandLabel: null,
-      conclusion: ANALYSIS_INCOMPLETE_COVERAGE_COPY,
+      conclusion: ANALYSIS_BLOCK_LIMITED_COPY,
       metrics: [],
       disclaimer: STANCE_POSITIONING_DISCLAIMER,
       confidence: null,
@@ -158,6 +160,7 @@ function buildStanceView(input: {
       : "Portfolio structure is available once holdings have usable prices.";
     const view: AnalysisStanceView = {
       status: "descriptive",
+      score: stance.score,
       bandId: null,
       bandLabel: null,
       conclusion,
@@ -172,6 +175,7 @@ function buildStanceView(input: {
 
   const view: AnalysisStanceView = {
     status: "ready",
+    score: stance.score,
     bandId: stance.bandId,
     bandLabel: stance.bandLabel,
     conclusion: stance.conclusion,
@@ -193,6 +197,7 @@ function toOutlookScenario(
   row: {
     scenarioId: AnalysisOutlookScenarioView["scenarioId"];
     scenarioName: string;
+    shortLabel: string;
     result: {
       estimatedPortfolioImpactPercent: number | null;
       estimatedPortfolioImpactAmount: number | null;
@@ -202,7 +207,8 @@ function toOutlookScenario(
 ): AnalysisOutlookScenarioView {
   return {
     scenarioId: row.scenarioId,
-    title: `If ${row.scenarioName}`,
+    title: row.scenarioName,
+    shortLabel: row.shortLabel,
     impactPercent: row.result.estimatedPortfolioImpactPercent,
     impactAmount: row.result.estimatedPortfolioImpactAmount,
     affectedWeightPercent: row.result.affectedPortfolioWeightPercent,
@@ -220,9 +226,9 @@ function buildOutlookView(input: {
   if (!input.coverageAllowsConclusions) {
     const view: AnalysisOutlookView = {
       status: "incomplete",
-      message: ANALYSIS_INCOMPLETE_COVERAGE_COPY,
+      message: ANALYSIS_BLOCK_LIMITED_COPY,
       primary: null,
-      secondary: null,
+      comparisons: [],
       resilienceScore: null,
       goalImpactLine: null,
       disclaimer: ANALYSIS_HYPOTHETICAL_DISCLAIMER,
@@ -239,7 +245,7 @@ function buildOutlookView(input: {
       row.result.estimatedPortfolioImpactPercent != null,
   );
   const primaryRow = modeled[0] ?? null;
-  const secondaryRow = modeled[1] ?? null;
+  const comparisonRows = modeled.slice(1, 3);
   const resilience =
     input.resilience ??
     buildResilienceProfile({
@@ -271,10 +277,9 @@ function buildOutlookView(input: {
   if (!primaryRow) {
     const view: AnalysisOutlookView = {
       status: "unavailable",
-      message:
-        "No modeled stress scenario currently has enough classified exposure to estimate.",
+      message: "No modeled scenario has enough classified exposure yet.",
       primary: null,
-      secondary: null,
+      comparisons: [],
       resilienceScore:
         resilience.status === "ok" ? resilience.score : null,
       goalImpactLine: null,
@@ -292,7 +297,7 @@ function buildOutlookView(input: {
     status: "ready",
     message: null,
     primary: toOutlookScenario(primaryRow),
-    secondary: secondaryRow ? toOutlookScenario(secondaryRow) : null,
+    comparisons: comparisonRows.map(toOutlookScenario),
     resilienceScore: resilience.status === "ok" ? resilience.score : null,
     goalImpactLine,
     disclaimer: ANALYSIS_HYPOTHETICAL_DISCLAIMER,
@@ -300,7 +305,7 @@ function buildOutlookView(input: {
   };
   assertNoAnalysisGlanceAdvisoryLanguage([
     view.primary?.title ?? "",
-    view.secondary?.title ?? "",
+    ...view.comparisons.map((row) => row.title),
     view.goalImpactLine ?? "",
     view.disclaimer,
   ]);
@@ -348,7 +353,9 @@ export function buildAnalysisGlance(input: {
 
   return {
     coverageComplete: coverageAllowsConclusions,
-    coverageMessage: coverage.coverageMessage,
+    coverageMessage: coverageAllowsConclusions
+      ? null
+      : ANALYSIS_INCOMPLETE_COVERAGE_COPY,
     stance,
     attention,
     outlook,

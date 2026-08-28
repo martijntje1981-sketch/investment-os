@@ -9,7 +9,7 @@ function read(relativePath: string): string {
 describe("Phase 3C central expected return assumption wiring", () => {
   const goalsPage = read("app/goals/page.tsx");
   const scenario = read("components/analysis/ScenarioStressSection.tsx");
-  const analysis = read("components/analysis/PortfolioAnalysisPage.tsx");
+  const analysis = read("components/analysis/glance/AnalysisDetailView.tsx");
   const dashboard = read("app/dashboard/page.tsx");
   const conclusionCard = read(
     "components/dashboard/DashboardGoalConclusionCard.tsx",

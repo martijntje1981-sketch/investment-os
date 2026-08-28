@@ -75,7 +75,7 @@ describe("product architecture cohesion", () => {
       "PageRelatedLinks",
     );
     expect(read("components/analysis/glance/AnalysisExploreNav.tsx")).toContain(
-      "PORTFOLIO_HISTORY_PATH",
+      "ANALYSIS_EXPLORE_DESTINATIONS.history",
     );
     expect(read("components/portfolioHistory/PortfolioHistoryPage.tsx")).toContain(
       "PageRelatedLinks",

@@ -1,4 +1,5 @@
 import {
+  ANALYSIS_BLOCK_LIMITED_COPY,
   ANALYSIS_HYPOTHETICAL_DISCLAIMER,
   ANALYSIS_INCOMPLETE_COVERAGE_COPY,
   ANALYSIS_QUIET_ATTENTION_COPY,
@@ -76,6 +77,7 @@ describe("buildAnalysisGlance", () => {
 
     expect(glance.stance.status).toBe("ready");
     expect(glance.stance.bandLabel).toMatch(/offensive/i);
+    expect(glance.stance.score).toEqual(expect.any(Number));
     expect(glance.stance.disclaimer).toBe(STANCE_POSITIONING_DISCLAIMER);
     expect(glance.stance.metrics.length).toBeGreaterThan(0);
     expect(glance.stance.metrics.length).toBeLessThanOrEqual(3);
@@ -100,8 +102,13 @@ describe("buildAnalysisGlance", () => {
     expect(glance.attention.items.some((item) => item.id === "holding_dominance")).toBe(
       true,
     );
-    expect(glance.attention.items[0]?.body).toMatch(/outweigh|dominate|Bitcoin/i);
-    expect(glance.attention.items.every((item) => !/^IB1T is 72/i.test(item.body))).toBe(
+    expect(glance.attention.items[0]?.implication).toMatch(
+      /outweigh|dominate|dominated/i,
+    );
+    expect(
+      glance.attention.items.every((item) => !/^IB1T is 72/i.test(item.implication)),
+    ).toBe(true);
+    expect(glance.attention.items.every((item) => item.value.length > 0)).toBe(
       true,
     );
   });
@@ -134,8 +141,9 @@ describe("buildAnalysisGlance", () => {
 
     expect(glance.outlook.status).toBe("ready");
     expect(glance.outlook.primary).not.toBeNull();
-    expect(glance.outlook.primary?.title).toMatch(/^If /);
+    expect(glance.outlook.primary?.shortLabel).toMatch(/Bitcoin|Equities|Crypto/);
     expect(glance.outlook.primary?.impactPercent).not.toBeNull();
+    expect(glance.outlook.comparisons.length).toBeLessThanOrEqual(2);
     expect(glance.outlook.disclaimer).toBe(ANALYSIS_HYPOTHETICAL_DISCLAIMER);
     expect(glance.outlook.disclaimer).toMatch(/not a prediction/i);
     for (const pattern of SCENARIO_PROHIBITED_PATTERNS) {
@@ -167,14 +175,19 @@ describe("buildAnalysisGlance", () => {
     const glance = buildAnalysisGlance({ holdings, analysis, allocation });
 
     expect(glance.coverageComplete).toBe(false);
+    expect(glance.coverageMessage).toBe(ANALYSIS_INCOMPLETE_COVERAGE_COPY);
     expect(glance.stance.status).toBe("incomplete");
     expect(glance.stance.bandLabel).toBeNull();
+    expect(glance.stance.score).toBeNull();
     expect(glance.stance.metrics).toEqual([]);
-    expect(glance.stance.conclusion).toBe(ANALYSIS_INCOMPLETE_COVERAGE_COPY);
+    expect(glance.stance.conclusion).toBe(ANALYSIS_BLOCK_LIMITED_COPY);
     expect(glance.outlook.status).toBe("incomplete");
     expect(glance.outlook.primary).toBeNull();
-    expect(glance.outlook.message).toBe(ANALYSIS_INCOMPLETE_COVERAGE_COPY);
-    expect(glance.attention.items).toHaveLength(1);
-    expect(glance.attention.items[0]?.body).toBe(ANALYSIS_INCOMPLETE_COVERAGE_COPY);
+    expect(glance.outlook.message).toBe(ANALYSIS_BLOCK_LIMITED_COPY);
+    expect(glance.attention.items).toHaveLength(0);
+    expect(glance.attention.limited).toBe(true);
+    expect(glance.attention.quietMessage).toBe(ANALYSIS_BLOCK_LIMITED_COPY);
+    expect(glance.stance.conclusion).not.toBe(glance.coverageMessage);
+    expect(glance.outlook.message).not.toBe(glance.coverageMessage);
   });
 });

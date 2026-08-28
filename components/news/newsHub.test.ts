@@ -132,7 +132,7 @@ describe("news safety boundaries", () => {
     );
 
     expect(newsPage).toContain("NewsHubContent");
-    expect(newsPage).not.toContain('title="Analysis"');
-    expect(analysisPage).toContain('title="Analysis"');
+    expect(newsPage).not.toContain("AnalysisIntro");
+    expect(analysisPage).toContain("AnalysisIntro");
   });
 });

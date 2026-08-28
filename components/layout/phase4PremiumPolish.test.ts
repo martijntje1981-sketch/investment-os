@@ -9,7 +9,10 @@ function read(relativePath: string): string {
 describe("Phase 4 premium polish contracts", () => {
   it("keeps Analysis on shared card and hero button tokens", () => {
     const analysis = read("components/analysis/PortfolioAnalysisPage.tsx");
-    expect(analysis).toContain("appCardClass");
+    const allocation = read(
+      "components/analysis/PortfolioAllocationSection.tsx",
+    );
+    expect(allocation).toContain("appCardClass");
     expect(analysis).toContain("appHeroGhostButtonClass");
     expect(analysis).not.toContain("rounded-full border border-white/20");
     expect(analysis).not.toContain("bg-violet-50");

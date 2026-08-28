@@ -7,6 +7,8 @@ import {
   CalendarDays,
   ChevronRight,
   Compass,
+  FlaskConical,
+  HelpCircle,
   History,
   Landmark,
   Layers3,
@@ -22,17 +24,7 @@ import {
   appDashboardDarkMetaClass,
   appHeroMetricLabelClass,
 } from "@/components/layout/appSurface";
-import {
-  ANALYSIS_PATH,
-  GOALS_PATH,
-  ON_TRACK_HUB_PATH,
-  PORTFOLIO_HISTORY_PATH,
-  REVIEW_PATH,
-  WHAT_HAPPENED_HUB_PATH,
-  WHAT_MATTERS_HUB_PATH,
-  WHATS_AHEAD_HUB_PATH,
-} from "@/lib/navigation/appRoutes";
-import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
+import { ANALYSIS_EXPLORE_DESTINATIONS } from "@/lib/services/analysisGlance";
 
 type ExploreItem = {
   href: string;
@@ -51,25 +43,25 @@ const EXPLORE_GROUPS: readonly ExploreGroup[] = [
     label: "Structure",
     items: [
       {
-        href: DASHBOARD_DEEP_LINKS.portfolioAllocation,
+        href: ANALYSIS_EXPLORE_DESTINATIONS.allocation,
         title: "Allocation",
         explanation: "Valued holdings and weights",
         icon: Layers3,
       },
       {
-        href: DASHBOARD_DEEP_LINKS.portfolioExposure,
+        href: ANALYSIS_EXPLORE_DESTINATIONS.exposure,
         title: "Exposure",
         explanation: "How the mix is classified",
         icon: PieChart,
       },
       {
-        href: `${ANALYSIS_PATH}#portfolio-concentration`,
+        href: ANALYSIS_EXPLORE_DESTINATIONS.concentration,
         title: "Concentration",
         explanation: "Largest positions and spread",
         icon: ScanLine,
       },
       {
-        href: DASHBOARD_DEEP_LINKS.portfolioXray,
+        href: ANALYSIS_EXPLORE_DESTINATIONS.xray,
         title: "Portfolio X-Ray",
         explanation: "Look-through when available",
         icon: ScanLine,
@@ -80,19 +72,19 @@ const EXPLORE_GROUPS: readonly ExploreGroup[] = [
     label: "Performance",
     items: [
       {
-        href: DASHBOARD_DEEP_LINKS.portfolioPerformance,
+        href: ANALYSIS_EXPLORE_DESTINATIONS.performance,
         title: "Performance",
         explanation: "Return and contribution",
         icon: Activity,
       },
       {
-        href: `${ANALYSIS_PATH}#performance-attribution`,
+        href: ANALYSIS_EXPLORE_DESTINATIONS.attribution,
         title: "Performance attribution",
         explanation: "What moved the result",
         icon: PieChart,
       },
       {
-        href: PORTFOLIO_HISTORY_PATH,
+        href: ANALYSIS_EXPLORE_DESTINATIONS.history,
         title: "Portfolio History",
         explanation: "Timeline and evolution",
         icon: History,
@@ -103,28 +95,34 @@ const EXPLORE_GROUPS: readonly ExploreGroup[] = [
     label: "Markets & assets",
     items: [
       {
-        href: `${ANALYSIS_PATH}#crypto-intelligence`,
+        href: ANALYSIS_EXPLORE_DESTINATIONS.crypto,
         title: "Crypto intelligence",
         explanation: "Classified crypto sleeve",
         icon: Sparkles,
       },
       {
-        href: DASHBOARD_DEEP_LINKS.bondsRates,
+        href: ANALYSIS_EXPLORE_DESTINATIONS.bonds,
         title: "Bonds & Rates",
         explanation: "Fixed income context",
         icon: Landmark,
       },
       {
-        href: DASHBOARD_DEEP_LINKS.cashIntelligence,
+        href: ANALYSIS_EXPLORE_DESTINATIONS.cash,
         title: "Cash intelligence",
         explanation: "Cash and allocation",
         icon: BadgeEuro,
       },
       {
-        href: DASHBOARD_DEEP_LINKS.dividendIntelligence,
+        href: ANALYSIS_EXPLORE_DESTINATIONS.dividends,
         title: "Dividend intelligence",
         explanation: "Income policy and estimates",
         icon: BadgeEuro,
+      },
+      {
+        href: ANALYSIS_EXPLORE_DESTINATIONS.consensus,
+        title: "Market consensus",
+        explanation: "Analyst context when available",
+        icon: Sparkles,
       },
     ],
   },
@@ -132,22 +130,28 @@ const EXPLORE_GROUPS: readonly ExploreGroup[] = [
     label: "Planning & risk",
     items: [
       {
-        href: DASHBOARD_DEEP_LINKS.scenarioStress,
+        href: ANALYSIS_EXPLORE_DESTINATIONS.scenarios,
         title: "Scenarios",
         explanation: "Modeled stress tests",
         icon: Compass,
       },
       {
-        href: DASHBOARD_DEEP_LINKS.scorecard,
+        href: ANALYSIS_EXPLORE_DESTINATIONS.scorecard,
         title: "Resilience / Scorecard",
         explanation: "Daily, weekly and monthly pulse",
         icon: Waves,
       },
       {
-        href: GOALS_PATH,
+        href: ANALYSIS_EXPLORE_DESTINATIONS.goals,
         title: "Goals",
-        explanation: "Progress and what-if",
+        explanation: "Progress and plan",
         icon: Target,
+      },
+      {
+        href: ANALYSIS_EXPLORE_DESTINATIONS.whatIf,
+        title: "What-if",
+        explanation: "Goal sensitivity",
+        icon: FlaskConical,
       },
     ],
   },
@@ -155,34 +159,40 @@ const EXPLORE_GROUPS: readonly ExploreGroup[] = [
     label: "Evidence",
     items: [
       {
-        href: WHAT_HAPPENED_HUB_PATH,
+        href: ANALYSIS_EXPLORE_DESTINATIONS.whatHappened,
         title: "What happened?",
         explanation: "Changes since last look",
         icon: Activity,
       },
       {
-        href: WHAT_MATTERS_HUB_PATH,
+        href: ANALYSIS_EXPLORE_DESTINATIONS.whatMatters,
         title: "What matters?",
         explanation: "What deserves attention",
         icon: Sparkles,
       },
       {
-        href: ON_TRACK_HUB_PATH,
+        href: ANALYSIS_EXPLORE_DESTINATIONS.onTrack,
         title: "On track?",
         explanation: "Goal and plan",
         icon: ListChecks,
       },
       {
-        href: WHATS_AHEAD_HUB_PATH,
+        href: ANALYSIS_EXPLORE_DESTINATIONS.whatsAhead,
         title: "What’s ahead?",
         explanation: "Outlook and scenarios",
         icon: Compass,
       },
       {
-        href: REVIEW_PATH,
+        href: ANALYSIS_EXPLORE_DESTINATIONS.reports,
         title: "Reports",
         explanation: "Weekly and monthly reviews",
         icon: CalendarDays,
+      },
+      {
+        href: ANALYSIS_EXPLORE_DESTINATIONS.methodology,
+        title: "Methodology",
+        explanation: "Data limitations and how it works",
+        icon: HelpCircle,
       },
     ],
   },
@@ -230,7 +240,7 @@ export function AnalysisExploreNav({
       <p
         className={`mt-1 max-w-[calc(100%-3.25rem)] sm:max-w-none ${appDashboardDarkMetaClass}`}
       >
-        Evidence, models and deeper portfolio analysis when you want it.
+        Deeper models and evidence, one destination at a time.
       </p>
 
       <div className="mt-3 space-y-4">
@@ -239,7 +249,7 @@ export function AnalysisExploreNav({
             <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-white/40">
               {group.label}
             </p>
-            <ul className="grid grid-cols-2 gap-1.5 lg:grid-cols-3">
+            <ul className="grid grid-cols-2 gap-1.5 lg:grid-cols-4">
               {group.items.map((item) => (
                 <ExploreTile key={`${group.label}-${item.title}`} item={item} />
               ))}

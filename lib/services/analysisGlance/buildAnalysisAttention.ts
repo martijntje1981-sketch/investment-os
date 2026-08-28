@@ -1,6 +1,6 @@
 /**
  * Rank 0–3 Analysis attention items from existing structure engines.
- * Implications only — does not invent exposures, advice, or forecasts.
+ * Numbers first — does not invent exposures, advice, or forecasts.
  */
 
 import {
@@ -13,13 +13,11 @@ import {
   type PortfolioAnalysisSnapshot,
 } from "@/lib/client/portfolioAnalysis";
 import type { PortfolioValuationCoverage } from "@/lib/client/portfolioValuationCoverage";
-import {
-  DASHBOARD_DEEP_LINKS,
-} from "@/lib/navigation/deepLinks";
+import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 import { isBitcoinHolding } from "@/lib/services/classification";
 import type { PortfolioScenarioExposureProfile } from "@/lib/services/scenarioRelevance";
 import {
-  ANALYSIS_INCOMPLETE_COVERAGE_COPY,
+  ANALYSIS_BLOCK_LIMITED_COPY,
   ANALYSIS_QUIET_ATTENTION_COPY,
   type AnalysisAttentionItem,
   type AnalysisAttentionView,
@@ -44,15 +42,11 @@ export function buildAnalysisAttention(input: {
   profile: PortfolioScenarioExposureProfile;
 }): AnalysisAttentionView {
   if (!input.coverage.allowsValuationConclusions) {
-    const item: AnalysisAttentionItem = {
-      id: "coverage_incomplete",
-      title: "Prices are still settling",
-      body: ANALYSIS_INCOMPLETE_COVERAGE_COPY,
-      href: DASHBOARD_DEEP_LINKS.portfolioAllocation,
-      hrefLabel: "Explore allocation",
+    return {
+      items: [],
+      quietMessage: ANALYSIS_BLOCK_LIMITED_COPY,
+      limited: true,
     };
-    assertNoAnalysisGlanceAdvisoryLanguage([item.title, item.body]);
-    return { items: [item], quietMessage: null };
   }
 
   const candidates: RankedItem[] = [];
@@ -67,24 +61,24 @@ export function buildAnalysisAttention(input: {
 
   if (largest && largest.weightPercent >= OBSERVATION_LARGEST_WEIGHT_THRESHOLD) {
     const holding = largest.holding;
-    const weight = formatPortfolioPercent(largest.weightPercent);
     const bitcoinLinked =
       holding.assetType === "crypto" && isBitcoinHolding(holding);
-    const remainder = formatPortfolioPercent(
-      Math.max(0, 100 - largest.weightPercent),
-    );
     candidates.push(
       ranked(
         {
           id: "holding_dominance",
-          title: bitcoinLinked
-            ? "Bitcoin dominates portfolio behaviour"
-            : `${holding.assetType === "cash" ? holding.name : holding.symbol} dominates portfolio behaviour`,
-          body: bitcoinLinked
-            ? `Around ${weight} of the portfolio is Bitcoin-linked, so Bitcoin movements can outweigh moves across the rest of the portfolio (${remainder}).`
-            : `${holding.assetType === "cash" ? holding.name : holding.symbol} is about ${weight} of valued portfolio weight, so its moves can outweigh the remaining ${remainder}.`,
+          value: formatPortfolioPercent(largest.weightPercent),
+          label: bitcoinLinked
+            ? "Bitcoin-linked exposure"
+            : holding.assetType === "cash"
+              ? holding.name
+              : `${holding.symbol} exposure`,
+          implication: bitcoinLinked
+            ? "Portfolio behaviour is dominated by one sleeve."
+            : "One position can outweigh moves across the rest of the portfolio.",
           href: DASHBOARD_DEEP_LINKS.portfolioAllocation,
           hrefLabel: "Explore allocation",
+          tone: "caution",
         },
         largest.weightPercent,
       ),
@@ -99,10 +93,13 @@ export function buildAnalysisAttention(input: {
       ranked(
         {
           id: "top3_vs_count",
-          title: "Diversification is lower than the holding count suggests",
-          body: `${investmentCount} positions are recorded, but the top three represent ${formatPortfolioPercent(topThree)} of portfolio value.`,
+          value: formatPortfolioPercent(topThree),
+          label: "Top three positions",
+          implication:
+            "Diversification is lower than the holding count suggests.",
           href: DASHBOARD_DEEP_LINKS.portfolioExposure,
           hrefLabel: "Explore exposure",
+          tone: "caution",
         },
         topThree * 0.85,
       ),
@@ -118,10 +115,12 @@ export function buildAnalysisAttention(input: {
       ranked(
         {
           id: "crypto_sleeve",
-          title: "Crypto exposure can drive portfolio behaviour",
-          body: `Classified crypto is about ${formatPortfolioPercent(crypto)} of portfolio value, so crypto moves can outweigh the rest of the mix.`,
+          value: formatPortfolioPercent(crypto),
+          label: "Classified crypto",
+          implication: "Crypto moves can outweigh the rest of the mix.",
           href: DASHBOARD_DEEP_LINKS.portfolioExposure,
           hrefLabel: "Explore exposure",
+          tone: "caution",
         },
         crypto * 0.9,
       ),
@@ -133,10 +132,12 @@ export function buildAnalysisAttention(input: {
       ranked(
         {
           id: "cash_buffer_high",
-          title: "Cash is a large share of current value",
-          body: `Cash is about ${formatPortfolioPercent(cash)} of the valued portfolio, so a large share is not in market-priced holdings.`,
+          value: formatPortfolioPercent(cash),
+          label: "Cash",
+          implication: "A large share is not in market-priced holdings.",
           href: DASHBOARD_DEEP_LINKS.cashIntelligence,
-          hrefLabel: "Explore cash intelligence",
+          hrefLabel: "Explore cash",
+          tone: "info",
         },
         cash,
       ),
@@ -146,10 +147,12 @@ export function buildAnalysisAttention(input: {
       ranked(
         {
           id: "cash_buffer_low",
-          title: "Cash is a small share of current value",
-          body: `Cash is about ${formatPortfolioPercent(cash)} of the valued portfolio.`,
+          value: formatPortfolioPercent(cash),
+          label: "Cash",
+          implication: "Cash is a small share of current portfolio value.",
           href: DASHBOARD_DEEP_LINKS.cashIntelligence,
-          hrefLabel: "Explore cash intelligence",
+          hrefLabel: "Explore cash",
+          tone: "info",
         },
         12,
       ),
@@ -161,10 +164,12 @@ export function buildAnalysisAttention(input: {
       ranked(
         {
           id: "rate_sensitivity_present",
-          title: "Fixed income is a material sleeve",
-          body: `Classified fixed income is about ${formatPortfolioPercent(fi)} of portfolio value, so bond-price moves can affect a meaningful share of the mix.`,
+          value: formatPortfolioPercent(fi),
+          label: "Fixed income",
+          implication: "Bond-price moves can affect a meaningful share of the mix.",
           href: DASHBOARD_DEEP_LINKS.bondsRates,
           hrefLabel: "Explore bonds & rates",
+          tone: "info",
         },
         fi,
       ),
@@ -176,10 +181,12 @@ export function buildAnalysisAttention(input: {
       ranked(
         {
           id: "unclassified_share",
-          title: "A material share is unclassified",
-          body: `About ${formatPortfolioPercent(unclassified)} of valued weight is unclassified, so structure conclusions for that sleeve stay limited.`,
+          value: formatPortfolioPercent(unclassified),
+          label: "Unclassified",
+          implication: "Structure conclusions for that sleeve stay limited.",
           href: DASHBOARD_DEEP_LINKS.portfolioExposure,
           hrefLabel: "Explore exposure",
+          tone: "caution",
         },
         unclassified * 0.7,
       ),
@@ -194,20 +201,27 @@ export function buildAnalysisAttention(input: {
       return left.id.localeCompare(right.id);
     })
     .slice(0, 3)
-    .map(({ id, title, body, href, hrefLabel }) => ({
+    .map(({ id, value, label, implication, href, hrefLabel, tone }) => ({
       id,
-      title,
-      body,
+      value,
+      label,
+      implication,
       href,
       hrefLabel,
+      tone,
     }));
 
-  const texts = items.flatMap((item) => [item.title, item.body]);
-  assertNoAnalysisGlanceAdvisoryLanguage(texts);
+  assertNoAnalysisGlanceAdvisoryLanguage(
+    items.flatMap((item) => [item.label, item.implication]),
+  );
 
   if (items.length === 0) {
-    return { items: [], quietMessage: ANALYSIS_QUIET_ATTENTION_COPY };
+    return {
+      items: [],
+      quietMessage: ANALYSIS_QUIET_ATTENTION_COPY,
+      limited: false,
+    };
   }
 
-  return { items, quietMessage: null };
+  return { items, quietMessage: null, limited: false };
 }

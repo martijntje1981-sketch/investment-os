@@ -77,7 +77,7 @@ describe("Phase 20 Dashboard intelligence refinement", () => {
 
   it("J. full Portfolio Exposure is preserved on Analysis", () => {
     expect(analysisExposure).toContain('id="portfolio-exposure"');
-    expect(read("components/analysis/PortfolioAnalysisPage.tsx")).toContain(
+    expect(read("components/analysis/glance/AnalysisDetailView.tsx")).toContain(
       "PortfolioExposureSection",
     );
   });

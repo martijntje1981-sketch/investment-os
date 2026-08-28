@@ -309,7 +309,10 @@ describe("Portfolio Evolution Dashboard hierarchy", () => {
   it("L/M. Cash Intelligence is preserved and discoverable", () => {
     expect(cashSection).toContain('id="cash-intelligence"');
     expect(cashSection).toContain("Cash intelligence");
-    expect(analysisPage).toContain("CashIntelligenceSection");
+    expect(analysisPage).toContain("AnalysisDetailView");
+    expect(read("components/analysis/glance/AnalysisDetailView.tsx")).toContain(
+      "CashIntelligenceSection",
+    );
     expect(DASHBOARD_DEEP_LINKS.cashIntelligence).toBe("/analysis#cash-intelligence");
     expect(cashCard).toContain("DASHBOARD_DEEP_LINKS.cashIntelligence");
     expect(cashCard).toContain("View cash intelligence");
