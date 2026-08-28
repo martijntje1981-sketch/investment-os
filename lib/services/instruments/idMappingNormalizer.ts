@@ -67,7 +67,7 @@ export function normalizeProviderListingRow(
     ...row,
     Code: code,
     Exchange: exchange,
-    ISIN: rowIsin(row),
+    ISIN: rowIsin(row) ?? undefined,
     Name: row.Name?.trim() || undefined,
     Currency: row.Currency,
     Type: row.Type,
