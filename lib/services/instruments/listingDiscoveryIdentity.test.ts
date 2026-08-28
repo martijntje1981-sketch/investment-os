@@ -172,6 +172,28 @@ describe("listing discovery identity — general, not registry-bound", () => {
     expect(resolved.quoteCurrency).toBe("CHF");
   });
 
+  it("identifies a single ticker listing even when the provider omits quote currency", async () => {
+    vi.mocked(fetchSearch).mockResolvedValue([
+      {
+        Code: "ABCD",
+        Exchange: "LSE",
+        Name: "Example Holdings PLC",
+        ISIN: "GB0000000001",
+      },
+    ]);
+
+    const resolved = await matchInstrument({
+      ticker: "ABCD",
+      assetType: "investment",
+    });
+
+    expect(resolved.providerSymbol).toBe("ABCD.LSE");
+    expect(resolved.exchange).toBe("LSE");
+    expect(resolved.instrumentName).toBe("Example Holdings PLC");
+    expect(resolved.quoteCurrency ?? null).toBeNull();
+    expect(resolved.matchMethod).not.toBe("unresolved");
+  });
+
   it("does not fabricate a listing from an empty provider response", async () => {
     vi.mocked(fetchSearch).mockResolvedValue([]);
 

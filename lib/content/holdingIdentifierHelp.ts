@@ -70,6 +70,11 @@ export const UNIDENTIFIED_HOLDING_MESSAGE =
 export const UNIDENTIFIED_LISTING_MESSAGE =
   "We couldn’t confidently identify this listing.";
 
+export const LISTING_CURRENCY_UNAVAILABLE_LABEL = "Currency unavailable";
+
+export const LISTING_LOOKUP_UNAVAILABLE_MESSAGE =
+  "Listing lookup is temporarily unavailable. Try More search options or try again shortly.";
+
 export const UNIDENTIFIED_HOLDING_HINT =
   "Check the ticker, ISIN or exchange shown by your broker.";
 

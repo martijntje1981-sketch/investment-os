@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
+import { LISTING_LOOKUP_UNAVAILABLE_MESSAGE } from "@/lib/content/holdingIdentifierHelp";
 import { PortfolioFundingSection } from "@/components/contributions/PortfolioFundingSection";
 import { formatListingLookupGuidance } from "@/lib/client/listingLookupGuidance";
 import { needsManualPricingSelection } from "@/lib/client/holdingVenuePresentation";
@@ -308,9 +309,7 @@ export default function PortfolioPage() {
           }
           if (controller.signal.aborted) return;
           setLookupUnavailable(true);
-          setListingWarnings([
-            "Instrument lookup is temporarily unavailable. You can continue manually and save your holding.",
-          ]);
+          setListingWarnings([LISTING_LOOKUP_UNAVAILABLE_MESSAGE]);
         } finally {
           if (!controller.signal.aborted) {
             setListingLookupPending(false);
@@ -429,9 +428,7 @@ export default function PortfolioPage() {
       }
     } catch {
       setLookupUnavailable(true);
-      setListingWarnings([
-        "Instrument lookup is temporarily unavailable. You can continue manually and save your holding.",
-      ]);
+      setListingWarnings([LISTING_LOOKUP_UNAVAILABLE_MESSAGE]);
       setEditorError(null);
     } finally {
       setListingLookupPending(false);
@@ -447,6 +444,15 @@ export default function PortfolioPage() {
 
   function submitHolding(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    const isEditingHolding = holdings.some((item) => item.id === draft.id);
+    if (
+      draft.assetType !== "cash" &&
+      !isEditingHolding &&
+      !draft.providerSymbol?.trim()
+    ) {
+      return;
+    }
 
     const sessionSnapshot = editorSessionRef.current ?? snapshot;
     if (!canPersistBaseCurrencyAmounts(sessionSnapshot)) {
@@ -794,6 +800,7 @@ export default function PortfolioPage() {
                   editorCurrencyLocked={editorCurrencyLocked}
                   canPersistMonetary={canPersistMonetary}
                   baseCurrency={baseCurrency}
+                  isEditing={holdings.some((item) => item.id === draft.id)}
                   onDraftChange={setDraft}
                   onSelectListing={selectListing}
                   onLookupListing={() => void lookupListing()}
@@ -829,21 +836,26 @@ export default function PortfolioPage() {
             </div>
 
             <div className="shrink-0 border-t border-slate-100 bg-white p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-6">
-              <button
-                type="submit"
-                disabled={
-                  !canPersistBaseCurrencyAmounts(
-                    editorSessionRef.current ?? snapshot,
-                  ) ||
-                  (editorCurrencyLocked !== "EUR" &&
-                    baseCurrency !== editorCurrencyLocked)
-                }
-                className="inline-flex min-h-[48px] w-full items-center justify-center rounded-xl bg-brand px-5 py-3.5 text-[16px] font-bold text-brand-navy hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {holdings.some((item) => item.id === draft.id)
-                  ? "Save holding"
-                  : "Add holding"}
-              </button>
+              {draft.assetType === "cash" ||
+              holdings.some((item) => item.id === draft.id) ||
+              Boolean(draft.providerSymbol?.trim()) ? (
+                <button
+                  type="submit"
+                  data-testid="add-holding-submit"
+                  disabled={
+                    !canPersistBaseCurrencyAmounts(
+                      editorSessionRef.current ?? snapshot,
+                    ) ||
+                    (editorCurrencyLocked !== "EUR" &&
+                      baseCurrency !== editorCurrencyLocked)
+                  }
+                  className="inline-flex min-h-[48px] w-full items-center justify-center rounded-xl bg-brand px-5 py-3.5 text-[16px] font-bold text-brand-navy hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {holdings.some((item) => item.id === draft.id)
+                    ? "Save holding"
+                    : "Add holding"}
+                </button>
+              ) : null}
             </div>
           </form>
         </div>

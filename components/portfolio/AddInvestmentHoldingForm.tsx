@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronDown, Loader2, Search } from "lucide-react";
 
 import { ExchangeFieldEditor } from "@/components/import/ExchangeFieldEditor";
@@ -8,8 +8,15 @@ import { HoldingIdentifierLabel } from "@/components/import/HoldingIdentifierHel
 import { ConfirmedListingIdentity } from "@/components/instruments/ConfirmedListingIdentity";
 import { ListingCandidatePicker } from "@/components/instruments/ListingCandidatePicker";
 import NumericInput from "@/components/NumericInput";
-import { UNIDENTIFIED_LISTING_MESSAGE } from "@/lib/content/holdingIdentifierHelp";
+import {
+  LISTING_LOOKUP_UNAVAILABLE_MESSAGE,
+  UNIDENTIFIED_LISTING_MESSAGE,
+} from "@/lib/content/holdingIdentifierHelp";
 import { shouldTriggerManualListingAutoLookup } from "@/lib/client/manualHoldingAutoLookup";
+import {
+  resolveAddHoldingUiPhase,
+  shouldShowAddHoldingEntryFields,
+} from "@/lib/client/addHoldingUiState";
 import { FX_UNAVAILABLE_SAVE_MESSAGE } from "@/lib/client/baseCurrencyInput";
 import { portfolioBaseCurrencySymbol } from "@/lib/types/portfolioBaseCurrency";
 import type { PortfolioBaseCurrency } from "@/lib/types/portfolioBaseCurrency";
@@ -33,6 +40,7 @@ export function AddInvestmentHoldingForm({
   editorCurrencyLocked,
   canPersistMonetary,
   baseCurrency,
+  isEditing = false,
   onDraftChange,
   onSelectListing,
   onLookupListing,
@@ -49,6 +57,7 @@ export function AddInvestmentHoldingForm({
   editorCurrencyLocked: PortfolioBaseCurrency;
   canPersistMonetary: boolean;
   baseCurrency: PortfolioBaseCurrency;
+  isEditing?: boolean;
   onDraftChange: (next: StoredPortfolioHolding) => void;
   onSelectListing: (candidate: ResolvedInstrument) => void;
   onLookupListing: () => void;
@@ -63,14 +72,21 @@ export function AddInvestmentHoldingForm({
     isin: draft.isin,
     providerSymbol: draft.providerSymbol,
   });
-  const noMatch =
-    searchActive &&
-    !listingLookupPending &&
-    !listingSelected &&
-    listingCandidates.length === 0 &&
-    !lookupUnavailable;
+  const uiPhase = resolveAddHoldingUiPhase({
+    listingSelected,
+    listingLookupPending,
+    candidateCount: listingCandidates.length,
+    searchActive,
+    lookupUnavailable,
+  });
   const showQuantity =
-    listingSelected || lookupUnavailable || moreSearchOptions || noMatch;
+    shouldShowAddHoldingEntryFields(uiPhase) || isEditing;
+
+  useEffect(() => {
+    if (uiPhase === "resolved") {
+      setMoreSearchOptions(false);
+    }
+  }, [uiPhase]);
 
   return (
     <div className="mt-7 space-y-5">
@@ -95,6 +111,11 @@ export function AddInvestmentHoldingForm({
                 providerSymbol: null,
               });
             }}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+              }
+            }}
             className="min-w-0 flex-1 bg-transparent px-2 py-3.5 font-bold outline-none"
           />
           {listingLookupPending ? (
@@ -109,13 +130,13 @@ export function AddInvestmentHoldingForm({
         </span>
       </div>
 
-      {listingLookupPending && !listingSelected ? (
+      {uiPhase === "searching" ? (
         <p className="text-sm font-semibold text-slate-500" data-testid="add-holding-searching-copy">
           Searching…
         </p>
       ) : null}
 
-      {noMatch ? (
+      {uiPhase === "unresolved" ? (
         <div
           className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800"
           data-testid="add-holding-no-match"
@@ -133,7 +154,7 @@ export function AddInvestmentHoldingForm({
         </div>
       ) : null}
 
-      {listingWarnings.length > 0 ? (
+      {listingWarnings.length > 0 && uiPhase !== "resolved" ? (
         <div className="space-y-3">
           {listingLookupMessages.guidance.length > 0 ? (
             <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
@@ -147,23 +168,18 @@ export function AddInvestmentHoldingForm({
               {listingLookupMessages.alerts.map((warning) => (
                 <p key={warning}>{warning}</p>
               ))}
-              {lookupUnavailable ? (
-                <p className="mt-2 font-semibold">
-                  Your entries are kept. You can save without finding a listing.
-                </p>
-              ) : null}
             </div>
           ) : lookupUnavailable ? (
             <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
               <p className="font-semibold">
-                Your entries are kept. You can save without finding a listing.
+                {LISTING_LOOKUP_UNAVAILABLE_MESSAGE}
               </p>
             </div>
           ) : null}
         </div>
       ) : null}
 
-      {showPricingListingPicker ? (
+      {uiPhase === "ambiguous" && showPricingListingPicker ? (
         <ListingCandidatePicker
           source={{
             instrumentName: draft.instrumentName ?? draft.name,
@@ -183,7 +199,7 @@ export function AddInvestmentHoldingForm({
       {listingSelected ? <ConfirmedListingIdentity holding={draft} /> : null}
 
       {showQuantity ? (
-        <>
+        <div data-testid="add-holding-entry-fields">
           <Field
             label="Quantity"
             type="number"
@@ -206,7 +222,7 @@ export function AddInvestmentHoldingForm({
               onDraftChange({ ...draft, purchasePrice: Number(value) })
             }
           />
-        </>
+        </div>
       ) : null}
 
       <div>

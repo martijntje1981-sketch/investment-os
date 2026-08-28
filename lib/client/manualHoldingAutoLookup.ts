@@ -6,7 +6,7 @@
  */
 
 import { applyManualListingSelection } from "@/lib/client/manualHoldingMatch";
-import { formatListingDetails } from "@/lib/services/instruments/listingConfirmation";
+import { resolveListingQuoteCurrency } from "@/lib/services/instruments/quoteCurrency";
 import { normalizeIsin } from "@/lib/services/instruments/validation";
 import type { ResolvedInstrument } from "@/lib/types/instrument";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
@@ -51,10 +51,21 @@ export function filterListingsBySuppliedIsin<
 export function listingIdentityReadyToConfirm(
   listing: ResolvedInstrument,
 ): boolean {
-  if (!listing.providerSymbol?.trim()) return false;
-  if (!listing.exchange?.trim()) return false;
-  const details = formatListingDetails(listing);
-  return details.currency !== "—";
+  return Boolean(
+    listing.providerSymbol?.trim() && listing.exchange?.trim(),
+  );
+}
+
+export function listingQuoteCurrencyResolved(
+  listing: ResolvedInstrument,
+): boolean {
+  return (
+    resolveListingQuoteCurrency({
+      persistedQuoteCurrency: listing.quoteCurrency ?? null,
+      providerSymbol: listing.providerSymbol,
+      exchange: listing.exchange,
+    }).currency != null
+  );
 }
 
 export function isHighConfidenceListing(listing: ResolvedInstrument): boolean {
@@ -63,6 +74,30 @@ export function isHighConfidenceListing(listing: ResolvedInstrument): boolean {
     return listing.confidence >= 0.55;
   }
   return listing.confidence >= HIGH_CONFIDENCE_LISTING_THRESHOLD;
+}
+
+export function collectLookupCandidates(
+  resolved: ResolvedInstrument,
+): ResolvedInstrument[] {
+  const listings: ResolvedInstrument[] = [];
+
+  if (listingIdentityReadyToConfirm(resolved)) {
+    listings.push({ ...resolved, candidates: undefined });
+  }
+
+  for (const candidate of resolved.candidates ?? []) {
+    if (!listingIdentityReadyToConfirm(candidate)) continue;
+    if (
+      listings.some(
+        (listing) => listing.providerSymbol === candidate.providerSymbol,
+      )
+    ) {
+      continue;
+    }
+    listings.push(candidate);
+  }
+
+  return listings;
 }
 
 export function canPreselectSingleListing(
@@ -103,11 +138,30 @@ function stripListingIdentity(
   };
 }
 
+function resolvedFromHolding(
+  holding: StoredPortfolioHolding,
+): ResolvedInstrument {
+  return {
+    providerSymbol: holding.providerSymbol ?? null,
+    instrumentName: holding.instrumentName ?? holding.name,
+    exchange: holding.exchange ?? null,
+    isin: holding.isin ?? null,
+    matchMethod:
+      (holding.matchMethod as ResolvedInstrument["matchMethod"] | undefined) ??
+      "unresolved",
+    confidence: holding.matchConfidence ?? 0,
+    requiresConfirmation: Boolean(holding.requiresConfirmation),
+    warnings: holding.matchWarnings ?? [],
+    quoteCurrency: holding.quoteCurrency,
+    pricingExchange: holding.pricingExchange,
+  };
+}
+
 export function resolveAutoListingDecision(
   result: ManualListingLookupSnapshot,
   suppliedIsin: string | null | undefined,
 ): AutoListingDecision {
-  const candidates = filterListingsBySuppliedIsin(
+  const fromResult = filterListingsBySuppliedIsin(
     result.candidates,
     suppliedIsin,
   );
@@ -118,6 +172,11 @@ export function resolveAutoListingDecision(
   const holding = holdingConflicts
     ? stripListingIdentity(result.holding)
     : result.holding;
+
+  const candidates = collectLookupCandidates({
+    ...resolvedFromHolding(holding),
+    candidates: fromResult,
+  });
 
   if (result.quotaUnavailable) {
     return {

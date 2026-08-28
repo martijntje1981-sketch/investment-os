@@ -1,3 +1,4 @@
+import { LISTING_CURRENCY_UNAVAILABLE_LABEL } from "@/lib/content/holdingIdentifierHelp";
 import type { ListingConfirmationSource } from "@/lib/services/instruments/listingConfirmationSource";
 import { formatListingDetails } from "@/lib/services/instruments/listingConfirmation";
 import { resolveListingQuoteCurrency } from "@/lib/services/instruments/quoteCurrency";
@@ -38,7 +39,7 @@ export function ConfirmedListingIdentity({
     providerSymbol: holding.providerSymbol,
     exchange: holding.exchange,
   });
-  const currencyLabel = currency.currency ?? "Unresolved";
+  const currencyLabel = currency.currency ?? LISTING_CURRENCY_UNAVAILABLE_LABEL;
 
   return (
     <div
@@ -86,8 +87,12 @@ export function ConfirmedListingIdentity({
         </div>
       </dl>
       {!currency.currency ? (
-        <p className="mt-2 text-sm font-semibold text-amber-900">
-          Quote currency is unresolved. Confirm the listing before adding.
+        <p
+          className="mt-2 text-sm font-semibold text-amber-900"
+          data-testid="listing-currency-unavailable"
+        >
+          Currency unavailable. Live pricing may need review after you add this
+          listing.
         </p>
       ) : null}
     </div>

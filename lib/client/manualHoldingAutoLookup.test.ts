@@ -3,8 +3,11 @@ import { describe, expect, it } from "vitest";
 import { applyManualListingSelection } from "@/lib/client/manualHoldingMatch";
 import {
   canPreselectSingleListing,
+  collectLookupCandidates,
   filterListingsBySuppliedIsin,
   listingConflictsSuppliedIsin,
+  listingIdentityReadyToConfirm,
+  listingQuoteCurrencyResolved,
   resolveAutoListingDecision,
   shouldTriggerManualListingAutoLookup,
 } from "@/lib/client/manualHoldingAutoLookup";
@@ -204,6 +207,111 @@ describe("manual holding auto listing discovery", () => {
     expect(decision.candidates.every((row) => row.isin !== "US78462F1030")).toBe(
       true,
     );
+  });
+
+  it("A. confident listing with missing quote currency is still identified", () => {
+    const identified = listing({
+      providerSymbol: "ABCD.LSE",
+      exchange: "LSE",
+      instrumentName: "Example Holdings PLC",
+      quoteCurrency: null,
+      confidence: 0.84,
+      matchMethod: "ticker_exchange",
+    });
+
+    expect(listingIdentityReadyToConfirm(identified)).toBe(true);
+    expect(listingQuoteCurrencyResolved(identified)).toBe(false);
+    expect(canPreselectSingleListing([identified])).toBe(true);
+
+    const decision = resolveAutoListingDecision(
+      {
+        holding: holding({ symbol: "ABCD", name: "" }),
+        candidates: [identified],
+        warnings: ["Quote currency could not be verified for this listing."],
+        quotaUnavailable: false,
+      },
+      null,
+    );
+
+    expect(decision.kind).toBe("preselect");
+    expect(decision.holding.providerSymbol).toBe("ABCD.LSE");
+    expect(decision.holding.exchange).toBe("LSE");
+    expect(decision.holding.quoteCurrency ?? null).toBeNull();
+  });
+
+  it("A. engine resolved listing with empty nested candidates is still usable", () => {
+    const identified = listing({
+      providerSymbol: "WXYZ.LSE",
+      exchange: "LSE",
+      instrumentName: "Example PLC",
+      quoteCurrency: null,
+      confidence: 0.9,
+    });
+
+    expect(
+      collectLookupCandidates({ ...identified, candidates: undefined }),
+    ).toHaveLength(1);
+
+    const decision = resolveAutoListingDecision(
+      {
+        holding: holding({
+          symbol: "WXYZ",
+          providerSymbol: "WXYZ.LSE",
+          exchange: "LSE",
+          instrumentName: "Example PLC",
+          quoteCurrency: null,
+          matchConfidence: 0.9,
+          matchMethod: "ticker_exchange",
+        }),
+        candidates: [],
+        warnings: [],
+        quotaUnavailable: false,
+      },
+      null,
+    );
+
+    expect(decision.kind).toBe("preselect");
+    expect(decision.holding.providerSymbol).toBe("WXYZ.LSE");
+  });
+
+  it("E. MSFT-style multi-listing ambiguity remains intact", () => {
+    const candidates = [
+      listing({
+        providerSymbol: "MSFT.US",
+        exchange: "US",
+        instrumentName: "Microsoft Corporation",
+        quoteCurrency: "USD",
+      }),
+      listing({
+        providerSymbol: "MSFT.LSE",
+        exchange: "LSE",
+        instrumentName: "Microsoft Corporation",
+        quoteCurrency: null,
+      }),
+      listing({
+        providerSymbol: "MSFT.AS",
+        exchange: "AS",
+        instrumentName: "Microsoft Corporation",
+        quoteCurrency: "EUR",
+      }),
+    ];
+
+    expect(canPreselectSingleListing(candidates)).toBe(false);
+
+    const decision = resolveAutoListingDecision(
+      {
+        holding: holding({ symbol: "MSFT" }),
+        candidates,
+        warnings: [],
+        quotaUnavailable: false,
+      },
+      null,
+    );
+
+    expect(decision.kind).toBe("choose");
+    expect(decision.holding.providerSymbol).toBeNull();
+    expect(decision.candidates).toHaveLength(3);
+    expect(new Set(decision.candidates.map((row) => row.exchange)).size).toBe(3);
   });
 
   it("does not merge venues on a bare ticker", () => {

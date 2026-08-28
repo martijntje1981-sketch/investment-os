@@ -3,7 +3,10 @@
 import { ChevronRight } from "lucide-react";
 
 import { AmbiguousListingHelp, HoldingIdentifierLabel } from "@/components/import/HoldingIdentifierHelp";
-import { AMBIGUOUS_LISTING_BODY } from "@/lib/content/holdingIdentifierHelp";
+import {
+  AMBIGUOUS_LISTING_BODY,
+  LISTING_CURRENCY_UNAVAILABLE_LABEL,
+} from "@/lib/content/holdingIdentifierHelp";
 import {
   buildListingCandidates,
   formatListingDetails,
@@ -39,6 +42,10 @@ export function ListingCandidatePicker({
       <div className="mt-3 space-y-2">
         {candidates.map((candidate) => {
           const details = formatListingDetails(candidate);
+          const currencyLabel =
+            details.currency === "—"
+              ? LISTING_CURRENCY_UNAVAILABLE_LABEL
+              : details.currency;
           const selected = selectedProviderSymbol === candidate.providerSymbol;
 
           return (
@@ -57,7 +64,7 @@ export function ListingCandidatePicker({
                   {details.instrumentName}
                 </p>
                 <p className="mt-1 break-words text-[15px] font-medium text-slate-600">
-                  {details.ticker} · {details.exchange} · {details.currency}
+                  {details.ticker} · {details.exchange} · {currencyLabel}
                 </p>
                 <p className="mt-1 break-all text-[13px] font-medium text-slate-500">
                   {details.providerSymbol}

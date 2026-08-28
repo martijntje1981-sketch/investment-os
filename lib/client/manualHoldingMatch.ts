@@ -23,6 +23,7 @@ import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
 import {
   humanizeInstrumentMatchMessage,
+  LISTING_LOOKUP_UNAVAILABLE_MESSAGE,
   UNIDENTIFIED_LISTING_MESSAGE,
 } from "@/lib/content/holdingIdentifierHelp";
 import { MATCHING_UNAVAILABLE_WARNING } from "@/lib/services/marketData/providerErrors";
@@ -54,6 +55,29 @@ function isMatchProviderFailure(message: string | undefined): boolean {
 
 function warningsIndicateLookupUnavailable(warnings: string[]): boolean {
   return warnings.some((warning) => warning.includes(MATCHING_UNAVAILABLE_WARNING));
+}
+
+function listingsFromResolved(
+  resolved: ResolvedInstrument,
+): ResolvedInstrument[] {
+  const listings: ResolvedInstrument[] = [];
+  if (resolved.providerSymbol?.trim() && resolved.exchange?.trim()) {
+    listings.push({ ...resolved, candidates: undefined });
+  }
+  for (const candidate of resolved.candidates ?? []) {
+    if (!candidate.providerSymbol?.trim() || !candidate.exchange?.trim()) {
+      continue;
+    }
+    if (
+      listings.some(
+        (listing) => listing.providerSymbol === candidate.providerSymbol,
+      )
+    ) {
+      continue;
+    }
+    listings.push(candidate);
+  }
+  return listings;
 }
 
 function mergeLookupResult(
@@ -142,7 +166,7 @@ export async function lookupManualHoldingListing(
       candidates: [],
       warnings: [
         unavailable
-          ? "Instrument lookup is temporarily unavailable. You can continue manually and save your holding."
+          ? LISTING_LOOKUP_UNAVAILABLE_MESSAGE
           : UNIDENTIFIED_LISTING_MESSAGE,
       ],
       quotaUnavailable: unavailable,
@@ -151,9 +175,15 @@ export async function lookupManualHoldingListing(
 
   const matched = applyMatchResultToImportRow(seedRow, data.results[0].resolved);
   const annotated = annotateImportRow(matched);
+  const candidates = listingsFromResolved(data.results[0].resolved);
 
-  if (annotated.providerSymbol) {
-    return mergeLookupResult(draft, annotated);
+  if (annotated.providerSymbol || candidates.length > 0) {
+    const merged = mergeLookupResult(draft, annotated);
+    return {
+      ...merged,
+      candidates:
+        candidates.length > 0 ? candidates : merged.candidates,
+    };
   }
 
   const warnings = annotated.matchWarnings ?? [];
@@ -163,9 +193,7 @@ export async function lookupManualHoldingListing(
     holding: draft,
     candidates: annotated.candidates ?? [],
     warnings: lookupUnavailable
-      ? [
-          "Instrument lookup is temporarily unavailable. You can continue manually and save your holding.",
-        ]
+      ? [LISTING_LOOKUP_UNAVAILABLE_MESSAGE]
       : warnings.length > 0
         ? warnings.map(humanizeInstrumentMatchMessage)
         : [UNIDENTIFIED_LISTING_MESSAGE],
