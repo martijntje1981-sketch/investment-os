@@ -8,7 +8,8 @@ import type { DashboardHoldingRow } from "@/lib/client/dashboardPortfolioSnapsho
 import { isValidArticleUrl } from "@/lib/services/news/intelligenceBullets";
 import { buildHoldingIntelligenceCandidates } from "@/lib/services/holdingIntelligence/buildHoldingIntelligenceCandidates";
 import { buildNewsHubHoldingRow } from "@/lib/services/holdingIntelligence/newsHubRows";
-import type { NewsContentItem } from "@/lib/types/newsContent";
+import { selectStoredNewsThumbnail } from "@/lib/services/news/newsThumbnail";
+import type { NewsContentItem, NewsSourceType } from "@/lib/types/newsContent";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
 
 export const HOLDINGS_TODAY_NO_NEWS = "No material news found";
@@ -23,6 +24,8 @@ export type HoldingsTodayNewsContext = {
   href: string | null;
   sourceName: string | null;
   emptyLabel: string | null;
+  thumbnailUrl: string | null;
+  sourceType: NewsSourceType | null;
 };
 
 export function buildHoldingsTodayNewsContext(
@@ -37,6 +40,8 @@ export function buildHoldingsTodayNewsContext(
       href: null,
       sourceName: null,
       emptyLabel: null,
+      thumbnailUrl: null,
+      sourceType: null,
     };
   }
 
@@ -55,6 +60,12 @@ export function buildHoldingsTodayNewsContext(
       href,
       sourceName: item?.sourceName?.trim() || null,
       emptyLabel: null,
+      thumbnailUrl: selectStoredNewsThumbnail({
+        thumbnailUrl: item?.thumbnailUrl,
+        canonicalUrl: item?.canonicalUrl,
+        sourceType: item?.sourceType,
+      }),
+      sourceType: item?.sourceType ?? null,
     };
   }
 
@@ -65,6 +76,8 @@ export function buildHoldingsTodayNewsContext(
     href: null,
     sourceName: null,
     emptyLabel: HOLDINGS_TODAY_NO_NEWS,
+    thumbnailUrl: null,
+    sourceType: null,
   };
 }
 

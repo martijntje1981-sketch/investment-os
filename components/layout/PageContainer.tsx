@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 
 import {
+  appDashboardPageCanvasClass,
+  appDashboardPageStackClass,
   appPageCanvasClass,
   appPageStackClass,
 } from "@/components/layout/appSurface";
@@ -13,14 +15,32 @@ export function PageContainer({
   children,
   className,
   stackClassName,
+  canvas = "default",
 }: {
   children: ReactNode;
   className?: string;
   stackClassName?: string;
+  canvas?: "default" | "dashboard";
 }) {
   return (
-    <main className={cn(appPageCanvasClass, className)}>
-      <div className={cn(appPageStackClass, stackClassName)}>{children}</div>
+    <main
+      className={cn(
+        canvas === "dashboard"
+          ? appDashboardPageCanvasClass
+          : appPageCanvasClass,
+        className,
+      )}
+    >
+      <div
+        className={cn(
+          canvas === "dashboard"
+            ? appDashboardPageStackClass
+            : appPageStackClass,
+          stackClassName,
+        )}
+      >
+        {children}
+      </div>
     </main>
   );
 }

@@ -8,12 +8,10 @@ import { HoldingsTodayRow } from "@/components/dashboard/HoldingsTodayRow";
 import { HoldingsTodaySkeleton } from "@/components/dashboard/HoldingsTodaySkeleton";
 import { DashboardSectionHeader } from "@/components/dashboard/DashboardSectionHeader";
 import {
-  appDashboardLightCardClass,
   appCardPaddingClass,
-  appSectionBodyClass,
-  appSectionLabelClass,
+  appDarkCardClass,
+  appDashboardDarkBodyClass,
   appSolidButtonClass,
-  appTextLinkClass,
 } from "@/components/layout/appSurface";
 import type { DashboardPortfolioSnapshot } from "@/lib/client/dashboardPortfolioSnapshot";
 import {
@@ -25,6 +23,9 @@ import { useDashboardSectionExpanded } from "@/lib/client/useDashboardSectionExp
 import { PORTFOLIO_PATH } from "@/lib/navigation/appRoutes";
 import type { NewsContentItem } from "@/lib/types/newsContent";
 import type { StoredPortfolioHolding } from "@/lib/types/portfolioStorage";
+
+const holdingsLinkClass =
+  "inline-flex min-h-[44px] items-center text-[14px] font-semibold text-brand underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40";
 
 export function HoldingsToday({
   snapshot,
@@ -65,16 +66,16 @@ export function HoldingsToday({
 
   if (snapshot.marketHoldings.length === 0) {
     return (
-      <section className={appDashboardLightCardClass}>
+      <section className={appDarkCardClass}>
         <DashboardSectionHeader
-          variant="holdings"
+          variant="feature"
           title="Your holdings today"
           subtitle="Today’s move and relevant context"
           icon={<Wallet className="h-5 w-5" />}
           bordered={false}
         />
         <div className={appCardPaddingClass}>
-          <p className={appSectionBodyClass}>
+          <p className={appDashboardDarkBodyClass}>
             Add market-priced holdings to see today’s move and relevant context.
           </p>
           <Link href="/upload" className={`mt-5 ${appSolidButtonClass}`}>
@@ -92,82 +93,51 @@ export function HoldingsToday({
     ? snapshot.marketHoldings.slice(0, HOLDINGS_TODAY_COLLAPSE_AFTER)
     : snapshot.marketHoldings;
   const hiddenCount = Math.max(0, total - HOLDINGS_TODAY_COLLAPSE_AFTER);
-  const positionSubtitle = `${total} ${total === 1 ? "position" : "positions"} · today’s move and relevant context`;
+  const positionSubtitle = `${total} ${total === 1 ? "position" : "positions"} · ${moveColumnLabel.toLowerCase()} and relevant context`;
 
   return (
     <section
-      className={appDashboardLightCardClass}
+      className={appDarkCardClass}
       data-testid="dashboard-holdings-summary"
       aria-labelledby="your-holdings-today-heading"
     >
       <DashboardSectionHeader
-        variant="holdings"
+        variant="feature"
         title="Your holdings today"
         titleId="your-holdings-today-heading"
         subtitle={positionSubtitle}
         icon={<Wallet className="h-5 w-5" />}
         trailing={
-          <Link
-            href={PORTFOLIO_PATH}
-            className={`min-h-[44px] items-center ${appTextLinkClass}`}
-          >
+          <Link href={PORTFOLIO_PATH} className={holdingsLinkClass}>
             View portfolio
           </Link>
         }
       />
 
       <div id={listId}>
-        <div className={`md:hidden ${appCardPaddingClass} space-y-0.5 pt-0`}>
-          {visibleHoldings.map((row, index) => (
+        <div className="px-3.5 pb-2 pt-0 sm:px-5">
+          <div className="mb-1 hidden grid-cols-[auto_minmax(0,1.15fr)_minmax(7.5rem,auto)_minmax(6.5rem,auto)_minmax(0,1.55fr)] gap-x-4 px-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-white/40 md:grid">
+            <span className="col-span-2">Holding</span>
+            <span className="text-right">{moveColumnLabel}</span>
+            <span>Value</span>
+            <span>News / context</span>
+          </div>
+          {visibleHoldings.map((row) => (
             <HoldingsTodayRow
               key={row.id}
               row={row}
               news={newsById.get(row.id) ?? null}
               layout="mobile"
-              index={index}
             />
           ))}
-        </div>
-
-        <div className="hidden md:block px-4 pb-4 pt-0 md:px-5 md:pb-5">
-          <div className="overflow-hidden rounded-2xl border border-slate-200/80">
-            <table className="w-full min-w-0 table-fixed border-collapse">
-              <thead>
-                <tr className="border-b border-slate-200/80 bg-slate-50/90 text-left">
-                  <th className={`w-[28%] px-4 py-3 text-left ${appSectionLabelClass}`}>
-                    Holding
-                  </th>
-                  <th
-                    className={`w-[18%] px-4 py-3 text-right ${appSectionLabelClass}`}
-                  >
-                    {moveColumnLabel}
-                  </th>
-                  <th className={`px-4 py-3 text-left ${appSectionLabelClass}`}>
-                    News / context
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {visibleHoldings.map((row, index) => (
-                  <HoldingsTodayRow
-                    key={row.id}
-                    row={row}
-                    news={newsById.get(row.id) ?? null}
-                    layout="desktop"
-                    index={index}
-                  />
-                ))}
-              </tbody>
-            </table>
-          </div>
         </div>
       </div>
 
       {showToggle ? (
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 px-4 py-3.5 md:px-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/10 px-3.5 py-2.5 sm:px-5">
           <button
             type="button"
-            className="inline-flex min-h-[44px] items-center rounded-lg px-1 text-sm font-semibold text-slate-700 underline-offset-4 transition hover:text-slate-950 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2"
+            className="inline-flex min-h-[44px] items-center rounded-lg px-1 text-sm font-semibold text-white/80 underline-offset-4 transition hover:text-white hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
             aria-expanded={expanded}
             aria-controls={listId}
             onClick={() => setExpanded(!expanded)}
@@ -178,10 +148,7 @@ export function HoldingsToday({
                 ? "Show 1 more"
                 : `Show all ${total} holdings`}
           </button>
-          <Link
-            href={PORTFOLIO_PATH}
-            className={`text-sm font-semibold ${appTextLinkClass}`}
-          >
+          <Link href={PORTFOLIO_PATH} className={holdingsLinkClass}>
             View all holdings
           </Link>
         </div>

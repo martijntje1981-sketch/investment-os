@@ -68,3 +68,40 @@ export function selectTrustedNewsThumbnailFromUrl(
     sourceType,
   });
 }
+
+/**
+ * Display a thumbnail already present on a fetched news object.
+ * Never derives an image from the article URL. HTTPS only.
+ */
+export function selectStoredNewsThumbnail(input: {
+  thumbnailUrl: string | null | undefined;
+  canonicalUrl?: string | null;
+  sourceType?: NewsSourceType;
+}): string | null {
+  const trusted = selectTrustedNewsThumbnail({
+    thumbnailUrl: input.thumbnailUrl ?? null,
+    sourceType: input.sourceType ?? "news",
+  });
+  if (trusted) {
+    return trusted;
+  }
+
+  const sanitized = sanitizeNewsUrl(input.thumbnailUrl);
+  if (!sanitized) {
+    return null;
+  }
+
+  try {
+    const parsed = new URL(sanitized);
+    if (parsed.protocol !== "https:") {
+      return null;
+    }
+    const canonical = sanitizeNewsUrl(input.canonicalUrl);
+    if (canonical && sanitized === canonical) {
+      return null;
+    }
+    return sanitized;
+  } catch {
+    return null;
+  }
+}

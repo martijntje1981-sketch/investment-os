@@ -10,9 +10,19 @@ export const appPageSectionClass = "space-y-8 md:space-y-10";
 export const appPageCanvasClass =
   "min-h-screen w-full max-w-full overflow-x-clip bg-background px-4 pb-28 pt-[4.5rem] text-foreground sm:px-6 sm:pb-28 sm:pt-[5rem] [[data-example-banner=true]_&]:pt-[6.25rem] sm:[[data-example-banner=true]_&]:pt-[6.75rem]";
 
+/**
+ * Dashboard-only canvas — deep navy, compact PWA padding.
+ * Other authenticated pages keep appPageCanvasClass.
+ */
+export const appDashboardPageCanvasClass =
+  "min-h-screen w-full max-w-full overflow-x-clip bg-navy-hero-deep px-3 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] pt-[calc(3.25rem+env(safe-area-inset-top,0px))] text-white sm:px-6 sm:pb-28 sm:pt-[4.75rem] [[data-example-banner=true]_&]:pt-[calc(5rem+env(safe-area-inset-top,0px))] sm:[[data-example-banner=true]_&]:pt-[6.5rem]";
+
 /** Inner content column. */
 export const appPageStackClass =
   "mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-6 md:gap-8";
+
+export const appDashboardPageStackClass =
+  "mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-3 md:gap-5";
 
 /* ── Light cards ─────────────────────────────────────────── */
 
@@ -69,11 +79,13 @@ export const appSectionBandClass =
 export const appHeroShellClass =
   "min-w-0 overflow-hidden rounded-[28px] border border-brand/30 bg-gradient-to-br from-hero-premium-from via-hero-premium-via to-hero-premium-to text-slate-950 shadow-[0_12px_32px_-16px_rgba(11,31,58,0.16)] md:rounded-[32px]";
 
-/** Dashboard portfolio value uses the same light Tobailey-blue hero shell. */
-export const appDashboardHeroShellClass = appHeroShellClass;
+/** Dashboard portfolio hero — deep navy, compact, native-app surface. */
+export const appDashboardHeroShellClass =
+  "min-w-0 overflow-hidden rounded-[22px] border border-white/10 bg-gradient-to-b from-navy-hero-lift to-navy-hero text-white shadow-[var(--navy-shadow)] md:rounded-[26px]";
 
-/** Subordinate Dashboard pulse — light, not a second hero. */
-export const appDashboardHeroSubordinateClass = appIntelligenceAccentCardClass;
+/** Subordinate Dashboard pulse — same navy family, slightly quieter. */
+export const appDashboardHeroSubordinateClass =
+  "min-w-0 overflow-hidden rounded-[22px] border border-white/10 bg-navy-card text-white shadow-[var(--navy-shadow)] md:rounded-[26px]";
 
 export const appDashboardHeroInsetClass =
   "rounded-xl border border-brand/25 bg-white/85";
@@ -87,7 +99,8 @@ export const appDashboardHeroMetricLabelClass = appPageHeroMetricLabelClass;
 export const appDashboardHeroMetaClass =
   "text-[15px] font-medium leading-relaxed text-slate-700";
 
-export const appPageHeroMetaClass = appDashboardHeroMetaClass;
+export const appPageHeroMetaClass =
+  "text-[15px] font-medium leading-relaxed text-slate-700";
 
 /** Inset evidence on the light hero (not white/10 on navy). */
 export const appPageHeroInsetClass =
@@ -110,7 +123,7 @@ export const appDarkInsetClass =
 
 /** Compact padding for dense dark heroes (dashboard + peers). */
 export const appHeroPaddingCompactClass =
-  "px-4 py-3 sm:px-5 sm:py-3.5 md:px-5 md:py-3.5";
+  "px-3.5 py-3 sm:px-5 sm:py-3.5 md:px-5 md:py-4";
 
 /** Standard padding for dark cards. */
 export const appDarkCardPaddingClass = "px-4 py-5 md:px-6 md:py-6";

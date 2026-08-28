@@ -369,7 +369,7 @@ describe("price status consistency hotfix", () => {
     const portfolio = read("app/portfolio/page.tsx");
     const holdingPage = read("app/holding/[ticker]/page.tsx");
     const symbolPage = read("app/portfolio/[symbol]/page.tsx");
-    expect(holdingsRow).toContain("holdingPriceHoldingsLabel");
+    expect(holdingsRow).toContain("formatHoldingQuoteTrustLine");
     expect(portfolio).toContain("holdingPriceHoldingsLabel");
     expect(holdingPage).toContain("holdingPriceHoldingsLabel");
     expect(symbolPage).toContain("holdingPriceHoldingsLabel");
@@ -388,7 +388,7 @@ describe("price status consistency hotfix", () => {
     expect(action).not.toMatch(/fetch\("\/api\/prices"/);
     expect(display).toContain("getMarketStatuses");
     expect(display).not.toMatch(/eodhd|openai/i);
-    expect(holdingsRow).toContain("holdingPriceHoldingsLabel");
+    expect(holdingsRow).toContain("formatHoldingQuoteTrustLine");
     expect(portfolio).toContain("holdingPriceHoldingsLabel");
     expect(holdingsRow).not.toMatch(/priceDataStatus === ["']delayed["']/);
   });

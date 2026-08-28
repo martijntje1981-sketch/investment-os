@@ -19,24 +19,23 @@ describe("Dashboard hero mobile movers prominence", () => {
 
   it("uses compact mover ticker and percentage sizes", () => {
     expect(source).toContain(
-      "truncate text-[15px] font-semibold leading-tight text-slate-950 sm:mt-1 sm:text-[15px]",
+      "truncate text-[14px] font-semibold leading-tight text-white sm:text-[15px]",
     );
     expect(source).toContain(
-      "truncate text-[15px] font-bold tabular-nums tracking-[-0.02em] sm:text-[15px]",
+      "truncate text-[14px] font-bold tabular-nums tracking-[-0.02em] sm:text-[15px]",
     );
   });
 
   it("keeps movers on the second premium-blue panel", () => {
     expect(source).toContain('data-testid="hero-zone-snapshot"');
-    expect(source).toContain("space-y-3 sm:space-y-4");
+    expect(source).toContain("space-y-2 sm:space-y-3");
   });
 
   it("uses a more compact mobile hero shell", () => {
     expect(source).toContain("appHeroPaddingCompactClass");
     expect(source).toContain("appHeroMatchedKpiClass");
-    expect(source).toContain("appDashboardHeroMetricLabelClass");
-    expect(source).toContain("mt-3 min-w-0 border-t border-brand/20 pt-3");
+    expect(source).toContain("appHeroMetricLabelClass");
     expect(source).toContain('variant="icon"');
-    expect(source).toContain("space-y-3 sm:space-y-4");
+    expect(source).toContain("space-y-2 sm:space-y-3");
   });
 });

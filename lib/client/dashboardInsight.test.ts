@@ -170,8 +170,8 @@ describe("home and dashboard hierarchy", () => {
     expect(summary).not.toContain("GoalProgressCard");
     expect(summary).not.toContain("TodayCard");
     expect(holdingsToday).toContain("Your holdings today");
-    expect(holdingsToday).toContain("md:hidden");
-    expect(holdingsToday).toContain("hidden md:block");
+    expect(holdingsToday).toContain("HoldingsTodayRow");
+    expect(holdingsToday).not.toContain("<table");
     expect(preview).not.toContain("Also worth noting");
     expect(preview).toContain("Markets today");
   });

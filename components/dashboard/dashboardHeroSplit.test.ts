@@ -12,15 +12,16 @@ describe("Dashboard hero split panels", () => {
     "utf8",
   );
 
-  it("renders a light cyan value hero and a subordinate light pulse panel", () => {
+  it("renders a dark navy value hero and a subordinate navy pulse panel", () => {
     expect(hero).toContain('data-testid="dashboard-portfolio-hero"');
     expect(hero).toContain('data-testid="hero-zone-primary"');
     expect(hero).toContain('data-testid="hero-zone-snapshot"');
-    expect(hero).toContain("space-y-3 sm:space-y-4");
+    expect(hero).toContain("space-y-2 sm:space-y-3");
     expect(hero).toContain("appDashboardHeroShellClass");
     expect((hero.match(/appDashboardHeroShellClass/g) ?? []).length).toBe(2);
     expect(hero).toContain("appDashboardHeroSubordinateClass");
     expect(hero).toContain("className={shellClass}");
+    expect(hero).toContain('appearance="onDark"');
   });
 
   it("keeps value/move/trend in panel 1 and pulse/focus/movers/briefing in panel 2", () => {

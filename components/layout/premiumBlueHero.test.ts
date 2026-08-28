@@ -35,7 +35,8 @@ describe("Phase 16.6 / 20 shared Q1 cyan page heroes", () => {
     expect(surface).toContain("text-slate-950");
     expect(surface).toContain("border-brand/20");
     expect(surface).toContain("bg-gradient-to-br");
-    expect(surface).toContain("appDashboardHeroShellClass = appHeroShellClass");
+    expect(surface).toContain("appDashboardHeroShellClass");
+    expect(surface).not.toContain("appDashboardHeroShellClass = appHeroShellClass");
     expect(surface).toContain("appDashboardHeroSubordinateClass");
     expect(surface).toContain("bg-navy-hero");
     expect(surface).toContain("appSolidButtonClass");
@@ -44,8 +45,8 @@ describe("Phase 16.6 / 20 shared Q1 cyan page heroes", () => {
   it("wires Dashboard, PageHero, and holding identity heroes to the shared shell", () => {
     expect(pageHero).toContain("appHeroShellClass");
     expect(dashboardHero).toContain("appDashboardHeroShellClass");
-    expect(dashboardHero).toContain('appearance="onLight"');
-    expect(dashboardHero).toContain('tone="light"');
+    expect(dashboardHero).toContain('appearance="onDark"');
+    expect(dashboardHero).toContain('tone="dark"');
     expect(dashboardHero).not.toContain("from-[#f4f9fd]");
     expect(analysis).toContain("<PageHero");
     expect(news).toContain("<PageHero");

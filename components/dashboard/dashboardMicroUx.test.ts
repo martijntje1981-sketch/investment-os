@@ -6,7 +6,6 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { HERO_INTRADAY_HISTORY_AVAILABLE } from "@/components/dashboard/heroTrendPeriods";
 import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 import { summarizeDailyPerformance } from "@/lib/client/dailyPerformance";
 import { buildValuedPositions } from "@/lib/client/portfolioAnalysis";
@@ -190,9 +189,14 @@ describe("Dashboard micro-UX — WATCH exact story", () => {
   });
 });
 
-describe("Dashboard micro-UX — hero 1D/1W/1M", () => {
-  it("does not claim genuine intraday history is available", () => {
-    expect(HERO_INTRADAY_HISTORY_AVAILABLE).toBe(false);
+describe("Dashboard micro-UX — hero 1W/1M", () => {
+  it("does not expose a 1D hero chart option", () => {
+    const sparkline = read("components/dashboard/HeroPerformanceSparkline.tsx");
+    const periods = read("components/dashboard/heroTrendPeriods.ts");
+    expect(periods).toContain('HERO_TREND_PERIOD_ORDER: HeroTrendPeriodId[] = ["1W", "1M"]');
+    expect(periods).toContain('HERO_TREND_DEFAULT_PERIOD: HeroTrendPeriodId = "1M"');
+    expect(sparkline).not.toContain("1D");
+    expect(sparkline).not.toContain("intraday");
   });
 
   it("wires week and month series into the hero sparkline selector", () => {
@@ -202,11 +206,10 @@ describe("Dashboard micro-UX — hero 1D/1W/1M", () => {
 
     expect(sparkline).toContain("hero-trend-period-selector");
     expect(sparkline).toContain('data-testid={`hero-trend-period-${option}`}');
-    expect(sparkline).toContain("Verified intraday portfolio history is not available yet");
     expect(sparkline).toContain("over ${period}");
     expect(sparkline).toContain('"1W trend"');
     expect(sparkline).toContain('"1M trend"');
-    expect(sparkline).toContain('useState<"1W" | "1M">("1M")');
+    expect(sparkline).toContain("HERO_TREND_DEFAULT_PERIOD");
     expect(hero).toContain("weekPoints=");
     expect(hero).toContain("monthPoints=");
     expect(page).toContain("weekPerformancePoints=");

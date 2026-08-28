@@ -27,7 +27,7 @@ describe("dashboard hero surface consistency", () => {
     "utf8",
   );
 
-  it("uses the shared premium-blue hero shell on Dashboard and other page heroes", () => {
+  it("uses a dark Dashboard hero shell while other page heroes stay light", () => {
     const heroShellMatch = surfaceSource.match(
       /export const appHeroShellClass =\s*"([^"]+)"/,
     );
@@ -39,7 +39,7 @@ describe("dashboard hero surface consistency", () => {
     expect(heroShellMatch?.[1]).not.toContain("bg-navy-hero");
     expect(valueSource).toContain("appDashboardHeroShellClass");
     expect(valueSource).toContain("appDashboardHeroSubordinateClass");
-    expect(valueSource).toContain("appearance=\"onLight\"");
+    expect(valueSource).toContain('appearance="onDark"');
     expect(valueSource).not.toContain("ambientGlowClass");
     expect(emptySource).toContain("PortfolioSetupOnboarding");
     expect(onboardingSource).toContain("appHeroShellClass");

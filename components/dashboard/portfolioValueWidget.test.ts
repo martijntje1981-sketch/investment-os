@@ -84,12 +84,15 @@ describe("dashboard portfolio value widget", () => {
 
     expect(
       formatPortfolioMovePeriodContextLine(
-        resolvePortfolioMovePeriod([
-          holding({
-            symbol: "VWCE",
-            marketPriceUpdatedAt: "2026-07-24",
-          }),
-        ]),
+        resolvePortfolioMovePeriod(
+          [
+            holding({
+              symbol: "VWCE",
+              marketPriceUpdatedAt: "2026-07-24",
+            }),
+          ],
+          Date.parse("2026-07-26T12:00:00.000Z"),
+        ),
       ),
     ).toBe("Based on Friday's market close");
 
@@ -151,7 +154,7 @@ describe("dashboard portfolio value widget", () => {
       "utf8",
     );
     expect(valueSource).toContain("appHeroMatchedKpiClass");
-    expect(valueSource).toContain("appDashboardHeroMetricLabelClass");
+    expect(valueSource).toContain("appHeroMetricLabelClass");
     expect(valueSource).toContain("appHeroPaddingCompactClass");
     expect(valueSource).toContain("appDisplayClass");
     expect(valueSource).toContain("tabular-nums");

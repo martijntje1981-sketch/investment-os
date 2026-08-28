@@ -15,7 +15,7 @@ import {
   writeEodhdNewsCache,
 } from "@/lib/services/news/cache/eodhdNewsCache";
 import { isUsableNewsTitle, sanitizeNewsText, sanitizeNewsUrl } from "@/lib/services/news/sanitizeNewsUrl";
-import { selectTrustedNewsThumbnailFromUrl } from "@/lib/services/news/newsThumbnail";
+import { selectStoredNewsThumbnail } from "@/lib/services/news/newsThumbnail";
 import {
   isProviderUnavailable,
   normalizeProviderError,
@@ -114,10 +114,11 @@ function mapEodhdItem(
     sourceName: EODHD_SOURCE,
     sourceType: "news",
     canonicalUrl,
-    thumbnailUrl: selectTrustedNewsThumbnailFromUrl(
-      raw.image ?? raw.thumbnail ?? null,
-      "news",
-    ),
+    thumbnailUrl: selectStoredNewsThumbnail({
+      thumbnailUrl: raw.image ?? raw.thumbnail ?? null,
+      canonicalUrl,
+      sourceType: "news",
+    }),
     publishedAt,
     description,
     summary: "",

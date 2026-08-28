@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { appSectionLabelClass, appSectionMetaClass } from "@/components/layout/appSurface";
+import { appDashboardDarkMetaClass, appHeroMetricLabelClass } from "@/components/layout/appSurface";
 import {
   ANALYSIS_PATH,
   GOALS_PATH,
@@ -42,17 +42,17 @@ function LinkRow({
   links: readonly { href: string; label: string }[];
 }) {
   return (
-    <ul className="flex flex-wrap items-center gap-x-3 gap-y-1">
+    <ul className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
       {links.map((link, index) => (
         <li key={link.href} className="inline-flex items-center gap-3">
           {index > 0 ? (
-            <span className="text-slate-300" aria-hidden>
+            <span className="text-white/20" aria-hidden>
               ·
             </span>
           ) : null}
           <Link
             href={link.href}
-            className="inline-flex min-h-[44px] items-center text-[14px] font-semibold text-brand-navy underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+            className="inline-flex min-h-[44px] items-center text-[14px] font-semibold text-white/80 underline-offset-2 hover:text-white hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
           >
             {link.label}
           </Link>
@@ -66,18 +66,18 @@ export function DashboardSecondaryNav() {
   return (
     <nav
       aria-label="More in Tobailey"
-      className="min-w-0"
+      className="min-w-0 px-1"
       data-testid="dashboard-secondary-nav"
       data-zone="explore-more"
     >
-      <p className={appSectionLabelClass}>More</p>
-      <p className={`mt-1 ${appSectionMetaClass}`}>
+      <p className={appHeroMetricLabelClass}>More</p>
+      <p className={`mt-1 ${appDashboardDarkMetaClass}`}>
         Analysis, news, goals and reports stay available here.
       </p>
-      <div className="mt-2">
+      <div className="mt-1">
         <LinkRow links={PRIMARY_LINKS} />
       </div>
-      <div className="mt-1">
+      <div className="mt-0.5">
         <LinkRow links={MORE_LINKS} />
       </div>
     </nav>

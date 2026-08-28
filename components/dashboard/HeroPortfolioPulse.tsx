@@ -5,7 +5,7 @@ import Link from "next/link";
 
 import { DynamicScoreRing } from "@/components/dashboard/DynamicScoreRing";
 import { PortfolioPulseDetailSheet } from "@/components/dashboard/PortfolioPulseDetailSheet";
-import { appDashboardHeroMetricLabelClass } from "@/components/layout/appSurface";
+import { appHeroMetricLabelClass } from "@/components/layout/appSurface";
 import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 import type {
   DynamicPortfolioScore,
@@ -45,12 +45,12 @@ export function HeroPortfolioPulse({
       data-testid="hero-portfolio-pulse"
     >
       <div className="flex items-center justify-between gap-2">
-        <p className={appDashboardHeroMetricLabelClass}>
+        <p className={appHeroMetricLabelClass}>
           Portfolio Pulse
         </p>
         <Link
           href={DASHBOARD_DEEP_LINKS.scorecard}
-          className="inline-flex min-h-11 items-center text-[15px] font-semibold text-q1-strong underline-offset-2 hover:underline"
+          className="inline-flex min-h-11 items-center text-[13px] font-semibold text-brand underline-offset-2 hover:underline"
         >
           Scorecard
         </Link>
@@ -60,21 +60,21 @@ export function HeroPortfolioPulse({
           score={pulse.daily}
           size={60}
           emphasis="primary"
-          appearance="onLight"
+          appearance="onDark"
           onActivate={() => setActive(pulse.daily)}
         />
         <DynamicScoreRing
           score={pulse.weekly}
           size={56}
           emphasis="default"
-          appearance="onLight"
+          appearance="onDark"
           onActivate={() => setActive(pulse.weekly)}
         />
         <DynamicScoreRing
           score={pulse.monthly}
           size={56}
           emphasis="default"
-          appearance="onLight"
+          appearance="onDark"
           onActivate={() => setActive(pulse.monthly)}
         />
       </div>

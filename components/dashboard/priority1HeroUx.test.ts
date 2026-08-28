@@ -46,7 +46,8 @@ describe("Priority 1 dashboard hero", () => {
     expect(surface).toContain("from-hero-premium-from");
     expect(surface).toContain("via-hero-premium-via");
     expect(surface).toContain("to-hero-premium-to");
-    expect(surface).toContain("appDashboardHeroShellClass = appHeroShellClass");
+    expect(surface).toContain("appDashboardHeroShellClass");
+    expect(surface).not.toContain("appDashboardHeroShellClass = appHeroShellClass");
     expect(globals).toContain("--hero-premium-from:");
     expect(globals).toContain("--navy-hero: #0b1f3a");
     expect(hero).toContain("appDashboardHeroShellClass");

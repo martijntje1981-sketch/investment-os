@@ -17,8 +17,6 @@ import {
 
 import {
   appBottomNavLabelClass,
-  appSectionLabelClass,
-  appSectionMetaClass,
 } from "@/components/layout/appSurface";
 import { isBottomNavItemActive } from "@/components/home/bottomNavActive";
 import { useDismissibleMenu } from "@/lib/client/useDismissibleMenu";
@@ -118,14 +116,14 @@ function MoreMenuPanel({
       id={menuId}
       role="dialog"
       aria-label="More destinations"
-      className="fixed inset-x-0 bottom-[calc(var(--bottom-nav-height)+env(safe-area-inset-bottom,0px))] z-[70] mx-auto max-h-[min(70dvh,32rem)] w-full max-w-6xl overflow-hidden rounded-t-2xl border border-slate-200 bg-white shadow-[0_-12px_40px_rgba(15,23,42,0.18)]"
+      className="fixed inset-x-0 bottom-[calc(var(--bottom-nav-height)+env(safe-area-inset-bottom,0px))] z-[70] mx-auto max-h-[min(70dvh,32rem)] w-full max-w-6xl overflow-hidden rounded-t-2xl border border-white/10 bg-navy-card shadow-[0_-12px_40px_rgba(7,21,37,0.45)]"
       data-testid="bottom-nav-more-panel"
     >
-      <div className="border-b border-slate-100 px-4 py-3">
-        <p className={appSectionLabelClass}>
+      <div className="border-b border-white/10 px-4 py-3">
+        <p className="text-[13px] font-semibold uppercase tracking-[0.06em] text-white/55">
           More
         </p>
-        <p className="mt-0.5 text-sm font-semibold text-slate-800">
+        <p className="mt-0.5 text-sm font-semibold text-white">
           Find the right place in Tobailey
         </p>
       </div>
@@ -133,9 +131,9 @@ function MoreMenuPanel({
         {APP_ARCHITECTURE_GROUPS.map((group, index) => (
           <div key={group.id}>
             {index > 0 ? (
-              <div className="mx-2 my-2 border-t border-slate-100" />
+              <div className="mx-2 my-2 border-t border-white/10" />
             ) : null}
-            <p className={`px-2 pb-1 pt-1 ${appSectionLabelClass}`}>
+            <p className="px-2 pb-1 pt-1 text-[13px] font-semibold uppercase tracking-[0.06em] text-white/45">
               {group.title}
             </p>
             <div className="space-y-0.5">
@@ -150,8 +148,8 @@ function MoreMenuPanel({
                     aria-current={active ? "page" : undefined}
                     className={`flex min-h-[52px] items-start gap-3 rounded-xl px-3 py-2.5 transition ${
                       active
-                        ? "bg-brand-soft text-brand-navy"
-                        : "text-slate-700 hover:bg-slate-50"
+                        ? "bg-white/12 text-white"
+                        : "text-white/75 hover:bg-white/8"
                     }`}
                   >
                     <Icon
@@ -163,7 +161,7 @@ function MoreMenuPanel({
                         {item.label}
                       </span>
                       {item.description ? (
-                        <span className={`mt-0.5 block ${appSectionMetaClass}`}>
+                        <span className="mt-0.5 block text-[13px] font-medium leading-relaxed text-white/50">
                           {item.description}
                         </span>
                       ) : null}
@@ -193,9 +191,9 @@ export default function BottomNavigation() {
     return (
       <nav
         aria-label="Main"
-        className="fixed bottom-0 left-0 right-0 z-50 max-w-full overflow-hidden border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur"
+        className="fixed bottom-0 left-0 right-0 z-50 max-w-full overflow-hidden border-t border-white/10 bg-navy-hero/95 pb-[env(safe-area-inset-bottom)] backdrop-blur"
       >
-        <div className="mx-auto grid w-full max-w-6xl grid-cols-4 gap-0.5 px-1 py-2 sm:gap-2 sm:px-4">
+        <div className="mx-auto grid w-full max-w-6xl grid-cols-4 gap-0.5 px-1 py-1 sm:gap-2 sm:px-4">
           {guestItems.map((item) => {
             const Icon = item.icon;
             const active = isBottomNavItemActive(pathname, item.href);
@@ -205,13 +203,13 @@ export default function BottomNavigation() {
                 key={item.href}
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className={`flex min-h-[58px] min-w-0 touch-manipulation flex-col items-center justify-center rounded-xl px-0.5 ${appBottomNavLabelClass} transition sm:rounded-2xl sm:px-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 ${
+                className={`flex min-h-[48px] min-w-0 touch-manipulation flex-col items-center justify-center rounded-xl px-0.5 ${appBottomNavLabelClass} transition sm:min-h-[52px] sm:rounded-2xl sm:px-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
                   active
-                    ? "bg-brand-soft text-brand-navy"
-                    : "text-slate-600 hover:bg-slate-50 hover:text-brand-navy"
+                    ? "bg-white/12 text-white"
+                    : "text-white/55 hover:bg-white/8 hover:text-white"
                 }`}
               >
-                <Icon className="mb-1 h-5 w-5" strokeWidth={1.8} />
+                <Icon className="mb-0.5 h-5 w-5" strokeWidth={1.8} />
                 <span>{item.label}</span>
               </Link>
             );
@@ -226,11 +224,11 @@ export default function BottomNavigation() {
   return (
     <nav
       aria-label="Main"
-      className="fixed bottom-0 left-0 right-0 z-50 max-w-full overflow-hidden border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur"
+      className="fixed bottom-0 left-0 right-0 z-50 max-w-full overflow-hidden border-t border-white/10 bg-navy-hero/95 pb-[env(safe-area-inset-bottom)] backdrop-blur"
     >
       <div
         ref={containerRef}
-        className="mx-auto grid w-full max-w-6xl grid-cols-5 gap-0.5 px-1 py-2 sm:gap-2 sm:px-4"
+        className="mx-auto grid w-full max-w-6xl grid-cols-5 gap-0.5 px-1 py-1 sm:gap-2 sm:px-4"
       >
         {authenticatedItems.map((item) => {
           const Icon = item.icon;
@@ -241,13 +239,13 @@ export default function BottomNavigation() {
               key={item.href}
               href={item.href}
               aria-current={active ? "page" : undefined}
-              className={`flex min-h-[58px] min-w-0 touch-manipulation flex-col items-center justify-center rounded-xl px-0.5 ${appBottomNavLabelClass} transition sm:rounded-2xl sm:px-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 ${
+              className={`flex min-h-[48px] min-w-0 touch-manipulation flex-col items-center justify-center rounded-xl px-0.5 ${appBottomNavLabelClass} transition sm:min-h-[52px] sm:rounded-2xl sm:px-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
                 active
-                  ? "bg-brand-soft text-brand-navy"
-                  : "text-slate-600 hover:bg-slate-50 hover:text-brand-navy"
+                  ? "bg-white/12 text-white"
+                  : "text-white/55 hover:bg-white/8 hover:text-white"
               }`}
             >
-              <Icon className="mb-1 h-5 w-5" strokeWidth={1.8} />
+              <Icon className="mb-0.5 h-5 w-5" strokeWidth={1.8} />
               <span>{item.label}</span>
             </Link>
           );
@@ -261,10 +259,10 @@ export default function BottomNavigation() {
           aria-haspopup="dialog"
           aria-label="More destinations"
           onClick={toggle}
-          className={`flex min-h-[58px] min-w-0 touch-manipulation flex-col items-center justify-center rounded-xl px-0.5 ${appBottomNavLabelClass} transition sm:rounded-2xl sm:px-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 ${
+          className={`flex min-h-[48px] min-w-0 touch-manipulation flex-col items-center justify-center rounded-xl px-0.5 ${appBottomNavLabelClass} transition sm:min-h-[52px] sm:rounded-2xl sm:px-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
             moreActive || open
-              ? "bg-brand-soft text-brand-navy"
-              : "text-slate-600 hover:bg-slate-50 hover:text-brand-navy"
+              ? "bg-white/12 text-white"
+              : "text-white/55 hover:bg-white/8 hover:text-white"
           }`}
           data-testid="bottom-nav-more-trigger"
         >

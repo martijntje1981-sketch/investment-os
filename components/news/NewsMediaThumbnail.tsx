@@ -8,11 +8,12 @@ import {
   getNewsMediaFallbackStyle,
   type NewsMediaFallbackCategory,
 } from "@/components/news/newsMediaFallback";
-import { selectTrustedNewsThumbnailFromUrl } from "@/lib/services/news/newsThumbnail";
+import { selectStoredNewsThumbnail, selectTrustedNewsThumbnailFromUrl } from "@/lib/services/news/newsThumbnail";
 import type { NewsSourceType } from "@/lib/types/newsContent";
 
 const SIZE_CLASSES = {
   micro: "h-8 w-8 shrink-0 sm:h-9 sm:w-9",
+  square: "h-10 w-10 shrink-0 md:h-11 md:w-11",
   compact:
     "h-11 w-[3.75rem] shrink-0 aspect-[4/3] min-[480px]:h-12 min-[480px]:w-16",
   small:
@@ -29,6 +30,7 @@ export function NewsMediaThumbnail({
   showPlayIndicator = false,
   alt = "",
   priority = false,
+  allowProviderStoredUrl = false,
 }: {
   thumbnailUrl?: string | null;
   sourceType?: NewsSourceType;
@@ -37,8 +39,12 @@ export function NewsMediaThumbnail({
   showPlayIndicator?: boolean;
   alt?: string;
   priority?: boolean;
+  /** Use a thumbnail already stored on the fetched item (HTTPS, not the article URL). */
+  allowProviderStoredUrl?: boolean;
 }) {
-  const trustedUrl = selectTrustedNewsThumbnailFromUrl(thumbnailUrl, sourceType);
+  const trustedUrl = allowProviderStoredUrl
+    ? selectStoredNewsThumbnail({ thumbnailUrl, sourceType })
+    : selectTrustedNewsThumbnailFromUrl(thumbnailUrl, sourceType);
   const [failed, setFailed] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const showImage = Boolean(trustedUrl) && !failed;
@@ -51,7 +57,9 @@ export function NewsMediaThumbnail({
 
   return (
     <div
-      className={`relative overflow-hidden rounded-lg ${
+      className={`relative overflow-hidden ${
+        size === "square" ? "rounded-xl" : "rounded-lg"
+      } ${
         showImage
           ? "bg-slate-100"
           : `${fallbackStyle.surfaceClass} ${fallbackStyle.borderClass}`
@@ -74,6 +82,7 @@ export function NewsMediaThumbnail({
             }`}
             loading={priority ? "eager" : "lazy"}
             decoding="async"
+            referrerPolicy="no-referrer"
             onLoad={() => setLoaded(true)}
             onError={() => setFailed(true)}
           />

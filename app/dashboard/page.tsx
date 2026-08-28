@@ -351,7 +351,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <PageContainer stackClassName="gap-5 md:gap-7">
+    <PageContainer canvas="dashboard">
       <PortfolioSyncBanner
         syncState={syncState}
         migrationPreview={migrationPreview}
@@ -440,7 +440,7 @@ export default function DashboardPage() {
         </>
       ) : null}
 
-      <p className="rounded-[28px] border border-slate-200/70 bg-white/95 px-5 py-5 text-center text-[13px] leading-[1.7] text-slate-500 shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:px-6 sm:py-6 sm:text-sm">
+      <p className="px-1 pb-2 text-center text-[13px] leading-[1.7] text-white/40">
         Tobailey is a monitoring tool. It does not provide personal financial
         advice.
       </p>

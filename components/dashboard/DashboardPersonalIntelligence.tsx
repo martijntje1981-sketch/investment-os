@@ -2,11 +2,10 @@ import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 
 import {
-  appDashboardLightCardClass,
-  appSectionBodyClass,
-  appSectionLabelClass,
-  appSectionMetaClass,
-  appTextLinkClass,
+  appDarkCardClass,
+  appDashboardDarkBodyClass,
+  appDashboardDarkMetaClass,
+  appHeroMetricLabelClass,
 } from "@/components/layout/appSurface";
 import type { DashboardPersonalIntelligenceView } from "@/lib/client/dashboardPersonalIntelligence";
 import {
@@ -23,6 +22,9 @@ const HUB_LINKS = [
   { href: WHATS_AHEAD_HUB_PATH, label: "What’s ahead" },
 ] as const;
 
+const actionClass =
+  "inline-flex min-h-11 items-center gap-1 text-[14px] font-semibold text-brand underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40";
+
 export function DashboardPersonalIntelligence({
   view,
 }: {
@@ -32,39 +34,41 @@ export function DashboardPersonalIntelligence({
 
   return (
     <section
-      className={`${appDashboardLightCardClass} min-w-0 overflow-x-clip`}
+      className={`${appDarkCardClass} min-w-0 overflow-x-clip`}
       data-testid="dashboard-personal-intelligence"
       data-kind={view.kind}
       aria-labelledby="personal-intelligence-heading"
     >
       <div className="px-4 py-4 sm:px-5">
-        <p className={appSectionLabelClass} id="personal-intelligence-heading">
+        <p className={appHeroMetricLabelClass} id="personal-intelligence-heading">
           Personal intelligence
         </p>
         {view.kind === "change" && view.windowLabel ? (
-          <p className={`mt-0.5 ${appSectionMetaClass}`}>{view.windowLabel}</p>
+          <p className={`mt-0.5 ${appDashboardDarkMetaClass}`}>{view.windowLabel}</p>
         ) : null}
         {view.kind === "looking_ahead" && view.modeledDisclaimer ? (
-          <p className={`mt-0.5 ${appSectionMetaClass}`}>
+          <p className={`mt-0.5 ${appDashboardDarkMetaClass}`}>
             {view.modeledDisclaimer}
           </p>
         ) : (
-          <p className={`mt-0.5 ${appSectionMetaClass}`}>
+          <p className={`mt-0.5 ${appDashboardDarkMetaClass}`}>
             Only what adds to today’s holding moves
           </p>
         )}
 
-        <p className="mt-3 text-[1.05rem] font-semibold leading-snug text-slate-950">
+        <p className="mt-3 text-[1.125rem] font-semibold leading-snug tracking-[-0.02em] text-white sm:text-[1.25rem]">
           {view.title}
         </p>
         {view.support ? (
-          <p className={`mt-1.5 ${quiet ? appSectionBodyClass : appSectionMetaClass}`}>
+          <p
+            className={`mt-1.5 ${quiet ? appDashboardDarkBodyClass : appDashboardDarkMetaClass}`}
+          >
             {view.support}
           </p>
         ) : null}
 
         {view.kind === "looking_ahead" && view.eventLabel ? (
-          <p className={`mt-2 ${appSectionMetaClass}`}>
+          <p className={`mt-2 ${appDashboardDarkMetaClass}`}>
             Next relevant event · {view.eventLabel}
           </p>
         ) : null}
@@ -73,20 +77,14 @@ export function DashboardPersonalIntelligence({
           <ul className="mt-3 flex flex-wrap gap-x-3 gap-y-1">
             {HUB_LINKS.map((link) => (
               <li key={link.href}>
-                <Link
-                  href={link.href}
-                  className={`inline-flex min-h-11 items-center ${appTextLinkClass}`}
-                >
+                <Link href={link.href} className={actionClass}>
                   {link.label}
                 </Link>
               </li>
             ))}
           </ul>
         ) : (
-          <Link
-            href={view.href}
-            className={`${appTextLinkClass} mt-3 inline-flex min-h-11 items-center gap-1`}
-          >
+          <Link href={view.href} className={`${actionClass} mt-3`}>
             {view.hrefLabel}
             <ArrowUpRight className="h-4 w-4" aria-hidden />
           </Link>

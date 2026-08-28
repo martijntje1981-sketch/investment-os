@@ -163,9 +163,9 @@ describe("Dashboard hero movers responsive layout", () => {
 
     expect(source).toContain("signedPercent");
     expect(source).toContain(
-      "truncate text-[15px] font-bold tabular-nums tracking-[-0.02em] sm:text-[15px]",
+      "truncate text-[14px] font-bold tabular-nums tracking-[-0.02em] sm:text-[15px]",
     );
-    expect(source).toContain("appDashboardHeroInsetClass");
+    expect(source).toContain("appDarkInsetClass");
     expect(source).toContain("TrendingUp");
     expect(source).toContain("TrendingDown");
   });

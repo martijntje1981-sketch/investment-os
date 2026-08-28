@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   isTrustedNewsThumbnailUrl,
+  selectStoredNewsThumbnail,
   selectTrustedNewsThumbnail,
   TRUSTED_NEWS_THUMBNAIL_HOSTS,
 } from "@/lib/services/news/newsThumbnail";
@@ -74,5 +75,40 @@ describe("newsThumbnail", () => {
       "i4.ytimg.com",
       "img.youtube.com",
     ]);
+  });
+
+  it("accepts a provider-stored HTTPS image that is not the article URL", () => {
+    expect(
+      selectStoredNewsThumbnail({
+        thumbnailUrl: "https://cdn.provider.example/story.jpg",
+        canonicalUrl: "https://wire.example/article/123",
+        sourceType: "news",
+      }),
+    ).toBe("https://cdn.provider.example/story.jpg");
+  });
+
+  it("does not use the article URL itself as a thumbnail", () => {
+    expect(
+      selectStoredNewsThumbnail({
+        thumbnailUrl: "https://reuters.com/article/123",
+        canonicalUrl: "https://reuters.com/article/123",
+        sourceType: "news",
+      }),
+    ).toBeNull();
+  });
+
+  it("still rejects unsafe stored thumbnail URLs", () => {
+    expect(
+      selectStoredNewsThumbnail({
+        thumbnailUrl: "javascript:alert(1)",
+        sourceType: "news",
+      }),
+    ).toBeNull();
+    expect(
+      selectStoredNewsThumbnail({
+        thumbnailUrl: "http://cdn.provider.example/story.jpg",
+        sourceType: "news",
+      }),
+    ).toBeNull();
   });
 });

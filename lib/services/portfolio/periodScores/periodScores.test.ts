@@ -545,7 +545,7 @@ describe("Dashboard Portfolio Pulse wiring", () => {
     expect(pulse).toContain("pulse.monthly");
     expect(pulse).toContain('emphasis="primary"');
     expect(pulse).not.toContain("pulse.combinedSummary");
-    expect(pulse).toContain('appearance="onLight"');
+    expect(pulse).toContain('appearance="onDark"');
     expect(ring).toContain('emphasis?: "primary" | "default"');
     expect(ring).toContain('appearance?: "onLight" | "onDark"');
     expect(ring).toContain("onActivate");

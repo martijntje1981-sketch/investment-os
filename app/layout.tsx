@@ -45,15 +45,12 @@ export const metadata: Metadata = {
   appleWebApp: {
     title: BRAND.name,
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#F8FAFC" },
-    { media: "(prefers-color-scheme: dark)", color: BRAND.navy },
-  ],
+  themeColor: BRAND.navy,
 };
 
 export default function RootLayout({

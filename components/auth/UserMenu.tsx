@@ -189,14 +189,14 @@ function MenuSection({
 
 function GuestHeader({ pathname }: { pathname: string }) {
   return (
-    <header className="fixed inset-x-0 top-0 z-[60] border-b border-slate-200/80 bg-white/90 backdrop-blur-xl">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 sm:h-16 sm:px-6">
+    <header className="fixed inset-x-0 top-0 z-[60] border-b border-white/10 bg-navy-hero/95 pt-[env(safe-area-inset-top,0px)] backdrop-blur-xl">
+      <div className="mx-auto flex h-12 max-w-6xl items-center justify-between gap-3 px-3 sm:h-14 sm:px-6">
         <Link
           href="/"
           className="min-w-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
           aria-label="Tobailey home"
         >
-          <TobaileyLogo size={36} showWordmark className="sm:gap-3" />
+          <TobaileyLogo size={28} showWordmark onDark className="sm:gap-3" />
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex" aria-label="Explore">
@@ -208,8 +208,8 @@ function GuestHeader({ pathname }: { pathname: string }) {
                 href={link.href}
                 className={`rounded-lg px-3 py-2 text-[13px] font-semibold transition ${
                   active
-                    ? "bg-brand/15 text-brand-navy"
-                    : "text-slate-600 hover:bg-slate-100 hover:text-brand-navy"
+                    ? "bg-white/10 text-white"
+                    : "text-white/70 hover:bg-white/8 hover:text-white"
                 }`}
               >
                 {link.label}
@@ -221,7 +221,7 @@ function GuestHeader({ pathname }: { pathname: string }) {
         <div className="flex items-center gap-2">
           <Link
             href="/login"
-            className="inline-flex min-h-[40px] items-center rounded-xl px-3 text-[13px] font-semibold text-brand-navy transition hover:bg-brand-soft"
+            className="inline-flex min-h-[40px] items-center rounded-xl px-3 text-[13px] font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
           >
             Sign in
           </Link>
@@ -264,10 +264,10 @@ function AuthenticatedDiscoverMenu({
         aria-expanded={open}
         aria-controls={menuId}
         aria-haspopup="menu"
-        className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-2 text-[13px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 ${
+        className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-2 text-[13px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
           discoverActive || open
-            ? "bg-brand/15 text-brand-navy"
-            : "text-slate-600 hover:bg-slate-100 hover:text-brand-navy"
+            ? "bg-white/12 text-white"
+            : "text-white/65 hover:bg-white/8 hover:text-white"
         }`}
         data-testid="desktop-discover-trigger"
       >
@@ -283,7 +283,7 @@ function AuthenticatedDiscoverMenu({
           id={menuId}
           role="menu"
           aria-label="Explore"
-          className="absolute left-0 top-[calc(100%+0.5rem)] z-50 w-80 overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-xl shadow-slate-300/40"
+          className="absolute left-0 top-[calc(100%+0.5rem)] z-50 w-80 overflow-hidden rounded-2xl border border-white/10 bg-navy-card p-2 shadow-[0_18px_40px_rgba(11,31,58,0.45)]"
           data-testid="desktop-discover-menu"
         >
           {DISCOVER_DESTINATIONS.map((item) => {
@@ -298,8 +298,8 @@ function AuthenticatedDiscoverMenu({
                 aria-current={active ? "page" : undefined}
                 className={`flex items-start gap-3 rounded-xl px-3 py-2.5 transition ${
                   active
-                    ? "bg-brand-soft text-brand-navy"
-                    : "text-slate-700 hover:bg-brand-soft hover:text-brand-navy"
+                    ? "bg-white/10 text-white"
+                    : "text-white/75 hover:bg-white/8 hover:text-white"
                 }`}
               >
                 <Icon
@@ -308,7 +308,7 @@ function AuthenticatedDiscoverMenu({
                 />
                 <span className="min-w-0">
                   <span className="block text-sm font-bold">{item.label}</span>
-                  <span className="mt-0.5 block text-xs font-medium text-slate-500">
+                  <span className="mt-0.5 block text-xs font-medium text-white/50">
                     {item.description}
                   </span>
                 </span>
@@ -401,17 +401,17 @@ export default function UserMenu() {
   }
 
   return (
-    <header className="fixed inset-x-0 top-0 z-[60] border-b border-slate-200/80 bg-white/90 backdrop-blur-xl">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 sm:h-16 sm:px-6">
+    <header className="fixed inset-x-0 top-0 z-[60] border-b border-white/10 bg-navy-hero/95 pt-[env(safe-area-inset-top,0px)] backdrop-blur-xl">
+      <div className="mx-auto flex h-12 max-w-6xl items-center justify-between gap-3 px-3 sm:h-14 sm:px-6">
         <div className="flex min-w-0 items-center gap-2 sm:gap-3 lg:gap-5">
           <Link
             href="/dashboard"
             className="min-w-0 shrink-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
             aria-label="Tobailey dashboard"
           >
-            <TobaileyLogo size={36} showWordmark className="sm:gap-3" />
+            <TobaileyLogo size={28} showWordmark onDark className="sm:gap-3" />
           </Link>
-          <PortfolioSwitcher />
+          <PortfolioSwitcher appearance="onDark" />
 
           <nav
             className="hidden items-center gap-0.5 lg:flex"
@@ -425,10 +425,10 @@ export default function UserMenu() {
                   key={link.href}
                   href={link.href}
                   aria-current={active ? "page" : undefined}
-                  className={`rounded-lg px-2.5 py-2 text-[14px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 ${
+                  className={`rounded-lg px-2.5 py-2 text-[14px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
                     active
-                      ? "bg-brand/15 text-brand-navy"
-                      : "text-slate-600 hover:bg-slate-100 hover:text-brand-navy"
+                      ? "bg-white/12 text-white"
+                      : "text-white/65 hover:bg-white/8 hover:text-white"
                   }`}
                 >
                   {link.label}
@@ -470,7 +470,7 @@ export default function UserMenu() {
                   id={menuId}
                   role="menu"
                   aria-label="Profile"
-                  className="fixed right-3 top-[calc(3.5rem+0.5rem)] z-[80] grid max-h-[min(32rem,calc(100dvh-3.5rem-var(--bottom-nav-height)-env(safe-area-inset-bottom,0px)-1rem))] w-[min(100vw-1.5rem,16.5rem)] grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden overscroll-none rounded-xl border border-white/10 bg-brand-navy shadow-[0_18px_40px_rgba(11,31,58,0.45)] sm:right-[max(0.75rem,calc((100vw-72rem)/2+1.5rem))] sm:top-[calc(4rem+0.5rem)] sm:max-h-[min(36rem,calc(100dvh-5rem))] sm:w-64"
+                  className="fixed right-3 top-[calc(3rem+env(safe-area-inset-top,0px)+0.4rem)] z-[80] grid max-h-[min(32rem,calc(100dvh-3.5rem-var(--bottom-nav-height)-env(safe-area-inset-bottom,0px)-1rem))] w-[min(100vw-1.5rem,16.5rem)] grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden overscroll-none rounded-xl border border-white/10 bg-brand-navy shadow-[0_18px_40px_rgba(11,31,58,0.45)] sm:right-[max(0.75rem,calc((100vw-72rem)/2+1.5rem))] sm:top-[calc(3.5rem+0.5rem)] sm:max-h-[min(36rem,calc(100dvh-5rem))] sm:w-64"
                   data-testid="profile-menu-panel"
                 >
                   <div className="border-b border-white/10 px-3 py-2.5">

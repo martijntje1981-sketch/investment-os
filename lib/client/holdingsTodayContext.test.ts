@@ -121,6 +121,7 @@ describe("holdings today news pairing", () => {
         title: "AI infrastructure stocks rise after data-centre demand",
         matchedHoldingIds: [aifs.id],
         matchedSymbols: ["AIFS"],
+        thumbnailUrl: "https://cdn.provider.example/aifs.jpg",
       }),
     ]);
 
@@ -130,10 +131,12 @@ describe("holdings today news pairing", () => {
     );
     expect(aifsNews?.href).toBe("https://example.test/aifs-story");
     expect(aifsNews?.sourceName).toBe("Test Wire");
+    expect(aifsNews?.thumbnailUrl).toBe("https://cdn.provider.example/aifs.jpg");
 
     const nuklNews = newsById.get(nukl.id);
     expect(nuklNews?.headline).toBeNull();
     expect(nuklNews?.href).toBeNull();
     expect(nuklNews?.emptyLabel).toBe(HOLDINGS_TODAY_NO_NEWS);
+    expect(nuklNews?.thumbnailUrl).toBeNull();
   });
 });

@@ -240,7 +240,7 @@ describe("Phase 19.7 report/export price-status consumption", () => {
     expect(excel).toContain("resolveHoldingDisplayPrice");
     expect(dashboard).toContain("resolveHoldingDisplayPrice");
     expect(dashboard).toContain("holdingPricePeriodCaption");
-    expect(holdingsRow).toContain("holdingPriceHoldingsLabel");
+    expect(holdingsRow).toContain("formatHoldingQuoteTrustLine");
     expect(holdingsRow).toContain("holdingPricePeriodCaption");
     expect(holdingPage).toContain("holdingPricePeriodCaption");
     expect(portfolioPage).toContain("resolveHoldingPriceTrustStatus");

@@ -11,7 +11,11 @@ import { PORTFOLIO_PATH } from "@/lib/navigation/appRoutes";
 import { MULTI_PORTFOLIO_COPY } from "@/lib/content/multiPortfolioCopy";
 import { useProductAccess } from "@/lib/client/useProductAccess";
 
-export function PortfolioSwitcher() {
+export function PortfolioSwitcher({
+  appearance = "onLight",
+}: {
+  appearance?: "onLight" | "onDark";
+}) {
   const active = useActivePortfolioOptional();
   const productAccess = useProductAccess(Boolean(active?.ready));
   const router = useRouter();
@@ -86,11 +90,17 @@ export function PortfolioSwitcher() {
         aria-haspopup="listbox"
         aria-label={`${MULTI_PORTFOLIO_COPY.switcherLabel}: ${currentName}`}
         data-testid="portfolio-switcher"
-        className="flex min-h-[40px] w-full min-w-0 items-center gap-1.5 rounded-xl border border-brand/40 bg-brand-soft px-2 py-1.5 text-left text-[13px] font-semibold text-brand-navy transition hover:border-brand/70 hover:bg-brand-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 sm:min-h-[44px] sm:px-2.5"
+        className={`flex min-h-[36px] w-full min-w-0 items-center gap-1.5 rounded-xl border px-2 py-1.5 text-left text-[13px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand sm:min-h-[40px] sm:px-2.5 ${
+          appearance === "onDark"
+            ? "border-white/20 bg-white/10 text-white hover:border-white/35 hover:bg-white/15"
+            : "border-brand/40 bg-brand-soft text-brand-navy hover:border-brand/70 hover:bg-brand-soft focus-visible:ring-offset-2"
+        }`}
       >
         <span className="min-w-0 truncate">{currentName}</span>
         <ChevronDown
-          className={`h-3.5 w-3.5 shrink-0 text-brand-strong transition ${open ? "rotate-180" : ""}`}
+          className={`h-3.5 w-3.5 shrink-0 transition ${open ? "rotate-180" : ""} ${
+            appearance === "onDark" ? "text-white/70" : "text-brand-strong"
+          }`}
           aria-hidden
         />
       </button>
