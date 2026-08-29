@@ -24,6 +24,9 @@ export const appDashboardPageCanvasClass =
 export const appAnalysisPageCanvasClass =
   "min-h-screen w-full max-w-full overflow-x-clip bg-navy-hero-deep px-3 pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] pt-[calc(4rem+env(safe-area-inset-top,0px))] text-white sm:px-6 sm:pb-28 sm:pt-[5.25rem] [[data-example-banner=true]_&]:pt-[calc(5.75rem+env(safe-area-inset-top,0px))] sm:[[data-example-banner=true]_&]:pt-[7rem] scroll-pt-[calc(4rem+env(safe-area-inset-top,0px))] sm:scroll-pt-[5.25rem]";
 
+/** Shared navy canvas for remaining authenticated pages (Goals, History, Review). */
+export const appAuthenticatedNavyCanvasClass = appAnalysisPageCanvasClass;
+
 /**
  * News navy canvas — same family and clearance as Analysis.
  * Do not reuse this token to restyle Dashboard or Analysis.
@@ -139,6 +142,14 @@ export const appDarkCardClass =
 /** Subtle inset surface inside dark cards. */
 export const appDarkInsetClass =
   "rounded-xl border border-white/10 bg-white/[0.07]";
+
+/** Compact caution on navy surfaces — not a primary product block. */
+export const appDarkCautionClass =
+  "rounded-xl border border-amber-400/30 bg-amber-400/10 px-3.5 py-2.5 text-[13px] font-medium leading-relaxed text-amber-100";
+
+/** Compact activity/list row on navy surfaces. */
+export const appDarkActivityRowClass =
+  "flex min-h-[44px] items-start justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5";
 
 /** Compact padding for dense dark heroes (dashboard + peers). */
 export const appHeroPaddingCompactClass =

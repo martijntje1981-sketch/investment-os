@@ -15,18 +15,18 @@ describe("goals hero integration", () => {
     expect(goalsPage).not.toContain("calculatePortfolioValue");
   });
 
-  it("renders the hero progress visual inside PageHero", () => {
+  it("renders the hero progress visual in the on-track block", () => {
     const goalsPage = readFileSync(
       path.resolve(process.cwd(), "app/goals/page.tsx"),
       "utf8",
     );
 
     expect(goalsPage).toContain("GoalHeroProgressVisual");
-    expect(goalsPage).toContain("visual={");
-    expect(goalsPage).toContain("appPageHeroMetricLabelClass");
-    expect(goalsPage).toContain("appPageHeroMetaClass");
-    expect(goalsPage).not.toMatch(/text-white\/90/);
-    expect(goalsPage).not.toMatch(/text-white\/65/);
-    expect(goalsPage).not.toMatch(/border-white\/15 bg-white\/10/);
+    expect(goalsPage).toContain("CalmPageIntro");
+    expect(goalsPage).toContain('canvas="navy"');
+    expect(goalsPage).toContain("Am I on track?");
+    expect(goalsPage).toContain("onDark");
+    expect(goalsPage).toContain("Estimated completion");
+    expect(goalsPage).not.toContain("<PageHero");
   });
 });

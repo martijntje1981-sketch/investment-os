@@ -4,14 +4,14 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 
 import {
-  appCardClass,
-  appCardPaddingClass,
-  appIntelligenceAccentMetricClass,
-  appSectionBodyClass,
-  appSectionLabelClass,
-  appSectionMetaClass,
-  appSectionTitleClass,
-  appTextLinkClass,
+  appAnalysisDarkTitleClass,
+  appAnalysisUtilityButtonClass,
+  appDarkCardClass,
+  appDarkCardPaddingClass,
+  appDarkInsetClass,
+  appDashboardDarkBodyClass,
+  appDashboardDarkMetaClass,
+  appHeroMetricLabelClass,
 } from "@/components/layout/appSurface";
 import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 import type { GoalTradeOffs } from "@/lib/services/portfolioStance";
@@ -64,32 +64,32 @@ export function GoalTradeOffsSection({
     <section
       id="goal-trade-offs"
       aria-labelledby="goal-trade-offs-heading"
-      className={`${appCardClass} ${appCardPaddingClass} min-w-0 scroll-mt-24 overflow-x-clip`}
+      className={`${appDarkCardClass} ${appDarkCardPaddingClass} min-w-0 scroll-mt-24 overflow-x-clip`}
       data-testid="goal-trade-offs"
     >
-      <p className={appSectionLabelClass}>Goal trade-offs</p>
-      <h2 id="goal-trade-offs-heading" className={appSectionTitleClass}>
+      <p className={appHeroMetricLabelClass}>What could change it?</p>
+      <h2 id="goal-trade-offs-heading" className={`mt-1 ${appAnalysisDarkTitleClass}`}>
         What could change the path?
       </h2>
-      <p className={`mt-2 ${appSectionBodyClass}`}>{model.pathCopy}</p>
-      <p className={`mt-2 ${appSectionMetaClass}`}>{STANCE_ILLUSTRATIVE_DISCLAIMER}</p>
+      <p className={`mt-2 ${appDashboardDarkBodyClass}`}>{model.pathCopy}</p>
+      <p className={`mt-2 ${appDashboardDarkMetaClass}`}>{STANCE_ILLUSTRATIVE_DISCLAIMER}</p>
 
       {!model.available ? (
-        <p className={`mt-5 ${appSectionMetaClass}`}>{model.reason}</p>
+        <p className={`mt-5 ${appDashboardDarkMetaClass}`}>{model.reason}</p>
       ) : (
         <>
-          <div className="mt-5 rounded-2xl border border-slate-200/80 px-4 py-4">
-            <p className={appSectionLabelClass}>Current path</p>
-            <p className="mt-1 text-[1.25rem] font-bold text-slate-950">
+          <div className={`mt-5 px-4 py-4 ${appDarkInsetClass}`}>
+            <p className={appHeroMetricLabelClass}>Current path</p>
+            <p className="mt-1 text-[1.25rem] font-bold text-white">
               {currentOption?.projectedCompletionLabel ?? "Projected completion unavailable"}
             </p>
             {currentMonthly != null ? (
-              <p className={`mt-1 ${appSectionMetaClass}`}>
+              <p className={`mt-1 ${appDashboardDarkMetaClass}`}>
                 {formatEur(currentMonthly)} / month
               </p>
             ) : null}
             {model.stance.currentLabel ? (
-              <p className={`mt-1 ${appSectionMetaClass}`}>
+              <p className={`mt-1 ${appDashboardDarkMetaClass}`}>
                 Current stance: {model.stance.currentLabel}
               </p>
             ) : null}
@@ -97,9 +97,9 @@ export function GoalTradeOffsSection({
 
           {currentMonthly != null && model.contribution.options.length > 1 ? (
             <div className="mt-5">
-              <p className={appSectionTitleClass}>Explore monthly contribution</p>
+              <p className="text-sm font-semibold text-white">Explore monthly contribution</p>
               <label className="mt-3 block">
-                <span className={appSectionMetaClass}>
+                <span className={appDashboardDarkMetaClass}>
                   {formatEur(currentMonthly)} → {formatEur(exploreMonthly)}
                 </span>
                 <input
@@ -109,11 +109,11 @@ export function GoalTradeOffsSection({
                   step={50}
                   value={exploreMonthly}
                   onChange={(event) => setExploreMonthly(Number(event.target.value))}
-                  className="mt-2 h-11 w-full accent-cyan-800"
+                  className="mt-2 h-11 w-full accent-cyan-400"
                 />
               </label>
               {selected && !selected.isCurrent ? (
-                <p className={`mt-2 ${appSectionBodyClass}`}>
+                <p className={`mt-2 ${appDashboardDarkBodyClass}`}>
                   Projected completion {currentOption?.projectedCompletionLabel ?? "—"} →{" "}
                   {selected.projectedCompletionLabel ?? "unavailable"}
                 </p>
@@ -122,16 +122,16 @@ export function GoalTradeOffsSection({
           ) : null}
 
           <div className="mt-6">
-            <p className={appSectionTitleClass}>Modeled trade-off</p>
-            <p className={`mt-2 ${appSectionMetaClass}`}>
+            <p className="text-sm font-semibold text-white">Modeled trade-off</p>
+            <p className={`mt-2 ${appDashboardDarkMetaClass}`}>
               {STANCE_RETURN_ASSUMPTIONS_BLOCKED_REASON}
             </p>
             <div className="mt-3 grid min-w-0 gap-3">
               {model.stance.paths.map((path) => (
-                <div key={path.id} className={appIntelligenceAccentMetricClass}>
-                  <p className={appSectionLabelClass}>{path.label}</p>
-                  <p className="mt-1 font-semibold text-slate-950">{path.stanceLabel}</p>
-                  <p className={`mt-1 ${appSectionMetaClass}`}>
+                <div key={path.id} className={`${appDarkInsetClass} px-3.5 py-3`}>
+                  <p className={appHeroMetricLabelClass}>{path.label}</p>
+                  <p className="mt-1 font-semibold text-white">{path.stanceLabel}</p>
+                  <p className={`mt-1 ${appDashboardDarkMetaClass}`}>
                     Modeled downside {formatImpact(path.modeledDownsidePercent)}
                   </p>
                 </div>
@@ -141,7 +141,7 @@ export function GoalTradeOffsSection({
 
           <Link
             href={DASHBOARD_DEEP_LINKS.whatIf}
-            className={`${appTextLinkClass} mt-4 inline-flex min-h-11 items-center`}
+            className={`${appAnalysisUtilityButtonClass} mt-4 inline-flex`}
           >
             Explore contribution scenarios →
           </Link>

@@ -45,18 +45,12 @@ describe("Pre-launch light hero contrast and action alignment", () => {
     );
   });
 
-  it("does not leave legacy white copy in the Goals light hero", () => {
-    expect(goals).toContain("<PageHero");
-    expect(goals).toContain("appPageHeroMetaClass");
-    expect(goals).toContain("appPageHeroMetricLabelClass");
-    expect(goals).toContain("appPageHeroInsetClass");
+  it("does not leave Goals on the light PageHero surface", () => {
+    expect(goals).toContain("<CalmPageIntro");
+    expect(goals).toContain('canvas="navy"');
     expect(goals).toContain("Estimated completion");
-    expect(goals).toContain("Expected return");
-    expect(goals).toContain("Your assumption");
-    expect(goals).not.toMatch(/text-white\/90/);
-    expect(goals).not.toMatch(/text-white\/65/);
-    expect(goals).not.toMatch(/border-white\/15 bg-white\/10/);
-    expect(goals).not.toContain("appHeroMetricLabelClass");
+    expect(goals).toContain("Am I on track?");
+    expect(goals).not.toContain("<PageHero");
   });
 
   it("places PageHero actions in one shared wrap row without nested action stacks", () => {
@@ -77,7 +71,8 @@ describe("Pre-launch light hero contrast and action alignment", () => {
     expect(pageHero).not.toContain("lg:grid-cols-[minmax(0,1fr)_auto]");
     expect(surface).toContain("lg:max-w-xl");
     expect(surface).toContain("flex-wrap");
-    expect(goals).toContain("<PageHero");
+    expect(goals).not.toContain("<PageHero");
+    expect(goals).toContain("<CalmPageIntro");
     expect(analysis).not.toContain("<PageHero");
     expect(analysis).toContain("AnalysisIntro");
     expect(news).not.toContain("<PageHero");

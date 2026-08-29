@@ -1,39 +1,38 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import {
-  ArrowRight,
   CalendarDays,
   Check,
   Percent,
   PiggyBank,
   Save,
-  Scale,
   Target,
 } from "lucide-react";
 
 import { ExportPortfolioButton } from "@/components/export/ExportPortfolioButton";
 import {
-  appCardValueClass,
-  appPageHeroInsetClass,
-  appPageHeroMetaClass,
-  appPageHeroMetricLabelClass,
-  appSectionBodyClass,
-  appSectionLabelClass,
+  appAnalysisDarkTitleClass,
+  appAnalysisUtilityButtonClass,
+  appDarkCardClass,
+  appDarkCardPaddingClass,
+  appDarkInsetClass,
+  appDashboardDarkBodyClass,
+  appDashboardDarkMetaClass,
+  appHeroKpiClass,
+  appHeroMetricLabelClass,
   appSectionMetaClass,
-  appSectionTitleClass,
   appSolidButtonClass,
-  appTextLinkClass,
 } from "@/components/layout/appSurface";
 import { ConversionDetailsDisclosure } from "@/components/currency/ConversionDetailsDisclosure";
+import { CalmExploreDisclosure } from "@/components/layout/CalmExploreDisclosure";
+import { CalmPageIntro } from "@/components/layout/CalmPageIntro";
 import {
   AppPageLoading,
   PageContainer,
 } from "@/components/layout/PageContainer";
-import { PageHero } from "@/components/layout/PageHero";
 import { PageRelatedLinks } from "@/components/layout/PageRelatedLinks";
-import { AuthenticatedFourQuestionsNav } from "@/components/fourQuestions/AuthenticatedFourQuestionsNav";
 import { GoalHeroProgressVisual } from "@/components/goals/GoalHeroProgressVisual";
 import {
   ExpectedReturnAssumptionEditor,
@@ -55,7 +54,6 @@ import {
 import {
   EXPECTED_ANNUAL_RETURN_MAX,
   EXPECTED_ANNUAL_RETURN_MIN,
-  formatExpectedReturnPa,
   getExpectedReturnAssumption,
   isValidExpectedAnnualReturnInput,
 } from "@/lib/client/expectedReturnAssumption";
@@ -76,6 +74,7 @@ import { usePortfolioPerformanceHistory } from "@/lib/client/usePortfolioPerform
 import { useUserGoal } from "@/lib/client/useUserGoal";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 import { useProductAccess } from "@/lib/client/useProductAccess";
+import { useSectionHashId } from "@/lib/client/useSectionHashId";
 import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
 import {
   ANALYSIS_PATH,
@@ -109,15 +108,15 @@ import type { GoalSettings } from "@/lib/types/portfolioStorage";
 
 function badgeToneClass(status: string): string {
   if (status === "Goal reached" || status === "Ahead of schedule" || status === "On track") {
-    return "bg-emerald-100 text-emerald-800";
+    return "bg-emerald-400/15 text-emerald-200";
   }
   if (status === "Slightly behind") {
-    return "bg-amber-100 text-amber-900";
+    return "bg-amber-400/15 text-amber-100";
   }
   if (status === "Behind schedule") {
-    return "bg-rose-100 text-rose-800";
+    return "bg-rose-400/15 text-rose-200";
   }
-  return "bg-slate-100 text-slate-700";
+  return "bg-white/10 text-white/80";
 }
 
 export default function GoalsPage() {
@@ -260,6 +259,12 @@ export default function GoalsPage() {
   const [saved, setSaved] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [assumptionEditorOpen, setAssumptionEditorOpen] = useState(false);
+  const [exploreOpen, setExploreOpen] = useState(false);
+  const sectionHash = useSectionHashId();
+
+  useEffect(() => {
+    if (sectionHash === "what-if") setExploreOpen(true);
+  }, [sectionHash]);
 
   useEffect(() => {
     if (formDirty) {
@@ -376,80 +381,32 @@ export default function GoalsPage() {
   }
 
   if (!portfolioReady) {
-    return <AppPageLoading />;
+    return <AppPageLoading canvas="navy" />;
   }
+
+  const topInsight = intelligence.insights[0] ?? null;
+  const alignment =
+    intelligence.alignment &&
+    intelligence.alignment.label !== "Goal data unavailable"
+      ? intelligence.alignment
+      : null;
 
   return (
     <>
-      <PageContainer stackClassName="gap-5 md:gap-7">
-        <PageHero
-          id="goal-progress"
+      <PageContainer canvas="navy" stackClassName="gap-4 md:gap-5">
+        <CalmPageIntro
+          eyebrow="Goals"
           title={displayName}
           subtitle="Am I on track — and when might I get there?"
           backToDashboard
           actions={
             <ExportPortfolioButton
-              variant="hero"
+              variant="onDark"
               disabled={isExporting}
               onExport={handleExport}
             />
           }
-          visual={
-            <div className="space-y-4">
-              {hasSavedGoal ? (
-                <span
-                  className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${badgeToneClass(badgeLabel)}`}
-                >
-                  {badgeLabel}
-                </span>
-              ) : null}
-              <GoalHeroProgressVisual
-                progress={goalProgress}
-                hasSavedGoal={hasSavedGoal}
-              />
-              {hasSavedGoal ? (
-                <div className="space-y-3">
-                  <p className={appPageHeroMetaClass}>
-                    Estimated completion:{" "}
-                    <span className="font-semibold text-slate-950">
-                      {intelligence.forecast.estimatedCompletionLabel}
-                    </span>
-                    {intelligence.forecast.isEstimate ? (
-                      <span className="text-slate-600"> · estimate</span>
-                    ) : null}
-                  </p>
-                  {getExpectedReturnAssumption(savedGoal) != null ? (
-                    <div className={appPageHeroInsetClass}>
-                      <p className={appPageHeroMetricLabelClass}>
-                        Expected return
-                      </p>
-                      <p className="mt-1 text-lg font-bold text-slate-950">
-                        {formatExpectedReturnPa(
-                          getExpectedReturnAssumption(savedGoal)!,
-                        )}
-                      </p>
-                      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
-                        <p className="text-[13px] font-medium text-slate-600">
-                          Your assumption
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => setAssumptionEditorOpen(true)}
-                          className={`${appTextLinkClass} text-[13px]`}
-                          data-testid="expected-return-assumption-edit"
-                        >
-                          Edit
-                        </button>
-                      </div>
-                    </div>
-                  ) : null}
-                </div>
-              ) : null}
-            </div>
-          }
         />
-
-        <AuthenticatedFourQuestionsNav />
 
         {holdings.length === 0 ? (
           <EmptyPortfolioGuide
@@ -460,52 +417,94 @@ export default function GoalsPage() {
           />
         ) : null}
 
+        <section
+          id="goal-progress"
+          aria-labelledby="goals-on-track-heading"
+          className={`${appDarkCardClass} ${appDarkCardPaddingClass} scroll-mt-24`}
+          data-testid="goals-on-track"
+        >
+          <p className={appHeroMetricLabelClass}>Am I on track?</p>
+          <h2
+            id="goals-on-track-heading"
+            className={`mt-1 ${appAnalysisDarkTitleClass}`}
+          >
+            {hasSavedGoal ? badgeLabel : "Set a target to track progress"}
+          </h2>
+          {hasSavedGoal ? (
+            <span
+              className={`mt-3 inline-flex rounded-full px-3 py-1 text-xs font-semibold ${badgeToneClass(badgeLabel)}`}
+            >
+              {badgeLabel}
+            </span>
+          ) : null}
+          <div className="mt-4">
+            <GoalHeroProgressVisual
+              progress={goalProgress}
+              hasSavedGoal={hasSavedGoal}
+              onDark
+            />
+          </div>
+          {hasSavedGoal ? (
+            <p className={`mt-4 ${appDashboardDarkMetaClass}`}>
+              Estimated completion:{" "}
+              <span className="font-semibold text-white">
+                {intelligence.forecast.estimatedCompletionLabel}
+              </span>
+              {intelligence.forecast.isEstimate ? " · estimate" : null}
+            </p>
+          ) : null}
+        </section>
+
         {hasSavedGoal ? (
           <section
-            aria-labelledby="goals-forecast-heading"
-            className="min-w-0 overflow-hidden rounded-[28px] border border-slate-200/80 bg-white"
+            aria-labelledby="goals-driving-heading"
+            className={`${appDarkCardClass} ${appDarkCardPaddingClass}`}
+            data-testid="goals-driving"
           >
-            <div className="border-b border-slate-100 px-4 py-4 sm:px-6">
-              <h2 id="goals-forecast-heading" className={appSectionTitleClass}>
-                Progress at a glance
-              </h2>
-              <p className={`mt-1 ${appSectionMetaClass}`}>
-                Projection from your plan and available history — not a guarantee.
-              </p>
-            </div>
-            <div className="grid min-w-0 gap-4 px-4 py-5 sm:grid-cols-2 sm:px-6 lg:grid-cols-4">
+            <p className={appHeroMetricLabelClass}>What is driving the outcome?</p>
+            <h2
+              id="goals-driving-heading"
+              className={`mt-1 ${appAnalysisDarkTitleClass}`}
+            >
+              Remaining {formatEur(goalProgress.remainingAmount)}
+            </h2>
+            <p className={`mt-1 ${appDashboardDarkMetaClass}`}>
+              Projection from your plan and available history — not a guarantee.
+            </p>
+            <div className="mt-4 grid min-w-0 gap-2 sm:grid-cols-3">
               <Metric
-                label="Current value"
-                value={formatEur(goalProgress.currentValue)}
-              />
-              <Metric
-                label="Target value"
+                label="Target"
                 value={formatEur(goalProgress.targetValue)}
-              />
-              <Metric
-                label="Remaining"
-                value={formatEur(goalProgress.remainingAmount)}
               />
               <Metric
                 label="Monthly contribution"
                 value={formatEur(intelligence.forecast.monthlyContribution)}
               />
+              <Metric
+                label="Current value"
+                value={formatEur(goalProgress.currentValue)}
+              />
             </div>
-            <div className="border-t border-slate-100 px-4 py-3 sm:px-6">
+            <div className="mt-3">
               <ConversionDetailsDisclosure compactTrigger />
             </div>
-            {getExpectedReturnAssumption(savedGoal) != null ? (
-              <div className="space-y-3 border-t border-slate-100 px-4 py-4 sm:px-6">
-                <ExpectedReturnAssumptionPanel
-                  percent={getExpectedReturnAssumption(savedGoal)!}
-                  onEdit={() => setAssumptionEditorOpen(true)}
-                />
-                <GoalRealityCheckPanel
-                  realityCheck={realityCheck}
-                  isLoading={realityCheckLoading}
-                />
-              </div>
+            {topInsight ? (
+              <p className={`mt-4 ${appDashboardDarkBodyClass}`}>{topInsight.text}</p>
             ) : null}
+            {alignment ? (
+              <p className={`mt-3 ${appDashboardDarkMetaClass}`}>
+                {alignment.label}. {alignment.reason}
+                {alignment.concentrationLine
+                  ? ` ${alignment.concentrationLine}`
+                  : ""}
+              </p>
+            ) : null}
+            <Link
+              href={DASHBOARD_DEEP_LINKS.scorecardHealth}
+              className={`${appAnalysisUtilityButtonClass} mt-4 inline-flex`}
+            >
+              Open Portfolio Scorecard
+            </Link>
           </section>
         ) : null}
 
@@ -514,211 +513,187 @@ export default function GoalsPage() {
           productAccess={productAccess}
         />
 
-        <WhatIfExplorer
-          holdings={holdings}
-          goal={hasSavedGoal ? savedGoal : null}
-          hasSavedGoal={hasSavedGoal}
-          currentPortfolioValue={
-            goalProgress.portfolioValueAvailable
-              ? goalProgress.currentValue
-              : null
-          }
-          portfolioValueAvailable={goalProgress.portfolioValueAvailable}
-          productAccess={productAccess}
-          formatEur={formatEur}
-          formatPercent={formatPortfolioPercent}
-        />
-
-        {hasSavedGoal && intelligence.insights.length > 0 ? (
-          <section
-            aria-labelledby="goals-insights-heading"
-            className="min-w-0 overflow-hidden rounded-[28px] border border-slate-200/80 bg-white"
-          >
-            <div className="border-b border-slate-100 px-4 py-4 sm:px-6">
-              <h2 id="goals-insights-heading" className={appSectionTitleClass}>
-                Insights
-              </h2>
-            </div>
-            <ul className="divide-y divide-slate-100 px-4 sm:px-6">
-              {intelligence.insights.map((insight) => (
-                <li key={insight.id} className="py-3.5">
-                  <p className={appSectionBodyClass}>{insight.text}</p>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ) : null}
-
-        {intelligence.alignment &&
-        intelligence.alignment.label !== "Goal data unavailable" ? (
-          <section
-            aria-labelledby="goals-alignment-heading"
-            className="min-w-0 overflow-hidden rounded-[28px] border border-slate-200/80 bg-white"
-          >
-            <div className="flex items-start gap-3 px-4 py-5 sm:px-6">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
-                <Scale className="h-5 w-5" aria-hidden />
-              </span>
-              <div className="min-w-0">
-                <p className={appSectionLabelClass}>Portfolio fit</p>
-                <h2
-                  id="goals-alignment-heading"
-                  className={`mt-1 ${appSectionTitleClass}`}
-                >
-                  {intelligence.alignment.label}
-                </h2>
-                <p className={`mt-2 ${appSectionBodyClass}`}>
-                  {intelligence.alignment.reason}
-                </p>
-                {intelligence.alignment.concentrationLine ? (
-                  <p className={`mt-2 ${appSectionMetaClass}`}>
-                    {intelligence.alignment.concentrationLine}
-                  </p>
-                ) : null}
-                <Link
-                  href={DASHBOARD_DEEP_LINKS.scorecardHealth}
-                  className={`mt-3 inline-flex min-h-[40px] items-center gap-1.5 ${appTextLinkClass}`}
-                >
-                  Open Portfolio Scorecard
-                  <ArrowRight className="h-4 w-4" aria-hidden />
-                </Link>
-              </div>
-            </div>
-          </section>
-        ) : null}
-
-        <form
-          onSubmit={handleSubmit}
-          className="min-w-0 overflow-hidden rounded-[28px] border border-slate-200/80 bg-white"
+        <CalmExploreDisclosure
+          description="Edit the goal, assumptions, and modeled what-if paths."
+          open={exploreOpen}
+          onToggle={() => setExploreOpen((value) => !value)}
+          testId="goals-explore"
         >
-          <div className="border-b border-slate-100 px-4 py-4 sm:px-6">
-            <h2 className={appSectionTitleClass}>
-              {hasSavedGoal ? "Edit your goal" : "Set your goal"}
-            </h2>
-            <p className={`mt-1 ${appSectionMetaClass}`}>
-              A few simple inputs. Tobailey calculates the rest.
-            </p>
-          </div>
+          {hasSavedGoal && intelligence.insights.length > 1 ? (
+            <section className={`${appDarkCardClass} ${appDarkCardPaddingClass}`}>
+              <p className={appHeroMetricLabelClass}>More insights</p>
+              <ul className="mt-3 space-y-2">
+                {intelligence.insights.slice(1).map((insight) => (
+                  <li key={insight.id} className={appDashboardDarkBodyClass}>
+                    {insight.text}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
 
-          <div className="space-y-5 px-4 py-5 sm:px-6">
-            <label className="block">
-              <span className="text-sm font-bold text-slate-700">
-                Goal name
-              </span>
-              <input
-                type="text"
-                value={goal.name ?? ""}
-                maxLength={60}
-                placeholder="e.g. Financial independence"
-                onChange={(event) => {
-                  setSaved(false);
-                  setFormDirty(true);
-                  const next = event.target.value;
-                  setGoal((current) => ({
-                    ...current,
-                    name: next.trim().length > 0 ? next : undefined,
-                  }));
-                }}
-                className="mt-2 w-full min-h-[44px] rounded-xl border border-slate-200 bg-slate-50 px-4 text-base font-semibold text-slate-950 outline-none focus:border-brand focus:ring-4 focus:ring-brand/15"
+          {getExpectedReturnAssumption(savedGoal) != null ? (
+            <section className={`${appDarkCardClass} ${appDarkCardPaddingClass} space-y-3`}>
+              <ExpectedReturnAssumptionPanel
+                percent={getExpectedReturnAssumption(savedGoal)!}
+                onEdit={() => setAssumptionEditorOpen(true)}
               />
-            </label>
+              <GoalRealityCheckPanel
+                realityCheck={realityCheck}
+                isLoading={realityCheckLoading}
+              />
+            </section>
+          ) : null}
 
-            <GoalInput
-              label={`Target amount (${formCurrency})`}
-              icon={<Target className="h-4 w-4" />}
-              prefix={currencyPrefix}
-              value={goal.targetValue}
-              min={1000}
-              onChange={(value) => updateGoalNumber("targetValue", value)}
-            />
-            <GoalInput
-              label="Target year"
-              icon={<CalendarDays className="h-4 w-4" />}
-              value={goal.targetYear}
-              min={currentYear + 1}
-              onChange={(value) => updateGoalNumber("targetYear", value)}
-            />
-            <GoalInput
-              label={`Monthly contribution (optional, ${formCurrency})`}
-              icon={<PiggyBank className="h-4 w-4" />}
-              prefix={currencyPrefix}
-              value={goal.monthlyContribution}
-              min={0}
-              onChange={(value) =>
-                updateGoalNumber("monthlyContribution", value)
-              }
-            />
-            <GoalInput
-              label="Expected annual return (% p.a.)"
-              icon={<Percent className="h-4 w-4" />}
-              value={goal.expectedAnnualReturn}
-              min={EXPECTED_ANNUAL_RETURN_MIN}
-              max={EXPECTED_ANNUAL_RETURN_MAX}
-              onChange={(value) =>
-                updateGoalNumber("expectedAnnualReturn", value)
-              }
-              hint="Your assumption used for projections — not a Tobailey forecast."
-            />
+          <WhatIfExplorer
+            holdings={holdings}
+            goal={hasSavedGoal ? savedGoal : null}
+            hasSavedGoal={hasSavedGoal}
+            currentPortfolioValue={
+              goalProgress.portfolioValueAvailable
+                ? goalProgress.currentValue
+                : null
+            }
+            portfolioValueAvailable={goalProgress.portfolioValueAvailable}
+            productAccess={productAccess}
+            formatEur={formatEur}
+            formatPercent={formatPortfolioPercent}
+          />
 
-            {fxFormError ? (
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-                <p role="alert">{fxFormError}</p>
-                <div className="mt-2 flex flex-wrap gap-3">
-                  {!canPersistMonetary && baseCurrency !== "EUR" ? (
-                    <button
-                      type="button"
-                      onClick={() => refreshFx()}
-                      className="inline-flex min-h-[40px] font-semibold underline"
-                    >
-                      Retry conversion
-                    </button>
-                  ) : null}
-                  {formDirty ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setFormDirty(false);
-                        setSaved(false);
-                      }}
-                      className="inline-flex min-h-[40px] font-semibold underline"
-                    >
-                      Reset form
-                    </button>
-                  ) : null}
+          <form
+            onSubmit={handleSubmit}
+            className={`${appDarkCardClass} overflow-hidden`}
+            data-testid="goals-edit-form"
+          >
+            <div className="border-b border-white/10 px-4 py-4 sm:px-6">
+              <h2 className="text-lg font-bold text-white">
+                {hasSavedGoal ? "Edit your goal" : "Set your goal"}
+              </h2>
+              <p className={`mt-1 ${appDashboardDarkMetaClass}`}>
+                A few simple inputs. Tobailey calculates the rest.
+              </p>
+            </div>
+
+            <div className="space-y-5 bg-white px-4 py-5 text-slate-950 sm:px-6">
+              <label className="block">
+                <span className="text-sm font-bold text-slate-700">
+                  Goal name
+                </span>
+                <input
+                  type="text"
+                  value={goal.name ?? ""}
+                  maxLength={60}
+                  placeholder="e.g. Financial independence"
+                  onChange={(event) => {
+                    setSaved(false);
+                    setFormDirty(true);
+                    const next = event.target.value;
+                    setGoal((current) => ({
+                      ...current,
+                      name: next.trim().length > 0 ? next : undefined,
+                    }));
+                  }}
+                  className="mt-2 w-full min-h-[44px] rounded-xl border border-slate-200 bg-slate-50 px-4 text-base font-semibold text-slate-950 outline-none focus:border-brand focus:ring-4 focus:ring-brand/15"
+                />
+              </label>
+
+              <GoalInput
+                label={`Target amount (${formCurrency})`}
+                icon={<Target className="h-4 w-4" />}
+                prefix={currencyPrefix}
+                value={goal.targetValue}
+                min={1000}
+                onChange={(value) => updateGoalNumber("targetValue", value)}
+              />
+              <GoalInput
+                label="Target year"
+                icon={<CalendarDays className="h-4 w-4" />}
+                value={goal.targetYear}
+                min={currentYear + 1}
+                onChange={(value) => updateGoalNumber("targetYear", value)}
+              />
+              <GoalInput
+                label={`Monthly contribution (optional, ${formCurrency})`}
+                icon={<PiggyBank className="h-4 w-4" />}
+                prefix={currencyPrefix}
+                value={goal.monthlyContribution}
+                min={0}
+                onChange={(value) =>
+                  updateGoalNumber("monthlyContribution", value)
+                }
+              />
+              <GoalInput
+                label="Expected annual return (% p.a.)"
+                icon={<Percent className="h-4 w-4" />}
+                value={goal.expectedAnnualReturn}
+                min={EXPECTED_ANNUAL_RETURN_MIN}
+                max={EXPECTED_ANNUAL_RETURN_MAX}
+                onChange={(value) =>
+                  updateGoalNumber("expectedAnnualReturn", value)
+                }
+                hint="Your assumption used for projections — not a Tobailey forecast."
+              />
+
+              {fxFormError ? (
+                <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+                  <p role="alert">{fxFormError}</p>
+                  <div className="mt-2 flex flex-wrap gap-3">
+                    {!canPersistMonetary && baseCurrency !== "EUR" ? (
+                      <button
+                        type="button"
+                        onClick={() => refreshFx()}
+                        className="inline-flex min-h-[40px] font-semibold underline"
+                      >
+                        Retry conversion
+                      </button>
+                    ) : null}
+                    {formDirty ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormDirty(false);
+                          setSaved(false);
+                        }}
+                        className="inline-flex min-h-[40px] font-semibold underline"
+                      >
+                        Reset form
+                      </button>
+                    ) : null}
+                  </div>
                 </div>
-              </div>
-            ) : null}
+              ) : null}
 
-            <button
-              type="submit"
-              disabled={
-                !canPersistBaseCurrencyAmounts(formSession) ||
-                (formCurrency !== "EUR" && baseCurrency !== formCurrency)
-              }
-              className={`w-full ${appSolidButtonClass}`}
-            >
-              {saved ? (
-                <Check className="h-4 w-4" />
-              ) : (
-                <Save className="h-4 w-4" />
-              )}
-              {saved ? "Goal saved" : "Save goal"}
-            </button>
-          </div>
-        </form>
+              <button
+                type="submit"
+                disabled={
+                  !canPersistBaseCurrencyAmounts(formSession) ||
+                  (formCurrency !== "EUR" && baseCurrency !== formCurrency)
+                }
+                className={`w-full ${appSolidButtonClass}`}
+              >
+                {saved ? (
+                  <Check className="h-4 w-4" />
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
+                {saved ? "Goal saved" : "Save goal"}
+              </button>
+            </div>
+          </form>
 
-        <PageRelatedLinks
-          purpose={PAGE_PURPOSE.goals}
-          links={[
-            { href: REVIEW_PATH, label: "Your Review" },
-            { href: ANALYSIS_PATH, label: "Open Analysis" },
-            { href: PORTFOLIO_HISTORY_PATH, label: "Portfolio History" },
-            {
-              href: DASHBOARD_DEEP_LINKS.scorecardGoal,
-              label: "Open Goal score",
-            },
-          ]}
-        />
+          <PageRelatedLinks
+            purpose={PAGE_PURPOSE.goals}
+            links={[
+              { href: REVIEW_PATH, label: "Your Review" },
+              { href: ANALYSIS_PATH, label: "Open Analysis" },
+              { href: PORTFOLIO_HISTORY_PATH, label: "Portfolio History" },
+              {
+                href: DASHBOARD_DEEP_LINKS.scorecardGoal,
+                label: "Open Goal score",
+              },
+            ]}
+          />
+        </CalmExploreDisclosure>
       </PageContainer>
       {hasSavedGoal && savedGoal ? (
         <ExpectedReturnAssumptionEditor
@@ -740,11 +715,9 @@ export default function GoalsPage() {
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="min-w-0">
-      <p className={appSectionLabelClass}>{label}</p>
-      <p className={`mt-1 truncate ${appCardValueClass} text-slate-950`}>
-        {value}
-      </p>
+    <div className={`${appDarkInsetClass} min-w-0 px-3 py-2.5`}>
+      <p className={appHeroMetricLabelClass}>{label}</p>
+      <p className={`mt-1 truncate ${appHeroKpiClass} text-white`}>{value}</p>
     </div>
   );
 }
@@ -760,7 +733,7 @@ function GoalInput({
   onChange,
 }: {
   label: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
   prefix?: string;
   value: number;
   min: number;

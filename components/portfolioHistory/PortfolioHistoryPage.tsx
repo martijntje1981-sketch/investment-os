@@ -8,19 +8,22 @@ import { ExportPortfolioButton } from "@/components/export/ExportPortfolioButton
 
 import { PortfolioPerformanceChart } from "@/components/analysis/performance/PortfolioPerformanceChart";
 import { ManageContributionsDialog } from "@/components/contributions/ManageContributionsDialog";
+import { CalmExploreDisclosure } from "@/components/layout/CalmExploreDisclosure";
+import { CalmPageIntro } from "@/components/layout/CalmPageIntro";
 import {
   AppPageLoading,
   PageContainer,
 } from "@/components/layout/PageContainer";
-import { PageHero } from "@/components/layout/PageHero";
-import { AuthenticatedFourQuestionsNav } from "@/components/fourQuestions/AuthenticatedFourQuestionsNav";
 import { PageRelatedLinks } from "@/components/layout/PageRelatedLinks";
 import {
-  appCardValueClass,
-  appSectionBodyClass,
-  appSectionLabelClass,
-  appSectionMetaClass,
-  appSectionTitleClass,
+  appAnalysisDarkTitleClass,
+  appAnalysisUtilityButtonClass,
+  appDarkCardClass,
+  appDarkCautionClass,
+  appDashboardDarkBodyClass,
+  appDashboardDarkMetaClass,
+  appHeroKpiClass,
+  appHeroMetricLabelClass,
 } from "@/components/layout/appSurface";
 import { EmptyPortfolioGuide } from "@/components/onboarding/EmptyPortfolioGuide";
 import { PortfolioTimelineList } from "@/components/portfolioHistory/PortfolioTimelineList";
@@ -74,11 +77,9 @@ function SummaryMetric({
   value: string;
 }) {
   return (
-    <div className="min-w-0 border-t border-slate-200/80 pt-3 first:border-t-0 first:pt-0 sm:border-t-0 sm:border-l sm:border-slate-200/80 sm:px-4 sm:pt-0 sm:first:border-l-0 sm:first:pl-0">
-      <p className={appSectionLabelClass}>{label}</p>
-      <p className={`mt-1 truncate ${appCardValueClass} text-slate-950`}>
-        {value}
-      </p>
+    <div className="min-w-0 border-t border-white/10 pt-3 first:border-t-0 first:pt-0 sm:border-t-0 sm:border-l sm:border-white/10 sm:px-4 sm:pt-0 sm:first:border-l-0 sm:first:pl-0">
+      <p className={appHeroMetricLabelClass}>{label}</p>
+      <p className={`mt-1 truncate ${appHeroKpiClass} text-white`}>{value}</p>
     </div>
   );
 }
@@ -94,6 +95,7 @@ export default function PortfolioHistoryPage() {
   const [exportError, setExportError] = useState<string | null>(null);
   const [exportSuccess, setExportSuccess] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [exploreOpen, setExploreOpen] = useState(false);
 
   const performance = useMemo(
     () => buildPortfolioPerformance(holdings),
@@ -191,7 +193,7 @@ export default function PortfolioHistoryPage() {
     formatContributionBaseAmount(amount, formatEur, convertToEur);
 
   if (!portfolioReady) {
-    return <AppPageLoading />;
+    return <AppPageLoading canvas="navy" />;
   }
 
   async function handleExport() {
@@ -252,8 +254,9 @@ export default function PortfolioHistoryPage() {
 
   return (
     <>
-      <PageContainer stackClassName="gap-5 md:gap-7">
-        <PageHero
+      <PageContainer canvas="navy" stackClassName="gap-4 md:gap-5">
+        <CalmPageIntro
+          eyebrow="History"
           title="Portfolio History"
           subtitle="How your portfolio developed, what you invested, and what changed."
           backToDashboard
@@ -262,13 +265,13 @@ export default function PortfolioHistoryPage() {
               <button
                 type="button"
                 onClick={() => setDialogOpen(true)}
-                className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-bold text-brand-navy transition hover:bg-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-navy-hero"
+                className={appAnalysisUtilityButtonClass}
               >
                 <Plus className="h-4 w-4" aria-hidden />
                 Add activity
               </button>
               <ExportPortfolioButton
-                variant="hero"
+                variant="onDark"
                 disabled={isExporting}
                 onExport={handleExport}
               />
@@ -276,51 +279,48 @@ export default function PortfolioHistoryPage() {
           }
         />
 
-        <PageRelatedLinks
-          purpose={PAGE_PURPOSE.history}
-          links={[
-            { href: REVIEW_PATH, label: "Your Review" },
-            { href: ANALYSIS_PATH, label: "Open Analysis" },
-          ]}
-        />
-
-        <AuthenticatedFourQuestionsNav />
-
         {exportError ? (
-          <p className={appSectionBodyClass} role="alert">
+          <p className={appDashboardDarkBodyClass} role="alert">
             {exportError}
           </p>
         ) : null}
         {exportSuccess ? (
-          <p className={appSectionBodyClass} role="status">
+          <p className={appDashboardDarkBodyClass} role="status">
             {exportSuccess}
+          </p>
+        ) : null}
+
+        {!summary.contributionBasisReliable ? (
+          <p className={appDarkCautionClass}>
+            Incomplete contribution history. Investment return is not claimed from this series.
           </p>
         ) : null}
 
         <section
           aria-labelledby="portfolio-history-chart-title"
-          className="min-w-0 overflow-hidden rounded-[28px] border border-slate-200/80 bg-white"
+          className={`${appDarkCardClass} min-w-0 overflow-hidden`}
         >
-          <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-4 py-4 sm:px-6">
+          <div className="flex items-start justify-between gap-3 border-b border-white/10 px-4 py-4 sm:px-6">
             <div className="min-w-0">
+              <p className={appHeroMetricLabelClass}>History glance</p>
               <h2
                 id="portfolio-history-chart-title"
-                className={appSectionTitleClass}
+                className={`mt-1 ${appAnalysisDarkTitleClass}`}
               >
                 Portfolio development
               </h2>
-              <p className={`mt-1 ${appSectionMetaClass}`}>
+              <p className={`mt-1 ${appDashboardDarkMetaClass}`}>
                 {timeline.summary.periodLabel
                   ? `${timeline.summary.periodLabel} · verified market history`
                   : "Verified market history when available"}
               </p>
             </div>
-            <History className="mt-0.5 h-5 w-5 shrink-0 text-slate-500" aria-hidden />
+            <History className="mt-0.5 h-5 w-5 shrink-0 text-white/40" aria-hidden />
           </div>
           <div className="px-3 py-4 sm:px-5 sm:py-5">
             {history.isLoading ? (
               <div
-                className="h-[190px] animate-pulse rounded-2xl bg-slate-100 sm:h-[210px]"
+                className="h-[190px] animate-pulse rounded-2xl bg-white/10 sm:h-[210px]"
                 aria-hidden
               />
             ) : (
@@ -332,7 +332,7 @@ export default function PortfolioHistoryPage() {
             )}
           </div>
 
-          <div className="grid min-w-0 gap-4 border-t border-slate-100 px-4 py-4 sm:grid-cols-3 sm:gap-0 sm:px-6">
+          <div className="grid min-w-0 gap-4 border-t border-white/10 px-4 py-4 sm:grid-cols-3 sm:gap-0 sm:px-6">
             {historySummary.metrics.map((metric) => (
               <SummaryMetric
                 key={metric.id}
@@ -343,26 +343,36 @@ export default function PortfolioHistoryPage() {
           </div>
         </section>
 
-        <PortfolioEvolutionSection
-          holdings={holdings}
-          entries={entries}
-          contributionBasisReliable={summary.contributionBasisReliable}
-          yearChartPoints={history.data?.chartPoints ?? null}
-        />
+        <section
+          aria-labelledby="portfolio-history-funding"
+          className={`${appDarkCardClass} px-4 py-4 sm:px-5`}
+        >
+          <p className={appHeroMetricLabelClass}>Money in & out context</p>
+          <h2
+            id="portfolio-history-funding"
+            className={`mt-1 ${appAnalysisDarkTitleClass}`}
+          >
+            Recorded net {netLabel}
+          </h2>
+          <p className={`mt-1 ${appDashboardDarkMetaClass}`}>
+            {historySummary.reason}
+          </p>
+        </section>
 
         <section
           aria-labelledby="portfolio-history-timeline-title"
-          className="min-w-0 overflow-hidden rounded-[28px] border border-slate-200/80 bg-white"
+          className={`${appDarkCardClass} min-w-0 overflow-hidden`}
         >
-          <div className="flex flex-col gap-3 border-b border-slate-100 px-4 py-4 sm:flex-row sm:items-start sm:justify-between sm:px-6">
+          <div className="flex flex-col gap-3 border-b border-white/10 px-4 py-4 sm:flex-row sm:items-start sm:justify-between sm:px-6">
             <div className="min-w-0">
+              <p className={appHeroMetricLabelClass}>Key change</p>
               <h2
                 id="portfolio-history-timeline-title"
-                className={appSectionTitleClass}
+                className={`mt-1 ${appAnalysisDarkTitleClass}`}
               >
                 Timeline
               </h2>
-              <p className={`mt-1 ${appSectionMetaClass}`}>
+              <p className={`mt-1 ${appDashboardDarkMetaClass}`}>
                 Contributions, withdrawals, and milestones
               </p>
             </div>
@@ -370,7 +380,7 @@ export default function PortfolioHistoryPage() {
               <button
                 type="button"
                 onClick={() => setDialogOpen(true)}
-                className="inline-flex min-h-[44px] shrink-0 items-center justify-center gap-2 rounded-xl bg-navy-hero px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-navy-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+                className={appAnalysisUtilityButtonClass}
               >
                 <Plus className="h-4 w-4" aria-hidden />
                 {hasEntries ? "Add activity" : CONTRIBUTIONS_ADD_LABEL}
@@ -380,10 +390,10 @@ export default function PortfolioHistoryPage() {
 
           <div className="px-4 py-5 sm:px-6">
             {status === "loading" ? (
-              <div className="h-32 animate-pulse rounded-2xl bg-slate-100" />
+              <div className="h-32 animate-pulse rounded-2xl bg-white/10" />
             ) : status === "error" ? (
               <div className="space-y-3">
-                <p className={appSectionBodyClass} role="alert">
+                <p className={appDashboardDarkBodyClass} role="alert">
                   {error ?? "Could not load portfolio history."}
                 </p>
                 <button
@@ -403,17 +413,30 @@ export default function PortfolioHistoryPage() {
           </div>
         </section>
 
+        <CalmExploreDisclosure
+          description="Detailed evolution, holdings, and related pages."
+          open={exploreOpen}
+          onToggle={() => setExploreOpen((value) => !value)}
+          testId="history-explore"
+        >
+        <PortfolioEvolutionSection
+          holdings={holdings}
+          entries={entries}
+          contributionBasisReliable={summary.contributionBasisReliable}
+          yearChartPoints={history.data?.chartPoints ?? null}
+        />
+
         <section
           aria-labelledby="portfolio-history-holdings-title"
-          className="min-w-0 overflow-hidden rounded-[28px] border border-slate-200/80 bg-white"
+          className={`${appDarkCardClass} min-w-0 overflow-hidden`}
         >
           <div className="flex flex-col gap-3 border-b border-slate-100 px-4 py-4 sm:flex-row sm:items-start sm:justify-between sm:px-6">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <Wallet className="h-5 w-5 text-slate-700" aria-hidden />
+                <Wallet className="h-5 w-5 text-white/70" aria-hidden />
                 <h2
                   id="portfolio-history-holdings-title"
-                  className={appSectionTitleClass}
+                  className={appAnalysisDarkTitleClass}
                 >
                   Current holdings
                 </h2>
@@ -421,7 +444,7 @@ export default function PortfolioHistoryPage() {
             </div>
             <Link
               href={PORTFOLIO_PATH}
-              className="inline-flex min-h-[44px] shrink-0 items-center text-sm font-semibold text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+              className={`${appAnalysisUtilityButtonClass} shrink-0`}
             >
               Manage portfolio
             </Link>
@@ -445,19 +468,19 @@ export default function PortfolioHistoryPage() {
                   const content = (
                     <>
                       <div className="min-w-0">
-                        <p className="text-sm font-semibold text-slate-900">
+                        <p className="text-sm font-semibold text-white">
                           {holding.symbol}
                           <span className="ml-2 font-medium text-slate-600">
                             {holding.name}
                           </span>
                         </p>
-                        <p className={`mt-1 ${appSectionMetaClass}`}>
+                        <p className={`mt-1 ${appDashboardDarkMetaClass}`}>
                           {holding.quantity.toLocaleString("en-GB")}
                           {holding.assetType === "cash" ? " cash" : " units"}
                           {` · ${formatPortfolioPercent(weightPercent)}`}
                         </p>
                       </div>
-                      <p className="shrink-0 text-sm font-semibold text-slate-900">
+                      <p className="shrink-0 text-sm font-semibold text-white">
                         {formatEur(value)}
                       </p>
                     </>
@@ -491,7 +514,7 @@ export default function PortfolioHistoryPage() {
                     className="flex items-start justify-between gap-3 px-1 py-3"
                   >
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-slate-900">
+                      <p className="text-sm font-semibold text-white">
                         {holding.symbol}
                         <span className="ml-2 font-medium text-slate-600">
                           {holding.name}
@@ -507,6 +530,14 @@ export default function PortfolioHistoryPage() {
             )}
           </div>
         </section>
+        <PageRelatedLinks
+          purpose={PAGE_PURPOSE.history}
+          links={[
+            { href: REVIEW_PATH, label: "Your Review" },
+            { href: ANALYSIS_PATH, label: "Open Analysis" },
+          ]}
+        />
+        </CalmExploreDisclosure>
       </PageContainer>
 
       {dialogOpen ? (

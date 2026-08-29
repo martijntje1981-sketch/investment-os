@@ -1,11 +1,11 @@
 import { Layers3 } from "lucide-react";
 
 import {
-  appCardClass,
   appCardPaddingClass,
-  appSectionBodyClass,
-  appSectionMetaClass,
-  appSectionTitleClass,
+  appDarkCardClass,
+  appDashboardDarkBodyClass,
+  appDashboardDarkMetaClass,
+  appAnalysisDarkTitleClass,
   appTableNameClass,
   appTableValueClass,
 } from "@/components/layout/appSurface";
@@ -38,7 +38,7 @@ export function PortfolioAllocationSection({
   return (
     <section
       id="portfolio-allocation"
-      className={`scroll-mt-24 ${appCardClass} ${appCardPaddingClass}`}
+              className={`scroll-mt-24 ${appDarkCardClass} ${appCardPaddingClass}`}
       aria-labelledby="portfolio-allocation-heading"
     >
       <div className="flex items-start gap-3">
@@ -46,10 +46,10 @@ export function PortfolioAllocationSection({
           <Layers3 className="h-5 w-5" />
         </div>
         <div>
-          <h3 id="portfolio-allocation-heading" className={appSectionTitleClass}>
+          <h3 id="portfolio-allocation-heading" className={appAnalysisDarkTitleClass}>
             Allocation
           </h3>
-          <p className={`mt-1 ${appSectionMetaClass}`}>
+          <p className={`mt-1 ${appDashboardDarkMetaClass}`}>
             Valued holdings, including cash.
           </p>
         </div>
@@ -60,7 +60,7 @@ export function PortfolioAllocationSection({
           {analysis.valuedPositions.map((position, index) => (
             <div key={position.holding.id}>
               <div
-                className={`mb-2 flex items-center justify-between gap-3 ${appSectionBodyClass}`}
+                className={`mb-2 flex items-center justify-between gap-3 ${appDashboardDarkBodyClass}`}
               >
                 <div className="min-w-0">
                   <p className={`truncate ${appTableNameClass}`}>
@@ -74,7 +74,7 @@ export function PortfolioAllocationSection({
                       </>
                     )}
                   </p>
-                  <p className={appSectionMetaClass}>
+                  <p className={appDashboardDarkMetaClass}>
                     {formatEur(position.value)}
                   </p>
                 </div>
@@ -94,7 +94,7 @@ export function PortfolioAllocationSection({
           ))}
         </div>
       ) : (
-        <p className={`mt-6 ${appSectionMetaClass}`}>
+        <p className={`mt-6 ${appDashboardDarkMetaClass}`}>
           Add current prices to your investments to calculate allocation.
         </p>
       )}

@@ -94,18 +94,26 @@ describe("Four Questions product architecture Phase 1 wiring", () => {
     );
   });
 
-  it("wires compact nav on major authenticated product pages", () => {
+  it("wires compact nav on remaining authenticated utility pages", () => {
     const pages = [
-      "app/goals/page.tsx",
-      "components/portfolioHistory/PortfolioHistoryPage.tsx",
       "components/companion/CompanionReviewPage.tsx",
-      "components/portfolioHealth/PortfolioHealthPage.tsx",
       "components/marketPulse/MarketPulsePage.tsx",
       "components/perspectives/PerspectivesPage.tsx",
       "components/events/EventsPage.tsx",
     ];
     for (const file of pages) {
       expect(read(file), file).toContain("AuthenticatedFourQuestionsNav");
+    }
+  });
+
+  it("keeps Goals, History, and Scorecard on Calm Core instead of Four Questions chrome", () => {
+    for (const file of [
+      "app/goals/page.tsx",
+      "components/portfolioHistory/PortfolioHistoryPage.tsx",
+      "components/portfolioHealth/PortfolioHealthPage.tsx",
+    ]) {
+      expect(read(file), file).not.toContain("AuthenticatedFourQuestionsNav");
+      expect(read(file), file).toContain("CalmPageIntro");
     }
   });
 });

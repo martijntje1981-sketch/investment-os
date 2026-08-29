@@ -3,16 +3,22 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 const authenticatedPagesWithBackLink = [
-  "app/goals/page.tsx",
   "app/discover/page.tsx",
   "app/settings/page.tsx",
   "app/upload/page.tsx",
 ];
 
+const navyCalmPagesWithBackLink = [
+  "app/goals/page.tsx",
+];
+
 const secondaryPagesWithSharedBack = [
+  "app/supported-instruments/page.tsx",
+];
+
+const navySecondaryPages = [
   "components/marketPulse/MarketPulsePage.tsx",
   "components/portfolioHealth/PortfolioHealthPage.tsx",
-  "app/supported-instruments/page.tsx",
 ];
 
 const authenticatedPages = [
@@ -21,6 +27,7 @@ const authenticatedPages = [
   "app/news/page.tsx",
   "app/portfolio/page.tsx",
   ...authenticatedPagesWithBackLink,
+  ...navyCalmPagesWithBackLink,
 ];
 
 describe("authenticated page layout", () => {
@@ -74,6 +81,17 @@ describe("authenticated page layout", () => {
       );
 
       expect(source, relativePath).toContain("PageHero");
+    }
+
+    for (const relativePath of navyCalmPagesWithBackLink) {
+      const source = readFileSync(
+        path.resolve(process.cwd(), relativePath),
+        "utf8",
+      );
+
+      expect(source, relativePath).toContain("CalmPageIntro");
+      expect(source, relativePath).toContain('canvas="navy"');
+      expect(source, relativePath).not.toContain("PageHero");
     }
   });
 
@@ -129,7 +147,10 @@ describe("authenticated page layout", () => {
 
     expect(dashboardSource).not.toContain("backToDashboard");
 
-    for (const relativePath of authenticatedPagesWithBackLink) {
+    for (const relativePath of [
+      ...authenticatedPagesWithBackLink,
+      ...navyCalmPagesWithBackLink,
+    ]) {
       const source = readFileSync(
         path.resolve(process.cwd(), relativePath),
         "utf8",
@@ -153,6 +174,16 @@ describe("authenticated page layout", () => {
         "utf8",
       );
       expect(source, relativePath).toContain("BackButton");
+    }
+
+    for (const relativePath of navySecondaryPages) {
+      const source = readFileSync(
+        path.resolve(process.cwd(), relativePath),
+        "utf8",
+      );
+      expect(source, relativePath).toContain("CalmPageIntro");
+      expect(source, relativePath).toContain('canvas="navy"');
+      expect(source, relativePath).toContain("backToDashboard");
     }
   });
 

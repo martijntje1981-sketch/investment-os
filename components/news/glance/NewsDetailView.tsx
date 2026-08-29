@@ -5,6 +5,7 @@ import { ArrowLeft } from "lucide-react";
 
 import { NewsHubContent } from "@/components/news/NewsHubContent";
 import {
+  appDarkCardClass,
   appDashboardDarkMetaClass,
   appHeroMetricLabelClass,
 } from "@/components/layout/appSurface";
@@ -62,7 +63,7 @@ export function NewsDetailView({
         </p>
       </header>
 
-      <div className="mt-4 min-w-0 overflow-hidden rounded-[24px] border border-white/10 bg-background px-3 py-4 text-foreground sm:px-4">
+      <div className={`mt-4 min-w-0 space-y-4 ${appDarkCardClass} px-3 py-4 sm:px-4`}>
         <NewsHubContent
           payload={payload}
           intelligence={intelligence}

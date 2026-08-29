@@ -46,14 +46,13 @@ describe("Premium Portfolio architecture", () => {
     const holdingsIdx = page.indexOf("<PortfolioHoldingsList");
     const activityIdx = page.indexOf("<PortfolioActivity");
     const exploreIdx = page.indexOf("<PortfolioExploreNav");
-    const fundingIdx = page.indexOf("<PortfolioFundingSection");
 
     expect(introIdx).toBeGreaterThan(-1);
     expect(glanceIdx).toBeGreaterThan(introIdx);
     expect(holdingsIdx).toBeGreaterThan(glanceIdx);
     expect(activityIdx).toBeGreaterThan(holdingsIdx);
     expect(exploreIdx).toBeGreaterThan(activityIdx);
-    expect(fundingIdx).toBeGreaterThan(exploreIdx);
+    expect(page).toContain("usePortfolioMoneyInOutOpen");
     expect(page).toContain('id="money-in-out"');
   });
 

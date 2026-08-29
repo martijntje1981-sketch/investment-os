@@ -12,7 +12,7 @@ describe("Phase 4 premium polish contracts", () => {
     const allocation = read(
       "components/analysis/PortfolioAllocationSection.tsx",
     );
-    expect(allocation).toContain("appCardClass");
+    expect(allocation).toContain("appDarkCardClass");
     expect(analysis).toContain("ExportPortfolioButton");
     expect(analysis).not.toContain("appHeroGhostButtonClass");
     expect(analysis).not.toContain("rounded-full border border-white/20");

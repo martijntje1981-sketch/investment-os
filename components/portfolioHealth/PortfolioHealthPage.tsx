@@ -16,25 +16,21 @@ import {
 } from "lucide-react";
 
 import { BackButton } from "@/components/layout/BackButton";
-import { ScoreRing } from "@/components/dashboard/ScoreRing";
+import { CalmPageIntro } from "@/components/layout/CalmPageIntro";
 import {
   AppPageLoading,
   PageContainer,
 } from "@/components/layout/PageContainer";
-import { AuthenticatedFourQuestionsNav } from "@/components/fourQuestions/AuthenticatedFourQuestionsNav";
 import {
-  appAnalysisDarkBodyClass,
-  appCardClass,
+  appAnalysisDarkTitleClass,
   appCardPaddingClass,
   appCardValueClass,
   appDarkCardClass,
   appDarkCardPaddingClass,
+  appDashboardDarkBodyClass,
   appDashboardDarkMetaClass,
   appHeroMetricLabelClass,
-  appSectionBodyClass,
   appSectionLabelClass,
-  appSectionMetaClass,
-  appSectionTitleClass,
 } from "@/components/layout/appSurface";
 import { PortfolioDnaRings } from "@/components/portfolioHealth/PortfolioDnaRings";
 import { RiskReturnMap } from "@/components/portfolioHealth/RiskReturnMap";
@@ -96,7 +92,7 @@ function alignmentTone(label: GoalAlignmentLabel): string {
 
 function ExposureVisual({ slices }: { slices: CompositionSlice[] }) {
   if (slices.length === 0) {
-    return <p className={appSectionMetaClass}>Exposure data unavailable.</p>;
+    return <p className={appDashboardDarkMetaClass}>Exposure data unavailable.</p>;
   }
 
   return (
@@ -125,7 +121,7 @@ function ExposureVisual({ slices }: { slices: CompositionSlice[] }) {
                   className={`h-2.5 w-2.5 shrink-0 rounded-full ${slice.colorClass}`}
                   aria-hidden="true"
                 />
-                <span className="truncate text-[15px] font-semibold text-slate-950">
+                <span className="truncate text-[15px] font-semibold text-white">
                   {slice.label}
                 </span>
               </span>
@@ -167,7 +163,7 @@ function HiddenDriversVisual({
   insight: string;
 }) {
   if (drivers.length === 0) {
-    return <p className={appSectionMetaClass}>{insight}</p>;
+    return <p className={appDashboardDarkMetaClass}>{insight}</p>;
   }
 
   return (
@@ -194,7 +190,7 @@ function HiddenDriversVisual({
           </li>
         ))}
       </ul>
-      <p className={`${appAnalysisDarkBodyClass} text-white/80`}>{insight}</p>
+      <p className={`${appDashboardDarkBodyClass} text-white/80`}>{insight}</p>
     </div>
   );
 }
@@ -306,13 +302,18 @@ export default function PortfolioHealthPage() {
   const [methodologyOpen, setMethodologyOpen] = useState(false);
 
   if (!portfolioReady || !goalReady) {
-    return <AppPageLoading />;
+    return <AppPageLoading canvas="navy" />;
   }
 
   return (
     <>
-      <PageContainer stackClassName="gap-6 md:gap-8">
-        <AuthenticatedFourQuestionsNav className="mt-0" />
+      <PageContainer canvas="navy" stackClassName="gap-4 md:gap-5">
+        <CalmPageIntro
+          eyebrow="Portfolio Health"
+          title="Your portfolio at a glance"
+          subtitle={SCORECARD_PAGE_DISCLAIMER}
+          backToDashboard
+        />
 
         {recoveryOffer ? (
           <PortfolioRecoveryBanner
@@ -347,7 +348,7 @@ export default function PortfolioHealthPage() {
               </p>
               <Link
                 href="/portfolio"
-                className="mt-7 inline-flex min-h-[44px] items-center gap-2 rounded-full bg-white px-5 py-3 text-[15px] font-semibold text-slate-950"
+                className="mt-7 inline-flex min-h-[44px] items-center gap-2 rounded-full bg-white px-5 py-3 text-[15px] font-semibold text-white"
               >
                 <Upload className="h-4 w-4" aria-hidden="true" />
                 Open portfolio
@@ -356,46 +357,9 @@ export default function PortfolioHealthPage() {
           )
         ) : scorecard ? (
           <>
-            {/* Hero — Portfolio Scorecard */}
-            <section
-              className={`${appDarkCardClass} relative overflow-hidden ${appDarkCardPaddingClass} sm:py-9`}
-              aria-labelledby="portfolio-scorecard-hero"
-            >
-              <div className="relative max-w-3xl">
-                <div className="mb-4">
-                  <BackButton variant="light" />
-                </div>
-                <p className={appHeroMetricLabelClass}>Portfolio Scorecard</p>
-                <h1
-                  id="portfolio-scorecard-hero"
-                  className="mt-3 text-3xl font-black tracking-[-0.04em] text-white sm:text-4xl"
-                >
-                  Your portfolio at a glance
-                </h1>
-                <div className="mt-6 rounded-[24px] bg-white/95 p-4 shadow-sm sm:p-5">
-                  <div className="grid min-w-0 grid-cols-2 gap-1 sm:gap-2 lg:grid-cols-4">
-                    <ScoreRing score={scorecard.scores.health} showContext />
-                    <ScoreRing score={scorecard.scores.goal} showContext />
-                    <ScoreRing score={scorecard.scores.momentum} showContext />
-                    <ScoreRing score={scorecard.scores.readiness} showContext />
-                  </div>
-                </div>
-                <p className="mt-5 max-w-2xl text-[15px] font-semibold leading-relaxed text-white sm:text-base">
-                  {scorecard.summary.headline}
-                </p>
-                <p className="mt-3 text-[13px] font-medium text-white/90">
-                  Scorecard {scorecard.scorecardVersion} · Calculated{" "}
-                  {formatScorecardTimestamp(scorecard.calculatedAt)}
-                </p>
-                <p className="mt-3 max-w-xl text-[15px] font-medium leading-relaxed text-white/90">
-                  {SCORECARD_PAGE_DISCLAIMER}
-                </p>
-              </div>
-            </section>
-
             <div
               id={SECTION_IDS.scorecardHealth}
-              className="scroll-mt-24 space-y-6 md:space-y-8"
+              className="scroll-mt-24 space-y-4"
             >
               {/* Health identity */}
               <section
@@ -403,7 +367,7 @@ export default function PortfolioHealthPage() {
                 aria-labelledby="health-identity-heading"
               >
                 <div className="relative max-w-3xl">
-                  <p className={appHeroMetricLabelClass}>Health</p>
+                  <p className={appHeroMetricLabelClass}>Overall health</p>
                   <div className="mt-3 flex flex-wrap items-end gap-x-4 gap-y-2">
                     <p
                       className="text-5xl font-bold tabular-nums tracking-[-0.04em] text-white sm:text-6xl"
@@ -432,7 +396,11 @@ export default function PortfolioHealthPage() {
                     {profile.hero.identity}
                   </h2>
                   <p className="mt-3 max-w-xl text-[15px] font-medium leading-relaxed text-white/75 sm:text-base">
-                    {healthScore.explanation}
+                    {scorecard.summary.headline} {healthScore.explanation}
+                  </p>
+                  <p className="mt-3 text-[13px] font-medium text-white/70">
+                    Scorecard {scorecard.scorecardVersion} · Calculated{" "}
+                    {formatScorecardTimestamp(scorecard.calculatedAt)}
                   </p>
                   {scorecard.scores.health.context ? (
                     <div className="mt-5 max-w-xl rounded-2xl bg-white/10 px-4 py-3">
@@ -480,13 +448,13 @@ export default function PortfolioHealthPage() {
 
               {/* Dimension breakdown */}
               <section
-                className={`${appCardClass} ${appCardPaddingClass}`}
+                className={`${appDarkCardClass} ${appCardPaddingClass}`}
                 aria-labelledby="health-dimensions-heading"
               >
                 <p className={appSectionLabelClass}>Dimension breakdown</p>
                 <h2
                   id="health-dimensions-heading"
-                  className={`mt-1 ${appSectionTitleClass}`}
+                  className={`mt-1 ${appAnalysisDarkTitleClass}`}
                 >
                   How the score is built
                 </h2>
@@ -496,10 +464,10 @@ export default function PortfolioHealthPage() {
                     .map((dimension) => (
                       <li key={dimension.id} className="min-w-0">
                         <div className="flex items-baseline justify-between gap-3">
-                          <p className="text-[15px] font-semibold text-slate-950">
+                          <p className="text-[15px] font-semibold text-white">
                             {dimension.label}
                           </p>
-                          <p className="shrink-0 text-[15px] font-bold tabular-nums text-slate-950">
+                          <p className="shrink-0 text-[15px] font-bold tabular-nums text-white">
                             {dimension.score}/100
                           </p>
                         </div>
@@ -509,7 +477,7 @@ export default function PortfolioHealthPage() {
                             style={{ width: `${dimension.score ?? 0}%` }}
                           />
                         </div>
-                        <p className={`mt-2 ${appSectionMetaClass}`}>
+                        <p className={`mt-2 ${appDashboardDarkMetaClass}`}>
                           Weight {dimension.effectiveWeight.toFixed(0)}% ·{" "}
                           {dimension.evidence[0]?.text ?? dimension.explanation}
                         </p>
@@ -523,37 +491,37 @@ export default function PortfolioHealthPage() {
                 className="grid gap-4 sm:gap-5 md:grid-cols-2"
                 aria-label="Score strengths and attention points"
               >
-                <div className={`${appCardClass} ${appCardPaddingClass}`}>
-                  <p className={appSectionLabelClass}>Score strengths</p>
+                <div className={`${appDarkCardClass} ${appDarkCardPaddingClass}`}>
+                  <p className={appHeroMetricLabelClass}>What helps</p>
                   <ul className="mt-3 space-y-3">
                     {healthScore.strengths.map((item) => (
                       <li key={item.id}>
-                        <p className="text-[15px] font-semibold text-slate-950">
+                        <p className="text-[15px] font-semibold text-white">
                           {item.title}
                         </p>
-                        <p className={`mt-1 ${appSectionBodyClass}`}>
+                        <p className={`mt-1 ${appDashboardDarkBodyClass}`}>
                           {item.detail}
                         </p>
                       </li>
                     ))}
                   </ul>
                 </div>
-                <div className={`${appCardClass} ${appCardPaddingClass}`}>
-                  <p className={appSectionLabelClass}>Attention points</p>
+                <div className={`${appDarkCardClass} ${appDarkCardPaddingClass}`}>
+                  <p className={appHeroMetricLabelClass}>What deserves attention</p>
                   <ul className="mt-3 space-y-3">
                     {healthScore.attentionPoints.map((item) => (
                       <li key={item.id}>
-                        <p className="text-[15px] font-semibold text-slate-950">
+                        <p className="text-[15px] font-semibold text-white">
                           {item.title}
                         </p>
-                        <p className={`mt-1 ${appSectionBodyClass}`}>
+                        <p className={`mt-1 ${appDashboardDarkBodyClass}`}>
                           {item.detail}
                         </p>
                       </li>
                     ))}
                     {healthScore.improvementDrivers[0] ? (
                       <li>
-                        <p className={`mt-1 ${appSectionMetaClass}`}>
+                        <p className={`mt-1 ${appDashboardDarkMetaClass}`}>
                           {healthScore.improvementDrivers[0]}
                         </p>
                       </li>
@@ -600,7 +568,7 @@ export default function PortfolioHealthPage() {
 
               {/* Exposure */}
               <section
-                className={`${appCardClass} ${appCardPaddingClass}`}
+                className={`${appDarkCardClass} ${appCardPaddingClass}`}
                 aria-labelledby="exposure-heading"
               >
                 <div className="flex items-start gap-3">
@@ -611,7 +579,7 @@ export default function PortfolioHealthPage() {
                     <p className={appSectionLabelClass}>Exposure</p>
                     <h2
                       id="exposure-heading"
-                      className={`mt-1 ${appSectionTitleClass}`}
+                      className={`mt-1 ${appAnalysisDarkTitleClass}`}
                     >
                       Where is my money invested?
                     </h2>
@@ -621,7 +589,7 @@ export default function PortfolioHealthPage() {
                   <ExposureVisual slices={profile.exposure.slices} />
                 </div>
                 {profile.exposure.coverageNote ? (
-                  <p className={`mt-5 ${appSectionMetaClass}`}>
+                  <p className={`mt-5 ${appDashboardDarkMetaClass}`}>
                     {profile.exposure.coverageNote}
                   </p>
                 ) : null}
@@ -659,26 +627,26 @@ export default function PortfolioHealthPage() {
                 className="grid gap-4 sm:gap-5 md:grid-cols-2"
                 aria-label="Strength and vulnerability"
               >
-                <div className={`${appCardClass} ${appCardPaddingClass}`}>
+                <div className={`${appDarkCardClass} ${appCardPaddingClass}`}>
                   <div className="flex items-start gap-3">
                     <div className="rounded-2xl bg-q1-soft p-3 text-q1-strong">
                       <Sparkles className="h-5 w-5" aria-hidden="true" />
                     </div>
                     <div>
                       <p className={appSectionLabelClass}>Strength</p>
-                      <h3 className={`mt-2 ${appSectionTitleClass}`}>
+                      <h3 className={`mt-2 ${appAnalysisDarkTitleClass}`}>
                         {profile.strength?.title ?? "Unavailable"}
                       </h3>
                     </div>
                   </div>
-                  <p className={`mt-4 ${appSectionBodyClass}`}>
+                  <p className={`mt-4 ${appDashboardDarkBodyClass}`}>
                     {profile.strength?.detail ??
                       "Not enough structure to name a strength."}
                   </p>
                 </div>
 
                 <div
-                  className={`${appCardClass} ${appCardPaddingClass} ${
+                  className={`${appDarkCardClass} ${appCardPaddingClass} ${
                     profile.vulnerability?.emphasize ? "border-rose-200" : ""
                   }`}
                 >
@@ -695,7 +663,7 @@ export default function PortfolioHealthPage() {
                     <div>
                       <p className={appSectionLabelClass}>Vulnerability</p>
                       <h3
-                        className={`mt-2 ${appSectionTitleClass} ${
+                        className={`mt-2 ${appAnalysisDarkTitleClass} ${
                           profile.vulnerability?.emphasize
                             ? "text-rose-900"
                             : ""
@@ -705,7 +673,7 @@ export default function PortfolioHealthPage() {
                       </h3>
                     </div>
                   </div>
-                  <p className={`mt-4 ${appSectionBodyClass}`}>
+                  <p className={`mt-4 ${appDashboardDarkBodyClass}`}>
                     {profile.vulnerability?.detail ??
                       "Not enough structure to name a vulnerability."}
                   </p>
@@ -729,7 +697,7 @@ export default function PortfolioHealthPage() {
                     >
                       {profile.goalAlignment.label}
                     </h2>
-                    <p className={`mt-3 max-w-2xl ${appAnalysisDarkBodyClass}`}>
+                    <p className={`mt-3 max-w-2xl ${appDashboardDarkBodyClass}`}>
                       {profile.goalAlignment.reason}
                     </p>
                     {!hasSavedGoal ? (
@@ -766,7 +734,7 @@ export default function PortfolioHealthPage() {
 
               {/* Expected volatility */}
               <section
-                className={`${appCardClass} ${appCardPaddingClass}`}
+                className={`${appDarkCardClass} ${appCardPaddingClass}`}
                 aria-labelledby="volatility-heading"
               >
                 <div className="flex items-start gap-3">
@@ -777,13 +745,13 @@ export default function PortfolioHealthPage() {
                     <p className={appSectionLabelClass}>Expected volatility</p>
                     <h2
                       id="volatility-heading"
-                      className={`mt-1 ${appSectionTitleClass}`}
+                      className={`mt-1 ${appAnalysisDarkTitleClass}`}
                     >
                       How lively should this feel?
                     </h2>
                   </div>
                 </div>
-                <p className="mt-6 text-4xl font-black tracking-[-0.04em] text-slate-950 sm:text-5xl">
+                <p className="mt-6 text-4xl font-black tracking-[-0.04em] text-white sm:text-5xl">
                   {profile.expectedVolatility.level}
                 </p>
                 <div className="mt-5 h-2.5 overflow-hidden rounded-full bg-slate-100">
@@ -794,7 +762,7 @@ export default function PortfolioHealthPage() {
                     }}
                   />
                 </div>
-                <p className={`mt-4 ${appSectionBodyClass} text-slate-600`}>
+                <p className={`mt-4 ${appDashboardDarkBodyClass} text-slate-600`}>
                   {profile.expectedVolatility.summary}
                 </p>
               </section>
@@ -827,7 +795,7 @@ export default function PortfolioHealthPage() {
               </section>
 
               <section
-                className={`${appCardClass} ${appCardPaddingClass}`}
+                className={`${appDarkCardClass} ${appCardPaddingClass}`}
                 aria-labelledby="health-methodology-heading"
               >
                 <button
@@ -841,7 +809,7 @@ export default function PortfolioHealthPage() {
                     <p className={appSectionLabelClass}>Methodology</p>
                     <h2
                       id="health-methodology-heading"
-                      className={`mt-1 ${appSectionTitleClass}`}
+                      className={`mt-1 ${appAnalysisDarkTitleClass}`}
                     >
                       What this score means
                     </h2>
@@ -852,17 +820,17 @@ export default function PortfolioHealthPage() {
                 </button>
                 {methodologyOpen ? (
                   <div id={methodologyId} className="mt-4 space-y-3">
-                    <p className={appSectionBodyClass}>
+                    <p className={appDashboardDarkBodyClass}>
                       {HEALTH_SCORE_DISCLAIMER}
                     </p>
-                    <p className={appSectionBodyClass}>
+                    <p className={appDashboardDarkBodyClass}>
                       Version {PORTFOLIO_HEALTH_SCORE_VERSION}. Applicable
                       dimensions are weighted and renormalized when goal or
                       income alignment does not apply. Missing data lowers
                       confidence rather than inventing zeros for unavailable
                       structure.
                     </p>
-                    <p className={appSectionMetaClass}>
+                    <p className={appDashboardDarkMetaClass}>
                       Confidence: {healthScore.confidence.explanation}
                     </p>
                   </div>
@@ -876,7 +844,7 @@ export default function PortfolioHealthPage() {
               title="Scorecard"
               methodology={GOAL_SCORE_METHODOLOGY}
             />
-            <p className={`px-1 ${appSectionMetaClass}`}>
+            <p className={`px-1 ${appDashboardDarkMetaClass}`}>
               <Link
                 href="/goals"
                 className="inline-flex min-h-[44px] items-center gap-1.5 font-semibold text-q1-strong"
@@ -892,7 +860,7 @@ export default function PortfolioHealthPage() {
               title="Scorecard"
               methodology={MOMENTUM_SCORE_METHODOLOGY}
             />
-            <p className={`px-1 ${appSectionMetaClass}`}>
+            <p className={`px-1 ${appDashboardDarkMetaClass}`}>
               <Link
                 href={DASHBOARD_DEEP_LINKS.portfolioPerformance}
                 className="inline-flex min-h-[44px] items-center gap-1.5 font-semibold text-q1-strong"
@@ -908,7 +876,7 @@ export default function PortfolioHealthPage() {
               title="Scorecard"
               methodology={READINESS_SCORE_METHODOLOGY}
             />
-            <div className={`${appCardClass} ${appCardPaddingClass}`}>
+            <div className={`${appDarkCardClass} ${appCardPaddingClass}`}>
               <p className={appSectionLabelClass}>Setup actions</p>
               <ul className="mt-3 space-y-2">
                 {!hasSavedGoal ? (
@@ -965,7 +933,7 @@ export default function PortfolioHealthPage() {
               </Link>
             </div>
 
-            <p className={`px-1 pb-2 ${appSectionMetaClass}`}>
+            <p className={`px-1 pb-2 ${appDashboardDarkMetaClass}`}>
               {SCORECARD_LEGAL_NOTE}
             </p>
           </>

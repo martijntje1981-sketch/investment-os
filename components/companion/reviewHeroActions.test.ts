@@ -56,6 +56,7 @@ describe("Phase 19.3 Review hero actions", () => {
       /appHeroPrimaryButtonClass =\s*`inline-flex min-h-\[44px\].*bg-navy-hero/,
     );
     expect(page).toContain('variant="hero"');
+    expect(page).toContain('variant="onDark"');
     expect(excel).toContain("appHeroSecondaryButtonClass");
     const heroBlock = page.slice(
       page.indexOf('data-testid="review-hero-actions"'),
@@ -66,6 +67,7 @@ describe("Phase 19.3 Review hero actions", () => {
       heroBlock.indexOf("ExportPortfolioButton"),
     );
     expect(heroBlock).toContain('variant="hero"');
+    expect(heroBlock).toContain('variant="onDark"');
     expect(heroBlock).not.toContain('className="w-full"');
   });
 

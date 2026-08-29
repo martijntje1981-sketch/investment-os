@@ -4,15 +4,15 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, RefreshCw } from "lucide-react";
 
-import { BackButton } from "@/components/layout/BackButton";
+import { CalmPageIntro } from "@/components/layout/CalmPageIntro";
 import { AppPageLoading, PageContainer } from "@/components/layout/PageContainer";
 import { AuthenticatedFourQuestionsNav } from "@/components/fourQuestions/AuthenticatedFourQuestionsNav";
 import {
-  appDashboardHeroMetricLabelClass,
-  appHeroShellClass,
-  appSectionBodyClass,
-  appSectionMetaClass,
-  appSectionTitleClass,
+  appAnalysisDarkTitleClass,
+  appDarkCardClass,
+  appDashboardDarkBodyClass,
+  appDashboardDarkMetaClass,
+  appHeroMetricLabelClass,
 } from "@/components/layout/appSurface";
 import { MarketPulseFeaturedChart } from "@/components/marketPulse/MarketPulseFeaturedChart";
 import { MarketPulseSparkline } from "@/components/marketPulse/MarketPulseSparkline";
@@ -115,13 +115,13 @@ function formatProviderTime(value: string | null): string {
 function AssetStatusLines({ asset }: { asset: MarketPulseAsset }) {
   return (
     <div className="mt-2 space-y-0.5">
-      <p className={appSectionMetaClass}>
+      <p className={appDashboardDarkMetaClass}>
         {asset.providerSymbol}
         {asset.tradingPair ? ` · ${asset.tradingPair}` : ""}
         {asset.isProxy ? " · ETF Proxy (not spot)" : ""}
       </p>
-      <p className={appSectionMetaClass}>{asset.sourceType}</p>
-      <p className={appSectionMetaClass}>
+      <p className={appDashboardDarkMetaClass}>{asset.sourceType}</p>
+      <p className={appDashboardDarkMetaClass}>
         {asset.availability === "unavailable"
           ? "Unavailable"
           : asset.marketStatus ?? asset.dataFrequency ?? "Status unknown"}
@@ -150,7 +150,7 @@ function LinkedMarketCard({
           <h3 className="text-[17px] font-bold tracking-[-0.02em] text-slate-950">
             {asset.name}
           </h3>
-          <p className={`mt-1 ${appSectionMetaClass}`}>
+          <p className={`mt-1 ${appDashboardDarkMetaClass}`}>
             {asset.portfolioLinks.map((link) => link.symbol).join(", ")}
             {asset.portfolioLinks[0]
               ? ` · ${asset.portfolioLinks[0].relationship}`
@@ -172,7 +172,7 @@ function LinkedMarketCard({
                 })
               : "—"}
           </p>
-          <p className={`mt-0.5 ${appSectionMetaClass}`}>
+          <p className={`mt-0.5 ${appDashboardDarkMetaClass}`}>
             {[asset.unit, asset.displayCurrency, asset.tradingPair]
               .filter(Boolean)
               .join(" · ")}
@@ -201,7 +201,7 @@ function SupportingMarketCard({ asset }: { asset: MarketPulseAsset }) {
           <h3 className="text-[15px] font-bold tracking-[-0.02em] text-slate-950">
             {asset.name}
           </h3>
-          <p className={`mt-0.5 ${appSectionMetaClass}`}>
+          <p className={`mt-0.5 ${appDashboardDarkMetaClass}`}>
             {asset.providerSymbol}
             {asset.tradingPair ? ` · ${asset.tradingPair}` : ""}
           </p>
@@ -219,7 +219,7 @@ function SupportingMarketCard({ asset }: { asset: MarketPulseAsset }) {
             })
           : "—"}
       </p>
-      <p className={`mt-1 ${appSectionMetaClass}`}>
+      <p className={`mt-1 ${appDashboardDarkMetaClass}`}>
         {[asset.unit, asset.displayCurrency].filter(Boolean).join(" · ") ||
           asset.availability}
       </p>
@@ -389,39 +389,34 @@ export default function MarketPulsePage() {
   }, [filter, snapshot]);
 
   if (!portfolioReady || !filterReady || (loading && !snapshot)) {
-    return <AppPageLoading />;
+    return <AppPageLoading canvas="navy" />;
   }
 
   const hero = snapshot?.heroDriver;
 
   return (
     <>
-      <PageContainer stackClassName="gap-5 md:gap-7">
+      <PageContainer canvas="navy" stackClassName="gap-4 md:gap-5">
+        <CalmPageIntro
+          eyebrow="Market Pulse"
+          title="Markets linked to your portfolio"
+          subtitle="Market state, what matters here, and what to watch."
+          backToDashboard
+        />
         <section
-          className={`${appHeroShellClass} relative overflow-hidden px-5 py-7 sm:px-8 sm:py-9`}
+          className={`${appDarkCardClass} relative overflow-hidden px-5 py-6 sm:px-8`}
           aria-labelledby="market-pulse-hero"
         >
-          <div
-            className="pointer-events-none absolute inset-0"
-            aria-hidden="true"
-            style={{
-              background:
-                "radial-gradient(ellipse at 10% 0%, rgba(245,158,11,0.18), transparent 45%), radial-gradient(ellipse at 90% 100%, rgba(56,189,248,0.14), transparent 40%)",
-            }}
-          />
           <div className="relative">
-            <div className="mb-4">
-              <BackButton variant="light" />
-            </div>
-            <p className={appDashboardHeroMetricLabelClass}>Market Pulse</p>
-            <h1
+            <p className={appHeroMetricLabelClass}>Market state</p>
+            <h2
               id="market-pulse-hero"
-              className="mt-2 text-[28px] font-black tracking-[-0.04em] text-slate-950 sm:text-4xl"
+              className="mt-2 text-[1.5rem] font-bold tracking-[-0.03em] text-white sm:text-3xl"
             >
               {holdings.length === 0
                 ? "Explore available market signals in detail"
                 : "Explore market signals linked to your portfolio"}
-            </h1>
+            </h2>
 
             {holdings.length === 0 ? (
               <p className="mt-5 max-w-xl text-[15px] font-medium leading-relaxed text-slate-700">
@@ -574,12 +569,12 @@ export default function MarketPulsePage() {
         ) : null}
 
         <section aria-labelledby="linked-markets-heading">
-          <h2 id="linked-markets-heading" className={appSectionTitleClass}>
+          <h2 id="linked-markets-heading" className={appAnalysisDarkTitleClass}>
             {filter === "portfolio"
               ? "Portfolio Markets"
               : "Markets connected to your portfolio"}
           </h2>
-          <p className={`mt-1.5 ${appSectionBodyClass}`}>
+          <p className={`mt-1.5 ${appDashboardDarkBodyClass}`}>
             Highest portfolio relevance first — why each market matters below
             the move.
           </p>
@@ -594,7 +589,7 @@ export default function MarketPulsePage() {
               ))}
             </div>
           ) : (
-            <p className={`mt-4 ${appSectionMetaClass}`}>
+            <p className={`mt-4 ${appDashboardDarkMetaClass}`}>
               No supported market links for the current holdings yet.
             </p>
           )}
@@ -610,10 +605,10 @@ export default function MarketPulsePage() {
         />
 
         <section
-          className={`${appHeroShellClass} px-5 py-6 sm:px-7 sm:py-7`}
+          className={`${appDarkCardClass} px-5 py-6 sm:px-7 sm:py-7`}
           aria-labelledby="momentum-heading"
         >
-          <p className={appDashboardHeroMetricLabelClass}>Market Momentum</p>
+          <p className={appHeroMetricLabelClass}>Market Momentum</p>
           <h2
             id="momentum-heading"
             className="mt-1.5 text-xl font-bold tracking-[-0.03em] text-slate-950 sm:text-2xl"
@@ -707,10 +702,10 @@ export default function MarketPulsePage() {
 
         {filter === "all" && allMarketsExtra.length > 0 ? (
           <section aria-labelledby="supporting-heading">
-            <h2 id="supporting-heading" className={appSectionTitleClass}>
+            <h2 id="supporting-heading" className={appAnalysisDarkTitleClass}>
               Broader markets
             </h2>
-            <p className={`mt-1.5 ${appSectionBodyClass}`}>
+            <p className={`mt-1.5 ${appDashboardDarkBodyClass}`}>
               Unrelated to your holdings — shown only in All Markets.
             </p>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -724,10 +719,10 @@ export default function MarketPulsePage() {
         {(supportingCommodities.length > 0 || supportingCrypto.length > 0) &&
         filter === "portfolio" ? (
           <section aria-labelledby="secondary-heading">
-            <h2 id="secondary-heading" className={appSectionTitleClass}>
+            <h2 id="secondary-heading" className={appAnalysisDarkTitleClass}>
               Secondary linked markets
             </h2>
-            <p className={`mt-1.5 ${appSectionBodyClass}`}>
+            <p className={`mt-1.5 ${appDashboardDarkBodyClass}`}>
               Additional portfolio-linked series beyond the primary set.
             </p>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -743,12 +738,12 @@ export default function MarketPulsePage() {
             className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6"
             aria-labelledby="why-matters-heading"
           >
-            <h2 id="why-matters-heading" className={appSectionTitleClass}>
+            <h2 id="why-matters-heading" className={appAnalysisDarkTitleClass}>
               Portfolio context
             </h2>
             <ul className="mt-4 space-y-3">
               {snapshot.insights.map((insight) => (
-                <li key={insight.id} className={appSectionBodyClass}>
+                <li key={insight.id} className={appDashboardDarkBodyClass}>
                   {insight.text}
                 </li>
               ))}
@@ -757,10 +752,10 @@ export default function MarketPulsePage() {
         ) : null}
 
         {snapshot?.dataNotes.length ? (
-          <p className={appSectionMetaClass}>{snapshot.dataNotes.join(" ")}</p>
+          <p className={appDashboardDarkMetaClass}>{snapshot.dataNotes.join(" ")}</p>
         ) : null}
 
-        <p className={`px-1 ${appSectionMetaClass}`}>{TRUST_NOT_ADVICE_SHORT}</p>
+        <p className={`px-1 ${appDashboardDarkMetaClass}`}>{TRUST_NOT_ADVICE_SHORT}</p>
 
         <PageRelatedLinks
           purpose={PAGE_PURPOSE.marketPulse}

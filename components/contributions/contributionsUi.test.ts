@@ -47,13 +47,16 @@ describe("contributions ledger UI", () => {
     expect(dashboardSource).not.toContain("DashboardDividendCard");
   });
 
-  it("keeps portfolio funding available after holdings", () => {
+  it("keeps portfolio funding as a hash detail, not a primary overview continuation", () => {
     expect(portfolioSource).toContain("PortfolioFundingSection");
-    expect(portfolioSource).toContain("id=\"money-in-out\"");
+    expect(portfolioSource).toContain('id="money-in-out"');
+    expect(portfolioSource).toContain("usePortfolioMoneyInOutOpen");
+    expect(portfolioSource).toContain("portfolio-money-in-out-detail");
+    expect(portfolioSource).not.toContain("rounded-xl bg-white p-4 text-slate-950");
     const holdingsIdx = portfolioSource.indexOf("<PortfolioHoldingsList");
-    const fundingIdx = portfolioSource.indexOf("<PortfolioFundingSection");
+    const exploreIdx = portfolioSource.indexOf("<PortfolioExploreNav");
     expect(holdingsIdx).toBeGreaterThan(-1);
-    expect(fundingIdx).toBeGreaterThan(holdingsIdx);
+    expect(exploreIdx).toBeGreaterThan(holdingsIdx);
   });
 
   it("shows portfolio empty state and opening contribution action", () => {

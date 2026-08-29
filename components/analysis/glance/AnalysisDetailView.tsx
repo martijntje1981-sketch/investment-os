@@ -20,15 +20,10 @@ import {
   appAnalysisDarkBodyClass,
   appAnalysisDarkDisclaimerClass,
   appAnalysisDarkTitleClass,
-  appCardClass,
-  appCardPaddingClass,
   appDarkCardClass,
   appDarkCardPaddingClass,
   appDashboardDarkMetaClass,
   appHeroMetricLabelClass,
-  appSectionMetaClass,
-  appSectionTitleClass,
-  appTableNameClass,
   appTextLinkClass,
 } from "@/components/layout/appSurface";
 import { ANALYSIS_PATH, PORTFOLIO_HISTORY_PATH } from "@/lib/navigation/appRoutes";
@@ -121,22 +116,24 @@ function UnvaluedHoldingsCard({
   if (holdings.length === 0) return null;
 
   return (
-    <section className={`${appCardClass} ${appCardPaddingClass}`}>
-      <h3 className={appSectionTitleClass}>Excluded from valued totals</h3>
-      <p className={`mt-1 ${appSectionMetaClass}`}>
+    <section className={`${appDarkCardClass} ${appDarkCardPaddingClass}`}>
+      <h3 className={appAnalysisDarkTitleClass}>Excluded from valued totals</h3>
+      <p className={`mt-1 ${appDashboardDarkMetaClass}`}>
         Visible holdings without a usable price — not counted as zero.
       </p>
-      <div className="mt-5 divide-y divide-slate-200 rounded-2xl border border-slate-200">
+      <div className="mt-5 divide-y divide-white/10 rounded-2xl border border-white/10">
         {holdings.map((holding) => (
           <div
             key={holding.id}
-            className="flex items-center justify-between gap-3 px-4 py-3.5 text-sm text-slate-700"
+            className="flex items-center justify-between gap-3 px-4 py-3.5 text-sm text-white/80"
           >
             <div>
-              <p className={appTableNameClass}>{holding.symbol}</p>
-              <p className={appSectionMetaClass}>{holding.name}</p>
+              <p className="min-w-0 break-words text-[16px] font-semibold text-white">
+                {holding.symbol}
+              </p>
+              <p className={appDashboardDarkMetaClass}>{holding.name}</p>
             </div>
-            <p className="font-semibold text-amber-700">Missing usable price</p>
+            <p className="font-semibold text-amber-200">Missing usable price</p>
           </div>
         ))}
       </div>
@@ -255,7 +252,7 @@ function AnalysisDetailModule({
             }}
           />
           <TopPerformersByCategorySection holdings={holdings} />
-          <p className={appSectionMetaClass}>
+          <p className={appDashboardDarkMetaClass}>
             For the full timeline and Portfolio Evolution, open{" "}
             <Link
               href={`${PORTFOLIO_HISTORY_PATH}#portfolio-evolution`}

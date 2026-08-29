@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import {
   appAnalysisPageCanvasClass,
+  appAuthenticatedNavyCanvasClass,
   appDashboardPageCanvasClass,
   appDashboardPageStackClass,
   appNewsPageCanvasClass,
@@ -23,7 +24,7 @@ export function PageContainer({
   children: ReactNode;
   className?: string;
   stackClassName?: string;
-  canvas?: "default" | "dashboard" | "analysis" | "news" | "portfolio";
+  canvas?: "default" | "dashboard" | "analysis" | "news" | "portfolio" | "navy";
 }) {
   const canvasClass =
     canvas === "news"
@@ -34,12 +35,15 @@ export function PageContainer({
           ? appPortfolioPageCanvasClass
           : canvas === "dashboard"
             ? appDashboardPageCanvasClass
-            : appPageCanvasClass;
+            : canvas === "navy"
+              ? appAuthenticatedNavyCanvasClass
+              : appPageCanvasClass;
   const stackClass =
     canvas === "analysis" ||
     canvas === "dashboard" ||
     canvas === "news" ||
-    canvas === "portfolio"
+    canvas === "portfolio" ||
+    canvas === "navy"
       ? appDashboardPageStackClass
       : appPageStackClass;
 
@@ -65,13 +69,14 @@ export function PageContainer({
 export function AppPageLoading({
   canvas = "default",
 }: {
-  canvas?: "default" | "dashboard" | "analysis" | "news" | "portfolio";
+  canvas?: "default" | "dashboard" | "analysis" | "news" | "portfolio" | "navy";
 }) {
   const navy =
     canvas === "dashboard" ||
     canvas === "analysis" ||
     canvas === "news" ||
-    canvas === "portfolio";
+    canvas === "portfolio" ||
+    canvas === "navy";
 
   return (
     <main

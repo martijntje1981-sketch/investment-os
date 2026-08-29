@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 import { LISTING_LOOKUP_UNAVAILABLE_MESSAGE } from "@/lib/content/holdingIdentifierHelp";
 import { PortfolioFundingSection } from "@/components/contributions/PortfolioFundingSection";
+import { CalmPageIntro } from "@/components/layout/CalmPageIntro";
 import { formatListingLookupGuidance } from "@/lib/client/listingLookupGuidance";
 import { needsManualPricingSelection } from "@/lib/client/holdingVenuePresentation";
 import {
@@ -42,7 +43,7 @@ import {
   resolveAutoListingDecision,
   shouldTriggerManualListingAutoLookup,
 } from "@/lib/client/manualHoldingAutoLookup";
-import { appDarkCardClass, appSectionLabelClass, appSectionTitleClass } from "@/components/layout/appSurface";
+import { appSectionLabelClass, appSectionTitleClass } from "@/components/layout/appSurface";
 import {
   convertHoldingBaseDraftToEur,
   convertHoldingEurToBaseDraft,
@@ -72,6 +73,8 @@ import {
   lookupManualHoldingListing,
 } from "@/lib/client/manualHoldingMatch";
 import { useLivePortfolioPriceRefresh } from "@/lib/client/useLivePortfolioPriceRefresh";
+import { usePortfolioMoneyInOutOpen } from "@/lib/client/useSectionHashId";
+import { PORTFOLIO_PATH } from "@/lib/navigation/appRoutes";
 import {
   normalizeHoldingForSave,
   type StoredPortfolioHolding,
@@ -105,6 +108,7 @@ const emptyDraft: Holding = {
 
 export default function PortfolioPage() {
   const router = useRouter();
+  const moneyInOutOpen = usePortfolioMoneyInOutOpen();
   const {
     formatEur,
     snapshot,
@@ -750,6 +754,39 @@ export default function PortfolioPage() {
   return (
     <>
       <PageContainer canvas="portfolio">
+        {moneyInOutOpen ? (
+          <div id="money-in-out" data-testid="portfolio-money-in-out-detail">
+            <CalmPageIntro
+              eyebrow="Portfolio"
+              title="Money in & out"
+              subtitle="Deposits, withdrawals, and recorded history"
+              backHref={PORTFOLIO_PATH}
+              backLabel="Back to Portfolio"
+              onBack={(event) => {
+                if (typeof window === "undefined") return;
+                if (window.location.pathname !== PORTFOLIO_PATH) return;
+                if (!window.location.hash) return;
+                event.preventDefault();
+                window.history.pushState(null, "", PORTFOLIO_PATH);
+                window.dispatchEvent(new Event("hashchange"));
+                window.scrollTo(0, 0);
+              }}
+            />
+            <div className="mt-4">
+              <PortfolioFundingSection
+                portfolioValueEur={totalValue}
+                portfolioValueAvailable={performance.totalValueAvailable}
+                holdings={holdings.map((holding) => ({
+                  id: holding.id,
+                  symbol: holding.symbol,
+                  name: holding.name,
+                  assetType: holding.assetType,
+                }))}
+              />
+            </div>
+          </div>
+        ) : (
+          <>
         <PortfolioIntro
           freshnessLabel={heroFreshness.label}
           onRefreshPrices={() => void refreshPrices()}
@@ -856,24 +893,8 @@ export default function PortfolioPage() {
             />
           }
         />
-
-        <section
-          id="money-in-out"
-          className={`${appDarkCardClass} p-3.5 sm:p-4`}
-        >
-          <div className="rounded-xl bg-white p-4 text-slate-950">
-            <PortfolioFundingSection
-              portfolioValueEur={totalValue}
-              portfolioValueAvailable={performance.totalValueAvailable}
-              holdings={holdings.map((holding) => ({
-                id: holding.id,
-                symbol: holding.symbol,
-                name: holding.name,
-                assetType: holding.assetType,
-              }))}
-            />
-          </div>
-        </section>
+          </>
+        )}
       </PageContainer>
 
       {cryptoEditorOpen ? (

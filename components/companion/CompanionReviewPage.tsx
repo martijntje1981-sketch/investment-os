@@ -8,7 +8,7 @@ import {
   AppPageLoading,
   PageContainer,
 } from "@/components/layout/PageContainer";
-import { PageHero } from "@/components/layout/PageHero";
+import { CalmPageIntro } from "@/components/layout/CalmPageIntro";
 import { AuthenticatedFourQuestionsNav } from "@/components/fourQuestions/AuthenticatedFourQuestionsNav";
 import {
   CompanionEmptyTrialState,
@@ -401,13 +401,14 @@ function CompanionReviewContent() {
   }
 
   if (!portfolioReady) {
-    return <AppPageLoading />;
+    return <AppPageLoading canvas="navy" />;
   }
 
   return (
     <>
-      <PageContainer>
-        <PageHero
+      <PageContainer canvas="navy">
+        <CalmPageIntro
+          eyebrow="Reports"
           title="Your Review"
           subtitle={
             activePeriod === "weekly" || activePeriod === "monthly"
@@ -430,7 +431,7 @@ function CompanionReviewContent() {
               ) : null}
               <ExportPortfolioButton
                 onExport={handleExport}
-                variant="hero"
+                variant="onDark"
               />
             </div>
           }

@@ -81,13 +81,13 @@ describe("Calm Core UX — Dashboard and Portfolio", () => {
     const holdingsIdx = portfolio.indexOf("<PortfolioHoldingsList");
     const activityIdx = portfolio.indexOf("<PortfolioActivity");
     const exploreIdx = portfolio.indexOf("<PortfolioExploreNav");
-    const fundingIdx = portfolio.indexOf("<PortfolioFundingSection");
 
     expect(glanceIdx).toBeGreaterThan(-1);
     expect(holdingsIdx).toBeGreaterThan(glanceIdx);
     expect(activityIdx).toBeGreaterThan(holdingsIdx);
     expect(exploreIdx).toBeGreaterThan(activityIdx);
-    expect(fundingIdx).toBeGreaterThan(exploreIdx);
+    expect(portfolio).toContain("usePortfolioMoneyInOutOpen");
+    expect(portfolio).toContain('id="money-in-out"');
     expect(portfolio).not.toContain("Largest position");
     expect(portfolio).not.toContain("is your largest position");
     expect(portfolio).not.toContain("<PortfolioAllocationNavCard");
