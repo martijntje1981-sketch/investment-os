@@ -1,0 +1,94 @@
+import { Clock3 } from "lucide-react";
+
+import { DashboardSectionHeader } from "@/components/dashboard/DashboardSectionHeader";
+import {
+  appCardPaddingClass,
+  appCardValueClass,
+  appDashboardLightCardClass,
+  appSectionLabelClass,
+  appSectionMetaClass,
+} from "@/components/layout/appSurface";
+import {
+  formatMarketUpdateTime,
+  getMarketStatuses,
+  resolveMarketUpdateDisplay,
+} from "@/lib/client/marketStatus";
+
+export function DashboardMarketStatus({
+  lastUpdatedAt,
+}: {
+  lastUpdatedAt: string | null;
+}) {
+  const statuses = getMarketStatuses();
+  const updateDisplay = resolveMarketUpdateDisplay(lastUpdatedAt);
+
+  return (
+    <section
+      className={`${appDashboardLightCardClass} hidden md:block`}
+      data-testid="dashboard-trading-hours"
+    >
+      <DashboardSectionHeader
+        title="Trading hours"
+        subtitle="Major market session status"
+        icon={<Clock3 className="h-5 w-5" />}
+        iconToneClassName="bg-blue-50 text-blue-700"
+        bordered={false}
+      />
+
+      <div className={appCardPaddingClass}>
+        <div className="grid gap-3 sm:grid-cols-3">
+          {statuses.map((market) => {
+            const isOpen =
+              market.status === "open" || market.status === "always-open";
+
+            return (
+              <div
+                key={market.label}
+                className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-4"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className={appSectionLabelClass}>{market.label}</p>
+                    <p className={`mt-1.5 ${appCardValueClass}`}>
+                      {market.statusLabel}
+                    </p>
+                  </div>
+                  <span
+                    className={`h-2.5 w-2.5 shrink-0 rounded-full ${
+                      isOpen ? "bg-emerald-500" : "bg-slate-400"
+                    }`}
+                    aria-hidden="true"
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {updateDisplay ? (
+          <p
+            className={`mt-6 border-t border-slate-100 pt-5 ${appSectionMetaClass}`}
+            data-stale={updateDisplay.isStale ? "true" : "false"}
+          >
+            {updateDisplay.isStale ? (
+              <>
+                Market data last refreshed:{" "}
+                <span className="font-semibold text-amber-800">
+                  {formatMarketUpdateTime(lastUpdatedAt)}
+                </span>
+                <span className="text-amber-800"> · may be outdated</span>
+              </>
+            ) : (
+              <>
+                Latest market update:{" "}
+                <span className="font-semibold text-slate-700">
+                  {formatMarketUpdateTime(lastUpdatedAt)}
+                </span>
+              </>
+            )}
+          </p>
+        ) : null}
+      </div>
+    </section>
+  );
+}

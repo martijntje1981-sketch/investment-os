@@ -1,0 +1,110 @@
+"use client";
+
+import { useState } from "react";
+import { PlayCircle } from "lucide-react";
+
+import {
+  getNewsMediaFallbackIcon,
+  getNewsMediaFallbackStyle,
+  type NewsMediaFallbackCategory,
+  type NewsMediaFallbackSurface,
+} from "@/components/news/newsMediaFallback";
+import { selectStoredNewsThumbnail, selectTrustedNewsThumbnailFromUrl } from "@/lib/services/news/newsThumbnail";
+import type { NewsSourceType } from "@/lib/types/newsContent";
+
+const SIZE_CLASSES = {
+  micro: "h-8 w-8 shrink-0 sm:h-9 sm:w-9",
+  square: "h-10 w-10 shrink-0 md:h-11 md:w-11",
+  compact:
+    "h-11 w-[3.75rem] shrink-0 aspect-[4/3] min-[480px]:h-12 min-[480px]:w-16",
+  small:
+    "h-12 w-[4.25rem] shrink-0 aspect-[10/7] min-[480px]:h-14 min-[480px]:w-20",
+  editorial:
+    "w-full max-w-[240px] shrink-0 aspect-video min-[480px]:max-w-none sm:w-36 lg:w-40",
+} as const;
+
+export function NewsMediaThumbnail({
+  thumbnailUrl,
+  sourceType = "news",
+  fallbackCategory,
+  size = "small",
+  showPlayIndicator = false,
+  alt = "",
+  priority = false,
+  allowProviderStoredUrl = false,
+  surface = "light",
+}: {
+  thumbnailUrl?: string | null;
+  sourceType?: NewsSourceType;
+  fallbackCategory: NewsMediaFallbackCategory;
+  size?: keyof typeof SIZE_CLASSES;
+  showPlayIndicator?: boolean;
+  alt?: string;
+  priority?: boolean;
+  /** Use a thumbnail already stored on the fetched item (HTTPS, not the article URL). */
+  allowProviderStoredUrl?: boolean;
+  surface?: NewsMediaFallbackSurface;
+}) {
+  const trustedUrl = allowProviderStoredUrl
+    ? selectStoredNewsThumbnail({ thumbnailUrl, sourceType })
+    : selectTrustedNewsThumbnailFromUrl(thumbnailUrl, sourceType);
+  const [failed, setFailed] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const showImage = Boolean(trustedUrl) && !failed;
+  const FallbackIcon = getNewsMediaFallbackIcon(fallbackCategory);
+  const fallbackStyle = getNewsMediaFallbackStyle(fallbackCategory, surface);
+  const sizeClass =
+    size === "editorial" && !showImage
+      ? SIZE_CLASSES.compact
+      : SIZE_CLASSES[size];
+  const placeholderClass = surface === "onDark" ? "bg-white/10" : "bg-slate-100";
+
+  return (
+    <div
+      className={`relative overflow-hidden ${
+        size === "square" ? "rounded-xl" : "rounded-lg"
+      } ${
+        showImage
+          ? placeholderClass
+          : `${fallbackStyle.surfaceClass} ${fallbackStyle.borderClass}`
+      } ${sizeClass}`}
+      data-news-media={showImage ? "thumbnail" : "fallback"}
+    >
+      {showImage ? (
+        <>
+          {!loaded ? (
+            <div
+              className={`absolute inset-0 ${placeholderClass} motion-reduce:animate-none`}
+              aria-hidden
+            />
+          ) : null}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={trustedUrl!}
+            alt={alt}
+            className={`h-full w-full object-cover motion-reduce:transition-none ${
+              loaded ? "opacity-100" : "opacity-0"
+            }`}
+            loading={priority ? "eager" : "lazy"}
+            decoding="async"
+            referrerPolicy="no-referrer"
+            onLoad={() => setLoaded(true)}
+            onError={() => setFailed(true)}
+          />
+          {showPlayIndicator ? (
+            <div
+              className="pointer-events-none absolute inset-0 flex items-center justify-center bg-navy-hero/20"
+              aria-hidden
+            >
+              <PlayCircle className="h-6 w-6 text-white drop-shadow-sm" />
+            </div>
+          ) : null}
+        </>
+      ) : (
+        <div className="flex h-full w-full items-center justify-center" aria-hidden>
+          <FallbackIcon className={`h-5 w-5 ${fallbackStyle.iconClass}`} />
+        </div>
+      )}
+    </div>
+  );
+}

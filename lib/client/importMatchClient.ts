@@ -1,0 +1,172 @@
+/**
+ * Client-side Match Engine API wrapper for the import pipeline.
+ */
+
+import {
+  applyMatchResultToImportRow,
+  importRowToMatchInput,
+} from "@/lib/services/import/finalizeImport";
+import { annotateImportRow } from "@/lib/services/import/confidencePolicy";
+import type { ImportRow } from "@/lib/services/import/types";
+import type { ResolvedInstrument } from "@/lib/types/instrument";
+
+type MatchApiResult = {
+  input: ReturnType<typeof importRowToMatchInput>;
+  resolved: ResolvedInstrument;
+};
+
+type MatchApiResponse = {
+  success: boolean;
+  results?: MatchApiResult[];
+  message?: string;
+};
+
+export type ImportPipelineResult = {
+  broker: string | null;
+  rows: ImportRow[];
+  matchQuotaWarning?: string;
+};
+
+export type ImportMatchResult = {
+  rows: ImportRow[];
+  quotaWarning?: string;
+};
+
+const MATCH_QUOTA_WARNING =
+  "Some instruments could not be matched automatically because the market data provider is temporarily unavailable. Review holdings before import.";
+
+function rowNeedsRemoteMatch(row: ImportRow): boolean {
+  if (row.assetType === "cash") return false;
+  if (row.fromSavedMapping) return false;
+  if (
+    row.providerSymbol &&
+    row.matchMethod &&
+    row.matchMethod !== "unresolved"
+  ) {
+    return false;
+  }
+  return true;
+}
+
+function isMatchProviderFailure(message: string | undefined): boolean {
+  if (!message) return false;
+  return /402|429|quota|rate.?limit|payment required|temporarily unavailable/i.test(
+    message,
+  );
+}
+
+export async function matchImportRowsViaApi(
+  rows: ImportRow[],
+): Promise<ImportMatchResult> {
+  const targets = rows
+    .map((row, index) => ({ row, index }))
+    .filter(({ row }) => rowNeedsRemoteMatch(row));
+
+  if (targets.length === 0) {
+    return { rows: rows.map(annotateImportRow) };
+  }
+
+  const response = await fetch("/api/instruments/match", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      holdings: targets.map(({ row }) => importRowToMatchInput(row)),
+    }),
+  });
+
+  const data = (await response.json()) as MatchApiResponse;
+
+  if (!response.ok || !data.success || !data.results) {
+    if (isMatchProviderFailure(data.message)) {
+      return {
+        rows: rows.map(annotateImportRow),
+        quotaWarning: MATCH_QUOTA_WARNING,
+      };
+    }
+
+    throw new Error(data.message ?? "Instrument matching failed.");
+  }
+
+  const next = [...rows];
+  targets.forEach(({ index }, resultIndex) => {
+    const result = data.results?.[resultIndex];
+    if (!result) return;
+    next[index] = applyMatchResultToImportRow(rows[index], result.resolved);
+  });
+
+  const annotated = next.map(annotateImportRow);
+  const unresolvedAfterMatch = annotated.filter(
+    (row) =>
+      row.assetType !== "cash" &&
+      !row.fromSavedMapping &&
+      (!row.providerSymbol || row.matchMethod === "unresolved"),
+  );
+
+  if (unresolvedAfterMatch.length > 0 && isMatchProviderFailure(data.message)) {
+    return { rows: annotated, quotaWarning: MATCH_QUOTA_WARNING };
+  }
+
+  return { rows: annotated };
+}
+
+export async function matchSingleImportRow(row: ImportRow): Promise<ImportRow> {
+  if (row.assetType === "cash") return annotateImportRow(row);
+
+  const response = await fetch("/api/instruments/match", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ holdings: [importRowToMatchInput(row)] }),
+  });
+
+  const data = (await response.json()) as MatchApiResponse;
+  if (!response.ok || !data.success || !data.results?.[0]) {
+    if (isMatchProviderFailure(data.message)) {
+      return annotateImportRow(row);
+    }
+    throw new Error(data.message ?? "Instrument matching failed.");
+  }
+
+  return annotateImportRow(
+    applyMatchResultToImportRow(row, data.results[0].resolved),
+  );
+}
+
+const SCREENSHOT_IMPORT_DISABLED_MESSAGE =
+  "Portfolio screenshot upload is not available. Add holdings manually or import a CSV or Excel file.";
+
+export async function analyzePortfolioScreenshot(file: File): Promise<{
+  broker: string;
+  rows: ImportRow[];
+}> {
+  void file;
+  throw new Error(SCREENSHOT_IMPORT_DISABLED_MESSAGE);
+}
+
+export async function runImportPipeline(input: {
+  source: "screenshot" | "spreadsheet" | "broker";
+  file: File;
+  userSub: string | null;
+  parseSpreadsheet: (buffer: ArrayBuffer) => ImportRow[];
+  applySavedMappings: (rows: ImportRow[]) => ImportRow[];
+}): Promise<ImportPipelineResult> {
+  if (input.source === "broker") {
+    throw new Error("Broker connections are not available yet.");
+  }
+
+  if (input.source === "screenshot") {
+    throw new Error(SCREENSHOT_IMPORT_DISABLED_MESSAGE);
+  }
+
+  const parsed = input.parseSpreadsheet(await input.file.arrayBuffer());
+  if (!parsed.length) {
+    throw new Error("No valid holdings were found. Check the column headings and values.");
+  }
+
+  const withMemory = input.applySavedMappings(parsed);
+  const matched = await matchImportRowsViaApi(withMemory);
+  return {
+    broker: null,
+    rows: matched.rows,
+    matchQuotaWarning: matched.quotaWarning,
+  };
+}

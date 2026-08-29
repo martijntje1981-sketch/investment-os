@@ -1,0 +1,90 @@
+{
+  "redirects": [
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "tobailey.nl" }],
+      "destination": "https://www.tobailey.com/",
+      "permanent": true
+    },
+    {
+      "source": "/:path+",
+      "has": [{ "type": "host", "value": "tobailey.nl" }],
+      "destination": "https://www.tobailey.com/:path+",
+      "permanent": true
+    },
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "www.tobailey.nl" }],
+      "destination": "https://www.tobailey.com/",
+      "permanent": true
+    },
+    {
+      "source": "/:path+",
+      "has": [{ "type": "host", "value": "www.tobailey.nl" }],
+      "destination": "https://www.tobailey.com/:path+",
+      "permanent": true
+    },
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "tobailey.com" }],
+      "destination": "https://www.tobailey.com/",
+      "permanent": true
+    },
+    {
+      "source": "/:path+",
+      "has": [{ "type": "host", "value": "tobailey.com" }],
+      "destination": "https://www.tobailey.com/:path+",
+      "permanent": true
+    },
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "tobailey.eu" }],
+      "destination": "https://www.tobailey.com/",
+      "permanent": true
+    },
+    {
+      "source": "/:path+",
+      "has": [{ "type": "host", "value": "tobailey.eu" }],
+      "destination": "https://www.tobailey.com/:path+",
+      "permanent": true
+    },
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "www.tobailey.eu" }],
+      "destination": "https://www.tobailey.com/",
+      "permanent": true
+    },
+    {
+      "source": "/:path+",
+      "has": [{ "type": "host", "value": "www.tobailey.eu" }],
+      "destination": "https://www.tobailey.com/:path+",
+      "permanent": true
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/market-snapshot?window=eu",
+      "schedule": "30 7 * * *"
+    },
+    {
+      "path": "/api/cron/market-snapshot?window=eu",
+      "schedule": "30 8 * * *"
+    },
+    {
+      "path": "/api/cron/market-snapshot?window=us",
+      "schedule": "35 13 * * *"
+    },
+    {
+      "path": "/api/cron/market-snapshot?window=us",
+      "schedule": "35 14 * * *"
+    },
+    {
+      "path": "/api/cron/monthly-review",
+      "schedule": "15 7 1 * *"
+    },
+    {
+      "path": "/api/cron/weekly-review-email",
+      "schedule": "20 7 * * 1"
+    }
+  ]
+}

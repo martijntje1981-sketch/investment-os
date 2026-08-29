@@ -1,0 +1,90 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+
+import { DynamicScoreRing } from "@/components/dashboard/DynamicScoreRing";
+import { PortfolioPulseDetailSheet } from "@/components/dashboard/PortfolioPulseDetailSheet";
+import { appHeroMetricLabelClass } from "@/components/layout/appSurface";
+import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
+import type {
+  DynamicPortfolioScore,
+  PortfolioPulseResult,
+} from "@/lib/services/portfolio/periodScores";
+
+/**
+ * Compact Daily + Weekly + Monthly pulse rings.
+ * Kept for Scorecard / Explore Tobailey — not shown on the primary Dashboard.
+ */
+export function HeroPortfolioPulse({
+  pulse,
+  attributionEnrichment = null,
+}: {
+  pulse: PortfolioPulseResult;
+  attributionEnrichment?: {
+    daily?: string[];
+    weekly?: string[];
+    monthly?: string[];
+  } | null;
+}) {
+  const [active, setActive] = useState<DynamicPortfolioScore | null>(null);
+
+  const notes =
+    active?.id === "daily"
+      ? (attributionEnrichment?.daily ?? [])
+      : active?.id === "weekly"
+        ? (attributionEnrichment?.weekly ?? [])
+        : active?.id === "monthly"
+          ? (attributionEnrichment?.monthly ?? [])
+          : [];
+
+  return (
+    <div
+      className="min-w-0"
+      aria-label="Portfolio pulse"
+      data-testid="hero-portfolio-pulse"
+    >
+      <div className="flex items-center justify-between gap-2">
+        <p className={appHeroMetricLabelClass}>
+          Portfolio Pulse
+        </p>
+        <Link
+          href={DASHBOARD_DEEP_LINKS.scorecard}
+          className="inline-flex min-h-11 items-center text-[13px] font-semibold text-brand underline-offset-2 hover:underline"
+        >
+          Scorecard
+        </Link>
+      </div>
+      <div className="mt-1.5 grid grid-cols-3 items-start justify-items-center gap-0 sm:mt-2 sm:gap-1">
+        <DynamicScoreRing
+          score={pulse.daily}
+          size={60}
+          emphasis="primary"
+          appearance="onDark"
+          onActivate={() => setActive(pulse.daily)}
+        />
+        <DynamicScoreRing
+          score={pulse.weekly}
+          size={56}
+          emphasis="default"
+          appearance="onDark"
+          onActivate={() => setActive(pulse.weekly)}
+        />
+        <DynamicScoreRing
+          score={pulse.monthly}
+          size={56}
+          emphasis="default"
+          appearance="onDark"
+          onActivate={() => setActive(pulse.monthly)}
+        />
+      </div>
+
+      <PortfolioPulseDetailSheet
+        score={active}
+        open={active != null}
+        onClose={() => setActive(null)}
+        attributionNotes={notes}
+      />
+    </div>
+  );
+}

@@ -1,0 +1,154 @@
+import { NextResponse } from "next/server";
+
+import { createClient } from "@/lib/supabase/server";
+import { sanitizeLocalHoldings } from "@/lib/services/portfolio/mappers";
+import { resolveProductAccessFromAuthUser } from "@/lib/services/productAccess";
+import {
+  PortfolioAccessError,
+  createPortfolioRepository,
+} from "@/lib/services/portfolio/repository";
+import {
+  formatSupabaseError,
+  supabaseErrorCode,
+} from "@/lib/services/portfolio/supabaseErrors";
+import {
+  PortfolioSyncError,
+  syncPortfolioSnapshot,
+} from "@/lib/services/portfolio/syncService";
+import type { PortfolioSyncRequest } from "@/lib/services/portfolio/types";
+import { SYNC_ERROR_CODES } from "@/lib/services/portfolio/types";
+import type { GoalSettings } from "@/lib/types/portfolioStorage";
+import type { SavedImportMapping } from "@/lib/services/import/mappingMemory";
+import { assertExamplePortfolioApiAccess } from "@/lib/services/examplePortfolio/accessGuard";
+
+export const dynamic = "force-dynamic";
+
+export async function GET(request: Request) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    const access = assertExamplePortfolioApiAccess(user);
+    if (!access.ok) return access.response;
+
+    const productAccess = await resolveProductAccessFromAuthUser(access.user);
+    const requestedId = new URL(request.url).searchParams.get("portfolioId");
+    const repo = createPortfolioRepository(supabase);
+    const snapshot = await repo.fetchSnapshot(
+      access.user.id,
+      requestedId,
+      { maxPortfolios: productAccess.maxPortfolios },
+    );
+
+    return NextResponse.json({ success: true, snapshot });
+  } catch (error) {
+    if (error instanceof PortfolioAccessError) {
+      return NextResponse.json(
+        { success: false, code: error.code, error: error.message },
+        { status: error.status },
+      );
+    }
+    console.error("[portfolio GET]", error);
+    return NextResponse.json(
+      {
+        success: false,
+        code: SYNC_ERROR_CODES.PROVIDER_FAILURE,
+        error: "Failed to load remote portfolio.",
+      },
+      { status: 500 },
+    );
+  }
+}
+
+export async function PUT(request: Request) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    const access = assertExamplePortfolioApiAccess(user);
+    if (!access.ok) return access.response;
+
+    const productAccess = await resolveProductAccessFromAuthUser(access.user);
+    const body = (await request.json()) as PortfolioSyncRequest & {
+      goal?: GoalSettings | null;
+      importMappings?: SavedImportMapping[];
+      portfolioId?: string | null;
+    };
+
+    if (!body.idempotencyKey) {
+      return NextResponse.json(
+        {
+          success: false,
+          code: SYNC_ERROR_CODES.VALIDATION,
+          error: "idempotencyKey is required.",
+        },
+        { status: 400 },
+      );
+    }
+
+    const repo = createPortfolioRepository(supabase);
+    await repo.resolvePortfolioForAccess(access.user.id, body.portfolioId, {
+      maxPortfolios: productAccess.maxPortfolios,
+    });
+    const snapshot = await syncPortfolioSnapshot(
+      repo,
+      access.user.id,
+      {
+        idempotencyKey: body.idempotencyKey,
+        holdings: sanitizeLocalHoldings(body.holdings),
+        goal: body.goal,
+        importMappings: body.importMappings,
+        portfolioId: body.portfolioId,
+        baseVersion: body.baseVersion,
+        clientId: body.clientId,
+      },
+      body.goal,
+      body.importMappings,
+    );
+
+    return NextResponse.json({ success: true, snapshot });
+  } catch (error) {
+    if (error instanceof PortfolioAccessError) {
+      return NextResponse.json(
+        { success: false, code: error.code, error: error.message },
+        { status: error.status },
+      );
+    }
+
+    if (error instanceof PortfolioSyncError) {
+      const status =
+        error.code === SYNC_ERROR_CODES.CONFLICT ||
+        error.code === SYNC_ERROR_CODES.STALE_VERSION
+          ? 409
+          : error.code === SYNC_ERROR_CODES.VALIDATION
+            ? 400
+            : error.code === SYNC_ERROR_CODES.UNAUTHORIZED
+              ? 401
+              : 500;
+
+      return NextResponse.json(
+        {
+          success: false,
+          code: error.code,
+          error: error.message,
+          snapshot: error.snapshot,
+        },
+        { status },
+      );
+    }
+
+    console.error("[portfolio PUT]", error);
+    return NextResponse.json(
+      {
+        success: false,
+        code: supabaseErrorCode(error) ?? SYNC_ERROR_CODES.PROVIDER_FAILURE,
+        error: formatSupabaseError(error) || "Failed to sync portfolio.",
+      },
+      { status: 500 },
+    );
+  }
+}

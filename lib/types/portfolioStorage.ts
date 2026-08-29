@@ -1,0 +1,199 @@
+/**
+ * Shared portfolio storage types and constants used by portfolio,
+ * dashboard, briefing, goals, and the pricing API.
+ */
+
+export {
+  LEGACY_ANNUAL_CONTRIBUTION_KEY,
+  LEGACY_GOAL_STORAGE_KEY,
+  LEGACY_PORTFOLIO_STORAGE_KEY,
+  LEGACY_PRICE_CACHE_KEY,
+  PORTFOLIO_HOLDINGS_UPDATED_EVENT,
+  annualContributionKey,
+  goalStorageKey,
+  portfolioStorageKey,
+  priceCacheKey,
+} from "@/lib/client/portfolioStorageKeys";
+
+/** @deprecated Use portfolioStorageKey(userSub) for authenticated storage. */
+export const PORTFOLIO_STORAGE_KEY = "investment-os-holdings";
+
+/** @deprecated Use priceCacheKey(userSub) for authenticated storage. */
+export const PRICE_CACHE_KEY = "investment-os-market-price-cache";
+
+/** A portfolio row persisted in localStorage. */
+export type StoredPortfolioHolding = {
+  id: string;
+  symbol: string;
+  name: string;
+  quantity: number;
+  purchasePrice: number;
+  currentPrice: number;
+  currency: "EUR";
+  assetType?: "investment" | "cash" | "crypto";
+  /**
+   * EODHD search / id-mapping Type when already resolved (e.g. "ETF", "Bond").
+   * Optional — never fetched here.
+   */
+  providerInstrumentType?: string | null;
+  isin?: string | null;
+  exchange?: string | null;
+  /** EODHD exchange used for live quotes when purchase venue differs (e.g. Tradegate). */
+  pricingExchange?: string | null;
+  providerSymbol?: string | null;
+  instrumentName?: string | null;
+  /** EODHD quote denomination for this listing (not portfolio base currency). */
+  quoteCurrency?: import("@/lib/services/prices/types").PriceCurrency | null;
+  matchMethod?: string;
+  confirmationSource?: string;
+  matchConfidence?: number;
+  requiresConfirmation?: boolean;
+  matchWarnings?: string[];
+  changePercent?: number | null;
+  previousClose?: number | null;
+  changeAmount?: number | null;
+  priceDataStatus?: "live" | "delayed" | "stale" | "unavailable";
+  updatedAt?: string;
+  /** ISO timestamp when currentPrice was last known to be valid. */
+  marketPriceUpdatedAt?: string;
+  /** Crypto pair quote currency (e.g. USDC). Distinct from USD. */
+  pairCurrency?: import("@/lib/types/cryptoHolding").CryptoPairCurrency;
+  /** Portfolio base currency for crypto holdings. */
+  portfolioCurrency?: "EUR";
+  pricingStatus?: import("@/lib/types/cryptoHolding").CryptoPricingStatus;
+  tradingPair?: string;
+  platform?: string | null;
+  providerAssetId?: string | null;
+  providerId?: string | null;
+  providerName?: string | null;
+  priceUpdatedAt?: string | null;
+  currentManualPrice?: number | null;
+  manualCurrentValue?: number | null;
+  /** Live quote in the holding's trading-pair currency (not portfolio base currency). */
+  currentPairPrice?: number | null;
+  change24hPercent?: number | null;
+  change24hAmount?: number | null;
+  quoteSourcePair?: string | null;
+  quoteConversionApplied?: boolean;
+  quoteConversionPath?: string | null;
+  providerDisplayName?: string | null;
+  fetchedAt?: string | null;
+  createdAt?: string;
+  /** User-confirmed distribution policy override for this exact holding. */
+  distributionPolicyUserOverride?: import("@/lib/types/distributionPolicy").DistributionPolicyUserOverride;
+  /**
+   * Optional user income estimate used only when provider annual income is unavailable.
+   * Never combined with a provider amount for the same holding.
+   */
+  passiveIncomeUserEstimate?: import("@/lib/types/passiveIncomeUserEstimate").PassiveIncomeUserEstimate | null;
+};
+
+/** Payload sent to POST /api/prices and POST /api/briefing. */
+export type PortfolioInstrumentPayload = {
+  symbol: string;
+  name?: string;
+  isin?: string | null;
+  exchange?: string | null;
+  providerSymbol?: string | null;
+  instrumentName?: string | null;
+  quoteCurrency?: import("@/lib/services/prices/types").PriceCurrency | null;
+  assetType?: "investment" | "cash" | "crypto";
+  pairCurrency?: string | null;
+  id?: string;
+};
+
+export type PriceApiQuote = {
+  symbol: string;
+  providerSymbol?: string;
+  eodhdSymbol?: string;
+  isin?: string | null;
+  /** @deprecated Use currentPrice — kept for backward compatibility. */
+  priceEur: number;
+  currentPrice?: number | null;
+  pairPrice?: number | null;
+  previousClose?: number | null;
+  change?: number | null;
+  changePercent?: number | null;
+  change24hPercent?: number | null;
+  currency?: string | null;
+  updatedAt?: string | null;
+  fetchedAt?: string | null;
+  dataStatus?: "live" | "delayed" | "stale" | "unavailable";
+  cacheStatus?: "fresh" | "stale" | "unavailable";
+  provider?: string;
+  providerDisplayName?: string | null;
+  isStale?: boolean;
+  unavailableReason?: string | null;
+  assetType?: "crypto" | "investment";
+  normalizedPair?: string | null;
+  sourcePair?: string | null;
+  conversionApplied?: boolean;
+  conversionPath?: string | null;
+};
+
+export type PriceApiResponse = {
+  success?: boolean;
+  message?: string;
+  prices?: PriceApiQuote[];
+  error?: string;
+  errors?: string[];
+  requested?: number;
+  received?: number;
+  lastSuccessfulUpdate?: string | null;
+  quoteSource?: "cache" | "provider" | "mixed";
+  refreshSummary?: {
+    uniqueSymbols?: string[];
+    cacheHits?: number;
+    providerCallsRequired?: number;
+    providerCallsMade?: number;
+    skippedSymbols?: string[];
+    circuitOpen?: boolean;
+    estimateOnly?: boolean;
+    fxCallsRequired?: number;
+    totalCallsRequired?: number;
+  };
+  eodhdBudget?: {
+    usageDate: string;
+    callsUsed: number;
+    dailyLimit: number;
+    recoveryReserve: number;
+    spendableRemaining: number;
+  };
+  canAffordRefresh?: boolean;
+  cryptoRefreshDiagnostics?: import("@/lib/services/prices/cryptoRefreshDiagnostics").SanitizedCryptoServerDiagnostic[];
+};
+
+export type CachedPortfolioPrice = {
+  symbol: string;
+  providerSymbol?: string;
+  isin?: string | null;
+  price: number;
+  previousClose?: number | null;
+  change?: number | null;
+  changePercent?: number | null;
+  change24hPercent?: number | null;
+  currency?: string | null;
+  dataStatus?: "live" | "delayed" | "stale" | "unavailable";
+  updatedAt?: string;
+  provider?: string | null;
+  quoteSource?: "cache" | "provider" | "mixed" | null;
+  lastSuccessfulUpdate?: string | null;
+  assetType?: "investment" | "crypto";
+  pairPrice?: number | null;
+  normalizedPair?: string | null;
+  sourcePair?: string | null;
+  conversionApplied?: boolean;
+  conversionPath?: string | null;
+  providerDisplayName?: string | null;
+};
+
+export type GoalSettings = {
+  /** Optional display name — local preference; not required for calculations. */
+  name?: string;
+  targetValue: number;
+  targetYear: number;
+  monthlyContribution: number;
+  expectedAnnualReturn: number;
+  /** Optional passive income target for dividend progress tracking. */
+  passiveIncomeTarget?: number;
+};

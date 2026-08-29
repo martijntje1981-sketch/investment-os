@@ -1,0 +1,53 @@
+import { UploadCloud } from "lucide-react";
+
+import {
+  IMPORT_SUPPORTED_FORMATS_DETAIL,
+  IMPORT_SUPPORTED_FORMATS_HEADLINE,
+} from "@/lib/services/import/importFormatCopy";
+
+type ImportDropzoneProps = {
+  isDragging: boolean;
+  onDragOver: (event: React.DragEvent<HTMLDivElement>) => void;
+  onDragLeave: () => void;
+  onDrop: (event: React.DragEvent<HTMLDivElement>) => void;
+};
+
+export function ImportDropzone({
+  isDragging,
+  onDragOver,
+  onDragLeave,
+  onDrop,
+}: ImportDropzoneProps) {
+  return (
+    <div
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+      data-testid="import-dropzone"
+      className={`mt-5 rounded-[24px] border-2 border-dashed px-5 py-8 text-center transition-colors ${
+        isDragging
+          ? "border-blue-500 bg-blue-50 text-blue-700"
+          : "border-slate-300 bg-white text-slate-500"
+      }`}
+    >
+      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-600">
+        <UploadCloud className="h-6 w-6" />
+      </div>
+      <p className="mt-4 text-[16px] font-bold text-slate-800">
+        Drop a spreadsheet here
+      </p>
+      <p
+        className="mt-1 text-[15px] font-semibold text-slate-800"
+        data-testid="import-supported-formats"
+      >
+        {IMPORT_SUPPORTED_FORMATS_HEADLINE}
+      </p>
+      <p className="mt-1 text-[15px] text-slate-600">
+        {IMPORT_SUPPORTED_FORMATS_DETAIL}
+      </p>
+      <p className="mt-1 text-[15px] text-slate-600">
+        Or use Choose file on your phone.
+      </p>
+    </div>
+  );
+}

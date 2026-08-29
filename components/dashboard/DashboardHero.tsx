@@ -1,0 +1,255 @@
+"use client";
+
+import Link from "next/link";
+import { Target, TrendingDown, TrendingUp } from "lucide-react";
+
+import { ConversionDetailsDisclosure } from "@/components/currency/ConversionDetailsDisclosure";
+import {
+  appCardValueClass,
+  appDashboardHeroMetricLabelClass,
+  appDashboardLightCardClass,
+  appDisplayClass,
+  appHeroKpiClass,
+  appHeroShellClass,
+  appSectionBodyClass,
+  appSectionLabelClass,
+  appSectionMetaClass,
+  appTableNameClass,
+  appTickerClass,
+} from "@/components/layout/appSurface";
+import { useBaseCurrencyDisplay } from "@/lib/client/baseCurrencyDisplay";
+import { formatPortfolioPercent } from "@/lib/client/portfolioAnalysis";
+import { formatMarketUpdateTime } from "@/lib/client/marketStatus";
+import type { DashboardSummary } from "@/lib/client/dashboardSummary";
+import {
+  formatTodayMoveDetail,
+  formatTodayMoveValue,
+  RANKING_AFTER_CLOSE,
+} from "@/lib/client/investorOverviewCopy";
+
+function signedCurrency(value: number, formatEur: (n: number) => string) {
+  const formatted = formatEur(Math.abs(value));
+  return value >= 0 ? `+${formatted}` : `−${formatted}`;
+}
+
+function signedPercent(value: number) {
+  const formatted = formatPortfolioPercent(Math.abs(value));
+  return value >= 0 ? `+${formatted}` : `−${formatted}`;
+}
+
+export function DashboardPortfolioHero({
+  summary,
+}: {
+  summary: DashboardSummary;
+}) {
+  const { formatEur } = useBaseCurrencyDisplay();
+  const showTodayMove = summary.hasDailyData;
+  const todayTone =
+    summary.hasDailyData && summary.todayChange !== 0
+      ? summary.todayChange > 0
+        ? "text-emerald-600"
+        : "text-rose-600"
+      : "text-slate-700";
+
+  const todayValue = formatTodayMoveValue({
+    hasDailyData: summary.hasDailyData,
+    performanceCoverageComplete: summary.performanceCoverageComplete,
+    formatValue: () => signedCurrency(summary.todayChange, formatEur),
+  });
+
+  const todayDetail = formatTodayMoveDetail({
+    hasDailyData: summary.hasDailyData,
+    performanceCoverageComplete: summary.performanceCoverageComplete,
+    formatPercent: () => signedPercent(summary.todayPercent),
+    coverageMessage: summary.dailyPerformanceCoverageMessage,
+    mixedPeriodDetail: summary.dailyMovePeriodDetail,
+  });
+
+  const totalTone =
+    summary.totalReturn >= 0 ? "text-emerald-600" : "text-rose-600";
+
+  return (
+    <section className={appHeroShellClass}>
+      <div className="px-4 py-5 md:px-8 md:py-6">
+        <p className={appDashboardHeroMetricLabelClass}>Portfolio value</p>
+        <p className={`mt-2 ${appDisplayClass}`}>
+          {summary.portfolioValueAvailable
+            ? formatEur(summary.portfolioValue)
+            : "Unavailable"}
+        </p>
+        <div className="mt-2">
+          <ConversionDetailsDisclosure compactTrigger tone="light" />
+        </div>
+        {summary.portfolioValueCoverageMessage ? (
+          <p className={`mt-2 ${appSectionMetaClass} text-slate-500`}>
+            {summary.portfolioValueCoverageMessage}
+          </p>
+        ) : null}
+        <p className={`mt-3 ${appSectionMetaClass} text-slate-500`}>
+          Last update: {formatMarketUpdateTime(summary.lastUpdatedAt)}
+        </p>
+
+        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <HeroMetric
+            label={summary.dailyMoveHeroLabel}
+            value={todayValue}
+            detail={todayDetail}
+            valueClassName={showTodayMove ? todayTone : "text-slate-700"}
+          />
+          <HeroMetric
+            label="Total gain / loss"
+            value={
+              summary.canShowPerformance
+                ? signedCurrency(summary.totalReturn, formatEur)
+                : "Unavailable"
+            }
+            detail={
+              summary.canShowPerformance
+                ? signedPercent(summary.totalReturnPercent)
+                : summary.hasUnvaluedInvestments
+                  ? "Some holdings lack price data"
+                  : "Price data required"
+            }
+            valueClassName={
+              summary.canShowPerformance ? totalTone : "text-slate-700"
+            }
+          />
+          <HeroMetric
+            label="Goal progress"
+            value={
+              summary.goalCompleted
+                ? "Achieved"
+                : summary.hasSavedGoal
+                  ? formatPortfolioPercent(summary.goalProgress)
+                  : "Not set"
+            }
+            detail={
+              summary.hasSavedGoal && summary.goalTarget
+                ? `Target ${formatEur(summary.goalTarget)}`
+                : "Set a goal to track progress"
+            }
+            valueClassName="text-q1-strong"
+            icon={<Target className="h-4 w-4" />}
+          />
+          <HeroMetric
+            label="Holdings"
+            value={String(summary.holdingCount)}
+            detail={`${summary.holdingCount === 1 ? "position" : "positions"} monitored`}
+            valueClassName="text-slate-950"
+          />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function HeroMetric({
+  label,
+  value,
+  detail,
+  valueClassName,
+  icon,
+}: {
+  label: string;
+  value: string;
+  detail: string;
+  valueClassName: string;
+  icon?: React.ReactNode;
+}) {
+  return (
+    <div className="min-w-0 rounded-[18px] border border-brand/20 bg-white/80 px-4 py-3.5">
+      <div
+        className={`flex items-center gap-2 ${appSectionLabelClass} text-slate-400`}
+      >
+        {icon}
+        {label}
+      </div>
+      <p className={`mt-1.5 ${appHeroKpiClass} ${valueClassName}`}>{value}</p>
+      <p className={`mt-1.5 ${appSectionMetaClass} text-slate-400`}>{detail}</p>
+    </div>
+  );
+}
+
+export function DashboardMoverCard({
+  label,
+  mover,
+  tone,
+  hasDailyData,
+  hasReliableMoverData,
+  coverageMessage,
+}: {
+  label: string;
+  mover: DashboardSummary["bestMover"];
+  tone: "positive" | "negative";
+  hasDailyData: boolean;
+  hasReliableMoverData: boolean;
+  coverageMessage?: string | null;
+}) {
+  const { formatEur } = useBaseCurrencyDisplay();
+
+  if (!hasReliableMoverData) {
+    const unavailableCopy =
+      hasDailyData && coverageMessage ? coverageMessage : RANKING_AFTER_CLOSE;
+
+    return (
+      <article className={`min-w-0 ${appDashboardLightCardClass} px-5 py-5`}>
+        <p className={appSectionLabelClass}>{label}</p>
+        <p className={`mt-2.5 ${appSectionBodyClass} text-slate-600`}>
+          {unavailableCopy}
+        </p>
+      </article>
+    );
+  }
+
+  const toneClasses =
+    tone === "positive"
+      ? "border-emerald-200 bg-emerald-50/60"
+      : "border-red-200 bg-red-50/60";
+
+  return (
+    <article
+      className={`min-w-0 ${appDashboardLightCardClass} p-5 ${toneClasses}`}
+    >
+      <p className={appSectionLabelClass}>{label}</p>
+      {mover ? (
+        <>
+          <Link
+            href={`/portfolio/${mover.symbol.toLowerCase()}`}
+            className="mt-2.5 block min-w-0 rounded-xl transition hover:bg-white/60"
+          >
+            <p className={`truncate ${appTableNameClass}`}>{mover.name}</p>
+            <p className={`mt-1 ${appTickerClass}`}>{mover.symbol}</p>
+          </Link>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            {tone === "positive" ? (
+              <TrendingUp className="h-4 w-4 shrink-0 text-emerald-600" />
+            ) : (
+              <TrendingDown className="h-4 w-4 shrink-0 text-red-600" />
+            )}
+            <p className={appCardValueClass}>
+              {signedPercent(mover.changePercent)}
+              <span aria-hidden="true"> · </span>
+              {signedCurrency(mover.changeAmount, formatEur)}
+            </p>
+          </div>
+          {mover.changePeriodLabel ? (
+            <p
+              className={`mt-1.5 ${appSectionMetaClass} text-slate-600`}
+              title={mover.changePeriodAccessibleDescription}
+            >
+              {mover.changePeriodLabel}
+            </p>
+          ) : null}
+        </>
+      ) : (
+        <p className={`mt-2.5 ${appSectionBodyClass} text-slate-600`}>
+          No {tone === "positive" ? "positive" : "negative"} mover for this
+          period.
+        </p>
+      )}
+    </article>
+  );
+}
+
+/** @deprecated Use DashboardPortfolioHero */
+export const DashboardHero = DashboardPortfolioHero;
