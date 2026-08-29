@@ -143,6 +143,17 @@ export const appDarkCardClass =
 export const appDarkInsetClass =
   "rounded-xl border border-white/10 bg-white/[0.07]";
 
+/**
+ * Lifted navy card vs the deep canvas — more depth than appDarkCardClass
+ * without leaving the Tobailey navy family.
+ */
+export const appDarkCardElevatedClass =
+  "min-w-0 overflow-hidden rounded-[24px] border border-white/14 bg-gradient-to-b from-navy-hero-lift to-navy-card text-white shadow-[var(--navy-shadow)] md:rounded-[28px]";
+
+/** Recessed nested metric on an elevated dark card. */
+export const appDarkInsetRecessedClass =
+  "rounded-xl border border-white/[0.08] bg-navy-hero-deep/60";
+
 /** Compact caution on navy surfaces — not a primary product block. */
 export const appDarkCautionClass =
   "rounded-xl border border-amber-400/30 bg-amber-400/10 px-3.5 py-2.5 text-[13px] font-medium leading-relaxed text-amber-100";

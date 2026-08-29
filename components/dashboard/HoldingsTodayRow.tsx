@@ -120,29 +120,6 @@ function HoldingMonogram({ name }: { name: string }) {
   );
 }
 
-function HoldingVisual({
-  row,
-  news,
-}: {
-  row: DashboardHoldingRow;
-  news: HoldingsTodayNewsContext | null;
-}) {
-  if (news?.thumbnailUrl) {
-    return (
-      <NewsMediaThumbnail
-        thumbnailUrl={news.thumbnailUrl}
-        sourceType={news.sourceType ?? "news"}
-        fallbackCategory="portfolio"
-        size="square"
-        allowProviderStoredUrl
-        alt=""
-      />
-    );
-  }
-
-  return <HoldingMonogram name={row.name || row.symbol} />;
-}
-
 function HoldingsTodayNews({
   news,
 }: {
@@ -154,21 +131,34 @@ function HoldingsTodayNews({
 
   if (news.href && news.headline) {
     return (
-      <a
-        href={news.href}
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={stopNewsNavigation}
-        className="block min-w-0 rounded-lg text-[15px] font-semibold leading-snug text-white underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 md:text-[16px]"
-        data-testid="holdings-today-news-link"
-      >
-        <span className="line-clamp-2">{news.headline}</span>
-        {news.sourceName ? (
-          <span className={`mt-0.5 block font-medium ${appDashboardDarkMetaClass}`}>
-            {news.sourceName}
-          </span>
+      <div className="flex min-w-0 items-start gap-2">
+        {news.thumbnailUrl ? (
+          <NewsMediaThumbnail
+            thumbnailUrl={news.thumbnailUrl}
+            sourceType={news.sourceType ?? "news"}
+            fallbackCategory="portfolio"
+            size="context"
+            allowProviderStoredUrl
+            surface="onDark"
+            alt=""
+          />
         ) : null}
-      </a>
+        <a
+          href={news.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={stopNewsNavigation}
+          className="block min-w-0 flex-1 rounded-lg text-[15px] font-semibold leading-snug text-white underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 md:text-[16px]"
+          data-testid="holdings-today-news-link"
+        >
+          <span className="line-clamp-2">{news.headline}</span>
+          {news.sourceName ? (
+            <span className={`mt-0.5 block font-medium ${appDashboardDarkMetaClass}`}>
+              {news.sourceName}
+            </span>
+          ) : null}
+        </a>
+      </div>
     );
   }
 
@@ -284,7 +274,7 @@ export function HoldingsTodayRow({
       data-layout={layout}
     >
       <div className="row-span-2 self-start md:row-span-1">
-        <HoldingVisual row={row} news={news} />
+        <HoldingMonogram name={row.name || row.symbol} />
       </div>
       <div className="min-w-0">{identity}</div>
       <div className="flex min-w-0 flex-col items-end gap-0.5 md:contents">

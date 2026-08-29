@@ -17,6 +17,7 @@ const SIZE_CLASSES = {
   square: "h-10 w-10 shrink-0 md:h-11 md:w-11",
   compact:
     "h-11 w-[3.75rem] shrink-0 aspect-[4/3] min-[480px]:h-12 min-[480px]:w-16",
+  context: "h-12 w-14 shrink-0 md:h-14 md:w-16",
   small:
     "h-12 w-[4.25rem] shrink-0 aspect-[10/7] min-[480px]:h-14 min-[480px]:w-20",
   editorial:
@@ -62,7 +63,11 @@ export function NewsMediaThumbnail({
   return (
     <div
       className={`relative overflow-hidden ${
-        size === "square" ? "rounded-xl" : "rounded-lg"
+        size === "square"
+          ? "rounded-xl"
+          : size === "context"
+            ? "rounded-md"
+            : "rounded-lg"
       } ${
         showImage
           ? placeholderClass

@@ -16,8 +16,9 @@ import {
   appAnalysisDarkTitleClass,
   appAnalysisUtilityButtonClass,
   appDarkCardClass,
+  appDarkCardElevatedClass,
   appDarkCardPaddingClass,
-  appDarkInsetClass,
+  appDarkInsetRecessedClass,
   appDashboardDarkBodyClass,
   appDashboardDarkMetaClass,
   appHeroKpiClass,
@@ -420,7 +421,7 @@ export default function GoalsPage() {
         <section
           id="goal-progress"
           aria-labelledby="goals-on-track-heading"
-          className={`${appDarkCardClass} ${appDarkCardPaddingClass} scroll-mt-24`}
+          className={`${appDarkCardElevatedClass} ${appDarkCardPaddingClass} scroll-mt-24`}
           data-testid="goals-on-track"
         >
           <p className={appHeroMetricLabelClass}>Am I on track?</p>
@@ -437,7 +438,7 @@ export default function GoalsPage() {
               {badgeLabel}
             </span>
           ) : null}
-          <div className="mt-4">
+          <div className={`mt-4 ${appDarkInsetRecessedClass} px-3.5 py-3.5 sm:px-4 sm:py-4`}>
             <GoalHeroProgressVisual
               progress={goalProgress}
               hasSavedGoal={hasSavedGoal}
@@ -458,7 +459,7 @@ export default function GoalsPage() {
         {hasSavedGoal ? (
           <section
             aria-labelledby="goals-driving-heading"
-            className={`${appDarkCardClass} ${appDarkCardPaddingClass}`}
+            className={`${appDarkCardElevatedClass} ${appDarkCardPaddingClass}`}
             data-testid="goals-driving"
           >
             <p className={appHeroMetricLabelClass}>What is driving the outcome?</p>
@@ -715,7 +716,7 @@ export default function GoalsPage() {
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className={`${appDarkInsetClass} min-w-0 px-3 py-2.5`}>
+    <div className={`${appDarkInsetRecessedClass} min-w-0 px-3 py-2.5`}>
       <p className={appHeroMetricLabelClass}>{label}</p>
       <p className={`mt-1 truncate ${appHeroKpiClass} text-white`}>{value}</p>
     </div>

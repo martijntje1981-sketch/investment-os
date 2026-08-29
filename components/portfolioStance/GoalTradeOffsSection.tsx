@@ -6,9 +6,9 @@ import Link from "next/link";
 import {
   appAnalysisDarkTitleClass,
   appAnalysisUtilityButtonClass,
-  appDarkCardClass,
+  appDarkCardElevatedClass,
   appDarkCardPaddingClass,
-  appDarkInsetClass,
+  appDarkInsetRecessedClass,
   appDashboardDarkBodyClass,
   appDashboardDarkMetaClass,
   appHeroMetricLabelClass,
@@ -64,7 +64,7 @@ export function GoalTradeOffsSection({
     <section
       id="goal-trade-offs"
       aria-labelledby="goal-trade-offs-heading"
-      className={`${appDarkCardClass} ${appDarkCardPaddingClass} min-w-0 scroll-mt-24 overflow-x-clip`}
+      className={`${appDarkCardElevatedClass} ${appDarkCardPaddingClass} min-w-0 scroll-mt-24 overflow-x-clip`}
       data-testid="goal-trade-offs"
     >
       <p className={appHeroMetricLabelClass}>What could change it?</p>
@@ -78,7 +78,7 @@ export function GoalTradeOffsSection({
         <p className={`mt-5 ${appDashboardDarkMetaClass}`}>{model.reason}</p>
       ) : (
         <>
-          <div className={`mt-5 px-4 py-4 ${appDarkInsetClass}`}>
+          <div className={`mt-5 px-4 py-4 ${appDarkInsetRecessedClass}`}>
             <p className={appHeroMetricLabelClass}>Current path</p>
             <p className="mt-1 text-[1.25rem] font-bold text-white">
               {currentOption?.projectedCompletionLabel ?? "Projected completion unavailable"}
@@ -128,7 +128,7 @@ export function GoalTradeOffsSection({
             </p>
             <div className="mt-3 grid min-w-0 gap-3">
               {model.stance.paths.map((path) => (
-                <div key={path.id} className={`${appDarkInsetClass} px-3.5 py-3`}>
+                <div key={path.id} className={`${appDarkInsetRecessedClass} px-3.5 py-3`}>
                   <p className={appHeroMetricLabelClass}>{path.label}</p>
                   <p className="mt-1 font-semibold text-white">{path.stanceLabel}</p>
                   <p className={`mt-1 ${appDashboardDarkMetaClass}`}>

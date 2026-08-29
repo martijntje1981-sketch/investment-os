@@ -39,6 +39,7 @@ const ZONES = [
 /**
  * Descriptive Risk vs Expected Return map with labelled zones.
  * Positioning only — no fake numerical precision.
+ * Compact wide matrix — must not dominate the Scorecard page.
  */
 export function RiskReturnMap({
   volatilityIndex,
@@ -55,60 +56,62 @@ export function RiskReturnMap({
   const y = Math.max(14, Math.min(86, (1 - returnIndex) * 100));
 
   return (
-    <div className="w-full">
-      <div
-        className="relative aspect-[5/4] w-full overflow-hidden rounded-[24px] border border-white/12 sm:aspect-[4/3]"
-        role="img"
-        aria-label={`Your portfolio: ${returnBand} expected return, ${volatilityLevel} expected volatility`}
-      >
-        <div className="absolute inset-0 grid grid-cols-2 grid-rows-2">
-          {ZONES.map((zone) => (
-            <div
-              key={zone.id}
-              className={`relative p-2.5 sm:p-3.5 ${zone.className} ${
-                zone.x === 1 ? "border-l border-white/10" : ""
-              } ${zone.y === 1 ? "border-t border-white/10" : ""}`}
-            >
-              <p className="max-w-[9rem] text-[10px] font-bold leading-snug text-white/80 sm:max-w-none sm:text-[12px]">
-                {zone.label}
-              </p>
-            </div>
-          ))}
+    <div className="w-full" data-testid="risk-return-map">
+      <div className="flex items-stretch gap-1.5">
+        <div
+          className="flex w-4 shrink-0 flex-col items-center justify-between py-0.5 sm:w-5"
+          aria-hidden
+        >
+          <span className="text-[10px] font-semibold text-white/50">High</span>
+          <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/55 [writing-mode:vertical-rl] rotate-180">
+            Expected return
+          </span>
+          <span className="text-[10px] font-semibold text-white/50">Low</span>
         </div>
-
-        <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 -rotate-90 text-[9px] font-bold uppercase tracking-[0.14em] text-white/40">
-          Expected return
-        </span>
-        <span className="pointer-events-none absolute bottom-1.5 left-1/2 -translate-x-1/2 text-[9px] font-bold uppercase tracking-[0.14em] text-white/40">
-          Expected volatility
-        </span>
-        <span className="pointer-events-none absolute left-3 top-2 text-[10px] font-semibold text-white/45">
-          High
-        </span>
-        <span className="pointer-events-none absolute bottom-7 left-3 text-[10px] font-semibold text-white/45">
-          Low
-        </span>
-        <span className="pointer-events-none absolute bottom-7 right-3 text-[10px] font-semibold text-white/45">
-          High
-        </span>
 
         <div
-          className="absolute z-10 -translate-x-1/2 -translate-y-1/2"
-          style={{ left: `${x}%`, top: `${y}%` }}
+          className="relative h-[188px] min-w-0 flex-1 overflow-hidden rounded-xl border border-white/12 bg-navy-hero-deep/40 sm:h-[240px] lg:h-[256px]"
+          role="img"
+          aria-label={`Your portfolio: ${returnBand} expected return, ${volatilityLevel} expected volatility`}
+          data-testid="risk-return-matrix"
         >
-          <span className="absolute -inset-3 animate-pulse rounded-full bg-brand/25" />
-          <span className="relative block h-4 w-4 rounded-full border-2 border-white bg-brand shadow-[0_0_18px_rgba(93,183,255,0.45)]" />
+          <div className="absolute inset-0 grid grid-cols-2 grid-rows-2">
+            {ZONES.map((zone) => (
+              <div
+                key={zone.id}
+                className={`relative px-2 py-1.5 sm:px-3 sm:py-2 ${zone.className} ${
+                  zone.x === 1 ? "border-l border-white/10" : ""
+                } ${zone.y === 1 ? "border-t border-white/10" : ""}`}
+              >
+                <p className="max-w-[10rem] text-[11px] font-semibold leading-snug text-white/85 sm:text-[12px]">
+                  {zone.label}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <div
+            className="absolute z-10 -translate-x-1/2 -translate-y-1/2"
+            style={{ left: `${x}%`, top: `${y}%` }}
+          >
+            <span className="absolute -inset-2.5 animate-pulse rounded-full bg-brand/25" />
+            <span className="relative block h-3.5 w-3.5 rounded-full border-2 border-white bg-brand shadow-[0_0_14px_rgba(93,183,255,0.45)] sm:h-4 sm:w-4" />
+          </div>
         </div>
       </div>
 
-      <div className="mt-4 rounded-2xl border border-white/15 bg-white/5 px-4 py-3">
-        <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-brand">
-          Your portfolio
-        </p>
-        <p className="mt-1 text-[15px] font-semibold text-white">
-          {returnBand} expected return · {volatilityLevel} expected volatility
-        </p>
+      <div
+        className="mt-1.5 flex items-center justify-between pl-6 text-[10px] font-bold uppercase tracking-[0.12em] text-white/55 sm:pl-7 sm:text-[11px]"
+        aria-hidden
+      >
+        <span>Low</span>
+        <span>Expected volatility</span>
+        <span>High</span>
       </div>
+
+      <p className="mt-3 text-[15px] font-semibold leading-snug text-white">
+        {returnBand} expected return · {volatilityLevel} expected volatility
+      </p>
     </div>
   );
 }

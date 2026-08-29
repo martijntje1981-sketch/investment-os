@@ -71,7 +71,7 @@ export function GoalHeroProgressVisual({
         <div>
           <p className={labelClass}>Achieved</p>
           <p
-            className={`mt-1 text-2xl font-black tabular-nums tracking-[-0.03em] sm:text-3xl ${valueClass}`}
+            className={`mt-1 text-[1.75rem] font-black tabular-nums tracking-[-0.03em] sm:text-[2rem] ${valueClass}`}
           >
             {formatGoalHeroProgressPercent(state.displayPercent)}
           </p>
@@ -93,12 +93,14 @@ export function GoalHeroProgressVisual({
       </div>
 
       <div
-        className={`relative mt-5 h-2 overflow-hidden rounded-full ${
-          onDark ? "bg-white/10" : "bg-q3-soft"
+        className={`relative mt-5 h-2.5 overflow-hidden rounded-full ${
+          onDark ? "bg-white/12" : "bg-q3-soft"
         }`}
       >
         <div
-          className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-q3-deep via-q3-strong to-q3 transition-[width] duration-500 motion-reduce:transition-none"
+          className={`absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-q3-deep via-q3-strong to-q3 transition-[width] duration-500 motion-reduce:transition-none ${
+            onDark ? "shadow-[0_0_16px_rgba(93,183,255,0.28)]" : ""
+          }`}
           style={{ width: `${state.fillPercent}%` }}
           role="progressbar"
           aria-valuemin={0}

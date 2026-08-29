@@ -781,7 +781,7 @@ export default function PortfolioHealthPage() {
                 >
                   Where this portfolio sits
                 </h2>
-                <div className="mt-6">
+                <div className="mt-4">
                   <RiskReturnMap
                     volatilityIndex={profile.riskReturn.volatilityIndex}
                     returnIndex={profile.riskReturn.returnIndex}
