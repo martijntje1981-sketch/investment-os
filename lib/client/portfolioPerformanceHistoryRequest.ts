@@ -44,10 +44,23 @@ export function __countPerformanceHistoryReusesForTests(): number {
 }
 
 export function __resetPortfolioPerformanceHistoryRequestsForTests(): void {
-  inFlight.clear();
-  successCache.clear();
+  clearPortfolioPerformanceHistoryCache();
   postsStartedForTests = 0;
   postsReusedForTests = 0;
+}
+
+export function peekPortfolioPerformanceHistory(
+  userSub: string,
+  period: PerformancePeriodId,
+  fingerprint: string,
+): PortfolioPerformanceHistoryApiResponse | null {
+  if (!userSub || period === "1D") return null;
+  return successCache.get(historyRequestKey(userSub, period, fingerprint)) ?? null;
+}
+
+export function clearPortfolioPerformanceHistoryCache(): void {
+  inFlight.clear();
+  successCache.clear();
 }
 
 export function toHistoryHolding(

@@ -124,7 +124,7 @@ describe("first-run dashboard wiring", () => {
     );
     expect(banner).toContain("bg-brand-soft/95");
     expect(banner).toContain("Upgrade");
-    expect(banner).toContain('cache: "no-store"');
+    expect(banner).toContain("fetchExamplePortfolioStatus");
     expect(banner).toContain("isFinal48Hours");
     expect(banner).not.toContain("animate-pulse");
     expect(banner).not.toContain("bg-rose");

@@ -40,7 +40,7 @@ function readInitialNewsPayload(userSub: string | null): NewsApiResponse {
 function initialNewsLoading(userSub: string | null, enabled: boolean): boolean {
   if (!enabled || !userSub) return false;
   const cached = readNewsCache(userSub);
-  return !(cached && isNewsCacheFresh(cached.cachedAt));
+  return !cached?.response;
 }
 
 export function usePortfolioNews(
@@ -55,6 +55,14 @@ export function usePortfolioNews(
     initialNewsLoading(userSub, enabled),
   );
   const [isStale, setIsStale] = useState(false);
+  const [scopedUserSub, setScopedUserSub] = useState(userSub);
+
+  if (scopedUserSub !== userSub) {
+    setScopedUserSub(userSub);
+    setPayload(readInitialNewsPayload(userSub));
+    setIsLoading(initialNewsLoading(userSub, enabled));
+    setIsStale(false);
+  }
 
   const reload = useCallback(
     async (options?: { force?: boolean }) => {
@@ -66,11 +74,18 @@ export function usePortfolioNews(
       }
 
       const cached = userSub ? readNewsCache(userSub) : null;
-      const hasFreshCache = Boolean(
-        cached && isNewsCacheFresh(cached.cachedAt) && !options?.force,
+      const hasCachedContent = Boolean(cached?.response);
+      const cacheFresh = Boolean(
+        cached && isNewsCacheFresh(cached.cachedAt),
       );
 
-      if (!hasFreshCache) {
+      if (hasCachedContent && cached?.response) {
+        setPayload(cached.response);
+      } else {
+        setPayload(EMPTY_NEWS_RESPONSE);
+      }
+
+      if (!hasCachedContent || !cacheFresh) {
         setIsLoading(true);
       }
 

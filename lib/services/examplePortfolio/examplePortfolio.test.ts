@@ -299,6 +299,7 @@ describe("example expiry enforcement", () => {
     const banner = read(
       "components/examplePortfolio/ExamplePortfolioBanner.tsx",
     );
+    const statusCache = read("lib/client/examplePortfolioStatusCache.ts");
     const header = read("components/marketing/MarketingHeader.tsx");
     const home = read("app/page.tsx");
     const expired = read("app/example-expired/page.tsx");
@@ -320,8 +321,9 @@ describe("example expiry enforcement", () => {
     expect(callback).not.toContain("templateHint");
     expect(banner).toContain("Upgrade");
     expect(banner).toContain("TRIAL_UPGRADE_HREF");
-    expect(banner).toContain("/api/example-portfolio/status");
-    expect(banner).toContain('cache: "no-store"');
+    expect(banner).toContain("fetchExamplePortfolioStatus");
+    expect(statusCache).toContain("/api/example-portfolio/status");
+    expect(statusCache).toContain('cache: "no-store"');
     expect(header).toContain("Start with Complete");
     expect(header).toContain("/signup?intent=trial");
     expect(header).not.toMatch(/24-?hour|24h trial/i);

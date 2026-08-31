@@ -68,10 +68,16 @@ describe("first-user access — post-login session", () => {
     expect(menu).toContain("router.refresh()");
   });
 
-  it("H. Dashboard waits for portfolio and product access before leaving the loader", () => {
+  it("H. Dashboard waits for portfolio identity, not product access, before leaving the loader", () => {
     const dashboard = read("app/dashboard/page.tsx");
     expect(dashboard).toContain("AppPageLoading");
-    expect(dashboard).toContain("!portfolioReady || (Boolean(userSub) && !productAccess.accessReady)");
+    expect(dashboard).toContain("if (!portfolioReady)");
+    expect(dashboard).not.toContain(
+      "!portfolioReady || (Boolean(userSub) && !productAccess.accessReady)",
+    );
+    expect(dashboard).toContain("dashboard-access-pending");
+    expect(dashboard).toContain("CompleteTrialIndicator");
+    expect(dashboard).toContain("FreeIntelligenceNote");
     expect(dashboard).not.toContain("window.location.reload");
   });
 

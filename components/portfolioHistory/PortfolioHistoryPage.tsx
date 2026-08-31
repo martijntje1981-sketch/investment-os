@@ -317,18 +317,31 @@ export default function PortfolioHistoryPage() {
             </div>
             <History className="mt-0.5 h-5 w-5 shrink-0 text-white/40" aria-hidden />
           </div>
-          <div className="px-3 py-4 sm:px-5 sm:py-5">
-            {history.isLoading ? (
+          <div
+            className="px-3 py-4 sm:px-5 sm:py-5"
+            aria-busy={history.isLoading || undefined}
+            data-history-updating={
+              Boolean(history.data) && history.isLoading ? "true" : undefined
+            }
+          >
+            {history.isLoading && !history.data ? (
               <div
                 className="h-[190px] animate-pulse rounded-2xl bg-white/10 sm:h-[210px]"
                 aria-hidden
               />
             ) : (
-              <PortfolioPerformanceChart
-                points={timeline.chartPoints}
-                hasSeries={timeline.hasValueSeries}
-                emptyMessage="Portfolio development appears here once daily market history is available for your holdings."
-              />
+              <>
+                {history.error ? (
+                  <p className={`mb-3 ${appDashboardDarkBodyClass}`} role="alert">
+                    {history.error}
+                  </p>
+                ) : null}
+                <PortfolioPerformanceChart
+                  points={timeline.chartPoints}
+                  hasSeries={timeline.hasValueSeries}
+                  emptyMessage="Portfolio development appears here once daily market history is available for your holdings."
+                />
+              </>
             )}
           </div>
 

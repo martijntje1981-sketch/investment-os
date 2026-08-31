@@ -176,9 +176,11 @@ export function NewsHubContent({
         isRefreshing={isRefreshing}
       />
 
-      {!isSearchActive && isRefreshing ? <NewsMarketsTodaySkeleton /> : null}
+      {!isSearchActive && isRefreshing && !hasBriefingContent ? (
+        <NewsMarketsTodaySkeleton />
+      ) : null}
 
-      {!isSearchActive && hasBriefingContent && !isRefreshing ? (
+      {!isSearchActive && hasBriefingContent ? (
         <NewsMarketsTodaySection regions={briefing.marketsToday} />
       ) : null}
 
@@ -213,7 +215,9 @@ export function NewsHubContent({
         </>
       ) : null}
 
-      {isRefreshing && !isSearchActive ? <NewsBriefingSkeleton /> : null}
+      {isRefreshing && !isSearchActive && !hasBriefingContent ? (
+        <NewsBriefingSkeleton />
+      ) : null}
 
       {isSearchActive && filteredItems.length === 0 ? (
         <NewsEmptyState
@@ -243,8 +247,11 @@ export function NewsHubContent({
         />
       ) : null}
 
-      {!isSearchActive && hasBriefingContent && !isRefreshing ? (
-        <div className="min-w-0 space-y-6 sm:space-y-7">
+      {!isSearchActive && hasBriefingContent ? (
+        <div
+          className="min-w-0 space-y-6 sm:space-y-7"
+          aria-busy={isRefreshing || undefined}
+        >
           <NewsMarketBriefSection headlines={briefing.marketBriefHeadlines} />
           <NewsForPortfolioSection rows={briefing.holdingIntelligenceRows} />
           <NewsMacroGroupsSection groups={briefing.macroGroups} />

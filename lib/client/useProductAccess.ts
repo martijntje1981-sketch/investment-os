@@ -1,126 +1,80 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
-import { EXAMPLE_STATUS_CHANGED_EVENT } from "@/lib/client/exampleFirstRun";
+import { useAuthenticatedUserSub } from "@/lib/client/useAuthenticatedUserSub";
 import {
-  maxPortfoliosForTier,
-  resolveProductAccess,
-  type ProductAccess,
-  type ProductAccessTier,
-} from "@/lib/services/productAccess";
-import type { ExampleStatusKind } from "@/lib/services/examplePortfolio/resolveExampleStatus";
-import type { ExampleTrialKind } from "@/lib/services/examplePortfolio/types";
-import type { FourQuestionsIntelligenceDepth } from "@/lib/services/fourQuestions/types";
+  DEFAULT_FREE_PRODUCT_ACCESS,
+  fetchExamplePortfolioStatus,
+  peekExamplePortfolioStatus,
+  productAccessFromStatusPayload,
+  subscribeExamplePortfolioStatus,
+  type ExamplePortfolioStatusPayload,
+} from "@/lib/client/examplePortfolioStatusCache";
+import type { ProductAccess } from "@/lib/services/productAccess";
 
-type StatusPayload = {
-  kind?: ExampleStatusKind | "none";
-  expiresAt?: string | null;
-  daysRemaining?: number;
-  trialKind?: ExampleTrialKind | null;
-  productAccess?: {
-    tier: ProductAccessTier;
-    intelligenceDepth: FourQuestionsIntelligenceDepth;
-    isCompleteTrial: boolean;
-    daysRemaining: number;
-    trialIndicatorLabel: string | null;
-    upgradeHref: string;
-    upgradeCtaLabel: string;
-    isDemo: boolean;
-  };
-};
-
-const DEFAULT_FREE_ACCESS: ProductAccess = resolveProductAccess({
-  exampleKind: "none",
-});
-
-/**
- * Central client product access for Dashboard intelligence depth.
- * Uses the example-portfolio status endpoint — never invents entitlements.
- * Until status loads (or if it fails), treat the user as Free.
- */
 export type ClientProductAccess = ProductAccess & {
   /** True after the first status resolve (success or fallback). */
   accessReady: boolean;
 };
 
-export function useProductAccess(enabled = true): ClientProductAccess {
-  const pathname = usePathname();
-  const [access, setAccess] = useState<ProductAccess>(DEFAULT_FREE_ACCESS);
-  const [fetched, setFetched] = useState(false);
+function applyPayload(payload: ExamplePortfolioStatusPayload | null): ProductAccess {
+  return productAccessFromStatusPayload(payload);
+}
 
-  const load = useCallback(async () => {
+/**
+ * Central client product access for intelligence depth.
+ * Session-scoped status cache — never invents entitlements.
+ * Until status loads, callers must not reveal plan-specific UI.
+ */
+export function useProductAccess(enabled = true): ClientProductAccess {
+  const { userSub, authReady } = useAuthenticatedUserSub();
+  const peeked = peekExamplePortfolioStatus(userSub);
+  const [access, setAccess] = useState<ProductAccess>(() =>
+    peeked ? applyPayload(peeked) : DEFAULT_FREE_PRODUCT_ACCESS,
+  );
+  const [fetched, setFetched] = useState(() => peeked !== null);
+
+  useEffect(() => {
     if (!enabled) {
-      setAccess(DEFAULT_FREE_ACCESS);
+      setAccess(DEFAULT_FREE_PRODUCT_ACCESS);
       setFetched(false);
       return;
     }
-    try {
-      const response = await fetch("/api/example-portfolio/status", {
-        method: "GET",
-        credentials: "same-origin",
-        cache: "no-store",
-      });
-      if (!response.ok) {
-        setAccess(DEFAULT_FREE_ACCESS);
-        setFetched(true);
-        return;
-      }
-      const payload = (await response.json()) as {
-        success?: boolean;
-        status?: StatusPayload;
-      };
-      if (!payload.success || !payload.status) {
-        setAccess(DEFAULT_FREE_ACCESS);
-        setFetched(true);
-        return;
-      }
 
-      if (payload.status.productAccess) {
-        const pa = payload.status.productAccess;
-        setAccess({
-          tier: pa.tier,
-          intelligenceDepth: pa.intelligenceDepth,
-          isCompleteTrial: pa.isCompleteTrial,
-          daysRemaining: pa.daysRemaining,
-          expiresAt: payload.status.expiresAt ?? null,
-          trialIndicatorLabel: pa.trialIndicatorLabel,
-          upgradeHref: pa.upgradeHref,
-          upgradeCtaLabel: pa.upgradeCtaLabel,
-          isDemo: pa.isDemo,
-          preservesUserData: true,
-          maxPortfolios: maxPortfoliosForTier(pa.tier),
-        });
-        setFetched(true);
-        return;
-      }
-
-      setAccess(
-        resolveProductAccess({
-          exampleKind: payload.status.kind ?? "none",
-          trialKind: payload.status.trialKind ?? null,
-          expiresAt: payload.status.expiresAt ?? null,
-          daysRemaining: payload.status.daysRemaining ?? 0,
-        }),
-      );
-      setFetched(true);
-    } catch {
-      setAccess(DEFAULT_FREE_ACCESS);
-      setFetched(true);
+    if (!authReady) {
+      return;
     }
-  }, [enabled]);
 
-  useEffect(() => {
-    void load();
-    const onStatusChanged = () => {
-      void load();
-    };
-    window.addEventListener(EXAMPLE_STATUS_CHANGED_EVENT, onStatusChanged);
-    return () => {
-      window.removeEventListener(EXAMPLE_STATUS_CHANGED_EVENT, onStatusChanged);
-    };
-  }, [enabled, load, pathname]);
+    if (!userSub) {
+      setAccess(DEFAULT_FREE_PRODUCT_ACCESS);
+      setFetched(true);
+      void fetchExamplePortfolioStatus({ userSub: null });
+      return;
+    }
 
-  return { ...access, accessReady: !enabled || fetched };
+    const syncFromCache = () => {
+      const peeked = peekExamplePortfolioStatus(userSub);
+      if (peeked) {
+        setAccess(applyPayload(peeked));
+        setFetched(true);
+      }
+    };
+
+    syncFromCache();
+    const unsubscribe = subscribeExamplePortfolioStatus(syncFromCache);
+
+    void fetchExamplePortfolioStatus({ userSub }).then((payload) => {
+      setAccess(applyPayload(payload));
+      setFetched(true);
+    });
+
+    return unsubscribe;
+  }, [authReady, enabled, userSub]);
+
+  const view = peeked ? applyPayload(peeked) : access;
+  return {
+    ...view,
+    accessReady: !enabled || fetched || peeked !== null,
+  };
 }

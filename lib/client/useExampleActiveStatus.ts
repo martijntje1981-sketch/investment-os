@@ -1,55 +1,48 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
-import { EXAMPLE_STATUS_CHANGED_EVENT } from "@/lib/client/exampleFirstRun";
+import { useAuthenticatedUserSub } from "@/lib/client/useAuthenticatedUserSub";
+import {
+  fetchExamplePortfolioStatus,
+  isExampleActiveFromStatusPayload,
+  peekExamplePortfolioStatus,
+  subscribeExamplePortfolioStatus,
+} from "@/lib/client/examplePortfolioStatusCache";
 
 /**
- * Lightweight Example Portfolio active flag for Dashboard first-run UI.
- * Uses the no-store status endpoint — never infers from metadata alone.
+ * Lightweight Example Portfolio active flag for first-run UI.
+ * Uses the shared session status cache — never infers from metadata alone.
  */
 export function useExampleActiveStatus(enabled = true): boolean {
-  const pathname = usePathname();
-  const [active, setActive] = useState(false);
+  const { userSub, authReady } = useAuthenticatedUserSub();
+  const peeked = peekExamplePortfolioStatus(userSub);
+  const peekedActive = isExampleActiveFromStatusPayload(peeked);
+  const [active, setActive] = useState(() => (enabled ? peekedActive : false));
 
-  const load = useCallback(async () => {
-    if (!enabled) {
+  useEffect(() => {
+    if (!enabled || !authReady || !userSub) {
       setActive(false);
       return;
     }
-    try {
-      const response = await fetch("/api/example-portfolio/status", {
-        method: "GET",
-        credentials: "same-origin",
-        cache: "no-store",
-      });
-      if (!response.ok) {
-        setActive(false);
-        return;
+
+    const syncFromCache = () => {
+      const peeked = peekExamplePortfolioStatus(userSub);
+      if (peeked) {
+        setActive(isExampleActiveFromStatusPayload(peeked));
       }
-      const payload = (await response.json()) as {
-        status?: { kind?: string; showBanner?: boolean };
-      };
-      setActive(
-        payload.status?.kind === "active" ||
-          payload.status?.showBanner === true,
-      );
-    } catch {
-      setActive(false);
-    }
-  }, [enabled]);
-
-  useEffect(() => {
-    void load();
-    const onStatusChanged = () => {
-      void load();
     };
-    window.addEventListener(EXAMPLE_STATUS_CHANGED_EVENT, onStatusChanged);
-    return () => {
-      window.removeEventListener(EXAMPLE_STATUS_CHANGED_EVENT, onStatusChanged);
-    };
-  }, [load, pathname]);
 
-  return active;
+    syncFromCache();
+    const unsubscribe = subscribeExamplePortfolioStatus(syncFromCache);
+
+    void fetchExamplePortfolioStatus({ userSub }).then((payload) => {
+      setActive(isExampleActiveFromStatusPayload(payload));
+    });
+
+    return unsubscribe;
+  }, [authReady, enabled, userSub]);
+
+  if (!enabled) return false;
+  return peeked ? peekedActive : active;
 }

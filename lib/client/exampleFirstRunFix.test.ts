@@ -57,11 +57,13 @@ describe("example portfolio banner in shared layout", () => {
     const banner = read(
       "components/examplePortfolio/ExamplePortfolioBanner.tsx",
     );
+    const statusCache = read("lib/client/examplePortfolioStatusCache.ts");
 
     expect(layout).toContain("ExamplePortfolioBanner");
     expect(layout).toContain("ExamplePortfolioActivator");
-    expect(banner).toContain("EXAMPLE_STATUS_CHANGED_EVENT");
-    expect(banner).toContain('cache: "no-store"');
+    expect(statusCache).toContain("EXAMPLE_STATUS_CHANGED_EVENT");
+    expect(banner).toContain("subscribeExamplePortfolioStatus");
+    expect(banner).toContain("fetchExamplePortfolioStatus");
     expect(banner).toContain("Upgrade");
     expect(banner).toContain("TRIAL_UPGRADE_HREF");
     expect(banner).toContain('data-testid="example-portfolio-banner"');

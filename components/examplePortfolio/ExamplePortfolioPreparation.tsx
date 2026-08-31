@@ -11,11 +11,7 @@ import {
   resolveExamplePrepStage,
   type ExamplePrepStage,
 } from "@/lib/client/exampleFirstRun";
-
-type PrepStatusPayload = {
-  success?: boolean;
-  status?: { kind?: string; showBanner?: boolean };
-};
+import { fetchExamplePortfolioStatus } from "@/lib/client/examplePortfolioStatusCache";
 
 type RefreshPricesFn = () => Promise<unknown> | unknown;
 
@@ -62,14 +58,12 @@ export function ExamplePortfolioPreparation({
       if (isExamplePrepComplete(userSub)) return;
 
       try {
-        const response = await fetch("/api/example-portfolio/status", {
-          method: "GET",
-          credentials: "same-origin",
-          cache: "no-store",
+        const payload = await fetchExamplePortfolioStatus({
+          userSub,
+          force: true,
         });
-        if (!response.ok || cancelled) return;
-        const payload = (await response.json()) as PrepStatusPayload;
-        const kind = payload.status?.kind;
+        if (cancelled) return;
+        const kind = payload.status?.kind as string | undefined;
 
         if (kind === "active") {
           if (cancelled || startedRef.current) return;

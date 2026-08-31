@@ -202,11 +202,16 @@ export default function DashboardPage() {
     portfolioReady && Boolean(userSub),
   );
 
+  const accessReady = productAccess.accessReady;
   const changeIntelligence = useChangeIntelligence({
-    enabled: portfolioReady && Boolean(userSub) && holdings.length > 0,
+    enabled:
+      accessReady &&
+      portfolioReady &&
+      Boolean(userSub) &&
+      holdings.length > 0,
     isDemo: productAccess.isDemo,
     dashboardCapture:
-      productAccess.isDemo || !portfolioReady
+      !accessReady || productAccess.isDemo || !portfolioReady
         ? null
         : {
             holdings,
@@ -222,7 +227,7 @@ export default function DashboardPage() {
   );
 
   const portfolioChangeAttention = useMemo(() => {
-    if (holdings.length === 0) return null;
+    if (!accessReady || holdings.length === 0) return null;
     return applyPortfolioChangeAccess(
       buildPortfolioChangeAttention({
         holdings,
@@ -240,12 +245,13 @@ export default function DashboardPage() {
     hasSavedGoal,
     holdings,
     holdingNewsItems,
+    accessReady,
     productAccess.isDemo,
     smartAlertsMode,
   ]);
 
   const lookingAhead = useMemo(() => {
-    if (holdings.length === 0) return null;
+    if (!accessReady || holdings.length === 0) return null;
     return buildLookingAhead({
       holdings,
       allocation: exposureAllocation,
@@ -254,6 +260,7 @@ export default function DashboardPage() {
       intelligenceDepth: productAccess.intelligenceDepth,
     });
   }, [
+    accessReady,
     exposureAllocation,
     holdings,
     payload.upcomingEvents,
@@ -274,7 +281,7 @@ export default function DashboardPage() {
     portfolioReady && Boolean(userSub),
   );
 
-  if (!portfolioReady || (Boolean(userSub) && !productAccess.accessReady)) {
+  if (!portfolioReady) {
     return <AppPageLoading />;
   }
 
@@ -314,19 +321,23 @@ export default function DashboardPage() {
             refreshPrices={refreshPrices}
           />
 
-          <DashboardFirstRunCue
-            userSub={userSub}
-            exampleActive={exampleActive}
-          />
+          {accessReady ? (
+            <>
+              <DashboardFirstRunCue
+                userSub={userSub}
+                exampleActive={exampleActive}
+              />
 
-          <FirstIntelligenceMoment
-            userSub={userSub}
-            hasHoldings={holdings.length > 0}
-            exampleActive={exampleActive}
-            hasSavedGoal={hasSavedGoal}
-          />
+              <FirstIntelligenceMoment
+                userSub={userSub}
+                hasHoldings={holdings.length > 0}
+                exampleActive={exampleActive}
+                hasSavedGoal={hasSavedGoal}
+              />
+            </>
+          ) : null}
 
-          {exampleActive ? (
+          {exampleActive && accessReady ? (
             <>
               <DemoHoldingsCallout
                 exampleActive={exampleActive}
@@ -371,9 +382,24 @@ export default function DashboardPage() {
             newsItems={holdingNewsItems}
           />
 
-          <CompleteTrialIndicator access={productAccess} />
-          <FreeIntelligenceNote access={productAccess} />
-          <DashboardPersonalIntelligence view={personalIntelligence} />
+          {accessReady ? (
+            <>
+              <CompleteTrialIndicator access={productAccess} />
+              <FreeIntelligenceNote access={productAccess} />
+              <DashboardPersonalIntelligence view={personalIntelligence} />
+            </>
+          ) : (
+            <section
+              className="rounded-2xl border border-white/10 bg-white/5 px-3.5 py-3 sm:px-5"
+              data-testid="dashboard-access-pending"
+              aria-busy="true"
+              aria-label="Updating plan"
+            >
+              <p className="text-[14px] leading-6 text-white/55">
+                Updating your plan…
+              </p>
+            </section>
+          )}
 
           <DashboardSecondaryNav />
         </>

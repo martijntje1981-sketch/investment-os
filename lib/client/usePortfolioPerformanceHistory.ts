@@ -9,6 +9,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 import {
   holdingsFingerprint,
+  peekPortfolioPerformanceHistory,
   requestPortfolioPerformanceHistory,
 } from "@/lib/client/portfolioPerformanceHistoryRequest";
 import type { PerformancePeriodId } from "@/lib/client/performance/types";
@@ -25,6 +26,7 @@ export type UsePortfolioPerformanceHistoryResult = {
  * POSTs /api/portfolio/performance when `period` is not 1D.
  * 1D stays on calculatePortfolioPerformance (previousClose).
  * Same user + period + holdings fingerprint shares one in-flight/cached result.
+ * Cached success for this user+fingerprint stays visible while a later request runs.
  */
 export function usePortfolioPerformanceHistory(
   holdings: StoredPortfolioHolding[],
@@ -32,13 +34,34 @@ export function usePortfolioPerformanceHistory(
   enabled = true,
 ): UsePortfolioPerformanceHistoryResult {
   const { userSub } = useUserPortfolio();
-  const [data, setData] =
-    useState<PortfolioPerformanceHistoryApiResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const requestIdRef = useRef(0);
-
   const fingerprint = useMemo(() => holdingsFingerprint(holdings), [holdings]);
+  const peeked =
+    enabled && userSub && period !== "1D" && holdings.length > 0
+      ? peekPortfolioPerformanceHistory(userSub, period, fingerprint)
+      : null;
+  const identityKey = `${userSub ?? ""}:${period}:${fingerprint}:${enabled ? "1" : "0"}`;
+  const [data, setData] = useState<PortfolioPerformanceHistoryApiResponse | null>(
+    peeked,
+  );
+  const [isLoading, setIsLoading] = useState(!peeked && enabled && holdings.length > 0);
+  const [error, setError] = useState<string | null>(null);
+  const [scopedIdentity, setScopedIdentity] = useState(identityKey);
+  const requestIdRef = useRef(0);
+  const dataRef = useRef(data);
+  dataRef.current = data;
+
+  if (scopedIdentity !== identityKey) {
+    setScopedIdentity(identityKey);
+    setData(peeked);
+    setIsLoading(
+      !peeked &&
+        enabled &&
+        holdings.length > 0 &&
+        period !== "1D" &&
+        Boolean(userSub),
+    );
+    setError(null);
+  }
 
   useEffect(() => {
     if (!enabled || period === "1D" || !userSub) {
@@ -55,10 +78,18 @@ export function usePortfolioPerformanceHistory(
       return;
     }
 
+    const cached = peekPortfolioPerformanceHistory(userSub, period, fingerprint);
+    if (cached) {
+      setData(cached);
+      setIsLoading(false);
+    } else {
+      setData(null);
+      setIsLoading(true);
+    }
+    setError(null);
+
     const requestId = ++requestIdRef.current;
     let cancelled = false;
-    setIsLoading(true);
-    setError(null);
 
     void (async () => {
       const result = await requestPortfolioPerformanceHistory({
@@ -70,7 +101,9 @@ export function usePortfolioPerformanceHistory(
       if (cancelled || requestId !== requestIdRef.current) return;
 
       if (!result.ok) {
-        setData(null);
+        if (!dataRef.current && !cached) {
+          setData(null);
+        }
         setError(result.error);
         setIsLoading(false);
         return;

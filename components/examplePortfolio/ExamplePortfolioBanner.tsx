@@ -4,7 +4,12 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 
-import { EXAMPLE_STATUS_CHANGED_EVENT } from "@/lib/client/exampleFirstRun";
+import { useAuthenticatedUserSub } from "@/lib/client/useAuthenticatedUserSub";
+import {
+  fetchExamplePortfolioStatus,
+  peekExamplePortfolioStatus,
+  subscribeExamplePortfolioStatus,
+} from "@/lib/client/examplePortfolioStatusCache";
 import {
   buildTrialExperienceView,
   TRIAL_UPGRADE_HREF,
@@ -24,42 +29,63 @@ type BannerStatus = {
  * Compact fixed bar under the header for active Premium trials (example portfolios).
  * Status comes from the server entitlement resolver — not stale metadata alone.
  */
+function bannerFromPayload(userSub: string | null): BannerStatus | null {
+  const payload = peekExamplePortfolioStatus(userSub);
+  if (!payload?.status) return null;
+  return {
+    showBanner: Boolean(payload.status.showBanner),
+    bannerLabel: payload.status.bannerLabel ?? null,
+    kind: payload.status.kind ?? "none",
+    daysRemaining: payload.status.daysRemaining,
+    startedAt: payload.status.startedAt,
+    expiresAt: payload.status.expiresAt,
+  };
+}
+
 export function ExamplePortfolioBanner() {
   const pathname = usePathname();
+  const { userSub, authReady } = useAuthenticatedUserSub();
   const [status, setStatus] = useState<BannerStatus | null>(null);
 
   const load = useCallback(async () => {
+    if (!userSub) {
+      setStatus({ showBanner: false, bannerLabel: null, kind: "none" });
+      return;
+    }
     try {
-      const response = await fetch("/api/example-portfolio/status", {
-        method: "GET",
-        credentials: "same-origin",
-        cache: "no-store",
-      });
-      if (!response.ok) {
-        setStatus({ showBanner: false, bannerLabel: null, kind: "none" });
-        return;
-      }
-      const payload = (await response.json()) as {
-        success?: boolean;
-        status?: BannerStatus;
-      };
+      const payload = await fetchExamplePortfolioStatus({ userSub });
       if (!payload.success || !payload.status) {
         setStatus({ showBanner: false, bannerLabel: null, kind: "none" });
         return;
       }
-      setStatus(payload.status);
+      setStatus({
+        showBanner: Boolean(payload.status.showBanner),
+        bannerLabel: payload.status.bannerLabel ?? null,
+        kind: payload.status.kind ?? "none",
+        daysRemaining: payload.status.daysRemaining,
+        startedAt: payload.status.startedAt,
+        expiresAt: payload.status.expiresAt,
+      });
     } catch {
       setStatus({ showBanner: false, bannerLabel: null, kind: "none" });
     }
-  }, []);
+  }, [userSub]);
 
   useEffect(() => {
-    void load();
+    if (!authReady || !userSub) {
+      setStatus({ showBanner: false, bannerLabel: null, kind: "none" });
+      return;
+    }
 
-    const onStatusChanged = () => {
-      void load();
-    };
-    window.addEventListener(EXAMPLE_STATUS_CHANGED_EVENT, onStatusChanged);
+    const peeked = bannerFromPayload(userSub);
+    if (peeked) setStatus(peeked);
+
+    const unsubscribe = subscribeExamplePortfolioStatus(() => {
+      const next = bannerFromPayload(userSub);
+      if (next) setStatus(next);
+    });
+
+    void load();
 
     const retryIds = [600, 1_500, 3_000].map((ms) =>
       window.setTimeout(() => {
@@ -68,10 +94,10 @@ export function ExamplePortfolioBanner() {
     );
 
     return () => {
-      window.removeEventListener(EXAMPLE_STATUS_CHANGED_EVENT, onStatusChanged);
+      unsubscribe();
       for (const id of retryIds) window.clearTimeout(id);
     };
-  }, [load, pathname]);
+  }, [authReady, load, pathname, userSub]);
 
   const trialView = buildTrialExperienceView({
     kind: (status?.kind as ExampleStatusKind | "none") ?? "none",
