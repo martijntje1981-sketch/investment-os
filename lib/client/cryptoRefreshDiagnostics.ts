@@ -371,7 +371,7 @@ export function shouldShowCryptoRefreshDiagnostics(input: {
   return (
     input.updatedCount === 0 &&
     input.diagnostics.length > 0 &&
-    input.message === "No live prices were updated."
+    input.message === "No prices were updated."
   );
 }
 

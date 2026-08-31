@@ -317,7 +317,7 @@ describe("legacy crypto price refresh pipeline", () => {
 
     expect(result.updated).toBe(false);
     expect(result.updatedCount).toBe(0);
-    expect(result.message).toBe("No live prices were updated.");
+    expect(result.message).toBe("No prices were updated.");
     expect(readLastLivePriceRefreshAt(USER)).toBe("2026-07-25T10:00:00.000Z");
   });
 
@@ -362,7 +362,7 @@ describe("legacy crypto price refresh pipeline", () => {
     expect(result.updated).toBe(true);
     expect(result.updatedCount).toBe(1);
     expect(result.message).toBe(
-      "Updated 1 of 2 holdings. Last known prices are shown for the remainder.",
+      "Some prices could not be refreshed. 1 of 2 holdings were updated; existing figures remain visible for the rest.",
     );
     expect(result.holdings[0]?.currentPairPrice).toBe(95_000);
     expect(result.holdings[1]?.currentPairPrice).toBeNull();

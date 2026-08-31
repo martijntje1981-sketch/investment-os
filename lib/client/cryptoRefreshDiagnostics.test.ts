@@ -244,7 +244,7 @@ describe("crypto refresh diagnostics", () => {
       shouldShowCryptoRefreshDiagnostics({
         updatedCount: 0,
         diagnostics,
-        message: "No live prices were updated.",
+        message: "No prices were updated.",
       }),
     ).toBe(true);
     expect(
@@ -369,7 +369,7 @@ describe("crypto refresh diagnostics", () => {
 
     const result = await refreshLivePortfolioPrices(USER, holdings);
 
-    expect(result.message).toBe("No live prices were updated.");
+    expect(result.message).toBe("No prices were updated.");
     expect(result.showCryptoRefreshDiagnostics).toBe(true);
     expect(readLastLivePriceRefreshAt(USER)).toBe("2026-07-25T21:06:00.000Z");
     expect(result.holdings[0]?.priceUpdatedAt).toBe("2026-07-25T15:16:00.000Z");

@@ -72,7 +72,7 @@ describe("pre-launch performance batch", () => {
     expect(liveRefresh).toContain("applyPricesToHoldings");
     expect(liveRefresh).toContain("applyCachedPrices(userSub, preparedHoldings)");
     expect(liveRefresh).toContain(
-      "Live prices could not be refreshed. Your last available prices remain visible.",
+      "Prices could not be refreshed. Your last available prices remain visible.",
     );
   });
 

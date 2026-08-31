@@ -165,19 +165,54 @@ export function buildLiveRefreshPreviewMessage(uniqueCount: number): string {
   return `This will request live prices for ${uniqueCount} unique holdings.`;
 }
 
-function buildLiveRefreshSuccessMessage(updatedCount: number): string {
-  return `Live prices updated for ${updatedCount} holdings.`;
+export const MANUAL_REFRESH_NO_UPDATE_MESSAGE = "No prices were updated.";
+
+export const MANUAL_REFRESH_FAILED_MESSAGE =
+  "Prices could not be refreshed. Your last available prices remain visible.";
+
+/**
+ * Completion copy for a manual refresh. Says "live" only when quote metadata
+ * already marks every returned quote as live and the payload is not cache-only.
+ */
+export function buildRefreshCompletionMessage(input: {
+  updatedCount: number;
+  totalQuotable: number;
+  quotes: Array<{ dataStatus?: string | null }>;
+  quoteSource?: string | null;
+}): string {
+  const { updatedCount, totalQuotable } = input;
+
+  if (updatedCount <= 0) {
+    return MANUAL_REFRESH_NO_UPDATE_MESSAGE;
+  }
+
+  if (updatedCount < totalQuotable) {
+    return `Some prices could not be refreshed. ${updatedCount} of ${totalQuotable} holdings were updated; existing figures remain visible for the rest.`;
+  }
+
+  if (refreshQuotesProveLive(input.quotes, input.quoteSource)) {
+    return `Live prices updated for ${updatedCount} holdings.`;
+  }
+
+  return "Prices updated.";
 }
 
-function buildPartialRefreshMessage(
-  updatedCount: number,
-  totalQuotable: number,
-): string {
-  return `Updated ${updatedCount} of ${totalQuotable} holdings. Last known prices are shown for the remainder.`;
+function refreshQuotesProveLive(
+  quotes: Array<{ dataStatus?: string | null }>,
+  quoteSource?: string | null,
+): boolean {
+  if (quoteSource === "cache") return false;
+  if (quotes.length === 0) return false;
+  return quotes.every((quote) => quote.dataStatus === "live");
 }
 
-function buildNoPricesUpdatedMessage(): string {
-  return "No live prices were updated.";
+/** API `dataStatus` only — do not use inferred or defaulted-to-live quotes. */
+function explicitQuoteDataStatuses(
+  prices: PriceApiQuote[] | undefined,
+): Array<{ dataStatus?: string | null }> {
+  return (prices ?? []).map((quote) => ({
+    dataStatus: quote.dataStatus ?? null,
+  }));
 }
 
 function buildQuotaExhaustedMessage(): string {
@@ -429,6 +464,7 @@ export async function refreshLivePortfolioPrices<
     }
 
     const normalizedQuotes = parsePriceApiResponseQuotes(data.prices);
+    const quoteStatusesForCopy = explicitQuoteDataStatuses(data.prices);
     const cachedHoldings = applyCachedPrices(userSub, preparedHoldings);
 
     if (cacheFirst) {
@@ -465,7 +501,7 @@ export async function refreshLivePortfolioPrices<
           uniqueRequested,
           updatedCount: 0,
           totalQuotable,
-          message: buildNoPricesUpdatedMessage(),
+          message: MANUAL_REFRESH_NO_UPDATE_MESSAGE,
           quotaExhausted: false,
           inProgress: false,
           cooldownRemainingMs: getLivePriceRefreshCooldownRemainingMs(),
@@ -494,7 +530,12 @@ export async function refreshLivePortfolioPrices<
         uniqueRequested,
         updatedCount: appliedCount,
         totalQuotable,
-        message: buildLiveRefreshSuccessMessage(appliedCount),
+        message: buildRefreshCompletionMessage({
+          updatedCount: appliedCount,
+          totalQuotable,
+          quotes: quoteStatusesForCopy,
+          quoteSource: data.quoteSource ?? null,
+        }),
         quotaExhausted: false,
         inProgress: false,
         cooldownRemainingMs: getLivePriceRefreshCooldownRemainingMs(),
@@ -566,10 +607,10 @@ export async function refreshLivePortfolioPrices<
           totalQuotable,
           message:
             received > 0 || normalizedQuotes.length > 0
-              ? buildNoPricesUpdatedMessage()
+              ? MANUAL_REFRESH_NO_UPDATE_MESSAGE
               : providerFailure
                 ? buildQuotaExhaustedMessage()
-                : buildNoPricesUpdatedMessage(),
+                : MANUAL_REFRESH_NO_UPDATE_MESSAGE,
           quotaExhausted: providerFailure && received === 0,
           inProgress: false,
           cooldownRemainingMs: getLivePriceRefreshCooldownRemainingMs(),
@@ -611,7 +652,12 @@ export async function refreshLivePortfolioPrices<
         uniqueRequested,
         updatedCount: appliedCount,
         totalQuotable,
-        message: buildLiveRefreshSuccessMessage(appliedCount),
+        message: buildRefreshCompletionMessage({
+          updatedCount: appliedCount,
+          totalQuotable,
+          quotes: quoteStatusesForCopy,
+          quoteSource: data.quoteSource ?? null,
+        }),
         quotaExhausted: false,
         inProgress: false,
         cooldownRemainingMs: getLivePriceRefreshCooldownRemainingMs(),
@@ -625,7 +671,12 @@ export async function refreshLivePortfolioPrices<
       uniqueRequested,
       updatedCount: appliedCount,
       totalQuotable,
-      message: buildPartialRefreshMessage(appliedCount, totalQuotable),
+      message: buildRefreshCompletionMessage({
+        updatedCount: appliedCount,
+        totalQuotable,
+        quotes: quoteStatusesForCopy,
+        quoteSource: data.quoteSource ?? null,
+      }),
       quotaExhausted: false,
       inProgress: false,
       cooldownRemainingMs: getLivePriceRefreshCooldownRemainingMs(),
@@ -648,7 +699,7 @@ export async function refreshLivePortfolioPrices<
       totalQuotable,
       message: isRateLimitedPriceError(message)
         ? buildQuotaExhaustedMessage()
-        : "Live prices could not be refreshed. Your last available prices remain visible.",
+        : MANUAL_REFRESH_FAILED_MESSAGE,
       quotaExhausted: isRateLimitedPriceError(message),
       inProgress: false,
       cooldownRemainingMs: getLivePriceRefreshCooldownRemainingMs(),

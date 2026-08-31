@@ -238,7 +238,68 @@ describe("livePortfolioPriceRefresh", () => {
 
     expect(result.quotaExhausted).toBe(false);
     expect(result.updated).toBe(true);
-    expect(result.message).toMatch(/Live prices updated/i);
+    expect(result.message).toMatch(/Prices updated/i);
+    expect(result.message).not.toMatch(/Live prices updated/i);
+  });
+
+  it("says live prices updated only when every quote is explicitly live", async () => {
+    writePortfolioToStorage(USER, [holding("VWCE", "VWCE.XETRA")]);
+
+    mockEstimateThenRefresh({
+      success: true,
+      quoteSource: "provider",
+      prices: [
+        {
+          symbol: "VWCE",
+          providerSymbol: "VWCE.XETRA",
+          priceEur: 112,
+          currentPrice: 112,
+          dataStatus: "live",
+          updatedAt: new Date().toISOString(),
+        },
+      ],
+      requested: 1,
+      received: 1,
+      refreshSummary: {
+        circuitOpen: false,
+        providerCallsMade: 1,
+      },
+    });
+
+    const result = await refreshLivePortfolioPrices(USER, loadUserPortfolioHoldings(USER));
+
+    expect(result.updated).toBe(true);
+    expect(result.message).toBe("Live prices updated for 1 holdings.");
+  });
+
+  it("does not say live when returned quotes are delayed", async () => {
+    writePortfolioToStorage(USER, [holding("VWCE", "VWCE.XETRA")]);
+
+    mockEstimateThenRefresh({
+      success: true,
+      quoteSource: "provider",
+      prices: [
+        {
+          symbol: "VWCE",
+          providerSymbol: "VWCE.XETRA",
+          priceEur: 112,
+          currentPrice: 112,
+          dataStatus: "delayed",
+          updatedAt: new Date().toISOString(),
+        },
+      ],
+      requested: 1,
+      received: 1,
+      refreshSummary: {
+        circuitOpen: false,
+        providerCallsMade: 1,
+      },
+    });
+
+    const result = await refreshLivePortfolioPrices(USER, loadUserPortfolioHoldings(USER));
+
+    expect(result.updated).toBe(true);
+    expect(result.message).toBe("Prices updated.");
   });
 
   it("preserves stale prices and shows quota message when provider is exhausted", async () => {

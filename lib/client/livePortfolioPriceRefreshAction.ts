@@ -97,7 +97,7 @@ function resolvePostRefreshStatus(
   }
 
   const failedRefreshCopy =
-    /could not be refreshed|market-data limit|No live prices were updated/i.test(
+    /could not be refreshed|market-data limit|No prices were updated/i.test(
       result.message,
     );
 
