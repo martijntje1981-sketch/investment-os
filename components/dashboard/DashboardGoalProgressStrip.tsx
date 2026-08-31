@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import Link from "next/link";
+import { Info } from "lucide-react";
 
 import {
   appDashboardDarkMetaClass,
@@ -16,10 +17,11 @@ import {
 } from "@/lib/client/goalHeroProgress";
 import {
   buildGoalPeriodSnapshot,
-  formatGoalPeriodDetail,
+  formatGoalPeriodDetailCopy,
   GOAL_PROGRESS_PERIOD_ORDER,
   sliceHistoryToFiveYears,
   type GoalPeriodHistoryInput,
+  type GoalPeriodSnapshot,
   type GoalProgressPeriodId,
 } from "@/lib/client/goalProgressPeriods";
 import { DASHBOARD_DEEP_LINKS } from "@/lib/navigation/deepLinks";
@@ -39,7 +41,58 @@ function toHistoryInput(
     chartPoints: data.chartPoints,
     dataAvailability: data.dataAvailability,
     availabilityMessage: data.availabilityMessage,
+    skippedHoldingCount: data.skippedHoldingCount,
+    coveredHoldingCount: data.coveredHoldingCount,
   };
+}
+
+function GoalPeriodEstimateDetail({
+  snapshot,
+  formatEur,
+}: {
+  snapshot: GoalPeriodSnapshot;
+  formatEur: (value: number) => string;
+}) {
+  const copy = formatGoalPeriodDetailCopy(snapshot, formatEur);
+  const detailsId = useId();
+  const [open, setOpen] = useState(false);
+
+  if (copy.unavailable) {
+    return (
+      <p className={`min-w-0 ${appDashboardDarkMetaClass}`}>{copy.message}</p>
+    );
+  }
+
+  return (
+    <div className="min-w-0" data-testid="dashboard-goal-period-detail">
+      <p className={`flex min-w-0 items-start gap-0.5 ${appDashboardDarkMetaClass}`}>
+        <span className="min-w-0 pt-2.5">{copy.priceMoveLine}</span>
+        <button
+          type="button"
+          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white/70 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
+          aria-expanded={open}
+          aria-controls={detailsId}
+          aria-label="About this estimate"
+          onClick={() => setOpen((value) => !value)}
+        >
+          <Info className="h-3.5 w-3.5" aria-hidden="true" />
+        </button>
+      </p>
+      {copy.equivalentLine ? (
+        <p className={appDashboardDarkMetaClass}>{copy.equivalentLine}</p>
+      ) : null}
+      {copy.skippedHoldingsLine ? (
+        <p className={appDashboardDarkMetaClass}>{copy.skippedHoldingsLine}</p>
+      ) : null}
+      <p id={detailsId} className={open ? `mt-1 ${appDashboardDarkMetaClass}` : "sr-only"}>
+        {open
+          ? `${copy.fullExplanation} ${copy.shortExplanation}${
+              copy.coverageRangeLabel ? ` Covered ${copy.coverageRangeLabel}.` : ""
+            }`
+          : copy.shortExplanation}
+      </p>
+    </div>
+  );
 }
 
 export function DashboardGoalProgressStrip({
@@ -88,10 +141,9 @@ export function DashboardGoalProgressStrip({
       buildGoalPeriodSnapshot({
         period,
         targetValue: state.targetValue ?? 0,
-        currentValue: state.currentValue,
         history: histories[period],
       }),
-    [histories, period, state.currentValue, state.targetValue],
+    [histories, period, state.targetValue],
   );
 
   const href =
@@ -105,10 +157,6 @@ export function DashboardGoalProgressStrip({
       : period === "1Y"
         ? yearHistoryLoading
         : allHistoryLoading;
-  const periodDetail =
-    !periodSnapshot.available && (!historyReady || periodLoading)
-      ? "Checking this period…"
-      : formatGoalPeriodDetail(periodSnapshot, formatEur);
 
   const headline =
     state.status === "ready" &&
@@ -164,7 +212,7 @@ export function DashboardGoalProgressStrip({
       </Link>
 
       {hasSavedGoal && progress.hasGoal ? (
-        <div className="mt-3 flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-3 flex min-w-0 flex-col gap-2">
           <div
             className="inline-flex min-w-0 items-center gap-0.5 self-start rounded-full bg-white/8 p-0.5"
             role="radiogroup"
@@ -192,9 +240,16 @@ export function DashboardGoalProgressStrip({
               );
             })}
           </div>
-          <p className={`min-w-0 ${appDashboardDarkMetaClass}`}>
-            {periodDetail}
-          </p>
+          {!periodSnapshot.available && (!historyReady || periodLoading) ? (
+            <p className={`min-w-0 ${appDashboardDarkMetaClass}`}>
+              Checking this period…
+            </p>
+          ) : (
+            <GoalPeriodEstimateDetail
+              snapshot={periodSnapshot}
+              formatEur={formatEur}
+            />
+          )}
         </div>
       ) : null}
     </article>
