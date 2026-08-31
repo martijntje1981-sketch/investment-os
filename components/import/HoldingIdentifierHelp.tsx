@@ -121,14 +121,16 @@ export function HoldingIdentifierGlossaryDisclosure() {
 }
 
 export function AmbiguousListingHelp({
+  heading = AMBIGUOUS_LISTING_HEADING,
   title = AMBIGUOUS_LISTING_BODY,
 }: {
+  heading?: string;
   title?: string;
 }) {
   return (
     <div className="min-w-0">
       <p className="text-[15px] font-semibold leading-relaxed text-slate-900">
-        {AMBIGUOUS_LISTING_HEADING}
+        {heading}
       </p>
       <p className="mt-1 text-[15px] leading-relaxed text-slate-600">{title}</p>
     </div>

@@ -80,6 +80,7 @@ import {
   type StoredPortfolioHolding,
 } from "@/lib/client/portfolioPricing";
 import { rememberConfirmedHolding } from "@/lib/services/import/mappingMemory";
+import { refreshConfirmedListingAfterSave } from "@/lib/client/refreshConfirmedListingAfterSave";
 import { validateManualHoldingForSave } from "@/lib/services/portfolio/holdingValidation";
 import {
   createEmptyCryptoDraft,
@@ -172,6 +173,10 @@ export default function PortfolioPage() {
   const [editorOpen, setEditorOpen] = useState(false);
   const [cryptoEditorOpen, setCryptoEditorOpen] = useState(false);
   const [isSavingCrypto, setIsSavingCrypto] = useState(false);
+  const [isSavingHolding, setIsSavingHolding] = useState(false);
+  const isSavingHoldingRef = useRef(false);
+  const holdingsRef = useRef(holdings);
+  holdingsRef.current = holdings;
   const [listingCandidates, setListingCandidates] = useState<
     ResolvedInstrument[]
   >([]);
@@ -585,86 +590,118 @@ export default function PortfolioPage() {
     setLookupUnavailable(false);
   }
 
-  function submitHolding(event: FormEvent<HTMLFormElement>) {
+  async function submitHolding(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (isSavingHoldingRef.current) return;
+    isSavingHoldingRef.current = true;
+    setIsSavingHolding(true);
 
-    const isEditingHolding = holdings.some((item) => item.id === draft.id);
-    if (draft.assetType !== "cash" && !isEditingHolding) {
-      if (
-        !canSaveAddHoldingListing({
-          providerSymbol: draft.providerSymbol,
-          searchSymbol: draft.symbol,
-          listingIsin: draft.isin,
-          boundQuery: boundListingQueryRef.current,
-        })
-      ) {
-        if (draft.providerSymbol?.trim()) {
-          setEditorError(STALE_LISTING_SAVE_MESSAGE);
+    try {
+      const isEditingHolding = holdings.some((item) => item.id === draft.id);
+      if (draft.assetType !== "cash" && !isEditingHolding) {
+        if (
+          !canSaveAddHoldingListing({
+            providerSymbol: draft.providerSymbol,
+            searchSymbol: draft.symbol,
+            listingIsin: draft.isin,
+            boundQuery: boundListingQueryRef.current,
+          })
+        ) {
+          if (draft.providerSymbol?.trim()) {
+            setEditorError(STALE_LISTING_SAVE_MESSAGE);
+          }
+          return;
         }
+      }
+
+      const sessionSnapshot = editorSessionRef.current ?? snapshot;
+      if (!canPersistBaseCurrencyAmounts(sessionSnapshot)) {
+        setEditorError(FX_UNAVAILABLE_SAVE_MESSAGE);
         return;
       }
-    }
 
-    const sessionSnapshot = editorSessionRef.current ?? snapshot;
-    if (!canPersistBaseCurrencyAmounts(sessionSnapshot)) {
-      setEditorError(FX_UNAVAILABLE_SAVE_MESSAGE);
-      return;
-    }
+      if (
+        editorCurrencyLocked !== "EUR" &&
+        baseCurrency !== editorCurrencyLocked
+      ) {
+        setEditorError(
+          "Your portfolio base currency changed while this form was open. Close and reopen the holding to continue.",
+        );
+        return;
+      }
 
-    if (
-      editorCurrencyLocked !== "EUR" &&
-      baseCurrency !== editorCurrencyLocked
-    ) {
-      setEditorError(
-        "Your portfolio base currency changed while this form was open. Close and reopen the holding to continue.",
-      );
-      return;
-    }
+      const converted = convertHoldingBaseDraftToEur(draft, sessionSnapshot);
+      if (!converted.ok) {
+        setEditorError(converted.message);
+        return;
+      }
 
-    const converted = convertHoldingBaseDraftToEur(draft, sessionSnapshot);
-    if (!converted.ok) {
-      setEditorError(converted.message);
-      return;
-    }
+      const validation = validateManualHoldingForSave(converted.value);
+      if (!validation.ok) {
+        setEditorError(validation.message);
+        return;
+      }
 
-    const validation = validateManualHoldingForSave(converted.value);
-    if (!validation.ok) {
-      setEditorError(validation.message);
-      return;
-    }
+      const cleaned = normalizeHoldingForSave(converted.value);
+      const exists = holdings.some((holding) => holding.id === cleaned.id);
+      const next = exists
+        ? holdings.map((holding) =>
+            holding.id === cleaned.id ? cleaned : holding,
+          )
+        : [...holdings, cleaned];
 
-    const cleaned = normalizeHoldingForSave(converted.value);
-    const exists = holdings.some((holding) => holding.id === cleaned.id);
-    const next = exists
-      ? holdings.map((holding) =>
-          holding.id === cleaned.id ? cleaned : holding,
-        )
-      : [...holdings, cleaned];
+      if (userSub && cleaned.providerSymbol) {
+        rememberConfirmedHolding(userSub, cleaned);
+      }
 
-    if (userSub && cleaned.providerSymbol) {
-      rememberConfirmedHolding(userSub, cleaned);
-    }
+      saveHoldings(next);
 
-    saveHoldings(next);
+      let quoteApplied = false;
+      if (
+        !exists &&
+        userSub &&
+        cleaned.assetType !== "cash" &&
+        cleaned.providerSymbol?.trim()
+      ) {
+        const liveHoldings = holdingsRef.current;
+        const baseline = liveHoldings.some((item) => item.id === cleaned.id)
+          ? liveHoldings
+          : next;
+        const refreshResult = await refreshConfirmedListingAfterSave({
+          userSub,
+          holdings: baseline,
+          savedHolding: cleaned,
+        });
+        quoteApplied = refreshResult.quoteApplied;
+        if (quoteApplied) {
+          saveHoldings(refreshResult.holdings);
+        }
+      }
 
-    const isFirstSetup = holdings.length === 0 && next.length > 0;
-    if (isFirstSetup) {
-      markFirstIntelligencePending(userSub);
+      const isFirstSetup = holdings.length === 0 && next.length > 0;
+      if (isFirstSetup) {
+        markFirstIntelligencePending(userSub);
+        setEditorOpen(false);
+        router.push(firstIntelligenceDashboardHref());
+        return;
+      }
+
+      if (!quoteApplied && cleaned.assetType !== "cash") {
+        if (isEstimatedHoldingPrice(cleaned)) {
+          setMessage(
+            "Holding saved with an estimated price until live market data is available.",
+          );
+        } else if (cleaned.currentPrice <= 0) {
+          setMessage(
+            "Holding saved. Current price is temporarily unavailable and will be refreshed later.",
+          );
+        }
+      }
       setEditorOpen(false);
-      router.push(firstIntelligenceDashboardHref());
-      return;
+    } finally {
+      isSavingHoldingRef.current = false;
+      setIsSavingHolding(false);
     }
-
-    if (cleaned.assetType !== "cash" && isEstimatedHoldingPrice(cleaned)) {
-      setMessage(
-        "Holding saved with an estimated price until live market data is available.",
-      );
-    } else if (cleaned.assetType !== "cash" && cleaned.currentPrice <= 0) {
-      setMessage(
-        "Holding saved. Current price is temporarily unavailable and will be refreshed later.",
-      );
-    }
-    setEditorOpen(false);
   }
 
   async function resolveCryptoDraftForSave(
@@ -1018,6 +1055,7 @@ export default function PortfolioPage() {
                   type="submit"
                   data-testid="add-holding-submit"
                   disabled={
+                    isSavingHolding ||
                     !canPersistBaseCurrencyAmounts(
                       editorSessionRef.current ?? snapshot,
                     ) ||

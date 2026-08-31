@@ -5,12 +5,17 @@ import { describe, expect, it } from "vitest";
 import {
   AMBIGUOUS_LISTING_BODY,
   AMBIGUOUS_LISTING_HEADING,
+  DIFFERENT_INVESTMENTS_TICKER_BODY,
+  DIFFERENT_INVESTMENTS_TICKER_HEADING,
   HOLDING_IDENTIFIER_GLOSSARY_TRIGGER,
   HOLDING_IDENTIFIER_HELP,
   HOLDING_IDENTIFIER_TERMS,
   HOLDING_IDENTIFIER_WHERE_ANSWER,
   HOLDING_IDENTIFIER_WHERE_TITLE,
   humanizeInstrumentMatchMessage,
+  NEUTRAL_AMBIGUOUS_LISTING_BODY,
+  NEUTRAL_AMBIGUOUS_LISTING_HEADING,
+  resolveAmbiguousListingCopy,
   UNIDENTIFIED_HOLDING_USER_MESSAGE,
 } from "@/lib/content/holdingIdentifierHelp";
 import { MATCHING_UNAVAILABLE_WARNING } from "@/lib/services/marketData/providerErrors";
@@ -30,6 +35,7 @@ describe("holding identifier help", () => {
   const matchEngine = read("lib/services/instruments/instrumentMatchEngine.ts");
   const matchRoute = read("app/api/instruments/match/route.ts");
   const parser = read("lib/services/import/spreadsheetParser.ts");
+  const autoLookup = read("lib/client/manualHoldingAutoLookup.ts");
 
   it("A. Ticker help exists", () => {
     expect(HOLDING_IDENTIFIER_HELP.ticker.title).toBe("Ticker / Symbol");
@@ -139,8 +145,62 @@ describe("holding identifier help", () => {
     expect(AMBIGUOUS_LISTING_HEADING).toBe("Same investment, different market?");
     expect(AMBIGUOUS_LISTING_BODY).toBe("Choose the listing shown by your broker.");
     expect(picker).toContain("AmbiguousListingHelp");
+    expect(picker).toContain("resolveAmbiguousListingCopy");
     expect(picker).not.toContain("Live pricing source");
     expect(review).not.toContain("% confidence");
+  });
+
+  it("uses different-investments copy when exact ticker candidates have distinct ISINs", () => {
+    const copy = resolveAmbiguousListingCopy([
+      { providerSymbol: "FOO.US", isin: "US37960A6698" },
+      { providerSymbol: "FOO.LSE", isin: "IE00077FRP95" },
+      { providerSymbol: "FOO.SW", isin: "IE00077FRP95" },
+    ]);
+    expect(copy.kind).toBe("different_investments");
+    expect(copy.heading).toBe(DIFFERENT_INVESTMENTS_TICKER_HEADING);
+    expect(copy.body).toBe(DIFFERENT_INVESTMENTS_TICKER_BODY);
+    expect(copy.heading).not.toBe(AMBIGUOUS_LISTING_HEADING);
+  });
+
+  it("keeps the different-market copy when candidates share one ISIN", () => {
+    const copy = resolveAmbiguousListingCopy([
+      { providerSymbol: "FOO.LSE", isin: "IE00077FRP95" },
+      { providerSymbol: "FOO.SW", isin: "IE00077FRP95" },
+    ]);
+    expect(copy.kind).toBe("same_investment");
+    expect(copy.heading).toBe(AMBIGUOUS_LISTING_HEADING);
+    expect(copy.body).toBe(AMBIGUOUS_LISTING_BODY);
+  });
+
+  it("uses neutral copy when ISIN evidence is incomplete", () => {
+    const missingIsin = resolveAmbiguousListingCopy([
+      { providerSymbol: "FOO.US", isin: "US37960A6698" },
+      { providerSymbol: "FOO.LSE", isin: null },
+    ]);
+    expect(missingIsin.kind).toBe("neutral");
+    expect(missingIsin.heading).toBe(NEUTRAL_AMBIGUOUS_LISTING_HEADING);
+    expect(missingIsin.body).toBe(NEUTRAL_AMBIGUOUS_LISTING_BODY);
+    expect(missingIsin.heading).not.toBe(AMBIGUOUS_LISTING_HEADING);
+    expect(missingIsin.heading).not.toBe(DIFFERENT_INVESTMENTS_TICKER_HEADING);
+
+    const invalidIsin = resolveAmbiguousListingCopy([
+      { providerSymbol: "FOO.US", isin: "US37960A6698" },
+      { providerSymbol: "FOO.LSE", isin: "NOT-AN-ISIN" },
+    ]);
+    expect(invalidIsin.kind).toBe("neutral");
+  });
+
+  it("does not auto-select a listing when resolving collision copy", () => {
+    const candidates = [
+      { providerSymbol: "FOO.US", isin: "US37960A6698" },
+      { providerSymbol: "FOO.LSE", isin: "IE00077FRP95" },
+    ];
+    const copy = resolveAmbiguousListingCopy(candidates);
+    expect(copy.kind).toBe("different_investments");
+    expect(candidates[0]?.providerSymbol).toBe("FOO.US");
+    expect(candidates[1]?.providerSymbol).toBe("FOO.LSE");
+    expect(autoLookup).not.toContain("resolveAmbiguousListingCopy");
+    expect(autoLookup).not.toContain("holdingIdentifierHelp");
   });
 
   it("humanizes technical match errors without touching quota copy", () => {

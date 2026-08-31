@@ -4,8 +4,8 @@ import { ChevronRight } from "lucide-react";
 
 import { AmbiguousListingHelp, HoldingIdentifierLabel } from "@/components/import/HoldingIdentifierHelp";
 import {
-  AMBIGUOUS_LISTING_BODY,
   LISTING_CURRENCY_UNAVAILABLE_LABEL,
+  resolveAmbiguousListingCopy,
 } from "@/lib/content/holdingIdentifierHelp";
 import {
   buildListingCandidates,
@@ -20,7 +20,6 @@ type ListingCandidatePickerProps = {
   source: ListingCandidateSource;
   selectedProviderSymbol?: string | null;
   onSelect: (candidate: ResolvedInstrument) => void;
-  title?: string;
 };
 
 /**
@@ -31,14 +30,15 @@ export function ListingCandidatePicker({
   source,
   selectedProviderSymbol,
   onSelect,
-  title = AMBIGUOUS_LISTING_BODY,
 }: ListingCandidatePickerProps) {
   const candidates = buildListingCandidates(source);
   if (candidates.length === 0) return null;
 
+  const listingCopy = resolveAmbiguousListingCopy(candidates);
+
   return (
     <div className="min-w-0">
-      <AmbiguousListingHelp title={title} />
+      <AmbiguousListingHelp heading={listingCopy.heading} title={listingCopy.body} />
       <div className="mt-3 space-y-2">
         {candidates.map((candidate) => {
           const details = formatListingDetails(candidate);

@@ -314,6 +314,41 @@ describe("manual holding auto listing discovery", () => {
     expect(new Set(decision.candidates.map((row) => row.exchange)).size).toBe(3);
   });
 
+  it("does not auto-select when distinct ISINs share a ticker", () => {
+    const candidates = [
+      listing({
+        providerSymbol: "FOO.US",
+        exchange: "US",
+        isin: "US37960A6698",
+        quoteCurrency: "USD",
+        confidence: 0.99,
+      }),
+      listing({
+        providerSymbol: "FOO.LSE",
+        exchange: "LSE",
+        isin: "IE00077FRP95",
+        quoteCurrency: "USD",
+        confidence: 0.99,
+      }),
+    ];
+
+    expect(canPreselectSingleListing(candidates)).toBe(false);
+
+    const decision = resolveAutoListingDecision(
+      {
+        holding: holding({ symbol: "FOO" }),
+        candidates,
+        warnings: [],
+        quotaUnavailable: false,
+      },
+      null,
+    );
+
+    expect(decision.kind).toBe("choose");
+    expect(decision.holding.providerSymbol).toBeNull();
+    expect(decision.candidates).toHaveLength(2);
+  });
+
   it("does not merge venues on a bare ticker", () => {
     const decision = resolveAutoListingDecision(
       {

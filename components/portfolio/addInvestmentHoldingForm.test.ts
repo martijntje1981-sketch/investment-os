@@ -99,6 +99,13 @@ describe("Add Holding simplification", () => {
   it("keeps Add on the existing saveHoldings path and does not search-write portfolio", () => {
     expect(page).toContain("saveHoldings");
     expect(page).toContain("validateManualHoldingForSave");
+    expect(page).toContain("refreshConfirmedListingAfterSave");
+    expect(page).toContain("isSavingHolding");
+    expect(page).toContain(
+      "Holding saved. Current price is temporarily unavailable and will be refreshed later.",
+    );
+    expect(page).not.toMatch(/price was refreshed|Price refreshed/i);
+    expect(page).not.toMatch(/\bSDIV\b/);
     expect(match).not.toContain("saveHoldings");
     expect(match).not.toContain("writePortfolioToStorage");
     expect(autoLookup).not.toContain("saveHoldings");

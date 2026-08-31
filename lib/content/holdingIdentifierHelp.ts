@@ -3,6 +3,8 @@
  * Presentation only — does not change matching or required fields.
  */
 
+import { normalizeIsin } from "@/lib/services/instruments/validation";
+
 export const HOLDING_IDENTIFIER_TERMS = [
   "ticker",
   "isin",
@@ -63,6 +65,79 @@ export const AMBIGUOUS_LISTING_HEADING = "Same investment, different market?";
 
 export const AMBIGUOUS_LISTING_BODY =
   "Choose the listing shown by your broker.";
+
+export const DIFFERENT_INVESTMENTS_TICKER_HEADING =
+  "Different investments share this ticker";
+
+export const DIFFERENT_INVESTMENTS_TICKER_BODY =
+  "Check the fund name, ISIN, currency and market before choosing.";
+
+export const NEUTRAL_AMBIGUOUS_LISTING_HEADING = "Several listings match";
+
+export const NEUTRAL_AMBIGUOUS_LISTING_BODY =
+  "Check the fund name, ISIN, currency and market before choosing.";
+
+export type AmbiguousListingCopyKind =
+  | "same_investment"
+  | "different_investments"
+  | "neutral";
+
+export type AmbiguousListingCopy = {
+  kind: AmbiguousListingCopyKind;
+  heading: string;
+  body: string;
+};
+
+type AmbiguousListingCandidate = {
+  isin?: string | null;
+  providerSymbol?: string | null;
+};
+
+function listingIsins(
+  candidates: readonly AmbiguousListingCandidate[],
+): Array<string | null> {
+  return candidates.map((candidate) => normalizeIsin(candidate.isin));
+}
+
+/**
+ * Collision-aware picker copy. Presentation only — never selects a listing.
+ */
+export function resolveAmbiguousListingCopy(
+  candidates: readonly AmbiguousListingCandidate[],
+): AmbiguousListingCopy {
+  const sameInvestment: AmbiguousListingCopy = {
+    kind: "same_investment",
+    heading: AMBIGUOUS_LISTING_HEADING,
+    body: AMBIGUOUS_LISTING_BODY,
+  };
+  const differentInvestments: AmbiguousListingCopy = {
+    kind: "different_investments",
+    heading: DIFFERENT_INVESTMENTS_TICKER_HEADING,
+    body: DIFFERENT_INVESTMENTS_TICKER_BODY,
+  };
+  const neutral: AmbiguousListingCopy = {
+    kind: "neutral",
+    heading: NEUTRAL_AMBIGUOUS_LISTING_HEADING,
+    body: NEUTRAL_AMBIGUOUS_LISTING_BODY,
+  };
+
+  if (candidates.length < 2) {
+    return sameInvestment;
+  }
+
+  const isins = listingIsins(candidates);
+  const present = isins.filter((value): value is string => Boolean(value));
+  if (present.length !== candidates.length) {
+    return neutral;
+  }
+
+  const unique = new Set(present);
+  if (unique.size === 1) {
+    return sameInvestment;
+  }
+
+  return differentInvestments;
+}
 
 export const UNIDENTIFIED_HOLDING_MESSAGE =
   "We couldn’t confidently identify this investment.";
