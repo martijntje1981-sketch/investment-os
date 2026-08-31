@@ -80,7 +80,9 @@ describe("Analysis under the Four Questions", () => {
     expect(gateway).toContain("analysis-on-track-gateway");
     expect(gateway).toContain("GOAL_REALITY_HREF");
     expect(gateway).toContain("goal-reality-check");
-    expect(gateway).toContain("Open full goal view");
+    expect(gateway).toContain("View and edit your goal");
+    expect(gateway).toContain("DASHBOARD_DEEP_LINKS.goalProgress");
+    expect(gateway).toContain("DASHBOARD_DEEP_LINKS.goalEdit");
     expect(gateway).toContain("What-if explorer");
     expect(gateway).not.toContain("persistGoal");
   });

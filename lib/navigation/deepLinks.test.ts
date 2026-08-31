@@ -33,6 +33,7 @@ describe("Dashboard deep links", () => {
       "/analysis#resilience-sleep",
     );
     expect(DASHBOARD_DEEP_LINKS.goalProgress).toBe("/goals#goal-progress");
+    expect(DASHBOARD_DEEP_LINKS.goalEdit).toBe("/goals#goal-edit");
     expect(DASHBOARD_DEEP_LINKS.goalScore).toBe("/portfolio-health#goal");
     expect(DASHBOARD_DEEP_LINKS.portfolioMomentum).toBe(
       "/portfolio-health#momentum",

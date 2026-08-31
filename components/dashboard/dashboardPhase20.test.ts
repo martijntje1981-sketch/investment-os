@@ -133,7 +133,7 @@ describe("Phase 20 Dashboard intelligence refinement", () => {
     expect(lookingEngine).not.toMatch(/\/api\/prices|eodhd|openai/i);
     expect(ahead).not.toMatch(/fetch\(|usePortfolioPerformanceHistory/);
     expect(notable).not.toMatch(/fetch\(|usePortfolioPerformanceHistory/);
-    expect(dashboard.match(/usePortfolioPerformanceHistory\(/g)?.length).toBe(2);
+    expect(dashboard.match(/usePortfolioPerformanceHistory\(/g)?.length).toBe(4);
     expect(dashboard).not.toContain('"3M"');
   });
 
@@ -154,6 +154,7 @@ describe("Phase 20 Dashboard intelligence refinement", () => {
   it("Y. Dashboard narrative order", () => {
     const order = [
       "<DashboardSummary",
+      "<DashboardGoalProgressStrip",
       "<HoldingsToday",
       "<DashboardPersonalIntelligence",
       "<DashboardSecondaryNav",

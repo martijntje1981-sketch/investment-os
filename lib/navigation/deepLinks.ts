@@ -43,6 +43,7 @@ export const SECTION_IDS = {
   /** @deprecated Prefer scorecardReadiness */
   portfolioReadiness: "portfolio-readiness",
   goalProgress: "goal-progress",
+  goalEdit: "goal-edit",
   /** @deprecated Prefer scorecardGoal */
   goalScore: "goal-score",
   newsMarketBrief: "news-market-brief",
@@ -90,6 +91,7 @@ export const DASHBOARD_DEEP_LINKS = {
   portfolioMomentum: `${SCORECARD_PATH}#${SECTION_IDS.scorecardMomentum}`,
   portfolioReadiness: `${SCORECARD_PATH}#${SECTION_IDS.scorecardReadiness}`,
   goalProgress: `${GOALS_PATH}#${SECTION_IDS.goalProgress}`,
+  goalEdit: `${GOALS_PATH}#${SECTION_IDS.goalEdit}`,
   goalScore: `${SCORECARD_PATH}#${SECTION_IDS.scorecardGoal}`,
   goals: GOALS_PATH,
   portfolioHealth: `${SCORECARD_PATH}#${SECTION_IDS.scorecardHealth}`,

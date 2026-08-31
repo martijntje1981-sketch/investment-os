@@ -74,7 +74,8 @@ export function AnalysisOnTrackGateway({
       )}
 
       <ul className="mt-4 space-y-2">
-        <GatewayLink href={GOALS_PATH} label="Open full goal view" />
+        <GatewayLink href={DASHBOARD_DEEP_LINKS.goalProgress} label="View and edit your goal" />
+        <GatewayLink href={DASHBOARD_DEEP_LINKS.goalEdit} label="Edit goal" />
         <GatewayLink href={GOAL_REALITY_HREF} label="Goal Reality Check" />
         <GatewayLink
           href={DASHBOARD_DEEP_LINKS.whatIf}

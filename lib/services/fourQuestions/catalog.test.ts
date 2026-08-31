@@ -73,4 +73,12 @@ describe("Four Questions central catalog", () => {
     expect(resolveFourQuestionsPagePlacement("/upload").show).toBe(false);
     expect(activeOf("/what-happened")).toBe("what_happened");
   });
+
+  it("routes On track to the central Goal view", () => {
+    const onTrack = FOUR_QUESTIONS.find((q) => q.id === "am_i_on_track");
+    expect(onTrack?.deepDives[0]).toEqual({
+      label: "View and edit your goal",
+      href: "/goals#goal-progress",
+    });
+  });
 });

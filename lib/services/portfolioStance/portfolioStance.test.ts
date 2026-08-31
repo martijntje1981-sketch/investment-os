@@ -922,7 +922,7 @@ describe("Phase 21 safety + integration contracts", () => {
     expect(dashboard).not.toContain("stanceHistory={stanceHistory}");
     expect(dashboard).not.toContain("<DashboardPortfolioStance");
     expect(evolutionCard).toContain("DashboardPortfolioStance");
-    expect(dashboard.match(/usePortfolioPerformanceHistory\(/g)?.length).toBe(2);
+    expect(dashboard.match(/usePortfolioPerformanceHistory\(/g)?.length).toBe(4);
     expect(dashboard).not.toContain("stanceHistory");
     expect(read("lib/services/fourQuestions/buildFourQuestions.ts")).toContain(
       "mergeStanceIntoFourQuestions",

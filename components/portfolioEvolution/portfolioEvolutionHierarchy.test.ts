@@ -361,11 +361,12 @@ describe("Portfolio Evolution Dashboard hierarchy", () => {
     expect(card).not.toContain("/api/prices");
     expect(card).not.toContain("usePortfolioPerformanceHistory");
     expect(dashboard).not.toContain('fetch("/api/prices"');
-    expect(dashboard.match(/usePortfolioPerformanceHistory\(/g)?.length).toBe(2);
+    expect(dashboard.match(/usePortfolioPerformanceHistory\(/g)?.length).toBe(4);
     expect(dashboard).toContain('"1W"');
     expect(dashboard).toContain('"1M"');
+    expect(dashboard).toContain('"1Y"');
+    expect(dashboard).toContain('"ALL"');
     expect(dashboard).not.toMatch(/usePortfolioPerformanceHistory\([\s\S]*?"3M"/);
-    expect(dashboard).not.toMatch(/usePortfolioPerformanceHistory\([\s\S]*?"ALL"/);
   });
 
   it("T. Dashboard reuses month history instead of a duplicate Evolution fetch", () => {

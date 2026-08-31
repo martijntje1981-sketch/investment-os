@@ -128,7 +128,7 @@ export const FOUR_QUESTIONS: readonly FourQuestionDefinition[] = [
     analysisSectionId: "on-track",
     visual: FOUR_QUESTION_VISUAL.am_i_on_track,
     deepDives: [
-      { label: "Goals", href: GOALS_PATH },
+      { label: "View and edit your goal", href: `${GOALS_PATH}#goal-progress` },
       { label: "Goal Reality Check", href: `${GOALS_PATH}#goal-reality-check` },
       { label: "What-if explorer", href: `${GOALS_PATH}#what-if` },
       { label: "Portfolio Scorecard", href: PORTFOLIO_HEALTH_PATH },

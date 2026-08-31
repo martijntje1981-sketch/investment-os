@@ -10,6 +10,7 @@ import { FirstIntelligenceMoment } from "@/components/onboarding/FirstIntelligen
 import { DemoHoldingsCallout } from "@/components/example/DemoHoldingsCallout";
 import { TrialStepsCard } from "@/components/example/TrialStepsCard";
 import { HoldingsToday } from "@/components/dashboard/HoldingsToday";
+import { DashboardGoalProgressStrip } from "@/components/dashboard/DashboardGoalProgressStrip";
 import { ExamplePortfolioPreparation } from "@/components/examplePortfolio/ExamplePortfolioPreparation";
 import { useExampleActiveStatus } from "@/lib/client/useExampleActiveStatus";
 import {
@@ -117,6 +118,16 @@ export default function DashboardPage() {
     holdings,
     "1M",
     historyEnabled,
+  );
+  const yearHistory = usePortfolioPerformanceHistory(
+    holdings,
+    "1Y",
+    historyEnabled && hasSavedGoal,
+  );
+  const allHistory = usePortfolioPerformanceHistory(
+    holdings,
+    "ALL",
+    historyEnabled && hasSavedGoal,
   );
 
   const snapshot = useMemo(
@@ -339,6 +350,19 @@ export default function DashboardPage() {
               liveRefreshAt,
               displayFreshnessAt,
             }}
+          />
+
+          <DashboardGoalProgressStrip
+            progress={goalProgress}
+            hasSavedGoal={hasSavedGoal}
+            targetYear={goal?.targetYear ?? null}
+            monthHistory={monthHistory.data}
+            yearHistory={yearHistory.data}
+            allHistory={allHistory.data}
+            historyReady={historyEnabled}
+            monthHistoryLoading={monthHistory.isLoading}
+            yearHistoryLoading={yearHistory.isLoading}
+            allHistoryLoading={allHistory.isLoading}
           />
 
           <HoldingsToday

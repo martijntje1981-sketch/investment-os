@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   CalendarDays,
   Check,
+  Pencil,
   Percent,
   PiggyBank,
   Save,
@@ -261,11 +262,20 @@ export default function GoalsPage() {
   const [isExporting, setIsExporting] = useState(false);
   const [assumptionEditorOpen, setAssumptionEditorOpen] = useState(false);
   const [exploreOpen, setExploreOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const sectionHash = useSectionHashId();
 
   useEffect(() => {
     if (sectionHash === "what-if") setExploreOpen(true);
+    if (sectionHash === "goal-edit") setEditOpen(true);
   }, [sectionHash]);
+
+  useEffect(() => {
+    if (!editOpen || !portfolioReady) return;
+    document
+      .getElementById("goal-edit")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [editOpen, portfolioReady]);
 
   useEffect(() => {
     if (formDirty) {
@@ -392,20 +402,26 @@ export default function GoalsPage() {
       ? intelligence.alignment
       : null;
 
+  const showGoalEditor = editOpen || !hasSavedGoal;
+
   return (
     <>
       <PageContainer canvas="navy" stackClassName="gap-4 md:gap-5">
         <CalmPageIntro
           eyebrow="Goals"
           title={displayName}
-          subtitle="Am I on track — and when might I get there?"
+          subtitle="Progress, status, and the numbers behind your plan."
           backToDashboard
           actions={
-            <ExportPortfolioButton
-              variant="onDark"
-              disabled={isExporting}
-              onExport={handleExport}
-            />
+            <button
+              type="button"
+              data-testid="goals-edit-open"
+              onClick={() => setEditOpen(true)}
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-brand px-4 text-[15px] font-bold text-brand-navy transition hover:bg-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
+            >
+              <Pencil className="h-4 w-4" aria-hidden />
+              {hasSavedGoal ? "Edit goal" : "Set goal"}
+            </button>
           }
         />
 
@@ -438,6 +454,18 @@ export default function GoalsPage() {
               {badgeLabel}
             </span>
           ) : null}
+          {hasSavedGoal && savedGoal ? (
+            <p className={`mt-3 ${appDashboardDarkMetaClass}`}>
+              {formatEur(goalProgress.targetValue)} by {savedGoal.targetYear}
+              {" · "}
+              Current{" "}
+              {goalProgress.portfolioValueAvailable
+                ? formatEur(goalProgress.currentValue)
+                : "unavailable"}
+              {" · "}
+              {formatEur(intelligence.forecast.monthlyContribution)} planned monthly
+            </p>
+          ) : null}
           <div className={`mt-4 ${appDarkInsetRecessedClass} px-3.5 py-3.5 sm:px-4 sm:py-4`}>
             <GoalHeroProgressVisual
               progress={goalProgress}
@@ -446,124 +474,55 @@ export default function GoalsPage() {
             />
           </div>
           {hasSavedGoal ? (
-            <p className={`mt-4 ${appDashboardDarkMetaClass}`}>
-              Estimated completion:{" "}
-              <span className="font-semibold text-white">
-                {intelligence.forecast.estimatedCompletionLabel}
-              </span>
-              {intelligence.forecast.isEstimate ? " · estimate" : null}
-            </p>
+            <>
+              <p className={`mt-4 ${appDashboardDarkMetaClass}`}>
+                Estimated completion:{" "}
+                <span className="font-semibold text-white">
+                  {intelligence.forecast.estimatedCompletionLabel}
+                </span>
+                {intelligence.forecast.isEstimate ? " · estimate" : null}
+              </p>
+              <p className={`mt-5 ${appHeroMetricLabelClass}`}>
+                What is driving the outcome?
+              </p>
+              <p className={`mt-1 ${appDashboardDarkMetaClass}`}>
+                Remaining {formatEur(goalProgress.remainingAmount)} · projection,
+                not a guarantee.
+              </p>
+              <div className="mt-3 grid min-w-0 grid-cols-2 gap-2">
+                <Metric
+                  label="Target"
+                  value={formatEur(goalProgress.targetValue)}
+                />
+                <Metric
+                  label="Target year"
+                  value={String(savedGoal?.targetYear ?? "—")}
+                />
+                <Metric
+                  label="Current value"
+                  value={
+                    goalProgress.portfolioValueAvailable
+                      ? formatEur(goalProgress.currentValue)
+                      : "Unavailable"
+                  }
+                />
+                <Metric
+                  label="Monthly contribution"
+                  value={formatEur(intelligence.forecast.monthlyContribution)}
+                />
+              </div>
+              <div className="mt-3">
+                <ConversionDetailsDisclosure compactTrigger />
+              </div>
+            </>
           ) : null}
         </section>
 
-        {hasSavedGoal ? (
-          <section
-            aria-labelledby="goals-driving-heading"
-            className={`${appDarkCardElevatedClass} ${appDarkCardPaddingClass}`}
-            data-testid="goals-driving"
-          >
-            <p className={appHeroMetricLabelClass}>What is driving the outcome?</p>
-            <h2
-              id="goals-driving-heading"
-              className={`mt-1 ${appAnalysisDarkTitleClass}`}
-            >
-              Remaining {formatEur(goalProgress.remainingAmount)}
-            </h2>
-            <p className={`mt-1 ${appDashboardDarkMetaClass}`}>
-              Projection from your plan and available history — not a guarantee.
-            </p>
-            <div className="mt-4 grid min-w-0 gap-2 sm:grid-cols-3">
-              <Metric
-                label="Target"
-                value={formatEur(goalProgress.targetValue)}
-              />
-              <Metric
-                label="Monthly contribution"
-                value={formatEur(intelligence.forecast.monthlyContribution)}
-              />
-              <Metric
-                label="Current value"
-                value={formatEur(goalProgress.currentValue)}
-              />
-            </div>
-            <div className="mt-3">
-              <ConversionDetailsDisclosure compactTrigger />
-            </div>
-            {topInsight ? (
-              <p className={`mt-4 ${appDashboardDarkBodyClass}`}>{topInsight.text}</p>
-            ) : null}
-            {alignment ? (
-              <p className={`mt-3 ${appDashboardDarkMetaClass}`}>
-                {alignment.label}. {alignment.reason}
-                {alignment.concentrationLine
-                  ? ` ${alignment.concentrationLine}`
-                  : ""}
-              </p>
-            ) : null}
-            <Link
-              href={DASHBOARD_DEEP_LINKS.scorecardHealth}
-              className={`${appAnalysisUtilityButtonClass} mt-4 inline-flex`}
-            >
-              Open Portfolio Scorecard
-            </Link>
-          </section>
-        ) : null}
-
-        <GoalTradeOffsSection
-          model={goalTradeOffs}
-          productAccess={productAccess}
-        />
-
-        <CalmExploreDisclosure
-          description="Edit the goal, assumptions, and modeled what-if paths."
-          open={exploreOpen}
-          onToggle={() => setExploreOpen((value) => !value)}
-          testId="goals-explore"
-        >
-          {hasSavedGoal && intelligence.insights.length > 1 ? (
-            <section className={`${appDarkCardClass} ${appDarkCardPaddingClass}`}>
-              <p className={appHeroMetricLabelClass}>More insights</p>
-              <ul className="mt-3 space-y-2">
-                {intelligence.insights.slice(1).map((insight) => (
-                  <li key={insight.id} className={appDashboardDarkBodyClass}>
-                    {insight.text}
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
-
-          {getExpectedReturnAssumption(savedGoal) != null ? (
-            <section className={`${appDarkCardClass} ${appDarkCardPaddingClass} space-y-3`}>
-              <ExpectedReturnAssumptionPanel
-                percent={getExpectedReturnAssumption(savedGoal)!}
-                onEdit={() => setAssumptionEditorOpen(true)}
-              />
-              <GoalRealityCheckPanel
-                realityCheck={realityCheck}
-                isLoading={realityCheckLoading}
-              />
-            </section>
-          ) : null}
-
-          <WhatIfExplorer
-            holdings={holdings}
-            goal={hasSavedGoal ? savedGoal : null}
-            hasSavedGoal={hasSavedGoal}
-            currentPortfolioValue={
-              goalProgress.portfolioValueAvailable
-                ? goalProgress.currentValue
-                : null
-            }
-            portfolioValueAvailable={goalProgress.portfolioValueAvailable}
-            productAccess={productAccess}
-            formatEur={formatEur}
-            formatPercent={formatPortfolioPercent}
-          />
-
+        {showGoalEditor ? (
           <form
+            id="goal-edit"
             onSubmit={handleSubmit}
-            className={`${appDarkCardClass} overflow-hidden`}
+            className={`${appDarkCardClass} scroll-mt-24 overflow-hidden`}
             data-testid="goals-edit-form"
           >
             <div className="border-b border-white/10 px-4 py-4 sm:px-6">
@@ -681,6 +640,81 @@ export default function GoalsPage() {
               </button>
             </div>
           </form>
+        ) : null}
+
+        <CalmExploreDisclosure
+          description="Assumptions, Reality Check, contribution stance, and modeled what-if paths."
+          open={exploreOpen}
+          onToggle={() => setExploreOpen((value) => !value)}
+          testId="goals-explore"
+        >
+          <GoalTradeOffsSection
+            model={goalTradeOffs}
+            productAccess={productAccess}
+          />
+
+          {hasSavedGoal && (topInsight || alignment) ? (
+            <section className={`${appDarkCardClass} ${appDarkCardPaddingClass}`}>
+              <p className={appHeroMetricLabelClass}>More context</p>
+              {topInsight ? (
+                <p className={`mt-3 ${appDashboardDarkBodyClass}`}>{topInsight.text}</p>
+              ) : null}
+              {alignment ? (
+                <p className={`mt-3 ${appDashboardDarkMetaClass}`}>
+                  {alignment.label}. {alignment.reason}
+                  {alignment.concentrationLine
+                    ? ` ${alignment.concentrationLine}`
+                    : ""}
+                </p>
+              ) : null}
+              <Link
+                href={DASHBOARD_DEEP_LINKS.scorecardHealth}
+                className={`${appAnalysisUtilityButtonClass} mt-4 inline-flex`}
+              >
+                Open Portfolio Scorecard
+              </Link>
+            </section>
+          ) : null}
+          {hasSavedGoal && intelligence.insights.length > 1 ? (
+            <section className={`${appDarkCardClass} ${appDarkCardPaddingClass}`}>
+              <p className={appHeroMetricLabelClass}>More insights</p>
+              <ul className="mt-3 space-y-2">
+                {intelligence.insights.slice(1).map((insight) => (
+                  <li key={insight.id} className={appDashboardDarkBodyClass}>
+                    {insight.text}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+
+          {getExpectedReturnAssumption(savedGoal) != null ? (
+            <section className={`${appDarkCardClass} ${appDarkCardPaddingClass} space-y-3`}>
+              <ExpectedReturnAssumptionPanel
+                percent={getExpectedReturnAssumption(savedGoal)!}
+                onEdit={() => setAssumptionEditorOpen(true)}
+              />
+              <GoalRealityCheckPanel
+                realityCheck={realityCheck}
+                isLoading={realityCheckLoading}
+              />
+            </section>
+          ) : null}
+
+          <WhatIfExplorer
+            holdings={holdings}
+            goal={hasSavedGoal ? savedGoal : null}
+            hasSavedGoal={hasSavedGoal}
+            currentPortfolioValue={
+              goalProgress.portfolioValueAvailable
+                ? goalProgress.currentValue
+                : null
+            }
+            portfolioValueAvailable={goalProgress.portfolioValueAvailable}
+            productAccess={productAccess}
+            formatEur={formatEur}
+            formatPercent={formatPortfolioPercent}
+          />
 
           <PageRelatedLinks
             purpose={PAGE_PURPOSE.goals}
@@ -693,6 +727,11 @@ export default function GoalsPage() {
                 label: "Open Goal score",
               },
             ]}
+          />
+          <ExportPortfolioButton
+            variant="onDark"
+            disabled={isExporting}
+            onExport={handleExport}
           />
         </CalmExploreDisclosure>
       </PageContainer>

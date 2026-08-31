@@ -27,6 +27,15 @@ describe("goals hero integration", () => {
     expect(goalsPage).toContain("Am I on track?");
     expect(goalsPage).toContain("onDark");
     expect(goalsPage).toContain("Estimated completion");
+    expect(goalsPage).toContain("goals-edit-open");
+    expect(goalsPage).not.toContain("goals-edit-open-card");
+    expect(goalsPage).toContain('id="goal-edit"');
+    expect(goalsPage.indexOf('data-testid="goals-edit-open"')).toBeLessThan(
+      goalsPage.indexOf('data-testid="goals-on-track"'),
+    );
+    expect(goalsPage).toContain('id="goal-edit"');
+    expect(goalsPage).toContain("planned monthly");
+    expect(goalsPage).toContain("Target year");
     expect(goalsPage).not.toContain("<PageHero");
   });
 });

@@ -19,6 +19,7 @@ describe("Calm Core UX — Dashboard and Portfolio", () => {
   it("keeps hero then Your Holdings Today then at most one intelligence block", () => {
     const order = [
       "<DashboardSummary",
+      "<DashboardGoalProgressStrip",
       "<HoldingsToday",
       "<DashboardPersonalIntelligence",
       "<DashboardSecondaryNav",
