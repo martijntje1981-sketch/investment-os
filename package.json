@@ -9,7 +9,8 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:db": "vitest run supabase/tests/phase1MigrationSecurity.test.ts"
+    "test:db": "vitest run supabase/tests/phase1MigrationSecurity.test.ts",
+    "test:nav-snapshots-sql": "node supabase/tests/database/runPortfolioNavSnapshotsDisposable.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.3",

@@ -1,0 +1,87 @@
+name: NAV snapshot migration (disposable Postgres)
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "supabase/migrations/20260901120000_portfolio_nav_snapshots.sql"
+      - "supabase/tests/database/portfolio_nav_snapshots_disposable_stub.sql"
+      - "supabase/tests/database/portfolio_nav_snapshots_disposable_verify.sql"
+      - "supabase/tests/database/runPortfolioNavSnapshotsDisposable.mjs"
+      - "supabase/tests/database/disposableDatabaseUrl.mjs"
+      - "supabase/tests/database/disposableDatabaseUrl.test.ts"
+      - "lib/services/goalPace/**"
+      - "supabase/tests/phase1MigrationSecurity.test.ts"
+      - ".github/workflows/nav-snapshot-migration.yml"
+  push:
+    paths:
+      - "supabase/migrations/20260901120000_portfolio_nav_snapshots.sql"
+      - "supabase/tests/database/portfolio_nav_snapshots_disposable_stub.sql"
+      - "supabase/tests/database/portfolio_nav_snapshots_disposable_verify.sql"
+      - "supabase/tests/database/runPortfolioNavSnapshotsDisposable.mjs"
+      - "supabase/tests/database/disposableDatabaseUrl.mjs"
+      - "supabase/tests/database/disposableDatabaseUrl.test.ts"
+      - "lib/services/goalPace/**"
+      - "supabase/tests/phase1MigrationSecurity.test.ts"
+      - ".github/workflows/nav-snapshot-migration.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nav-snapshot-sql-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  disposable-postgres:
+    name: Validate portfolio_nav_snapshots on Postgres 15
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DISPOSABLE_DB_MODE: ci
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Wait for disposable Postgres
+        env:
+          PGPASSWORD: postgres
+        run: |
+          until pg_isready -h localhost -p 5432 -U postgres; do
+            sleep 1
+          done
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Apply A1 migration and verify on disposable Postgres
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
+          DISPOSABLE_DB_MODE: ci
+        run: node supabase/tests/database/runPortfolioNavSnapshotsDisposable.mjs
+
+      - name: Run Goal Pace and migration security tests
+        run: npx vitest run lib/services/goalPace supabase/tests/phase1MigrationSecurity.test.ts supabase/tests/database/disposableDatabaseUrl.test.ts
