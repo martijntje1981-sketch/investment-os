@@ -9,9 +9,14 @@ import { mapDbHoldingToStored } from "@/lib/services/portfolio/mappers";
 import { isUniqueViolation } from "@/lib/services/portfolio/idempotency";
 import type { DbGoalRow, DbHoldingRow } from "@/lib/services/portfolio/types";
 import {
+  applyCanonicalCryptoQuotesForNav,
+  type CanonicalCryptoQuoteNavRow,
+} from "@/lib/services/goalPace/applyCanonicalCryptoQuotesForNav";
+import {
   evaluateNavSnapshotWrite,
   resolveCanonicalNavValuation,
 } from "@/lib/services/goalPace/evaluateNavSnapshotCapture";
+import { HOLDING_CANONICAL_QUOTES_TABLE } from "@/lib/services/canonicalQuotes/types";
 import { buildFrozenGoalPlan } from "@/lib/services/goalPace/goalPlanFreeze";
 import { resolveNavSnapshotDemoStatus } from "@/lib/services/goalPace/resolveNavSnapshotDemoStatus";
 import type { NavSnapshotDemoAccess } from "@/lib/services/goalPace/resolveNavSnapshotDemoStatus";
@@ -103,6 +108,10 @@ export type CaptureNavSnapshotDeps = {
       valuedAt: string | null;
     },
   ) => Promise<PortfolioNavSnapshot | null>;
+  loadCanonicalQuotes: (
+    client: NavSnapshotClient,
+    userId: string,
+  ) => Promise<CanonicalCryptoQuoteNavRow[]>;
 };
 
 function toNumber(value: number | string | null | undefined): number | null {
@@ -218,6 +227,20 @@ async function defaultLoadHoldings(
 
   if (error) throw new Error(error.message || "Could not load holdings.");
   return (data as DbHoldingRow[] | null) ?? [];
+}
+
+async function defaultLoadCanonicalQuotes(
+  client: NavSnapshotClient,
+  userId: string,
+): Promise<CanonicalCryptoQuoteNavRow[]> {
+  const { data, error } = await table(client, HOLDING_CANONICAL_QUOTES_TABLE)
+    .select(
+      "holding_id, user_id, canonical_eur_unit_price, canonical_priced_at, data_status, quote_updated_at, fetched_at",
+    )
+    .eq("user_id", userId);
+
+  if (error) throw new Error(error.message || "Could not load canonical quotes.");
+  return (data as CanonicalCryptoQuoteNavRow[] | null) ?? [];
 }
 
 async function defaultLoadActiveGoal(
@@ -352,6 +375,7 @@ const defaultDeps: CaptureNavSnapshotDeps = {
   loadExistingSnapshot: defaultLoadExisting,
   insertSnapshot: defaultInsert,
   updateValuation: defaultUpdateValuation,
+  loadCanonicalQuotes: defaultLoadCanonicalQuotes,
 };
 
 export async function capturePortfolioNavSnapshot(
@@ -410,7 +434,12 @@ export async function capturePortfolioNavSnapshot(
       input.userId,
       portfolioId,
     );
-    const holdings = holdingRows.map((row) => mapDbHoldingToStored(row));
+    const quotes = await deps.loadCanonicalQuotes(input.client, input.userId);
+    const holdings = applyCanonicalCryptoQuotesForNav({
+      holdings: holdingRows.map((row) => mapDbHoldingToStored(row)),
+      quotes,
+      userId: input.userId,
+    });
     const valuation = resolveCanonicalNavValuation(holdings);
     const existing = await deps.loadExistingSnapshot(
       input.client,

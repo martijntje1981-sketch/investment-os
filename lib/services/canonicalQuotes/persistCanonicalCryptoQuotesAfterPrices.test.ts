@@ -338,7 +338,7 @@ describe("persistCanonicalCryptoQuotesAfterPrices", () => {
     const persistQuote = vi.fn();
     const createQuoteClient = vi.fn();
     const aggregate = await persistCanonicalCryptoQuotesAfterPrices({
-      payload: payload({ quoteSource: "cache" }),
+      payload: payload({ quoteSource: "cache", refreshSummary: { estimateOnly: false } as never }),
       requestHoldings: [{ id: HOLDING_BTC, symbol: "BTC", providerSymbol: "BTC-USD.CC" }],
       env: enabledEnv(),
       getSessionUser: async () => user(),
@@ -348,6 +348,57 @@ describe("persistCanonicalCryptoQuotesAfterPrices", () => {
     expect(aggregate.skipped_cache).toBe(1);
     expect(createQuoteClient).not.toHaveBeenCalled();
     expect(persistQuote).not.toHaveBeenCalled();
+  });
+
+  it("skips estimate-only results even when quoteSource is provider", async () => {
+    const persistQuote = vi.fn();
+    const createQuoteClient = vi.fn();
+    const fromBody = await persistCanonicalCryptoQuotesAfterPrices({
+      payload: payload({ quoteSource: "provider" }),
+      requestHoldings: [{ id: HOLDING_BTC, symbol: "BTC", providerSymbol: "BTC-USD.CC" }],
+      estimateOnly: true,
+      env: enabledEnv(),
+      getSessionUser: async () => user(),
+      createQuoteClient,
+      persistQuote,
+    });
+    expect(fromBody.skipped_estimate).toBe(1);
+    expect(persistQuote).not.toHaveBeenCalled();
+
+    const fromSummary = await persistCanonicalCryptoQuotesAfterPrices({
+      payload: payload({
+        quoteSource: "provider",
+        refreshSummary: { estimateOnly: true } as never,
+      }),
+      requestHoldings: [{ id: HOLDING_BTC, symbol: "BTC", providerSymbol: "BTC-USD.CC" }],
+      estimateOnly: false,
+      env: enabledEnv(),
+      getSessionUser: async () => user(),
+      createQuoteClient,
+      persistQuote,
+    });
+    expect(fromSummary.skipped_estimate).toBe(1);
+    expect(persistQuote).not.toHaveBeenCalled();
+  });
+
+  it("reaches the writer on a live phase with estimateOnly false", async () => {
+    const persistQuote = vi.fn(async () => persistResult("created"));
+    const aggregate = await persistCanonicalCryptoQuotesAfterPrices({
+      payload: payload({
+        quoteSource: "provider",
+        refreshSummary: { estimateOnly: false } as never,
+      }),
+      requestHoldings: [{ id: HOLDING_BTC, symbol: "BTC", providerSymbol: "BTC-USD.CC" }],
+      estimateOnly: false,
+      env: enabledEnv(),
+      getSessionUser: async () => user(),
+      resolveProductAccess: async () => personalAccess,
+      createQuoteClient: () => QUOTE_CLIENT,
+      persistQuote,
+    });
+    expect(aggregate.skipped_estimate).toBe(0);
+    expect(aggregate.created).toBe(1);
+    expect(persistQuote).toHaveBeenCalledOnce();
   });
 
   it("does not fail the caller when the writer throws", async () => {
@@ -402,6 +453,17 @@ describe("C2 persist wiring sources", () => {
     expect(builder).not.toContain("loadPricesForHoldings");
     expect(builder).not.toContain("eodhdMarketDataProvider");
     expect(builder).not.toContain("getQuote(");
+  });
+
+  it("stamps live and cache-first phases as estimateOnly false after estimate spreads", () => {
+    const priceService = read("lib/services/prices/priceService.ts");
+    const liveSummary = priceService.slice(
+      priceService.indexOf("const refreshSummary: PriceRefreshSummary"),
+    );
+    expect(liveSummary).toContain("estimateOnly: false");
+    expect(priceService).toMatch(
+      /if \(options\?\.estimateOnly\) \{[\s\S]*estimateOnly: true,/,
+    );
   });
 
   it("never exposes the flag as NEXT_PUBLIC and does not set it in vercel.json", () => {

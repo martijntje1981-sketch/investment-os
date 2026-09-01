@@ -8,7 +8,7 @@ import {
   type CapturePortfolioNavSnapshotInput,
   type NavSnapshotClient,
 } from "@/lib/services/goalPace/capturePortfolioNavSnapshot";
-import type { NavSnapshotDemoAccess } from "@/lib/services/goalPace/resolveNavSnapshotDemoStatus";
+import type { CanonicalCryptoQuoteNavRow } from "@/lib/services/goalPace/applyCanonicalCryptoQuotesForNav";
 import type { PortfolioNavSnapshot } from "@/lib/services/goalPace/types";
 import type { DbGoalRow, DbHoldingRow } from "@/lib/services/portfolio/types";
 
@@ -100,6 +100,7 @@ function createMemoryDeps(options?: {
   holdingsByPortfolio?: Record<string, DbHoldingRow[]>;
   goalsByPortfolio?: Record<string, DbGoalRow | null>;
   ownedPortfolios?: Record<string, string[]>;
+  canonicalQuotes?: CanonicalCryptoQuoteNavRow[];
 }): {
   deps: CaptureNavSnapshotDeps;
   store: Map<string, PortfolioNavSnapshot>;
@@ -134,6 +135,8 @@ function createMemoryDeps(options?: {
     },
     loadActiveGoal: async (_client, _userId, portfolioId) =>
       goalsByPortfolio[portfolioId] ?? null,
+    loadCanonicalQuotes: async (_client, userId) =>
+      (options?.canonicalQuotes ?? []).filter((row) => row.user_id === userId),
     loadExistingSnapshot: async (_client, userId, portfolioId, dateIso) =>
       store.get(snapshotKey(userId, portfolioId, dateIso)) ?? null,
     insertSnapshot: async (_client, row) => {
@@ -629,5 +632,150 @@ describe("snapshotInsertPayload", () => {
     });
     expect(payload.nav_currency).toBe("EUR");
     expect(payload).not.toHaveProperty("presentation_currency");
+  });
+
+  function listed(id: string, symbol: string): DbHoldingRow {
+    return dbHolding({
+      id,
+      asset_type: "investment",
+      symbol,
+      name: symbol,
+    });
+  }
+
+  function cryptoHolding(id: string, symbol: string): DbHoldingRow {
+    return dbHolding({
+      id,
+      asset_type: "crypto",
+      symbol,
+      name: symbol,
+      last_market_price: null,
+      last_market_price_at: null,
+      previous_close: null,
+      quantity: 1,
+      average_cost: 1,
+    });
+  }
+
+  function quoteRow(
+    holdingId: string,
+    userId: string,
+    pricedAt: string,
+  ): CanonicalCryptoQuoteNavRow {
+    return {
+      holding_id: holdingId,
+      user_id: userId,
+      canonical_eur_unit_price: 100,
+      canonical_priced_at: pricedAt,
+      data_status: "live",
+      quote_updated_at: pricedAt,
+      fetched_at: pricedAt,
+    };
+  }
+
+  const LISTED_AND_CRYPTO: DbHoldingRow[] = [
+    listed("h-strc", "STRC"),
+    listed("h-aifs", "AIFS"),
+    listed("h-ib1t", "IB1T"),
+    listed("h-nukl", "NUKL"),
+    listed("h-vwce", "VWCE"),
+    cryptoHolding("h-btc", "BTC"),
+    cryptoHolding("h-shib", "SHIB"),
+  ];
+
+  it("values 7/7 NAV as usable when BTC and SHIB have canonical EUR quotes", async () => {
+    const pricedAt = "2026-09-01T14:00:00.000Z";
+    const { deps } = createMemoryDeps({
+      holdingsByPortfolio: { [PORT_A]: LISTED_AND_CRYPTO },
+      canonicalQuotes: [
+        quoteRow("h-btc", USER_A, pricedAt),
+        quoteRow("h-shib", USER_A, pricedAt),
+      ],
+    });
+    const result = await capturePortfolioNavSnapshot(trustedInput(), deps);
+    expect(result.status).toBe("created");
+    expect(result.snapshot?.usability).toBe("usable");
+    expect(result.snapshot?.holdingCount).toBe(7);
+    expect(result.snapshot?.valuedHoldingCount).toBe(7);
+    expect(result.snapshot?.excludedHoldingCount).toBe(0);
+    expect(result.snapshot?.navEur).toBe(5200);
+    expect(result.snapshot?.valuedAt).toBe(pricedAt);
+  });
+
+  it("keeps NAV partial when one canonical crypto row is missing", async () => {
+    const { deps } = createMemoryDeps({
+      holdingsByPortfolio: { [PORT_A]: LISTED_AND_CRYPTO },
+      canonicalQuotes: [quoteRow("h-btc", USER_A, "2026-09-01T14:00:00.000Z")],
+    });
+    const result = await capturePortfolioNavSnapshot(trustedInput(), deps);
+    expect(result.status).toBe("created");
+    expect(result.snapshot?.usability).toBe("partial");
+    expect(result.snapshot?.valuedHoldingCount).toBe(6);
+    expect(result.snapshot?.excludedHoldingCount).toBe(1);
+  });
+
+  it("ignores a mismatched user or holding canonical quote", async () => {
+    const { deps } = createMemoryDeps({
+      holdingsByPortfolio: { [PORT_A]: LISTED_AND_CRYPTO },
+      canonicalQuotes: [
+        quoteRow("h-btc", USER_B, "2026-09-01T14:00:00.000Z"),
+        quoteRow("h-other", USER_A, "2026-09-01T14:00:00.000Z"),
+        quoteRow("h-shib", USER_A, "2026-09-01T14:00:00.000Z"),
+      ],
+    });
+    const result = await capturePortfolioNavSnapshot(trustedInput(), deps);
+    expect(result.snapshot?.usability).toBe("partial");
+    expect(result.snapshot?.excludedHoldingCount).toBe(1);
+    expect(result.snapshot?.navEur).toBe(5100);
+  });
+
+  it("does not change listed last_market_price valuation when overlaying crypto quotes", async () => {
+    const { deps } = createMemoryDeps({
+      holdingsByPortfolio: {
+        [PORT_A]: [
+          listed("h-vwce", "VWCE"),
+          cryptoHolding("h-btc", "BTC"),
+        ],
+      },
+      canonicalQuotes: [
+        {
+          ...quoteRow("h-vwce", USER_A, "2026-09-01T16:00:00.000Z"),
+          canonical_eur_unit_price: 999,
+        },
+        quoteRow("h-btc", USER_A, "2026-09-01T14:00:00.000Z"),
+      ],
+    });
+    const result = await capturePortfolioNavSnapshot(trustedInput(), deps);
+    expect(result.snapshot?.navEur).toBe(1100);
+    expect(result.snapshot?.usability).toBe("usable");
+  });
+
+  it("improves same-day partial NAV to usable from canonical crypto without changing frozen Goal", async () => {
+    const quotes: CanonicalCryptoQuoteNavRow[] = [];
+    const { deps, store } = createMemoryDeps({
+      holdingsByPortfolio: { [PORT_A]: LISTED_AND_CRYPTO },
+      canonicalQuotes: quotes,
+    });
+    const first = await capturePortfolioNavSnapshot(trustedInput(), deps);
+    expect(first.status).toBe("created");
+    expect(first.snapshot?.usability).toBe("partial");
+    expect(first.snapshot?.excludedHoldingCount).toBe(2);
+    expect(first.snapshot?.goalId).toBe(GOAL_1);
+    expect(first.snapshot?.goalTargetValue).toBe(50000);
+    const frozenGoalId = first.snapshot?.goalId;
+    const frozenPlanAt = first.snapshot?.goalPlanCapturedAt;
+
+    quotes.push(
+      quoteRow("h-btc", USER_A, "2026-09-01T14:00:00.000Z"),
+      quoteRow("h-shib", USER_A, "2026-09-01T14:05:00.000Z"),
+    );
+    const second = await capturePortfolioNavSnapshot(trustedInput(), deps);
+    expect(second.status).toBe("improved");
+    expect(second.snapshot?.usability).toBe("usable");
+    expect(second.snapshot?.excludedHoldingCount).toBe(0);
+    expect(second.snapshot?.goalId).toBe(frozenGoalId);
+    expect(second.snapshot?.goalPlanCapturedAt).toBe(frozenPlanAt);
+    expect(second.snapshot?.goalTargetValue).toBe(50000);
+    expect(store.size).toBe(1);
   });
 });

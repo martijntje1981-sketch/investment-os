@@ -1,7 +1,7 @@
 /**
  * Server-only canonical crypto valuation contracts.
  * C2 may persist from authenticated POST /api/prices. Do not import from UI.
- * NAV capture must not read this table yet.
+ * Trusted NAV capture may read this table for owned crypto holdings only.
  *
  * Canonical EUR unit price: EUR per one crypto unit.
  * Pair price: remains in pairCurrency.

@@ -756,6 +756,7 @@ export async function loadPricesForHoldings(
       logRefreshOutcome(holdingsRequested, skipped, targets.length, metricsBefore, {
         ...estimate,
         providerCallsMade: 0,
+        estimateOnly: false,
         circuitOpen: getProviderCircuitSnapshot(EODHD_QUOTE_PROVIDER_ID).open,
       });
       return attachCryptoRefreshDiagnostics(
@@ -770,6 +771,7 @@ export async function loadPricesForHoldings(
             fxCallsRequired,
             totalCallsRequired,
             circuitOpen: getProviderCircuitSnapshot(EODHD_QUOTE_PROVIDER_ID).open,
+            estimateOnly: false,
           },
           canAffordRefresh: false,
         }),
@@ -789,6 +791,7 @@ export async function loadPricesForHoldings(
         fxCallsRequired,
         totalCallsRequired,
         circuitOpen: getProviderCircuitSnapshot(EODHD_QUOTE_PROVIDER_ID).open,
+        estimateOnly: true,
       },
       message: "Price refresh estimate ready.",
       eodhdBudget,
@@ -802,6 +805,7 @@ export async function loadPricesForHoldings(
     providerCallsMade:
       (payload.metrics?.providerCalls ?? 0) - metricsBefore.providerCalls,
     circuitOpen: getProviderCircuitSnapshot(EODHD_QUOTE_PROVIDER_ID).open,
+    estimateOnly: false,
   };
 
   logRefreshOutcome(holdingsRequested, skipped, targets.length, metricsBefore, refreshSummary);
