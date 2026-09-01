@@ -5,23 +5,33 @@ on:
   pull_request:
     paths:
       - "supabase/migrations/20260901120000_portfolio_nav_snapshots.sql"
+      - "supabase/migrations/20260901140000_holding_canonical_quotes.sql"
       - "supabase/tests/database/portfolio_nav_snapshots_disposable_stub.sql"
       - "supabase/tests/database/portfolio_nav_snapshots_disposable_verify.sql"
+      - "supabase/tests/database/holding_canonical_quotes_disposable_stub.sql"
+      - "supabase/tests/database/holding_canonical_quotes_disposable_verify.sql"
       - "supabase/tests/database/runPortfolioNavSnapshotsDisposable.mjs"
+      - "supabase/tests/database/runHoldingCanonicalQuotesDisposable.mjs"
       - "supabase/tests/database/disposableDatabaseUrl.mjs"
       - "supabase/tests/database/disposableDatabaseUrl.test.ts"
       - "lib/services/goalPace/**"
+      - "lib/services/canonicalQuotes/**"
       - "supabase/tests/phase1MigrationSecurity.test.ts"
       - ".github/workflows/nav-snapshot-migration.yml"
   push:
     paths:
       - "supabase/migrations/20260901120000_portfolio_nav_snapshots.sql"
+      - "supabase/migrations/20260901140000_holding_canonical_quotes.sql"
       - "supabase/tests/database/portfolio_nav_snapshots_disposable_stub.sql"
       - "supabase/tests/database/portfolio_nav_snapshots_disposable_verify.sql"
+      - "supabase/tests/database/holding_canonical_quotes_disposable_stub.sql"
+      - "supabase/tests/database/holding_canonical_quotes_disposable_verify.sql"
       - "supabase/tests/database/runPortfolioNavSnapshotsDisposable.mjs"
+      - "supabase/tests/database/runHoldingCanonicalQuotesDisposable.mjs"
       - "supabase/tests/database/disposableDatabaseUrl.mjs"
       - "supabase/tests/database/disposableDatabaseUrl.test.ts"
       - "lib/services/goalPace/**"
+      - "lib/services/canonicalQuotes/**"
       - "supabase/tests/phase1MigrationSecurity.test.ts"
       - ".github/workflows/nav-snapshot-migration.yml"
 
@@ -34,7 +44,7 @@ concurrency:
 
 jobs:
   disposable-postgres:
-    name: Validate portfolio_nav_snapshots on Postgres 15
+    name: Validate NAV snapshot and canonical quotes on Postgres 15
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -83,5 +93,11 @@ jobs:
           DISPOSABLE_DB_MODE: ci
         run: node supabase/tests/database/runPortfolioNavSnapshotsDisposable.mjs
 
-      - name: Run Goal Pace and migration security tests
-        run: npx vitest run lib/services/goalPace supabase/tests/phase1MigrationSecurity.test.ts supabase/tests/database/disposableDatabaseUrl.test.ts
+      - name: Apply C1 canonical quotes migration and verify on disposable Postgres
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
+          DISPOSABLE_DB_MODE: ci
+        run: node supabase/tests/database/runHoldingCanonicalQuotesDisposable.mjs
+
+      - name: Run Goal Pace, canonical quote, and migration security tests
+        run: npx vitest run lib/services/goalPace lib/services/canonicalQuotes supabase/tests/phase1MigrationSecurity.test.ts supabase/tests/database/disposableDatabaseUrl.test.ts
