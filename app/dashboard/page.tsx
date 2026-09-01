@@ -27,6 +27,7 @@ import { useGoalProgress } from "@/lib/client/useGoalProgress";
 import { useUserGoal } from "@/lib/client/useUserGoal";
 import { useUserPortfolio } from "@/lib/client/useUserPortfolio";
 import { useLivePortfolioPriceRefresh } from "@/lib/client/useLivePortfolioPriceRefresh";
+import { usePortfolioNavSnapshotCapture } from "@/lib/client/usePortfolioNavSnapshotCapture";
 import { usePortfolioPerformanceHistory } from "@/lib/client/usePortfolioPerformanceHistory";
 import { useAfterFirstPaint } from "@/lib/client/useAfterFirstPaint";
 import { needsPortfolioSetup } from "@/lib/client/portfolioSetup";
@@ -55,7 +56,9 @@ export default function DashboardPage() {
   const firstName = useAuthenticatedFirstName();
   const {
     userSub,
+    authReady,
     holdings,
+    activePortfolioId,
     portfolioReady,
     recoveryOffer,
     syncState,
@@ -76,6 +79,8 @@ export default function DashboardPage() {
     liveRefreshAt,
     displayFreshnessAt,
     disabled: refreshDisabled,
+    pricesSettled,
+    manualRefreshGeneration,
   } = useLivePortfolioPriceRefresh({
     userSub,
     holdings,
@@ -201,6 +206,19 @@ export default function DashboardPage() {
   const productAccess = useProductAccess(
     portfolioReady && Boolean(userSub),
   );
+
+  usePortfolioNavSnapshotCapture({
+    authReady,
+    userSub,
+    activePortfolioId,
+    portfolioReady,
+    holdings,
+    pricesSettled,
+    isRefreshing,
+    manualRefreshGeneration,
+    accessReady: productAccess.accessReady,
+    isDemo: productAccess.isDemo,
+  });
 
   const accessReady = productAccess.accessReady;
   const changeIntelligence = useChangeIntelligence({

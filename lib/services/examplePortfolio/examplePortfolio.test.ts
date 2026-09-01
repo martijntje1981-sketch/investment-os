@@ -256,11 +256,13 @@ describe("example API access guard", () => {
     }
   });
 
-  it("wires the guard into portfolio GET/PUT and migrate POST", () => {
+  it("wires the guard into portfolio GET/PUT, migrate POST, and NAV snapshot POST", () => {
     const portfolio = read("app/api/portfolio/route.ts");
     const migrate = read("app/api/portfolio/migrate/route.ts");
+    const navSnapshot = read("app/api/portfolio/nav-snapshot/route.ts");
     expect(portfolio).toContain("assertExamplePortfolioApiAccess");
     expect(migrate).toContain("assertExamplePortfolioApiAccess");
+    expect(navSnapshot).toContain("assertExamplePortfolioApiAccess");
   });
 });
 

@@ -1,6 +1,6 @@
 /**
  * Prospective canonical EUR NAV snapshots for future Goal Pace.
- * Phase A1: contracts and server writer only — not consumed by UI or pace math.
+ * Capture is trusted-server only. No Goal Pace UI or pace math in this phase.
  */
 
 export const PORTFOLIO_NAV_SNAPSHOTS_TABLE = "portfolio_nav_snapshots";
@@ -8,6 +8,7 @@ export const PORTFOLIO_NAV_SNAPSHOTS_TABLE = "portfolio_nav_snapshots";
 export type NavSnapshotUsability = "usable" | "partial";
 
 export type NavSnapshotCaptureStatus =
+  | "disabled"
   | "created"
   | "improved"
   | "already_captured"

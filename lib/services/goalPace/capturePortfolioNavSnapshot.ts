@@ -2,7 +2,7 @@
  * Server-only prospective NAV snapshot writer.
  * Writes through a trusted server/admin client after explicit ownership checks.
  * Never accepts client-supplied NAV, user id, ownership, Goal fields, or isDemo.
- * Phase A1: not invoked from Dashboard, routes, cron, or providers.
+ * Invoked only from the authenticated trusted capture route after identity checks.
  */
 
 import { mapDbHoldingToStored } from "@/lib/services/portfolio/mappers";

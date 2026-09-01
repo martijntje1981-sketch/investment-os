@@ -58,6 +58,8 @@ export function useLivePortfolioPriceRefresh({
     CryptoRefreshDiagnosticRecord[] | null
   >(null);
   const [showRefreshDiagnostics, setShowRefreshDiagnostics] = useState(false);
+  const [pricesSettled, setPricesSettled] = useState(false);
+  const [manualRefreshGeneration, setManualRefreshGeneration] = useState(0);
   const isRefreshingRef = useRef(false);
   const holdingsRef = useRef(holdings);
   const entryRefreshStartedRef = useRef(false);
@@ -68,6 +70,9 @@ export function useLivePortfolioPriceRefresh({
     if (!userSub) {
       setLiveRefreshAt(null);
       setDisplayFreshnessAt(null);
+      setPricesSettled(false);
+      setManualRefreshGeneration(0);
+      entryRefreshStartedRef.current = false;
       return;
     }
     const liveAt = readLastLivePriceRefreshAt(userSub);
@@ -161,6 +166,12 @@ export function useLivePortfolioPriceRefresh({
         setRefreshDiagnostics(null);
         setShowRefreshDiagnostics(false);
       }
+      if (
+        !cacheFirst &&
+        (outcome.updated || outcome.status === "success")
+      ) {
+        setManualRefreshGeneration((generation) => generation + 1);
+      }
       return outcome;
     } catch {
       markAppEntryPricesReconciled();
@@ -174,6 +185,7 @@ export function useLivePortfolioPriceRefresh({
     } finally {
       isRefreshingRef.current = false;
       setIsRefreshing(false);
+      setPricesSettled(true);
     }
   }, [
     baseCurrency,
@@ -201,7 +213,10 @@ export function useLivePortfolioPriceRefresh({
         userSub,
         holdingsCount: holdingsRef.current.length,
       });
-      if (!decision.shouldRefresh) return;
+      if (!decision.shouldRefresh) {
+        setPricesSettled(true);
+        return;
+      }
       void refreshPrices({ cacheFirst: true });
     };
 
@@ -232,6 +247,8 @@ export function useLivePortfolioPriceRefresh({
     setLiveRefreshAt,
     refreshDiagnostics,
     showRefreshDiagnostics,
+    pricesSettled,
+    manualRefreshGeneration,
     disabled: isRefreshing || !userSub,
   };
 }

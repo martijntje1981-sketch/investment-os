@@ -73,6 +73,8 @@ import {
   lookupManualHoldingListing,
 } from "@/lib/client/manualHoldingMatch";
 import { useLivePortfolioPriceRefresh } from "@/lib/client/useLivePortfolioPriceRefresh";
+import { usePortfolioNavSnapshotCapture } from "@/lib/client/usePortfolioNavSnapshotCapture";
+import { useProductAccess } from "@/lib/client/useProductAccess";
 import { usePortfolioMoneyInOutOpen } from "@/lib/client/useSectionHashId";
 import { PORTFOLIO_PATH } from "@/lib/navigation/appRoutes";
 import {
@@ -123,7 +125,9 @@ export default function PortfolioPage() {
     useState(baseCurrency);
   const {
     userSub,
+    authReady,
     holdings,
+    activePortfolioId,
     portfolioReady,
     recoveryOffer,
     syncState,
@@ -151,11 +155,26 @@ export default function PortfolioPage() {
     refreshDiagnostics,
     showRefreshDiagnostics,
     disabled: refreshDisabled,
+    pricesSettled,
+    manualRefreshGeneration,
   } = useLivePortfolioPriceRefresh({
     userSub,
     holdings,
     saveHoldings,
     ready: portfolioReady,
+  });
+  const productAccess = useProductAccess(portfolioReady && Boolean(userSub));
+  usePortfolioNavSnapshotCapture({
+    authReady,
+    userSub,
+    activePortfolioId,
+    portfolioReady,
+    holdings,
+    pricesSettled,
+    isRefreshing,
+    manualRefreshGeneration,
+    accessReady: productAccess.accessReady,
+    isDemo: productAccess.isDemo,
   });
 
   const heroFreshness = useMemo(

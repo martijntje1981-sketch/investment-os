@@ -12,7 +12,6 @@ function read(rel: string): string {
 }
 
 const liveCaptureSurfaces = [
-  "app/dashboard/page.tsx",
   "app/api/portfolio/route.ts",
   "app/api/prices/route.ts",
   "app/api/portfolio/performance/route.ts",
@@ -25,6 +24,8 @@ const liveCaptureSurfaces = [
   "components/dashboard/DashboardGoalProgressStrip.tsx",
   "vercel.json",
 ];
+
+const trustedCaptureRoute = "app/api/portfolio/nav-snapshot/route.ts";
 
 describe("portfolio_nav_snapshots migration", () => {
   const sql = read(`supabase/migrations/${navMigrationFile}`);
@@ -131,7 +132,7 @@ describe("portfolio_nav_snapshots migration", () => {
 });
 
 describe("Phase A1 isolation from live Goal Pace consumers", () => {
-  it("is not imported by UI, Goal-period math, or reconstructed EOD history", () => {
+  it("is not imported by Goal-period math or reconstructed EOD history", () => {
     const forbidden = [
       "components/dashboard/DashboardGoalProgressStrip.tsx",
       "components/dashboard/dashboardGoalProgressStrip.test.ts",
@@ -139,7 +140,6 @@ describe("Phase A1 isolation from live Goal Pace consumers", () => {
       "lib/client/goalProgressPeriods.test.ts",
       "lib/services/performance/buildHistoricalPortfolioSeries.ts",
       "lib/services/goals/goalProgressEngine.ts",
-      "app/dashboard/page.tsx",
     ];
 
     for (const rel of forbidden) {
@@ -150,12 +150,30 @@ describe("Phase A1 isolation from live Goal Pace consumers", () => {
     }
   });
 
-  it("is not invoked from application routes, providers, or cron", () => {
+  it("Dashboard and Portfolio trigger capture without Goal Pace math or table writes", () => {
+    for (const rel of ["app/dashboard/page.tsx", "app/portfolio/page.tsx"]) {
+      const source = read(rel);
+      expect(source).toContain("usePortfolioNavSnapshotCapture");
+      expect(source).not.toContain("capturePortfolioNavSnapshot");
+      expect(source).not.toContain("portfolio_nav_snapshots");
+      expect(source).not.toContain("goalProgressEngine");
+    }
+  });
+
+  it("is not invoked from prices, cron, reconstructed history, or vercel crons", () => {
     for (const rel of liveCaptureSurfaces) {
       const source = read(rel);
       expect(source, rel).not.toContain("capturePortfolioNavSnapshot");
       expect(source, rel).not.toContain("portfolio_nav_snapshots");
       expect(source, rel).not.toContain("@/lib/services/goalPace");
     }
+  });
+
+  it("A2 trusted route is the only live writer seam", () => {
+    const source = read(trustedCaptureRoute);
+    expect(source).toContain("runTrustedNavSnapshotCapture");
+    expect(source).toContain("assertExamplePortfolioApiAccess");
+    expect(source).toContain("auth.getUser");
+    expect(source).not.toContain("NEXT_PUBLIC_PORTFOLIO_NAV_SNAPSHOT");
   });
 });

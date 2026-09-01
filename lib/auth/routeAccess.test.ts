@@ -84,6 +84,11 @@ describe("middleware and private API wiring", () => {
     expect(source).toContain("getUser");
     expect(source).toContain("assertExamplePortfolioApiAccess");
     expect(source).toContain("accessGuard");
+    const navSnapshot = readProjectFile(
+      "app/api/portfolio/nav-snapshot/route.ts",
+    );
+    expect(navSnapshot).toContain("getUser");
+    expect(navSnapshot).toContain("assertExamplePortfolioApiAccess");
   });
 
   it("login honors next redirect destination", () => {

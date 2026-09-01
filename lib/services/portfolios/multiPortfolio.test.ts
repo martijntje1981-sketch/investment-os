@@ -111,6 +111,18 @@ describe("multi-portfolio isolation architecture", () => {
     );
   });
 
+  it("NAV snapshot capture is scoped to the active owned portfolio", () => {
+    expect(read("lib/client/usePortfolioNavSnapshotCapture.ts")).toContain(
+      "activePortfolioId",
+    );
+    expect(read("lib/client/navSnapshotCaptureClient.ts")).toContain(
+      "JSON.stringify({ portfolioId: input.portfolioId })",
+    );
+    expect(read("lib/services/goalPace/capturePortfolioNavSnapshot.ts")).toContain(
+      "resolveOwnedPortfolioId",
+    );
+  });
+
   it("Q. switcher is in the authenticated header and usable at narrow widths", () => {
     const switcher = read("components/portfolio/PortfolioSwitcher.tsx");
     const header = read("components/auth/UserMenu.tsx");
