@@ -141,7 +141,17 @@ export async function persistCanonicalCryptoQuotesAfterPrices(
       return aggregate;
     }
 
-    if (input.payload.quoteSource === "cache" || input.payload.quoteSource == null) {
+    const providerCallsMade = Number(
+    input.payload.refreshSummary?.providerCallsMade ?? 0,
+  );
+  const effectiveQuoteSource =
+    Number.isFinite(providerCallsMade) && providerCallsMade > 0
+      ? input.payload.quoteSource === "mixed"
+        ? "mixed"
+        : "provider"
+      : input.payload.quoteSource;
+
+  if (effectiveQuoteSource === "cache" || effectiveQuoteSource == null) {
       const aggregate = emptyAggregate({ skipped_cache: 1 });
       logCanonicalCryptoQuotePersistAggregate(aggregate);
       return aggregate;
@@ -196,7 +206,7 @@ export async function persistCanonicalCryptoQuotesAfterPrices(
         price,
         fxRates: input.payload.fxRates,
         fxAt,
-        quoteSource: input.payload.quoteSource,
+        quoteSource: effectiveQuoteSource,
         estimateOnly: false,
       });
       if (!built.ok) {

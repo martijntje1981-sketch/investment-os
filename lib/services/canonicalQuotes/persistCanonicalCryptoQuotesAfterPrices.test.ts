@@ -350,6 +350,32 @@ describe("persistCanonicalCryptoQuotesAfterPrices", () => {
     expect(persistQuote).not.toHaveBeenCalled();
   });
 
+  it("uses request provider-call proof when shared quoteSource is cache", async () => {
+    const persistQuote = vi.fn(async () => ({ status: "created" as const }));
+    const createQuoteClient = vi.fn(() => QUOTE_CLIENT);
+    const aggregate = await persistCanonicalCryptoQuotesAfterPrices({
+      payload: payload({
+        quoteSource: "cache",
+        refreshSummary: {
+          estimateOnly: false,
+          providerCallsMade: 10,
+        } as never,
+      }),
+      requestHoldings: [
+        { id: HOLDING_BTC, symbol: "BTC", providerSymbol: "BTC-USD.CC" },
+      ],
+      env: enabledEnv(),
+      getSessionUser: async () => user(),
+      resolveProductAccess: async () => personalAccess,
+      createQuoteClient,
+      persistQuote,
+    });
+
+    expect(aggregate.created).toBe(1);
+    expect(aggregate.skipped_cache).toBe(0);
+    expect(createQuoteClient).toHaveBeenCalledTimes(1);
+    expect(persistQuote).toHaveBeenCalledTimes(1);
+  });
   it("skips estimate-only results even when quoteSource is provider", async () => {
     const persistQuote = vi.fn();
     const createQuoteClient = vi.fn();
