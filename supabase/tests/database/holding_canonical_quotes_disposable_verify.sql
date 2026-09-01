@@ -212,10 +212,55 @@ DO $$
 DECLARE
   v_holding uuid;
   v_user uuid;
+  v_count integer;
 BEGIN
+  -- Mismatched identity: SHIB is owned by user A, but the UPDATE claims user B.
+  -- Contract: reject (ownership mismatch). Identity freeze is not reached.
+  BEGIN
+    UPDATE public.holding_canonical_quotes
+    SET
+      holding_id = 'c1c1c1c1-c1c1-41c1-81c1-c1c1c1c1c1c1',
+      user_id = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+      quote_updated_at = '2026-09-01T12:00:00Z',
+      fetched_at = '2026-09-01T12:00:01Z'
+    WHERE holding_id = 'c0c0c0c0-c0c0-40c0-80c0-c0c0c0c0c0c0';
+    RAISE EXCEPTION 'expected ownership mismatch for identity mutation';
+  EXCEPTION
+    WHEN others THEN
+      IF SQLERRM NOT LIKE '%ownership mismatch%' THEN
+        RAISE;
+      END IF;
+  END;
+
+  SELECT holding_id, user_id INTO v_holding, v_user
+  FROM public.holding_canonical_quotes
+  WHERE holding_id = 'c0c0c0c0-c0c0-40c0-80c0-c0c0c0c0c0c0';
+
+  IF v_holding IS NULL OR v_user <> 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' THEN
+    RAISE EXCEPTION 'mismatched identity mutation changed the row';
+  END IF;
+
+  SELECT count(*) INTO v_count
+  FROM public.holding_canonical_quotes
+  WHERE holding_id = 'c1c1c1c1-c1c1-41c1-81c1-c1c1c1c1c1c1';
+  IF v_count <> 0 THEN
+    RAISE EXCEPTION 'mismatched identity mutation created a row on the target holding';
+  END IF;
+
+  RAISE NOTICE 'ok: mismatched identity mutation is rejected';
+END $$;
+
+DO $$
+DECLARE
+  v_holding uuid;
+  v_user uuid;
+  v_moved integer;
+BEGIN
+  -- Otherwise-valid reassignment: ETH belongs to user B, and user_id is set to B.
+  -- Contract: UPDATE is rewritten so holding_id/user_id stay on the original row.
   UPDATE public.holding_canonical_quotes
   SET
-    holding_id = 'c1c1c1c1-c1c1-41c1-81c1-c1c1c1c1c1c1',
+    holding_id = 'b0b0b0b0-b0b0-40b0-80b0-b0b0b0b0b0b0',
     user_id = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
     quote_updated_at = '2026-09-01T12:00:00Z',
     fetched_at = '2026-09-01T12:00:01Z'
@@ -225,10 +270,21 @@ BEGIN
   FROM public.holding_canonical_quotes
   WHERE holding_id = 'c0c0c0c0-c0c0-40c0-80c0-c0c0c0c0c0c0';
 
-  IF v_holding IS NULL OR v_user <> 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' THEN
-    RAISE EXCEPTION 'identity columns were allowed to change';
+  IF v_holding IS DISTINCT FROM 'c0c0c0c0-c0c0-40c0-80c0-c0c0c0c0c0c0'
+    OR v_user IS DISTINCT FROM 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+  THEN
+    RAISE EXCEPTION 'valid-target identity mutation reassigned the quote';
   END IF;
-  RAISE NOTICE 'ok: identity cannot change on UPDATE';
+
+  SELECT count(*) INTO v_moved
+  FROM public.holding_canonical_quotes
+  WHERE holding_id = 'b0b0b0b0-b0b0-40b0-80b0-b0b0b0b0b0b0'
+    OR user_id = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+  IF v_moved <> 0 THEN
+    RAISE EXCEPTION 'canonical quote row moved to another holding or user';
+  END IF;
+
+  RAISE NOTICE 'ok: identity cannot be reassigned to another valid holding/user';
 END $$;
 
 DO $$
