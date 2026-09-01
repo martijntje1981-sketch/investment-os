@@ -6,6 +6,7 @@
  */
 
 import { NextResponse } from "next/server";
+import { persistCanonicalCryptoQuotesAfterPrices } from "@/lib/services/canonicalQuotes/persistCanonicalCryptoQuotesAfterPrices";
 import { logMarketDataRefreshTrace } from "@/lib/services/marketData/providerDiagnostics";
 import {
   loadDefaultWatchlistPrices,
@@ -137,6 +138,15 @@ export async function POST(request: Request) {
       circuitOpen: payload.refreshSummary?.circuitOpen ?? null,
       providerCallsMade: payload.refreshSummary?.providerCallsMade ?? null,
     });
+    try {
+      await persistCanonicalCryptoQuotesAfterPrices({
+        payload,
+        requestHoldings: holdings,
+        estimateOnly: body.estimateOnly ?? false,
+      });
+    } catch {
+      // Persistence must never turn a successful price response into a failed refresh.
+    }
     return jsonResponse(payload, status, { forceRefresh });
   } catch (error) {
     console.error("Prices API POST error:", error);

@@ -1,6 +1,25 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { POST } from "@/app/api/prices/route";
+import { POST, GET } from "@/app/api/prices/route";
+
+vi.mock("@/lib/services/canonicalQuotes/persistCanonicalCryptoQuotesAfterPrices", () => ({
+  persistCanonicalCryptoQuotesAfterPrices: vi.fn(async () => ({
+    attempted: 0,
+    created: 0,
+    improved: 0,
+    already_current: 0,
+    skipped_stale: 0,
+    skipped_invalid: 0,
+    forbidden: 0,
+    error: 0,
+    skipped_unauthenticated: 0,
+    skipped_demo: 0,
+    skipped_unresolved: 0,
+    skipped_disabled: 1,
+    skipped_cache: 0,
+    skipped_estimate: 0,
+  })),
+}));
 
 vi.mock("@/lib/services/prices/priceService", () => ({
   loadPricesForHoldings: vi.fn(async () => ({
@@ -64,8 +83,10 @@ vi.mock("@/lib/services/prices/priceService", () => ({
 
 import {
   loadBaseCurrencyFxSnapshot,
+  loadDefaultWatchlistPrices,
   loadPricesForHoldings,
 } from "@/lib/services/prices/priceService";
+import { persistCanonicalCryptoQuotesAfterPrices } from "@/lib/services/canonicalQuotes/persistCanonicalCryptoQuotesAfterPrices";
 
 describe("POST /api/prices", () => {
   beforeEach(() => {
@@ -189,5 +210,71 @@ describe("POST /api/prices", () => {
     );
 
     expect(response.headers.get("Cache-Control")).toBe("private, no-store");
+  });
+
+  it("awaits persistence after PriceService without changing quote values", async () => {
+    const response = await POST(
+      new Request("http://localhost/api/prices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          holdings: [{ id: "holding-1", symbol: "VWCE", providerSymbol: "VWCE.XETRA" }],
+        }),
+      }),
+    );
+    const body = await response.json();
+    expect(response.status).toBe(200);
+    expect(body.prices[0].currentPrice).toBe(100);
+    expect(persistCanonicalCryptoQuotesAfterPrices).toHaveBeenCalledOnce();
+    expect(persistCanonicalCryptoQuotesAfterPrices).toHaveBeenCalledWith({
+      payload: expect.objectContaining({ success: true }),
+      requestHoldings: [
+        { id: "holding-1", symbol: "VWCE", providerSymbol: "VWCE.XETRA" },
+      ],
+      estimateOnly: false,
+    });
+    expect(loadPricesForHoldings).toHaveBeenCalledOnce();
+  });
+
+  it("still returns a successful refresh when persistence throws", async () => {
+    vi.mocked(persistCanonicalCryptoQuotesAfterPrices).mockRejectedValueOnce(
+      new Error("writer failed"),
+    );
+    const response = await POST(
+      new Request("http://localhost/api/prices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          holdings: [{ symbol: "VWCE", providerSymbol: "VWCE.XETRA" }],
+        }),
+      }),
+    );
+    expect(response.status).toBe(200);
+    expect((await response.json()).success).toBe(true);
+  });
+
+  it("does not persist fxSnapshotOnly or GET requests", async () => {
+    await POST(
+      new Request("http://localhost/api/prices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fxSnapshotOnly: true, baseCurrency: "USD" }),
+      }),
+    );
+    expect(persistCanonicalCryptoQuotesAfterPrices).not.toHaveBeenCalled();
+
+    vi.mocked(loadDefaultWatchlistPrices).mockResolvedValueOnce({
+      success: true,
+      baseCurrency: "EUR",
+      fxRates: { EUR: 1, USD_TO_EUR: 0.92, GBP_TO_EUR: null, CHF_TO_EUR: null },
+      prices: [],
+      errors: [],
+      requested: 0,
+      received: 0,
+      generatedAt: "2026-09-01T11:00:00.000Z",
+      cache: { enabled: true, durationSeconds: 720 },
+    });
+    await GET();
+    expect(persistCanonicalCryptoQuotesAfterPrices).not.toHaveBeenCalled();
   });
 });

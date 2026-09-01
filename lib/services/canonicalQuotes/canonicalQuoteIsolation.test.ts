@@ -10,7 +10,6 @@ function read(rel: string): string {
 }
 
 const liveSurfaces = [
-  "app/api/prices/route.ts",
   "app/api/portfolio/nav-snapshot/route.ts",
   "app/api/portfolio/route.ts",
   "lib/services/goalPace/capturePortfolioNavSnapshot.ts",
@@ -31,13 +30,32 @@ const liveSurfaces = [
 ];
 
 describe("C1 canonical quote isolation", () => {
-  it("is not imported by prices, NAV capture, overlay, export, history or UI", () => {
+  it("is not imported by NAV capture, overlay, export, history or UI", () => {
     for (const rel of liveSurfaces) {
       const source = read(rel);
       expect(source, rel).not.toContain("holding_canonical_quotes");
       expect(source, rel).not.toContain("persistCanonicalCryptoQuote");
       expect(source, rel).not.toContain("@/lib/services/canonicalQuotes");
     }
+  });
+
+  it("lets POST /api/prices persist without reading the table or changing listed last_market_price", () => {
+    const route = read("app/api/prices/route.ts");
+    expect(route).toContain("persistCanonicalCryptoQuotesAfterPrices");
+    expect(route).not.toContain("holding_canonical_quotes");
+    expect(route).not.toContain("createAdminClient");
+    expect(route).not.toContain("last_market_price");
+  });
+
+  it("NAV capture still does not read holding_canonical_quotes", () => {
+    const capture = read("lib/services/goalPace/capturePortfolioNavSnapshot.ts");
+    const evaluate = read("lib/services/goalPace/evaluateNavSnapshotCapture.ts");
+    const trusted = read("lib/services/goalPace/trustedNavSnapshotCapture.ts");
+    expect(capture).not.toContain("holding_canonical_quotes");
+    expect(capture).toContain("last_market_price");
+    expect(evaluate).not.toContain("holding_canonical_quotes");
+    expect(evaluate).toContain("holdingsForCanonicalNav");
+    expect(trusted).not.toContain("holding_canonical_quotes");
   });
 
   it("does not change listed last_market_price write or mapper contracts", () => {

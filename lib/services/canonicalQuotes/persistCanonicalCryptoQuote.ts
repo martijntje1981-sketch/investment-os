@@ -1,15 +1,14 @@
 /**
- * Trusted-server persistence for canonical crypto valuations (Phase C1).
+ * Trusted-server persistence for canonical crypto valuations.
  *
- * Not wired to any live route. C2 seam (do not call yet):
- * after a successful authenticated POST /api/prices, map the internally
- * produced crypto HoldingPrice + FX snapshot into a CanonicalCryptoQuoteCandidate
- * (do not spread the API body or HoldingPrice object) and call this function
- * with session userId. Do not fetch EODHD again. Do not persist from cache,
- * localStorage, metadata priceUpdatedAt, manual, or purchase prices.
+ * C2 calls this after a successful authenticated POST /api/prices, mapping the
+ * internally produced crypto quote + FX snapshot into a CanonicalCryptoQuoteCandidate
+ * (do not spread the API body or HoldingPrice object). Do not fetch EODHD again.
+ * Do not persist from cache, localStorage, metadata priceUpdatedAt, manual, or
+ * purchase prices.
  *
  * Ownership is loaded from the database. Browser-supplied user/holding/price/FX
- * claims are ignored. service_role is used only after those checks.
+ * claims are ignored. service_role is used only after identity and access checks.
  */
 
 import { parseCryptoHoldingMetadata } from "@/lib/services/portfolio/cryptoDbMetadata";

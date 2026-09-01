@@ -1,6 +1,7 @@
 /**
- * Server-only canonical crypto valuation contracts (Phase C1).
- * Not a live price, NAV, or client type. Do not import from UI or /api/prices yet.
+ * Server-only canonical crypto valuation contracts.
+ * C2 may persist from authenticated POST /api/prices. Do not import from UI.
+ * NAV capture must not read this table yet.
  *
  * Canonical EUR unit price: EUR per one crypto unit.
  * Pair price: remains in pairCurrency.
